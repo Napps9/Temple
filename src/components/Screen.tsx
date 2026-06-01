@@ -1,10 +1,20 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-export function Screen({ children, className }: { children: ReactNode; className?: string }) {
+const DEFAULT_EDGES: readonly Edge[] = ['top', 'left', 'right'];
+
+export function Screen({
+  children,
+  className,
+  edges = DEFAULT_EDGES,
+}: {
+  children: ReactNode;
+  className?: string;
+  edges?: readonly Edge[];
+}) {
   return (
-    <SafeAreaView className="flex-1 bg-ink" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-ink" edges={edges}>
       <View className={`flex-1 px-6 ${className ?? ''}`}>{children}</View>
     </SafeAreaView>
   );

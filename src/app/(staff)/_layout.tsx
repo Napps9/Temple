@@ -1,5 +1,6 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 
+import { MemberViewLink } from '@/components/CrossExperienceLink';
 import { isStaffRole, useGymMembership, useSession } from '@/lib/auth';
 
 export default function StaffLayout() {
@@ -12,15 +13,24 @@ export default function StaffLayout() {
   }
 
   return (
-    <Stack
+    <Tabs
       screenOptions={{
         headerStyle: { backgroundColor: '#0B1220' },
-        headerTintColor: '#F5F1E8',
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: '#0B1220' },
+        headerTintColor: '#F5F1E8',
+        headerTitleStyle: { color: '#F5F1E8', fontWeight: '600' },
+        tabBarStyle: { backgroundColor: '#0B1220', borderTopColor: '#1A2230' },
+        tabBarActiveTintColor: '#C5A572',
+        tabBarInactiveTintColor: '#9CA3AF',
+        sceneStyle: { backgroundColor: '#0B1220' },
+        headerRight: () => <MemberViewLink />,
       }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="team" options={{ title: 'Team' }} />
-    </Stack>
+      <Tabs.Screen name="classes" options={{ title: 'Classes' }} />
+      <Tabs.Screen
+        name="management"
+        options={{ title: 'Management', headerShown: false }}
+      />
+      <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
+    </Tabs>
   );
 }

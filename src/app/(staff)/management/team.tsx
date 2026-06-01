@@ -51,7 +51,7 @@ export default function TeamScreen() {
   });
 
   return (
-    <Screen>
+    <Screen edges={['left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6">
         <View className="gap-2">
           <Text className="text-bone text-2xl font-semibold">Issue invite</Text>
