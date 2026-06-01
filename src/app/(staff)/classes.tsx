@@ -4,7 +4,7 @@ import { Screen } from '@/components/Screen';
 
 export default function StaffClasses() {
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
         <View className="gap-1">
           <Text className="text-bone text-2xl font-semibold">Classes</Text>

@@ -1,29 +1,35 @@
 import { Redirect, Tabs } from 'expo-router';
+import { View } from 'react-native';
 
-import { StaffViewLinkIfStaff } from '@/components/CrossExperienceLink';
+import { TopNav, type NavSection } from '@/components/TopNav';
 import { useSession } from '@/lib/auth';
+
+const MEMBER_SECTIONS: NavSection[] = [
+  { name: 'book', href: '/book', label: 'Book' },
+  { name: 'programming', href: '/programming', label: 'Programming' },
+  { name: 'workouts', href: '/workouts', label: 'Workouts' },
+  { name: 'account', href: '/account', label: 'Account' },
+];
 
 export default function MemberLayout() {
   const session = useSession();
   if (session === null) return <Redirect href="/sign-in" />;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: '#0B1220' },
-        headerShadowVisible: false,
-        headerTintColor: '#F5F1E8',
-        headerTitleStyle: { color: '#F5F1E8', fontWeight: '600' },
-        tabBarStyle: { backgroundColor: '#0B1220', borderTopColor: '#1A2230' },
-        tabBarActiveTintColor: '#C5A572',
-        tabBarInactiveTintColor: '#9CA3AF',
-        sceneStyle: { backgroundColor: '#0B1220' },
-        headerLeft: () => <StaffViewLinkIfStaff />,
-      }}>
-      <Tabs.Screen name="book" options={{ title: 'Book' }} />
-      <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
-      <Tabs.Screen name="workouts" options={{ title: 'Workouts' }} />
-      <Tabs.Screen name="account" options={{ title: 'Account' }} />
-    </Tabs>
+    <View className="flex-1 bg-ink">
+      <TopNav sections={MEMBER_SECTIONS} variant="member" />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+          sceneStyle: { backgroundColor: '#0B1220' },
+          animation: 'none',
+        }}>
+        <Tabs.Screen name="book" options={{ title: 'Book' }} />
+        <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
+        <Tabs.Screen name="workouts" options={{ title: 'Workouts' }} />
+        <Tabs.Screen name="account" options={{ title: 'Account' }} />
+      </Tabs>
+    </View>
   );
 }

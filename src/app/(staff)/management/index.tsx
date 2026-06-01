@@ -48,7 +48,7 @@ export default function ManagementHome() {
   const signOut = useSignOut();
 
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
         <View className="gap-1">
           <Text className="text-bone/60 text-sm uppercase tracking-widest">{role}</Text>

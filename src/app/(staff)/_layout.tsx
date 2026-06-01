@@ -1,7 +1,14 @@
 import { Redirect, Tabs } from 'expo-router';
+import { View } from 'react-native';
 
-import { MemberViewLink } from '@/components/CrossExperienceLink';
+import { TopNav, type NavSection } from '@/components/TopNav';
 import { isStaffRole, useGymMembership, useSession } from '@/lib/auth';
+
+const STAFF_SECTIONS: NavSection[] = [
+  { name: 'classes', href: '/classes', label: 'Classes' },
+  { name: 'management', href: '/management', label: 'Management' },
+  { name: 'programming', href: '/programming', label: 'Programming' },
+];
 
 export default function StaffLayout() {
   const session = useSession();
@@ -13,24 +20,19 @@ export default function StaffLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: '#0B1220' },
-        headerShadowVisible: false,
-        headerTintColor: '#F5F1E8',
-        headerTitleStyle: { color: '#F5F1E8', fontWeight: '600' },
-        tabBarStyle: { backgroundColor: '#0B1220', borderTopColor: '#1A2230' },
-        tabBarActiveTintColor: '#C5A572',
-        tabBarInactiveTintColor: '#9CA3AF',
-        sceneStyle: { backgroundColor: '#0B1220' },
-        headerRight: () => <MemberViewLink />,
-      }}>
-      <Tabs.Screen name="classes" options={{ title: 'Classes' }} />
-      <Tabs.Screen
-        name="management"
-        options={{ title: 'Management', headerShown: false }}
-      />
-      <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
-    </Tabs>
+    <View className="flex-1 bg-ink">
+      <TopNav sections={STAFF_SECTIONS} variant="staff" />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+          sceneStyle: { backgroundColor: '#0B1220' },
+          animation: 'none',
+        }}>
+        <Tabs.Screen name="classes" options={{ title: 'Classes' }} />
+        <Tabs.Screen name="management" options={{ title: 'Management' }} />
+        <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
+      </Tabs>
+    </View>
   );
 }
