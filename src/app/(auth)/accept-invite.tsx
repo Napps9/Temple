@@ -78,7 +78,7 @@ export default function AcceptInviteScreen() {
               Create account
             </Button>
             <View className="items-center">
-              <Link href="/(auth)/sign-in" asChild>
+              <Link href="/sign-in" asChild>
                 <Pressable hitSlop={8}>
                   <Text className="text-brand">Already have an account? Sign in</Text>
                 </Pressable>

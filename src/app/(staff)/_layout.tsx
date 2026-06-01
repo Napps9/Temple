@@ -7,9 +7,9 @@ export default function StaffLayout() {
   const session = useSession();
   const { data: membership, isLoading } = useGymMembership();
 
-  if (session === null) return <Redirect href="/(auth)/sign-in" />;
+  if (session === null) return <Redirect href="/sign-in" />;
   if (!isLoading && membership && !isStaffRole(membership.role)) {
-    return <Redirect href="/(member)" />;
+    return <Redirect href="/book" />;
   }
 
   return (

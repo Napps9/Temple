@@ -61,7 +61,7 @@ export default function ManagementHome() {
           <ManagementCard
             title="Team"
             description="Invite owners, coaches, staff and members."
-            href="/(staff)/management/team"
+            href="/management/team"
           />
         ) : null}
         <ManagementCard

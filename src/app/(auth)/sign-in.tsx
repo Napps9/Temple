@@ -56,7 +56,7 @@ export default function SignInScreen() {
             Sign in
           </Button>
           <View className="items-center">
-            <Link href="/(auth)/accept-invite" asChild>
+            <Link href="/accept-invite" asChild>
               <Pressable hitSlop={8}>
                 <Text className="text-brand">Have an invite code?</Text>
               </Pressable>

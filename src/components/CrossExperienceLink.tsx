@@ -5,7 +5,7 @@ import { isStaffRole, useRole } from '@/lib/auth';
 
 export function MemberViewLink() {
   return (
-    <Link href="/(member)" asChild>
+    <Link href="/book" asChild>
       <Pressable hitSlop={8} className="px-4">
         <Text className="text-brand">Member view →</Text>
       </Pressable>
@@ -17,7 +17,7 @@ export function StaffViewLinkIfStaff() {
   const role = useRole();
   if (!isStaffRole(role)) return null;
   return (
-    <Link href="/(staff)" asChild>
+    <Link href="/classes" asChild>
       <Pressable hitSlop={8} className="px-4">
         <Text className="text-brand">← Staff view</Text>
       </Pressable>

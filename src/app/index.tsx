@@ -8,10 +8,10 @@ export default function Index() {
   const { data: membership, isLoading } = useGymMembership();
 
   if (session === undefined) return <Loading />;
-  if (!session) return <Redirect href="/(auth)/sign-in" />;
+  if (!session) return <Redirect href="/sign-in" />;
   if (isLoading) return <Loading />;
-  if (!membership) return <Redirect href="/(auth)/sign-in" />;
-  return <Redirect href={membership.role === 'member' ? '/(member)' : '/(staff)'} />;
+  if (!membership) return <Redirect href="/sign-in" />;
+  return <Redirect href={membership.role === 'member' ? '/book' : '/classes'} />;
 }
 
 function Loading() {

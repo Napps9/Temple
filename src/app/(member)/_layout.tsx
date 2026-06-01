@@ -5,7 +5,7 @@ import { useSession } from '@/lib/auth';
 
 export default function MemberLayout() {
   const session = useSession();
-  if (session === null) return <Redirect href="/(auth)/sign-in" />;
+  if (session === null) return <Redirect href="/sign-in" />;
 
   return (
     <Tabs

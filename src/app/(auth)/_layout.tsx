@@ -7,9 +7,7 @@ export default function AuthLayout() {
   const { data: membership, isLoading } = useGymMembership();
 
   if (session && !isLoading && membership) {
-    return (
-      <Redirect href={membership.role === 'member' ? '/(member)' : '/(staff)'} />
-    );
+    return <Redirect href={membership.role === 'member' ? '/book' : '/classes'} />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;
