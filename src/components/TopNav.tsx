@@ -7,6 +7,14 @@ import { useGymMembership } from '@/lib/auth';
 
 export type NavSection = { name: string; href: string; label: string };
 
+function LogoMark({ initial }: { initial: string }) {
+  return (
+    <View className="w-9 h-9 rounded-lg bg-brand items-center justify-center">
+      <Text className="text-ink font-bold text-base">{initial}</Text>
+    </View>
+  );
+}
+
 export function TopNav({
   sections,
   variant,
@@ -19,24 +27,19 @@ export function TopNav({
   const { data: membership } = useGymMembership();
 
   const currentSection = segments[1];
+  const gymName = membership?.gymName ?? 'Temple';
+  const initial = (gymName.charAt(0) || 'T').toUpperCase();
 
   return (
     <View
-      style={{ paddingTop: insets.top + 12 }}
-      className="bg-ink border-b border-bone/10 px-6 pb-4">
-      <View className="flex-row items-center mb-4">
-        <View className="flex-1">
-          {variant === 'member' ? <StaffViewLinkIfStaff /> : null}
-        </View>
-        <Text className="text-bone font-semibold text-base">
-          {membership?.gymName ?? 'Temple'}
-        </Text>
-        <View className="flex-1 items-end">
-          {variant === 'staff' ? <MemberViewLink /> : null}
-        </View>
+      style={{ paddingTop: insets.top + 10 }}
+      className="bg-ink border-b border-bone/10 px-6 pb-3 flex-row items-center gap-4">
+      <View className="flex-row items-center gap-3 flex-1">
+        <LogoMark initial={initial} />
+        <Text className="text-bone font-semibold text-base">{gymName}</Text>
       </View>
 
-      <View className="flex-row justify-center gap-7">
+      <View className="flex-row gap-7">
         {sections.map((s) => {
           const active = currentSection === s.name;
           return (
@@ -55,6 +58,10 @@ export function TopNav({
             </Pressable>
           );
         })}
+      </View>
+
+      <View className="flex-1 items-end">
+        {variant === 'staff' ? <MemberViewLink /> : <StaffViewLinkIfStaff />}
       </View>
     </View>
   );

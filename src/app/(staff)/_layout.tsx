@@ -5,9 +5,9 @@ import { TopNav, type NavSection } from '@/components/TopNav';
 import { isStaffRole, useGymMembership, useSession } from '@/lib/auth';
 
 const STAFF_SECTIONS: NavSection[] = [
-  { name: 'classes', href: '/classes', label: 'Classes' },
-  { name: 'management', href: '/management', label: 'Management' },
   { name: 'programming', href: '/programming', label: 'Programming' },
+  { name: 'classes', href: '/classes', label: 'Classes' },
+  { name: 'management', href: '/management', label: 'Manage' },
 ];
 
 export default function StaffLayout() {
