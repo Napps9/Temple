@@ -108,6 +108,72 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_hours: {
+        Row: {
+          id: string;
+          gym_id: string;
+          day_of_week: number;
+          opens_at: string;
+          closes_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          day_of_week: number;
+          opens_at: string;
+          closes_at: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          day_of_week: number;
+          opens_at: string;
+          closes_at: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      class_sessions: {
+        Row: {
+          id: string;
+          gym_id: string;
+          name: string;
+          coach_id: string | null;
+          starts_at: string;
+          duration_minutes: number;
+          capacity: number;
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          name: string;
+          coach_id?: string | null;
+          starts_at: string;
+          duration_minutes?: number;
+          capacity?: number;
+          notes?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          name: string;
+          coach_id: string | null;
+          starts_at: string;
+          duration_minutes: number;
+          capacity: number;
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

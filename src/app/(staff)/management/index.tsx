@@ -64,6 +64,13 @@ export default function ManagementHome() {
             href="/management/team"
           />
         ) : null}
+        {role === 'owner' ? (
+          <ManagementCard
+            title="Operating hours"
+            description="Set when your gym is open and closed each day of the week."
+            href="/management/hours"
+          />
+        ) : null}
         <ManagementCard
           title="Members"
           description="View and manage everyone signed up to your gym."
