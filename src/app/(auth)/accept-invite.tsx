@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { acceptInvite } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 
 export default function AcceptInviteScreen() {
   const params = useLocalSearchParams<{ code?: string }>();
@@ -26,7 +27,7 @@ export default function AcceptInviteScreen() {
     try {
       await acceptInvite(code.trim(), email.trim(), password, name.trim());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Invite could not be accepted');
+      setError(errorMessage(e, 'Invite could not be accepted'));
     } finally {
       setLoading(false);
     }

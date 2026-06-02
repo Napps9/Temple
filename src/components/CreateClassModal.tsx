@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { ClassTypePicker } from '@/components/ClassTypePicker';
 import { Input } from '@/components/Input';
 import { useGymMembership } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -182,7 +183,7 @@ export function CreateClassModal({
       setError(null);
       onCreated();
     },
-    onError: (e) => setError(e instanceof Error ? e.message : 'Could not create class'),
+    onError: (e) => setError(errorMessage(e, 'Could not create class')),
   });
 
   return (

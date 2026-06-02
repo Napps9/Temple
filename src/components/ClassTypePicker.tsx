@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ColorSwatchPicker, PALETTE } from './ColorSwatchPicker';
 import { Input } from './Input';
 import { useGymMembership } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 export type ClassType = { id: string; name: string; color: string };
@@ -58,7 +59,7 @@ export function ClassTypePicker({
       queryClient.invalidateQueries({ queryKey: ['class-types'] });
       onChange(created.id);
     },
-    onError: (e) => setError(e instanceof Error ? e.message : 'Could not create type'),
+    onError: (e) => setError(errorMessage(e, 'Could not create type')),
   });
 
   return (

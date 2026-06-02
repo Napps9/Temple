@@ -9,6 +9,7 @@ import { ColorSwatchPicker, PALETTE } from '@/components/ColorSwatchPicker';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 type ServerType = { id: string; name: string; color: string };
@@ -95,7 +96,7 @@ export default function ClassTypesScreen() {
       queryClient.invalidateQueries({ queryKey: ['class-types'] });
       queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
     },
-    onError: (e) => setError(e instanceof Error ? e.message : 'Save failed'),
+    onError: (e) => setError(errorMessage(e, 'Save failed')),
   });
 
   function addRow() {

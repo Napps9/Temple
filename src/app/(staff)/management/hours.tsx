@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 const DAYS = [
@@ -106,7 +107,7 @@ export default function HoursScreen() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['gym-hours'] });
     },
-    onError: (e) => setError(e instanceof Error ? e.message : 'Save failed'),
+    onError: (e) => setError(errorMessage(e, 'Save failed')),
   });
 
   return (

@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import type { GymRole } from '@/types/database';
 
@@ -86,7 +87,7 @@ export default function TeamScreen() {
 
         {create.error ? (
           <Text className="text-red-500">
-            {create.error instanceof Error ? create.error.message : 'Could not generate code'}
+            {errorMessage(create.error, 'Could not generate code')}
           </Text>
         ) : null}
 

@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { signIn } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export default function SignInScreen() {
     try {
       await signIn(email, password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign-in failed');
+      setError(errorMessage(e, 'Sign-in failed'));
     } finally {
       setLoading(false);
     }
