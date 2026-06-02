@@ -299,6 +299,7 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
 
       {view === 'day' ? (
         <DayView
+          mode={mode}
           date={date}
           setDate={setDate}
           sessions={sessionsQuery.data}
@@ -352,6 +353,7 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
 }
 
 function DayView({
+  mode,
   date,
   setDate,
   sessions,
@@ -360,6 +362,7 @@ function DayView({
   onSessionPress,
   canCreate,
 }: {
+  mode: 'manage' | 'book';
   date: Date;
   setDate: (d: Date) => void;
   sessions: ClassSession[] | undefined;
@@ -371,6 +374,10 @@ function DayView({
   const weekStart = startOfWeek(date);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const todayHours = dayHoursFor(date);
+  const dayClasses = classesOnDay(sessions, date).sort(
+    (a, b) =>
+      new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
+  );
 
   return (
     <View className="flex-1">
@@ -422,20 +429,42 @@ function DayView({
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2">
-          {HOURS.map((hour) => {
-            const open = isHourOpen(hour, todayHours);
-            const cellClasses = classesAtDayHour(sessions, date, hour);
-            return (
-              <DayHourRow
-                key={hour}
-                hour={hour}
-                open={open}
-                classes={cellClasses}
-                onCreate={canCreate ? () => onCreateAt(date, hour) : null}
-                onSessionPress={onSessionPress}
-              />
-            );
-          })}
+          {mode === 'book' ? (
+            <View className="gap-2">
+              {dayClasses.length > 0 ? (
+                dayClasses.map((c) => (
+                  <DayClassCard
+                    key={c.id}
+                    session={c}
+                    onPress={() => onSessionPress(c.id)}
+                  />
+                ))
+              ) : (
+                <View className="bg-white border border-gray-200 rounded-xl p-4">
+                  <Text className="text-gray-500 text-sm">
+                    {todayHours
+                      ? 'No classes scheduled today.'
+                      : 'The gym is closed today.'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            HOURS.map((hour) => {
+              const open = isHourOpen(hour, todayHours);
+              const cellClasses = classesAtDayHour(sessions, date, hour);
+              return (
+                <DayHourRow
+                  key={hour}
+                  hour={hour}
+                  open={open}
+                  classes={cellClasses}
+                  onCreate={canCreate ? () => onCreateAt(date, hour) : null}
+                  onSessionPress={onSessionPress}
+                />
+              );
+            })
+          )}
         </View>
       </ScrollView>
     </View>
