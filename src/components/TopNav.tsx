@@ -9,7 +9,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NavModal, type NavSection } from './NavModal';
-import { useGymMembership, useMyProfile, useRole, useSession } from '@/lib/auth';
+import { isStaffRole, useGymMembership, useMyProfile, useRole, useSession } from '@/lib/auth';
 
 export type { NavSection };
 
@@ -46,6 +46,7 @@ export function TopNav({
   const isOnClasses = pathname === '/classes' || pathname === '/book';
   const currentView = params.view ?? 'day';
   const isManagementSubPage = pathname.startsWith('/management/');
+  const accountHref = isStaffRole(role) ? '/management/account' : '/account';
 
   return (
     <View
@@ -91,18 +92,20 @@ export function TopNav({
 
       <View className="flex-1 items-end">
         {displayName ? (
-          <View className="items-end">
-            <Text
-              className="text-gray-900 text-sm font-medium"
-              numberOfLines={1}>
-              {displayName}
-            </Text>
-            {role ? (
-              <Text className="text-gray-400 text-[10px] uppercase tracking-widest">
-                {role}
+          <Link href={accountHref} asChild>
+            <Pressable hitSlop={6} className="items-end active:opacity-70">
+              <Text
+                className="text-gray-900 text-sm font-medium"
+                numberOfLines={1}>
+                {displayName}
               </Text>
-            ) : null}
-          </View>
+              {role ? (
+                <Text className="text-gray-400 text-[10px] uppercase tracking-widest">
+                  {role}
+                </Text>
+              ) : null}
+            </Pressable>
+          </Link>
         ) : null}
       </View>
 

@@ -23,9 +23,16 @@ export default function AcceptInviteScreen() {
 
   async function onSubmit() {
     setError(null);
+    const trimmedCode = code.trim();
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedCode) return setError('Enter your invite code');
+    if (!trimmedName) return setError('Enter your full name');
+    if (!trimmedEmail) return setError('Enter your email');
+    if (!password) return setError('Enter a password');
     setLoading(true);
     try {
-      await acceptInvite(code.trim(), email.trim(), password, name.trim());
+      await acceptInvite(trimmedCode, trimmedEmail, password, trimmedName);
     } catch (e) {
       setError(errorMessage(e, 'Invite could not be accepted'));
     } finally {

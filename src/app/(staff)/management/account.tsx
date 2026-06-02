@@ -1,5 +1,5 @@
 import { AccountScreen } from '@/components/AccountScreen';
 
-export default function Account() {
+export default function ManagementAccount() {
   return <AccountScreen />;
 }

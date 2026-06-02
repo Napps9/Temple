@@ -2,9 +2,8 @@ import { Link } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { useRole, useSignOut } from '@/lib/auth';
+import { useRole } from '@/lib/auth';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -44,11 +43,15 @@ function ManagementCard({
 
 export default function ManagementHome() {
   const role = useRole();
-  const signOut = useSignOut();
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
+        <ManagementCard
+          title="Account"
+          description="Your name, email, and password."
+          href="/management/account"
+        />
         {role === 'owner' ? (
           <ManagementCard
             title="Team"
@@ -80,12 +83,6 @@ export default function ManagementHome() {
           description="Gym details, branding, and operational preferences."
           comingSoon
         />
-
-        <View className="mt-6">
-          <Button variant="ghost" onPress={() => signOut.mutate()}>
-            Sign out
-          </Button>
-        </View>
       </ScrollView>
     </Screen>
   );
