@@ -94,7 +94,9 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
       const end = addDays(startOfMonth(addMonths(date, 1)), 7);
       const { data, error } = await supabase
         .from('class_sessions')
-        .select('id, starts_at, class_type_id, class_types(name, color)')
+        .select(
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color), coach_id, coach:profiles!coach_id(full_name)',
+        )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
         .order('starts_at');
