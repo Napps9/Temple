@@ -255,6 +255,30 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      class_bookings: {
+        Row: {
+          id: string;
+          gym_id: string;
+          class_session_id: string;
+          profile_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          class_session_id: string;
+          profile_id: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          class_session_id: string;
+          profile_id: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -265,6 +289,14 @@ export type Database = {
       extend_recurrence: {
         Args: { rec_id: string; until_date: string };
         Returns: null;
+      };
+      book_class: {
+        Args: { session_id: string };
+        Returns: null;
+      };
+      same_gym_as_caller: {
+        Args: { target_profile: string };
+        Returns: boolean;
       };
     };
     Enums: {

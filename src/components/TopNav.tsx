@@ -38,7 +38,7 @@ export function TopNav({
   const gymName = membership?.gymName ?? 'Temple';
   const initial = (gymName.charAt(0) || 'T').toUpperCase();
 
-  const isOnClasses = pathname === '/classes';
+  const isOnClasses = pathname === '/classes' || pathname === '/book';
   const currentView = params.view ?? 'day';
 
   return (
