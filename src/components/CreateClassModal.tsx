@@ -13,18 +13,14 @@ import { supabase } from '@/lib/supabase';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const HORIZON_WEEKS = 12;
 
-type SessionInsert = {
-  gym_id: string;
-  name: string;
-  class_type_id: string;
-  starts_at: string;
-  duration_minutes: number;
-  capacity: number;
-  notes: string | null;
-  coach_id: string;
-  created_by: string;
-};
+function fmtDateLocal(d: Date) {
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d
+    .getDate()
+    .toString()
+    .padStart(2, '0')}`;
+}
 
 function fmtDate(d: Date) {
   return `${d.getFullYear()}-${(d.getMonth() + 1)
@@ -64,6 +60,7 @@ export function CreateClassModal({
   const [days, setDays] = useState<Set<number>>(new Set());
   const [times, setTimes] = useState<string[]>(['06:00']);
   const [weeks, setWeeks] = useState('4');
+  const [indefinite, setIndefinite] = useState(false);
   const [durationMinutes, setDurationMinutes] = useState('60');
   const [capacity, setCapacity] = useState('12');
   const [notes, setNotes] = useState('');
@@ -79,6 +76,7 @@ export function CreateClassModal({
     setDays(new Set());
     setTimes(['06:00']);
     setWeeks('4');
+    setIndefinite(false);
     setDurationMinutes('60');
     setCapacity('12');
     setNotes('');
@@ -107,31 +105,11 @@ export function CreateClassModal({
         throw new Error('Capacity must be a positive number');
       }
 
-      const { data: typeRow, error: typeErr } = await supabase
-        .from('class_types')
-        .select('name')
-        .eq('id', classTypeId)
-        .single();
-      if (typeErr || !typeRow) throw typeErr ?? new Error('Class type not found');
-      const typeName = typeRow.name;
-
       const { data: userResp, error: userErr } = await supabase.auth.getUser();
       if (userErr || !userResp.user) throw userErr ?? new Error('Not signed in');
       const userId = userResp.user.id;
 
       const [y, mo, day] = dateStr.split('-').map(Number);
-
-      const rows: SessionInsert[] = [];
-      const baseRow = {
-        gym_id: membership.gymId,
-        name: typeName,
-        class_type_id: classTypeId,
-        duration_minutes: dur,
-        capacity: cap,
-        notes: notes.trim() || null,
-        coach_id: userId,
-        created_by: userId,
-      };
 
       if (recurring) {
         if (days.size === 0) throw new Error('Pick at least one day');
@@ -141,43 +119,75 @@ export function CreateClassModal({
           if (!TIME_RE.test(t)) throw new Error(`Time "${t}" must be HH:MM (24-hour)`);
         }
         if (validTimes.length > 6) throw new Error('At most 6 times per pattern');
-        const w = parseInt(weeks, 10);
-        if (!Number.isFinite(w) || w < 1 || w > 26) {
-          throw new Error('Repeat must be between 1 and 26 weeks');
+
+        let endsOn: string | null = null;
+        if (!indefinite) {
+          const w = parseInt(weeks, 10);
+          if (!Number.isFinite(w) || w < 1 || w > 260) {
+            throw new Error('Repeat must be between 1 and 260 weeks, or pick "Repeat indefinitely"');
+          }
+          const endDate = new Date(y, mo - 1, day);
+          endDate.setDate(endDate.getDate() + w * 7 - 1);
+          endsOn = fmtDateLocal(endDate);
         }
 
-        const start = new Date(y, mo - 1, day);
-        start.setHours(0, 0, 0, 0);
-        for (let dayOffset = 0; dayOffset < w * 7; dayOffset++) {
-          const d = new Date(start);
-          d.setDate(d.getDate() + dayOffset);
-          if (!days.has(d.getDay())) continue;
-          for (const t of validTimes) {
-            const [h, mi] = t.split(':').map(Number);
-            const startsAt = new Date(
-              d.getFullYear(),
-              d.getMonth(),
-              d.getDate(),
-              h,
-              mi,
-              0,
-              0,
-            );
-            rows.push({ ...baseRow, starts_at: startsAt.toISOString() });
-          }
-        }
-        if (rows.length === 0) {
-          throw new Error('Pattern produces no sessions — check days and weeks');
-        }
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+        const { data: rec, error: recErr } = await supabase
+          .from('class_recurrences')
+          .insert({
+            gym_id: membership.gymId,
+            class_type_id: classTypeId,
+            days_of_week: Array.from(days),
+            times: validTimes,
+            duration_minutes: dur,
+            capacity: cap,
+            notes: notes.trim() || null,
+            starts_on: dateStr,
+            ends_on: endsOn,
+            tz,
+            created_by: userId,
+          })
+          .select('id')
+          .single();
+        if (recErr || !rec) throw recErr ?? new Error('Could not save recurrence');
+
+        // Materialise the first horizon (12 weeks ahead of today, capped by ends_on).
+        const horizon = new Date();
+        horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+        const targetEnd =
+          endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
+
+        const { error: extErr } = await supabase.rpc('extend_recurrence', {
+          rec_id: rec.id,
+          until_date: targetEnd,
+        });
+        if (extErr) throw extErr;
       } else {
         if (!TIME_RE.test(timeStr)) throw new Error('Time must be HH:MM (24-hour)');
         const [h, mi] = timeStr.split(':').map(Number);
         const startsAt = new Date(y, mo - 1, day, h, mi, 0, 0);
-        rows.push({ ...baseRow, starts_at: startsAt.toISOString() });
-      }
 
-      const { error } = await supabase.from('class_sessions').insert(rows);
-      if (error) throw error;
+        const { data: typeRow, error: typeErr } = await supabase
+          .from('class_types')
+          .select('name')
+          .eq('id', classTypeId)
+          .single();
+        if (typeErr || !typeRow) throw typeErr ?? new Error('Class type not found');
+
+        const { error } = await supabase.from('class_sessions').insert({
+          gym_id: membership.gymId,
+          name: typeRow.name,
+          class_type_id: classTypeId,
+          starts_at: startsAt.toISOString(),
+          duration_minutes: dur,
+          capacity: cap,
+          notes: notes.trim() || null,
+          coach_id: userId,
+          created_by: userId,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       setError(null);
@@ -307,13 +317,29 @@ export function CreateClassModal({
                     </View>
                   </View>
 
-                  <Input
-                    label="Repeat for (weeks)"
-                    value={weeks}
-                    onChangeText={setWeeks}
-                    keyboardType="numeric"
-                    placeholder="4"
-                  />
+                  {!indefinite ? (
+                    <Input
+                      label="Repeat for (weeks)"
+                      value={weeks}
+                      onChangeText={setWeeks}
+                      keyboardType="numeric"
+                      placeholder="4"
+                    />
+                  ) : null}
+
+                  <Pressable
+                    onPress={() => setIndefinite(!indefinite)}
+                    className="flex-row items-center gap-2">
+                    <View
+                      className={`w-5 h-5 rounded border-2 items-center justify-center ${
+                        indefinite ? 'border-primary bg-primary' : 'border-gray-300'
+                      }`}>
+                      {indefinite ? (
+                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                      ) : null}
+                    </View>
+                    <Text className="text-gray-900">Repeat indefinitely</Text>
+                  </Pressable>
                 </>
               ) : null}
 

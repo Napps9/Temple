@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { CreateClassModal } from '@/components/CreateClassModal';
@@ -10,6 +10,21 @@ import { useGymMembership, useRole } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 type CreateRequest = { date?: Date; hour?: number };
+type Recurrence = {
+  id: string;
+  starts_on: string;
+  ends_on: string | null;
+  materialized_until: string | null;
+};
+
+const HORIZON_WEEKS = 12;
+
+function fmtDateLocal(d: Date) {
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d
+    .getDate()
+    .toString()
+    .padStart(2, '0')}`;
+}
 
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -190,6 +205,55 @@ export default function StaffClasses() {
 
   const dayHoursFor = (d: Date) =>
     hoursQuery.data?.find((h) => h.day_of_week === d.getDay());
+
+  const recurrencesQuery = useQuery({
+    queryKey: ['class-recurrences', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_recurrences')
+        .select('id, starts_on, ends_on, materialized_until');
+      if (error) throw error;
+      return data as Recurrence[];
+    },
+  });
+
+  const extend = useMutation({
+    mutationFn: async (untilDate: string) => {
+      const recs = recurrencesQuery.data ?? [];
+      for (const r of recs) {
+        const cursor = r.materialized_until ?? r.starts_on;
+        if (cursor >= untilDate) continue;
+        if (r.ends_on && r.ends_on <= cursor) continue;
+        const { error } = await supabase.rpc('extend_recurrence', {
+          rec_id: r.id,
+          until_date: untilDate,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
+      queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
+    },
+  });
+
+  useEffect(() => {
+    if (!recurrencesQuery.data || recurrencesQuery.data.length === 0) return;
+    if (extend.isPending) return;
+    const horizon = new Date();
+    horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+    const visibleEnd = addDays(startOfMonth(addMonths(date, 1)), 7);
+    const target = visibleEnd > horizon ? visibleEnd : horizon;
+    const targetStr = fmtDateLocal(target);
+    const needs = recurrencesQuery.data.some((r) => {
+      const cursor = r.materialized_until ?? r.starts_on;
+      if (cursor >= targetStr) return false;
+      if (r.ends_on && r.ends_on <= cursor) return false;
+      return true;
+    });
+    if (needs) extend.mutate(targetStr);
+  }, [recurrencesQuery.data, date, extend]);
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>

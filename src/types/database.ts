@@ -148,6 +148,7 @@ export type Database = {
           created_by: string;
           created_at: string;
           class_type_id: string | null;
+          recurrence_id: string | null;
         };
         Insert: {
           id?: string;
@@ -161,6 +162,7 @@ export type Database = {
           created_by: string;
           created_at?: string;
           class_type_id?: string | null;
+          recurrence_id?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -174,6 +176,7 @@ export type Database = {
           created_by: string;
           created_at: string;
           class_type_id: string | null;
+          recurrence_id: string | null;
         }>;
         Relationships: [];
       };
@@ -201,12 +204,67 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      class_recurrences: {
+        Row: {
+          id: string;
+          gym_id: string;
+          class_type_id: string;
+          days_of_week: number[];
+          times: string[];
+          duration_minutes: number;
+          capacity: number;
+          notes: string | null;
+          starts_on: string;
+          ends_on: string | null;
+          tz: string;
+          materialized_until: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          class_type_id: string;
+          days_of_week: number[];
+          times: string[];
+          duration_minutes: number;
+          capacity: number;
+          notes?: string | null;
+          starts_on: string;
+          ends_on?: string | null;
+          tz?: string;
+          materialized_until?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          class_type_id: string;
+          days_of_week: number[];
+          times: string[];
+          duration_minutes: number;
+          capacity: number;
+          notes: string | null;
+          starts_on: string;
+          ends_on: string | null;
+          tz: string;
+          materialized_until: string | null;
+          created_by: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       accept_invite: {
         Args: { invite_code: string };
         Returns: { gym_id: string; role: GymRole }[];
+      };
+      extend_recurrence: {
+        Args: { rec_id: string; until_date: string };
+        Returns: null;
       };
     };
     Enums: {
