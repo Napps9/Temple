@@ -9,7 +9,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NavModal, type NavSection } from './NavModal';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useMyProfile, useRole, useSession } from '@/lib/auth';
 
 export type { NavSection };
 
@@ -34,10 +34,14 @@ export function TopNav({
   const pathname = usePathname();
   const params = useGlobalSearchParams<{ view?: string }>();
   const { data: membership } = useGymMembership();
+  const { data: profile } = useMyProfile();
+  const session = useSession();
+  const role = useRole();
   const [navOpen, setNavOpen] = useState(false);
 
   const gymName = membership?.gymName ?? 'Temple';
   const initial = (gymName.charAt(0) || 'T').toUpperCase();
+  const displayName = profile?.full_name?.trim() || session?.user.email || '';
 
   const isOnClasses = pathname === '/classes' || pathname === '/book';
   const currentView = params.view ?? 'day';
@@ -85,7 +89,22 @@ export function TopNav({
         ) : null}
       </View>
 
-      <View className="flex-1" />
+      <View className="flex-1 items-end">
+        {displayName ? (
+          <View className="items-end">
+            <Text
+              className="text-gray-900 text-sm font-medium"
+              numberOfLines={1}>
+              {displayName}
+            </Text>
+            {role ? (
+              <Text className="text-gray-400 text-[10px] uppercase tracking-widest">
+                {role}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
 
       <NavModal
         visible={navOpen}

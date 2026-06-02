@@ -61,6 +61,23 @@ export function useRole(): GymRole | null {
   return data?.role ?? null;
 }
 
+export function useMyProfile() {
+  const session = useSession();
+  return useQuery({
+    queryKey: ['my-profile', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', session!.user.id)
+        .single();
+      if (error) throw error;
+      return data as { full_name: string | null; avatar_url: string | null };
+    },
+  });
+}
+
 export function isStaffRole(role: GymRole | null | undefined): boolean {
   return role === 'owner' || role === 'coach' || role === 'staff';
 }

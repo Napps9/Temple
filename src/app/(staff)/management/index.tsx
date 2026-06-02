@@ -4,7 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole, useSignOut } from '@/lib/auth';
+import { useRole, useSignOut } from '@/lib/auth';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -44,19 +44,11 @@ function ManagementCard({
 
 export default function ManagementHome() {
   const role = useRole();
-  const { data: membership } = useGymMembership();
   const signOut = useSignOut();
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
-        <View className="gap-1">
-          <Text className="text-gray-500 text-sm uppercase tracking-widest">{role}</Text>
-          <Text className="text-gray-900 text-3xl font-semibold">
-            {membership?.gymName ?? 'Temple'}
-          </Text>
-        </View>
-
         {role === 'owner' ? (
           <ManagementCard
             title="Team"
