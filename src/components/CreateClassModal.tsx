@@ -291,12 +291,12 @@ export function CreateClassModal({
         <View className="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md gap-5">
           <View className="gap-1">
             <Text className="text-gray-900 text-xl font-semibold">
-              {stage === 'form' ? 'New class' : 'Confirm class'}
+              {stage === 'form' ? 'New class' : 'Ready to schedule?'}
             </Text>
             <Text className="text-gray-500">
               {stage === 'form'
-                ? 'Schedule a class at any date and time.'
-                : 'Review the details below before saving.'}
+                ? 'Pick a date and time, or have it repeat.'
+                : 'Have a quick look — tap Edit if anything needs changing.'}
             </Text>
           </View>
 
@@ -583,12 +583,17 @@ function ConfirmView({
             <Text className="text-gray-500 text-sm mt-1">
               Starting {dateLabel}
               {indefinite
-                ? ' · indefinitely'
+                ? ''
                 : ` · for ${weeks} ${weeks === '1' ? 'week' : 'weeks'}`}
             </Text>
             <Text className="text-gray-500 text-sm mt-1">
-              Materialising {sessionCount} session{sessionCount === 1 ? '' : 's'} in the first{' '}
-              {indefinite ? '12 weeks' : 'batch'}
+              {indefinite
+                ? `We'll add ${sessionCount} ${
+                    sessionCount === 1 ? 'class' : 'classes'
+                  } to your calendar over the next 12 weeks. More are added automatically as time goes on.`
+                : `We'll add ${sessionCount} ${
+                    sessionCount === 1 ? 'class' : 'classes'
+                  } to your calendar.`}
             </Text>
           </ConfirmRow>
         ) : (
