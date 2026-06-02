@@ -1,4 +1,5 @@
 import {
+  Link,
   router,
   useGlobalSearchParams,
   usePathname,
@@ -40,18 +41,26 @@ export function TopNav({
 
   const isOnClasses = pathname === '/classes' || pathname === '/book';
   const currentView = params.view ?? 'day';
+  const isManagementSubPage = pathname.startsWith('/management/');
 
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
       className="bg-gray-50 px-4 md:px-6 pb-3 flex-row items-center">
-      <View className="flex-1">
+      <View className="flex-1 flex-row items-center gap-3">
         <Pressable
           onPress={() => setNavOpen(true)}
           hitSlop={6}
-          className="self-start active:opacity-70">
+          className="active:opacity-70">
           <LogoMark initial={initial} />
         </Pressable>
+        {isManagementSubPage ? (
+          <Link href="/management" asChild>
+            <Pressable hitSlop={6} className="active:opacity-70">
+              <Text className="text-primary font-medium">← Manage</Text>
+            </Pressable>
+          </Link>
+        ) : null}
       </View>
 
       <View className="items-center">

@@ -55,11 +55,6 @@ export default function TeamScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6">
-        <Link href="/management" asChild>
-          <Pressable hitSlop={8}>
-            <Text className="text-primary">← Back to Management</Text>
-          </Pressable>
-        </Link>
         <View className="gap-2">
           <Text className="text-gray-900 text-2xl font-semibold">Issue invite</Text>
           <Text className="text-gray-500">Pick a role and generate a code.</Text>

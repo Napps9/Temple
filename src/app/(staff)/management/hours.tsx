@@ -113,11 +113,6 @@ export default function HoursScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6">
-        <Link href="/management" asChild>
-          <Pressable hitSlop={8}>
-            <Text className="text-primary">← Back to Manage</Text>
-          </Pressable>
-        </Link>
         <View className="gap-2">
           <Text className="text-gray-900 text-2xl font-semibold">Operating hours</Text>
           <Text className="text-gray-500">
