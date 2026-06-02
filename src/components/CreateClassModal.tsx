@@ -6,13 +6,18 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { ClassTypePicker } from '@/components/ClassTypePicker';
 import { Input } from '@/components/Input';
+import {
+  EMPTY_RECURRENCE,
+  RecurrenceEditor,
+  type RecurrenceForm,
+  validateRecurrence,
+} from '@/components/RecurrenceEditor';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
-const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HORIZON_WEEKS = 12;
 
@@ -58,12 +63,7 @@ export function CreateClassModal({
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
   const [recurring, setRecurring] = useState(false);
-  const [days, setDays] = useState<Set<number>>(new Set());
-  const [times, setTimes] = useState<string[]>(['06:00']);
-  const [weeks, setWeeks] = useState('4');
-  const [indefinite, setIndefinite] = useState(false);
-  const [durationMinutes, setDurationMinutes] = useState('60');
-  const [capacity, setCapacity] = useState('12');
+  const [recurrence, setRecurrence] = useState<RecurrenceForm>(EMPTY_RECURRENCE);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<'form' | 'confirm'>('form');
@@ -89,59 +89,36 @@ export function CreateClassModal({
     setDateStr(fmtDate(d));
     setTimeStr(defaultTimeFor(defaultHour));
     setRecurring(false);
-    setDays(new Set());
-    setTimes(['06:00']);
-    setWeeks('4');
-    setIndefinite(false);
-    setDurationMinutes('60');
-    setCapacity('12');
+    setRecurrence({ ...EMPTY_RECURRENCE, indefinite: false });
     setNotes('');
     setError(null);
     setStage('form');
   }, [visible, defaultDate, defaultHour]);
 
-  function toggleDay(i: number) {
-    const next = new Set(days);
-    if (next.has(i)) next.delete(i);
-    else next.add(i);
-    setDays(next);
-  }
-
   function validate(): string | null {
     if (!classTypeId) return 'Pick a class type';
     if (!DATE_RE.test(dateStr)) return 'Date must be YYYY-MM-DD';
-    const dur = parseInt(durationMinutes, 10);
-    const cap = parseInt(capacity, 10);
+    if (recurring) {
+      return validateRecurrence(recurrence);
+    }
+    const dur = parseInt(recurrence.durationMinutes, 10);
+    const cap = parseInt(recurrence.capacity, 10);
     if (!Number.isFinite(dur) || dur <= 0) {
       return 'Duration must be a positive number of minutes';
     }
     if (!Number.isFinite(cap) || cap <= 0) {
       return 'Capacity must be a positive number';
     }
-    if (recurring) {
-      if (days.size === 0) return 'Pick at least one day';
-      const validTimes = times.map((t) => t.trim()).filter(Boolean);
-      if (validTimes.length === 0) return 'Add at least one time';
-      for (const t of validTimes) {
-        if (!TIME_RE.test(t)) return `Time "${t}" must be HH:MM (24-hour)`;
-      }
-      if (validTimes.length > 6) return 'At most 6 times per pattern';
-      if (!indefinite) {
-        const w = parseInt(weeks, 10);
-        if (!Number.isFinite(w) || w < 1 || w > 260) {
-          return 'Repeat must be 1–260 weeks, or pick "Repeat indefinitely"';
-        }
-      }
-    } else {
-      if (!TIME_RE.test(timeStr)) return 'Time must be HH:MM (24-hour)';
-    }
+    if (!TIME_RE.test(timeStr)) return 'Time must be HH:MM (24-hour)';
     return null;
   }
 
   function sessionsInHorizon(): number {
     if (!recurring) return 1;
-    const validTimes = times.map((t) => t.trim()).filter((t) => TIME_RE.test(t));
-    if (validTimes.length === 0 || days.size === 0) return 0;
+    const validTimes = recurrence.times
+      .map((t) => t.trim())
+      .filter((t) => TIME_RE.test(t));
+    if (validTimes.length === 0 || recurrence.days.length === 0) return 0;
     const [y, mo, day] = dateStr.split('-').map(Number);
     if (!y || !mo || !day) return 0;
     const start = new Date(y, mo - 1, day);
@@ -150,16 +127,17 @@ export function CreateClassModal({
     horizon.setHours(0, 0, 0, 0);
     horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
     let end = horizon;
-    if (!indefinite) {
-      const w = parseInt(weeks, 10);
+    if (!recurrence.indefinite) {
+      const w = parseInt(recurrence.weeks, 10);
       const finiteEnd = new Date(start);
       finiteEnd.setDate(finiteEnd.getDate() + w * 7 - 1);
       if (finiteEnd < end) end = finiteEnd;
     }
+    const daysSet = new Set(recurrence.days);
     let count = 0;
     const cursor = new Date(start);
     while (cursor <= end) {
-      if (days.has(cursor.getDay())) count += validTimes.length;
+      if (daysSet.has(cursor.getDay())) count += validTimes.length;
       cursor.setDate(cursor.getDate() + 1);
     }
     return count;
@@ -181,8 +159,8 @@ export function CreateClassModal({
       if (!classTypeId) throw new Error('Pick a class type');
       if (!DATE_RE.test(dateStr)) throw new Error('Date must be YYYY-MM-DD');
 
-      const dur = parseInt(durationMinutes, 10);
-      const cap = parseInt(capacity, 10);
+      const dur = parseInt(recurrence.durationMinutes, 10);
+      const cap = parseInt(recurrence.capacity, 10);
       if (!Number.isFinite(dur) || dur <= 0) {
         throw new Error('Duration must be a positive number of minutes');
       }
@@ -197,20 +175,13 @@ export function CreateClassModal({
       const [y, mo, day] = dateStr.split('-').map(Number);
 
       if (recurring) {
-        if (days.size === 0) throw new Error('Pick at least one day');
-        const validTimes = times.map((t) => t.trim()).filter(Boolean);
-        if (validTimes.length === 0) throw new Error('Add at least one time');
-        for (const t of validTimes) {
-          if (!TIME_RE.test(t)) throw new Error(`Time "${t}" must be HH:MM (24-hour)`);
-        }
-        if (validTimes.length > 6) throw new Error('At most 6 times per pattern');
+        const recErrMsg = validateRecurrence(recurrence);
+        if (recErrMsg) throw new Error(recErrMsg);
+        const validTimes = recurrence.times.map((t) => t.trim()).filter(Boolean);
 
         let endsOn: string | null = null;
-        if (!indefinite) {
-          const w = parseInt(weeks, 10);
-          if (!Number.isFinite(w) || w < 1 || w > 260) {
-            throw new Error('Repeat must be between 1 and 260 weeks, or pick "Repeat indefinitely"');
-          }
+        if (!recurrence.indefinite) {
+          const w = parseInt(recurrence.weeks, 10);
           const endDate = new Date(y, mo - 1, day);
           endDate.setDate(endDate.getDate() + w * 7 - 1);
           endsOn = fmtDateLocal(endDate);
@@ -223,7 +194,7 @@ export function CreateClassModal({
           .insert({
             gym_id: membership.gymId,
             class_type_id: classTypeId,
-            days_of_week: Array.from(days),
+            days_of_week: recurrence.days,
             times: validTimes,
             duration_minutes: dur,
             capacity: cap,
@@ -339,118 +310,31 @@ export function CreateClassModal({
               </Pressable>
 
               {recurring ? (
-                <>
-                  <View className="gap-1.5">
-                    <Text className="text-gray-700 text-sm font-medium">Days</Text>
-                    <View className="flex-row gap-1.5">
-                      {DAY_LETTERS.map((l, i) => {
-                        const sel = days.has(i);
-                        return (
-                          <Pressable
-                            key={i}
-                            onPress={() => toggleDay(i)}
-                            className={`flex-1 aspect-square rounded-lg items-center justify-center ${
-                              sel ? 'bg-primary' : 'bg-gray-100'
-                            }`}>
-                            <Text
-                              className={
-                                sel
-                                  ? 'text-white font-semibold'
-                                  : 'text-gray-500 font-medium'
-                              }>
-                              {l}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </View>
-
-                  <View className="gap-1.5">
-                    <Text className="text-gray-700 text-sm font-medium">Times</Text>
-                    <View className="gap-2">
-                      {times.map((t, idx) => (
-                        <View key={idx} className="flex-row gap-2 items-end">
-                          <View className="flex-1">
-                            <Input
-                              label=""
-                              value={t}
-                              onChangeText={(v) => {
-                                const next = [...times];
-                                next[idx] = v;
-                                setTimes(next);
-                              }}
-                              placeholder="06:00"
-                            />
-                          </View>
-                          <Pressable
-                            onPress={() => {
-                              if (times.length <= 1) return;
-                              setTimes(times.filter((_, i) => i !== idx));
-                            }}
-                            disabled={times.length === 1}
-                            className={`w-11 h-11 rounded-lg items-center justify-center ${
-                              times.length === 1 ? 'opacity-40 bg-gray-100' : 'bg-gray-100'
-                            }`}>
-                            <Ionicons name="close" size={18} color="#6B7280" />
-                          </Pressable>
-                        </View>
-                      ))}
-                      {times.length < 6 ? (
-                        <Pressable
-                          onPress={() => setTimes([...times, '12:00'])}
-                          className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300">
-                          <Ionicons name="add" size={14} color="#6B7280" />
-                          <Text className="text-gray-500 text-sm">Add time</Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  </View>
-
-                  {!indefinite ? (
+                <RecurrenceEditor value={recurrence} onChange={setRecurrence} />
+              ) : (
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
                     <Input
-                      label="Repeat for (weeks)"
-                      value={weeks}
-                      onChangeText={setWeeks}
+                      label="Duration (min)"
+                      value={recurrence.durationMinutes}
+                      onChangeText={(v) =>
+                        setRecurrence({ ...recurrence, durationMinutes: v })
+                      }
                       keyboardType="numeric"
-                      placeholder="4"
                     />
-                  ) : null}
-
-                  <Pressable
-                    onPress={() => setIndefinite(!indefinite)}
-                    className="flex-row items-center gap-2">
-                    <View
-                      className={`w-5 h-5 rounded border-2 items-center justify-center ${
-                        indefinite ? 'border-primary bg-primary' : 'border-gray-300'
-                      }`}>
-                      {indefinite ? (
-                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                      ) : null}
-                    </View>
-                    <Text className="text-gray-900">Repeat indefinitely</Text>
-                  </Pressable>
-                </>
-              ) : null}
-
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Input
-                    label="Duration (min)"
-                    value={durationMinutes}
-                    onChangeText={setDurationMinutes}
-                    keyboardType="numeric"
-                  />
+                  </View>
+                  <View className="flex-1">
+                    <Input
+                      label="Capacity"
+                      value={recurrence.capacity}
+                      onChangeText={(v) =>
+                        setRecurrence({ ...recurrence, capacity: v })
+                      }
+                      keyboardType="numeric"
+                    />
+                  </View>
                 </View>
-                <View className="flex-1">
-                  <Input
-                    label="Capacity"
-                    value={capacity}
-                    onChangeText={setCapacity}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
+              )}
 
               <Input
                 label="Notes (optional)"
@@ -466,12 +350,12 @@ export function CreateClassModal({
               dateStr={dateStr}
               timeStr={timeStr}
               recurring={recurring}
-              days={days}
-              times={times}
-              indefinite={indefinite}
-              weeks={weeks}
-              durationMinutes={durationMinutes}
-              capacity={capacity}
+              days={new Set(recurrence.days)}
+              times={recurrence.times}
+              indefinite={recurrence.indefinite}
+              weeks={recurrence.weeks}
+              durationMinutes={recurrence.durationMinutes}
+              capacity={recurrence.capacity}
               notes={notes}
               sessionCount={sessionsInHorizon()}
             />

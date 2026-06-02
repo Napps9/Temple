@@ -1,25 +1,73 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ColorSwatchPicker, PALETTE } from '@/components/ColorSwatchPicker';
 import { Input } from '@/components/Input';
+import {
+  EMPTY_RECURRENCE,
+  RecurrenceEditor,
+  type RecurrenceForm,
+  summariseRecurrence,
+  validateRecurrence,
+} from '@/components/RecurrenceEditor';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
+const HORIZON_WEEKS = 12;
+
 type ServerType = { id: string; name: string; color: string };
+type ServerRecurrence = {
+  id: string;
+  class_type_id: string;
+  days_of_week: number[];
+  times: string[];
+  duration_minutes: number;
+  capacity: number;
+  starts_on: string;
+  ends_on: string | null;
+};
+
 type EditableType = {
   id: string | null;
   name: string;
   color: string;
   deleted?: boolean;
+  scheduleOpen: boolean;
+  recurrenceId: string | null;
+  recurrence: RecurrenceForm;
 };
+
+function fmtDateLocal(d: Date) {
+  return `${d.getFullYear()}-${(d.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+}
+
+function recurrenceFromServer(r: ServerRecurrence): RecurrenceForm {
+  const indefinite = r.ends_on === null;
+  let weeks = '4';
+  if (!indefinite && r.ends_on) {
+    const start = new Date(r.starts_on);
+    const end = new Date(r.ends_on);
+    const days =
+      Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    weeks = Math.max(1, Math.round(days / 7)).toString();
+  }
+  return {
+    days: r.days_of_week,
+    times: r.times,
+    durationMinutes: r.duration_minutes.toString(),
+    capacity: r.capacity.toString(),
+    indefinite,
+    weeks,
+  };
+}
 
 export default function ClassTypesScreen() {
   const { data: membership } = useGymMembership();
@@ -42,27 +90,66 @@ export default function ClassTypesScreen() {
     },
   });
 
+  const recurrences = useQuery({
+    queryKey: ['class-recurrences', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_recurrences')
+        .select(
+          'id, class_type_id, days_of_week, times, duration_minutes, capacity, starts_on, ends_on',
+        )
+        .order('created_at');
+      if (error) throw error;
+      return data as ServerRecurrence[];
+    },
+  });
+
   useEffect(() => {
-    if (!types.data) return;
-    setRows(types.data.map((t) => ({ id: t.id, name: t.name, color: t.color })));
-  }, [types.data]);
+    if (!types.data || !recurrences.data) return;
+    const recByTypeId = new Map<string, ServerRecurrence>();
+    for (const r of recurrences.data) {
+      if (!recByTypeId.has(r.class_type_id)) recByTypeId.set(r.class_type_id, r);
+    }
+    setRows(
+      types.data.map((t) => {
+        const rec = recByTypeId.get(t.id);
+        return {
+          id: t.id,
+          name: t.name,
+          color: t.color,
+          scheduleOpen: false,
+          recurrenceId: rec?.id ?? null,
+          recurrence: rec
+            ? recurrenceFromServer(rec)
+            : { ...EMPTY_RECURRENCE, indefinite: true },
+        };
+      }),
+    );
+  }, [types.data, recurrences.data]);
 
   const save = useMutation({
     mutationFn: async () => {
       if (!membership) throw new Error('No gym');
+      const { data: userResp, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !userResp.user) throw userErr ?? new Error('Not signed in');
+      const userId = userResp.user.id;
+
       const server = types.data ?? [];
       const serverById = new Map(server.map((t) => [t.id, t]));
 
-      const inserts: { gym_id: string; name: string; color: string }[] = [];
+      type Insert = { localIdx: number; name: string; color: string };
+      const inserts: Insert[] = [];
       const updates: { id: string; name: string; color: string }[] = [];
       const deletes: string[] = [];
 
-      for (const r of rows) {
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
         const name = r.name.trim();
         if (r.id === null) {
           if (r.deleted) continue;
           if (!name) throw new Error('Each type needs a name');
-          inserts.push({ gym_id: membership.gymId, name, color: r.color });
+          inserts.push({ localIdx: i, name, color: r.color });
           continue;
         }
         if (r.deleted) {
@@ -76,9 +163,25 @@ export default function ClassTypesScreen() {
         }
       }
 
+      const newIdByLocalIdx = new Map<number, string>();
       if (inserts.length > 0) {
-        const { error } = await supabase.from('class_types').insert(inserts);
+        const { data, error } = await supabase
+          .from('class_types')
+          .insert(
+            inserts.map((i) => ({
+              gym_id: membership.gymId,
+              name: i.name,
+              color: i.color,
+            })),
+          )
+          .select('id');
         if (error) throw error;
+        if (!data || data.length !== inserts.length) {
+          throw new Error('Insert mismatch');
+        }
+        for (let k = 0; k < inserts.length; k++) {
+          newIdByLocalIdx.set(inserts[k].localIdx, data[k].id);
+        }
       }
       for (const u of updates) {
         const { error } = await supabase
@@ -88,8 +191,113 @@ export default function ClassTypesScreen() {
         if (error) throw error;
       }
       if (deletes.length > 0) {
-        const { error } = await supabase.from('class_types').delete().in('id', deletes);
+        const { error } = await supabase
+          .from('class_types')
+          .delete()
+          .in('id', deletes);
         if (error) throw error;
+      }
+
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        if (r.deleted) continue;
+        const classTypeId = r.id ?? newIdByLocalIdx.get(i);
+        if (!classTypeId) continue;
+
+        const wantsSchedule = r.recurrence.days.length > 0;
+
+        if (!wantsSchedule) {
+          if (r.recurrenceId) {
+            const { error: delErr } = await supabase
+              .from('class_recurrences')
+              .delete()
+              .eq('id', r.recurrenceId);
+            if (delErr) throw delErr;
+          }
+          continue;
+        }
+
+        const errMsg = validateRecurrence(r.recurrence);
+        if (errMsg) throw new Error(`${r.name}: ${errMsg}`);
+
+        const validTimes = r.recurrence.times
+          .map((t) => t.trim())
+          .filter(Boolean);
+        const dur = parseInt(r.recurrence.durationMinutes, 10);
+        const cap = parseInt(r.recurrence.capacity, 10);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = fmtDateLocal(today);
+
+        let endsOn: string | null = null;
+        if (!r.recurrence.indefinite) {
+          const w = parseInt(r.recurrence.weeks, 10);
+          const endDate = new Date(today);
+          endDate.setDate(endDate.getDate() + w * 7 - 1);
+          endsOn = fmtDateLocal(endDate);
+        }
+
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+        let recId: string;
+        if (r.recurrenceId) {
+          const nowIso = new Date().toISOString();
+          const { error: sessDelErr } = await supabase
+            .from('class_sessions')
+            .delete()
+            .eq('recurrence_id', r.recurrenceId)
+            .gte('starts_at', nowIso);
+          if (sessDelErr) throw sessDelErr;
+
+          const { error: updErr } = await supabase
+            .from('class_recurrences')
+            .update({
+              days_of_week: r.recurrence.days,
+              times: validTimes,
+              duration_minutes: dur,
+              capacity: cap,
+              ends_on: endsOn,
+              tz,
+              materialized_until: todayStr,
+            })
+            .eq('id', r.recurrenceId);
+          if (updErr) throw updErr;
+          recId = r.recurrenceId;
+        } else {
+          const { data, error: insErr } = await supabase
+            .from('class_recurrences')
+            .insert({
+              gym_id: membership.gymId,
+              class_type_id: classTypeId,
+              days_of_week: r.recurrence.days,
+              times: validTimes,
+              duration_minutes: dur,
+              capacity: cap,
+              notes: null,
+              starts_on: todayStr,
+              ends_on: endsOn,
+              tz,
+              created_by: userId,
+            })
+            .select('id')
+            .single();
+          if (insErr || !data) {
+            throw insErr ?? new Error('Could not save recurrence');
+          }
+          recId = data.id;
+        }
+
+        const horizon = new Date();
+        horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+        const targetEnd =
+          endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
+
+        const { error: extErr } = await supabase.rpc('extend_recurrence', {
+          rec_id: recId,
+          until_date: targetEnd,
+        });
+        if (extErr) throw extErr;
       }
     },
     onSuccess: () => {
@@ -97,7 +305,9 @@ export default function ClassTypesScreen() {
       setOpenPickerIdx(null);
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['class-types'] });
+      queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
       queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
+      queryClient.invalidateQueries({ queryKey: ['class-programming-month'] });
     },
     onError: (e) => setError(errorMessage(e, 'Save failed')),
   });
@@ -106,10 +316,26 @@ export default function ClassTypesScreen() {
     const usedColors = new Set(rows.map((r) => r.color.toUpperCase()));
     const next =
       PALETTE.find((c) => !usedColors.has(c.hex.toUpperCase())) ?? PALETTE[0];
-    setRows([...rows, { id: null, name: '', color: next.hex }]);
+    setRows([
+      ...rows,
+      {
+        id: null,
+        name: '',
+        color: next.hex,
+        scheduleOpen: true,
+        recurrenceId: null,
+        recurrence: { ...EMPTY_RECURRENCE, indefinite: true },
+      },
+    ]);
   }
 
-  const visibleRows = rows.map((r, idx) => ({ row: r, idx })).filter((r) => !r.row.deleted);
+  function updateRow(idx: number, patch: Partial<EditableType>) {
+    setRows((curr) => curr.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  }
+
+  const visibleRows = rows
+    .map((r, idx) => ({ row: r, idx }))
+    .filter((r) => !r.row.deleted);
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -117,8 +343,8 @@ export default function ClassTypesScreen() {
         <View className="gap-2">
           <Text className="text-gray-900 text-2xl font-semibold">Class types</Text>
           <Text className="text-gray-500">
-            Name and colour the kinds of class you run. The colour shows up
-            wherever a class appears on the calendar.
+            Name and colour the kinds of class you run, and set up a recurring
+            schedule so they appear on the calendar automatically.
           </Text>
         </View>
 
@@ -126,60 +352,97 @@ export default function ClassTypesScreen() {
           {visibleRows.length === 0 ? (
             <Text className="text-gray-500">No types yet — add one below.</Text>
           ) : null}
-          {visibleRows.map(({ row: r, idx }) => (
-            <View key={r.id ?? `new-${idx}`} className="bg-white rounded-xl p-3 gap-2">
-              <View className="flex-row items-center gap-3">
+          {visibleRows.map(({ row: r, idx }) => {
+            const hasSchedule = r.recurrence.days.length > 0;
+            return (
+              <View
+                key={r.id ?? `new-${idx}`}
+                className="bg-white rounded-xl p-3 gap-3">
+                <View className="flex-row items-center gap-3">
+                  <Pressable
+                    onPress={() =>
+                      setOpenPickerIdx(openPickerIdx === idx ? null : idx)
+                    }
+                    hitSlop={4}
+                    style={{ backgroundColor: r.color }}
+                    className="w-10 h-10 rounded-full border-2 border-white"
+                  />
+                  <View className="flex-1">
+                    <Input
+                      label=""
+                      value={r.name}
+                      onChangeText={(v) => updateRow(idx, { name: v })}
+                      placeholder="CrossFit"
+                      autoCapitalize="words"
+                    />
+                  </View>
+                  <Pressable
+                    onPress={() => {
+                      if (r.id === null) {
+                        setRows(rows.filter((_, i) => i !== idx));
+                      } else {
+                        updateRow(idx, { deleted: true });
+                      }
+                      if (openPickerIdx === idx) setOpenPickerIdx(null);
+                    }}
+                    hitSlop={4}
+                    className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100">
+                    <Ionicons name="close" size={18} color="#9CA3AF" />
+                  </Pressable>
+                </View>
+                {openPickerIdx === idx ? (
+                  <View className="bg-gray-50 rounded-lg p-3">
+                    <ColorSwatchPicker
+                      value={r.color}
+                      onChange={(c) => updateRow(idx, { color: c })}
+                    />
+                  </View>
+                ) : null}
+
                 <Pressable
                   onPress={() =>
-                    setOpenPickerIdx(openPickerIdx === idx ? null : idx)
+                    updateRow(idx, { scheduleOpen: !r.scheduleOpen })
                   }
-                  hitSlop={4}
-                  style={{ backgroundColor: r.color }}
-                  className="w-10 h-10 rounded-full border-2 border-white"
-                />
-                <View className="flex-1">
-                  <Input
-                    label=""
-                    value={r.name}
-                    onChangeText={(v) => {
-                      const next = [...rows];
-                      next[idx] = { ...r, name: v };
-                      setRows(next);
-                    }}
-                    placeholder="CrossFit"
-                    autoCapitalize="words"
-                  />
-                </View>
-                <Pressable
-                  onPress={() => {
-                    if (r.id === null) {
-                      setRows(rows.filter((_, i) => i !== idx));
-                    } else {
-                      const next = [...rows];
-                      next[idx] = { ...r, deleted: true };
-                      setRows(next);
-                    }
-                    if (openPickerIdx === idx) setOpenPickerIdx(null);
-                  }}
-                  hitSlop={4}
-                  className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100">
-                  <Ionicons name="close" size={18} color="#9CA3AF" />
+                  className="flex-row items-center justify-between gap-3 px-1 py-1 active:opacity-70">
+                  <Text
+                    className={`flex-1 text-sm ${
+                      hasSchedule ? 'text-gray-700' : 'text-gray-400'
+                    }`}
+                    numberOfLines={2}>
+                    {hasSchedule
+                      ? summariseRecurrence(r.recurrence)
+                      : 'No recurring schedule yet.'}
+                  </Text>
+                  <Text className="text-primary text-xs uppercase tracking-widest">
+                    {r.scheduleOpen ? 'Hide' : hasSchedule ? 'Edit' : 'Set up'}
+                  </Text>
                 </Pressable>
+
+                {r.scheduleOpen ? (
+                  <View className="bg-gray-50 rounded-lg p-3 gap-3">
+                    <RecurrenceEditor
+                      value={r.recurrence}
+                      onChange={(next) => updateRow(idx, { recurrence: next })}
+                    />
+                    {hasSchedule ? (
+                      <Pressable
+                        onPress={() =>
+                          updateRow(idx, {
+                            recurrence: { ...r.recurrence, days: [] },
+                          })
+                        }
+                        hitSlop={4}
+                        className="self-start">
+                        <Text className="text-red-500 text-sm">
+                          Remove schedule
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
-              {openPickerIdx === idx ? (
-                <View className="bg-gray-50 rounded-lg p-3">
-                  <ColorSwatchPicker
-                    value={r.color}
-                    onChange={(c) => {
-                      const next = [...rows];
-                      next[idx] = { ...r, color: c };
-                      setRows(next);
-                    }}
-                  />
-                </View>
-              ) : null}
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         <Pressable
@@ -191,7 +454,10 @@ export default function ClassTypesScreen() {
 
         {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
 
-        <Button onPress={() => save.mutate()} loading={save.isPending} success={saved}>
+        <Button
+          onPress={() => save.mutate()}
+          loading={save.isPending}
+          success={saved}>
           Save changes
         </Button>
       </ScrollView>
