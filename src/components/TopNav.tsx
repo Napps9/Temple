@@ -48,20 +48,12 @@ export function TopNav({
       style={{ paddingTop: insets.top + 10 }}
       className="bg-gray-50 px-4 md:px-6 pb-3 flex-row items-center">
       <View className="flex-1 flex-row items-center">
-        {isManagementSubPage ? (
-          <Link href="/management" asChild>
-            <Pressable hitSlop={8} className="active:opacity-70">
-              <Text className="text-primary font-medium text-base">← Manage</Text>
-            </Pressable>
-          </Link>
-        ) : (
-          <Pressable
-            onPress={() => setNavOpen(true)}
-            hitSlop={6}
-            className="active:opacity-70">
-            <LogoMark initial={initial} />
-          </Pressable>
-        )}
+        <Pressable
+          onPress={() => setNavOpen(true)}
+          hitSlop={6}
+          className="active:opacity-70">
+          <LogoMark initial={initial} />
+        </Pressable>
       </View>
 
       <View className="items-center">
@@ -86,7 +78,15 @@ export function TopNav({
         ) : null}
       </View>
 
-      <View className="flex-1" />
+      <View className="flex-1 items-end">
+        {isManagementSubPage ? (
+          <Link href="/management" asChild>
+            <Pressable hitSlop={8} className="active:opacity-70">
+              <Text className="text-primary font-medium text-base">← Manage</Text>
+            </Pressable>
+          </Link>
+        ) : null}
+      </View>
 
       <NavModal
         visible={navOpen}
