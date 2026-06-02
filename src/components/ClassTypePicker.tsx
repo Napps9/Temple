@@ -56,7 +56,14 @@ export function ClassTypePicker({
       setNewColor(PALETTE[0].hex);
       setCreating(false);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ['class-types'] });
+      queryClient.setQueryData<ClassType[]>(
+        ['class-types', membership?.gymId],
+        (prev) => {
+          const merged = [...(prev ?? []).filter((t) => t.id !== created.id), created];
+          merged.sort((a, b) => a.name.localeCompare(b.name));
+          return merged;
+        },
+      );
       onChange(created.id);
     },
     onError: (e) => setError(errorMessage(e, 'Could not create type')),
@@ -74,13 +81,22 @@ export function ClassTypePicker({
                 key={t.id}
                 onPress={() => onChange(t.id)}
                 className={`flex-row items-center gap-2 px-3 py-2 rounded-full border ${
-                  selected ? 'border-gray-900 bg-gray-100' : 'border-gray-200 bg-white'
+                  selected
+                    ? 'border-primary bg-primary/10'
+                    : 'border-gray-200 bg-white'
                 }`}>
                 <View
                   style={{ backgroundColor: t.color }}
                   className="w-2.5 h-2.5 rounded-full"
                 />
-                <Text className="text-gray-900 text-sm">{t.name}</Text>
+                <Text
+                  className={
+                    selected
+                      ? 'text-primary text-sm font-medium'
+                      : 'text-gray-900 text-sm'
+                  }>
+                  {t.name}
+                </Text>
               </Pressable>
             );
           })}

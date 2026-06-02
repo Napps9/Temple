@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HORIZON_WEEKS = 12;
 
 function fmtDateLocal(d: Date) {
@@ -65,6 +66,21 @@ export function CreateClassModal({
   const [capacity, setCapacity] = useState('12');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [stage, setStage] = useState<'form' | 'confirm'>('form');
+
+  const typesQuery = useQuery({
+    queryKey: ['class-types', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('id, name, color')
+        .order('name');
+      if (error) throw error;
+      return data as { id: string; name: string; color: string }[];
+    },
+  });
+  const selectedType = typesQuery.data?.find((t) => t.id === classTypeId);
 
   useEffect(() => {
     if (!visible) return;
@@ -81,6 +97,7 @@ export function CreateClassModal({
     setCapacity('12');
     setNotes('');
     setError(null);
+    setStage('form');
   }, [visible, defaultDate, defaultHour]);
 
   function toggleDay(i: number) {
@@ -88,6 +105,74 @@ export function CreateClassModal({
     if (next.has(i)) next.delete(i);
     else next.add(i);
     setDays(next);
+  }
+
+  function validate(): string | null {
+    if (!classTypeId) return 'Pick a class type';
+    if (!DATE_RE.test(dateStr)) return 'Date must be YYYY-MM-DD';
+    const dur = parseInt(durationMinutes, 10);
+    const cap = parseInt(capacity, 10);
+    if (!Number.isFinite(dur) || dur <= 0) {
+      return 'Duration must be a positive number of minutes';
+    }
+    if (!Number.isFinite(cap) || cap <= 0) {
+      return 'Capacity must be a positive number';
+    }
+    if (recurring) {
+      if (days.size === 0) return 'Pick at least one day';
+      const validTimes = times.map((t) => t.trim()).filter(Boolean);
+      if (validTimes.length === 0) return 'Add at least one time';
+      for (const t of validTimes) {
+        if (!TIME_RE.test(t)) return `Time "${t}" must be HH:MM (24-hour)`;
+      }
+      if (validTimes.length > 6) return 'At most 6 times per pattern';
+      if (!indefinite) {
+        const w = parseInt(weeks, 10);
+        if (!Number.isFinite(w) || w < 1 || w > 260) {
+          return 'Repeat must be 1–260 weeks, or pick "Repeat indefinitely"';
+        }
+      }
+    } else {
+      if (!TIME_RE.test(timeStr)) return 'Time must be HH:MM (24-hour)';
+    }
+    return null;
+  }
+
+  function sessionsInHorizon(): number {
+    if (!recurring) return 1;
+    const validTimes = times.map((t) => t.trim()).filter((t) => TIME_RE.test(t));
+    if (validTimes.length === 0 || days.size === 0) return 0;
+    const [y, mo, day] = dateStr.split('-').map(Number);
+    if (!y || !mo || !day) return 0;
+    const start = new Date(y, mo - 1, day);
+    start.setHours(0, 0, 0, 0);
+    const horizon = new Date();
+    horizon.setHours(0, 0, 0, 0);
+    horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+    let end = horizon;
+    if (!indefinite) {
+      const w = parseInt(weeks, 10);
+      const finiteEnd = new Date(start);
+      finiteEnd.setDate(finiteEnd.getDate() + w * 7 - 1);
+      if (finiteEnd < end) end = finiteEnd;
+    }
+    let count = 0;
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      if (days.has(cursor.getDay())) count += validTimes.length;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return count;
+  }
+
+  function onReview() {
+    const err = validate();
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError(null);
+    setStage('confirm');
   }
 
   const create = useMutation({
@@ -205,12 +290,17 @@ export function CreateClassModal({
       <View className="flex-1 bg-black/60 items-center justify-center px-6">
         <View className="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md gap-5">
           <View className="gap-1">
-            <Text className="text-gray-900 text-xl font-semibold">New class</Text>
+            <Text className="text-gray-900 text-xl font-semibold">
+              {stage === 'form' ? 'New class' : 'Confirm class'}
+            </Text>
             <Text className="text-gray-500">
-              Schedule a class at any date and time.
+              {stage === 'form'
+                ? 'Schedule a class at any date and time.'
+                : 'Review the details below before saving.'}
             </Text>
           </View>
 
+          {stage === 'form' ? (
           <ScrollView className="max-h-[36rem]">
             <View className="gap-4">
               <ClassTypePicker value={classTypeId} onChange={setClassTypeId} />
@@ -370,23 +460,172 @@ export function CreateClassModal({
               />
             </View>
           </ScrollView>
+          ) : (
+            <ConfirmView
+              selectedType={selectedType}
+              dateStr={dateStr}
+              timeStr={timeStr}
+              recurring={recurring}
+              days={days}
+              times={times}
+              indefinite={indefinite}
+              weeks={weeks}
+              durationMinutes={durationMinutes}
+              capacity={capacity}
+              notes={notes}
+              sessionCount={sessionsInHorizon()}
+            />
+          )}
 
           {error ? <Text className="text-red-500">{error}</Text> : null}
 
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose}>
-                Cancel
-              </Button>
+          {stage === 'form' ? (
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Button variant="secondary" onPress={onClose}>
+                  Cancel
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button onPress={onReview}>Review</Button>
+              </View>
             </View>
-            <View className="flex-1">
-              <Button onPress={() => create.mutate()} loading={create.isPending}>
-                Create
-              </Button>
+          ) : (
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Button variant="secondary" onPress={() => setStage('form')}>
+                  Edit
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button onPress={() => create.mutate()} loading={create.isPending}>
+                  Confirm
+                </Button>
+              </View>
             </View>
-          </View>
+          )}
         </View>
       </View>
     </Modal>
+  );
+}
+
+function ConfirmView({
+  selectedType,
+  dateStr,
+  timeStr,
+  recurring,
+  days,
+  times,
+  indefinite,
+  weeks,
+  durationMinutes,
+  capacity,
+  notes,
+  sessionCount,
+}: {
+  selectedType: { name: string; color: string } | undefined;
+  dateStr: string;
+  timeStr: string;
+  recurring: boolean;
+  days: Set<number>;
+  times: string[];
+  indefinite: boolean;
+  weeks: string;
+  durationMinutes: string;
+  capacity: string;
+  notes: string;
+  sessionCount: number;
+}) {
+  const [y, mo, day] = dateStr.split('-').map(Number);
+  const dateObj = y && mo && day ? new Date(y, mo - 1, day) : null;
+  const dateLabel = dateObj
+    ? dateObj.toLocaleDateString(undefined, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : dateStr;
+
+  const daysList = [...days]
+    .sort((a, b) => a - b)
+    .map((i) => DAY_NAMES[i])
+    .join(', ');
+
+  const timesList = times
+    .map((t) => t.trim())
+    .filter((t) => /^([01]?\d|2[0-3]):[0-5]\d$/.test(t))
+    .join(', ');
+
+  return (
+    <ScrollView className="max-h-[36rem]">
+      <View className="gap-5">
+        <ConfirmRow label="Type">
+          <View className="flex-row items-center gap-2">
+            {selectedType ? (
+              <View
+                style={{ backgroundColor: selectedType.color }}
+                className="w-3 h-3 rounded-full"
+              />
+            ) : null}
+            <Text className="text-gray-900 text-base font-medium">
+              {selectedType?.name ?? 'Unknown'}
+            </Text>
+          </View>
+        </ConfirmRow>
+
+        {recurring ? (
+          <ConfirmRow label="Repeats">
+            <Text className="text-gray-900">
+              {daysList || '—'} at {timesList || '—'}
+            </Text>
+            <Text className="text-gray-500 text-sm mt-1">
+              Starting {dateLabel}
+              {indefinite
+                ? ' · indefinitely'
+                : ` · for ${weeks} ${weeks === '1' ? 'week' : 'weeks'}`}
+            </Text>
+            <Text className="text-gray-500 text-sm mt-1">
+              Materialising {sessionCount} session{sessionCount === 1 ? '' : 's'} in the first{' '}
+              {indefinite ? '12 weeks' : 'batch'}
+            </Text>
+          </ConfirmRow>
+        ) : (
+          <ConfirmRow label="When">
+            <Text className="text-gray-900">
+              {dateLabel} at {timeStr}
+            </Text>
+          </ConfirmRow>
+        )}
+
+        <ConfirmRow label="Duration · Capacity">
+          <Text className="text-gray-900">
+            {durationMinutes} min · {capacity} spot{capacity === '1' ? '' : 's'}
+          </Text>
+        </ConfirmRow>
+
+        {notes.trim() ? (
+          <ConfirmRow label="Notes">
+            <Text className="text-gray-900">{notes.trim()}</Text>
+          </ConfirmRow>
+        ) : null}
+      </View>
+    </ScrollView>
+  );
+}
+
+function ConfirmRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View className="gap-1">
+      <Text className="text-gray-500 text-xs uppercase tracking-widest">{label}</Text>
+      {children}
+    </View>
   );
 }
