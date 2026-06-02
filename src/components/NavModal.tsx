@@ -1,9 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Modal, Pressable, Text, View } from 'react-native';
 
 import { isStaffRole, useGymMembership, useRole } from '@/lib/auth';
 
-export type NavSection = { name: string; href: string; label: string };
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+export type NavSection = {
+  name: string;
+  href: string;
+  label: string;
+  icon: IoniconName;
+};
 
 export function NavModal({
   visible,
@@ -55,33 +63,32 @@ export function NavModal({
             </View>
           </View>
 
-          <View className="p-3">
-            <Text className="text-gray-400 text-xs font-medium uppercase tracking-widest px-3 py-2">
-              Navigate
-            </Text>
-            {sections.map((s) => (
-              <Pressable
-                key={s.name}
-                onPress={() => go(s.href)}
-                className="px-3 py-2.5 rounded-lg active:bg-gray-50">
-                <Text className="text-gray-900 text-base">{s.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {showCrossLink ? (
-            <View className="p-3 border-t border-gray-100">
-              <Text className="text-gray-400 text-xs font-medium uppercase tracking-widest px-3 py-2">
-                View
-              </Text>
-              <Pressable
-                onPress={() => go(crossHref)}
-                className="px-3 py-2.5 rounded-lg active:bg-gray-50 flex-row items-center justify-between">
-                <Text className="text-gray-900 text-base">{crossLabel}</Text>
-                <Text className="text-gray-400">→</Text>
-              </Pressable>
+          <View className="p-4">
+            <View className="flex-row gap-2">
+              {sections.map((s) => (
+                <Pressable
+                  key={s.name}
+                  onPress={() => go(s.href)}
+                  className="flex-1 aspect-square bg-gray-50 rounded-2xl items-center justify-center gap-2 active:bg-gray-100">
+                  <Ionicons name={s.icon} size={26} color="#1F2937" />
+                  <Text className="text-gray-900 text-xs font-medium text-center px-1">
+                    {s.label}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
-          ) : null}
+
+            {showCrossLink ? (
+              <View className="pt-3">
+                <Pressable
+                  onPress={() => go(crossHref)}
+                  className="bg-primary rounded-full px-4 py-3 flex-row items-center justify-center gap-2 active:bg-primary-dark">
+                  <Text className="text-white font-semibold text-sm">{crossLabel}</Text>
+                  <Text className="text-white font-semibold text-sm">→</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
         </Pressable>
       </Pressable>
     </Modal>

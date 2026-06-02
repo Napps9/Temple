@@ -5,10 +5,10 @@ import { TopNav, type NavSection } from '@/components/TopNav';
 import { useSession } from '@/lib/auth';
 
 const MEMBER_SECTIONS: NavSection[] = [
-  { name: 'book', href: '/book', label: 'Book' },
-  { name: 'programming', href: '/programming', label: 'Programming' },
-  { name: 'workouts', href: '/workouts', label: 'Workouts' },
-  { name: 'account', href: '/account', label: 'Account' },
+  { name: 'book', href: '/book', label: 'Book', icon: 'calendar-clear-outline' },
+  { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
+  { name: 'workouts', href: '/workouts', label: 'Workouts', icon: 'trophy-outline' },
+  { name: 'account', href: '/account', label: 'Account', icon: 'person-circle-outline' },
 ];
 
 export default function MemberLayout() {

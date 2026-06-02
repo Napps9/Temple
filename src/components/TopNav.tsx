@@ -44,17 +44,19 @@ export function TopNav({
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-gray-50 border-b border-gray-200 px-6 pb-3 flex-row items-center">
-      <Pressable
-        onPress={() => setNavOpen(true)}
-        hitSlop={6}
-        className="flex-row items-center gap-3 active:opacity-70">
-        <LogoMark initial={initial} />
-        <Text className="text-gray-900 font-semibold text-base">{gymName}</Text>
-        <Text className="text-gray-400 text-sm">▾</Text>
-      </Pressable>
+      className="bg-gray-50 px-6 pb-3 flex-row items-center">
+      <View className="flex-1">
+        <Pressable
+          onPress={() => setNavOpen(true)}
+          hitSlop={6}
+          className="flex-row items-center gap-3 self-start active:opacity-70">
+          <LogoMark initial={initial} />
+          <Text className="text-gray-900 font-semibold text-base">{gymName}</Text>
+          <Text className="text-gray-400 text-sm">▾</Text>
+        </Pressable>
+      </View>
 
-      <View className="flex-1 items-center">
+      <View className="items-center">
         {isOnClasses ? (
           <View className="flex-row bg-gray-100 rounded-full p-1">
             {CLASSES_VIEWS.map((v) => (
@@ -75,6 +77,8 @@ export function TopNav({
           </View>
         ) : null}
       </View>
+
+      <View className="flex-1" />
 
       <NavModal
         visible={navOpen}
