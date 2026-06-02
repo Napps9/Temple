@@ -16,10 +16,13 @@ type ClassSession = {
   class_types: { name: string; color: string } | null;
 };
 
+type Section = { title: string; body: string };
+
 type ProgrammingRow = {
   id: string;
   class_type_id: string;
   date: string;
+  sections: Section[];
 };
 
 type DayClassType = {
@@ -108,11 +111,14 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
       const end = fmtDateLocal(addDays(startOfMonth(addMonths(date, 1)), 7));
       const { data, error } = await supabase
         .from('class_programming')
-        .select('id, class_type_id, date')
+        .select('id, class_type_id, date, sections')
         .gte('date', start)
         .lt('date', end);
       if (error) throw error;
-      return data as ProgrammingRow[];
+      return (data ?? []).map((row) => ({
+        ...row,
+        sections: (row.sections as Section[]) ?? [],
+      })) as ProgrammingRow[];
     },
   });
 
@@ -139,10 +145,10 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
   })();
 
   const dateStr = fmtDateLocal(date);
-  const programmedTypeIds = new Set(
+  const sectionsByTypeId = new Map<string, Section[]>(
     (programmingMonthQuery.data ?? [])
       .filter((p) => p.date === dateStr)
-      .map((p) => p.class_type_id),
+      .map((p) => [p.class_type_id, p.sections]),
   );
 
   return (
@@ -204,7 +210,7 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
-        <View className="w-full max-w-5xl mx-auto px-2 gap-2">
+        <View className="w-full max-w-5xl mx-auto px-2 gap-3">
           {dayTypes.length === 0 ? (
             <View className="bg-white border border-gray-200 rounded-xl p-4">
               <Text className="text-gray-500 text-sm">
@@ -213,28 +219,15 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
             </View>
           ) : (
             dayTypes.map((t) => {
-              const programmed = programmedTypeIds.has(t.id);
+              const sections = sectionsByTypeId.get(t.id) ?? [];
               return (
-                <Pressable
+                <ClassTypeCard
                   key={t.id}
-                  onPress={() => setOpenFor({ classType: t, date })}
-                  className="bg-white rounded-xl p-4 flex-row items-center gap-3 active:bg-gray-50">
-                  <View
-                    style={{ backgroundColor: t.color }}
-                    className="w-3 h-3 rounded-full"
-                  />
-                  <Text className="flex-1 text-gray-900 font-semibold">
-                    {t.name}
-                  </Text>
-                  <Text
-                    className={
-                      programmed
-                        ? 'text-primary text-xs uppercase tracking-widest'
-                        : 'text-gray-400 text-xs uppercase tracking-widest'
-                    }>
-                    {programmed ? 'Programmed' : 'Not yet'}
-                  </Text>
-                </Pressable>
+                  classType={t}
+                  sections={sections}
+                  mode={mode}
+                  onEdit={() => setOpenFor({ classType: t, date })}
+                />
               );
             })
           )}
@@ -245,9 +238,71 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
         visible={openFor !== null}
         classType={openFor?.classType ?? null}
         date={openFor?.date ?? null}
-        mode={mode}
         onClose={() => setOpenFor(null)}
       />
     </Screen>
+  );
+}
+
+function ClassTypeCard({
+  classType,
+  sections,
+  mode,
+  onEdit,
+}: {
+  classType: DayClassType;
+  sections: Section[];
+  mode: 'manage' | 'view';
+  onEdit: () => void;
+}) {
+  const header = (
+    <View className="flex-row items-center gap-3">
+      <View
+        style={{ backgroundColor: classType.color }}
+        className="w-3 h-3 rounded-full"
+      />
+      <Text className="flex-1 text-gray-900 font-semibold">{classType.name}</Text>
+      {mode === 'manage' ? (
+        <Text className="text-primary text-xs uppercase tracking-widest">
+          {sections.length === 0 ? 'Add' : 'Edit'}
+        </Text>
+      ) : null}
+    </View>
+  );
+
+  const body =
+    sections.length === 0 ? (
+      <Text className="text-gray-400 text-sm">
+        {mode === 'manage'
+          ? 'No programming yet — tap to add.'
+          : 'No programming yet.'}
+      </Text>
+    ) : (
+      <View className="gap-3">
+        {sections.map((s, idx) => (
+          <View key={idx} className="gap-1">
+            <Text className="text-gray-900 font-semibold">{s.title}</Text>
+            <Text className="text-gray-700">{s.body}</Text>
+          </View>
+        ))}
+      </View>
+    );
+
+  if (mode === 'manage') {
+    return (
+      <Pressable
+        onPress={onEdit}
+        className="bg-white rounded-xl p-4 gap-3 active:bg-gray-50">
+        {header}
+        {body}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View className="bg-white rounded-xl p-4 gap-3">
+      {header}
+      {body}
+    </View>
   );
 }

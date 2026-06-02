@@ -36,13 +36,11 @@ export function ProgrammingModal({
   visible,
   classType,
   date,
-  mode,
   onClose,
 }: {
   visible: boolean;
   classType: { id: string; name: string; color: string } | null;
   date: Date | null;
-  mode: 'manage' | 'view';
   onClose: () => void;
 }) {
   const session = useSession();
@@ -74,15 +72,9 @@ export function ProgrammingModal({
     if (!visible) return;
     if (programming.isLoading) return;
     const loaded = programming.data?.sections ?? [];
-    if (loaded.length > 0) {
-      setSections(loaded);
-    } else if (mode === 'manage') {
-      setSections([{ title: '', body: '' }]);
-    } else {
-      setSections([]);
-    }
+    setSections(loaded.length > 0 ? loaded : [{ title: '', body: '' }]);
     setError(null);
-  }, [visible, programming.isLoading, programming.data, mode]);
+  }, [visible, programming.isLoading, programming.data]);
 
   function close() {
     setSections([]);
@@ -183,25 +175,6 @@ export function ProgrammingModal({
               <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-3">
                 {programming.isLoading ? (
                   <Text className="text-gray-500">Loading…</Text>
-                ) : mode === 'view' ? (
-                  sections.length === 0 ? (
-                    <View className="bg-gray-50 rounded-xl p-4">
-                      <Text className="text-gray-500">
-                        No programming for this class yet.
-                      </Text>
-                    </View>
-                  ) : (
-                    sections.map((s, idx) => (
-                      <View
-                        key={idx}
-                        className="bg-gray-50 rounded-xl p-4 gap-1">
-                        <Text className="text-gray-900 font-semibold">
-                          {s.title}
-                        </Text>
-                        <Text className="text-gray-700">{s.body}</Text>
-                      </View>
-                    ))
-                  )
                 ) : (
                   <>
                     {sections.map((s, idx) => (
@@ -255,27 +228,21 @@ export function ProgrammingModal({
                 <Text className="text-red-500 text-sm">{error}</Text>
               ) : null}
 
-              {mode === 'manage' ? (
-                <View className="flex-row gap-3">
-                  <View className="flex-1">
-                    <Button variant="secondary" onPress={close}>
-                      Cancel
-                    </Button>
-                  </View>
-                  <View className="flex-1">
-                    <Button
-                      onPress={() => save.mutate()}
-                      loading={save.isPending}
-                      success={saved}>
-                      Save changes
-                    </Button>
-                  </View>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Button variant="secondary" onPress={close}>
+                    Cancel
+                  </Button>
                 </View>
-              ) : (
-                <Button variant="secondary" onPress={close}>
-                  Close
-                </Button>
-              )}
+                <View className="flex-1">
+                  <Button
+                    onPress={() => save.mutate()}
+                    loading={save.isPending}
+                    success={saved}>
+                    Save changes
+                  </Button>
+                </View>
+              </View>
             </>
           )}
         </Pressable>
