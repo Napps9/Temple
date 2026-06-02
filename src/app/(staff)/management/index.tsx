@@ -71,6 +71,13 @@ export default function ManagementHome() {
             href="/management/hours"
           />
         ) : null}
+        {role === 'owner' || role === 'coach' ? (
+          <ManagementCard
+            title="Class types"
+            description="Name and colour the kinds of class you run."
+            href="/management/class-types"
+          />
+        ) : null}
         <ManagementCard
           title="Members"
           description="View and manage everyone signed up to your gym."

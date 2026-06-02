@@ -147,6 +147,7 @@ export type Database = {
           notes: string | null;
           created_by: string;
           created_at: string;
+          class_type_id: string | null;
         };
         Insert: {
           id?: string;
@@ -159,6 +160,7 @@ export type Database = {
           notes?: string | null;
           created_by: string;
           created_at?: string;
+          class_type_id?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -170,6 +172,31 @@ export type Database = {
           capacity: number;
           notes: string | null;
           created_by: string;
+          created_at: string;
+          class_type_id: string | null;
+        }>;
+        Relationships: [];
+      };
+      class_types: {
+        Row: {
+          id: string;
+          gym_id: string;
+          name: string;
+          color: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          name: string;
+          color: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          name: string;
+          color: string;
           created_at: string;
         }>;
         Relationships: [];

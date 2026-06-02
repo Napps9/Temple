@@ -23,7 +23,19 @@ type ClassSession = {
   starts_at: string;
   duration_minutes: number;
   capacity: number;
+  class_type_id: string | null;
+  class_types: { name: string; color: string } | null;
 };
+
+const DEFAULT_CLASS_COLOR = '#2563EB';
+
+function sessionColor(s: ClassSession) {
+  return s.class_types?.color ?? DEFAULT_CLASS_COLOR;
+}
+
+function sessionLabel(s: ClassSession) {
+  return s.class_types?.name ?? s.name;
+}
 
 type GymHour = { day_of_week: number; opens_at: string; closes_at: string };
 
@@ -165,12 +177,14 @@ export default function StaffClasses() {
       const end = addDays(startOfMonth(addMonths(date, 1)), 7);
       const { data, error } = await supabase
         .from('class_sessions')
-        .select('id, name, starts_at, duration_minutes, capacity')
+        .select(
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color)',
+        )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
         .order('starts_at');
       if (error) throw error;
-      return data as ClassSession[];
+      return data as unknown as ClassSession[];
     },
   });
 
@@ -377,8 +391,10 @@ function DayClassCard({ session }: { session: ClassSession }) {
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   return (
-    <View className="bg-primary rounded-2xl p-4 gap-1">
-      <Text className="text-white text-lg font-semibold">{session.name}</Text>
+    <View
+      style={{ backgroundColor: sessionColor(session) }}
+      className="rounded-2xl p-4 gap-1">
+      <Text className="text-white text-lg font-semibold">{sessionLabel(session)}</Text>
       <Text className="text-white/80 text-sm">
         {fmtTime(start)} — {fmtTime(end)}
       </Text>
@@ -473,11 +489,13 @@ function WeekView({
                       {!open ? (
                         <View className="flex-1 bg-gray-100/60 rounded min-h-12" />
                       ) : cellClasses.length > 0 ? (
-                        <View className="flex-1 bg-primary rounded p-1.5 min-h-12 justify-center">
+                        <View
+                          style={{ backgroundColor: sessionColor(cellClasses[0]) }}
+                          className="flex-1 rounded p-1.5 min-h-12 justify-center">
                           <Text
                             className="text-white text-xs font-semibold"
                             numberOfLines={1}>
-                            {cellClasses[0].name}
+                            {sessionLabel(cellClasses[0])}
                           </Text>
                           <Text
                             className="text-white/80 text-[10px]"
