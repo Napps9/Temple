@@ -10,7 +10,7 @@ export function Input({ label, error, ...props }: Props) {
     <View className="gap-1.5">
       <Text className="text-gray-700 text-sm font-medium">{label}</Text>
       <TextInput
-        className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900"
+        className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 text-base"
         placeholderTextColor="#9CA3AF"
         autoCapitalize="none"
         autoCorrect={false}
