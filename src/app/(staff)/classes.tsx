@@ -435,12 +435,12 @@ function DayHourRow({
     <View className="flex-row gap-4 py-2 border-t border-gray-100">
       <Text className="text-gray-400 text-sm w-14 pt-3">{label}</Text>
       <View className="flex-1 py-1.5 gap-2">
-        {!open ? (
+        {classes.length > 0 ? (
+          classes.map((c) => <DayClassCard key={c.id} session={c} />)
+        ) : !open ? (
           <View className="bg-gray-100 rounded-xl px-4 py-3">
             <Text className="text-gray-400 text-sm">Closed</Text>
           </View>
-        ) : classes.length > 0 ? (
-          classes.map((c) => <DayClassCard key={c.id} session={c} />)
         ) : (
           <Pressable
             onPress={onCreate}
@@ -552,9 +552,7 @@ function WeekView({
                   const cellClasses = classesAtDayHour(sessions, d, hour);
                   return (
                     <View key={d.toISOString()} className="flex-1 p-0.5">
-                      {!open ? (
-                        <View className="flex-1 bg-gray-100/60 rounded min-h-12" />
-                      ) : cellClasses.length > 0 ? (
+                      {cellClasses.length > 0 ? (
                         <View
                           style={{ backgroundColor: sessionColor(cellClasses[0]) }}
                           className="flex-1 rounded p-1.5 min-h-12 justify-center">
@@ -569,6 +567,8 @@ function WeekView({
                             {cellClasses[0].duration_minutes}m
                           </Text>
                         </View>
+                      ) : !open ? (
+                        <View className="flex-1 bg-gray-100/60 rounded min-h-12" />
                       ) : (
                         <Pressable
                           onPress={() => onCreateAt(d, hour)}
