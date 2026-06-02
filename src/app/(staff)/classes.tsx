@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -123,8 +124,13 @@ function isHourOpen(hour: number, dayHours: GymHour | undefined) {
   return hourMin >= open && hourMin < close;
 }
 
+function parseView(v: string | undefined): ViewMode {
+  return VIEWS.includes(v as ViewMode) ? (v as ViewMode) : 'day';
+}
+
 export default function StaffClasses() {
-  const [view, setView] = useState<ViewMode>('day');
+  const params = useLocalSearchParams<{ view?: string }>();
+  const view = parseView(params.view);
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [createAt, setCreateAt] = useState<{ date: Date; hour: number } | null>(null);
   const { data: membership } = useGymMembership();
@@ -169,27 +175,7 @@ export default function StaffClasses() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="items-center pt-6 pb-4">
-          <View className="flex-row bg-gray-100 rounded-full p-1">
-            {VIEWS.map((v) => (
-              <Pressable
-                key={v}
-                onPress={() => setView(v)}
-                className={`px-6 py-1.5 rounded-full ${
-                  view === v ? 'bg-white' : ''
-                }`}>
-                <Text
-                  className={`capitalize text-sm font-medium ${
-                    view === v ? 'text-gray-900' : 'text-gray-500'
-                  }`}>
-                  {v}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <View className="flex-row items-center justify-center gap-4 pb-6">
+        <View className="flex-row items-center justify-center gap-4 pt-6 pb-6">
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, -1)))}
             hitSlop={8}
@@ -221,7 +207,7 @@ export default function StaffClasses() {
         <WeekView
           date={date}
           setDate={setDate}
-          setView={setView}
+          gotoDay={() => router.setParams({ view: 'day' })}
           sessions={sessionsQuery.data}
           dayHoursFor={dayHoursFor}
           onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
@@ -231,7 +217,7 @@ export default function StaffClasses() {
         <MonthView
           date={date}
           setDate={setDate}
-          setView={setView}
+          gotoDay={() => router.setParams({ view: 'day' })}
           sessions={sessionsQuery.data}
         />
       ) : null}
@@ -389,14 +375,14 @@ function DayClassCard({ session }: { session: ClassSession }) {
 function WeekView({
   date,
   setDate,
-  setView,
+  gotoDay,
   sessions,
   dayHoursFor,
   onCreateAt,
 }: {
   date: Date;
   setDate: (d: Date) => void;
-  setView: (v: ViewMode) => void;
+  gotoDay: () => void;
   sessions: ClassSession[] | undefined;
   dayHoursFor: (d: Date) => GymHour | undefined;
   onCreateAt: (d: Date, hour: number) => void;
@@ -434,7 +420,7 @@ function WeekView({
                 key={d.toISOString()}
                 onPress={() => {
                   setDate(d);
-                  setView('day');
+                  gotoDay();
                 }}
                 hitSlop={4}
                 className="flex-1 items-center pb-2">
@@ -505,12 +491,12 @@ function WeekView({
 function MonthView({
   date,
   setDate,
-  setView,
+  gotoDay,
   sessions,
 }: {
   date: Date;
   setDate: (d: Date) => void;
-  setView: (v: ViewMode) => void;
+  gotoDay: () => void;
   sessions: ClassSession[] | undefined;
 }) {
   const grid = monthGrid(date);
@@ -541,7 +527,7 @@ function MonthView({
                     key={d.toISOString()}
                     onPress={() => {
                       setDate(d);
-                      setView('day');
+                      gotoDay();
                     }}
                     className={`flex-1 aspect-square m-0.5 rounded-xl p-2 border ${
                       selected

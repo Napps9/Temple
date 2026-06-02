@@ -1,11 +1,18 @@
-import { router, useSegments } from 'expo-router';
+import {
+  router,
+  useLocalSearchParams,
+  usePathname,
+} from 'expo-router';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MemberViewLink, StaffViewLinkIfStaff } from './CrossExperienceLink';
+import { NavModal, type NavSection } from './NavModal';
 import { useGymMembership } from '@/lib/auth';
 
-export type NavSection = { name: string; href: string; label: string };
+export type { NavSection };
+
+const CLASSES_VIEWS = ['day', 'week', 'month'] as const;
 
 function LogoMark({ initial }: { initial: string }) {
   return (
@@ -23,46 +30,58 @@ export function TopNav({
   variant: 'staff' | 'member';
 }) {
   const insets = useSafeAreaInsets();
-  const segments = useSegments() as readonly string[];
+  const pathname = usePathname();
+  const params = useLocalSearchParams<{ view?: string }>();
   const { data: membership } = useGymMembership();
+  const [navOpen, setNavOpen] = useState(false);
 
-  const currentSection = segments[1];
   const gymName = membership?.gymName ?? 'Temple';
   const initial = (gymName.charAt(0) || 'T').toUpperCase();
+
+  const isOnClasses = pathname === '/classes';
+  const currentView = params.view ?? 'day';
 
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-gray-50 border-b border-gray-200 px-6 pb-3 flex-row items-center gap-4">
-      <View className="flex-row items-center gap-3 flex-1">
+      className="bg-gray-50 border-b border-gray-200 px-6 pb-3 flex-row items-center">
+      <Pressable
+        onPress={() => setNavOpen(true)}
+        hitSlop={6}
+        className="flex-row items-center gap-3 active:opacity-70">
         <LogoMark initial={initial} />
         <Text className="text-gray-900 font-semibold text-base">{gymName}</Text>
+        <Text className="text-gray-400 text-sm">▾</Text>
+      </Pressable>
+
+      <View className="flex-1 items-center">
+        {isOnClasses ? (
+          <View className="flex-row bg-gray-100 rounded-full p-1">
+            {CLASSES_VIEWS.map((v) => (
+              <Pressable
+                key={v}
+                onPress={() => router.setParams({ view: v })}
+                className={`px-6 py-1.5 rounded-full ${
+                  currentView === v ? 'bg-white' : ''
+                }`}>
+                <Text
+                  className={`capitalize text-sm font-medium ${
+                    currentView === v ? 'text-gray-900' : 'text-gray-500'
+                  }`}>
+                  {v}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
 
-      <View className="flex-row gap-7">
-        {sections.map((s) => {
-          const active = currentSection === s.name;
-          return (
-            <Pressable
-              key={s.name}
-              onPress={() => router.replace(s.href as never)}
-              hitSlop={8}>
-              <Text
-                className={
-                  active
-                    ? 'text-primary font-semibold'
-                    : 'text-gray-500 font-medium'
-                }>
-                {s.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <View className="flex-1 items-end">
-        {variant === 'staff' ? <MemberViewLink /> : <StaffViewLinkIfStaff />}
-      </View>
+      <NavModal
+        visible={navOpen}
+        onClose={() => setNavOpen(false)}
+        sections={sections}
+        variant={variant}
+      />
     </View>
   );
 }
