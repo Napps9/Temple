@@ -48,8 +48,6 @@ function sessionLabel(s: ClassSession) {
   return s.class_types?.name ?? s.name;
 }
 
-type GymHour = { day_of_week: number; opens_at: string; closes_at: string };
-
 function fmtDateLocal(d: Date) {
   return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d
     .getDate()
@@ -100,11 +98,6 @@ function fmtTime(d: Date) {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function timeToMinutes(t: string) {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
 function fmtMonthYear(d: Date) {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
@@ -149,14 +142,6 @@ function classesOnDay(sessions: ClassSession[] | undefined, day: Date) {
   return (sessions ?? []).filter((s) => isSameDay(new Date(s.starts_at), day));
 }
 
-function isHourOpen(hour: number, dayHours: GymHour | undefined) {
-  if (!dayHours) return false;
-  const open = timeToMinutes(dayHours.opens_at.slice(0, 5));
-  const close = timeToMinutes(dayHours.closes_at.slice(0, 5));
-  const hourMin = hour * 60;
-  return hourMin >= open && hourMin < close;
-}
-
 function parseView(v: string | undefined): ViewMode {
   return VIEWS.includes(v as ViewMode) ? (v as ViewMode) : 'day';
 }
@@ -176,18 +161,6 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
     .toString()
     .padStart(2, '0')}`;
 
-  const hoursQuery = useQuery({
-    queryKey: ['gym-hours', membership?.gymId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gym_hours')
-        .select('day_of_week, opens_at, closes_at');
-      if (error) throw error;
-      return data as GymHour[];
-    },
-  });
-
   const sessionsQuery = useQuery({
     queryKey: ['class-sessions-month', membership?.gymId, monthKey],
     enabled: !!membership?.gymId,
@@ -206,9 +179,6 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
       return data as unknown as ClassSession[];
     },
   });
-
-  const dayHoursFor = (d: Date) =>
-    hoursQuery.data?.find((h) => h.day_of_week === d.getDay());
 
   const recurrencesQuery = useQuery({
     queryKey: ['class-recurrences', membership?.gymId],
@@ -303,7 +273,6 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
           date={date}
           setDate={setDate}
           sessions={sessionsQuery.data}
-          dayHoursFor={dayHoursFor}
           onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
           onSessionPress={openSession}
           canCreate={canCreate}
@@ -315,7 +284,6 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
           setDate={setDate}
           gotoDay={() => router.setParams({ view: 'day' })}
           sessions={sessionsQuery.data}
-          dayHoursFor={dayHoursFor}
           onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
           onSessionPress={openSession}
           canCreate={canCreate}
@@ -357,7 +325,6 @@ function DayView({
   date,
   setDate,
   sessions,
-  dayHoursFor,
   onCreateAt,
   onSessionPress,
   canCreate,
@@ -366,14 +333,12 @@ function DayView({
   date: Date;
   setDate: (d: Date) => void;
   sessions: ClassSession[] | undefined;
-  dayHoursFor: (d: Date) => GymHour | undefined;
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
   canCreate: boolean;
 }) {
   const weekStart = startOfWeek(date);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const todayHours = dayHoursFor(date);
   const dayClasses = classesOnDay(sessions, date).sort(
     (a, b) =>
       new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
@@ -420,13 +385,6 @@ function DayView({
 
         <View className="mb-4">
           <Text className="text-gray-900 text-2xl font-semibold">{fmtFullDate(date)}</Text>
-          {todayHours ? (
-            <Text className="text-gray-500 mt-1">
-              Open {todayHours.opens_at.slice(0, 5)} — {todayHours.closes_at.slice(0, 5)}
-            </Text>
-          ) : (
-            <Text className="text-gray-500 mt-1">Gym closed today</Text>
-          )}
         </View>
       </View>
 
@@ -445,22 +403,18 @@ function DayView({
               ) : (
                 <View className="bg-white border border-gray-200 rounded-xl p-4">
                   <Text className="text-gray-500 text-sm">
-                    {todayHours
-                      ? 'No classes scheduled today.'
-                      : 'The gym is closed today.'}
+                    No classes scheduled today.
                   </Text>
                 </View>
               )}
             </View>
           ) : (
             HOURS.map((hour) => {
-              const open = isHourOpen(hour, todayHours);
               const cellClasses = classesAtDayHour(sessions, date, hour);
               return (
                 <DayHourRow
                   key={hour}
                   hour={hour}
-                  open={open}
                   classes={cellClasses}
                   onCreate={canCreate ? () => onCreateAt(date, hour) : null}
                   onSessionPress={onSessionPress}
@@ -476,13 +430,11 @@ function DayView({
 
 function DayHourRow({
   hour,
-  open,
   classes,
   onCreate,
   onSessionPress,
 }: {
   hour: number;
-  open: boolean;
   classes: ClassSession[];
   onCreate: (() => void) | null;
   onSessionPress: (id: string) => void;
@@ -500,10 +452,6 @@ function DayHourRow({
               onPress={() => onSessionPress(c.id)}
             />
           ))
-        ) : !open ? (
-          <View className="bg-gray-100 rounded-xl px-4 py-3">
-            <Text className="text-gray-400 text-sm">Closed</Text>
-          </View>
         ) : onCreate ? (
           <Pressable
             onPress={onCreate}
@@ -554,7 +502,6 @@ function WeekView({
   setDate,
   gotoDay,
   sessions,
-  dayHoursFor,
   onCreateAt,
   onSessionPress,
   canCreate,
@@ -563,7 +510,6 @@ function WeekView({
   setDate: (d: Date) => void;
   gotoDay: () => void;
   sessions: ClassSession[] | undefined;
-  dayHoursFor: (d: Date) => GymHour | undefined;
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
   canCreate: boolean;
@@ -631,8 +577,6 @@ function WeekView({
               <View key={hour} className="flex-row border-t border-gray-100 min-h-14 py-0.5">
                 <Text className="w-10 md:w-14 text-xs text-gray-400 pt-2">{label}</Text>
                 {weekDays.map((d) => {
-                  const dayHours = dayHoursFor(d);
-                  const open = isHourOpen(hour, dayHours);
                   const cellClasses = classesAtDayHour(sessions, d, hour);
                   return (
                     <View key={d.toISOString()} className="flex-1 px-0.5">
@@ -641,8 +585,6 @@ function WeekView({
                           session={cellClasses[0]}
                           onPress={() => onSessionPress(cellClasses[0].id)}
                         />
-                      ) : !open ? (
-                        <View className="flex-1 bg-gray-100/60 rounded-md min-h-14" />
                       ) : canCreate ? (
                         <Pressable
                           onPress={() => onCreateAt(d, hour)}
