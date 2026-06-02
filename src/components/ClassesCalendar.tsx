@@ -382,7 +382,7 @@ function DayView({
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="flex-row gap-2 md:gap-2 md:justify-center pt-2 pb-6 md:pb-8">
+        <View className="flex-row gap-2 md:gap-3 md:justify-center pt-2 pb-6 md:pb-8">
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
             const today = isSameDay(d, new Date());
@@ -390,26 +390,29 @@ function DayView({
               <Pressable
                 key={d.toISOString()}
                 onPress={() => setDate(d)}
-                hitSlop={4}
-                className={`flex-1 md:flex-none md:w-14 aspect-square md:aspect-auto md:h-16 rounded-2xl items-center justify-center gap-1.5 ${
-                  selected
-                    ? 'bg-primary'
-                    : today
-                      ? 'bg-white border border-primary'
-                      : 'bg-white border border-gray-200'
-                }`}>
+                hitSlop={6}
+                className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
                 <Text
-                  className={`text-xs font-medium ${
-                    selected ? 'text-white/80' : today ? 'text-primary' : 'text-gray-500'
+                  className={`text-xs font-semibold uppercase ${
+                    today ? 'text-primary' : 'text-gray-400'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
-                <Text
-                  className={`font-bold text-lg ${
-                    selected ? 'text-white' : today ? 'text-primary' : 'text-gray-900'
+                <View
+                  className={`w-9 h-9 rounded-full items-center justify-center ${
+                    selected ? 'bg-primary' : ''
                   }`}>
-                  {d.getDate()}
-                </Text>
+                  <Text
+                    className={`font-bold text-base ${
+                      selected
+                        ? 'text-white'
+                        : today
+                          ? 'text-primary'
+                          : 'text-gray-900'
+                    }`}>
+                    {d.getDate()}
+                  </Text>
+                </View>
               </Pressable>
             );
           })}
