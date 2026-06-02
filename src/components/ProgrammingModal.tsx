@@ -181,17 +181,12 @@ export function ProgrammingModal({
                       <View
                         key={idx}
                         className="bg-gray-50 rounded-xl p-4 gap-2">
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-gray-700 text-sm font-medium">
-                            Section {idx + 1}
-                          </Text>
-                          <Pressable
-                            onPress={() => removeSection(idx)}
-                            hitSlop={4}
-                            className="w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100">
-                            <Ionicons name="close" size={18} color="#9CA3AF" />
-                          </Pressable>
-                        </View>
+                        <Pressable
+                          onPress={() => removeSection(idx)}
+                          hitSlop={4}
+                          className="self-end w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100">
+                          <Ionicons name="close" size={18} color="#9CA3AF" />
+                        </Pressable>
                         <Input
                           label="Title"
                           value={s.title}
