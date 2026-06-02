@@ -1,6 +1,6 @@
 import {
   router,
-  useLocalSearchParams,
+  useGlobalSearchParams,
   usePathname,
 } from 'expo-router';
 import { useState } from 'react';
@@ -31,7 +31,7 @@ export function TopNav({
 }) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const params = useLocalSearchParams<{ view?: string }>();
+  const params = useGlobalSearchParams<{ view?: string }>();
   const { data: membership } = useGymMembership();
   const [navOpen, setNavOpen] = useState(false);
 
