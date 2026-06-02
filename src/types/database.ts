@@ -279,6 +279,36 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      class_programming: {
+        Row: {
+          id: string;
+          gym_id: string;
+          class_type_id: string;
+          date: string;
+          sections: Json;
+          author_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          class_type_id: string;
+          date: string;
+          sections?: Json;
+          author_id: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          class_type_id: string;
+          date: string;
+          sections: Json;
+          author_id: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
