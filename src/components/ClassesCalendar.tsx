@@ -382,7 +382,7 @@ function DayView({
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="flex-row gap-1.5 md:gap-2 md:justify-center pb-8">
+        <View className="flex-row gap-2 md:gap-2 md:justify-center pt-2 pb-6 md:pb-8">
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
             const today = isSameDay(d, new Date());
@@ -391,7 +391,7 @@ function DayView({
                 key={d.toISOString()}
                 onPress={() => setDate(d)}
                 hitSlop={4}
-                className={`flex-1 md:flex-none md:w-14 aspect-square md:aspect-auto md:h-16 rounded-2xl items-center justify-center gap-0.5 ${
+                className={`flex-1 md:flex-none md:w-14 aspect-square md:aspect-auto md:h-16 rounded-2xl items-center justify-center gap-1.5 ${
                   selected
                     ? 'bg-primary'
                     : today
