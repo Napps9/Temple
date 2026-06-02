@@ -173,7 +173,7 @@ export default function HoursScreen() {
           })}
         </View>
 
-        {error ? <Text className="text-red-500">{error}</Text> : null}
+        {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
 
         <Button onPress={() => save.mutate()} loading={save.isPending} success={saved}>
           Save changes

@@ -81,7 +81,7 @@ export default function AcceptInviteScreen() {
                 textContentType="newPassword"
               />
             </View>
-            {error ? <Text className="text-red-500">{error}</Text> : null}
+            {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
             <Button onPress={onSubmit} loading={loading}>
               Create account
             </Button>

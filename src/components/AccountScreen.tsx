@@ -114,7 +114,12 @@ export function AccountScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6">
+      <ScrollView contentContainerClassName="gap-6 py-6">
+        <View className="gap-2">
+          <Text className="text-gray-900 text-2xl font-semibold">Account</Text>
+          <Text className="text-gray-500">Manage your name, email, and password.</Text>
+        </View>
+
         <View className="bg-white rounded-xl p-4 flex-row items-center gap-3">
           <Avatar name={displayName} size={48} />
           <View className="flex-1">

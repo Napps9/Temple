@@ -8,6 +8,7 @@ import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 import type { GymRole } from '@/types/database';
 
 const ROLE_OPTIONS: GymRole[] = ['owner', 'coach', 'staff', 'member'];
@@ -20,6 +21,7 @@ export default function TeamScreen() {
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [role, setRole] = useState<GymRole>('member');
+  const [generated, markGenerated] = useSavedFlag();
 
   const codes = useQuery({
     queryKey: ['invite-codes', membership?.gymId],
@@ -49,7 +51,10 @@ export default function TeamScreen() {
       if (error) throw error;
       return code;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invite-codes'] }),
+    onSuccess: () => {
+      markGenerated();
+      queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
+    },
   });
 
   return (
@@ -76,12 +81,15 @@ export default function TeamScreen() {
           })}
         </View>
 
-        <Button onPress={() => create.mutate()} loading={create.isPending}>
+        <Button
+          onPress={() => create.mutate()}
+          loading={create.isPending}
+          success={generated}>
           Generate code
         </Button>
 
         {create.error ? (
-          <Text className="text-red-500">
+          <Text className="text-red-500 text-sm">
             {errorMessage(create.error, 'Could not generate code')}
           </Text>
         ) : null}

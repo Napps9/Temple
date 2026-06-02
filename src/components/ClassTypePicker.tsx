@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Button } from './Button';
 import { ColorSwatchPicker, PALETTE } from './ColorSwatchPicker';
 import { Input } from './Input';
 import { useGymMembership } from '@/lib/auth';
@@ -122,25 +123,24 @@ export function ClassTypePicker({
             <Text className="text-gray-700 text-sm font-medium">Colour</Text>
             <ColorSwatchPicker value={newColor} onChange={setNewColor} />
           </View>
-          {error ? <Text className="text-red-500 text-xs">{error}</Text> : null}
+          {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
           <View className="flex-row gap-2">
-            <Pressable
-              onPress={() => {
-                setCreating(false);
-                setNewName('');
-                setError(null);
-              }}
-              className="flex-1 py-2 rounded-lg bg-white border border-gray-200 items-center">
-              <Text className="text-gray-700 text-sm font-medium">Cancel</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => create.mutate()}
-              disabled={create.isPending}
-              className="flex-1 py-2 rounded-lg bg-primary items-center active:bg-primary-dark">
-              <Text className="text-white text-sm font-semibold">
-                {create.isPending ? 'Creating…' : 'Create type'}
-              </Text>
-            </Pressable>
+            <View className="flex-1">
+              <Button
+                variant="secondary"
+                onPress={() => {
+                  setCreating(false);
+                  setNewName('');
+                  setError(null);
+                }}>
+                Cancel
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button onPress={() => create.mutate()} loading={create.isPending}>
+                Create type
+              </Button>
+            </View>
           </View>
         </View>
       ) : null}

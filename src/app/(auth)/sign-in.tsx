@@ -52,7 +52,7 @@ export default function SignInScreen() {
               textContentType="password"
             />
           </View>
-          {error ? <Text className="text-red-500">{error}</Text> : null}
+          {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
           <Button onPress={onSubmit} loading={loading}>
             Sign in
           </Button>

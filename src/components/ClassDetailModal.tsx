@@ -231,7 +231,7 @@ export function ClassDetailModal({
                 </View>
               ) : null}
 
-              {error ? <Text className="text-red-500">{error}</Text> : null}
+              {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
 
               <BookActions
                 inPast={inPast}

@@ -477,7 +477,7 @@ export function CreateClassModal({
             />
           )}
 
-          {error ? <Text className="text-red-500">{error}</Text> : null}
+          {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
 
           {stage === 'form' ? (
             <View className="flex-row gap-3">
