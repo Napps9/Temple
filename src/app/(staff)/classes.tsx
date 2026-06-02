@@ -168,75 +168,73 @@ export default function StaffClasses() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="pb-10">
-        <View className="w-full max-w-5xl mx-auto px-2">
-          <View className="items-center pt-6 pb-4">
-            <View className="flex-row bg-gray-100 rounded-full p-1">
-              {VIEWS.map((v) => (
-                <Pressable
-                  key={v}
-                  onPress={() => setView(v)}
-                  className={`px-6 py-1.5 rounded-full ${
-                    view === v ? 'bg-white' : ''
+      <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="items-center pt-6 pb-4">
+          <View className="flex-row bg-gray-100 rounded-full p-1">
+            {VIEWS.map((v) => (
+              <Pressable
+                key={v}
+                onPress={() => setView(v)}
+                className={`px-6 py-1.5 rounded-full ${
+                  view === v ? 'bg-white' : ''
+                }`}>
+                <Text
+                  className={`capitalize text-sm font-medium ${
+                    view === v ? 'text-gray-900' : 'text-gray-500'
                   }`}>
-                  <Text
-                    className={`capitalize text-sm font-medium ${
-                      view === v ? 'text-gray-900' : 'text-gray-500'
-                    }`}>
-                    {v}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+                  {v}
+                </Text>
+              </Pressable>
+            ))}
           </View>
-
-          <View className="flex-row items-center justify-center gap-4 pb-6">
-            <Pressable
-              onPress={() => setDate(startOfDay(addMonths(date, -1)))}
-              hitSlop={8}
-              className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
-              <Text className="text-gray-500 text-lg">‹</Text>
-            </Pressable>
-            <Text className="text-gray-900 text-xl font-semibold">
-              {fmtMonthYear(date)}
-            </Text>
-            <Pressable
-              onPress={() => setDate(startOfDay(addMonths(date, 1)))}
-              hitSlop={8}
-              className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
-              <Text className="text-gray-500 text-lg">›</Text>
-            </Pressable>
-          </View>
-
-          {view === 'day' ? (
-            <DayView
-              date={date}
-              setDate={setDate}
-              sessions={sessionsQuery.data}
-              dayHoursFor={dayHoursFor}
-              onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
-            />
-          ) : null}
-          {view === 'week' ? (
-            <WeekView
-              date={date}
-              setDate={setDate}
-              setView={setView}
-              sessions={sessionsQuery.data}
-              dayHoursFor={dayHoursFor}
-              onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
-            />
-          ) : null}
-          {view === 'month' ? (
-            <MonthView
-              date={date}
-              setDate={setDate}
-              setView={setView}
-              sessions={sessionsQuery.data}
-            />
-          ) : null}
         </View>
-      </ScrollView>
+
+        <View className="flex-row items-center justify-center gap-4 pb-6">
+          <Pressable
+            onPress={() => setDate(startOfDay(addMonths(date, -1)))}
+            hitSlop={8}
+            className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
+            <Text className="text-gray-500 text-lg">‹</Text>
+          </Pressable>
+          <Text className="text-gray-900 text-xl font-semibold">
+            {fmtMonthYear(date)}
+          </Text>
+          <Pressable
+            onPress={() => setDate(startOfDay(addMonths(date, 1)))}
+            hitSlop={8}
+            className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
+            <Text className="text-gray-500 text-lg">›</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {view === 'day' ? (
+        <DayView
+          date={date}
+          setDate={setDate}
+          sessions={sessionsQuery.data}
+          dayHoursFor={dayHoursFor}
+          onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
+        />
+      ) : null}
+      {view === 'week' ? (
+        <WeekView
+          date={date}
+          setDate={setDate}
+          setView={setView}
+          sessions={sessionsQuery.data}
+          dayHoursFor={dayHoursFor}
+          onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
+        />
+      ) : null}
+      {view === 'month' ? (
+        <MonthView
+          date={date}
+          setDate={setDate}
+          setView={setView}
+          sessions={sessionsQuery.data}
+        />
+      ) : null}
 
       <CreateClassModal
         visible={createAt !== null}
@@ -270,64 +268,72 @@ function DayView({
   const todayHours = dayHoursFor(date);
 
   return (
-    <View>
-      <View className="flex-row gap-2 justify-center pb-8">
-        {weekDays.map((d) => {
-          const selected = isSameDay(d, date);
-          const today = isSameDay(d, new Date());
-          return (
-            <Pressable
-              key={d.toISOString()}
-              onPress={() => setDate(d)}
-              hitSlop={4}
-              className={`w-14 h-16 rounded-2xl items-center justify-center gap-0.5 ${
-                selected
-                  ? 'bg-primary'
-                  : today
-                    ? 'bg-white border border-primary'
-                    : 'bg-white border border-gray-200'
-              }`}>
-              <Text
-                className={`text-xs font-medium ${
-                  selected ? 'text-white/80' : today ? 'text-primary' : 'text-gray-500'
+    <View className="flex-1">
+      <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="flex-row gap-2 justify-center pb-8">
+          {weekDays.map((d) => {
+            const selected = isSameDay(d, date);
+            const today = isSameDay(d, new Date());
+            return (
+              <Pressable
+                key={d.toISOString()}
+                onPress={() => setDate(d)}
+                hitSlop={4}
+                className={`w-14 h-16 rounded-2xl items-center justify-center gap-0.5 ${
+                  selected
+                    ? 'bg-primary'
+                    : today
+                      ? 'bg-white border border-primary'
+                      : 'bg-white border border-gray-200'
                 }`}>
-                {DAY_LETTERS[d.getDay()]}
-              </Text>
-              <Text
-                className={`font-bold text-lg ${
-                  selected ? 'text-white' : today ? 'text-primary' : 'text-gray-900'
-                }`}>
-                {d.getDate()}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+                <Text
+                  className={`text-xs font-medium ${
+                    selected ? 'text-white/80' : today ? 'text-primary' : 'text-gray-500'
+                  }`}>
+                  {DAY_LETTERS[d.getDay()]}
+                </Text>
+                <Text
+                  className={`font-bold text-lg ${
+                    selected ? 'text-white' : today ? 'text-primary' : 'text-gray-900'
+                  }`}>
+                  {d.getDate()}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-      <View className="mb-4">
-        <Text className="text-gray-900 text-2xl font-semibold">{fmtFullDate(date)}</Text>
-        {todayHours ? (
-          <Text className="text-gray-500 mt-1">
-            Open {todayHours.opens_at.slice(0, 5)} — {todayHours.closes_at.slice(0, 5)}
+        <View className="mb-4">
+          <Text className="text-gray-900 text-2xl font-semibold">
+            {fmtFullDate(date)}
           </Text>
-        ) : (
-          <Text className="text-gray-500 mt-1">Gym closed today</Text>
-        )}
+          {todayHours ? (
+            <Text className="text-gray-500 mt-1">
+              Open {todayHours.opens_at.slice(0, 5)} — {todayHours.closes_at.slice(0, 5)}
+            </Text>
+          ) : (
+            <Text className="text-gray-500 mt-1">Gym closed today</Text>
+          )}
+        </View>
       </View>
 
-      {HOURS.map((hour) => {
-        const open = isHourOpen(hour, todayHours);
-        const cellClasses = classesAtDayHour(sessions, date, hour);
-        return (
-          <DayHourRow
-            key={hour}
-            hour={hour}
-            open={open}
-            classes={cellClasses}
-            onCreate={() => onCreateAt(date, hour)}
-          />
-        );
-      })}
+      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+        <View className="w-full max-w-5xl mx-auto px-2">
+          {HOURS.map((hour) => {
+            const open = isHourOpen(hour, todayHours);
+            const cellClasses = classesAtDayHour(sessions, date, hour);
+            return (
+              <DayHourRow
+                key={hour}
+                hour={hour}
+                open={open}
+                classes={cellClasses}
+                onCreate={() => onCreateAt(date, hour)}
+              />
+            );
+          })}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -399,93 +405,99 @@ function WeekView({
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   return (
-    <View>
-      <View className="flex-row items-center justify-center gap-4 pb-4">
-        <Pressable
-          onPress={() => setDate(addDays(date, -7))}
-          hitSlop={8}
-          className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center">
-          <Text className="text-gray-500">‹</Text>
-        </Pressable>
-        <Text className="text-gray-700 font-medium">
-          {fmtWeekRange(weekDays[0], weekDays[6])}
-        </Text>
-        <Pressable
-          onPress={() => setDate(addDays(date, 7))}
-          hitSlop={8}
-          className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center">
-          <Text className="text-gray-500">›</Text>
-        </Pressable>
+    <View className="flex-1">
+      <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="flex-row items-center justify-center gap-4 pb-4">
+          <Pressable
+            onPress={() => setDate(addDays(date, -7))}
+            hitSlop={8}
+            className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center">
+            <Text className="text-gray-500">‹</Text>
+          </Pressable>
+          <Text className="text-gray-700 font-medium">
+            {fmtWeekRange(weekDays[0], weekDays[6])}
+          </Text>
+          <Pressable
+            onPress={() => setDate(addDays(date, 7))}
+            hitSlop={8}
+            className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center">
+            <Text className="text-gray-500">›</Text>
+          </Pressable>
+        </View>
+
+        <View className="flex-row pb-2 border-b border-gray-200">
+          <View className="w-14" />
+          {weekDays.map((d) => {
+            const today = isSameDay(d, new Date());
+            return (
+              <Pressable
+                key={d.toISOString()}
+                onPress={() => {
+                  setDate(d);
+                  setView('day');
+                }}
+                hitSlop={4}
+                className="flex-1 items-center pb-2">
+                <Text
+                  className={`text-xs uppercase tracking-wide ${
+                    today ? 'text-primary font-semibold' : 'text-gray-500'
+                  }`}>
+                  {d.toLocaleDateString(undefined, { weekday: 'short' })}
+                </Text>
+                <Text
+                  className={`text-lg font-bold mt-0.5 ${
+                    today ? 'text-primary' : 'text-gray-900'
+                  }`}>
+                  {d.getDate()}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
-      <View className="flex-row pb-2 border-b border-gray-200">
-        <View className="w-14" />
-        {weekDays.map((d) => {
-          const today = isSameDay(d, new Date());
-          return (
-            <Pressable
-              key={d.toISOString()}
-              onPress={() => {
-                setDate(d);
-                setView('day');
-              }}
-              hitSlop={4}
-              className="flex-1 items-center pb-2">
-              <Text
-                className={`text-xs uppercase tracking-wide ${
-                  today ? 'text-primary font-semibold' : 'text-gray-500'
-                }`}>
-                {d.toLocaleDateString(undefined, { weekday: 'short' })}
-              </Text>
-              <Text
-                className={`text-lg font-bold mt-0.5 ${
-                  today ? 'text-primary' : 'text-gray-900'
-                }`}>
-                {d.getDate()}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {HOURS.map((hour) => {
-        const label = `${hour.toString().padStart(2, '0')}:00`;
-        return (
-          <View key={hour} className="flex-row border-t border-gray-100 min-h-14">
-            <Text className="w-14 text-xs text-gray-400 pt-2">{label}</Text>
-            {weekDays.map((d) => {
-              const dayHours = dayHoursFor(d);
-              const open = isHourOpen(hour, dayHours);
-              const cellClasses = classesAtDayHour(sessions, d, hour);
-              return (
-                <View key={d.toISOString()} className="flex-1 p-0.5">
-                  {!open ? (
-                    <View className="flex-1 bg-gray-100/60 rounded min-h-12" />
-                  ) : cellClasses.length > 0 ? (
-                    <View className="flex-1 bg-primary rounded p-1.5 min-h-12 justify-center">
-                      <Text
-                        className="text-white text-xs font-semibold"
-                        numberOfLines={1}>
-                        {cellClasses[0].name}
-                      </Text>
-                      <Text
-                        className="text-white/80 text-[10px]"
-                        numberOfLines={1}>
-                        {cellClasses[0].duration_minutes}m
-                      </Text>
+      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+        <View className="w-full max-w-5xl mx-auto px-2">
+          {HOURS.map((hour) => {
+            const label = `${hour.toString().padStart(2, '0')}:00`;
+            return (
+              <View key={hour} className="flex-row border-t border-gray-100 min-h-14">
+                <Text className="w-14 text-xs text-gray-400 pt-2">{label}</Text>
+                {weekDays.map((d) => {
+                  const dayHours = dayHoursFor(d);
+                  const open = isHourOpen(hour, dayHours);
+                  const cellClasses = classesAtDayHour(sessions, d, hour);
+                  return (
+                    <View key={d.toISOString()} className="flex-1 p-0.5">
+                      {!open ? (
+                        <View className="flex-1 bg-gray-100/60 rounded min-h-12" />
+                      ) : cellClasses.length > 0 ? (
+                        <View className="flex-1 bg-primary rounded p-1.5 min-h-12 justify-center">
+                          <Text
+                            className="text-white text-xs font-semibold"
+                            numberOfLines={1}>
+                            {cellClasses[0].name}
+                          </Text>
+                          <Text
+                            className="text-white/80 text-[10px]"
+                            numberOfLines={1}>
+                            {cellClasses[0].duration_minutes}m
+                          </Text>
+                        </View>
+                      ) : (
+                        <Pressable
+                          onPress={() => onCreateAt(d, hour)}
+                          className="flex-1 border border-dashed border-gray-200 rounded min-h-12 active:bg-gray-50"
+                        />
+                      )}
                     </View>
-                  ) : (
-                    <Pressable
-                      onPress={() => onCreateAt(d, hour)}
-                      className="flex-1 border border-dashed border-gray-200 rounded min-h-12 active:bg-gray-50"
-                    />
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        );
-      })}
+                  );
+                })}
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -504,76 +516,82 @@ function MonthView({
   const grid = monthGrid(date);
 
   return (
-    <View>
-      <View className="flex-row pb-2">
-        {WEEK_LETTERS.map((l, i) => (
-          <View key={i} className="flex-1 items-center">
-            <Text className="text-gray-400 text-xs font-medium uppercase">{l}</Text>
-          </View>
-        ))}
+    <View className="flex-1">
+      <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="flex-row pb-2">
+          {WEEK_LETTERS.map((l, i) => (
+            <View key={i} className="flex-1 items-center">
+              <Text className="text-gray-400 text-xs font-medium uppercase">{l}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
-      {Array.from({ length: 6 }, (_, w) => (
-        <View key={w} className="flex-row">
-          {grid.slice(w * 7, (w + 1) * 7).map((d) => {
-            const inMonth = d.getMonth() === date.getMonth();
-            const today = isSameDay(d, new Date());
-            const selected = isSameDay(d, date);
-            const dayClasses = classesOnDay(sessions, d);
-            return (
-              <Pressable
-                key={d.toISOString()}
-                onPress={() => {
-                  setDate(d);
-                  setView('day');
-                }}
-                className={`flex-1 aspect-square m-0.5 rounded-xl p-2 border ${
-                  selected
-                    ? 'bg-primary border-primary'
-                    : today
-                      ? 'border-primary bg-white'
-                      : 'border-transparent bg-white'
-                }`}>
-                <Text
-                  className={
-                    selected
-                      ? 'text-white font-semibold'
-                      : !inMonth
-                        ? 'text-gray-300'
+      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+        <View className="w-full max-w-5xl mx-auto px-2">
+          {Array.from({ length: 6 }, (_, w) => (
+            <View key={w} className="flex-row">
+              {grid.slice(w * 7, (w + 1) * 7).map((d) => {
+                const inMonth = d.getMonth() === date.getMonth();
+                const today = isSameDay(d, new Date());
+                const selected = isSameDay(d, date);
+                const dayClasses = classesOnDay(sessions, d);
+                return (
+                  <Pressable
+                    key={d.toISOString()}
+                    onPress={() => {
+                      setDate(d);
+                      setView('day');
+                    }}
+                    className={`flex-1 aspect-square m-0.5 rounded-xl p-2 border ${
+                      selected
+                        ? 'bg-primary border-primary'
                         : today
-                          ? 'text-primary font-semibold'
-                          : 'text-gray-900 font-medium'
-                  }>
-                  {d.getDate()}
-                </Text>
-                {dayClasses.length > 0 ? (
-                  <View className="flex-row gap-0.5 mt-1 items-center">
-                    {Array.from(
-                      { length: Math.min(3, dayClasses.length) },
-                      (_, i) => (
-                        <View
-                          key={i}
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            selected ? 'bg-white' : 'bg-primary'
-                          }`}
-                        />
-                      ),
-                    )}
-                    {dayClasses.length > 3 ? (
-                      <Text
-                        className={`text-[10px] ml-0.5 ${
-                          selected ? 'text-white' : 'text-primary'
-                        }`}>
-                        +{dayClasses.length - 3}
-                      </Text>
+                          ? 'border-primary bg-white'
+                          : 'border-transparent bg-white'
+                    }`}>
+                    <Text
+                      className={
+                        selected
+                          ? 'text-white font-semibold'
+                          : !inMonth
+                            ? 'text-gray-300'
+                            : today
+                              ? 'text-primary font-semibold'
+                              : 'text-gray-900 font-medium'
+                      }>
+                      {d.getDate()}
+                    </Text>
+                    {dayClasses.length > 0 ? (
+                      <View className="flex-row gap-0.5 mt-1 items-center">
+                        {Array.from(
+                          { length: Math.min(3, dayClasses.length) },
+                          (_, i) => (
+                            <View
+                              key={i}
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                selected ? 'bg-white' : 'bg-primary'
+                              }`}
+                            />
+                          ),
+                        )}
+                        {dayClasses.length > 3 ? (
+                          <Text
+                            className={`text-[10px] ml-0.5 ${
+                              selected ? 'text-white' : 'text-primary'
+                            }`}>
+                            +{dayClasses.length - 3}
+                          </Text>
+                        ) : null}
+                      </View>
                     ) : null}
-                  </View>
-                ) : null}
-              </Pressable>
-            );
-          })}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
         </View>
-      ))}
+      </ScrollView>
     </View>
   );
 }
