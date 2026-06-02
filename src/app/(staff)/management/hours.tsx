@@ -9,6 +9,7 @@ import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 
 const DAYS = [
   { dow: 0, label: 'Sunday' },
@@ -37,6 +38,7 @@ export default function HoursScreen() {
     return initial;
   });
   const [error, setError] = useState<string | null>(null);
+  const [saved, markSaved] = useSavedFlag();
 
   const hours = useQuery({
     queryKey: ['gym-hours', membership?.gymId],
@@ -105,6 +107,7 @@ export default function HoursScreen() {
     },
     onSuccess: () => {
       setError(null);
+      markSaved();
       queryClient.invalidateQueries({ queryKey: ['gym-hours'] });
     },
     onError: (e) => setError(errorMessage(e, 'Save failed')),
@@ -172,7 +175,7 @@ export default function HoursScreen() {
 
         {error ? <Text className="text-red-500">{error}</Text> : null}
 
-        <Button onPress={() => save.mutate()} loading={save.isPending}>
+        <Button onPress={() => save.mutate()} loading={save.isPending} success={saved}>
           Save changes
         </Button>
       </ScrollView>

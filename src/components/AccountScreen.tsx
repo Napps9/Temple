@@ -15,6 +15,7 @@ import {
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 
 export function AccountScreen() {
   const session = useSession();
@@ -33,6 +34,8 @@ export function AccountScreen() {
   const [detailsMessage, setDetailsMessage] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [detailsSaved, markDetailsSaved] = useSavedFlag();
+  const [passwordSaved, markPasswordSaved] = useSavedFlag();
 
   useEffect(() => {
     if (profile?.full_name) setFullName(profile.full_name);
@@ -74,10 +77,11 @@ export function AccountScreen() {
           'Check your new email for a confirmation link before the change takes effect.',
         );
       } else if (anyChanged) {
-        setDetailsMessage('Saved.');
+        setDetailsMessage(null);
       } else {
         setDetailsMessage(null);
       }
+      if (anyChanged) markDetailsSaved();
     },
     onError: (e) => {
       setDetailsMessage(null);
@@ -95,9 +99,10 @@ export function AccountScreen() {
     },
     onSuccess: () => {
       setPasswordError(null);
-      setPasswordMessage('Password updated.');
+      setPasswordMessage(null);
       setPassword('');
       setConfirmPassword('');
+      markPasswordSaved();
     },
     onError: (e) => {
       setPasswordMessage(null);
@@ -144,7 +149,10 @@ export function AccountScreen() {
           {detailsError ? (
             <Text className="text-red-500 text-sm">{detailsError}</Text>
           ) : null}
-          <Button onPress={() => saveDetails.mutate()} loading={saveDetails.isPending}>
+          <Button
+            onPress={() => saveDetails.mutate()}
+            loading={saveDetails.isPending}
+            success={detailsSaved}>
             Save changes
           </Button>
         </View>
@@ -171,7 +179,10 @@ export function AccountScreen() {
           {passwordError ? (
             <Text className="text-red-500 text-sm">{passwordError}</Text>
           ) : null}
-          <Button onPress={() => updatePassword.mutate()} loading={updatePassword.isPending}>
+          <Button
+            onPress={() => updatePassword.mutate()}
+            loading={updatePassword.isPending}
+            success={passwordSaved}>
             Update password
           </Button>
         </View>

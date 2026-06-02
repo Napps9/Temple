@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, type View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View as RNView, type View } from 'react-native';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 
@@ -7,6 +8,7 @@ type Props = {
   children: ReactNode;
   onPress?: () => void;
   loading?: boolean;
+  success?: boolean;
   disabled?: boolean;
   variant?: Variant;
 };
@@ -23,8 +25,14 @@ const textStyles: Record<Variant, string> = {
   ghost: 'text-primary',
 };
 
+const successIconColor: Record<Variant, string> = {
+  primary: '#FFFFFF',
+  secondary: '#16A34A',
+  ghost: '#16A34A',
+};
+
 export const Button = forwardRef<View, Props>(function Button(
-  { children, onPress, loading, disabled, variant = 'primary' },
+  { children, onPress, loading, success, disabled, variant = 'primary' },
   ref,
 ) {
   const isDisabled = disabled || loading;
@@ -39,7 +47,16 @@ export const Button = forwardRef<View, Props>(function Button(
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#2563EB'} />
       ) : (
-        <Text className={textStyles[variant]}>{children}</Text>
+        <RNView className="flex-row items-center gap-2">
+          {success ? (
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={successIconColor[variant]}
+            />
+          ) : null}
+          <Text className={textStyles[variant]}>{children}</Text>
+        </RNView>
       )}
     </Pressable>
   );

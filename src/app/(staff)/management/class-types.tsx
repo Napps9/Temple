@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 
 type ServerType = { id: string; name: string; color: string };
 type EditableType = {
@@ -26,6 +27,7 @@ export default function ClassTypesScreen() {
   const [rows, setRows] = useState<EditableType[]>([]);
   const [openPickerIdx, setOpenPickerIdx] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saved, markSaved] = useSavedFlag();
 
   const types = useQuery({
     queryKey: ['class-types', membership?.gymId],
@@ -93,6 +95,7 @@ export default function ClassTypesScreen() {
     onSuccess: () => {
       setError(null);
       setOpenPickerIdx(null);
+      markSaved();
       queryClient.invalidateQueries({ queryKey: ['class-types'] });
       queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
     },
@@ -188,7 +191,7 @@ export default function ClassTypesScreen() {
 
         {error ? <Text className="text-red-500">{error}</Text> : null}
 
-        <Button onPress={() => save.mutate()} loading={save.isPending}>
+        <Button onPress={() => save.mutate()} loading={save.isPending} success={saved}>
           Save changes
         </Button>
       </ScrollView>
