@@ -233,23 +233,21 @@ export function ClassDetailModal({
 
               {error ? <Text className="text-red-500">{error}</Text> : null}
 
-              {mode === 'book' ? (
-                <BookActions
-                  inPast={inPast}
-                  isFull={isFull}
-                  myBookingExists={myBookingExists}
-                  confirming={confirming}
-                  setConfirming={setConfirming}
-                  onBook={() => book.mutate()}
-                  onCancel={() => cancel.mutate()}
-                  bookPending={book.isPending}
-                  cancelPending={cancel.isPending}
-                />
-              ) : (
-                <Button variant="secondary" onPress={close}>
-                  Close
-                </Button>
-              )}
+              <BookActions
+                inPast={inPast}
+                isFull={isFull}
+                myBookingExists={myBookingExists}
+                confirming={confirming}
+                setConfirming={setConfirming}
+                onBook={() => book.mutate()}
+                onCancel={() => cancel.mutate()}
+                bookPending={book.isPending}
+                cancelPending={cancel.isPending}
+              />
+
+              <Button variant="secondary" onPress={close}>
+                Close
+              </Button>
             </>
           )}
         </Pressable>
