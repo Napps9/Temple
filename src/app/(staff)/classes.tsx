@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -5,8 +6,10 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useRole } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+
+type CreateRequest = { date?: Date; hour?: number };
 
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -132,8 +135,10 @@ export default function StaffClasses() {
   const params = useLocalSearchParams<{ view?: string }>();
   const view = parseView(params.view);
   const [date, setDate] = useState(() => startOfDay(new Date()));
-  const [createAt, setCreateAt] = useState<{ date: Date; hour: number } | null>(null);
+  const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const { data: membership } = useGymMembership();
+  const role = useRole();
+  const canCreate = role === 'owner' || role === 'coach';
   const queryClient = useQueryClient();
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
@@ -175,7 +180,7 @@ export default function StaffClasses() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="flex-row items-center justify-center gap-4 pt-6 pb-6">
+        <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, -1)))}
             hitSlop={8}
@@ -191,6 +196,16 @@ export default function StaffClasses() {
             className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
             <Text className="text-gray-500 text-lg">›</Text>
           </Pressable>
+          {canCreate ? (
+            <View className="absolute right-0 top-6">
+              <Pressable
+                onPress={() => setCreateAt({ date })}
+                className="bg-primary rounded-full pl-3 pr-4 py-2 flex-row items-center gap-1.5 active:bg-primary-dark">
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+                <Text className="text-white text-sm font-semibold">Add class</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       </View>
 
@@ -224,8 +239,8 @@ export default function StaffClasses() {
 
       <CreateClassModal
         visible={createAt !== null}
-        date={createAt?.date ?? new Date()}
-        hour={createAt?.hour ?? 0}
+        defaultDate={createAt?.date}
+        defaultHour={createAt?.hour}
         onClose={() => setCreateAt(null)}
         onCreated={() => {
           setCreateAt(null);
