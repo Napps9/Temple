@@ -278,9 +278,11 @@ export default function StaffClasses() {
             <View className="absolute right-0 top-6">
               <Pressable
                 onPress={() => setCreateAt({ date })}
-                className="bg-primary rounded-full pl-3 pr-4 py-2 flex-row items-center gap-1.5 active:bg-primary-dark">
+                className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 active:bg-primary-dark">
                 <Ionicons name="add" size={16} color="#FFFFFF" />
-                <Text className="text-white text-sm font-semibold">Add class</Text>
+                <Text className="hidden md:flex text-white text-sm font-semibold">
+                  Add class
+                </Text>
               </Pressable>
             </View>
           ) : null}
@@ -349,7 +351,7 @@ function DayView({
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="flex-row gap-2 justify-center pb-8">
+        <View className="flex-row gap-1.5 md:gap-2 md:justify-center pb-8">
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
             const today = isSameDay(d, new Date());
@@ -358,7 +360,7 @@ function DayView({
                 key={d.toISOString()}
                 onPress={() => setDate(d)}
                 hitSlop={4}
-                className={`w-14 h-16 rounded-2xl items-center justify-center gap-0.5 ${
+                className={`flex-1 md:flex-none md:w-14 aspect-square md:aspect-auto md:h-16 rounded-2xl items-center justify-center gap-0.5 ${
                   selected
                     ? 'bg-primary'
                     : today
