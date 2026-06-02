@@ -324,9 +324,7 @@ function BookActions({
   }
   if (myBookingExists) {
     return (
-      <Button variant="secondary" onPress={() => setConfirming('cancel')}>
-        Cancel booking
-      </Button>
+      <Button onPress={() => setConfirming('cancel')}>Cancel booking</Button>
     );
   }
   if (isFull) {
