@@ -20,16 +20,16 @@ function ManagementCard({
   comingSoon?: boolean;
 }) {
   const body = (
-    <View className="bg-ink-soft rounded-xl p-4 gap-1">
+    <View className="bg-white rounded-xl p-4 gap-1">
       <View className="flex-row justify-between items-center">
-        <Text className="text-bone font-semibold">{title}</Text>
+        <Text className="text-gray-900 font-semibold">{title}</Text>
         {comingSoon ? (
-          <Text className="text-bone/40 text-xs uppercase tracking-widest">Coming soon</Text>
+          <Text className="text-gray-400 text-xs uppercase tracking-widest">Coming soon</Text>
         ) : (
-          <Text className="text-brand">→</Text>
+          <Text className="text-primary">→</Text>
         )}
       </View>
-      <Text className="text-bone/60">{description}</Text>
+      <Text className="text-gray-500">{description}</Text>
     </View>
   );
   if (href && !comingSoon) {
@@ -51,8 +51,8 @@ export default function ManagementHome() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
         <View className="gap-1">
-          <Text className="text-bone/60 text-sm uppercase tracking-widest">{role}</Text>
-          <Text className="text-bone text-3xl font-semibold">
+          <Text className="text-gray-500 text-sm uppercase tracking-widest">{role}</Text>
+          <Text className="text-gray-900 text-3xl font-semibold">
             {membership?.gymName ?? 'Temple'}
           </Text>
         </View>

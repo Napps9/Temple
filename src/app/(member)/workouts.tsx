@@ -7,12 +7,12 @@ export default function Workouts() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
         <View className="gap-1">
-          <Text className="text-bone text-2xl font-semibold">Workouts</Text>
-          <Text className="text-bone/60">Your training history and personal records.</Text>
+          <Text className="text-gray-900 text-2xl font-semibold">Workouts</Text>
+          <Text className="text-gray-500">Your training history and personal records.</Text>
         </View>
-        <View className="bg-ink-soft rounded-xl p-4 gap-2">
-          <Text className="text-bone font-semibold">Coming soon</Text>
-          <Text className="text-bone/60">
+        <View className="bg-white rounded-xl p-4 gap-2">
+          <Text className="text-gray-900 font-semibold">Coming soon</Text>
+          <Text className="text-gray-500">
             Log results after class, see your time / weight / reps over
             the weeks, and watch your PRs climb.
           </Text>

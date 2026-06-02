@@ -40,8 +40,8 @@ export default function AcceptInviteScreen() {
         <ScrollView contentContainerClassName="flex-grow justify-center py-8">
           <View className="gap-6 w-full max-w-md mx-auto">
             <View className="gap-2">
-              <Text className="text-bone text-3xl font-semibold">Join your gym</Text>
-              <Text className="text-bone/60">Enter the invite code your gym gave you.</Text>
+              <Text className="text-gray-900 text-3xl font-semibold">Join your gym</Text>
+              <Text className="text-gray-500">Enter the invite code your gym gave you.</Text>
             </View>
             <View className="gap-4">
               <Input
@@ -73,14 +73,14 @@ export default function AcceptInviteScreen() {
                 textContentType="newPassword"
               />
             </View>
-            {error ? <Text className="text-red-400">{error}</Text> : null}
+            {error ? <Text className="text-red-500">{error}</Text> : null}
             <Button onPress={onSubmit} loading={loading}>
               Create account
             </Button>
             <View className="items-center">
               <Link href="/sign-in" asChild>
                 <Pressable hitSlop={8}>
-                  <Text className="text-brand">Already have an account? Sign in</Text>
+                  <Text className="text-primary">Already have an account? Sign in</Text>
                 </Pressable>
               </Link>
             </View>

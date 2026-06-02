@@ -17,11 +17,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: '#0B1220' },
+              contentStyle: { backgroundColor: '#F9FAFB' },
             }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(auth)" />

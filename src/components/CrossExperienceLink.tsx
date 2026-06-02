@@ -7,7 +7,7 @@ export function MemberViewLink() {
   return (
     <Link href="/book" asChild>
       <Pressable hitSlop={8} className="px-4">
-        <Text className="text-brand">Member view →</Text>
+        <Text className="text-primary">Member view →</Text>
       </Pressable>
     </Link>
   );
@@ -19,7 +19,7 @@ export function StaffViewLinkIfStaff() {
   return (
     <Link href="/classes" asChild>
       <Pressable hitSlop={8} className="px-4">
-        <Text className="text-brand">← Staff view</Text>
+        <Text className="text-primary">← Staff view</Text>
       </Pressable>
     </Link>
   );

@@ -14,25 +14,25 @@ export default function Account() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
         <View className="gap-1">
-          <Text className="text-bone/60 text-sm uppercase tracking-widest">Account</Text>
-          <Text className="text-bone text-2xl font-semibold">{session?.user.email}</Text>
+          <Text className="text-gray-500 text-sm uppercase tracking-widest">Account</Text>
+          <Text className="text-gray-900 text-2xl font-semibold">{session?.user.email}</Text>
         </View>
 
-        <View className="bg-ink-soft rounded-xl p-4 gap-1">
-          <Text className="text-bone font-semibold">{membership?.gymName ?? 'Temple'}</Text>
-          <Text className="text-bone/60 capitalize">{role ?? 'member'}</Text>
+        <View className="bg-white rounded-xl p-4 gap-1">
+          <Text className="text-gray-900 font-semibold">{membership?.gymName ?? 'Temple'}</Text>
+          <Text className="text-gray-500 capitalize">{role ?? 'member'}</Text>
         </View>
 
-        <View className="bg-ink-soft rounded-xl p-4 gap-2">
-          <Text className="text-bone font-semibold">Profile</Text>
-          <Text className="text-bone/60">
+        <View className="bg-white rounded-xl p-4 gap-2">
+          <Text className="text-gray-900 font-semibold">Profile</Text>
+          <Text className="text-gray-500">
             Coming soon — edit your name, photo, and contact details.
           </Text>
         </View>
 
-        <View className="bg-ink-soft rounded-xl p-4 gap-2">
-          <Text className="text-bone font-semibold">Membership</Text>
-          <Text className="text-bone/60">
+        <View className="bg-white rounded-xl p-4 gap-2">
+          <Text className="text-gray-900 font-semibold">Membership</Text>
+          <Text className="text-gray-500">
             Coming soon — manage your plan, payments, and billing history.
           </Text>
         </View>

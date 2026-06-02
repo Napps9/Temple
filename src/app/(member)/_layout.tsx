@@ -16,13 +16,13 @@ export default function MemberLayout() {
   if (session === null) return <Redirect href="/sign-in" />;
 
   return (
-    <View className="flex-1 bg-ink">
+    <View className="flex-1 bg-gray-50">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
-          sceneStyle: { backgroundColor: '#0B1220' },
+          sceneStyle: { backgroundColor: '#F9FAFB' },
           animation: 'none',
         }}>
         <Tabs.Screen name="book" options={{ title: 'Book' }} />

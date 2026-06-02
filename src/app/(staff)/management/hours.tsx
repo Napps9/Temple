@@ -114,12 +114,12 @@ export default function HoursScreen() {
       <ScrollView contentContainerClassName="gap-6 py-6">
         <Link href="/management" asChild>
           <Pressable hitSlop={8}>
-            <Text className="text-brand">← Back to Manage</Text>
+            <Text className="text-primary">← Back to Manage</Text>
           </Pressable>
         </Link>
         <View className="gap-2">
-          <Text className="text-bone text-2xl font-semibold">Operating hours</Text>
-          <Text className="text-bone/60">
+          <Text className="text-gray-900 text-2xl font-semibold">Operating hours</Text>
+          <Text className="text-gray-500">
             Set when your gym is open each day. Hours outside these windows
             appear as Closed in the Classes view, so they can't be booked.
           </Text>
@@ -129,18 +129,18 @@ export default function HoursScreen() {
           {DAYS.map((d) => {
             const s = states[d.dow];
             return (
-              <View key={d.dow} className="bg-ink-soft rounded-xl p-4 gap-3">
+              <View key={d.dow} className="bg-white rounded-xl p-4 gap-3">
                 <View className="flex-row justify-between items-center">
-                  <Text className="text-bone font-semibold">{d.label}</Text>
+                  <Text className="text-gray-900 font-semibold">{d.label}</Text>
                   <Pressable
                     onPress={() =>
                       setStates({ ...states, [d.dow]: { ...s, open: !s.open } })
                     }
                     hitSlop={8}
                     className={`px-3 py-1 rounded-full border ${
-                      s.open ? 'border-brand bg-brand/10' : 'border-bone/20'
+                      s.open ? 'border-primary bg-primary/10' : 'border-gray-200'
                     }`}>
-                    <Text className={s.open ? 'text-brand' : 'text-bone/60'}>
+                    <Text className={s.open ? 'text-primary' : 'text-gray-500'}>
                       {s.open ? 'Open' : 'Closed'}
                     </Text>
                   </Pressable>
@@ -174,7 +174,7 @@ export default function HoursScreen() {
           })}
         </View>
 
-        {error ? <Text className="text-red-400">{error}</Text> : null}
+        {error ? <Text className="text-red-500">{error}</Text> : null}
 
         <Button onPress={() => save.mutate()} loading={save.isPending}>
           Save changes

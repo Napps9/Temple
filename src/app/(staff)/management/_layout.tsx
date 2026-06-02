@@ -5,7 +5,7 @@ export default function ManagementLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0B1220' },
+        contentStyle: { backgroundColor: '#F9FAFB' },
         animation: 'none',
       }}
     />

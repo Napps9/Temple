@@ -108,11 +108,11 @@ export default function StaffClasses() {
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="py-4 flex-row items-center justify-between">
         <Pressable onPress={() => setDate(addDays(date, -1))} hitSlop={8}>
-          <Text className="text-brand">← Prev</Text>
+          <Text className="text-primary">← Prev</Text>
         </Pressable>
         <View className="items-center gap-0.5">
-          <Text className="text-bone text-xl font-semibold">{formatDateLabel(date)}</Text>
-          <Text className="text-bone/60 text-xs">
+          <Text className="text-gray-900 text-xl font-semibold">{formatDateLabel(date)}</Text>
+          <Text className="text-gray-500 text-xs">
             {date.toLocaleDateString(undefined, {
               month: 'short',
               day: 'numeric',
@@ -121,14 +121,14 @@ export default function StaffClasses() {
           </Text>
         </View>
         <Pressable onPress={() => setDate(addDays(date, 1))} hitSlop={8}>
-          <Text className="text-brand">Next →</Text>
+          <Text className="text-primary">Next →</Text>
         </Pressable>
       </View>
 
       {!todayHours && hours.data ? (
-        <View className="bg-ink-soft rounded-xl p-4 gap-1 mb-2">
-          <Text className="text-bone font-semibold">Gym closed today</Text>
-          <Text className="text-bone/60">
+        <View className="bg-white rounded-xl p-4 gap-1 mb-2">
+          <Text className="text-gray-900 font-semibold">Gym closed today</Text>
+          <Text className="text-gray-500">
             Open hours for this day are not set. Configure them in Manage →
             Operating hours to start scheduling.
           </Text>
@@ -178,20 +178,20 @@ function HourRow({
 }) {
   const label = `${hour.toString().padStart(2, '0')}:00`;
   return (
-    <View className="flex-row gap-3 py-2 border-t border-bone/5">
-      <Text className="text-bone/50 text-sm w-12 pt-2">{label}</Text>
+    <View className="flex-row gap-3 py-2 border-t border-gray-100">
+      <Text className="text-gray-500 text-sm w-12 pt-2">{label}</Text>
       <View className="flex-1 gap-1.5 py-1">
         {!open ? (
-          <View className="bg-ink-soft/40 rounded-md px-3 py-2">
-            <Text className="text-bone/30 text-sm">Closed</Text>
+          <View className="bg-gray-100 rounded-md px-3 py-2">
+            <Text className="text-gray-400 text-sm">Closed</Text>
           </View>
         ) : classes.length > 0 ? (
           classes.map((c) => <ClassCard key={c.id} session={c} />)
         ) : (
           <Pressable
             onPress={onCreate}
-            className="border border-dashed border-bone/15 rounded-md px-3 py-2">
-            <Text className="text-bone/40 text-sm">+ Add a class</Text>
+            className="border border-dashed border-gray-300 rounded-md px-3 py-2">
+            <Text className="text-gray-400 text-sm">+ Add a class</Text>
           </Pressable>
         )}
       </View>
@@ -203,9 +203,9 @@ function ClassCard({ session }: { session: ClassSession }) {
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   return (
-    <View className="bg-brand/10 border border-brand/40 rounded-md p-3 gap-1">
-      <Text className="text-bone font-semibold">{session.name}</Text>
-      <Text className="text-bone/60 text-xs">
+    <View className="bg-primary/10 border border-primary/40 rounded-md p-3 gap-1">
+      <Text className="text-gray-900 font-semibold">{session.name}</Text>
+      <Text className="text-gray-500 text-xs">
         {fmtTime(start)}–{fmtTime(end)} · {session.capacity} spots
       </Text>
     </View>

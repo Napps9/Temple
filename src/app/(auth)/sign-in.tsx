@@ -32,8 +32,8 @@ export default function SignInScreen() {
         className="flex-1 justify-center">
         <View className="gap-6 w-full max-w-md mx-auto">
           <View className="gap-2">
-            <Text className="text-bone text-4xl font-semibold">Temple</Text>
-            <Text className="text-bone/60">Sign in to continue</Text>
+            <Text className="text-gray-900 text-4xl font-semibold">Temple</Text>
+            <Text className="text-gray-500">Sign in to continue</Text>
           </View>
           <View className="gap-4">
             <Input
@@ -51,14 +51,14 @@ export default function SignInScreen() {
               textContentType="password"
             />
           </View>
-          {error ? <Text className="text-red-400">{error}</Text> : null}
+          {error ? <Text className="text-red-500">{error}</Text> : null}
           <Button onPress={onSubmit} loading={loading}>
             Sign in
           </Button>
           <View className="items-center">
             <Link href="/accept-invite" asChild>
               <Pressable hitSlop={8}>
-                <Text className="text-brand">Have an invite code?</Text>
+                <Text className="text-primary">Have an invite code?</Text>
               </Pressable>
             </Link>
           </View>

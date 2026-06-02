@@ -9,8 +9,8 @@ export type NavSection = { name: string; href: string; label: string };
 
 function LogoMark({ initial }: { initial: string }) {
   return (
-    <View className="w-9 h-9 rounded-lg bg-brand items-center justify-center">
-      <Text className="text-ink font-bold text-base">{initial}</Text>
+    <View className="w-9 h-9 rounded-lg bg-primary items-center justify-center">
+      <Text className="text-white font-bold text-base">{initial}</Text>
     </View>
   );
 }
@@ -33,10 +33,10 @@ export function TopNav({
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-ink border-b border-bone/10 px-6 pb-3 flex-row items-center gap-4">
+      className="bg-gray-50 border-b border-gray-200 px-6 pb-3 flex-row items-center gap-4">
       <View className="flex-row items-center gap-3 flex-1">
         <LogoMark initial={initial} />
-        <Text className="text-bone font-semibold text-base">{gymName}</Text>
+        <Text className="text-gray-900 font-semibold text-base">{gymName}</Text>
       </View>
 
       <View className="flex-row gap-7">
@@ -50,8 +50,8 @@ export function TopNav({
               <Text
                 className={
                   active
-                    ? 'text-brand font-semibold'
-                    : 'text-bone/60 font-medium'
+                    ? 'text-primary font-semibold'
+                    : 'text-gray-500 font-medium'
                 }>
                 {s.label}
               </Text>

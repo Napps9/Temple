@@ -75,10 +75,10 @@ export function CreateClassModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 bg-black/60 items-center justify-center px-6">
-        <View className="bg-ink rounded-2xl border border-bone/10 p-6 w-full max-w-md gap-5">
+        <View className="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md gap-5">
           <View className="gap-1">
-            <Text className="text-bone text-xl font-semibold">New class</Text>
-            <Text className="text-bone/60">
+            <Text className="text-gray-900 text-xl font-semibold">New class</Text>
+            <Text className="text-gray-500">
               Starting at {timeLabel} on {dateLabel}
             </Text>
           </View>
@@ -119,7 +119,7 @@ export function CreateClassModal({
             </View>
           </ScrollView>
 
-          {error ? <Text className="text-red-400">{error}</Text> : null}
+          {error ? <Text className="text-red-500">{error}</Text> : null}
 
           <View className="flex-row gap-3">
             <View className="flex-1">

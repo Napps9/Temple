@@ -7,12 +7,12 @@ export default function MemberProgramming() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6">
         <View className="gap-1">
-          <Text className="text-bone text-2xl font-semibold">Programming</Text>
-          <Text className="text-bone/60">Today's workout and the week ahead.</Text>
+          <Text className="text-gray-900 text-2xl font-semibold">Programming</Text>
+          <Text className="text-gray-500">Today's workout and the week ahead.</Text>
         </View>
-        <View className="bg-ink-soft rounded-xl p-4 gap-2">
-          <Text className="text-bone font-semibold">Coming soon</Text>
-          <Text className="text-bone/60">
+        <View className="bg-white rounded-xl p-4 gap-2">
+          <Text className="text-gray-900 font-semibold">Coming soon</Text>
+          <Text className="text-gray-500">
             Once your coaches publish programming, you'll see the WOD,
             warm-up, and any scaling options here before class.
           </Text>

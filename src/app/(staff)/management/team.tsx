@@ -56,12 +56,12 @@ export default function TeamScreen() {
       <ScrollView contentContainerClassName="gap-6 py-6">
         <Link href="/management" asChild>
           <Pressable hitSlop={8}>
-            <Text className="text-brand">← Back to Management</Text>
+            <Text className="text-primary">← Back to Management</Text>
           </Pressable>
         </Link>
         <View className="gap-2">
-          <Text className="text-bone text-2xl font-semibold">Issue invite</Text>
-          <Text className="text-bone/60">Pick a role and generate a code.</Text>
+          <Text className="text-gray-900 text-2xl font-semibold">Issue invite</Text>
+          <Text className="text-gray-500">Pick a role and generate a code.</Text>
         </View>
 
         <View className="flex-row flex-wrap gap-2">
@@ -72,9 +72,9 @@ export default function TeamScreen() {
                 key={r}
                 onPress={() => setRole(r)}
                 className={`px-4 py-2 rounded-full border ${
-                  selected ? 'border-brand bg-brand/10' : 'border-bone/20'
+                  selected ? 'border-primary bg-primary/10' : 'border-gray-200'
                 }`}>
-                <Text className={selected ? 'text-brand' : 'text-bone/70'}>{r}</Text>
+                <Text className={selected ? 'text-primary' : 'text-gray-600'}>{r}</Text>
               </Pressable>
             );
           })}
@@ -85,33 +85,33 @@ export default function TeamScreen() {
         </Button>
 
         {create.error ? (
-          <Text className="text-red-400">
+          <Text className="text-red-500">
             {create.error instanceof Error ? create.error.message : 'Could not generate code'}
           </Text>
         ) : null}
 
         {create.data ? (
-          <View className="bg-brand/10 border border-brand/40 rounded-xl p-4 gap-1">
-            <Text className="text-bone/60 text-sm">New code (share with the invitee)</Text>
-            <Text className="text-brand text-2xl tracking-widest">{create.data}</Text>
+          <View className="bg-primary/10 border border-primary/40 rounded-xl p-4 gap-1">
+            <Text className="text-gray-500 text-sm">New code (share with the invitee)</Text>
+            <Text className="text-primary text-2xl tracking-widest">{create.data}</Text>
           </View>
         ) : null}
 
         <View className="gap-3 mt-4">
-          <Text className="text-bone text-xl font-semibold">All invites</Text>
-          {codes.isLoading ? <Text className="text-bone/60">Loading…</Text> : null}
+          <Text className="text-gray-900 text-xl font-semibold">All invites</Text>
+          {codes.isLoading ? <Text className="text-gray-500">Loading…</Text> : null}
           {codes.data?.length === 0 ? (
-            <Text className="text-bone/60">No invites yet.</Text>
+            <Text className="text-gray-500">No invites yet.</Text>
           ) : null}
           {codes.data?.map((c) => (
             <View
               key={c.id}
-              className="flex-row justify-between items-center bg-ink-soft rounded-lg p-3">
+              className="flex-row justify-between items-center bg-white rounded-lg p-3">
               <View>
-                <Text className="text-bone tracking-widest">{c.code}</Text>
-                <Text className="text-bone/60 text-xs uppercase">{c.role}</Text>
+                <Text className="text-gray-900 tracking-widest">{c.code}</Text>
+                <Text className="text-gray-500 text-xs uppercase">{c.role}</Text>
               </View>
-              <Text className={`text-xs ${c.used_at ? 'text-bone/40' : 'text-brand'}`}>
+              <Text className={`text-xs ${c.used_at ? 'text-gray-400' : 'text-primary'}`}>
                 {c.used_at ? 'used' : 'unused'}
               </Text>
             </View>

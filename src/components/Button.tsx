@@ -12,15 +12,15 @@ type Props = {
 };
 
 const containerStyles: Record<Variant, string> = {
-  primary: 'bg-brand active:bg-brand-dark',
-  secondary: 'bg-ink-soft border border-bone/20 active:bg-bone/10',
+  primary: 'bg-primary active:bg-primary-dark',
+  secondary: 'bg-white border border-gray-200 active:bg-gray-50',
   ghost: 'bg-transparent',
 };
 
 const textStyles: Record<Variant, string> = {
-  primary: 'text-ink font-semibold',
-  secondary: 'text-bone',
-  ghost: 'text-brand',
+  primary: 'text-white font-semibold',
+  secondary: 'text-gray-900',
+  ghost: 'text-primary',
 };
 
 export const Button = forwardRef<View, Props>(function Button(
@@ -37,7 +37,7 @@ export const Button = forwardRef<View, Props>(function Button(
         isDisabled ? 'opacity-50' : ''
       }`}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#0B1220' : '#C5A572'} />
+        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#2563EB'} />
       ) : (
         <Text className={textStyles[variant]}>{children}</Text>
       )}
