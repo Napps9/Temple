@@ -590,7 +590,7 @@ function WeekView({
         </View>
 
         <View className="flex-row pb-2 border-b border-gray-200">
-          <View className="w-14" />
+          <View className="w-10 md:w-14" />
           {weekDays.map((d) => {
             const today = isSameDay(d, new Date());
             return (
@@ -625,28 +625,28 @@ function WeekView({
           {HOURS.map((hour) => {
             const label = `${hour.toString().padStart(2, '0')}:00`;
             return (
-              <View key={hour} className="flex-row border-t border-gray-100 min-h-14">
-                <Text className="w-14 text-xs text-gray-400 pt-2">{label}</Text>
+              <View key={hour} className="flex-row border-t border-gray-100 min-h-14 py-0.5">
+                <Text className="w-10 md:w-14 text-xs text-gray-400 pt-2">{label}</Text>
                 {weekDays.map((d) => {
                   const dayHours = dayHoursFor(d);
                   const open = isHourOpen(hour, dayHours);
                   const cellClasses = classesAtDayHour(sessions, d, hour);
                   return (
-                    <View key={d.toISOString()} className="flex-1 p-0.5">
+                    <View key={d.toISOString()} className="flex-1 px-0.5">
                       {cellClasses.length > 0 ? (
                         <WeekTile
                           session={cellClasses[0]}
                           onPress={() => onSessionPress(cellClasses[0].id)}
                         />
                       ) : !open ? (
-                        <View className="flex-1 bg-gray-100/60 rounded min-h-12" />
+                        <View className="flex-1 bg-gray-100/60 rounded-md min-h-14" />
                       ) : canCreate ? (
                         <Pressable
                           onPress={() => onCreateAt(d, hour)}
-                          className="flex-1 border border-dashed border-gray-200 rounded min-h-12 active:bg-gray-50"
+                          className="flex-1 border border-dashed border-gray-200 rounded-md min-h-14 active:bg-gray-50"
                         />
                       ) : (
-                        <View className="flex-1 rounded min-h-12" />
+                        <View className="flex-1 rounded-md min-h-14" />
                       )}
                     </View>
                   );
@@ -671,17 +671,19 @@ function WeekTile({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-1 bg-white border border-gray-200 rounded p-1 min-h-12 gap-0.5 active:bg-gray-50">
-      <View
-        style={{ backgroundColor: sessionColor(session) }}
-        className="self-start rounded-full px-1.5 py-0.5">
+      className="flex-1 bg-white border border-gray-200 rounded-md p-1.5 min-h-14 gap-1 active:bg-gray-50">
+      <View className="flex-row items-center gap-1">
+        <View
+          style={{ backgroundColor: sessionColor(session) }}
+          className="w-1.5 h-1.5 rounded-full"
+        />
         <Text
-          className="text-white text-[10px] font-semibold"
+          className="text-gray-900 text-[10px] font-semibold flex-1"
           numberOfLines={1}>
           {sessionLabel(session)}
         </Text>
       </View>
-      <Text className="text-gray-700 text-[10px]" numberOfLines={1}>
+      <Text className="text-gray-500 text-[10px]" numberOfLines={1}>
         {fmtTime(start)}
       </Text>
     </Pressable>
