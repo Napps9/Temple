@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { Screen } from '@/components/Screen';
@@ -33,6 +34,8 @@ type ClassSession = {
   capacity: number;
   class_type_id: string | null;
   class_types: { name: string; color: string } | null;
+  coach_id: string | null;
+  coach: { full_name: string | null } | null;
 };
 
 const DEFAULT_CLASS_COLOR = '#2563EB';
@@ -194,7 +197,7 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color)',
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color), coach_id, coach:profiles!coach_id(full_name)',
         )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
@@ -497,16 +500,19 @@ function DayClassCard({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white rounded-2xl border border-gray-200 p-4 gap-1.5 active:bg-gray-50">
-      <View
-        style={{ backgroundColor: sessionColor(session) }}
-        className="self-start rounded-full px-2.5 py-1">
-        <Text className="text-white text-xs font-semibold">{sessionLabel(session)}</Text>
+      className="bg-white rounded-2xl border border-gray-200 p-4 flex-row items-start gap-3 active:bg-gray-50">
+      <View className="flex-1 gap-1.5">
+        <View
+          style={{ backgroundColor: sessionColor(session) }}
+          className="self-start rounded-full px-2.5 py-1">
+          <Text className="text-white text-xs font-semibold">{sessionLabel(session)}</Text>
+        </View>
+        <Text className="text-gray-900 text-base font-medium">
+          {fmtTime(start)} — {fmtTime(end)}
+        </Text>
+        <Text className="text-gray-500 text-xs">{session.capacity} spots</Text>
       </View>
-      <Text className="text-gray-900 text-base font-medium">
-        {fmtTime(start)} — {fmtTime(end)}
-      </Text>
-      <Text className="text-gray-500 text-xs">{session.capacity} spots</Text>
+      <Avatar name={session.coach?.full_name} size={36} />
     </Pressable>
   );
 }

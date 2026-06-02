@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -31,20 +32,6 @@ function fmtTime(d: Date) {
     .getMinutes()
     .toString()
     .padStart(2, '0')}`;
-}
-
-function Avatar({ name, size = 40 }: { name?: string | null; size?: number }) {
-  const initial = (name?.charAt(0) || '?').toUpperCase();
-  const fontSize = size >= 40 ? 16 : 13;
-  return (
-    <View
-      style={{ width: size, height: size, borderRadius: size / 2 }}
-      className="bg-gray-200 items-center justify-center">
-      <Text className="text-gray-600 font-semibold" style={{ fontSize }}>
-        {initial}
-      </Text>
-    </View>
-  );
 }
 
 export function ClassDetailModal({
