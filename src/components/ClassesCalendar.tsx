@@ -102,14 +102,6 @@ function fmtMonthYear(d: Date) {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
-function fmtFullDate(d: Date) {
-  return d.toLocaleDateString(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-}
-
 function fmtWeekRange(start: Date, end: Date) {
   const sameMonth = start.getMonth() === end.getMonth();
   if (sameMonth) {
@@ -347,7 +339,7 @@ function DayView({
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="flex-row gap-2 md:gap-3 md:justify-center pt-2 pb-6 md:pb-8">
+        <View className="flex-row gap-2 md:gap-3 md:justify-center pt-2 pb-4 md:pb-6">
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
             const today = isSameDay(d, new Date());
@@ -383,9 +375,6 @@ function DayView({
           })}
         </View>
 
-        <View className="mb-4">
-          <Text className="text-gray-900 text-2xl font-semibold">{fmtFullDate(date)}</Text>
-        </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
