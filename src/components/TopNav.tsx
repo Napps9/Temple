@@ -9,7 +9,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NavModal, type NavSection } from './NavModal';
-import { isStaffRole, useGymMembership, useMyProfile, useRole, useSession } from '@/lib/auth';
+import { useGymMembership } from '@/lib/auth';
 
 export type { NavSection };
 
@@ -34,38 +34,34 @@ export function TopNav({
   const pathname = usePathname();
   const params = useGlobalSearchParams<{ view?: string }>();
   const { data: membership } = useGymMembership();
-  const { data: profile } = useMyProfile();
-  const session = useSession();
-  const role = useRole();
   const [navOpen, setNavOpen] = useState(false);
 
   const gymName = membership?.gymName ?? 'Temple';
   const initial = (gymName.charAt(0) || 'T').toUpperCase();
-  const displayName = profile?.full_name?.trim() || session?.user.email || '';
 
   const isOnClasses = pathname === '/classes' || pathname === '/book';
   const currentView = params.view ?? 'day';
   const isManagementSubPage = pathname.startsWith('/management/');
-  const accountHref = isStaffRole(role) ? '/management/account' : '/account';
 
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
       className="bg-gray-50 px-4 md:px-6 pb-3 flex-row items-center">
-      <View className="flex-1 flex-row items-center gap-3">
-        <Pressable
-          onPress={() => setNavOpen(true)}
-          hitSlop={6}
-          className="active:opacity-70">
-          <LogoMark initial={initial} />
-        </Pressable>
+      <View className="flex-1 flex-row items-center">
         {isManagementSubPage ? (
           <Link href="/management" asChild>
-            <Pressable hitSlop={6} className="active:opacity-70">
-              <Text className="text-primary font-medium">← Manage</Text>
+            <Pressable hitSlop={8} className="active:opacity-70">
+              <Text className="text-primary font-medium text-base">← Manage</Text>
             </Pressable>
           </Link>
-        ) : null}
+        ) : (
+          <Pressable
+            onPress={() => setNavOpen(true)}
+            hitSlop={6}
+            className="active:opacity-70">
+            <LogoMark initial={initial} />
+          </Pressable>
+        )}
       </View>
 
       <View className="items-center">
@@ -90,24 +86,7 @@ export function TopNav({
         ) : null}
       </View>
 
-      <View className="flex-1 items-end">
-        {displayName ? (
-          <Link href={accountHref} asChild>
-            <Pressable hitSlop={6} className="items-end active:opacity-70">
-              <Text
-                className="text-gray-900 text-sm font-medium"
-                numberOfLines={1}>
-                {displayName}
-              </Text>
-              {role ? (
-                <Text className="text-gray-400 text-[10px] uppercase tracking-widest">
-                  {role}
-                </Text>
-              ) : null}
-            </Pressable>
-          </Link>
-        ) : null}
-      </View>
+      <View className="flex-1" />
 
       <NavModal
         visible={navOpen}
