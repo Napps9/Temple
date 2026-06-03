@@ -74,6 +74,9 @@ Deno.serve(async (req) => {
       case 'account.updated':
         await handleAccountUpdated(event);
         break;
+      case 'charge.refunded':
+        await handleChargeRefunded(event);
+        break;
       default:
         // Unhandled event types still return 200 so Stripe stops
         // retrying. Unknown types are expected during rollout.
@@ -153,6 +156,41 @@ async function handleInvoicePaymentActionRequired(event: Stripe.Event) {
       p_occurred_at: new Date(event.created * 1000).toISOString(),
     },
   );
+  if (error) throw error;
+}
+
+async function handleChargeRefunded(event: Stripe.Event) {
+  const charge = event.data.object as Stripe.Charge;
+  const accountId = event.account ?? null;
+
+  // Stripe doesn't put the subscription on the charge directly; we
+  // look it up via the invoice if present.
+  let subscriptionId: string | null = null;
+  if (charge.invoice && typeof charge.invoice === 'string') {
+    try {
+      const invoice = await stripe.invoices.retrieve(
+        charge.invoice,
+        accountId ? { stripeAccount: accountId } : undefined,
+      );
+      subscriptionId = typeof invoice.subscription === 'string'
+        ? invoice.subscription
+        : invoice.subscription?.id ?? null;
+    } catch (err) {
+      console.warn('invoice retrieve failed for refund', err);
+    }
+  }
+
+  const refundedAmount = charge.amount_refunded ?? 0;
+
+  const { error } = await supabase.rpc('record_charge_refunded', {
+    p_event_id: event.id,
+    p_account_id: accountId,
+    p_subscription_id: subscriptionId,
+    p_amount_cents: refundedAmount,
+    p_currency: charge.currency ?? '',
+    p_occurred_at: new Date(event.created * 1000).toISOString(),
+    p_payload: charge as unknown as Record<string, unknown>,
+  });
   if (error) throw error;
 }
 
