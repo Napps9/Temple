@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
@@ -164,6 +164,20 @@ export default function MemberBilling() {
     onError: (err) => setError(errorMessage(err)),
   });
 
+  const portalMutation = useMutation({
+    mutationFn: async () => {
+      if (!gym) throw new Error('No gym');
+      const { data, error } = await supabase.functions.invoke<{ url: string }>(
+        'billing-portal',
+        { body: { gymId: gym.gymId } },
+      );
+      if (error) throw error;
+      if (!data?.url) throw new Error('No portal URL returned');
+      await Linking.openURL(data.url);
+    },
+    onError: (err) => setError(errorMessage(err)),
+  });
+
   const resumeMutation = useMutation({
     mutationFn: async () => {
       if (!sub) throw new Error('No subscription');
@@ -313,15 +327,22 @@ export default function MemberBilling() {
             {canResume ? (
               <Button onPress={() => setConfirming('resume')}>Resume</Button>
             ) : null}
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                Update card
+            <Pressable
+              onPress={() => portalMutation.mutate()}
+              disabled={portalMutation.isPending}
+              className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Update card and invoices
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  Opens your gym's secure Stripe billing portal.
+                </Text>
+              </View>
+              <Text className="text-primary">
+                {portalMutation.isPending ? '…' : '→'}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Self-serve card update is coming soon. For now, contact your
-                gym to change the card on file.
-              </Text>
-            </View>
+            </Pressable>
             <Link href="/receipts" asChild>
               <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between">
                 <View className="flex-1">
