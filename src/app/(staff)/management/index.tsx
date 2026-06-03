@@ -81,6 +81,13 @@ export default function ManagementHome() {
             href="/management/announcements"
           />
         ) : null}
+        {can(role, 'can_access_staff_area') ? (
+          <ManagementCard
+            title="Insights"
+            description="Lifecycle, conversion, attendance."
+            href="/management/insights"
+          />
+        ) : null}
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"

@@ -709,6 +709,28 @@ export type Database = {
         Args: { target_profile: string };
         Returns: boolean;
       };
+      get_lifecycle_bucket_counts: {
+        Args: { p_gym_id: string };
+        Returns: { bucket: string; count: number }[];
+      };
+      get_conversion_funnel: {
+        Args: { p_gym_id: string; p_since: string | null };
+        Returns: {
+          grants_issued: number;
+          grants_converted: number;
+          conversion_rate: number;
+        }[];
+      };
+      get_attendance_weekly: {
+        Args: { p_gym_id: string; p_weeks: number };
+        Returns: {
+          week_start: string;
+          class_type_id: string | null;
+          class_type_name: string | null;
+          bookings_count: number;
+          unique_members: number;
+        }[];
+      };
     };
     Enums: {
       gym_role: GymRole;
