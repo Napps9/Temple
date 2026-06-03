@@ -58,7 +58,6 @@ export default function StaffChatThread() {
   const messagesQuery = useQuery({
     queryKey: ['chat-messages', threadId],
     enabled: !!threadId,
-    refetchInterval: 8000,
     queryFn: async (): Promise<ChatMessage[]> => {
       const { data, error } = await supabase
         .from('chat_messages')
@@ -70,6 +69,28 @@ export default function StaffChatThread() {
       return (data ?? []) as unknown as ChatMessage[];
     },
   });
+
+  useEffect(() => {
+    if (!threadId) return;
+    const channel = supabase
+      .channel(`staff-chat-thread-${threadId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `thread_id=eq.${threadId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['chat-messages', threadId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [threadId, queryClient]);
 
   const sendMutation = useMutation({
     mutationFn: async () => {
