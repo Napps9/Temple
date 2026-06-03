@@ -4,7 +4,9 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
-import { useSession } from '@/lib/auth';
+import { CheckInButton } from '@/components/CheckInButton';
+import { useRole, useSession } from '@/lib/auth';
+import { can } from '@/lib/can';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
@@ -24,6 +26,8 @@ type SessionDetail = {
 type Booking = {
   id: string;
   profile_id: string;
+  attended_at: string | null;
+  no_show: boolean;
   profiles: { full_name: string | null } | null;
 };
 
@@ -46,6 +50,7 @@ export function ClassDetailModal({
   onClose: () => void;
 }) {
   const session = useSession();
+  const role = useRole();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +77,9 @@ export function ClassDetailModal({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_bookings')
-        .select('id, profile_id, profiles(full_name)')
+        .select(
+          'id, profile_id, attended_at, no_show, profiles(full_name)',
+        )
         .eq('class_session_id', sessionId!)
         .order('created_at');
       if (error) throw error;
@@ -222,9 +229,21 @@ export function ClassDetailModal({
                             key={b.id}
                             className="flex-row items-center gap-3">
                             <Avatar name={b.profiles?.full_name} size={32} />
-                            <Text className="text-gray-900 dark:text-gray-50">
+                            <Text className="text-gray-900 dark:text-gray-50 flex-1">
                               {b.profiles?.full_name ?? 'Member'}
                             </Text>
+                            {can(role, 'can_check_in_member') && start && sessionId ? (
+                              <CheckInButton
+                                bookingId={b.id}
+                                sessionId={sessionId}
+                                attendedAt={b.attended_at}
+                                noShow={b.no_show}
+                                isOpen={
+                                  Date.now() >=
+                                  start.getTime() - 15 * 60 * 1000
+                                }
+                              />
+                            ) : null}
                           </View>
                         ))}
                       </View>

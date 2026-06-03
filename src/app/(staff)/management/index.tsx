@@ -55,6 +55,20 @@ export default function ManagementHome() {
           description="Your name, email, and password."
           href="/management/account"
         />
+        {can(role, 'can_see_insights') ? (
+          <ManagementCard
+            title="Insights"
+            description="Intros, expiring members, conversion vs targets."
+            href="/management/insights"
+          />
+        ) : null}
+        {can(role, 'can_view_attendance') ? (
+          <ManagementCard
+            title="Attendance"
+            description="Trends from check-ins on class bookings."
+            href="/management/attendance"
+          />
+        ) : null}
         {can(role, 'can_manage_staff') ? (
           <ManagementCard
             title="Team"
