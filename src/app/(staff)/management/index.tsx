@@ -69,6 +69,13 @@ export default function ManagementHome() {
             href="/management/attendance"
           />
         ) : null}
+        {can(role, 'can_export_members') ? (
+          <ManagementCard
+            title="Reports"
+            description="Export members, memberships, and attendance to CSV."
+            href="/management/reports"
+          />
+        ) : null}
         {can(role, 'can_manage_staff') ? (
           <ManagementCard
             title="Team"
