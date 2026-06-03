@@ -77,6 +77,9 @@ Deno.serve(async (req) => {
       case 'charge.refunded':
         await handleChargeRefunded(event);
         break;
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(event);
+        break;
       default:
         // Unhandled event types still return 200 so Stripe stops
         // retrying. Unknown types are expected during rollout.
@@ -156,6 +159,63 @@ async function handleInvoicePaymentActionRequired(event: Stripe.Event) {
       p_occurred_at: new Date(event.created * 1000).toISOString(),
     },
   );
+  if (error) throw error;
+}
+
+async function handleCheckoutSessionCompleted(event: Stripe.Event) {
+  const session = event.data.object as Stripe.Checkout.Session;
+  const accountId = event.account ?? null;
+
+  if (session.mode !== 'subscription') return;
+  const subscriptionId = typeof session.subscription === 'string'
+    ? session.subscription
+    : session.subscription?.id;
+  const customerId = typeof session.customer === 'string'
+    ? session.customer
+    : session.customer?.id;
+  if (!subscriptionId || !customerId) return;
+
+  // Pull the subscription to grab billing interval + period end +
+  // metadata (in case session.metadata wasn't echoed back).
+  let subscription: Stripe.Subscription | null = null;
+  try {
+    subscription = await stripe.subscriptions.retrieve(
+      subscriptionId,
+      accountId ? { stripeAccount: accountId } : undefined,
+    );
+  } catch (err) {
+    console.error('failed to retrieve subscription after checkout', err);
+    return;
+  }
+  const metadata = subscription.metadata ?? session.metadata ?? {};
+  const gymId = metadata.gym_id as string | undefined;
+  const profileId = metadata.profile_id as string | undefined;
+  const planId = metadata.plan_id as string | undefined;
+  if (!gymId || !profileId || !planId) {
+    console.warn('checkout session missing metadata', { gymId, profileId, planId });
+    return;
+  }
+
+  const recurring = subscription.items?.data?.[0]?.price?.recurring;
+  const billingInterval = recurring?.interval
+    ? `${recurring.interval_count ?? 1} ${recurring.interval}`
+    : null;
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000).toISOString()
+    : null;
+
+  const { error } = await supabase.rpc('record_checkout_session_completed', {
+    p_event_id: event.id,
+    p_account_id: accountId,
+    p_gym_id: gymId,
+    p_profile_id: profileId,
+    p_plan_id: planId,
+    p_stripe_customer_id: customerId,
+    p_stripe_subscription_id: subscriptionId,
+    p_billing_interval: billingInterval,
+    p_paid_period_end: periodEnd,
+    p_occurred_at: new Date(event.created * 1000).toISOString(),
+  });
   if (error) throw error;
 }
 
