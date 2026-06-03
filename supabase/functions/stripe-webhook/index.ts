@@ -77,6 +77,14 @@ Deno.serve(async (req) => {
   }
 });
 
+function stripeRecurringToInterval(
+  recurring: Stripe.Price.Recurring | null | undefined,
+): string | null {
+  if (!recurring?.interval || !recurring.interval_count) return null;
+  // Postgres parses "1 month", "3 month", "7 day", "1 year".
+  return `${recurring.interval_count} ${recurring.interval}`;
+}
+
 async function handleInvoicePaid(event: Stripe.Event) {
   const invoice = event.data.object as Stripe.Invoice;
   const subscriptionId = typeof invoice.subscription === 'string'
@@ -88,7 +96,9 @@ async function handleInvoicePaid(event: Stripe.Event) {
   const accountId = event.account ?? null;
 
   // The covered period ends at lines[0].period.end for the renewal.
-  const periodEnd = invoice.lines?.data?.[0]?.period?.end ?? null;
+  const firstLine = invoice.lines?.data?.[0];
+  const periodEnd = firstLine?.period?.end ?? null;
+  const billingInterval = stripeRecurringToInterval(firstLine?.price?.recurring);
 
   const { error } = await supabase.rpc('record_invoice_paid', {
     p_event_id: event.id,
@@ -97,6 +107,7 @@ async function handleInvoicePaid(event: Stripe.Event) {
     p_amount_cents: invoice.amount_paid ?? 0,
     p_currency: invoice.currency ?? '',
     p_paid_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+    p_billing_interval: billingInterval,
     p_occurred_at: new Date(event.created * 1000).toISOString(),
     p_payload: invoice as unknown as Record<string, unknown>,
   });
@@ -106,6 +117,8 @@ async function handleInvoicePaid(event: Stripe.Event) {
 async function handleSubscriptionUpdated(event: Stripe.Event) {
   const subscription = event.data.object as Stripe.Subscription;
   const accountId = event.account ?? null;
+  const firstItem = subscription.items?.data?.[0];
+  const billingInterval = stripeRecurringToInterval(firstItem?.price?.recurring);
 
   const { error } = await supabase.rpc('record_subscription_updated', {
     p_event_id: event.id,
@@ -115,6 +128,7 @@ async function handleSubscriptionUpdated(event: Stripe.Event) {
     p_paid_period_end: subscription.current_period_end
       ? new Date(subscription.current_period_end * 1000).toISOString()
       : null,
+    p_billing_interval: billingInterval,
     p_occurred_at: new Date(event.created * 1000).toISOString(),
     p_payload: subscription as unknown as Record<string, unknown>,
   });
