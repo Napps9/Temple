@@ -546,6 +546,63 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      announcements: {
+        Row: {
+          announcement_id: string;
+          gym_id: string;
+          audience_id: string | null;
+          title: string;
+          body: string;
+          pinned: boolean;
+          published_at: string;
+          expires_at: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          announcement_id?: string;
+          gym_id: string;
+          audience_id?: string | null;
+          title: string;
+          body: string;
+          pinned?: boolean;
+          published_at?: string;
+          expires_at?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          announcement_id: string;
+          gym_id: string;
+          audience_id: string | null;
+          title: string;
+          body: string;
+          pinned: boolean;
+          published_at: string;
+          expires_at: string | null;
+          created_by: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      announcement_reads: {
+        Row: {
+          announcement_id: string;
+          profile_id: string;
+          read_at: string;
+        };
+        Insert: {
+          announcement_id: string;
+          profile_id: string;
+          read_at?: string;
+        };
+        Update: Partial<{
+          announcement_id: string;
+          profile_id: string;
+          read_at: string;
+        }>;
+        Relationships: [];
+      };
       stripe_connect_accounts: {
         Row: {
           gym_id: string;

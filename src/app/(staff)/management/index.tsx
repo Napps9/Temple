@@ -74,6 +74,13 @@ export default function ManagementHome() {
           description="View and manage everyone signed up to your gym."
           comingSoon
         />
+        {can(role, 'can_edit_classes') ? (
+          <ManagementCard
+            title="Announcements"
+            description="Broadcast notices to members."
+            href="/management/announcements"
+          />
+        ) : null}
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"
