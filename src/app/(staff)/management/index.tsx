@@ -90,11 +90,20 @@ export default function ManagementHome() {
             href="/management/class-types"
           />
         ) : null}
-        <ManagementCard
-          title="Members"
-          description="View and manage everyone signed up to your gym."
-          comingSoon
-        />
+        {can(role, 'can_manage_tags') ? (
+          <ManagementCard
+            title="Members"
+            description="View members by cohort, see and edit their tags."
+            href="/management/members"
+          />
+        ) : null}
+        {can(role, 'can_manage_tags') ? (
+          <ManagementCard
+            title="Tag rules"
+            description="Auto-tag members based on cohort state."
+            href="/management/tags"
+          />
+        ) : null}
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"

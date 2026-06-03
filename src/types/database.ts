@@ -437,6 +437,96 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      member_tags: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          label: string;
+          color: string;
+          source: 'manual' | 'auto';
+          rule_id: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          label: string;
+          color: string;
+          source: 'manual' | 'auto';
+          rule_id?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          label: string;
+          color: string;
+          source: 'manual' | 'auto';
+          rule_id: string | null;
+          created_by: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      tag_rules: {
+        Row: {
+          id: string;
+          gym_id: string;
+          label: string;
+          color: string;
+          predicate_kind:
+            | 'intro'
+            | 'expiring_soon'
+            | 'expired'
+            | 'paying'
+            | 'inactive'
+            | 'never_paid';
+          threshold_days: number | null;
+          active: boolean;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          label: string;
+          color: string;
+          predicate_kind:
+            | 'intro'
+            | 'expiring_soon'
+            | 'expired'
+            | 'paying'
+            | 'inactive'
+            | 'never_paid';
+          threshold_days?: number | null;
+          active?: boolean;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          label: string;
+          color: string;
+          predicate_kind:
+            | 'intro'
+            | 'expiring_soon'
+            | 'expired'
+            | 'paying'
+            | 'inactive'
+            | 'never_paid';
+          threshold_days: number | null;
+          active: boolean;
+          created_by: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       comp_grants: {
         Row: {
           grant_id: string;
@@ -536,6 +626,10 @@ export type Database = {
           paying_now: number;
           billing_live: boolean;
         }[];
+      };
+      apply_tag_rules: {
+        Args: { p_gym_id: string };
+        Returns: number;
       };
     };
     Enums: {
