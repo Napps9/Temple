@@ -16,6 +16,16 @@ export type PlanSubState =
 
 export type MembershipPlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 
+export type MovementCategory = 'lift' | 'gymnastic' | 'metcon' | 'mono';
+
+export type TrackedMetric =
+  | 'weight'
+  | 'reps'
+  | 'time'
+  | 'distance'
+  | 'calories'
+  | 'rounds';
+
 export type Database = {
   public: {
     Tables: {
@@ -421,6 +431,111 @@ export type Database = {
           stripe_subscription_id: string | null;
           awaiting_payment_authentication: boolean;
           cancelled_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      movements: {
+        Row: {
+          movement_id: string;
+          name: string;
+          category: MovementCategory;
+          parent_movement_id: string | null;
+          equipment: string[];
+          aliases: string[];
+          tracked_metrics: TrackedMetric[];
+          archived_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          movement_id?: string;
+          name: string;
+          category: MovementCategory;
+          parent_movement_id?: string | null;
+          equipment?: string[];
+          aliases?: string[];
+          tracked_metrics: TrackedMetric[];
+          archived_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          movement_id: string;
+          name: string;
+          category: MovementCategory;
+          parent_movement_id: string | null;
+          equipment: string[];
+          aliases: string[];
+          tracked_metrics: TrackedMetric[];
+          archived_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      workout_logs: {
+        Row: {
+          log_id: string;
+          profile_id: string;
+          gym_id: string | null;
+          class_session_id: string | null;
+          programmed_at: string | null;
+          logged_at: string;
+          notes: string | null;
+        };
+        Insert: {
+          log_id?: string;
+          profile_id: string;
+          gym_id?: string | null;
+          class_session_id?: string | null;
+          programmed_at?: string | null;
+          logged_at?: string;
+          notes?: string | null;
+        };
+        Update: Partial<{
+          log_id: string;
+          profile_id: string;
+          gym_id: string | null;
+          class_session_id: string | null;
+          programmed_at: string | null;
+          logged_at: string;
+          notes: string | null;
+        }>;
+        Relationships: [];
+      };
+      workout_log_results: {
+        Row: {
+          result_id: string;
+          log_id: string;
+          movement_id: string;
+          metric_kind: TrackedMetric;
+          value_numeric: number | null;
+          value_seconds: number | null;
+          value_reps: number | null;
+          is_rx: boolean;
+          ordinal: number;
+          created_at: string;
+        };
+        Insert: {
+          result_id?: string;
+          log_id: string;
+          movement_id: string;
+          metric_kind: TrackedMetric;
+          value_numeric?: number | null;
+          value_seconds?: number | null;
+          value_reps?: number | null;
+          is_rx?: boolean;
+          ordinal?: number;
+          created_at?: string;
+        };
+        Update: Partial<{
+          result_id: string;
+          log_id: string;
+          movement_id: string;
+          metric_kind: TrackedMetric;
+          value_numeric: number | null;
+          value_seconds: number | null;
+          value_reps: number | null;
+          is_rx: boolean;
+          ordinal: number;
           created_at: string;
         }>;
         Relationships: [];
