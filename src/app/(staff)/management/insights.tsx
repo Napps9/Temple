@@ -1,9 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
-import { ScrollView, Text, View } from 'react-native';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Platform, ScrollView, Text, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useRole } from '@/lib/auth';
+import { can } from '@/lib/can';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 
 type BucketCount = { bucket: string; count: number };
 type FunnelRow = {
@@ -37,6 +41,34 @@ function fmtWeek(iso: string): string {
 
 export default function Insights() {
   const { data: gym } = useGymMembership();
+  const role = useRole();
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const exportMutation = useMutation({
+    mutationFn: async (kind: 'members' | 'subscriptions') => {
+      if (!gym?.gymId) throw new Error('No gym');
+      const { data, error } = await supabase.functions.invoke<string>('exports', {
+        body: { gymId: gym.gymId, kind },
+      });
+      if (error) throw error;
+      if (typeof data !== 'string') throw new Error('No data returned');
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${kind}-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        throw new Error('CSV export is currently web-only — open Temple on desktop.');
+      }
+    },
+    onError: (err) => setExportError(errorMessage(err)),
+    onSuccess: () => setExportError(null),
+  });
 
   const lifecycleQuery = useQuery({
     queryKey: ['insights-lifecycle', gym?.gymId],
@@ -148,6 +180,42 @@ export default function Insights() {
             Converted within 90 days of the comp grant being issued.
           </Text>
         </View>
+
+        {can(role, 'can_see_money') ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+            <View className="gap-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Export to CSV
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Members and subscription snapshots for your own analysis.
+              </Text>
+            </View>
+            <View className="flex-row gap-3 flex-wrap">
+              <View className="flex-1 min-w-[140px]">
+                <Button
+                  variant="secondary"
+                  onPress={() => exportMutation.mutate('members')}
+                  loading={exportMutation.isPending && exportMutation.variables === 'members'}>
+                  Members
+                </Button>
+              </View>
+              <View className="flex-1 min-w-[140px]">
+                <Button
+                  variant="secondary"
+                  onPress={() => exportMutation.mutate('subscriptions')}
+                  loading={exportMutation.isPending && exportMutation.variables === 'subscriptions'}>
+                  Subscriptions
+                </Button>
+              </View>
+            </View>
+            {exportError ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {exportError}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
