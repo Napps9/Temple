@@ -77,8 +77,8 @@ export default function ManagementHome() {
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"
-            description="Memberships, payment plans, and revenue."
-            comingSoon
+            description="Connect Stripe, manage plans, and track revenue."
+            href="/management/billing"
           />
         ) : null}
         <ManagementCard

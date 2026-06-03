@@ -71,6 +71,9 @@ Deno.serve(async (req) => {
       case 'customer.subscription.updated':
         await handleSubscriptionUpdated(event);
         break;
+      case 'account.updated':
+        await handleAccountUpdated(event);
+        break;
       default:
         // Unhandled event types still return 200 so Stripe stops
         // retrying. Unknown types are expected during rollout.
@@ -150,6 +153,22 @@ async function handleInvoicePaymentActionRequired(event: Stripe.Event) {
       p_occurred_at: new Date(event.created * 1000).toISOString(),
     },
   );
+  if (error) throw error;
+}
+
+async function handleAccountUpdated(event: Stripe.Event) {
+  const account = event.data.object as Stripe.Account;
+
+  const { error } = await supabase.rpc('record_connect_account_updated', {
+    p_event_id: event.id,
+    p_account_id: account.id,
+    p_charges_enabled: account.charges_enabled ?? false,
+    p_payouts_enabled: account.payouts_enabled ?? false,
+    p_details_submitted: account.details_submitted ?? false,
+    p_country: account.country ?? null,
+    p_default_currency: account.default_currency ?? null,
+    p_occurred_at: new Date(event.created * 1000).toISOString(),
+  });
   if (error) throw error;
 }
 

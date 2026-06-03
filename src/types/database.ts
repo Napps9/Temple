@@ -26,6 +26,12 @@ export type TrackedMetric =
   | 'calories'
   | 'rounds';
 
+export type ConnectOnboardingStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'completed'
+  | 'rejected';
+
 export type Database = {
   public: {
     Tables: {
@@ -536,6 +542,48 @@ export type Database = {
           value_reps: number | null;
           is_rx: boolean;
           ordinal: number;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      stripe_connect_accounts: {
+        Row: {
+          gym_id: string;
+          provider: string;
+          provider_account_id: string | null;
+          onboarding_status: ConnectOnboardingStatus;
+          charges_enabled: boolean;
+          payouts_enabled: boolean;
+          details_submitted: boolean;
+          country: string | null;
+          default_currency: string | null;
+          last_synced_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          provider?: string;
+          provider_account_id?: string | null;
+          onboarding_status?: ConnectOnboardingStatus;
+          charges_enabled?: boolean;
+          payouts_enabled?: boolean;
+          details_submitted?: boolean;
+          country?: string | null;
+          default_currency?: string | null;
+          last_synced_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          provider: string;
+          provider_account_id: string | null;
+          onboarding_status: ConnectOnboardingStatus;
+          charges_enabled: boolean;
+          payouts_enabled: boolean;
+          details_submitted: boolean;
+          country: string | null;
+          default_currency: string | null;
+          last_synced_at: string | null;
           created_at: string;
         }>;
         Relationships: [];
