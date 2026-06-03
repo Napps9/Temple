@@ -3,7 +3,7 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type GymRole = 'owner' | 'coach' | 'staff' | 'member';
+export type GymRole = 'owner' | 'admin' | 'coach' | 'staff' | 'member';
 
 export type PlanSubState =
   | 'pending'
@@ -279,6 +279,10 @@ export type Database = {
           class_session_id: string;
           profile_id: string;
           created_at: string;
+          attended_at: string | null;
+          marked_by: string | null;
+          no_show: boolean;
+          no_show_marked_at: string | null;
         };
         Insert: {
           id?: string;
@@ -286,6 +290,10 @@ export type Database = {
           class_session_id: string;
           profile_id: string;
           created_at?: string;
+          attended_at?: string | null;
+          marked_by?: string | null;
+          no_show?: boolean;
+          no_show_marked_at?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -293,6 +301,10 @@ export type Database = {
           class_session_id: string;
           profile_id: string;
           created_at: string;
+          attended_at: string | null;
+          marked_by: string | null;
+          no_show: boolean;
+          no_show_marked_at: string | null;
         }>;
         Relationships: [];
       };
@@ -471,7 +483,22 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      v_member_cohort: {
+        Row: {
+          gym_id: string;
+          profile_id: string;
+          joined_at: string;
+          is_intro: boolean;
+          is_paying: boolean;
+          is_active: boolean;
+          is_expiring_soon: boolean;
+          is_expired: boolean;
+          days_until_expiry: number | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       accept_invite: {
         Args: { invite_code: string };
@@ -488,6 +515,27 @@ export type Database = {
       same_gym_as_caller: {
         Args: { target_profile: string };
         Returns: boolean;
+      };
+      check_in_member: {
+        Args: { p_booking_id: string };
+        Returns: null;
+      };
+      mark_no_show: {
+        Args: { p_booking_id: string };
+        Returns: null;
+      };
+      compute_insight_summary: {
+        Args: { p_gym_id: string; p_period_start: string; p_period_end: string };
+        Returns: {
+          intros_new: number;
+          intros_target: number;
+          conversions: number;
+          conversions_target: number;
+          expiring_soon: number;
+          expired: number;
+          paying_now: number;
+          billing_live: boolean;
+        }[];
       };
     };
     Enums: {
