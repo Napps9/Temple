@@ -123,6 +123,13 @@ export default function ManagementHome() {
             href="/management/plans"
           />
         ) : null}
+        {can(role, 'can_manage_plans') ? (
+          <ManagementCard
+            title="Discounts"
+            description="Promo codes members enter at signup."
+            href="/management/discounts"
+          />
+        ) : null}
         <ManagementCard
           title="Settings"
           description="Gym details, branding, and operational preferences."

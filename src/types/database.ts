@@ -594,6 +594,54 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      discounts: {
+        Row: {
+          discount_id: string;
+          gym_id: string;
+          code: string;
+          kind: 'percent' | 'amount';
+          value: number;
+          valid_from: string | null;
+          valid_to: string | null;
+          max_redemptions: number | null;
+          redemption_count: number;
+          stripe_coupon_id: string | null;
+          stripe_promo_id: string | null;
+          archived_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          discount_id?: string;
+          gym_id: string;
+          code: string;
+          kind: 'percent' | 'amount';
+          value: number;
+          valid_from?: string | null;
+          valid_to?: string | null;
+          max_redemptions?: number | null;
+          redemption_count?: number;
+          stripe_coupon_id?: string | null;
+          stripe_promo_id?: string | null;
+          archived_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          discount_id: string;
+          gym_id: string;
+          code: string;
+          kind: 'percent' | 'amount';
+          value: number;
+          valid_from: string | null;
+          valid_to: string | null;
+          max_redemptions: number | null;
+          redemption_count: number;
+          stripe_coupon_id: string | null;
+          stripe_promo_id: string | null;
+          archived_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       sop_documents: {
         Row: {
           sop_id: string;
