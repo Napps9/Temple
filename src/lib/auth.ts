@@ -40,9 +40,8 @@ export function useGymMembership() {
       if (!session) return null;
       const { data, error } = await supabase
         .from('gym_memberships')
-        .select('gym_id, role, status, gyms ( name )')
+        .select('gym_id, role, gyms ( name )')
         .eq('profile_id', session.user.id)
-        .eq('status', 'active')
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;

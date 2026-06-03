@@ -32,8 +32,8 @@ begin
   values (v_owner_id, v_owner_name)
   on conflict (id) do update set full_name = excluded.full_name;
 
-  insert into public.gym_memberships (gym_id, profile_id, role, status)
-  values (v_gym_id, v_owner_id, 'owner', 'active');
+  insert into public.gym_memberships (gym_id, profile_id, role)
+  values (v_gym_id, v_owner_id, 'owner');
 
   raise notice 'Provisioned gym % (%) with owner % (%)',
     v_gym_name, v_gym_id, v_owner_name, v_owner_email;

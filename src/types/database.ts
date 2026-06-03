@@ -44,7 +44,9 @@ export type Database = {
           gym_id: string;
           profile_id: string;
           role: GymRole;
-          status: 'active' | 'inactive';
+          health_flag: boolean;
+          emergency_contact: string | null;
+          par_q_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -52,7 +54,9 @@ export type Database = {
           gym_id: string;
           profile_id: string;
           role: GymRole;
-          status?: 'active' | 'inactive';
+          health_flag?: boolean;
+          emergency_contact?: string | null;
+          par_q_id?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -60,7 +64,9 @@ export type Database = {
           gym_id: string;
           profile_id: string;
           role: GymRole;
-          status: 'active' | 'inactive';
+          health_flag: boolean;
+          emergency_contact: string | null;
+          par_q_id: string | null;
           created_at: string;
         }>;
         Relationships: [
