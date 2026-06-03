@@ -62,6 +62,12 @@ Deno.serve(async (req) => {
       case 'invoice.paid':
         await handleInvoicePaid(event);
         break;
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(event);
+        break;
+      case 'invoice.payment_action_required':
+        await handleInvoicePaymentActionRequired(event);
+        break;
       case 'customer.subscription.updated':
         await handleSubscriptionUpdated(event);
         break;
@@ -111,6 +117,39 @@ async function handleInvoicePaid(event: Stripe.Event) {
     p_occurred_at: new Date(event.created * 1000).toISOString(),
     p_payload: invoice as unknown as Record<string, unknown>,
   });
+  if (error) throw error;
+}
+
+async function handleInvoicePaymentFailed(event: Stripe.Event) {
+  const invoice = event.data.object as Stripe.Invoice;
+  const subscriptionId = typeof invoice.subscription === 'string'
+    ? invoice.subscription
+    : invoice.subscription?.id;
+  if (!subscriptionId) return;
+
+  const { error } = await supabase.rpc('record_invoice_payment_failed', {
+    p_event_id: event.id,
+    p_subscription_id: subscriptionId,
+    p_occurred_at: new Date(event.created * 1000).toISOString(),
+  });
+  if (error) throw error;
+}
+
+async function handleInvoicePaymentActionRequired(event: Stripe.Event) {
+  const invoice = event.data.object as Stripe.Invoice;
+  const subscriptionId = typeof invoice.subscription === 'string'
+    ? invoice.subscription
+    : invoice.subscription?.id;
+  if (!subscriptionId) return;
+
+  const { error } = await supabase.rpc(
+    'record_invoice_payment_action_required',
+    {
+      p_event_id: event.id,
+      p_subscription_id: subscriptionId,
+      p_occurred_at: new Date(event.created * 1000).toISOString(),
+    },
+  );
   if (error) throw error;
 }
 
