@@ -109,6 +109,13 @@ export default function ManagementHome() {
             href="/management/sops"
           />
         ) : null}
+        {can(role, 'can_access_staff_area') ? (
+          <ManagementCard
+            title="Shifts"
+            description="When the team's on the floor. Cover when needed."
+            href="/management/shifts"
+          />
+        ) : null}
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"

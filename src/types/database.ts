@@ -642,6 +642,111 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      platform_subscriptions: {
+        Row: {
+          id: string;
+          profile_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string;
+          status: 'active' | 'past_due' | 'cancelled' | 'trialing';
+          current_period_end: string | null;
+          cancel_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string;
+          status?: 'active' | 'past_due' | 'cancelled' | 'trialing';
+          current_period_end?: string | null;
+          cancel_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          profile_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string;
+          status: 'active' | 'past_due' | 'cancelled' | 'trialing';
+          current_period_end: string | null;
+          cancel_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      shifts: {
+        Row: {
+          shift_id: string;
+          gym_id: string;
+          class_session_id: string | null;
+          assigned_to: string | null;
+          starts_at: string;
+          ends_at: string;
+          state: 'assigned' | 'open' | 'covered';
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          shift_id?: string;
+          gym_id: string;
+          class_session_id?: string | null;
+          assigned_to?: string | null;
+          starts_at: string;
+          ends_at: string;
+          state?: 'assigned' | 'open' | 'covered';
+          notes?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          shift_id: string;
+          gym_id: string;
+          class_session_id: string | null;
+          assigned_to: string | null;
+          starts_at: string;
+          ends_at: string;
+          state: 'assigned' | 'open' | 'covered';
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      shift_cover_requests: {
+        Row: {
+          request_id: string;
+          shift_id: string;
+          requested_by: string;
+          reason: string | null;
+          accepted_by: string | null;
+          accepted_at: string | null;
+          cancelled_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          request_id?: string;
+          shift_id: string;
+          requested_by: string;
+          reason?: string | null;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          cancelled_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          request_id: string;
+          shift_id: string;
+          requested_by: string;
+          reason: string | null;
+          accepted_by: string | null;
+          accepted_at: string | null;
+          cancelled_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       sop_documents: {
         Row: {
           sop_id: string;
@@ -978,6 +1083,10 @@ export type Database = {
           class_type_id: string | null;
           class_type_name: string | null;
         }[];
+      };
+      accept_cover: {
+        Args: { p_request_id: string };
+        Returns: null;
       };
     };
     Enums: {
