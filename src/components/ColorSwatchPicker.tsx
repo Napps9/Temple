@@ -29,7 +29,9 @@ export function ColorSwatchPicker({
             hitSlop={4}
             style={{ backgroundColor: c.hex }}
             className={`w-8 h-8 rounded-full ${
-              selected ? 'border-2 border-gray-900' : 'border border-white'
+              selected
+                ? 'border-2 border-gray-900 dark:border-gray-50'
+                : 'border border-white dark:border-gray-900'
             }`}
           />
         );

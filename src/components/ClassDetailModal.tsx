@@ -152,10 +152,10 @@ export function ClassDetailModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md gap-5">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5">
           {sessionQuery.isLoading || !detail ? (
             <View className="py-6 items-center">
-              <Text className="text-gray-500">Loading…</Text>
+              <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
             </View>
           ) : (
             <>
@@ -165,30 +165,32 @@ export function ClassDetailModal({
                   className="self-start rounded-full px-3 py-1">
                   <Text className="text-white text-xs font-semibold">{typeName}</Text>
                 </View>
-                <Text className="text-gray-900 text-xl font-semibold">
+                <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
                   {dateLabel}
                 </Text>
-                <Text className="text-gray-500">
+                <Text className="text-gray-500 dark:text-gray-400">
                   {start && end ? `${fmtTime(start)} — ${fmtTime(end)}` : ''} ·{' '}
                   {detail.duration_minutes} min
                 </Text>
               </View>
 
               <View className="gap-2">
-                <Text className="text-gray-400 text-xs uppercase tracking-widest">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
                   Coach
                 </Text>
                 <View className="flex-row items-center gap-3">
                   <Avatar name={coachName} />
-                  <Text className="text-gray-900 font-medium">{coachName}</Text>
+                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    {coachName}
+                  </Text>
                 </View>
               </View>
 
               <View className="gap-2">
-                <Text className="text-gray-400 text-xs uppercase tracking-widest">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
                   Booked
                 </Text>
-                <Text className="text-gray-900 font-medium">
+                <Text className="text-gray-900 dark:text-gray-50 font-medium">
                   {bookings.length} / {detail.capacity}{' '}
                   {bookings.length === 1 ? 'spot' : 'spots'} taken
                 </Text>
@@ -196,21 +198,21 @@ export function ClassDetailModal({
 
               {detail.notes ? (
                 <View className="gap-2">
-                  <Text className="text-gray-400 text-xs uppercase tracking-widest">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
                     Notes
                   </Text>
-                  <Text className="text-gray-900">{detail.notes}</Text>
+                  <Text className="text-gray-900 dark:text-gray-50">{detail.notes}</Text>
                 </View>
               ) : null}
 
               {mode === 'manage' ? (
                 <View className="gap-2">
-                  <Text className="text-gray-400 text-xs uppercase tracking-widest">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
                     Members
                   </Text>
                   <ScrollView className="max-h-48">
                     {bookings.length === 0 ? (
-                      <Text className="text-gray-500 text-sm">
+                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
                         No bookings yet.
                       </Text>
                     ) : (
@@ -220,7 +222,7 @@ export function ClassDetailModal({
                             key={b.id}
                             className="flex-row items-center gap-3">
                             <Avatar name={b.profiles?.full_name} size={32} />
-                            <Text className="text-gray-900">
+                            <Text className="text-gray-900 dark:text-gray-50">
                               {b.profiles?.full_name ?? 'Member'}
                             </Text>
                           </View>
@@ -231,7 +233,9 @@ export function ClassDetailModal({
                 </View>
               ) : null}
 
-              {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
+              {error ? (
+                <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              ) : null}
 
               <BookActions
                 inPast={inPast}
@@ -278,12 +282,16 @@ function BookActions({
   cancelPending: boolean;
 }) {
   if (inPast && !myBookingExists) {
-    return <Text className="text-gray-500 text-sm">This class has already started.</Text>;
+    return (
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        This class has already started.
+      </Text>
+    );
   }
   if (confirming === 'book') {
     return (
       <View className="gap-2">
-        <Text className="text-gray-900 font-medium">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
           Confirm your booking for this class?
         </Text>
         <View className="flex-row gap-3">
@@ -304,7 +312,7 @@ function BookActions({
   if (confirming === 'cancel') {
     return (
       <View className="gap-2">
-        <Text className="text-gray-900 font-medium">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
           Cancel your booking for this class?
         </Text>
         <View className="flex-row gap-3">
@@ -328,7 +336,11 @@ function BookActions({
     );
   }
   if (isFull) {
-    return <Text className="text-gray-500 text-sm">This class is full.</Text>;
+    return (
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        This class is full.
+      </Text>
+    );
   }
   return <Button onPress={() => setConfirming('book')}>Book this class</Button>;
 }

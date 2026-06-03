@@ -116,24 +116,32 @@ export function AccountScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6">
         <View className="gap-2">
-          <Text className="text-gray-900 text-2xl font-semibold">Account</Text>
-          <Text className="text-gray-500">Manage your name, email, and password.</Text>
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Account
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Manage your name, email, and password.
+          </Text>
         </View>
 
-        <View className="bg-white rounded-xl p-4 flex-row items-center gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3">
           <Avatar name={displayName} size={48} />
           <View className="flex-1">
-            <Text className="text-gray-900 font-semibold" numberOfLines={1}>
+            <Text
+              className="text-gray-900 dark:text-gray-50 font-semibold"
+              numberOfLines={1}>
               {displayName}
             </Text>
-            <Text className="text-gray-500 capitalize">
+            <Text className="text-gray-500 dark:text-gray-400 capitalize">
               {role ?? 'member'} · {membership?.gymName ?? 'Temple'}
             </Text>
           </View>
         </View>
 
-        <View className="bg-white rounded-xl p-4 gap-3">
-          <Text className="text-gray-900 font-semibold">Your details</Text>
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            Your details
+          </Text>
           <Input
             label="Full name"
             value={fullName}
@@ -149,10 +157,14 @@ export function AccountScreen() {
             textContentType="emailAddress"
           />
           {detailsMessage ? (
-            <Text className="text-gray-600 text-sm">{detailsMessage}</Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+              {detailsMessage}
+            </Text>
           ) : null}
           {detailsError ? (
-            <Text className="text-red-500 text-sm">{detailsError}</Text>
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {detailsError}
+            </Text>
           ) : null}
           <Button
             onPress={() => saveDetails.mutate()}
@@ -162,8 +174,10 @@ export function AccountScreen() {
           </Button>
         </View>
 
-        <View className="bg-white rounded-xl p-4 gap-3">
-          <Text className="text-gray-900 font-semibold">Password</Text>
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            Password
+          </Text>
           <Input
             label="New password"
             value={password}
@@ -179,10 +193,14 @@ export function AccountScreen() {
             textContentType="newPassword"
           />
           {passwordMessage ? (
-            <Text className="text-gray-600 text-sm">{passwordMessage}</Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+              {passwordMessage}
+            </Text>
           ) : null}
           {passwordError ? (
-            <Text className="text-red-500 text-sm">{passwordError}</Text>
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {passwordError}
+            </Text>
           ) : null}
           <Button
             onPress={() => updatePassword.mutate()}

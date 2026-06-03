@@ -14,7 +14,7 @@ export function Screen({
   edges?: readonly Edge[];
 }) {
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={edges}>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" edges={edges}>
       <View className={`flex-1 px-6 ${className ?? ''}`}>{children}</View>
     </SafeAreaView>
   );

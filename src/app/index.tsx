@@ -16,7 +16,7 @@ export default function Index() {
 
 function Loading() {
   return (
-    <View className="flex-1 bg-gray-50 items-center justify-center">
+    <View className="flex-1 bg-gray-50 dark:bg-gray-950 items-center justify-center">
       <ActivityIndicator color="#2563EB" />
     </View>
   );

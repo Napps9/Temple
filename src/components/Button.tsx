@@ -15,13 +15,14 @@ type Props = {
 
 const containerStyles: Record<Variant, string> = {
   primary: 'bg-primary active:bg-primary-dark',
-  secondary: 'bg-white border border-gray-200 active:bg-gray-50',
+  secondary:
+    'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800',
   ghost: 'bg-transparent',
 };
 
 const textStyles: Record<Variant, string> = {
   primary: 'text-white font-semibold',
-  secondary: 'text-gray-900',
+  secondary: 'text-gray-900 dark:text-gray-50',
   ghost: 'text-primary',
 };
 

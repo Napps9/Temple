@@ -1,11 +1,14 @@
 import { Stack } from 'expo-router';
 
+import { useThemeColors } from '@/lib/theme';
+
 export default function ManagementLayout() {
+  const colors = useThemeColors();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#F9FAFB' },
+        contentStyle: { backgroundColor: colors.screenBg },
         animation: 'none',
       }}
     />

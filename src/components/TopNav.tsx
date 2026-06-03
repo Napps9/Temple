@@ -46,7 +46,7 @@ export function TopNav({
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-gray-50 px-4 md:px-6 pb-3 flex-row items-center">
+      className="bg-gray-50 dark:bg-gray-950 px-4 md:px-6 pb-3 flex-row items-center">
       <View className="flex-1 flex-row items-center">
         <Pressable
           onPress={() => setNavOpen(true)}
@@ -58,17 +58,19 @@ export function TopNav({
 
       <View className="items-center">
         {isOnClasses ? (
-          <View className="flex-row bg-gray-100 rounded-full p-1">
+          <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
             {CLASSES_VIEWS.map((v) => (
               <Pressable
                 key={v}
                 onPress={() => router.setParams({ view: v })}
                 className={`px-5 md:px-6 py-1.5 rounded-full ${
-                  currentView === v ? 'bg-white' : ''
+                  currentView === v ? 'bg-white dark:bg-gray-700' : ''
                 }`}>
                 <Text
                   className={`capitalize text-sm font-medium ${
-                    currentView === v ? 'text-gray-900' : 'text-gray-500'
+                    currentView === v
+                      ? 'text-gray-900 dark:text-gray-50'
+                      : 'text-gray-500 dark:text-gray-400'
                   }`}>
                   {v}
                 </Text>

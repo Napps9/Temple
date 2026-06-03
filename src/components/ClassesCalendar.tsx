@@ -232,17 +232,17 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, -1)))}
             hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
-            <Text className="text-gray-500 text-lg">‹</Text>
+            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
           </Pressable>
-          <Text className="text-gray-900 text-xl font-semibold">
+          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
             {fmtMonthYear(date)}
           </Text>
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, 1)))}
             hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
-            <Text className="text-gray-500 text-lg">›</Text>
+            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
           </Pressable>
           {canCreate ? (
             <View className="absolute right-0 top-6">
@@ -351,7 +351,7 @@ function DayView({
                 className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
                 <Text
                   className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-gray-400'
+                    today ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
@@ -365,7 +365,7 @@ function DayView({
                         ? 'text-white'
                         : today
                           ? 'text-primary'
-                          : 'text-gray-900'
+                          : 'text-gray-900 dark:text-gray-50'
                     }`}>
                     {d.getDate()}
                   </Text>
@@ -390,8 +390,8 @@ function DayView({
                   />
                 ))
               ) : (
-                <View className="bg-white border border-gray-200 rounded-xl p-4">
-                  <Text className="text-gray-500 text-sm">
+                <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
                     No classes scheduled today.
                   </Text>
                 </View>
@@ -430,8 +430,10 @@ function DayHourRow({
 }) {
   const label = `${hour.toString().padStart(2, '0')}:00`;
   return (
-    <View className="flex-row gap-4 py-2 border-t border-gray-100">
-      <Text className="text-gray-400 text-sm w-14 pt-3">{label}</Text>
+    <View className="flex-row gap-4 py-2 border-t border-gray-100 dark:border-gray-800">
+      <Text className="text-gray-400 dark:text-gray-500 text-sm w-14 pt-3">
+        {label}
+      </Text>
       <View className="flex-1 py-1.5 gap-2">
         {classes.length > 0 ? (
           classes.map((c) => (
@@ -444,12 +446,12 @@ function DayHourRow({
         ) : onCreate ? (
           <Pressable
             onPress={onCreate}
-            className="border border-dashed border-gray-300 rounded-xl px-4 py-3 active:bg-gray-50">
-            <Text className="text-gray-400 text-sm">+ Add a class</Text>
+            className="border border-dashed border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 active:bg-gray-50 dark:active:bg-gray-800">
+            <Text className="text-gray-400 dark:text-gray-500 text-sm">+ Add a class</Text>
           </Pressable>
         ) : (
-          <View className="border border-dashed border-gray-200 rounded-xl px-4 py-3">
-            <Text className="text-gray-400 text-sm">No class scheduled</Text>
+          <View className="border border-dashed border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
+            <Text className="text-gray-400 dark:text-gray-500 text-sm">No class scheduled</Text>
           </View>
         )}
       </View>
@@ -469,17 +471,19 @@ function DayClassCard({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white rounded-2xl border border-gray-200 p-4 flex-row items-start gap-3 active:bg-gray-50">
+      className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800">
       <View className="flex-1 gap-1.5">
         <View
           style={{ backgroundColor: sessionColor(session) }}
           className="self-start rounded-full px-2.5 py-1">
           <Text className="text-white text-xs font-semibold">{sessionLabel(session)}</Text>
         </View>
-        <Text className="text-gray-900 text-base font-medium">
+        <Text className="text-gray-900 dark:text-gray-50 text-base font-medium">
           {fmtTime(start)} — {fmtTime(end)}
         </Text>
-        <Text className="text-gray-500 text-xs">{session.capacity} spots</Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {session.capacity} spots
+        </Text>
       </View>
       <Avatar name={session.coach?.full_name} size={36} />
     </Pressable>
@@ -513,21 +517,21 @@ function WeekView({
           <Pressable
             onPress={() => setDate(addDays(date, -7))}
             hitSlop={8}
-            className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center">
-            <Text className="text-gray-500">‹</Text>
+            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            <Text className="text-gray-500 dark:text-gray-400">‹</Text>
           </Pressable>
-          <Text className="text-gray-700 font-medium">
+          <Text className="text-gray-700 dark:text-gray-200 font-medium">
             {fmtWeekRange(weekDays[0], weekDays[6])}
           </Text>
           <Pressable
             onPress={() => setDate(addDays(date, 7))}
             hitSlop={8}
-            className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center">
-            <Text className="text-gray-500">›</Text>
+            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            <Text className="text-gray-500 dark:text-gray-400">›</Text>
           </Pressable>
         </View>
 
-        <View className="flex-row pb-2 border-b border-gray-200">
+        <View className="flex-row pb-2 border-b border-gray-200 dark:border-gray-700">
           <View className="w-10 md:w-14" />
           {weekDays.map((d) => {
             const today = isSameDay(d, new Date());
@@ -542,13 +546,15 @@ function WeekView({
                 className="flex-1 items-center pb-2">
                 <Text
                   className={`text-xs uppercase tracking-wide ${
-                    today ? 'text-primary font-semibold' : 'text-gray-500'
+                    today
+                      ? 'text-primary font-semibold'
+                      : 'text-gray-500 dark:text-gray-400'
                   }`}>
                   {d.toLocaleDateString(undefined, { weekday: 'short' })}
                 </Text>
                 <Text
                   className={`text-lg font-bold mt-0.5 ${
-                    today ? 'text-primary' : 'text-gray-900'
+                    today ? 'text-primary' : 'text-gray-900 dark:text-gray-50'
                   }`}>
                   {d.getDate()}
                 </Text>
@@ -563,8 +569,12 @@ function WeekView({
           {HOURS.map((hour) => {
             const label = `${hour.toString().padStart(2, '0')}:00`;
             return (
-              <View key={hour} className="flex-row border-t border-gray-100 min-h-14 py-0.5">
-                <Text className="w-10 md:w-14 text-xs text-gray-400 pt-2">{label}</Text>
+              <View
+                key={hour}
+                className="flex-row border-t border-gray-100 dark:border-gray-800 min-h-14 py-0.5">
+                <Text className="w-10 md:w-14 text-xs text-gray-400 dark:text-gray-500 pt-2">
+                  {label}
+                </Text>
                 {weekDays.map((d) => {
                   const cellClasses = classesAtDayHour(sessions, d, hour);
                   return (
@@ -577,7 +587,7 @@ function WeekView({
                       ) : canCreate ? (
                         <Pressable
                           onPress={() => onCreateAt(d, hour)}
-                          className="flex-1 border border-dashed border-gray-200 rounded-md min-h-14 active:bg-gray-50"
+                          className="flex-1 border border-dashed border-gray-200 dark:border-gray-700 rounded-md min-h-14 active:bg-gray-50 dark:active:bg-gray-800"
                         />
                       ) : (
                         <View className="flex-1 rounded-md min-h-14" />
@@ -605,19 +615,19 @@ function WeekTile({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-1 bg-white border border-gray-200 rounded-md p-1.5 min-h-14 gap-1 active:bg-gray-50">
+      className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-1.5 min-h-14 gap-1 active:bg-gray-50 dark:active:bg-gray-800">
       <View className="flex-row items-center gap-1">
         <View
           style={{ backgroundColor: sessionColor(session) }}
           className="w-1.5 h-1.5 rounded-full"
         />
         <Text
-          className="text-gray-900 text-[10px] font-semibold flex-1"
+          className="text-gray-900 dark:text-gray-50 text-[10px] font-semibold flex-1"
           numberOfLines={1}>
           {sessionLabel(session)}
         </Text>
       </View>
-      <Text className="text-gray-500 text-[10px]" numberOfLines={1}>
+      <Text className="text-gray-500 dark:text-gray-400 text-[10px]" numberOfLines={1}>
         {fmtTime(start)}
       </Text>
     </Pressable>
@@ -643,7 +653,9 @@ function MonthView({
         <View className="flex-row pb-2">
           {WEEK_LETTERS.map((l, i) => (
             <View key={i} className="flex-1 items-center">
-              <Text className="text-gray-400 text-xs font-medium uppercase">{l}</Text>
+              <Text className="text-gray-400 dark:text-gray-500 text-xs font-medium uppercase">
+                {l}
+              </Text>
             </View>
           ))}
         </View>
@@ -669,18 +681,18 @@ function MonthView({
                       selected
                         ? 'bg-primary border-primary'
                         : today
-                          ? 'border-primary bg-white'
-                          : 'border-transparent bg-white'
+                          ? 'border-primary bg-white dark:bg-gray-900'
+                          : 'border-transparent bg-white dark:bg-gray-900'
                     }`}>
                     <Text
                       className={
                         selected
                           ? 'text-white font-semibold'
                           : !inMonth
-                            ? 'text-gray-300'
+                            ? 'text-gray-300 dark:text-gray-600'
                             : today
                               ? 'text-primary font-semibold'
-                              : 'text-gray-900 font-medium'
+                              : 'text-gray-900 dark:text-gray-50 font-medium'
                       }>
                       {d.getDate()}
                     </Text>

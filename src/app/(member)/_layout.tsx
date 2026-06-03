@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { useSession } from '@/lib/auth';
+import { useThemeColors } from '@/lib/theme';
 
 const MEMBER_SECTIONS: NavSection[] = [
   { name: 'book', href: '/book', label: 'Book', icon: 'calendar-clear-outline' },
@@ -13,16 +14,17 @@ const MEMBER_SECTIONS: NavSection[] = [
 
 export default function MemberLayout() {
   const session = useSession();
+  const colors = useThemeColors();
   if (session === null) return <Redirect href="/sign-in" />;
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
-          sceneStyle: { backgroundColor: '#F9FAFB' },
+          sceneStyle: { backgroundColor: colors.screenBg },
           animation: 'none',
         }}>
         <Tabs.Screen name="book" options={{ title: 'Book' }} />

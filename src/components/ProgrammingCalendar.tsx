@@ -160,17 +160,17 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, -1)))}
             hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
-            <Text className="text-gray-500 text-lg">‹</Text>
+            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
           </Pressable>
-          <Text className="text-gray-900 text-xl font-semibold">
+          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
             {fmtMonthYear(date)}
           </Text>
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, 1)))}
             hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
-            <Text className="text-gray-500 text-lg">›</Text>
+            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
           </Pressable>
         </View>
 
@@ -186,7 +186,7 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
                 className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
                 <Text
                   className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-gray-400'
+                    today ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
@@ -200,7 +200,7 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
                         ? 'text-white'
                         : today
                           ? 'text-primary'
-                          : 'text-gray-900'
+                          : 'text-gray-900 dark:text-gray-50'
                     }`}>
                     {d.getDate()}
                   </Text>
@@ -214,8 +214,8 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2 gap-3">
           {dayTypes.length === 0 ? (
-            <View className="bg-white border border-gray-200 rounded-xl p-4">
-              <Text className="text-gray-500 text-sm">
+            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 No classes scheduled for this day.
               </Text>
             </View>
@@ -263,7 +263,9 @@ function ClassTypeCard({
         style={{ backgroundColor: classType.color }}
         className="w-3 h-3 rounded-full"
       />
-      <Text className="flex-1 text-gray-900 font-semibold">{classType.name}</Text>
+      <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        {classType.name}
+      </Text>
       {mode === 'manage' ? (
         <Text className="text-primary text-xs uppercase tracking-widest">
           {sections.length === 0 ? 'Add' : 'Edit'}
@@ -274,7 +276,7 @@ function ClassTypeCard({
 
   const body =
     sections.length === 0 ? (
-      <Text className="text-gray-400 text-sm">
+      <Text className="text-gray-400 dark:text-gray-500 text-sm">
         {mode === 'manage'
           ? 'No programming yet — tap to add.'
           : 'No programming yet.'}
@@ -283,8 +285,10 @@ function ClassTypeCard({
       <View className="gap-3">
         {sections.map((s, idx) => (
           <View key={idx} className="gap-1">
-            <Text className="text-gray-900 font-semibold">{s.title}</Text>
-            <Text className="text-gray-700">{s.body}</Text>
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              {s.title}
+            </Text>
+            <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
           </View>
         ))}
       </View>
@@ -294,7 +298,7 @@ function ClassTypeCard({
     return (
       <Pressable
         onPress={onEdit}
-        className="bg-white rounded-xl p-4 gap-3 active:bg-gray-50">
+        className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800">
         {header}
         {body}
       </Pressable>
@@ -302,7 +306,7 @@ function ClassTypeCard({
   }
 
   return (
-    <View className="bg-white rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
       {header}
       {body}
     </View>

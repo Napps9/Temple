@@ -152,10 +152,10 @@ export function ProgrammingModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md gap-5 max-h-[90vh]">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[90vh]">
           {!classType || !date ? (
             <View className="py-6 items-center">
-              <Text className="text-gray-500">Loading…</Text>
+              <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
             </View>
           ) : (
             <>
@@ -167,24 +167,24 @@ export function ProgrammingModal({
                     {classType.name}
                   </Text>
                 </View>
-                <Text className="text-gray-900 text-xl font-semibold">
+                <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
                   {fmtLongDate(date)}
                 </Text>
               </View>
 
               <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-3">
                 {programming.isLoading ? (
-                  <Text className="text-gray-500">Loading…</Text>
+                  <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
                 ) : (
                   <>
                     {sections.map((s, idx) => (
                       <View
                         key={idx}
-                        className="bg-gray-50 rounded-xl p-4 gap-2">
+                        className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 gap-2">
                         <Pressable
                           onPress={() => removeSection(idx)}
                           hitSlop={4}
-                          className="self-end w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100">
+                          className="self-end w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-700">
                           <Ionicons name="close" size={18} color="#9CA3AF" />
                         </Pressable>
                         <Input
@@ -211,16 +211,20 @@ export function ProgrammingModal({
                     ))}
                     <Pressable
                       onPress={addSection}
-                      className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300">
+                      className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
                       <Ionicons name="add" size={16} color="#6B7280" />
-                      <Text className="text-gray-500">Add section</Text>
+                      <Text className="text-gray-500 dark:text-gray-400">
+                        Add section
+                      </Text>
                     </Pressable>
                   </>
                 )}
               </ScrollView>
 
               {error ? (
-                <Text className="text-red-500 text-sm">{error}</Text>
+                <Text className="text-red-500 dark:text-red-400 text-sm">
+                  {error}
+                </Text>
               ) : null}
 
               <View className="flex-row gap-3">

@@ -117,8 +117,10 @@ export default function HoursScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6">
         <View className="gap-2">
-          <Text className="text-gray-900 text-2xl font-semibold">Operating hours</Text>
-          <Text className="text-gray-500">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Operating hours
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
             Set when your gym is open each day. Hours outside these windows
             appear as Closed in the Classes view, so they can't be booked.
           </Text>
@@ -128,18 +130,29 @@ export default function HoursScreen() {
           {DAYS.map((d) => {
             const s = states[d.dow];
             return (
-              <View key={d.dow} className="bg-white rounded-xl p-4 gap-3">
+              <View
+                key={d.dow}
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
                 <View className="flex-row justify-between items-center">
-                  <Text className="text-gray-900 font-semibold">{d.label}</Text>
+                  <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                    {d.label}
+                  </Text>
                   <Pressable
                     onPress={() =>
                       setStates({ ...states, [d.dow]: { ...s, open: !s.open } })
                     }
                     hitSlop={8}
                     className={`px-3 py-1 rounded-full border ${
-                      s.open ? 'border-primary bg-primary/10' : 'border-gray-200'
+                      s.open
+                        ? 'border-primary bg-primary/10'
+                        : 'border-gray-200 dark:border-gray-700'
                     }`}>
-                    <Text className={s.open ? 'text-primary' : 'text-gray-500'}>
+                    <Text
+                      className={
+                        s.open
+                          ? 'text-primary'
+                          : 'text-gray-500 dark:text-gray-400'
+                      }>
                       {s.open ? 'Open' : 'Closed'}
                     </Text>
                   </Pressable>
@@ -173,7 +186,9 @@ export default function HoursScreen() {
           })}
         </View>
 
-        {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
+        {error ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
 
         <Button onPress={() => save.mutate()} loading={save.isPending} success={saved}>
           Save changes

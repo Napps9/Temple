@@ -341,8 +341,10 @@ export default function ClassTypesScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6">
         <View className="gap-2">
-          <Text className="text-gray-900 text-2xl font-semibold">Class types</Text>
-          <Text className="text-gray-500">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Class types
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
             Name and colour the kinds of class you run, and set up a recurring
             schedule so they appear on the calendar automatically.
           </Text>
@@ -350,14 +352,16 @@ export default function ClassTypesScreen() {
 
         <View className="gap-2">
           {visibleRows.length === 0 ? (
-            <Text className="text-gray-500">No types yet — add one below.</Text>
+            <Text className="text-gray-500 dark:text-gray-400">
+              No types yet — add one below.
+            </Text>
           ) : null}
           {visibleRows.map(({ row: r, idx }) => {
             const hasSchedule = r.recurrence.days.length > 0;
             return (
               <View
                 key={r.id ?? `new-${idx}`}
-                className="bg-white rounded-xl p-3 gap-3">
+                className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-3">
                 <View className="flex-row items-center gap-3">
                   <Pressable
                     onPress={() =>
@@ -365,7 +369,7 @@ export default function ClassTypesScreen() {
                     }
                     hitSlop={4}
                     style={{ backgroundColor: r.color }}
-                    className="w-10 h-10 rounded-full border-2 border-white"
+                    className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-900"
                   />
                   <View className="flex-1">
                     <Input
@@ -386,12 +390,12 @@ export default function ClassTypesScreen() {
                       if (openPickerIdx === idx) setOpenPickerIdx(null);
                     }}
                     hitSlop={4}
-                    className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100">
+                    className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
                     <Ionicons name="close" size={18} color="#9CA3AF" />
                   </Pressable>
                 </View>
                 {openPickerIdx === idx ? (
-                  <View className="bg-gray-50 rounded-lg p-3">
+                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                     <ColorSwatchPicker
                       value={r.color}
                       onChange={(c) => updateRow(idx, { color: c })}
@@ -406,7 +410,9 @@ export default function ClassTypesScreen() {
                   className="flex-row items-center justify-between gap-3 px-1 py-1 active:opacity-70">
                   <Text
                     className={`flex-1 text-sm ${
-                      hasSchedule ? 'text-gray-700' : 'text-gray-400'
+                      hasSchedule
+                        ? 'text-gray-700 dark:text-gray-200'
+                        : 'text-gray-400 dark:text-gray-500'
                     }`}
                     numberOfLines={2}>
                     {hasSchedule
@@ -419,7 +425,7 @@ export default function ClassTypesScreen() {
                 </Pressable>
 
                 {r.scheduleOpen ? (
-                  <View className="bg-gray-50 rounded-lg p-3 gap-3">
+                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-3">
                     <RecurrenceEditor
                       value={r.recurrence}
                       onChange={(next) => updateRow(idx, { recurrence: next })}
@@ -433,7 +439,7 @@ export default function ClassTypesScreen() {
                         }
                         hitSlop={4}
                         className="self-start">
-                        <Text className="text-red-500 text-sm">
+                        <Text className="text-red-500 dark:text-red-400 text-sm">
                           Remove schedule
                         </Text>
                       </Pressable>
@@ -447,12 +453,14 @@ export default function ClassTypesScreen() {
 
         <Pressable
           onPress={addRow}
-          className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300">
+          className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
           <Ionicons name="add" size={16} color="#6B7280" />
-          <Text className="text-gray-500">Add type</Text>
+          <Text className="text-gray-500 dark:text-gray-400">Add type</Text>
         </Pressable>
 
-        {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
+        {error ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
 
         <Button
           onPress={() => save.mutate()}

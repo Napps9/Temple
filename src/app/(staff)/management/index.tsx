@@ -19,16 +19,18 @@ function ManagementCard({
   comingSoon?: boolean;
 }) {
   const body = (
-    <View className="bg-white rounded-xl p-4 gap-1">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
       <View className="flex-row justify-between items-center">
-        <Text className="text-gray-900 font-semibold">{title}</Text>
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">{title}</Text>
         {comingSoon ? (
-          <Text className="text-gray-400 text-xs uppercase tracking-widest">Coming soon</Text>
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Coming soon
+          </Text>
         ) : (
           <Text className="text-primary">→</Text>
         )}
       </View>
-      <Text className="text-gray-500">{description}</Text>
+      <Text className="text-gray-500 dark:text-gray-400">{description}</Text>
     </View>
   );
   if (href && !comingSoon) {

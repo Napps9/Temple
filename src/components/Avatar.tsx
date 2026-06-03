@@ -12,8 +12,10 @@ export function Avatar({
   return (
     <View
       style={{ width: size, height: size, borderRadius: size / 2 }}
-      className="bg-gray-200 items-center justify-center">
-      <Text className="text-gray-600 font-semibold" style={{ fontSize }}>
+      className="bg-gray-200 dark:bg-gray-700 items-center justify-center">
+      <Text
+        className="text-gray-600 dark:text-gray-300 font-semibold"
+        style={{ fontSize }}>
         {initial}
       </Text>
     </View>
