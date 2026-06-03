@@ -116,6 +116,13 @@ export default function ManagementHome() {
             href="/management/billing"
           />
         ) : null}
+        {can(role, 'can_manage_plans') ? (
+          <ManagementCard
+            title="Plans"
+            description="Membership plans members can sign up to."
+            href="/management/plans"
+          />
+        ) : null}
         <ManagementCard
           title="Settings"
           description="Gym details, branding, and operational preferences."
