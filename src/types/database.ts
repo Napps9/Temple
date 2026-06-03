@@ -594,6 +594,30 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      class_check_ins: {
+        Row: {
+          booking_id: string;
+          gym_id: string;
+          profile_id: string;
+          checked_in_by: string;
+          checked_in_at: string;
+        };
+        Insert: {
+          booking_id: string;
+          gym_id: string;
+          profile_id: string;
+          checked_in_by: string;
+          checked_in_at?: string;
+        };
+        Update: Partial<{
+          booking_id: string;
+          gym_id: string;
+          profile_id: string;
+          checked_in_by: string;
+          checked_in_at: string;
+        }>;
+        Relationships: [];
+      };
       chat_threads: {
         Row: {
           thread_id: string;
@@ -830,6 +854,8 @@ export type Database = {
           class_type_id: string | null;
           class_type_name: string | null;
           bookings_count: number;
+          checked_in_count: number;
+          no_show_count: number;
           unique_members: number;
         }[];
       };

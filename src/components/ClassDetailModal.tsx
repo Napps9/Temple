@@ -25,6 +25,7 @@ type Booking = {
   id: string;
   profile_id: string;
   profiles: { full_name: string | null } | null;
+  class_check_ins: { checked_in_at: string }[];
 };
 
 function fmtTime(d: Date) {
@@ -72,12 +73,40 @@ export function ClassDetailModal({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_bookings')
-        .select('id, profile_id, profiles(full_name)')
+        .select(
+          'id, profile_id, profiles(full_name), class_check_ins!left(checked_in_at)',
+        )
         .eq('class_session_id', sessionId!)
         .order('created_at');
       if (error) throw error;
       return data as unknown as Booking[];
     },
+  });
+
+  const checkInMutation = useMutation({
+    mutationFn: async (booking: Booking) => {
+      if (!session || !detail) throw new Error('Not ready');
+      const isChecked = booking.class_check_ins.length > 0;
+      if (isChecked) {
+        const { error } = await supabase
+          .from('class_check_ins')
+          .delete()
+          .eq('booking_id', booking.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('class_check_ins').insert({
+          booking_id: booking.id,
+          gym_id: detail.gym_id,
+          profile_id: booking.profile_id,
+          checked_in_by: session.user.id,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not update check-in')),
   });
 
   const book = useMutation({
@@ -217,16 +246,38 @@ export function ClassDetailModal({
                       </Text>
                     ) : (
                       <View className="gap-2">
-                        {bookings.map((b) => (
-                          <View
-                            key={b.id}
-                            className="flex-row items-center gap-3">
-                            <Avatar name={b.profiles?.full_name} size={32} />
-                            <Text className="text-gray-900 dark:text-gray-50">
-                              {b.profiles?.full_name ?? 'Member'}
-                            </Text>
-                          </View>
-                        ))}
+                        {bookings.map((b) => {
+                          const isChecked = b.class_check_ins.length > 0;
+                          return (
+                            <View
+                              key={b.id}
+                              className="flex-row items-center gap-3">
+                              <Avatar name={b.profiles?.full_name} size={32} />
+                              <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                                {b.profiles?.full_name ?? 'Member'}
+                              </Text>
+                              {mode === 'manage' ? (
+                                <Pressable
+                                  onPress={() => checkInMutation.mutate(b)}
+                                  disabled={checkInMutation.isPending}
+                                  className={`rounded-full px-3 py-1 ${
+                                    isChecked
+                                      ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                                      : 'bg-gray-100 dark:bg-gray-800'
+                                  }`}>
+                                  <Text
+                                    className={`text-xs font-medium ${
+                                      isChecked
+                                        ? 'text-emerald-700 dark:text-emerald-200'
+                                        : 'text-gray-700 dark:text-gray-200'
+                                    }`}>
+                                    {isChecked ? '✓ Checked in' : 'Check in'}
+                                  </Text>
+                                </Pressable>
+                              ) : null}
+                            </View>
+                          );
+                        })}
                       </View>
                     )}
                   </ScrollView>
