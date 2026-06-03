@@ -2,7 +2,8 @@ import { Redirect, Tabs } from 'expo-router';
 import { View } from 'react-native';
 
 import { TopNav, type NavSection } from '@/components/TopNav';
-import { isStaffRole, useGymMembership, useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
+import { can } from '@/lib/can';
 import { useThemeColors } from '@/lib/theme';
 
 const STAFF_SECTIONS: NavSection[] = [
@@ -17,7 +18,7 @@ export default function StaffLayout() {
   const colors = useThemeColors();
 
   if (session === null) return <Redirect href="/sign-in" />;
-  if (!isLoading && membership && !isStaffRole(membership.role)) {
+  if (!isLoading && membership && !can(membership.role, 'can_access_staff_area')) {
     return <Redirect href="/book" />;
   }
 

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { useRole } from '@/lib/auth';
+import { can } from '@/lib/can';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -54,14 +55,14 @@ export default function ManagementHome() {
           description="Your name, email, and password."
           href="/management/account"
         />
-        {role === 'owner' ? (
+        {can(role, 'can_manage_staff') ? (
           <ManagementCard
             title="Team"
             description="Invite owners, coaches, staff and members."
             href="/management/team"
           />
         ) : null}
-        {role === 'owner' || role === 'coach' ? (
+        {can(role, 'can_edit_classes') ? (
           <ManagementCard
             title="Class types"
             description="Name and colour the kinds of class you run."
@@ -73,7 +74,7 @@ export default function ManagementHome() {
           description="View and manage everyone signed up to your gym."
           comingSoon
         />
-        {role === 'owner' ? (
+        {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"
             description="Memberships, payment plans, and revenue."

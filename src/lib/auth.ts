@@ -78,10 +78,6 @@ export function useMyProfile() {
   });
 }
 
-export function isStaffRole(role: GymRole | null | undefined): boolean {
-  return role === 'owner' || role === 'coach' || role === 'staff';
-}
-
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;

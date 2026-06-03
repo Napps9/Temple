@@ -9,6 +9,7 @@ import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
+import { can } from '@/lib/can';
 import { supabase } from '@/lib/supabase';
 
 type CreateRequest = { date?: Date; hour?: number };
@@ -146,7 +147,7 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   const { data: membership } = useGymMembership();
   const role = useRole();
-  const canCreate = mode === 'manage' && (role === 'owner' || role === 'coach');
+  const canCreate = mode === 'manage' && can(role, 'can_edit_classes');
   const queryClient = useQueryClient();
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
