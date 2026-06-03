@@ -102,6 +102,13 @@ export default function ManagementHome() {
             href="/management/chat"
           />
         ) : null}
+        {can(role, 'can_access_staff_area') ? (
+          <ManagementCard
+            title="SOPs"
+            description="How the coaching team runs the gym."
+            href="/management/sops"
+          />
+        ) : null}
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"

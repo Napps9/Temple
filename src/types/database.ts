@@ -594,6 +594,42 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      sop_documents: {
+        Row: {
+          sop_id: string;
+          gym_id: string;
+          title: string;
+          category: string | null;
+          body_markdown: string;
+          updated_by: string;
+          updated_at: string;
+          archived_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          sop_id?: string;
+          gym_id: string;
+          title: string;
+          category?: string | null;
+          body_markdown?: string;
+          updated_by: string;
+          updated_at?: string;
+          archived_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          sop_id: string;
+          gym_id: string;
+          title: string;
+          category: string | null;
+          body_markdown: string;
+          updated_by: string;
+          updated_at: string;
+          archived_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       class_check_ins: {
         Row: {
           booking_id: string;
