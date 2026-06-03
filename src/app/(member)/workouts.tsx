@@ -16,6 +16,7 @@ type LogResult = {
   value_seconds: number | null;
   value_reps: number | null;
   is_rx: boolean;
+  is_pr: boolean;
   movements: { name: string } | null;
 };
 
@@ -69,7 +70,7 @@ export default function Workouts() {
       const { data, error } = await supabase
         .from('workout_logs')
         .select(
-          'log_id, logged_at, programmed_at, notes, workout_log_results(metric_kind, value_numeric, value_seconds, value_reps, is_rx, movements(name))',
+          'log_id, logged_at, programmed_at, notes, workout_log_results(metric_kind, value_numeric, value_seconds, value_reps, is_rx, is_pr, movements(name))',
         )
         .order('logged_at', { ascending: false })
         .limit(20);
@@ -119,12 +120,23 @@ export default function Workouts() {
             </Text>
             <View className="gap-1">
               {log.workout_log_results.map((r, i) => (
-                <Text key={i} className="text-gray-900 dark:text-gray-50">
-                  {fmtResult(r)}
+                <View key={i} className="flex-row items-center gap-2 flex-wrap">
+                  <Text className="text-gray-900 dark:text-gray-50">
+                    {fmtResult(r)}
+                  </Text>
+                  {r.is_pr ? (
+                    <View className="bg-amber-100 dark:bg-amber-900/40 rounded-full px-2 py-0.5">
+                      <Text className="text-amber-800 dark:text-amber-200 text-xs font-medium">
+                        PR
+                      </Text>
+                    </View>
+                  ) : null}
                   {r.is_rx ? null : (
-                    <Text className="text-gray-500 dark:text-gray-400"> · scaled</Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      scaled
+                    </Text>
                   )}
-                </Text>
+                </View>
               ))}
             </View>
             {log.notes ? (
