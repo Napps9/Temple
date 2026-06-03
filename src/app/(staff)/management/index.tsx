@@ -88,6 +88,13 @@ export default function ManagementHome() {
             href="/management/insights"
           />
         ) : null}
+        {can(role, 'can_manage_staff') ? (
+          <ManagementCard
+            title="Tags"
+            description="Tag members for segmentation and automation."
+            href="/management/tags"
+          />
+        ) : null}
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"

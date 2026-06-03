@@ -546,6 +546,54 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      tags: {
+        Row: {
+          tag_id: string;
+          gym_id: string;
+          name: string;
+          color: string | null;
+          created_at: string;
+        };
+        Insert: {
+          tag_id?: string;
+          gym_id: string;
+          name: string;
+          color?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          tag_id: string;
+          gym_id: string;
+          name: string;
+          color: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      member_tags: {
+        Row: {
+          gym_id: string;
+          profile_id: string;
+          tag_id: string;
+          added_by: string;
+          added_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          profile_id: string;
+          tag_id: string;
+          added_by: string;
+          added_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          profile_id: string;
+          tag_id: string;
+          added_by: string;
+          added_at: string;
+        }>;
+        Relationships: [];
+      };
       announcements: {
         Row: {
           announcement_id: string;
