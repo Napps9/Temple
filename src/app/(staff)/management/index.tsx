@@ -76,6 +76,27 @@ export default function ManagementHome() {
             href="/management/reports"
           />
         ) : null}
+        {can(role, 'can_manage_tasks') || role === 'staff' ? (
+          <ManagementCard
+            title="Tasks"
+            description="Day-to-day staff work, assigned and tracked."
+            href="/management/tasks"
+          />
+        ) : null}
+        {can(role, 'can_request_cover') || can(role, 'can_claim_cover') ? (
+          <ManagementCard
+            title="Cover"
+            description="Hand a class to another coach; first-claim wins."
+            href="/management/cover"
+          />
+        ) : null}
+        {can(role, 'can_view_sops') ? (
+          <ManagementCard
+            title="SOPs"
+            description="How we do things here — for the whole team."
+            href="/management/sops"
+          />
+        ) : null}
         {can(role, 'can_manage_staff') ? (
           <ManagementCard
             title="Team"
@@ -111,11 +132,13 @@ export default function ManagementHome() {
             comingSoon
           />
         ) : null}
-        <ManagementCard
-          title="Settings"
-          description="Gym details, branding, and operational preferences."
-          comingSoon
-        />
+        {can(role, 'can_set_targets') ? (
+          <ManagementCard
+            title="Settings"
+            description="Set monthly and quarterly targets for insights."
+            href="/management/settings"
+          />
+        ) : null}
       </ScrollView>
     </Screen>
   );

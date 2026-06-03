@@ -1,27 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useRole } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import type { GymRole } from '@/types/database';
 
-const ROLE_OPTIONS: GymRole[] = ['owner', 'coach', 'staff', 'member'];
-
-function generateCode() {
-  return Math.random().toString(36).slice(2, 10).toUpperCase();
-}
+// Owners can mint any role. Admins can mint coach / staff / member only
+// — the create_invite RPC enforces this at the DB layer; the UI hides
+// the disallowed options so the picker doesn't reveal a path the RPC
+// will reject.
+const ALL_ROLES: GymRole[] = ['owner', 'admin', 'coach', 'staff', 'member'];
+const ADMIN_ROLES: GymRole[] = ['coach', 'staff', 'member'];
 
 export default function TeamScreen() {
   const { data: membership } = useGymMembership();
+  const callerRole = useRole();
   const queryClient = useQueryClient();
   const [role, setRole] = useState<GymRole>('member');
   const [generated, markGenerated] = useSavedFlag();
+
+  const roleOptions =
+    callerRole === 'owner' ? ALL_ROLES : ADMIN_ROLES;
 
   const codes = useQuery({
     queryKey: ['invite-codes', membership?.gymId],
@@ -39,17 +43,13 @@ export default function TeamScreen() {
   const create = useMutation({
     mutationFn: async () => {
       if (!membership) throw new Error('No gym membership found');
-      const { data: userResp, error: userErr } = await supabase.auth.getUser();
-      if (userErr || !userResp.user) throw userErr ?? new Error('Not signed in');
-      const code = generateCode();
-      const { error } = await supabase.from('invite_codes').insert({
-        gym_id: membership.gymId,
-        code,
-        role,
-        created_by: userResp.user.id,
+      const { data, error } = await supabase.rpc('create_invite', {
+        p_gym_id: membership.gymId,
+        p_role: role,
+        p_expires_at: null,
       });
       if (error) throw error;
-      return code;
+      return data;
     },
     onSuccess: () => {
       markGenerated();
@@ -70,7 +70,7 @@ export default function TeamScreen() {
         </View>
 
         <View className="flex-row flex-wrap gap-2">
-          {ROLE_OPTIONS.map((r) => {
+          {roleOptions.map((r) => {
             const selected = role === r;
             return (
               <Pressable

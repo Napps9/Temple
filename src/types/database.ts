@@ -437,6 +437,174 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      coach_tasks: {
+        Row: {
+          id: string;
+          gym_id: string;
+          assigned_to: string;
+          created_by: string;
+          target_profile: string | null;
+          title: string;
+          notes: string | null;
+          status: 'open' | 'done' | 'cancelled';
+          due_date: string | null;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          assigned_to: string;
+          created_by: string;
+          target_profile?: string | null;
+          title: string;
+          notes?: string | null;
+          status?: 'open' | 'done' | 'cancelled';
+          due_date?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          assigned_to: string;
+          created_by: string;
+          target_profile: string | null;
+          title: string;
+          notes: string | null;
+          status: 'open' | 'done' | 'cancelled';
+          due_date: string | null;
+          completed_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      cover_requests: {
+        Row: {
+          id: string;
+          gym_id: string;
+          requested_by: string;
+          range_start: string;
+          range_end: string;
+          notes: string | null;
+          status: 'open' | 'partial' | 'claimed' | 'cancelled' | 'expired';
+          created_at: string;
+          cancelled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          requested_by: string;
+          range_start: string;
+          range_end: string;
+          notes?: string | null;
+          status?: 'open' | 'partial' | 'claimed' | 'cancelled' | 'expired';
+          created_at?: string;
+          cancelled_at?: string | null;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          requested_by: string;
+          range_start: string;
+          range_end: string;
+          notes: string | null;
+          status: 'open' | 'partial' | 'claimed' | 'cancelled' | 'expired';
+          created_at: string;
+          cancelled_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      cover_request_sessions: {
+        Row: {
+          id: string;
+          request_id: string;
+          class_session_id: string;
+          original_coach_id: string;
+          claimed_by: string | null;
+          claimed_at: string | null;
+          gym_id: string;
+        };
+        Insert: {
+          id?: string;
+          request_id: string;
+          class_session_id: string;
+          original_coach_id: string;
+          claimed_by?: string | null;
+          claimed_at?: string | null;
+          gym_id: string;
+        };
+        Update: Partial<{
+          id: string;
+          request_id: string;
+          class_session_id: string;
+          original_coach_id: string;
+          claimed_by: string | null;
+          claimed_at: string | null;
+          gym_id: string;
+        }>;
+        Relationships: [];
+      };
+      sop_documents: {
+        Row: {
+          id: string;
+          gym_id: string;
+          title: string;
+          body_markdown: string;
+          category: string | null;
+          author_id: string;
+          updated_at: string;
+          archived_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          title: string;
+          body_markdown?: string;
+          category?: string | null;
+          author_id: string;
+          updated_at?: string;
+          archived_at?: string | null;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          title: string;
+          body_markdown: string;
+          category: string | null;
+          author_id: string;
+          updated_at: string;
+          archived_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      gym_insight_targets: {
+        Row: {
+          gym_id: string;
+          metric: 'intros_new' | 'conversions' | 'retention';
+          period: 'month' | 'quarter';
+          target_value: number;
+          updated_by: string;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          metric: 'intros_new' | 'conversions' | 'retention';
+          period: 'month' | 'quarter';
+          target_value: number;
+          updated_by: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          metric: 'intros_new' | 'conversions' | 'retention';
+          period: 'month' | 'quarter';
+          target_value: number;
+          updated_by: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       member_tags: {
         Row: {
           id: string;
@@ -630,6 +798,30 @@ export type Database = {
       apply_tag_rules: {
         Args: { p_gym_id: string };
         Returns: number;
+      };
+      request_cover: {
+        Args: { p_session_ids: string[]; p_notes: string | null };
+        Returns: string;
+      };
+      claim_cover: {
+        Args: { p_session_offer_id: string };
+        Returns: null;
+      };
+      cancel_cover_request: {
+        Args: { p_request_id: string };
+        Returns: null;
+      };
+      complete_task: {
+        Args: { p_task_id: string };
+        Returns: null;
+      };
+      reopen_task: {
+        Args: { p_task_id: string };
+        Returns: null;
+      };
+      create_invite: {
+        Args: { p_gym_id: string; p_role: GymRole; p_expires_at: string | null };
+        Returns: string;
       };
     };
     Enums: {
