@@ -212,14 +212,14 @@ export function AccountScreen() {
         </View>
 
         {role === 'member' ? (
-          <Link href="/receipts" asChild>
+          <Link href="/billing" asChild>
             <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between">
               <View className="flex-1 gap-0.5">
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                  Receipts
+                  Membership
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                  Every payment and refund on your account.
+                  Pause, cancel, view receipts.
                 </Text>
               </View>
               <Text className="text-primary">→</Text>

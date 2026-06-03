@@ -895,6 +895,29 @@ export type Database = {
           unique_members: number;
         }[];
       };
+      pause_subscription: {
+        Args: { p_plan_subscription_id: string; p_pause_ends_at: string | null };
+        Returns: {
+          new_status: string;
+          pause_started_at: string;
+          pause_ends_at: string | null;
+        }[];
+      };
+      resume_subscription: {
+        Args: { p_plan_subscription_id: string };
+        Returns: {
+          new_status: string;
+          new_paid_period_end: string | null;
+          pause_duration_seconds: number;
+        }[];
+      };
+      cancel_subscription: {
+        Args: { p_plan_subscription_id: string };
+        Returns: {
+          new_status: string;
+          new_paid_period_end: string | null;
+        }[];
+      };
     };
     Enums: {
       gym_role: GymRole;
