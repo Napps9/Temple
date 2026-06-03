@@ -76,7 +76,8 @@ export default function AttendanceScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_types')
-        .select('id, name, color');
+        .select('id, name, color')
+        .eq('gym_id', membership!.gymId);
       if (error) throw error;
       return data ?? [];
     },

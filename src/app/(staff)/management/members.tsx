@@ -157,7 +157,10 @@ export default function MembersScreen() {
             </Text>
           ) : (
             filtered.map((m) => (
-              <Link key={m.profile_id} href={`/management/tags?profile=${m.profile_id}` as never} asChild>
+              <Link
+                key={m.profile_id}
+                href={{ pathname: '/management/tags', params: { profile: m.profile_id } }}
+                asChild>
                 <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
                   <View className="flex-row items-center gap-3">
                     <Avatar name={m.profiles?.full_name} size={36} />

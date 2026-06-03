@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { useSession } from '@/lib/auth';
@@ -32,6 +32,10 @@ export function SessionPickerModal({
 }: Props) {
   const session = useSession();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!visible) setSelected(new Set());
+  }, [visible]);
 
   const sessionsQuery = useQuery({
     queryKey: ['my-upcoming-sessions', session?.user.id],
