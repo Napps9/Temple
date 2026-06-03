@@ -594,6 +594,60 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      chat_threads: {
+        Row: {
+          thread_id: string;
+          gym_id: string;
+          profile_id: string;
+          last_message_at: string | null;
+          last_member_read_at: string | null;
+          last_staff_read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          thread_id?: string;
+          gym_id: string;
+          profile_id: string;
+          last_message_at?: string | null;
+          last_member_read_at?: string | null;
+          last_staff_read_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          thread_id: string;
+          gym_id: string;
+          profile_id: string;
+          last_message_at: string | null;
+          last_member_read_at: string | null;
+          last_staff_read_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      chat_messages: {
+        Row: {
+          message_id: string;
+          thread_id: string;
+          sender_profile_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          message_id?: string;
+          thread_id: string;
+          sender_profile_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          message_id: string;
+          thread_id: string;
+          sender_profile_id: string;
+          body: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       announcements: {
         Row: {
           announcement_id: string;

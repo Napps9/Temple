@@ -95,6 +95,13 @@ export default function ManagementHome() {
             href="/management/tags"
           />
         ) : null}
+        {can(role, 'can_check_in_member') ? (
+          <ManagementCard
+            title="Chat"
+            description="Reply to members from the coaching team."
+            href="/management/chat"
+          />
+        ) : null}
         {can(role, 'can_see_money') ? (
           <ManagementCard
             title="Billing"
