@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Avatar } from './Avatar';
 import { Button } from './Button';
@@ -209,6 +210,22 @@ export function AccountScreen() {
             Update password
           </Button>
         </View>
+
+        {role === 'member' ? (
+          <Link href="/receipts" asChild>
+            <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between">
+              <View className="flex-1 gap-0.5">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Receipts
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  Every payment and refund on your account.
+                </Text>
+              </View>
+              <Text className="text-primary">→</Text>
+            </Pressable>
+          </Link>
+        ) : null}
 
         <View className="mt-4">
           <Button variant="ghost" onPress={() => signOut.mutate()}>
