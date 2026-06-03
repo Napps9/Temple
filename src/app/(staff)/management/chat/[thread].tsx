@@ -131,14 +131,14 @@ export default function StaffChatThread() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}>
         <View className="flex-1 md:max-w-2xl md:mx-auto md:w-full">
-          <View className="px-4 pt-6">
+          <View className="pt-6">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
               {memberName}
             </Text>
           </View>
           <ScrollView
             ref={scrollRef}
-            contentContainerClassName="gap-2 p-4"
+            contentContainerClassName="gap-2 py-4"
             onContentSizeChange={() =>
               scrollRef.current?.scrollToEnd({ animated: false })
             }>

@@ -195,7 +195,7 @@ export default function ManagePlans() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full px-4">
+      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-end justify-between gap-3">
           <View className="flex-1 gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
