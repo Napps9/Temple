@@ -72,7 +72,7 @@ export default function ManagementHome() {
         <ManagementCard
           title="Members"
           description="View and manage everyone signed up to your gym."
-          comingSoon
+          href="/management/members"
         />
         {can(role, 'can_edit_classes') ? (
           <ManagementCard
