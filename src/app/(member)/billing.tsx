@@ -314,6 +314,13 @@ export default function MemberBilling() {
 
         {confirming === null && sub ? (
           <View className="gap-2">
+            {sub.status === 'active' ? (
+              <Link href="/change-plan" asChild>
+                <Pressable>
+                  <Button variant="secondary">Change plan</Button>
+                </Pressable>
+              </Link>
+            ) : null}
             {canCancel ? (
               <Button variant="secondary" onPress={() => setConfirming('cancel')}>
                 Cancel membership

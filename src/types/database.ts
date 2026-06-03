@@ -966,6 +966,19 @@ export type Database = {
           new_paid_period_end: string | null;
         }[];
       };
+      get_affected_bookings_on_plan_change: {
+        Args: {
+          p_plan_subscription_id: string;
+          p_new_plan_id: string;
+        };
+        Returns: {
+          booking_id: string;
+          class_session_id: string;
+          starts_at: string;
+          class_type_id: string | null;
+          class_type_name: string | null;
+        }[];
+      };
     };
     Enums: {
       gym_role: GymRole;
