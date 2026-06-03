@@ -48,7 +48,7 @@ export default function ManagementHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6">
+      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
         <ManagementCard
           title="Account"
           description="Your name, email, and password."
