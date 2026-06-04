@@ -35,6 +35,53 @@ function fmtSessionWhen(startsAt: string, durationMinutes: number): string {
   return `${date}, ${t(start)}–${t(end)}`;
 }
 
+const DAY_LABELS = [
+  'Sundays',
+  'Mondays',
+  'Tuesdays',
+  'Wednesdays',
+  'Thursdays',
+  'Fridays',
+  'Saturdays',
+];
+
+function fmtDays(days: number[]): string {
+  if (days.length === 0) return '';
+  if (days.length === 7) return 'Every day';
+  const set = new Set(days);
+  const isWeekdays =
+    days.length === 5 && [1, 2, 3, 4, 5].every((d) => set.has(d));
+  if (isWeekdays) return 'Weekdays';
+  const isWeekends = days.length === 2 && set.has(0) && set.has(6);
+  if (isWeekends) return 'Weekends';
+  const sorted = [...days].sort((a, b) => a - b).map((d) => DAY_LABELS[d]);
+  if (sorted.length === 1) return sorted[0];
+  if (sorted.length === 2) return `${sorted[0]} and ${sorted[1]}`;
+  return `${sorted.slice(0, -1).join(', ')} and ${sorted[sorted.length - 1]}`;
+}
+
+function fmtTimes(times: string[]): string {
+  if (times.length === 0) return '';
+  if (times.length === 1) return `at ${times[0]}`;
+  if (times.length === 2) return `at ${times[0]} and ${times[1]}`;
+  return `at ${times.slice(0, -1).join(', ')} and ${times[times.length - 1]}`;
+}
+
+function fmtPattern(days: number[], times: string[]): string {
+  return [fmtDays(days), fmtTimes(times)].filter(Boolean).join(' ');
+}
+
+function fmtEnds(endsOn: string | null): string {
+  if (!endsOn) return '';
+  const d = new Date(endsOn);
+  const label = d.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  return ` · ends ${label}`;
+}
+
 export function CancelClassDialog({
   visible,
   sessionId,
@@ -49,14 +96,16 @@ export function CancelClassDialog({
   const [scope, setScope] = useState<Scope>('one');
   const [error, setError] = useState<string | null>(null);
 
-  // Impact counts: bookings on this session, plus (for recurring) the count
-  // of future sibling sessions affected by "this and future" / "whole series".
+  // Impact counts for this session (bookings + waitlist). For recurring
+  // sessions we don't show a session count — the *pattern* tells the
+  // operator what they're committing to, and a session count on an
+  // indefinite recurrence is just noise (we materialise far into the
+  // future, so 360 sessions means "this recurrence is open-ended").
   const impact = useQuery({
-    queryKey: ['cancel-class-impact', sessionId, recurrenceId],
+    queryKey: ['cancel-class-impact', sessionId],
     enabled: visible,
     queryFn: async () => {
-      const nowIso = new Date().toISOString();
-      const [thisBookings, thisWaitlist, fromSiblings, seriesSiblings] = await Promise.all([
+      const [thisBookings, thisWaitlist] = await Promise.all([
         supabase
           .from('class_bookings')
           .select('id', { count: 'exact', head: true })
@@ -65,30 +114,35 @@ export function CancelClassDialog({
           .from('class_waitlist')
           .select('id', { count: 'exact', head: true })
           .eq('class_session_id', sessionId),
-        recurrenceId
-          ? supabase
-              .from('class_sessions')
-              .select('id', { count: 'exact', head: true })
-              .eq('recurrence_id', recurrenceId)
-              .gte('starts_at', startsAt)
-              .gt('starts_at', nowIso)
-          : Promise.resolve({ count: 1 } as { count: number | null }),
-        recurrenceId
-          ? supabase
-              .from('class_sessions')
-              .select('id', { count: 'exact', head: true })
-              .eq('recurrence_id', recurrenceId)
-              .gt('starts_at', nowIso)
-          : Promise.resolve({ count: 1 } as { count: number | null }),
       ]);
       return {
         thisBookings: thisBookings.count ?? 0,
         thisWaitlist: thisWaitlist.count ?? 0,
-        fromSiblings: fromSiblings.count ?? 1,
-        seriesSiblings: seriesSiblings.count ?? 1,
       };
     },
   });
+
+  // For recurring sessions, fetch the pattern (day(s) + time(s) + ends_on)
+  // so the dialog can describe "Tuesdays at 17:30" rather than "360 sessions".
+  const recurrence = useQuery({
+    queryKey: ['cancel-class-recurrence', recurrenceId],
+    enabled: visible && !!recurrenceId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_recurrences')
+        .select('days_of_week, times, ends_on')
+        .eq('id', recurrenceId!)
+        .single();
+      if (error) throw error;
+      return data as { days_of_week: number[]; times: string[]; ends_on: string | null };
+    },
+  });
+
+  const patternLabel = recurrence.data
+    ? `${fmtPattern(recurrence.data.days_of_week, recurrence.data.times)}${fmtEnds(
+        recurrence.data.ends_on,
+      )}`
+    : '…';
 
   const cancelMut = useMutation({
     mutationFn: async () => {
@@ -175,25 +229,13 @@ export function CancelClassDialog({
                 label="This and all future"
                 selected={scope === 'from'}
                 onPress={() => setScope('from')}
-                detail={
-                  counts
-                    ? `${counts.fromSiblings} session${
-                        counts.fromSiblings === 1 ? '' : 's'
-                      } in the series from this date onward`
-                    : '…'
-                }
+                detail={`${patternLabel}, from this date onward`}
               />
               <ScopeOption
                 label="The whole series"
                 selected={scope === 'series'}
                 onPress={() => setScope('series')}
-                detail={
-                  counts
-                    ? `${counts.seriesSiblings} future session${
-                        counts.seriesSiblings === 1 ? '' : 's'
-                      } in the series · past sessions kept as history`
-                    : '…'
-                }
+                detail={`${patternLabel} · past sessions kept as history`}
               />
             </View>
           ) : counts ? (
