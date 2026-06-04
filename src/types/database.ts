@@ -58,6 +58,7 @@ export type Database = {
           health_flag: boolean;
           emergency_contact: string | null;
           par_q_id: string | null;
+          left_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -68,6 +69,7 @@ export type Database = {
           health_flag?: boolean;
           emergency_contact?: string | null;
           par_q_id?: string | null;
+          left_at?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -78,6 +80,7 @@ export type Database = {
           health_flag: boolean;
           emergency_contact: string | null;
           par_q_id: string | null;
+          left_at: string | null;
           created_at: string;
         }>;
         Relationships: [
@@ -203,6 +206,7 @@ export type Database = {
           gym_id: string;
           name: string;
           color: string;
+          archived_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -210,6 +214,7 @@ export type Database = {
           gym_id: string;
           name: string;
           color: string;
+          archived_at?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -217,6 +222,7 @@ export type Database = {
           gym_id: string;
           name: string;
           color: string;
+          archived_at: string | null;
           created_at: string;
         }>;
         Relationships: [];
@@ -283,6 +289,7 @@ export type Database = {
           marked_by: string | null;
           no_show: boolean;
           no_show_marked_at: string | null;
+          promoted_from_waitlist: boolean;
         };
         Insert: {
           id?: string;
@@ -294,6 +301,7 @@ export type Database = {
           marked_by?: string | null;
           no_show?: boolean;
           no_show_marked_at?: string | null;
+          promoted_from_waitlist?: boolean;
         };
         Update: Partial<{
           id: string;
@@ -305,6 +313,7 @@ export type Database = {
           marked_by: string | null;
           no_show: boolean;
           no_show_marked_at: string | null;
+          promoted_from_waitlist: boolean;
         }>;
         Relationships: [];
       };
@@ -403,6 +412,7 @@ export type Database = {
           stripe_subscription_id: string | null;
           awaiting_payment_authentication: boolean;
           cancelled_at: string | null;
+          price_cents: number | null;
           created_at: string;
         };
         Insert: {
@@ -418,6 +428,7 @@ export type Database = {
           stripe_subscription_id?: string | null;
           awaiting_payment_authentication?: boolean;
           cancelled_at?: string | null;
+          price_cents?: number | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -433,6 +444,7 @@ export type Database = {
           stripe_subscription_id: string | null;
           awaiting_payment_authentication: boolean;
           cancelled_at: string | null;
+          price_cents: number | null;
           created_at: string;
         }>;
         Relationships: [];
@@ -740,6 +752,66 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      class_waitlist: {
+        Row: {
+          id: string;
+          gym_id: string;
+          class_session_id: string;
+          profile_id: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          class_session_id: string;
+          profile_id: string;
+          position: number;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          class_session_id: string;
+          profile_id: string;
+          position: number;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      onboarding_responses: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          question_key: string;
+          question_text: string;
+          answer: string;
+          display_order: number;
+          answered_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          question_key: string;
+          question_text: string;
+          answer: string;
+          display_order: number;
+          answered_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          question_key: string;
+          question_text: string;
+          answer: string;
+          display_order: number;
+          answered_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       v_member_cohort: {
@@ -822,6 +894,78 @@ export type Database = {
       create_invite: {
         Args: { p_gym_id: string; p_role: GymRole; p_expires_at: string | null };
         Returns: string;
+      };
+      class_type_has_dependents: {
+        Args: { p_id: string };
+        Returns: boolean;
+      };
+      plan_has_dependents: {
+        Args: { p_id: string };
+        Returns: boolean;
+      };
+      member_has_dependents: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: boolean;
+      };
+      is_terminal_subscription_status: {
+        Args: { p_status: PlanSubState };
+        Returns: boolean;
+      };
+      archive_class_type: {
+        Args: { p_id: string };
+        Returns: null;
+      };
+      restore_class_type: {
+        Args: { p_id: string };
+        Returns: null;
+      };
+      delete_class_type: {
+        Args: { p_id: string };
+        Returns: null;
+      };
+      archive_plan: {
+        Args: { p_plan_id: string };
+        Returns: null;
+      };
+      restore_plan: {
+        Args: { p_plan_id: string };
+        Returns: null;
+      };
+      delete_plan: {
+        Args: { p_plan_id: string };
+        Returns: null;
+      };
+      leave_gym: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: null;
+      };
+      rejoin_gym: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: null;
+      };
+      set_avatar_url: {
+        Args: { p_url: string };
+        Returns: null;
+      };
+      copy_week_forward: {
+        Args: { p_gym_id: string; p_from: string };
+        Returns: number;
+      };
+      join_waitlist: {
+        Args: { p_session_id: string };
+        Returns: number;
+      };
+      leave_waitlist: {
+        Args: { p_session_id: string };
+        Returns: null;
+      };
+      my_waitlist_rank: {
+        Args: { p_session_id: string };
+        Returns: number | null;
+      };
+      waitlist_for_session: {
+        Args: { p_session_id: string };
+        Returns: { rank: number; profile_id: string; joined_at: string }[];
       };
     };
     Enums: {
