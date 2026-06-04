@@ -73,7 +73,14 @@ begin
   return v_booking_id;
 end;
 $$;
-grant execute on function public._book_class_for(uuid, uuid) to authenticated;
+-- Lock the no-caller-auth helper out of the PostgREST surface: SECURITY
+-- DEFINER callers (the public book_class wrapper, the promote_from_waitlist
+-- trigger) run as the function owner and so can still invoke this. A
+-- direct grant to authenticated would let any signed-in user book on
+-- behalf of any other profile by passing their uuid — exactly what the
+-- _book_class_for split was designed to prevent.
+revoke execute on function public._book_class_for(uuid, uuid)
+  from public, anon, authenticated;
 
 create or replace function public.book_class(session_id uuid)
 returns void

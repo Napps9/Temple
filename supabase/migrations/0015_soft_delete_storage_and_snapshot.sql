@@ -129,24 +129,6 @@ as $$
   );
 $$;
 
-create or replace function public.is_booking_eligible(
-  p_profile_id       uuid,
-  p_gym_id           uuid,
-  p_class_session_id uuid
-) returns boolean
-language sql
-security definer
-stable
-set search_path = public
-as $$
-  select case
-    when p_profile_id = auth.uid()
-      or public.user_can_assign_plan(p_gym_id)
-    then public._is_booking_eligible_for(p_profile_id, p_gym_id, p_class_session_id)
-    else false
-  end;
-$$;
-
 -- _is_booking_eligible_for evaluates eligibility WITHOUT the caller-vs-target
 -- auth check, so it can be called from trigger contexts (where auth.uid() is
 -- the user whose action fired the trigger, NOT the user being evaluated).
@@ -155,6 +137,10 @@ $$;
 -- act on. The promote_from_waitlist trigger relies on this — without it,
 -- every waitlister was failing eligibility because auth.uid() was the
 -- cancelling member, not the queued one.
+--
+-- Defined BEFORE the public is_booking_eligible wrapper: psql/Postgres
+-- validate language sql function bodies at creation, so the wrapper would
+-- abort with "function does not exist" if the helper isn't already there.
 create or replace function public._is_booking_eligible_for(
   p_profile_id       uuid,
   p_gym_id           uuid,
@@ -224,6 +210,30 @@ as $$
     ),
     false
   );
+$$;
+
+-- Lock the no-caller-auth helper out of the PostgREST surface: it must be
+-- callable from SECURITY DEFINER code (triggers, the public wrapper) but
+-- never as an RPC, because it skips the caller-vs-target check.
+revoke execute on function public._is_booking_eligible_for(uuid, uuid, uuid)
+  from public, anon, authenticated;
+
+create or replace function public.is_booking_eligible(
+  p_profile_id       uuid,
+  p_gym_id           uuid,
+  p_class_session_id uuid
+) returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select case
+    when p_profile_id = auth.uid()
+      or public.user_can_assign_plan(p_gym_id)
+    then public._is_booking_eligible_for(p_profile_id, p_gym_id, p_class_session_id)
+    else false
+  end;
 $$;
 
 -- ============================================================================
