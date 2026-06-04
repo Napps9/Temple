@@ -215,6 +215,7 @@ export function CancelClassDialog({
             <View className="gap-2">
               <ScopeOption
                 label="Just this one"
+                effect="The rest of the series keeps running"
                 selected={scope === 'one'}
                 onPress={() => setScope('one')}
                 detail={
@@ -227,15 +228,17 @@ export function CancelClassDialog({
               />
               <ScopeOption
                 label="This and all future"
+                effect="Series shortened — earlier sessions stay scheduled"
                 selected={scope === 'from'}
                 onPress={() => setScope('from')}
                 detail={`${patternLabel}, from this date onward`}
               />
               <ScopeOption
                 label="The whole series"
+                effect="Series removed — past sessions kept as history"
                 selected={scope === 'series'}
                 onPress={() => setScope('series')}
-                detail={`${patternLabel} · past sessions kept as history`}
+                detail={patternLabel}
               />
             </View>
           ) : counts ? (
@@ -271,11 +274,13 @@ export function CancelClassDialog({
 
 function ScopeOption({
   label,
+  effect,
   detail,
   selected,
   onPress,
 }: {
   label: string;
+  effect: string;
   detail: string;
   selected: boolean;
   onPress: () => void;
@@ -305,7 +310,10 @@ function ScopeOption({
           {label}
         </Text>
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1 ml-6">
+      <Text className="text-gray-700 dark:text-gray-200 text-xs mt-1 ml-6">
+        {effect}
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 ml-6">
         {detail}
       </Text>
     </Pressable>
