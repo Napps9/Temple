@@ -407,6 +407,8 @@ export function ClassDetailModal({
         sessionId={sessionId}
         recurrenceId={detail.recurrence_id}
         startsAt={detail.starts_at}
+        className={detail.class_types?.name ?? detail.name}
+        durationMinutes={detail.duration_minutes}
         onClose={() => setShowCancelClass(false)}
         onCancelled={() => {
           setShowCancelClass(false);
