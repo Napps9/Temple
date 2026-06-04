@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
 import { useRole, useSession } from '@/lib/auth';
 import { can } from '@/lib/can';
@@ -19,6 +20,7 @@ type SessionDetail = {
   notes: string | null;
   gym_id: string;
   coach_id: string | null;
+  recurrence_id: string | null;
   class_types: { name: string; color: string } | null;
   coach: { full_name: string | null } | null;
 };
@@ -61,6 +63,7 @@ export function ClassDetailModal({
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelClass, setShowCancelClass] = useState(false);
 
   const sessionQuery = useQuery({
     queryKey: ['class-session-detail', sessionId],
@@ -69,7 +72,7 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, class_types(name, color), coach:profiles!coach_id(full_name)',
+          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color), coach:profiles!coach_id(full_name)',
         )
         .eq('id', sessionId!)
         .single();
@@ -217,6 +220,7 @@ export function ClassDetailModal({
     : '';
 
   return (
+    <>
     <Modal
       visible={visible}
       transparent
@@ -379,6 +383,16 @@ export function ClassDetailModal({
                 waitlistPending={joinWaitlist.isPending || leaveWaitlist.isPending}
               />
 
+              {mode === 'manage' && can(role, 'can_edit_classes') && !inPast ? (
+                <Pressable
+                  onPress={() => setShowCancelClass(true)}
+                  className="self-start px-3 py-1.5 rounded-md border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20">
+                  <Text className="text-red-600 dark:text-red-400 text-xs uppercase tracking-widest">
+                    Cancel class
+                  </Text>
+                </Pressable>
+              ) : null}
+
               <Button variant="secondary" onPress={close}>
                 Close
               </Button>
@@ -387,6 +401,20 @@ export function ClassDetailModal({
         </Pressable>
       </Pressable>
     </Modal>
+    {detail && sessionId ? (
+      <CancelClassDialog
+        visible={showCancelClass}
+        sessionId={sessionId}
+        recurrenceId={detail.recurrence_id}
+        startsAt={detail.starts_at}
+        onClose={() => setShowCancelClass(false)}
+        onCancelled={() => {
+          setShowCancelClass(false);
+          onClose();
+        }}
+      />
+    ) : null}
+    </>
   );
 }
 

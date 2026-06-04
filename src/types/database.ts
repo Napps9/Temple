@@ -951,6 +951,18 @@ export type Database = {
         Args: { p_gym_id: string; p_from: string };
         Returns: number;
       };
+      cancel_session: {
+        Args: { p_session_id: string };
+        Returns: number;
+      };
+      cancel_recurrence_from: {
+        Args: { p_session_id: string };
+        Returns: number;
+      };
+      cancel_recurrence: {
+        Args: { p_recurrence_id: string };
+        Returns: number;
+      };
       join_waitlist: {
         Args: { p_session_id: string };
         Returns: number;
