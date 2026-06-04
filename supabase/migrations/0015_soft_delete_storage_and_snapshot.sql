@@ -139,11 +139,32 @@ security definer
 stable
 set search_path = public
 as $$
-  with auth_ok as (
-    select 1
-    where p_profile_id = auth.uid()
-       or public.user_can_assign_plan(p_gym_id)
-  )
+  select case
+    when p_profile_id = auth.uid()
+      or public.user_can_assign_plan(p_gym_id)
+    then public._is_booking_eligible_for(p_profile_id, p_gym_id, p_class_session_id)
+    else false
+  end;
+$$;
+
+-- _is_booking_eligible_for evaluates eligibility WITHOUT the caller-vs-target
+-- auth check, so it can be called from trigger contexts (where auth.uid() is
+-- the user whose action fired the trigger, NOT the user being evaluated).
+-- Mirrors the _book_class_for split: public wrappers gate by caller identity,
+-- internal helpers operate on data the caller has already been authorised to
+-- act on. The promote_from_waitlist trigger relies on this — without it,
+-- every waitlister was failing eligibility because auth.uid() was the
+-- cancelling member, not the queued one.
+create or replace function public._is_booking_eligible_for(
+  p_profile_id       uuid,
+  p_gym_id           uuid,
+  p_class_session_id uuid
+) returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
   select coalesce(
     (
       select
@@ -200,7 +221,6 @@ as $$
               )
           )
         )
-      from auth_ok
     ),
     false
   );

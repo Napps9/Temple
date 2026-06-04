@@ -299,7 +299,11 @@ begin
     where class_session_id = old.class_session_id
     order by position
   loop
-    if not public.is_booking_eligible(
+    -- _is_booking_eligible_for (NOT is_booking_eligible) — the public
+    -- wrapper requires the caller to be the target or staff; in this
+    -- trigger context auth.uid() is the cancelling user, which fails
+    -- the check for every other waitlister.
+    if not public._is_booking_eligible_for(
       v_entry.profile_id, v_entry.gym_id, old.class_session_id
     ) then
       continue;

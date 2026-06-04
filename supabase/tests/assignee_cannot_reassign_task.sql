@@ -11,7 +11,7 @@
 begin;
 select plan(3);
 
-\ir _helpers.sql
+\ir _helpers.psql
 
 do $$
 declare

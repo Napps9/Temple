@@ -10,7 +10,7 @@
 begin;
 select plan(10);
 
-\ir _helpers.sql
+\ir _helpers.psql
 
 do $$
 declare
@@ -66,10 +66,10 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_converted;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
     ('stripe', 'evt_converted_'||v_m_converted::text, v_m_converted, v_gym,
-     'charge.succeeded', 0, 'GBP', now() - interval '1 day');
+     'charge.succeeded', 0, 'GBP', now() - interval '1 day', '{}'::jsonb);
 
   -- active sub expiring in 5 days: paying + expiring_soon.
   insert into public.plan_subscriptions
@@ -79,10 +79,10 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_expiring_sub;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
     ('stripe', 'evt_expiring_'||v_m_expiring_sub::text, v_m_expiring_sub, v_gym,
-     'invoice.paid', 0, 'GBP', now() - interval '10 days');
+     'invoice.paid', 0, 'GBP', now() - interval '10 days', '{}'::jsonb);
 
   -- expired: was paying, sub is lapsed.
   insert into public.plan_subscriptions
@@ -92,10 +92,10 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_expired;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
     ('stripe', 'evt_expired_'||v_m_expired::text, v_m_expired, v_gym,
-     'charge.succeeded', 0, 'GBP', now() - interval '60 days');
+     'charge.succeeded', 0, 'GBP', now() - interval '60 days', '{}'::jsonb);
 
   -- refunded_retained mid-period (21 days out): paying + expired
   -- (is_active is false because refunded_retained is not in active states).
@@ -106,10 +106,10 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_refunded;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
     ('stripe', 'evt_refunded_'||v_m_refunded::text, v_m_refunded, v_gym,
-     'charge.succeeded', 0, 'GBP', now() - interval '40 days');
+     'charge.succeeded', 0, 'GBP', now() - interval '40 days', '{}'::jsonb);
 
   -- v_m_fresh: nothing. Default member, no plan, no comp.
 

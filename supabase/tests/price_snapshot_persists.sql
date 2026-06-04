@@ -8,7 +8,7 @@
 begin;
 select plan(4);
 
-\ir _helpers.sql
+\ir _helpers.psql
 
 do $$
 declare
