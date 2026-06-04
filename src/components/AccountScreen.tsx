@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
-import { Avatar } from './Avatar';
+import { AvatarUploader } from './AvatarUploader';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Screen } from './Screen';
@@ -124,9 +124,13 @@ export function AccountScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3">
-          <Avatar name={displayName} size={48} />
-          <View className="flex-1">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <AvatarUploader
+            currentUrl={profile?.avatar_url}
+            fullName={displayName}
+            size={56}
+          />
+          <View>
             <Text
               className="text-gray-900 dark:text-gray-50 font-semibold"
               numberOfLines={1}>

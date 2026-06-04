@@ -139,7 +139,13 @@ function parseView(v: string | undefined): ViewMode {
   return VIEWS.includes(v as ViewMode) ? (v as ViewMode) : 'day';
 }
 
-export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
+export function ClassesCalendar({
+  mode,
+  topSlot,
+}: {
+  mode: 'manage' | 'book';
+  topSlot?: React.ReactNode;
+}) {
   const params = useLocalSearchParams<{ view?: string }>();
   const view = parseView(params.view);
   const [date, setDate] = useState(() => startOfDay(new Date()));
@@ -228,6 +234,9 @@ export function ClassesCalendar({ mode }: { mode: 'manage' | 'book' }) {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
+      {topSlot ? (
+        <View className="w-full max-w-5xl mx-auto px-2 pt-4">{topSlot}</View>
+      ) : null}
       <View className="w-full max-w-5xl mx-auto px-2">
         <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
           <Pressable
