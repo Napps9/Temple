@@ -610,7 +610,10 @@ begin
     raise exception 'Only owners can invite owners or admins';
   end if;
 
-  v_code := upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 8));
+  -- Schema-qualified: gen_random_bytes lives in pgcrypto (installed in the
+  -- extensions schema by 0001). The function's search_path is set to public
+  -- only, so the unqualified call would fail on a clean database.
+  v_code := upper(substr(encode(extensions.gen_random_bytes(6), 'hex'), 1, 8));
 
   insert into public.invite_codes
     (gym_id, code, role, created_by, expires_at)

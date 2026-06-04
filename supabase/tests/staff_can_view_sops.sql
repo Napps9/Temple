@@ -9,7 +9,7 @@
 begin;
 select plan(2);
 
-\i tests/_helpers.sql
+\ir _helpers.psql
 
 do $$
 declare
@@ -22,14 +22,14 @@ begin
 
   insert into public.sop_documents (gym_id, title, body_markdown, author_id)
   values (v_gym, 'Door procedure', '1. Open door.', v_owner);
+
+  -- Act as staff for the SELECTs below.
+  -- (SET LOCAL …jwt.claim.sub TO (subquery) is invalid SQL — SET LOCAL
+  -- only accepts literals. _test_act_as wraps set_config, which accepts
+  -- arbitrary expressions and survives the GUC transaction scope.)
+  perform _test_act_as(v_staff);
 end;
 $$;
-
--- Staff selects: should see the row.
-set local request.jwt.claim.sub to (
-  select id::text from auth.users where email = 'staff@sops.test'
-);
-set local role to 'authenticated';
 
 select is(
   (select count(*) from public.sop_documents),

@@ -8,7 +8,7 @@ import { useThemeColors } from '@/lib/theme';
 const MEMBER_SECTIONS: NavSection[] = [
   { name: 'book', href: '/book', label: 'Book', icon: 'calendar-clear-outline' },
   { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
-  { name: 'workouts', href: '/workouts', label: 'Workouts', icon: 'trophy-outline' },
+  { name: 'bookings', href: '/bookings', label: 'Bookings', icon: 'ticket-outline' },
   { name: 'account', href: '/account', label: 'Account', icon: 'person-circle-outline' },
 ];
 
@@ -29,7 +29,7 @@ export default function MemberLayout() {
         }}>
         <Tabs.Screen name="book" options={{ title: 'Book' }} />
         <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
-        <Tabs.Screen name="workouts" options={{ title: 'Workouts' }} />
+        <Tabs.Screen name="bookings" options={{ title: 'Bookings' }} />
         <Tabs.Screen name="account" options={{ title: 'Account' }} />
       </Tabs>
     </View>

@@ -9,7 +9,7 @@
 begin;
 select plan(3);
 
-\i tests/_helpers.sql
+\ir _helpers.psql
 
 do $$
 declare

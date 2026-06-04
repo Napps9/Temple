@@ -125,11 +125,11 @@ export default function ManagementHome() {
             href="/management/tags"
           />
         ) : null}
-        {can(role, 'can_see_money') ? (
+        {can(role, 'can_manage_plans') ? (
           <ManagementCard
-            title="Billing"
-            description="Memberships, payment plans, and revenue."
-            comingSoon
+            title="Plans"
+            description="Define your membership plans, prices, and credit packs."
+            href="/management/plans"
           />
         ) : null}
         {can(role, 'can_set_targets') ? (

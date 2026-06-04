@@ -24,7 +24,11 @@ export type Capability =
   | 'can_claim_cover'
   | 'can_manage_sops'
   | 'can_view_sops'
-  | 'can_view_attendance';
+  | 'can_view_attendance'
+  | 'can_archive_classes'
+  | 'can_archive_plans'
+  | 'can_archive_members'
+  | 'can_hard_delete';
 
 const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_access_staff_area: { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
@@ -51,6 +55,10 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_manage_sops:       { owner: true,  admin: true,  coach: false, staff: false, member: false },
   can_view_sops:         { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
   can_view_attendance:   { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
+  can_archive_classes:   { owner: true,  admin: true,  coach: true,  staff: false, member: false },
+  can_archive_plans:     { owner: true,  admin: false, coach: false, staff: false, member: false },
+  can_archive_members:   { owner: true,  admin: true,  coach: false, staff: false, member: false },
+  can_hard_delete:       { owner: true,  admin: false, coach: false, staff: false, member: false },
 };
 
 export const RoleOrder: GymRole[] = ['owner', 'admin', 'coach', 'staff', 'member'];

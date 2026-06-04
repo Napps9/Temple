@@ -8,7 +8,7 @@
 begin;
 select plan(3);
 
-\i tests/_helpers.sql
+\ir _helpers.psql
 
 do $$
 declare
@@ -19,7 +19,8 @@ begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   perform _test_mk_membership(v_gym, v_admin, 'admin');
 
-  perform set_config('test.gym', v_gym::text, true);
+  perform set_config('test.gym',   v_gym::text,   true);
+  perform set_config('test.owner', v_owner::text, true);
 
   -- Act as admin for the first two throws_ok calls.
   perform _test_act_as(v_admin);
@@ -41,12 +42,11 @@ select throws_ok(
 );
 
 -- Switch to owner; minting an admin must succeed.
+-- (Reading test.owner instead of auth.users — the latter requires
+-- service_role, which the authenticated-context test session doesn't have.)
 do $$
-declare
-  v_owner uuid;
 begin
-  select id into v_owner from auth.users where email = 'owner@invite.test';
-  perform _test_act_as(v_owner);
+  perform _test_act_as(current_setting('test.owner')::uuid);
   perform create_invite(current_setting('test.gym')::uuid, 'admin'::public.gym_role, null);
 end;
 $$;

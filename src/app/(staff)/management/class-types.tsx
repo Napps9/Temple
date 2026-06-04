@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -14,14 +14,20 @@ import {
   validateRecurrence,
 } from '@/components/RecurrenceEditor';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useRole } from '@/lib/auth';
+import { can } from '@/lib/can';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 const HORIZON_WEEKS = 12;
 
-type ServerType = { id: string; name: string; color: string };
+type ServerType = {
+  id: string;
+  name: string;
+  color: string;
+  archived_at: string | null;
+};
 type ServerRecurrence = {
   id: string;
   class_type_id: string;
@@ -37,7 +43,7 @@ type EditableType = {
   id: string | null;
   name: string;
   color: string;
-  deleted?: boolean;
+  archivedAt: string | null;
   scheduleOpen: boolean;
   recurrenceId: string | null;
   recurrence: RecurrenceForm;
@@ -70,12 +76,18 @@ function recurrenceFromServer(r: ServerRecurrence): RecurrenceForm {
 }
 
 export default function ClassTypesScreen() {
+  const role = useRole();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditableType[]>([]);
   const [openPickerIdx, setOpenPickerIdx] = useState<number | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [saved, markSaved] = useSavedFlag();
+
+  const canArchive = can(role, 'can_archive_classes');
+  const canHardDelete = can(role, 'can_hard_delete');
 
   const types = useQuery({
     queryKey: ['class-types', membership?.gymId],
@@ -83,7 +95,7 @@ export default function ClassTypesScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_types')
-        .select('id, name, color')
+        .select('id, name, color, archived_at')
         .order('name');
       if (error) throw error;
       return data as ServerType[];
@@ -105,6 +117,24 @@ export default function ClassTypesScreen() {
     },
   });
 
+  const dependents = useQuery({
+    queryKey: ['class-type-dependents', membership?.gymId, types.data?.map((t) => t.id).join(',')],
+    enabled: !!types.data && types.data.length > 0,
+    queryFn: async () => {
+      const ids = types.data!.map((t) => t.id);
+      const results = await Promise.all(
+        ids.map((id) =>
+          supabase.rpc('class_type_has_dependents', { p_id: id }),
+        ),
+      );
+      const map = new Map<string, boolean>();
+      for (let i = 0; i < ids.length; i++) {
+        map.set(ids[i], !!results[i].data);
+      }
+      return map;
+    },
+  });
+
   useEffect(() => {
     if (!types.data || !recurrences.data) return;
     const recByTypeId = new Map<string, ServerRecurrence>();
@@ -118,6 +148,7 @@ export default function ClassTypesScreen() {
           id: t.id,
           name: t.name,
           color: t.color,
+          archivedAt: t.archived_at,
           scheduleOpen: false,
           recurrenceId: rec?.id ?? null,
           recurrence: rec
@@ -127,6 +158,44 @@ export default function ClassTypesScreen() {
       }),
     );
   }, [types.data, recurrences.data]);
+
+  const archive = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('archive_class_type', { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setActionError(null);
+      queryClient.invalidateQueries({ queryKey: ['class-types'] });
+      queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
+    },
+    onError: (e) => setActionError(errorMessage(e, 'Could not archive')),
+  });
+
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('restore_class_type', { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setActionError(null);
+      queryClient.invalidateQueries({ queryKey: ['class-types'] });
+    },
+    onError: (e) => setActionError(errorMessage(e, 'Could not restore')),
+  });
+
+  const hardDelete = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('delete_class_type', { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setActionError(null);
+      queryClient.invalidateQueries({ queryKey: ['class-types'] });
+      queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
+    },
+    onError: (e) => setActionError(errorMessage(e, 'Could not delete')),
+  });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -141,21 +210,18 @@ export default function ClassTypesScreen() {
       type Insert = { localIdx: number; name: string; color: string };
       const inserts: Insert[] = [];
       const updates: { id: string; name: string; color: string }[] = [];
-      const deletes: string[] = [];
 
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         const name = r.name.trim();
         if (r.id === null) {
-          if (r.deleted) continue;
           if (!name) throw new Error('Each type needs a name');
           inserts.push({ localIdx: i, name, color: r.color });
           continue;
         }
-        if (r.deleted) {
-          deletes.push(r.id);
-          continue;
-        }
+        // Archived rows are read-only in the form (name/color/schedule changes
+        // don't apply to archived types — restore first).
+        if (r.archivedAt) continue;
         if (!name) throw new Error('Each type needs a name');
         const sv = serverById.get(r.id);
         if (sv && (sv.name !== name || sv.color !== r.color)) {
@@ -190,17 +256,10 @@ export default function ClassTypesScreen() {
           .eq('id', u.id);
         if (error) throw error;
       }
-      if (deletes.length > 0) {
-        const { error } = await supabase
-          .from('class_types')
-          .delete()
-          .in('id', deletes);
-        if (error) throw error;
-      }
 
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
-        if (r.deleted) continue;
+        if (r.archivedAt) continue;
         const classTypeId = r.id ?? newIdByLocalIdx.get(i);
         if (!classTypeId) continue;
 
@@ -322,6 +381,7 @@ export default function ClassTypesScreen() {
         id: null,
         name: '',
         color: next.hex,
+        archivedAt: null,
         scheduleOpen: true,
         recurrenceId: null,
         recurrence: { ...EMPTY_RECURRENCE, indefinite: true },
@@ -333,9 +393,19 @@ export default function ClassTypesScreen() {
     setRows((curr) => curr.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
   }
 
-  const visibleRows = rows
-    .map((r, idx) => ({ row: r, idx }))
-    .filter((r) => !r.row.deleted);
+  const activeRows = useMemo(
+    () => rows.map((r, idx) => ({ row: r, idx })).filter(({ row }) => !row.archivedAt),
+    [rows],
+  );
+  const archivedRows = useMemo(
+    () => rows.map((r, idx) => ({ row: r, idx })).filter(({ row }) => !!row.archivedAt),
+    [rows],
+  );
+
+  function hasDeps(id: string | null): boolean {
+    if (!id) return false;
+    return dependents.data?.get(id) ?? true;
+  }
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -351,13 +421,15 @@ export default function ClassTypesScreen() {
         </View>
 
         <View className="gap-2">
-          {visibleRows.length === 0 ? (
+          {activeRows.length === 0 ? (
             <Text className="text-gray-500 dark:text-gray-400">
               No types yet — add one below.
             </Text>
           ) : null}
-          {visibleRows.map(({ row: r, idx }) => {
+          {activeRows.map(({ row: r, idx }) => {
             const hasSchedule = r.recurrence.days.length > 0;
+            const isSaved = r.id !== null;
+            const deletable = isSaved && canHardDelete && !hasDeps(r.id);
             return (
               <View
                 key={r.id ?? `new-${idx}`}
@@ -380,19 +452,17 @@ export default function ClassTypesScreen() {
                       autoCapitalize="words"
                     />
                   </View>
-                  <Pressable
-                    onPress={() => {
-                      if (r.id === null) {
+                  {!isSaved ? (
+                    <Pressable
+                      onPress={() => {
                         setRows(rows.filter((_, i) => i !== idx));
-                      } else {
-                        updateRow(idx, { deleted: true });
-                      }
-                      if (openPickerIdx === idx) setOpenPickerIdx(null);
-                    }}
-                    hitSlop={4}
-                    className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                    <Ionicons name="close" size={18} color="#9CA3AF" />
-                  </Pressable>
+                        if (openPickerIdx === idx) setOpenPickerIdx(null);
+                      }}
+                      hitSlop={4}
+                      className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+                      <Ionicons name="close" size={18} color="#9CA3AF" />
+                    </Pressable>
+                  ) : null}
                 </View>
                 {openPickerIdx === idx ? (
                   <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
@@ -446,6 +516,42 @@ export default function ClassTypesScreen() {
                     ) : null}
                   </View>
                 ) : null}
+
+                {isSaved && canArchive ? (
+                  <View className="flex-row gap-2 justify-end">
+                    <Pressable
+                      onPress={() => archive.mutate(r.id!)}
+                      disabled={archive.isPending}
+                      className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
+                      <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
+                        Archive
+                      </Text>
+                    </Pressable>
+                    {canHardDelete ? (
+                      <Pressable
+                        onPress={() => {
+                          if (deletable) hardDelete.mutate(r.id!);
+                        }}
+                        disabled={!deletable || hardDelete.isPending}
+                        className={`px-3 py-1.5 rounded-md border ${
+                          deletable
+                            ? 'border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20'
+                            : 'border-gray-200 dark:border-gray-700 opacity-50'
+                        }`}>
+                        <Text
+                          className={`text-xs uppercase tracking-widest ${
+                            deletable
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-gray-400 dark:text-gray-500'
+                          }`}>
+                          {deletable
+                            ? 'Delete permanently'
+                            : 'Cannot delete — has history'}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             );
           })}
@@ -461,6 +567,9 @@ export default function ClassTypesScreen() {
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
+        {actionError ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">{actionError}</Text>
+        ) : null}
 
         <Button
           onPress={() => save.mutate()}
@@ -468,6 +577,78 @@ export default function ClassTypesScreen() {
           success={saved}>
           Save changes
         </Button>
+
+        {archivedRows.length > 0 ? (
+          <View className="gap-2">
+            <Pressable
+              onPress={() => setShowArchived(!showArchived)}
+              className="flex-row items-center gap-2 self-start py-1">
+              <Ionicons
+                name={showArchived ? 'chevron-down' : 'chevron-forward'}
+                size={16}
+                color="#6B7280"
+              />
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Archived ({archivedRows.length})
+              </Text>
+            </Pressable>
+            {showArchived
+              ? archivedRows.map(({ row: r }) => {
+                  const deletable = canHardDelete && !hasDeps(r.id);
+                  return (
+                    <View
+                      key={r.id!}
+                      className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-2">
+                      <View className="flex-row items-center gap-3">
+                        <View
+                          style={{ backgroundColor: r.color }}
+                          className="w-8 h-8 rounded-full opacity-50"
+                        />
+                        <Text className="flex-1 text-gray-700 dark:text-gray-200">
+                          {r.name}
+                        </Text>
+                      </View>
+                      {canArchive ? (
+                        <View className="flex-row gap-2 justify-end">
+                          <Pressable
+                            onPress={() => restore.mutate(r.id!)}
+                            disabled={restore.isPending}
+                            className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
+                            <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
+                              Restore
+                            </Text>
+                          </Pressable>
+                          {canHardDelete ? (
+                            <Pressable
+                              onPress={() => {
+                                if (deletable) hardDelete.mutate(r.id!);
+                              }}
+                              disabled={!deletable || hardDelete.isPending}
+                              className={`px-3 py-1.5 rounded-md border ${
+                                deletable
+                                  ? 'border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20'
+                                  : 'border-gray-200 dark:border-gray-700 opacity-50'
+                              }`}>
+                              <Text
+                                className={`text-xs uppercase tracking-widest ${
+                                  deletable
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-gray-400 dark:text-gray-500'
+                                }`}>
+                                {deletable
+                                  ? 'Delete permanently'
+                                  : 'Cannot delete — has history'}
+                              </Text>
+                            </Pressable>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })
+              : null}
+          </View>
+        ) : null}
       </ScrollView>
     </Screen>
   );

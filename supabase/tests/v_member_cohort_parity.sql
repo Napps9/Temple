@@ -10,7 +10,7 @@
 begin;
 select plan(10);
 
-\i tests/_helpers.sql
+\ir _helpers.psql
 
 do $$
 declare
@@ -66,10 +66,11 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_converted;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, provider_account_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
-    ('stripe', 'evt_converted_'||v_m_converted::text, v_m_converted, v_gym,
-     'charge.succeeded', 0, 'GBP', now() - interval '1 day');
+    ('stripe', 'evt_converted_'||v_m_converted::text, 'acct_test',
+     v_m_converted, v_gym,
+     'charge.succeeded', 0, 'GBP', now() - interval '1 day', '{}'::jsonb);
 
   -- active sub expiring in 5 days: paying + expiring_soon.
   insert into public.plan_subscriptions
@@ -79,10 +80,11 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_expiring_sub;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, provider_account_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
-    ('stripe', 'evt_expiring_'||v_m_expiring_sub::text, v_m_expiring_sub, v_gym,
-     'invoice.paid', 0, 'GBP', now() - interval '10 days');
+    ('stripe', 'evt_expiring_'||v_m_expiring_sub::text, 'acct_test',
+     v_m_expiring_sub, v_gym,
+     'invoice.paid', 0, 'GBP', now() - interval '10 days', '{}'::jsonb);
 
   -- expired: was paying, sub is lapsed.
   insert into public.plan_subscriptions
@@ -92,10 +94,11 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_expired;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, provider_account_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
-    ('stripe', 'evt_expired_'||v_m_expired::text, v_m_expired, v_gym,
-     'charge.succeeded', 0, 'GBP', now() - interval '60 days');
+    ('stripe', 'evt_expired_'||v_m_expired::text, 'acct_test',
+     v_m_expired, v_gym,
+     'charge.succeeded', 0, 'GBP', now() - interval '60 days', '{}'::jsonb);
 
   -- refunded_retained mid-period (21 days out): paying + expired
   -- (is_active is false because refunded_retained is not in active states).
@@ -106,10 +109,11 @@ begin
   from public.gym_memberships
   where gym_id = v_gym and profile_id = v_m_refunded;
   insert into public.billing_events
-    (provider, provider_event_id, member_id, gym_id, kind, amount_cents, currency, occurred_at)
+    (provider, provider_event_id, provider_account_id, member_id, gym_id, kind, amount_cents, currency, occurred_at, payload)
   values
-    ('stripe', 'evt_refunded_'||v_m_refunded::text, v_m_refunded, v_gym,
-     'charge.succeeded', 0, 'GBP', now() - interval '40 days');
+    ('stripe', 'evt_refunded_'||v_m_refunded::text, 'acct_test',
+     v_m_refunded, v_gym,
+     'charge.succeeded', 0, 'GBP', now() - interval '40 days', '{}'::jsonb);
 
   -- v_m_fresh: nothing. Default member, no plan, no comp.
 
@@ -210,26 +214,22 @@ select ok(
 
 -- Days-until-expiry on the converted-intro row picks the nearer of plan vs comp.
 -- (Comp ends ~25 days out; plan ends ~40 days out → min = ~25.)
-select cmp_ok(
-  (select days_until_expiry
+-- pgTAP's cmp_ok is binary-op-only (no 'between'); express the range in
+-- the SELECT and assert with ok().
+select ok(
+  (select days_until_expiry between 24 and 26
    from public.v_member_cohort
    where gym_id = current_setting('test.gym')::uuid
      and profile_id = current_setting('test.m_converted')::uuid),
-  'between',
-  24,
-  26,
   'converted intro days_until_expiry follows nearer of comp/plan window'
 );
 
 -- Days-until-expiry on the expiring-sub row is ~5
-select cmp_ok(
-  (select days_until_expiry
+select ok(
+  (select days_until_expiry between 4 and 5
    from public.v_member_cohort
    where gym_id = current_setting('test.gym')::uuid
      and profile_id = current_setting('test.m_expiring_sub')::uuid),
-  'between',
-  4,
-  5,
   'expiring sub days_until_expiry is in [4, 5]'
 );
 

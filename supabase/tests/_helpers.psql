@@ -1,10 +1,14 @@
--- Test helpers shared across the Tier 5 pgTAP suite.
+-- Test helpers shared across the pgTAP suite.
 --
 -- Conventions:
 --   - Each test file BEGINs, plans, asserts, finishes, and ROLLBACKs.
---   - Each test file includes this helper via `\i tests/_helpers.sql`
---     OR copies the function signatures it needs (Supabase test
---     runners vary on whether `\i` is supported).
+--   - Each test file includes this helper via `\ir _helpers.sql`
+--     (include-relative; resolves relative to the including file's
+--     directory, so it works regardless of pg_prove's CWD). The
+--     plain `\i tests/_helpers.sql` form only resolves correctly
+--     when psql's CWD is the project root, which CI's pg_prove
+--     container does not guarantee — every test silently failed
+--     until the convention was fixed.
 --   - All IDs are deterministic in tests so failure messages read
 --     clearly; reset via pgcrypto's gen_random_uuid only when the
 --     test cares about uniqueness.

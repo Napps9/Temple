@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { Avatar } from './Avatar';
+import { AvatarUploader } from './AvatarUploader';
 import { Button } from './Button';
 import { Input } from './Input';
+import { RemoveMemberDialog } from './RemoveMemberDialog';
 import { Screen } from './Screen';
 import {
   useGymMembership,
@@ -36,6 +37,12 @@ export function AccountScreen() {
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [detailsSaved, markDetailsSaved] = useSavedFlag();
   const [passwordSaved, markPasswordSaved] = useSavedFlag();
+  const [showLeave, setShowLeave] = useState(false);
+
+  // user.new_email is the Supabase-side authoritative "pending email change"
+  // — it survives reloads and clears once the confirmation link is clicked.
+  const pendingEmail = (session?.user as { new_email?: string } | undefined)
+    ?.new_email;
 
   useEffect(() => {
     if (profile?.full_name) setFullName(profile.full_name);
@@ -124,9 +131,13 @@ export function AccountScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3">
-          <Avatar name={displayName} size={48} />
-          <View className="flex-1">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <AvatarUploader
+            currentUrl={profile?.avatar_url}
+            fullName={displayName}
+            size={56}
+          />
+          <View>
             <Text
               className="text-gray-900 dark:text-gray-50 font-semibold"
               numberOfLines={1}>
@@ -156,6 +167,29 @@ export function AccountScreen() {
             keyboardType="email-address"
             textContentType="emailAddress"
           />
+          {pendingEmail ? (
+            <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 gap-2">
+              <Text className="text-amber-700 dark:text-amber-300 text-sm">
+                Pending email confirmation: {pendingEmail}
+              </Text>
+              <Pressable
+                onPress={() =>
+                  supabase.auth
+                    .updateUser({ email: pendingEmail })
+                    .then(() => {
+                      setDetailsMessage('Confirmation email re-sent.');
+                    })
+                    .catch((e: unknown) =>
+                      setDetailsError(errorMessage(e, 'Could not resend')),
+                    )
+                }
+                className="self-start px-3 py-1.5 rounded-md border border-amber-300 dark:border-amber-700 active:bg-amber-100 dark:active:bg-amber-900/40">
+                <Text className="text-amber-700 dark:text-amber-300 text-xs uppercase tracking-widest">
+                  Resend confirmation
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
           {detailsMessage ? (
             <Text className="text-gray-600 dark:text-gray-300 text-sm">
               {detailsMessage}
@@ -210,12 +244,39 @@ export function AccountScreen() {
           </Button>
         </View>
 
+        {role && role !== 'owner' && membership && session ? (
+          <View className="mt-4 gap-2">
+            <Pressable
+              onPress={() => setShowLeave(true)}
+              className="self-start px-3 py-1.5 rounded-md border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20">
+              <Text className="text-red-600 dark:text-red-400 text-xs uppercase tracking-widest">
+                Leave this gym
+              </Text>
+            </Pressable>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Cancels any active subscriptions and removes your access. History
+              is preserved.
+            </Text>
+          </View>
+        ) : null}
+
         <View className="mt-4">
           <Button variant="ghost" onPress={() => signOut.mutate()}>
             Sign out
           </Button>
         </View>
       </ScrollView>
+
+      {membership && session ? (
+        <RemoveMemberDialog
+          visible={showLeave}
+          gymId={membership.gymId}
+          profileId={session.user.id}
+          memberName="yourself"
+          onClose={() => setShowLeave(false)}
+          onRemoved={() => signOut.mutate()}
+        />
+      ) : null}
     </Screen>
   );
 }

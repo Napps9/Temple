@@ -8,7 +8,7 @@
 begin;
 select plan(1);
 
-\i tests/_helpers.sql
+\ir _helpers.psql
 
 do $$
 declare
