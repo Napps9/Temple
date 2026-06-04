@@ -214,26 +214,22 @@ select ok(
 
 -- Days-until-expiry on the converted-intro row picks the nearer of plan vs comp.
 -- (Comp ends ~25 days out; plan ends ~40 days out → min = ~25.)
-select cmp_ok(
-  (select days_until_expiry
+-- pgTAP's cmp_ok is binary-op-only (no 'between'); express the range in
+-- the SELECT and assert with ok().
+select ok(
+  (select days_until_expiry between 24 and 26
    from public.v_member_cohort
    where gym_id = current_setting('test.gym')::uuid
      and profile_id = current_setting('test.m_converted')::uuid),
-  'between',
-  24,
-  26,
   'converted intro days_until_expiry follows nearer of comp/plan window'
 );
 
 -- Days-until-expiry on the expiring-sub row is ~5
-select cmp_ok(
-  (select days_until_expiry
+select ok(
+  (select days_until_expiry between 4 and 5
    from public.v_member_cohort
    where gym_id = current_setting('test.gym')::uuid
      and profile_id = current_setting('test.m_expiring_sub')::uuid),
-  'between',
-  4,
-  5,
   'expiring sub days_until_expiry is in [4, 5]'
 );
 
