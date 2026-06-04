@@ -13,15 +13,35 @@ type Props = {
   sessionId: string;
   recurrenceId: string | null;
   startsAt: string;
+  className: string;
+  durationMinutes: number;
   onClose: () => void;
   onCancelled: () => void;
 };
+
+function fmtSessionWhen(startsAt: string, durationMinutes: number): string {
+  const start = new Date(startsAt);
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+  const date = start.toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+  const t = (d: Date) =>
+    `${d.getHours().toString().padStart(2, '0')}:${d
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}`;
+  return `${date}, ${t(start)}–${t(end)}`;
+}
 
 export function CancelClassDialog({
   visible,
   sessionId,
   recurrenceId,
   startsAt,
+  className,
+  durationMinutes,
   onClose,
   onCancelled,
 }: Props) {
@@ -122,9 +142,14 @@ export function CancelClassDialog({
         <Pressable
           onPress={() => {}}
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
-            Cancel class
-          </Text>
+          <View className="gap-1">
+            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+              Cancel {className}
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              {fmtSessionWhen(startsAt, durationMinutes)}
+            </Text>
+          </View>
 
           <Text className="text-gray-700 dark:text-gray-200 text-sm">
             Members lose access to this class. Credit-pack and comp credits are
