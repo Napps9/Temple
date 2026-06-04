@@ -10,7 +10,7 @@
 begin;
 select plan(10);
 
-\i tests/_helpers.sql
+\ir _helpers.sql
 
 do $$
 declare

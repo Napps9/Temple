@@ -4,7 +4,7 @@
 begin;
 select plan(7);
 
-\i tests/_helpers.sql
+\ir _helpers.sql
 
 do $$
 declare
