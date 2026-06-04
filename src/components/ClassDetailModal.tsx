@@ -28,7 +28,14 @@ type Booking = {
   profile_id: string;
   attended_at: string | null;
   no_show: boolean;
-  profiles: { full_name: string | null } | null;
+  promoted_from_waitlist: boolean;
+  profiles: { full_name: string | null; avatar_url: string | null } | null;
+};
+
+type WaitlistEntry = {
+  rank: number;
+  profile_id: string;
+  joined_at: string;
 };
 
 function fmtTime(d: Date) {
@@ -78,12 +85,36 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_bookings')
         .select(
-          'id, profile_id, attended_at, no_show, profiles(full_name)',
+          'id, profile_id, attended_at, no_show, promoted_from_waitlist, profiles(full_name, avatar_url)',
         )
         .eq('class_session_id', sessionId!)
         .order('created_at');
       if (error) throw error;
       return data as unknown as Booking[];
+    },
+  });
+
+  const myWaitlistRank = useQuery({
+    queryKey: ['my-waitlist-rank', sessionId, session?.user.id],
+    enabled: !!sessionId && visible && !!session?.user.id && mode === 'book',
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('my_waitlist_rank', {
+        p_session_id: sessionId!,
+      });
+      if (error) throw error;
+      return (data as number | null) ?? null;
+    },
+  });
+
+  const staffWaitlist = useQuery({
+    queryKey: ['staff-waitlist', sessionId],
+    enabled: !!sessionId && visible && mode === 'manage',
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('waitlist_for_session', {
+        p_session_id: sessionId!,
+      });
+      if (error) throw error;
+      return (data ?? []) as WaitlistEntry[];
     },
   });
 
@@ -115,8 +146,42 @@ export function ClassDetailModal({
       setError(null);
       setConfirming(null);
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['my-next-booking'] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not cancel booking')),
+  });
+
+  const joinWaitlist = useMutation({
+    mutationFn: async () => {
+      if (!sessionId) throw new Error('No class selected');
+      const { error: e } = await supabase.rpc('join_waitlist', {
+        p_session_id: sessionId,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['my-waitlist-rank', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['staff-waitlist', sessionId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not join waitlist')),
+  });
+
+  const leaveWaitlist = useMutation({
+    mutationFn: async () => {
+      if (!sessionId) throw new Error('No class selected');
+      const { error: e } = await supabase.rpc('leave_waitlist', {
+        p_session_id: sessionId,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['my-waitlist-rank', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['staff-waitlist', sessionId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not leave waitlist')),
   });
 
   function close() {
@@ -127,8 +192,11 @@ export function ClassDetailModal({
 
   const detail = sessionQuery.data;
   const bookings = bookingsQuery.data ?? [];
-  const myBookingExists =
-    !!session?.user.id && bookings.some((b) => b.profile_id === session.user.id);
+  const myBooking =
+    session?.user.id != null
+      ? bookings.find((b) => b.profile_id === session.user.id) ?? null
+      : null;
+  const myBookingExists = myBooking !== null;
   const start = detail ? new Date(detail.starts_at) : null;
   const end =
     detail && start
@@ -228,10 +296,21 @@ export function ClassDetailModal({
                           <View
                             key={b.id}
                             className="flex-row items-center gap-3">
-                            <Avatar name={b.profiles?.full_name} size={32} />
-                            <Text className="text-gray-900 dark:text-gray-50 flex-1">
-                              {b.profiles?.full_name ?? 'Member'}
-                            </Text>
+                            <Avatar
+                              name={b.profiles?.full_name}
+                              avatarUrl={b.profiles?.avatar_url}
+                              size={32}
+                            />
+                            <View className="flex-1">
+                              <Text className="text-gray-900 dark:text-gray-50">
+                                {b.profiles?.full_name ?? 'Member'}
+                              </Text>
+                              {b.promoted_from_waitlist ? (
+                                <Text className="text-amber-600 dark:text-amber-400 text-[10px] uppercase tracking-widest">
+                                  Promoted from waitlist
+                                </Text>
+                              ) : null}
+                            </View>
                             {can(role, 'can_check_in_member') && start && sessionId ? (
                               <CheckInButton
                                 bookingId={b.id}
@@ -252,6 +331,34 @@ export function ClassDetailModal({
                 </View>
               ) : null}
 
+              {mode === 'manage' && (staffWaitlist.data?.length ?? 0) > 0 ? (
+                <View className="gap-2">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    Waitlist
+                  </Text>
+                  <View className="gap-1">
+                    {staffWaitlist.data!.map((w) => (
+                      <View key={w.profile_id} className="flex-row items-center gap-2">
+                        <Text className="text-gray-500 dark:text-gray-400 text-xs w-6">
+                          #{w.rank}
+                        </Text>
+                        <Text className="text-gray-700 dark:text-gray-200 text-sm flex-1">
+                          {w.profile_id.slice(0, 8)}…
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+
+              {mode === 'book' && myBooking?.promoted_from_waitlist ? (
+                <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3">
+                  <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
+                    You were promoted from the waitlist for this class.
+                  </Text>
+                </View>
+              ) : null}
+
               {error ? (
                 <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
               ) : null}
@@ -260,12 +367,16 @@ export function ClassDetailModal({
                 inPast={inPast}
                 isFull={isFull}
                 myBookingExists={myBookingExists}
+                myWaitlistRank={myWaitlistRank.data ?? null}
                 confirming={confirming}
                 setConfirming={setConfirming}
                 onBook={() => book.mutate()}
                 onCancel={() => cancel.mutate()}
+                onJoinWaitlist={() => joinWaitlist.mutate()}
+                onLeaveWaitlist={() => leaveWaitlist.mutate()}
                 bookPending={book.isPending}
                 cancelPending={cancel.isPending}
+                waitlistPending={joinWaitlist.isPending || leaveWaitlist.isPending}
               />
 
               <Button variant="secondary" onPress={close}>
@@ -283,22 +394,30 @@ function BookActions({
   inPast,
   isFull,
   myBookingExists,
+  myWaitlistRank,
   confirming,
   setConfirming,
   onBook,
   onCancel,
+  onJoinWaitlist,
+  onLeaveWaitlist,
   bookPending,
   cancelPending,
+  waitlistPending,
 }: {
   inPast: boolean;
   isFull: boolean;
   myBookingExists: boolean;
+  myWaitlistRank: number | null;
   confirming: null | 'book' | 'cancel';
   setConfirming: (v: null | 'book' | 'cancel') => void;
   onBook: () => void;
   onCancel: () => void;
+  onJoinWaitlist: () => void;
+  onLeaveWaitlist: () => void;
   bookPending: boolean;
   cancelPending: boolean;
+  waitlistPending: boolean;
 }) {
   if (inPast && !myBookingExists) {
     return (
@@ -354,11 +473,31 @@ function BookActions({
       <Button onPress={() => setConfirming('cancel')}>Cancel booking</Button>
     );
   }
+  if (myWaitlistRank !== null) {
+    return (
+      <View className="gap-2">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          You're #{myWaitlistRank} on the waitlist
+        </Text>
+        <Button
+          variant="secondary"
+          onPress={onLeaveWaitlist}
+          loading={waitlistPending}>
+          Leave waitlist
+        </Button>
+      </View>
+    );
+  }
   if (isFull) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
-        This class is full.
-      </Text>
+      <View className="gap-2">
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          This class is full.
+        </Text>
+        <Button onPress={onJoinWaitlist} loading={waitlistPending}>
+          Join waitlist
+        </Button>
+      </View>
     );
   }
   return <Button onPress={() => setConfirming('book')}>Book this class</Button>;

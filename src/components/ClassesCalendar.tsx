@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
@@ -22,10 +22,16 @@ type Recurrence = {
 
 const HORIZON_WEEKS = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
+const HOUR_HEIGHT = 64;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const WEEK_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const VIEWS = ['day', 'week', 'month'] as const;
 type ViewMode = (typeof VIEWS)[number];
+
+function scrollYForHour(hour: number) {
+  const clamped = Math.max(HOURS[0], Math.min(hour, HOURS[HOURS.length - 1]));
+  return Math.max(0, (clamped - HOURS[0]) * HOUR_HEIGHT);
+}
 
 type ClassSession = {
   id: string;
@@ -282,6 +288,7 @@ export function ClassesCalendar({
       ) : null}
       {view === 'week' ? (
         <WeekView
+          gymId={membership?.gymId ?? null}
           date={date}
           setDate={setDate}
           gotoDay={() => router.setParams({ view: 'day' })}
@@ -346,6 +353,17 @@ function DayView({
       new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
   );
 
+  const scrollRef = useRef<ScrollView | null>(null);
+  useEffect(() => {
+    if (mode !== 'manage') return;
+    const now = new Date();
+    const hourTarget = isSameDay(now, date) ? now.getHours() : HOURS[0];
+    const y = scrollYForHour(hourTarget);
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y, animated: false });
+    });
+  }, [date, mode]);
+
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-2">
@@ -387,7 +405,10 @@ function DayView({
 
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2">
           {mode === 'book' ? (
             <View className="gap-2">
@@ -501,6 +522,7 @@ function DayClassCard({
 }
 
 function WeekView({
+  gymId,
   date,
   setDate,
   gotoDay,
@@ -509,6 +531,7 @@ function WeekView({
   onSessionPress,
   canCreate,
 }: {
+  gymId: string | null;
   date: Date;
   setDate: (d: Date) => void;
   gotoDay: () => void;
@@ -517,8 +540,37 @@ function WeekView({
   onSessionPress: (id: string) => void;
   canCreate: boolean;
 }) {
+  const queryClient = useQueryClient();
   const weekStart = startOfWeek(date);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  const scrollRef = useRef<ScrollView | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    const inWeek = weekDays.some((d) => isSameDay(d, now));
+    const hourTarget = inWeek ? now.getHours() : HOURS[0];
+    const y = scrollYForHour(hourTarget);
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y, animated: false });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekStart.toISOString()]);
+
+  const copyWeek = useMutation({
+    mutationFn: async () => {
+      if (!gymId) throw new Error('No gym');
+      const fromStr = fmtDateLocal(weekStart);
+      const { data, error } = await supabase.rpc('copy_week_forward', {
+        p_gym_id: gymId,
+        p_from: fromStr,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
+    },
+  });
 
   return (
     <View className="flex-1">
@@ -539,6 +591,17 @@ function WeekView({
             className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400">›</Text>
           </Pressable>
+          {canCreate ? (
+            <Pressable
+              onPress={() => copyWeek.mutate()}
+              disabled={copyWeek.isPending}
+              hitSlop={8}
+              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
+              <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
+                {copyWeek.isPending ? 'Copying…' : 'Copy week forward'}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View className="flex-row pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -574,7 +637,10 @@ function WeekView({
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2">
           {HOURS.map((hour) => {
             const label = `${hour.toString().padStart(2, '0')}:00`;

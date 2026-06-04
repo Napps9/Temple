@@ -12,7 +12,18 @@ import {
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
-type Tab = 'upcoming' | 'past';
+type Tab = 'upcoming' | 'waitlisted' | 'past';
+
+type WaitlistRow = {
+  id: string;
+  class_session_id: string;
+  position: number;
+  class_sessions: {
+    starts_at: string;
+    duration_minutes: number;
+    class_types: { name: string; color: string } | null;
+  } | null;
+};
 
 type ServerBooking = {
   id: string;
@@ -63,6 +74,23 @@ export default function BookingsScreen() {
     },
   });
 
+  const waitlist = useQuery({
+    queryKey: ['my-waitlist', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async () => {
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('class_waitlist')
+        .select(
+          'id, class_session_id, position, class_sessions!inner(starts_at, duration_minutes, class_types(name, color))',
+        )
+        .eq('profile_id', session!.user.id)
+        .gt('class_sessions.starts_at', nowIso);
+      if (error) throw error;
+      return (data ?? []) as unknown as WaitlistRow[];
+    },
+  });
+
   const rows: BookingRow[] = (bookings.data ?? [])
     .filter((b) => b.class_sessions)
     .map((b) => ({
@@ -106,11 +134,16 @@ export default function BookingsScreen() {
           </Text>
         </View>
 
-        <View className="flex-row gap-2">
+        <View className="flex-row gap-2 flex-wrap">
           <TabChip
             label={`Upcoming (${upcoming.length})`}
             active={tab === 'upcoming'}
             onPress={() => setTab('upcoming')}
+          />
+          <TabChip
+            label={`Waitlisted (${waitlist.data?.length ?? 0})`}
+            active={tab === 'waitlisted'}
+            onPress={() => setTab('waitlisted')}
           />
           <TabChip
             label={`Past (${past.length})`}
@@ -146,6 +179,16 @@ export default function BookingsScreen() {
                   onCancel={() => cancel.mutate(r.id)}
                   cancelling={cancel.isPending}
                 />
+              ))
+            )
+          ) : tab === 'waitlisted' ? (
+            (waitlist.data?.length ?? 0) === 0 ? (
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Not on any waitlists.
+              </Text>
+            ) : (
+              waitlist.data!.map((w) => (
+                <WaitlistCard key={w.id} row={w} />
               ))
             )
           ) : past.length === 0 ? (
@@ -242,6 +285,32 @@ function BookingCard({
           </Text>
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function WaitlistCard({ row }: { row: WaitlistRow }) {
+  const start = row.class_sessions ? new Date(row.class_sessions.starts_at) : null;
+  const typeColor = row.class_sessions?.class_types?.color ?? '#2563EB';
+  const typeName = row.class_sessions?.class_types?.name ?? 'Class';
+  if (!start) return null;
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+      <View className="flex-row items-center gap-3">
+        <View
+          style={{ backgroundColor: typeColor }}
+          className="self-start rounded-full px-2 py-0.5">
+          <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            {fmtDate(start)} · {fmtTime(start)}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            On waitlist — open the class to see your position
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
