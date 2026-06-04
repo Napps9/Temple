@@ -1,6 +1,12 @@
 -- Temple: gyms, profiles, gym_memberships, invite_codes
 -- All tenant-scoped tables enforce RLS keyed on gym_id.
 
+-- pgcrypto provides gen_random_bytes (used by create_invite). Hosted
+-- Supabase preinstalls it in the extensions schema, but we declare it
+-- explicitly so a clean local database / CI runner has it too. gen_random_uuid
+-- (used in defaults below) is in pg17+ core and does not require pgcrypto.
+create extension if not exists pgcrypto with schema extensions;
+
 create table public.gyms (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
