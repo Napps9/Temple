@@ -5,7 +5,7 @@ import { ScrollView, Text, View } from 'react-native';
 
 import { AttendanceChart } from '@/components/AttendanceChart';
 import { Button } from '@/components/Button';
-import { Input } from '@/components/Input';
+import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
 import { useGymMembership } from '@/lib/auth';
@@ -134,25 +134,23 @@ export default function AttendanceScreen() {
 
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <Input
+            <DatePicker
               label="From"
               value={range.start}
-              onChangeText={(v) => {
+              onChange={(v) => {
                 setError(null);
                 setRange((r) => ({ ...r, start: v }));
               }}
-              placeholder="YYYY-MM-DD"
             />
           </View>
           <View className="flex-1">
-            <Input
+            <DatePicker
               label="To"
               value={range.end}
-              onChangeText={(v) => {
+              onChange={(v) => {
                 setError(null);
                 setRange((r) => ({ ...r, end: v }));
               }}
-              placeholder="YYYY-MM-DD"
             />
           </View>
         </View>

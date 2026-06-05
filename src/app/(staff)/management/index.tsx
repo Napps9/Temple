@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { Input } from '@/components/Input';
+import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
 import { useGymMembership, useRole } from '@/lib/auth';
@@ -306,20 +306,10 @@ function KeyStats() {
       {preset === 'custom' ? (
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <Input
-              label="From"
-              value={customStart}
-              onChangeText={setCustomStart}
-              placeholder="YYYY-MM-DD"
-            />
+            <DatePicker label="From" value={customStart} onChange={setCustomStart} />
           </View>
           <View className="flex-1">
-            <Input
-              label="To"
-              value={customEnd}
-              onChangeText={setCustomEnd}
-              placeholder="YYYY-MM-DD"
-            />
+            <DatePicker label="To" value={customEnd} onChange={setCustomEnd} />
           </View>
         </View>
       ) : null}

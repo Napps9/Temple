@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
@@ -169,11 +170,10 @@ export default function TasksScreen() {
               placeholder=""
               multiline
             />
-            <Input
-              label="Due date (optional, YYYY-MM-DD)"
+            <DatePicker
+              label="Due date (optional)"
               value={dueDate}
-              onChangeText={setDueDate}
-              placeholder="2026-06-10"
+              onChange={setDueDate}
             />
             <View className="gap-2">
               <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
