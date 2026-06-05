@@ -67,11 +67,6 @@ export default function ManagementHome() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
         <KeyStats />
-        <ManagementCard
-          title="Account"
-          description="Your name, email, and password."
-          href="/management/account"
-        />
         {canSeeInsights ? (
           <ManagementCard
             title="Insights"

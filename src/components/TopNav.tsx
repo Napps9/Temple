@@ -47,13 +47,18 @@ export function TopNav({
     <View
       style={{ paddingTop: insets.top + 10 }}
       className="bg-gray-50 dark:bg-gray-950 px-4 md:px-6 pb-3 flex-row items-center">
-      <View className="flex-1 flex-row items-center">
+      <View className="flex-1 flex-row items-center gap-3">
         <Pressable
           onPress={() => setNavOpen(true)}
           hitSlop={6}
           className="active:opacity-70">
           <LogoMark initial={initial} />
         </Pressable>
+        <Text
+          className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden md:flex"
+          numberOfLines={1}>
+          {gymName}
+        </Text>
       </View>
 
       <View className="items-center">
