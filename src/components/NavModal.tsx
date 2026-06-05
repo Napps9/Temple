@@ -34,14 +34,15 @@ export function NavModal({
   const { scheme, set } = useThemePreference();
   const colors = useThemeColors();
   const gymName = membership?.gymName ?? 'Temple';
+  const gymInitial = (gymName.charAt(0) || 'T').toUpperCase();
   const displayName = profile?.full_name?.trim() || session?.user.email || '';
   const showCrossLink = variant === 'staff' || canAccessStaff;
   const crossHref = variant === 'staff' ? '/book' : '/classes';
   const crossLabel = variant === 'staff' ? 'Member view' : 'Staff view';
 
-  // Account lives inside the modal rather than as a manage-page card, so
-  // it's one tap away from anywhere in the app. Staff use /management/account
-  // (which renders inside the staff layout); members use /account.
+  // Account lives inside the modal as the last grid tile, identified
+  // by the user's own avatar + name. Staff route to /management/account
+  // (which renders inside the staff layout); members to /account.
   const accountHref = variant === 'staff' ? '/management/account' : '/account';
 
   function go(href: string) {
@@ -63,19 +64,12 @@ export function NavModal({
           className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <View className="p-5 border-b border-gray-100 dark:border-gray-800">
             <View className="flex-row items-center gap-3">
-              <Avatar
-                name={displayName}
-                avatarUrl={profile?.avatar_url}
-                size={40}
-              />
+              <View className="w-10 h-10 rounded-lg bg-primary items-center justify-center">
+                <Text className="text-white font-bold text-base">{gymInitial}</Text>
+              </View>
               <View className="flex-1">
                 <Text
                   className="text-gray-900 dark:text-gray-50 font-semibold text-base"
-                  numberOfLines={1}>
-                  {displayName || gymName}
-                </Text>
-                <Text
-                  className="text-gray-500 dark:text-gray-400 text-xs"
                   numberOfLines={1}>
                   {gymName}
                 </Text>
@@ -108,14 +102,16 @@ export function NavModal({
               ))}
               <Pressable
                 onPress={() => go(accountHref)}
-                className="flex-1 min-w-[80px] aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center gap-2 active:bg-gray-100 dark:active:bg-gray-700">
-                <Ionicons
-                  name="person-circle-outline"
-                  size={26}
-                  color={colors.iconPrimary}
+                className="flex-1 min-w-[80px] aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center gap-2 px-2 active:bg-gray-100 dark:active:bg-gray-700">
+                <Avatar
+                  name={displayName}
+                  avatarUrl={profile?.avatar_url}
+                  size={32}
                 />
-                <Text className="text-gray-900 dark:text-gray-50 text-xs font-medium text-center px-1">
-                  Account
+                <Text
+                  className="text-gray-900 dark:text-gray-50 text-xs font-medium text-center"
+                  numberOfLines={1}>
+                  {displayName || 'Account'}
                 </Text>
               </Pressable>
             </View>
