@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 import {
   parseMembershipRow,
@@ -12,24 +12,64 @@ import type { GymRole } from '@/types/database';
 
 export type { GymMembership } from './membership';
 
+// Module-level session state, shared across every useSession() caller.
+//
+// Before this was an in-component useState(undefined), which produced
+// a subtle navigation bug: when (auth)/_layout unmounted and
+// (staff)/_layout mounted (e.g. an owner being redirected from
+// /sign-in to /classes), the new layout's useSession started fresh at
+// undefined for one render. useGymMembership's queryKey includes
+// session.user.id, so during that render the key was
+// ['gym-membership', undefined] — a cache miss against the
+// ['gym-membership', <uuid>] entry the prior layout had populated.
+// useCan therefore saw role: null and returned false, and the staff
+// layout's `if (canAccessStaff === false)` redirect bounced the owner
+// straight back to /book before the layout's own useSession effect
+// had a chance to resolve.
+//
+// useSyncExternalStore + a single module-level currentSession means
+// every component reads the same value synchronously, so the moment
+// onAuthStateChange fires, every layout sees it on the next render.
+
+let currentSession: Session | null | undefined = undefined;
+const sessionListeners = new Set<() => void>();
+let sessionInitialised = false;
+
+function notifySessionListeners(): void {
+  for (const listener of sessionListeners) listener();
+}
+
+function ensureSessionInitialised(): void {
+  if (sessionInitialised) return;
+  sessionInitialised = true;
+  supabase.auth.getSession().then(({ data }) => {
+    currentSession = data.session;
+    notifySessionListeners();
+  });
+  supabase.auth.onAuthStateChange((_event, next) => {
+    currentSession = next;
+    notifySessionListeners();
+  });
+}
+
+function subscribeSession(listener: () => void): () => void {
+  ensureSessionInitialised();
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+}
+
+function getSessionSnapshot(): Session | null | undefined {
+  return currentSession;
+}
+
 export function useSession(): Session | null | undefined {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
-
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setSession(data.session);
-    });
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-    });
-    return () => {
-      mounted = false;
-      subscription.subscription.unsubscribe();
-    };
-  }, []);
-
-  return session;
+  return useSyncExternalStore(
+    subscribeSession,
+    getSessionSnapshot,
+    getSessionSnapshot,
+  );
 }
 
 export function useGymMembership() {

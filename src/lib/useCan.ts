@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { useGymMembership } from './auth';
+import { useGymMembership, useSession } from './auth';
 import { type Capability } from './can';
 import {
   computeCan,
@@ -42,13 +42,21 @@ export function useGymCapabilities() {
   });
 }
 
-// Hook wrapper. Subscribes to membership + override queries and
-// delegates the actual decision to the pure computeCan() function in
-// can-resolver.ts (which is exercised by useCan.test.ts).
+// Hook wrapper. Subscribes to session + membership + override state
+// and delegates the actual decision to the pure computeCan() function
+// in can-resolver.ts (exercised by can-resolver.test.ts).
+//
+// Subscribing to the session here is what makes the resolver "wait"
+// before redirecting: while session === undefined (still being read
+// from storage) computeCan returns undefined, so the staff layout's
+// `if (canAccessStaff === false)` redirect does not fire on the very
+// first render after a route-group transition.
 export function useCan(capability: Capability): boolean | undefined {
+  const session = useSession();
   const { data: membership, isLoading: membershipLoading } = useGymMembership();
   const { data: overrides, isLoading: overridesLoading } = useGymCapabilities();
   return computeCan(capability, {
+    sessionPending: session === undefined,
     membershipLoading,
     role: membership?.role ?? null,
     overridesLoading,

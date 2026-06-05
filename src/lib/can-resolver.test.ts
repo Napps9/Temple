@@ -1,27 +1,44 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeCan } from './can-resolver';
+import { computeCan, type CanState } from './can-resolver';
+
+// Common base state — overridden per test.
+const baseState: CanState = {
+  sessionPending: false,
+  membershipLoading: false,
+  role: null,
+  overridesLoading: false,
+  overrides: [],
+};
 
 describe('computeCan', () => {
+  it('returns undefined while the supabase session is still being read', () => {
+    // This is the regression case for the (staff)/_layout bouncing an
+    // owner to /book. During the very first render after a route
+    // group transition, useGymMembership is disabled because session
+    // is still pending — without this short-circuit, computeCan saw
+    // role: null and answered false, which the layout treated as an
+    // explicit denial.
+    expect(
+      computeCan('can_access_staff_area', {
+        ...baseState,
+        sessionPending: true,
+      }),
+    ).toBeUndefined();
+  });
+
   it('returns undefined while membership is loading', () => {
     expect(
       computeCan('can_access_staff_area', {
+        ...baseState,
         membershipLoading: true,
-        role: null,
-        overridesLoading: false,
-        overrides: [],
       }),
     ).toBeUndefined();
   });
 
   it('returns false when there is no role (signed in but no gym membership)', () => {
     expect(
-      computeCan('can_access_staff_area', {
-        membershipLoading: false,
-        role: null,
-        overridesLoading: false,
-        overrides: [],
-      }),
+      computeCan('can_access_staff_area', baseState),
     ).toBe(false);
   });
 
@@ -32,7 +49,7 @@ describe('computeCan', () => {
   it('returns true for an owner reaching can_access_staff_area with no overrides loaded yet', () => {
     expect(
       computeCan('can_access_staff_area', {
-        membershipLoading: false,
+        ...baseState,
         role: 'owner',
         overridesLoading: true,
         overrides: undefined,
@@ -45,9 +62,8 @@ describe('computeCan', () => {
     // staff, computeCan refuses to honor it — owner is structural.
     expect(
       computeCan('can_access_staff_area', {
-        membershipLoading: false,
+        ...baseState,
         role: 'owner',
-        overridesLoading: false,
         overrides: [
           { role: 'owner', capability: 'can_access_staff_area', enabled: false },
         ],
@@ -65,12 +81,7 @@ describe('computeCan', () => {
     ] as const;
     for (const cap of caps) {
       expect(
-        computeCan(cap, {
-          membershipLoading: false,
-          role: 'owner',
-          overridesLoading: false,
-          overrides: [],
-        }),
+        computeCan(cap, { ...baseState, role: 'owner' }),
       ).toBe(true);
     }
   });
@@ -78,9 +89,8 @@ describe('computeCan', () => {
   it('returns false for a member regardless of overrides', () => {
     expect(
       computeCan('can_access_staff_area', {
-        membershipLoading: false,
+        ...baseState,
         role: 'member',
-        overridesLoading: false,
         overrides: [
           // Even an override trying to grant staff access to a member
           // is ignored — member is structural.
@@ -93,7 +103,7 @@ describe('computeCan', () => {
   it('returns undefined for non-owner/non-member while overrides are loading', () => {
     expect(
       computeCan('can_access_staff_area', {
-        membershipLoading: false,
+        ...baseState,
         role: 'admin',
         overridesLoading: true,
         overrides: undefined,
@@ -104,9 +114,8 @@ describe('computeCan', () => {
   it('honors an admin override that disables a default-on capability', () => {
     expect(
       computeCan('can_access_staff_area', {
-        membershipLoading: false,
+        ...baseState,
         role: 'admin',
-        overridesLoading: false,
         overrides: [
           { role: 'admin', capability: 'can_access_staff_area', enabled: false },
         ],
@@ -117,9 +126,8 @@ describe('computeCan', () => {
   it('honors an admin override that enables a default-off capability', () => {
     expect(
       computeCan('can_see_money', {
-        membershipLoading: false,
+        ...baseState,
         role: 'admin',
-        overridesLoading: false,
         overrides: [
           { role: 'admin', capability: 'can_see_money', enabled: true },
         ],
@@ -130,21 +138,11 @@ describe('computeCan', () => {
   it('falls back to the baked-in matrix when no override exists for the role/capability', () => {
     // Coach has can_claim_cover by default; not by override.
     expect(
-      computeCan('can_claim_cover', {
-        membershipLoading: false,
-        role: 'coach',
-        overridesLoading: false,
-        overrides: [],
-      }),
+      computeCan('can_claim_cover', { ...baseState, role: 'coach' }),
     ).toBe(true);
     // Coach lacks can_invite by default.
     expect(
-      computeCan('can_invite', {
-        membershipLoading: false,
-        role: 'coach',
-        overridesLoading: false,
-        overrides: [],
-      }),
+      computeCan('can_invite', { ...baseState, role: 'coach' }),
     ).toBe(false);
   });
 
@@ -152,14 +150,26 @@ describe('computeCan', () => {
     // An override for staff:can_invite must not leak into coach.
     expect(
       computeCan('can_invite', {
-        membershipLoading: false,
+        ...baseState,
         role: 'coach',
-        overridesLoading: false,
         overrides: [
           { role: 'staff', capability: 'can_invite', enabled: true },
           { role: 'coach', capability: 'can_claim_cover', enabled: false },
         ],
       }),
     ).toBe(false); // coach default for can_invite
+  });
+
+  it('session-pending wins over a present role (paranoia: mid-flight invalidation)', () => {
+    // Belt-and-suspenders — if some future caller manages to construct
+    // a state where sessionPending is true alongside a stale role,
+    // the resolver still refuses to answer.
+    expect(
+      computeCan('can_access_staff_area', {
+        ...baseState,
+        sessionPending: true,
+        role: 'owner',
+      }),
+    ).toBeUndefined();
   });
 });

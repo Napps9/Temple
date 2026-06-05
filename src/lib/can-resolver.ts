@@ -8,6 +8,12 @@ export type OverrideRow = {
 };
 
 export type CanState = {
+  // True while the supabase session is still being read out of storage
+  // for the first time. This is distinct from "no session" (signed
+  // out): in that case sessionPending is false and role is null.
+  // Critical for not pre-emptively redirecting to /book on the first
+  // render of a fresh route-group mount.
+  sessionPending: boolean;
   membershipLoading: boolean;
   role: GymRole | null;
   overridesLoading: boolean;
@@ -31,6 +37,7 @@ export function computeCan(
   capability: Capability,
   state: CanState,
 ): boolean | undefined {
+  if (state.sessionPending) return undefined;
   if (state.membershipLoading) return undefined;
   if (!state.role) return false;
   // Owner and member are structural floors / ceilings — never gated
