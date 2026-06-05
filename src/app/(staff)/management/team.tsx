@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -204,30 +205,76 @@ export default function TeamScreen() {
             <Text className="text-gray-500 dark:text-gray-400">No invites yet.</Text>
           ) : null}
           {codes.data?.map((c) => (
-            <View
+            <InviteCodeRow
               key={c.id}
-              className="flex-row justify-between items-center bg-white dark:bg-gray-900 rounded-lg p-3">
-              <View>
-                <Text className="text-gray-900 dark:text-gray-50 tracking-widest">
-                  {c.code}
-                </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase">
-                  {c.role}
-                </Text>
-              </View>
-              <Text
-                className={`text-xs ${
-                  c.used_at ? 'text-gray-400 dark:text-gray-500' : 'text-primary'
-                }`}>
-                {c.used_at ? 'used' : 'unused'}
-              </Text>
-            </View>
+              id={c.id}
+              code={c.code}
+              role={c.role}
+              usedAt={c.used_at}
+              canDelete={callerRole === 'owner'}
+            />
           ))}
         </View>
 
         {callerRole === 'owner' ? <RolePermissionsLauncher /> : null}
       </ScrollView>
     </Screen>
+  );
+}
+
+function InviteCodeRow({
+  id,
+  code,
+  role,
+  usedAt,
+  canDelete,
+}: {
+  id: string;
+  code: string;
+  role: GymRole;
+  usedAt: string | null;
+  canDelete: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('invite_codes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
+    },
+  });
+  return (
+    <View className="flex-row justify-between items-center bg-white dark:bg-gray-900 rounded-lg p-3 gap-3">
+      <View className="flex-1">
+        <Text className="text-gray-900 dark:text-gray-50 tracking-widest">
+          {code}
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase">
+          {role}
+        </Text>
+      </View>
+      <Text
+        className={`text-xs ${
+          usedAt ? 'text-gray-400 dark:text-gray-500' : 'text-primary'
+        }`}>
+        {usedAt ? 'used' : 'unused'}
+      </Text>
+      {canDelete ? (
+        <Pressable
+          onPress={() => remove.mutate()}
+          disabled={remove.isPending}
+          hitSlop={8}
+          className="w-8 h-8 rounded-md items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+          <Ionicons
+            name="close"
+            size={18}
+            color={remove.isPending ? '#9CA3AF' : '#DC2626'}
+          />
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
