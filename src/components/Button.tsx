@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View as RNView, type View } from 'react-native';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
 type Props = {
   children: ReactNode;
@@ -18,18 +18,22 @@ const containerStyles: Record<Variant, string> = {
   secondary:
     'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800',
   ghost: 'bg-transparent',
+  destructive:
+    'bg-white dark:bg-gray-900 border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20',
 };
 
 const textStyles: Record<Variant, string> = {
   primary: 'text-white font-semibold',
   secondary: 'text-gray-900 dark:text-gray-50',
   ghost: 'text-primary',
+  destructive: 'text-red-600 dark:text-red-400 font-semibold',
 };
 
 const successIconColor: Record<Variant, string> = {
   primary: '#FFFFFF',
   secondary: '#16A34A',
   ghost: '#16A34A',
+  destructive: '#DC2626',
 };
 
 export const Button = forwardRef<View, Props>(function Button(

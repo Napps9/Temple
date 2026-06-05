@@ -385,13 +385,11 @@ export function ClassDetailModal({
               />
 
               {mode === 'manage' && canEditClasses && !inPast ? (
-                <Pressable
-                  onPress={() => setShowCancelClass(true)}
-                  className="self-start px-3 py-1.5 rounded-md border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20">
-                  <Text className="text-red-600 dark:text-red-400 text-xs uppercase tracking-widest">
-                    Cancel class
-                  </Text>
-                </Pressable>
+                <Button
+                  variant="destructive"
+                  onPress={() => setShowCancelClass(true)}>
+                  Cancel class
+                </Button>
               ) : null}
 
               <Button variant="secondary" onPress={close}>
