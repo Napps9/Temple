@@ -4,8 +4,10 @@ import { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { AttendanceChart } from '@/components/AttendanceChart';
+import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { StatTile } from '@/components/StatTile';
 import { useGymMembership, useRole } from '@/lib/auth';
 import {
   bucketByClassType,
@@ -14,6 +16,7 @@ import {
   type AttendanceSession,
 } from '@/lib/attendance';
 import { can } from '@/lib/can';
+import { useExportAttendanceCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
@@ -34,6 +37,8 @@ export default function AttendanceScreen() {
   const { data: membership } = useGymMembership();
   const [range, setRange] = useState(defaultRange);
   const [error, setError] = useState<string | null>(null);
+  const canExport = can(role, 'can_export_members');
+  const exportAttendance = useExportAttendanceCsv();
 
   const rangeValid =
     DATE_RE.test(range.start) && DATE_RE.test(range.end) && range.start <= range.end;
@@ -152,6 +157,22 @@ export default function AttendanceScreen() {
           </View>
         </View>
 
+        {canExport ? (
+          <View className="gap-2">
+            <Button
+              variant="secondary"
+              onPress={() => exportAttendance.mutate()}
+              loading={exportAttendance.isPending}>
+              Export attendance CSV
+            </Button>
+            {exportAttendance.error ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {exportErrorMessage(exportAttendance.error, 'attendance')}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
         {!rangeValid ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">
             Dates must be YYYY-MM-DD and From ≤ To.
@@ -169,9 +190,9 @@ export default function AttendanceScreen() {
         ) : null}
 
         <View className="flex-row gap-3 flex-wrap">
-          <Tile title="Attended" value={totals.attended} tone="green" />
-          <Tile title="No-show" value={totals.no_show} tone="red" />
-          <Tile title="Unmarked" value={totals.unmarked} tone="muted" />
+          <StatTile title="Attended" value={totals.attended} tone="green" minWidth={120} />
+          <StatTile title="No-show" value={totals.no_show} tone="red" minWidth={120} />
+          <StatTile title="Unmarked" value={totals.unmarked} tone="muted" minWidth={120} />
         </View>
 
         <View className="gap-2">
@@ -230,27 +251,3 @@ export default function AttendanceScreen() {
   );
 }
 
-function Tile({
-  title,
-  value,
-  tone,
-}: {
-  title: string;
-  value: number;
-  tone: 'green' | 'red' | 'muted';
-}) {
-  const valueClass =
-    tone === 'green'
-      ? 'text-green-600 dark:text-green-400'
-      : tone === 'red'
-        ? 'text-red-600 dark:text-red-400'
-        : 'text-gray-900 dark:text-gray-50';
-  return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 flex-1 min-w-[120px]">
-      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-        {title}
-      </Text>
-      <Text className={`${valueClass} text-3xl font-semibold`}>{value}</Text>
-    </View>
-  );
-}

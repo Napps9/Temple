@@ -1,15 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
-import { Redirect } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
 
-import { Button } from '@/components/Button';
-import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
-import { buildCsv, downloadCsv } from '@/lib/csv';
-import { can } from '@/lib/can';
-import { errorMessage } from '@/lib/errors';
-import { supabase } from '@/lib/supabase';
+import { useGymMembership } from './auth';
+import { buildCsv, downloadCsv } from './csv';
+import { errorMessage } from './errors';
+import { supabase } from './supabase';
 
 type MemberRow = {
   profile_id: string;
@@ -46,12 +40,13 @@ type AttendanceRow = {
   } | null;
 };
 
-export default function ReportsScreen() {
-  const role = useRole();
-  const { data: membership } = useGymMembership();
-  const [error, setError] = useState<string | null>(null);
+function isoDay(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
-  const exportMembers = useMutation({
+export function useExportMembersCsv() {
+  const { data: membership } = useGymMembership();
+  return useMutation({
     mutationFn: async () => {
       if (!membership) throw new Error('No gym selected');
       const { data, error } = await supabase
@@ -83,11 +78,12 @@ export default function ReportsScreen() {
       ]);
       await downloadCsv(`members-${isoDay(new Date())}.csv`, csv);
     },
-    onError: (e) => setError(errorMessage(e, 'Could not export members')),
-    onSuccess: () => setError(null),
   });
+}
 
-  const exportMemberships = useMutation({
+export function useExportMembershipsCsv() {
+  const { data: membership } = useGymMembership();
+  return useMutation({
     mutationFn: async () => {
       if (!membership) throw new Error('No gym selected');
       const { data, error } = await supabase
@@ -116,11 +112,12 @@ export default function ReportsScreen() {
       ]);
       await downloadCsv(`memberships-${isoDay(new Date())}.csv`, csv);
     },
-    onError: (e) => setError(errorMessage(e, 'Could not export memberships')),
-    onSuccess: () => setError(null),
   });
+}
 
-  const exportAttendance = useMutation({
+export function useExportAttendanceCsv() {
+  const { data: membership } = useGymMembership();
+  return useMutation({
     mutationFn: async () => {
       if (!membership) throw new Error('No gym selected');
       const { data, error } = await supabase
@@ -163,80 +160,9 @@ export default function ReportsScreen() {
       ]);
       await downloadCsv(`attendance-${isoDay(new Date())}.csv`, csv);
     },
-    onError: (e) => setError(errorMessage(e, 'Could not export attendance')),
-    onSuccess: () => setError(null),
   });
-
-  if (role && !can(role, 'can_export_members')) {
-    return <Redirect href="/management" />;
-  }
-
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Reports
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            One-click CSV exports. Files include a UTF-8 BOM so Excel and
-            Sheets open them with the right encoding.
-          </Text>
-        </View>
-
-        <View className="gap-3">
-          <ExportCard
-            title="Members"
-            description="One row per member: contact details, lifecycle flags, days to expiry. Backed by the same view that powers Insights, so the numbers reconcile."
-            onPress={() => exportMembers.mutate()}
-            loading={exportMembers.isPending}
-          />
-          <ExportCard
-            title="Memberships"
-            description="One row per plan subscription: member, plan, status, paid-through date."
-            onPress={() => exportMemberships.mutate()}
-            loading={exportMemberships.isPending}
-          />
-          <ExportCard
-            title="Attendance"
-            description="One row per booking: member, class type, check-in state. Last 5,000 bookings."
-            onPress={() => exportAttendance.mutate()}
-            loading={exportAttendance.isPending}
-          />
-        </View>
-
-        {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-        ) : null}
-      </ScrollView>
-    </Screen>
-  );
 }
 
-function ExportCard({
-  title,
-  description,
-  onPress,
-  loading,
-}: {
-  title: string;
-  description: string;
-  onPress: () => void;
-  loading: boolean;
-}) {
-  return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-      <View className="gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">{title}</Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">{description}</Text>
-      </View>
-      <Button onPress={onPress} loading={loading}>
-        Download CSV
-      </Button>
-    </View>
-  );
-}
-
-function isoDay(d: Date): string {
-  return d.toISOString().slice(0, 10);
+export function exportErrorMessage(error: unknown, kind: 'members' | 'memberships' | 'attendance'): string {
+  return errorMessage(error, `Could not export ${kind}`);
 }

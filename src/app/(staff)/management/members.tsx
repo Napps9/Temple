@@ -4,12 +4,14 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
 import { can } from '@/lib/can';
+import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { useMembersFilter } from '@/lib/members-filter';
 import { supabase } from '@/lib/supabase';
@@ -62,6 +64,8 @@ export default function MembersScreen() {
   );
 
   const canRemove = can(role, 'can_archive_members');
+  const canExport = can(role, 'can_export_members');
+  const exportMembers = useExportMembersCsv();
 
   const cohortQuery = useQuery({
     queryKey: ['members-cohort', membership?.gymId],
@@ -188,6 +192,22 @@ export default function MembersScreen() {
             search by name. Tap a member to open their detail page.
           </Text>
         </View>
+
+        {canExport ? (
+          <View className="gap-2">
+            <Button
+              variant="secondary"
+              onPress={() => exportMembers.mutate()}
+              loading={exportMembers.isPending}>
+              Export members CSV
+            </Button>
+            {exportMembers.error ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {exportErrorMessage(exportMembers.error, 'members')}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         <Input
           label="Search"

@@ -45,7 +45,7 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_invite:            { owner: true,  admin: true,  coach: false, staff: false, member: false },
   can_refund:            { owner: true,  admin: false, coach: false, staff: false, member: false },
   can_manage_staff:      { owner: true,  admin: true,  coach: false, staff: false, member: false },
-  can_see_insights:      { owner: true,  admin: true,  coach: false, staff: false, member: false },
+  can_see_insights:      { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
   can_set_targets:       { owner: true,  admin: false, coach: false, staff: false, member: false },
   can_export_members:    { owner: true,  admin: true,  coach: false, staff: false, member: false },
   can_manage_tags:       { owner: true,  admin: true,  coach: false, staff: false, member: false },

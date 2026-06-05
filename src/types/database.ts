@@ -867,6 +867,18 @@ export type Database = {
           billing_live: boolean;
         }[];
       };
+      compute_revenue_summary: {
+        Args: { p_gym_id: string; p_period_start: string; p_period_end: string };
+        Returns: {
+          currency: string;
+          gross_cents: number;
+          charge_count: number;
+        }[];
+      };
+      is_revenue_event: {
+        Args: { p_provider: string; p_kind: string };
+        Returns: boolean;
+      };
       apply_tag_rules: {
         Args: { p_gym_id: string };
         Returns: number;

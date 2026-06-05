@@ -9,6 +9,7 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
 import { can } from '@/lib/can';
+import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
@@ -73,6 +74,8 @@ export default function PlansScreen() {
   const canEdit = can(role, 'can_manage_plans');
   const canArchive = can(role, 'can_archive_plans');
   const canHardDelete = can(role, 'can_hard_delete');
+  const canExport = can(role, 'can_export_members');
+  const exportMemberships = useExportMembershipsCsv();
 
   const plans = useQuery({
     queryKey: ['membership-plans', membership?.gymId],
@@ -250,6 +253,22 @@ export default function PlansScreen() {
             new subscribers get.
           </Text>
         </View>
+
+        {canExport ? (
+          <View className="gap-2">
+            <Button
+              variant="secondary"
+              onPress={() => exportMemberships.mutate()}
+              loading={exportMemberships.isPending}>
+              Export memberships CSV
+            </Button>
+            {exportMemberships.error ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {exportErrorMessage(exportMemberships.error, 'memberships')}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         <View className="gap-3">
           {activeRows.length === 0 ? (
