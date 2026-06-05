@@ -98,7 +98,7 @@ as $$
     when 'can_invite'            then p_role = 'admin'
     when 'can_refund'            then false
     when 'can_manage_staff'      then p_role = 'admin'
-    when 'can_see_insights'      then p_role in ('admin','coach','staff')
+    when 'can_see_insights'      then p_role = 'admin'
     when 'can_set_targets'       then false
     when 'can_export_members'    then p_role = 'admin'
     when 'can_manage_tags'       then p_role = 'admin'
