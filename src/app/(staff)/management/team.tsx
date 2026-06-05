@@ -225,7 +225,7 @@ export default function TeamScreen() {
           ))}
         </View>
 
-        {callerRole === 'owner' ? <RolePermissionsSection /> : null}
+        {callerRole === 'owner' ? <RolePermissionsLauncher /> : null}
       </ScrollView>
     </Screen>
   );
@@ -234,6 +234,31 @@ export default function TeamScreen() {
 // ============================================================================
 // Role permissions — owner-only editor for gym_role_capabilities.
 // ============================================================================
+
+// Tucked behind a CTA so it doesn't dominate the Team screen — owners
+// rarely need to touch role configuration after initial setup.
+function RolePermissionsLauncher() {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <View className="mt-4">
+        <Button variant="secondary" onPress={() => setOpen(true)}>
+          Configure role permissions
+        </Button>
+      </View>
+    );
+  }
+  return (
+    <View className="gap-3">
+      <RolePermissionsSection />
+      <View className="self-start">
+        <Button variant="ghost" onPress={() => setOpen(false)}>
+          Hide permissions
+        </Button>
+      </View>
+    </View>
+  );
+}
 
 type OverrideRow = {
   role: GymRole;
