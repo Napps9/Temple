@@ -5,6 +5,7 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ClassTypePicker } from '@/components/ClassTypePicker';
+import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import {
   EMPTY_RECURRENCE,
@@ -97,7 +98,7 @@ export function CreateClassModal({
 
   function validate(): string | null {
     if (!classTypeId) return 'Pick a class type';
-    if (!DATE_RE.test(dateStr)) return 'Date must be YYYY-MM-DD';
+    if (!DATE_RE.test(dateStr)) return 'Pick a date';
     if (recurring) {
       return validateRecurrence(recurrence);
     }
@@ -157,7 +158,7 @@ export function CreateClassModal({
     mutationFn: async () => {
       if (!membership) throw new Error('No gym');
       if (!classTypeId) throw new Error('Pick a class type');
-      if (!DATE_RE.test(dateStr)) throw new Error('Date must be YYYY-MM-DD');
+      if (!DATE_RE.test(dateStr)) throw new Error('Pick a date');
 
       const dur = parseInt(recurrence.durationMinutes, 10);
       const cap = parseInt(recurrence.capacity, 10);
@@ -278,11 +279,10 @@ export function CreateClassModal({
 
               <View className="flex-row gap-3">
                 <View className="flex-1">
-                  <Input
+                  <DatePicker
                     label={recurring ? 'Start date' : 'Date'}
                     value={dateStr}
-                    onChangeText={setDateStr}
-                    placeholder="2026-06-02"
+                    onChange={setDateStr}
                   />
                 </View>
                 {!recurring ? (

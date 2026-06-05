@@ -173,7 +173,7 @@ export default function AttendanceScreen() {
 
         {!rangeValid ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">
-            Dates must be YYYY-MM-DD and From ≤ To.
+            Pick valid dates with From on or before To.
           </Text>
         ) : null}
 
