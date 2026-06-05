@@ -17,6 +17,57 @@ type Props = {
   onCancelled: () => void;
 };
 
+// Pattern formatting for recurring-series descriptions in the dialog.
+// e.g. fmtPattern([1,3], ['17:30']) → "Mondays and Wednesdays at 17:30".
+// Kept narrow on purpose — same names PostgreSQL hands back from
+// class_recurrences.days_of_week (0=Sunday).
+const DAY_LABELS = [
+  'Sundays',
+  'Mondays',
+  'Tuesdays',
+  'Wednesdays',
+  'Thursdays',
+  'Fridays',
+  'Saturdays',
+];
+
+function fmtDays(days: number[]): string {
+  if (days.length === 0) return '';
+  if (days.length === 7) return 'Every day';
+  const set = new Set(days);
+  const isWeekdays =
+    days.length === 5 && [1, 2, 3, 4, 5].every((d) => set.has(d));
+  if (isWeekdays) return 'Weekdays';
+  const isWeekends = days.length === 2 && set.has(0) && set.has(6);
+  if (isWeekends) return 'Weekends';
+  const sorted = [...days].sort((a, b) => a - b).map((d) => DAY_LABELS[d]);
+  if (sorted.length === 1) return sorted[0]!;
+  if (sorted.length === 2) return `${sorted[0]} and ${sorted[1]}`;
+  return `${sorted.slice(0, -1).join(', ')} and ${sorted[sorted.length - 1]}`;
+}
+
+function fmtTimes(times: string[]): string {
+  if (times.length === 0) return '';
+  if (times.length === 1) return `at ${times[0]}`;
+  if (times.length === 2) return `at ${times[0]} and ${times[1]}`;
+  return `at ${times.slice(0, -1).join(', ')} and ${times[times.length - 1]}`;
+}
+
+function fmtPattern(days: number[], times: string[]): string {
+  return [fmtDays(days), fmtTimes(times)].filter(Boolean).join(' ');
+}
+
+function fmtEnds(endsOn: string | null): string {
+  if (!endsOn) return '';
+  const d = new Date(endsOn);
+  const label = d.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  return ` · ends ${label}`;
+}
+
 export function CancelClassDialog({
   visible,
   sessionId,
@@ -68,6 +119,39 @@ export function CancelClassDialog({
         seriesSiblings: seriesSiblings.count ?? 1,
       };
     },
+  });
+
+  // For recurring sessions, fetch the pattern (day(s) + time(s) + ends_on)
+  // so the dialog can describe "Tuesdays at 17:30" rather than "360
+  // sessions". Lets the operator make the call on the basis of the
+  // schedule shape, not the materialisation count.
+  const recurrence = useQuery({
+    queryKey: ['cancel-class-recurrence', recurrenceId],
+    enabled: visible && !!recurrenceId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_recurrences')
+        .select('days_of_week, times, ends_on')
+        .eq('id', recurrenceId!)
+        .single();
+      if (error) throw error;
+      return data as { days_of_week: number[]; times: string[]; ends_on: string | null };
+    },
+  });
+
+  const patternLabel = recurrence.data
+    ? `${fmtPattern(recurrence.data.days_of_week, recurrence.data.times)}${fmtEnds(
+        recurrence.data.ends_on,
+      )}`
+    : '…';
+
+  // The "from this date" anchor for the "This and all future" option —
+  // explicit calendar date instead of the vaguer "earlier sessions".
+  // Same source as the modal header so the boundary is named, not implied.
+  const anchorDate = new Date(startsAt).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
   });
 
   const cancelMut = useMutation({
@@ -136,6 +220,7 @@ export function CancelClassDialog({
             <View className="gap-2">
               <ScopeOption
                 label="Just this one"
+                effect="The rest of the series keeps running"
                 selected={scope === 'one'}
                 onPress={() => setScope('one')}
                 detail={
@@ -148,27 +233,17 @@ export function CancelClassDialog({
               />
               <ScopeOption
                 label="This and all future"
+                effect={`Any sessions in this series before ${anchorDate} will not be cancelled`}
                 selected={scope === 'from'}
                 onPress={() => setScope('from')}
-                detail={
-                  counts
-                    ? `${counts.fromSiblings} session${
-                        counts.fromSiblings === 1 ? '' : 's'
-                      } in the series from this date onward`
-                    : '…'
-                }
+                detail={`${patternLabel}, from this date onward`}
               />
               <ScopeOption
                 label="The whole series"
+                effect="Past sessions kept as history; the recurring schedule is removed"
                 selected={scope === 'series'}
                 onPress={() => setScope('series')}
-                detail={
-                  counts
-                    ? `${counts.seriesSiblings} future session${
-                        counts.seriesSiblings === 1 ? '' : 's'
-                      } in the series · past sessions kept as history`
-                    : '…'
-                }
+                detail={patternLabel}
               />
             </View>
           ) : counts ? (
@@ -204,11 +279,13 @@ export function CancelClassDialog({
 
 function ScopeOption({
   label,
+  effect,
   detail,
   selected,
   onPress,
 }: {
   label: string;
+  effect: string;
   detail: string;
   selected: boolean;
   onPress: () => void;
@@ -238,7 +315,10 @@ function ScopeOption({
           {label}
         </Text>
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1 ml-6">
+      <Text className="text-gray-700 dark:text-gray-200 text-xs mt-1 ml-6">
+        {effect}
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 ml-6">
         {detail}
       </Text>
     </Pressable>
