@@ -2,8 +2,15 @@ import type { Session } from '@supabase/supabase-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
+import {
+  parseMembershipRow,
+  type GymMembership,
+  type MembershipRowInput,
+} from './membership';
 import { supabase } from './supabase';
 import type { GymRole } from '@/types/database';
+
+export type { GymMembership } from './membership';
 
 export function useSession(): Session | null | undefined {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -25,17 +32,24 @@ export function useSession(): Session | null | undefined {
   return session;
 }
 
-export type GymMembership = {
-  gymId: string;
-  gymName: string;
-  role: GymRole;
-};
-
 export function useGymMembership() {
   const session = useSession();
   return useQuery({
     queryKey: ['gym-membership', session?.user.id],
     enabled: !!session?.user.id,
+    // Membership rarely changes within a session, and refetching on
+    // every observer remount is what produced the apparent "infinite
+    // retry" loop on the deployed app: each useCan() call in a child
+    // component attaches a new observer, and with staleTime: 0 (RQ's
+    // default) the new observer triggered an immediate refetch even
+    // though the prior fetch had succeeded. Pinning this lets RQ
+    // serve the cached row to every observer without re-hitting the
+    // network until someone explicitly invalidates (sign-out clears
+    // the entire cache via useSignOut).
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     queryFn: async (): Promise<GymMembership | null> => {
       if (!session) return null;
       const { data, error } = await supabase
@@ -44,13 +58,7 @@ export function useGymMembership() {
         .eq('profile_id', session.user.id)
         .maybeSingle();
       if (error) throw error;
-      if (!data) return null;
-      const gymName = Array.isArray(data.gyms) ? data.gyms[0]?.name : data.gyms?.name;
-      return {
-        gymId: data.gym_id,
-        gymName: gymName ?? '',
-        role: data.role,
-      };
+      return parseMembershipRow(data as MembershipRowInput | null);
     },
   });
 }
