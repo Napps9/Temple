@@ -38,11 +38,6 @@ export function NavModal({
   const crossLabel = variant === 'staff' ? 'Member view' : 'Staff view';
 
   function go(href: string) {
-    // Diagnostic for the "owner taps Staff view but nothing happens"
-    // report. Surfaces both clicks on cross-links and clicks on the
-    // section grid items so we can tell which interaction is firing.
-    // eslint-disable-next-line no-console
-    console.log('[temple-debug] NavModal.go', { href, role, canAccessStaff });
     router.replace(href as never);
     onClose();
   }
