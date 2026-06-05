@@ -40,9 +40,8 @@ export function NavModal({
   const crossHref = variant === 'staff' ? '/book' : '/classes';
   const crossLabel = variant === 'staff' ? 'Member view' : 'Staff view';
 
-  // Account lives inside the modal as the last grid tile, identified
-  // by the user's own avatar + name. Staff route to /management/account
-  // (which renders inside the staff layout); members to /account.
+  // Account routes per layout — staff to /management/account so it
+  // renders inside the staff tabs; members to /account.
   const accountHref = variant === 'staff' ? '/management/account' : '/account';
 
   function go(href: string) {
@@ -67,64 +66,63 @@ export function NavModal({
               <View className="w-10 h-10 rounded-lg bg-primary items-center justify-center">
                 <Text className="text-white font-bold text-base">{gymInitial}</Text>
               </View>
-              <View className="flex-1">
-                <Text
-                  className="text-gray-900 dark:text-gray-50 font-semibold text-base"
-                  numberOfLines={1}>
-                  {gymName}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => set(scheme === 'dark' ? 'light' : 'dark')}
-                hitSlop={6}
-                className="w-9 h-9 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                <Ionicons
-                  name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
-                  size={20}
-                  color={colors.iconPrimary}
-                />
-              </Pressable>
+              <Text
+                className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base"
+                numberOfLines={1}>
+                {gymName}
+              </Text>
             </View>
           </View>
 
-          <View className="p-4">
-            <View className="flex-row flex-wrap gap-2">
+          <View className="p-4 gap-3">
+            <View className="flex-row gap-2">
               {sections.map((s) => (
                 <Pressable
                   key={s.name}
                   onPress={() => go(s.href)}
-                  className="flex-1 min-w-[80px] aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center gap-2 active:bg-gray-100 dark:active:bg-gray-700">
+                  className="flex-1 aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center gap-2 active:bg-gray-100 dark:active:bg-gray-700">
                   <Ionicons name={s.icon} size={26} color={colors.iconPrimary} />
                   <Text className="text-gray-900 dark:text-gray-50 text-xs font-medium text-center px-1">
                     {s.label}
                   </Text>
                 </Pressable>
               ))}
+            </View>
+
+            <View className="flex-row items-center gap-3">
               <Pressable
                 onPress={() => go(accountHref)}
-                className="flex-1 min-w-[80px] aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center gap-2 px-2 active:bg-gray-100 dark:active:bg-gray-700">
+                className="flex-1 flex-row items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl p-3 active:bg-gray-100 dark:active:bg-gray-700">
                 <Avatar
                   name={displayName}
                   avatarUrl={profile?.avatar_url}
-                  size={32}
+                  size={36}
                 />
                 <Text
-                  className="text-gray-900 dark:text-gray-50 text-xs font-medium text-center"
+                  className="flex-1 text-gray-900 dark:text-gray-50 font-medium"
                   numberOfLines={1}>
                   {displayName || 'Account'}
                 </Text>
               </Pressable>
+              <Pressable
+                onPress={() => set(scheme === 'dark' ? 'light' : 'dark')}
+                hitSlop={6}
+                className="w-12 h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 items-center justify-center active:bg-gray-100 dark:active:bg-gray-700">
+                <Ionicons
+                  name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
+                  size={22}
+                  color={colors.iconPrimary}
+                />
+              </Pressable>
             </View>
 
             {showCrossLink ? (
-              <View className="pt-3">
-                <Pressable
-                  onPress={() => go(crossHref)}
-                  className="bg-primary rounded-full px-4 py-3 flex-row items-center justify-center gap-2 active:bg-primary-dark">
-                  <Text className="text-white font-semibold text-sm">{crossLabel}</Text>
-                  <Text className="text-white font-semibold text-sm">→</Text>
-                </Pressable>
-              </View>
+              <Pressable
+                onPress={() => go(crossHref)}
+                className="bg-primary rounded-full px-4 py-3 flex-row items-center justify-center gap-2 active:bg-primary-dark">
+                <Text className="text-white font-semibold text-sm">{crossLabel}</Text>
+                <Text className="text-white font-semibold text-sm">→</Text>
+              </Pressable>
             ) : null}
           </View>
         </Pressable>
