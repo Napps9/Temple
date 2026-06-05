@@ -14,10 +14,10 @@ import {
   validateRecurrence,
 } from '@/components/RecurrenceEditor';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 const HORIZON_WEEKS = 12;
@@ -76,7 +76,6 @@ function recurrenceFromServer(r: ServerRecurrence): RecurrenceForm {
 }
 
 export default function ClassTypesScreen() {
-  const role = useRole();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditableType[]>([]);
@@ -86,8 +85,8 @@ export default function ClassTypesScreen() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [saved, markSaved] = useSavedFlag();
 
-  const canArchive = can(role, 'can_archive_classes');
-  const canHardDelete = can(role, 'can_hard_delete');
+  const canArchive = useCan('can_archive_classes') ?? false;
+  const canHardDelete = useCan('can_hard_delete') ?? false;
 
   const types = useQuery({
     queryKey: ['class-types', membership?.gymId],

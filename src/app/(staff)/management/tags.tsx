@@ -9,10 +9,10 @@ import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { Screen } from '@/components/Screen';
 import { TagRuleEditor, type TagRule } from '@/components/TagRuleEditor';
-import { useGymMembership, useRole, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type TagRow = {
   id: string;
@@ -23,9 +23,9 @@ type TagRow = {
 };
 
 export default function TagsScreen() {
-  const role = useRole();
+  const canManageTags = useCan('can_manage_tags');
   const { profile } = useLocalSearchParams<{ profile?: string }>();
-  if (role && !can(role, 'can_manage_tags')) {
+  if (canManageTags === false) {
     return <Redirect href="/management" />;
   }
   return profile ? <MemberTags profileId={profile} /> : <RulesEditor />;

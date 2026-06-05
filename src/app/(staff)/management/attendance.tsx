@@ -8,17 +8,17 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
-import { useGymMembership, useRole } from '@/lib/auth';
+import { useGymMembership } from '@/lib/auth';
 import {
   bucketByClassType,
   bucketByDay,
   type AttendanceBooking,
   type AttendanceSession,
 } from '@/lib/attendance';
-import { can } from '@/lib/can';
 import { useExportAttendanceCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -33,11 +33,11 @@ function iso(d: Date): string {
 }
 
 export default function AttendanceScreen() {
-  const role = useRole();
   const { data: membership } = useGymMembership();
   const [range, setRange] = useState(defaultRange);
   const [error, setError] = useState<string | null>(null);
-  const canExport = can(role, 'can_export_members');
+  const canViewAttendance = useCan('can_view_attendance');
+  const canExport = useCan('can_export_members') ?? false;
   const exportAttendance = useExportAttendanceCsv();
 
   const rangeValid =
@@ -113,7 +113,7 @@ export default function AttendanceScreen() {
     );
   }, [typeBuckets]);
 
-  if (role && !can(role, 'can_view_attendance')) {
+  if (canViewAttendance === false) {
     return <Redirect href="/management" />;
   }
 

@@ -3,8 +3,8 @@ import { View } from 'react-native';
 
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
 import { useThemeColors } from '@/lib/theme';
+import { useCan } from '@/lib/useCan';
 
 const STAFF_SECTIONS: NavSection[] = [
   { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
@@ -14,11 +14,11 @@ const STAFF_SECTIONS: NavSection[] = [
 
 export default function StaffLayout() {
   const session = useSession();
-  const { data: membership, isLoading } = useGymMembership();
   const colors = useThemeColors();
+  const canAccessStaff = useCan('can_access_staff_area');
 
   if (session === null) return <Redirect href="/sign-in" />;
-  if (!isLoading && membership && !can(membership.role, 'can_access_staff_area')) {
+  if (canAccessStaff === false) {
     return <Redirect href="/book" />;
   }
 

@@ -8,9 +8,9 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
 import { useGymMembership, useRole } from '@/lib/auth';
-import { can } from '@/lib/can';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -52,6 +52,16 @@ function ManagementCard({
 
 export default function ManagementHome() {
   const role = useRole();
+  const canSeeInsights = useCan('can_see_insights');
+  const canViewAttendance = useCan('can_view_attendance');
+  const canManageTasks = useCan('can_manage_tasks');
+  const canRequestCover = useCan('can_request_cover');
+  const canClaimCover = useCan('can_claim_cover');
+  const canViewSops = useCan('can_view_sops');
+  const canManageStaff = useCan('can_manage_staff');
+  const canEditClasses = useCan('can_edit_classes');
+  const canManageTags = useCan('can_manage_tags');
+  const canManagePlans = useCan('can_manage_plans');
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -62,70 +72,70 @@ export default function ManagementHome() {
           description="Your name, email, and password."
           href="/management/account"
         />
-        {can(role, 'can_see_insights') ? (
+        {canSeeInsights ? (
           <ManagementCard
             title="Insights"
             description="Intros, expiring members, conversion vs targets."
             href="/management/insights"
           />
         ) : null}
-        {can(role, 'can_view_attendance') ? (
+        {canViewAttendance ? (
           <ManagementCard
             title="Attendance"
             description="Trends from check-ins on class bookings."
             href="/management/attendance"
           />
         ) : null}
-        {can(role, 'can_manage_tasks') || role === 'staff' ? (
+        {canManageTasks || role === 'staff' ? (
           <ManagementCard
             title="Tasks"
             description="Day-to-day staff work, assigned and tracked."
             href="/management/tasks"
           />
         ) : null}
-        {can(role, 'can_request_cover') || can(role, 'can_claim_cover') ? (
+        {canRequestCover || canClaimCover ? (
           <ManagementCard
             title="Cover"
             description="Hand a class to another coach; first-claim wins."
             href="/management/cover"
           />
         ) : null}
-        {can(role, 'can_view_sops') ? (
+        {canViewSops ? (
           <ManagementCard
             title="SOPs"
             description="How we do things here — for the whole team."
             href="/management/sops"
           />
         ) : null}
-        {can(role, 'can_manage_staff') ? (
+        {canManageStaff ? (
           <ManagementCard
             title="Team"
             description="Invite owners, coaches, staff and members."
             href="/management/team"
           />
         ) : null}
-        {can(role, 'can_edit_classes') ? (
+        {canEditClasses ? (
           <ManagementCard
             title="Class types"
             description="Name and colour the kinds of class you run."
             href="/management/class-types"
           />
         ) : null}
-        {can(role, 'can_manage_tags') ? (
+        {canManageTags ? (
           <ManagementCard
             title="Members"
             description="View members by cohort, see and edit their tags."
             href="/management/members"
           />
         ) : null}
-        {can(role, 'can_manage_tags') ? (
+        {canManageTags ? (
           <ManagementCard
             title="Tag rules"
             description="Auto-tag members based on cohort state."
             href="/management/tags"
           />
         ) : null}
-        {can(role, 'can_manage_plans') ? (
+        {canManagePlans ? (
           <ManagementCard
             title="Plans"
             description="Define your membership plans, prices, and credit packs."
@@ -201,12 +211,11 @@ function formatCurrency(cents: number, currency: string): string {
 }
 
 function KeyStats() {
-  const role = useRole();
   const { data: membership } = useGymMembership();
 
-  const showRevenue = can(role, 'can_see_money');
-  const showInsights = can(role, 'can_see_insights');
-  const showAttendance = can(role, 'can_view_attendance');
+  const showRevenue = useCan('can_see_money') ?? false;
+  const showInsights = useCan('can_see_insights') ?? false;
+  const showAttendance = useCan('can_view_attendance') ?? false;
 
   const [preset, setPreset] = useState<Preset>('month');
   const [customStart, setCustomStart] = useState(() => isoDate(new Date()));

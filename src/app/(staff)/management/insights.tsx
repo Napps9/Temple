@@ -8,10 +8,10 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
-import { useGymMembership, useRole, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 type Period = 'month' | 'quarter';
@@ -74,8 +74,9 @@ function isoDate(d: Date): string {
 }
 
 export default function InsightsScreen() {
-  const role = useRole();
   const { data: membership } = useGymMembership();
+  const canSeeInsights = useCan('can_see_insights');
+  const canSetTargets = useCan('can_set_targets');
   const [period, setPeriod] = useState<Period>('month');
 
   const { start, end } = useMemo(() => periodRange(period, new Date()), [period]);
@@ -107,7 +108,7 @@ export default function InsightsScreen() {
     },
   });
 
-  if (role && !can(role, 'can_see_insights')) {
+  if (canSeeInsights === false) {
     return <Redirect href="/management" />;
   }
 
@@ -180,7 +181,7 @@ export default function InsightsScreen() {
           </View>
         ) : null}
 
-        {can(role, 'can_set_targets') ? <TargetsSection /> : null}
+        {canSetTargets ? <TargetsSection /> : null}
       </ScrollView>
     </Screen>
   );

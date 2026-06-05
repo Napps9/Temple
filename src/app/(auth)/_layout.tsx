@@ -1,14 +1,15 @@
 import { Redirect, Stack } from 'expo-router';
 
 import { useGymMembership, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useCan } from '@/lib/useCan';
 
 export default function AuthLayout() {
   const session = useSession();
   const { data: membership, isLoading } = useGymMembership();
+  const canAccessStaff = useCan('can_access_staff_area');
 
-  if (session && !isLoading && membership) {
-    return <Redirect href={can(membership.role, 'can_access_staff_area') ? '/classes' : '/book'} />;
+  if (session && !isLoading && membership && canAccessStaff !== undefined) {
+    return <Redirect href={canAccessStaff ? '/classes' : '/book'} />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

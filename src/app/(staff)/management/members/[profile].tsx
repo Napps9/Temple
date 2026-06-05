@@ -8,10 +8,10 @@ import { Avatar } from '@/components/Avatar';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type ProfileRow = {
   full_name: string | null;
@@ -74,7 +74,6 @@ type OnboardingRow = {
 };
 
 export default function MemberDetailScreen() {
-  const role = useRole();
   const { data: membership } = useGymMembership();
   const router = useRouter();
   const params = useLocalSearchParams<{ profile: string }>();
@@ -83,7 +82,8 @@ export default function MemberDetailScreen() {
   const [showRemove, setShowRemove] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canRemove = can(role, 'can_archive_members');
+  const canManageTags = useCan('can_manage_tags');
+  const canRemove = useCan('can_archive_members') ?? false;
 
   const profile = useQuery({
     queryKey: ['member-detail-profile', profileId],
@@ -205,7 +205,7 @@ export default function MemberDetailScreen() {
     onError: (e) => setError(errorMessage(e, 'Could not restore member')),
   });
 
-  if (role && !can(role, 'can_manage_tags')) {
+  if (canManageTags === false) {
     return <Redirect href="/management" />;
   }
 

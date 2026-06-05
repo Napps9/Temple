@@ -6,10 +6,10 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type Doc = {
   id: string;
@@ -21,7 +21,6 @@ type Doc = {
 };
 
 export default function SopsScreen() {
-  const role = useRole();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
@@ -32,7 +31,8 @@ export default function SopsScreen() {
   const [draftCategory, setDraftCategory] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const canEdit = can(role, 'can_manage_sops');
+  const canEdit = useCan('can_manage_sops') ?? false;
+  const canView = useCan('can_view_sops');
 
   const docsQuery = useQuery({
     queryKey: ['sop-docs', membership?.gymId],
@@ -106,7 +106,7 @@ export default function SopsScreen() {
     onError: (e) => setError(errorMessage(e, 'Could not archive')),
   });
 
-  if (role && !can(role, 'can_view_sops')) {
+  if (canView === false) {
     return <Redirect href="/management" />;
   }
 

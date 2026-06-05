@@ -8,10 +8,10 @@ import { CoverRequestCard, type CoverOffer } from '@/components/CoverRequestCard
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { SessionPickerModal } from '@/components/SessionPickerModal';
-import { useGymMembership, useRole, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type MyRequest = {
   id: string;
@@ -23,13 +23,14 @@ type MyRequest = {
 };
 
 export default function CoverScreen() {
-  const role = useRole();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const canRequest = useCan('can_request_cover');
+  const canClaim = useCan('can_claim_cover');
 
   const offersQuery = useQuery({
     queryKey: ['cover-offers', membership?.gymId],
@@ -95,7 +96,7 @@ export default function CoverScreen() {
     onError: (e) => setError(errorMessage(e, 'Could not cancel request')),
   });
 
-  if (role && !can(role, 'can_request_cover') && !can(role, 'can_claim_cover')) {
+  if (canRequest === false && canClaim === false) {
     return <Redirect href="/management" />;
   }
 
@@ -145,7 +146,7 @@ export default function CoverScreen() {
               <CoverRequestCard
                 key={o.id}
                 offer={o}
-                canClaim={can(role, 'can_claim_cover')}
+                canClaim={canClaim ?? false}
               />
             ))
           )}

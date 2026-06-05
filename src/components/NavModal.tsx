@@ -2,9 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Modal, Pressable, Text, View } from 'react-native';
 
-import { useGymMembership, useRole } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership } from '@/lib/auth';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
+import { useCan } from '@/lib/useCan';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -27,12 +27,13 @@ export function NavModal({
   variant: 'staff' | 'member';
 }) {
   const { data: membership } = useGymMembership();
-  const role = useRole();
+  const role = membership?.role ?? null;
+  const canAccessStaff = useCan('can_access_staff_area') ?? false;
   const { scheme, set } = useThemePreference();
   const colors = useThemeColors();
   const gymName = membership?.gymName ?? 'Temple';
   const initial = (gymName.charAt(0) || 'T').toUpperCase();
-  const showCrossLink = variant === 'staff' || can(role, 'can_access_staff_area');
+  const showCrossLink = variant === 'staff' || canAccessStaff;
   const crossHref = variant === 'staff' ? '/book' : '/classes';
   const crossLabel = variant === 'staff' ? 'Member view' : 'Staff view';
 

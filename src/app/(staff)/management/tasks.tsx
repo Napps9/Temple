@@ -7,9 +7,9 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type TaskRow = {
   id: string;
@@ -45,7 +45,7 @@ export default function TasksScreen() {
   const [assignTo, setAssignTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const canManage = can(role, 'can_manage_tasks');
+  const canManage = useCan('can_manage_tasks') ?? false;
 
   const tasksQuery = useQuery({
     queryKey: ['coach-tasks', membership?.gymId, filter, assigneeFilter],

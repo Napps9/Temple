@@ -590,6 +590,33 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_role_capabilities: {
+        Row: {
+          gym_id: string;
+          role: GymRole;
+          capability: string;
+          enabled: boolean;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          role: GymRole;
+          capability: string;
+          enabled: boolean;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          role: GymRole;
+          capability: string;
+          enabled: boolean;
+          updated_by: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       gym_insight_targets: {
         Row: {
           gym_id: string;
@@ -877,6 +904,18 @@ export type Database = {
       };
       is_revenue_event: {
         Args: { p_provider: string; p_kind: string };
+        Returns: boolean;
+      };
+      effective_can: {
+        Args: { p_gym_id: string; p_capability: string };
+        Returns: boolean;
+      };
+      effective_can_for_role: {
+        Args: { p_gym_id: string; p_role: GymRole; p_capability: string };
+        Returns: boolean;
+      };
+      default_capability: {
+        Args: { p_role: GymRole; p_capability: string };
         Returns: boolean;
       };
       apply_tag_rules: {

@@ -9,12 +9,12 @@ import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership } from '@/lib/auth';
 import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { useMembersFilter } from '@/lib/members-filter';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type CohortRow = {
   profile_id: string;
@@ -51,7 +51,6 @@ type CompRow = {
 };
 
 export default function MembersScreen() {
-  const role = useRole();
   const { data: membership } = useGymMembership();
   const {
     filter,
@@ -63,8 +62,9 @@ export default function MembersScreen() {
     null,
   );
 
-  const canRemove = can(role, 'can_archive_members');
-  const canExport = can(role, 'can_export_members');
+  const canManageTags = useCan('can_manage_tags');
+  const canRemove = useCan('can_archive_members') ?? false;
+  const canExport = useCan('can_export_members') ?? false;
   const exportMembers = useExportMembersCsv();
 
   const cohortQuery = useQuery({
@@ -176,7 +176,7 @@ export default function MembersScreen() {
       );
   }, [cohortQuery.data, filter, search]);
 
-  if (role && !can(role, 'can_manage_tags')) {
+  if (canManageTags === false) {
     return <Redirect href="/management" />;
   }
 

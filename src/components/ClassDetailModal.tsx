@@ -6,10 +6,10 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
-import { useRole, useSession } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type SessionDetail = {
   id: string;
@@ -59,7 +59,8 @@ export function ClassDetailModal({
   onClose: () => void;
 }) {
   const session = useSession();
-  const role = useRole();
+  const canCheckIn = useCan('can_check_in_member') ?? false;
+  const canEditClasses = useCan('can_edit_classes') ?? false;
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -315,7 +316,7 @@ export function ClassDetailModal({
                                 </Text>
                               ) : null}
                             </View>
-                            {can(role, 'can_check_in_member') && start && sessionId ? (
+                            {canCheckIn && start && sessionId ? (
                               <CheckInButton
                                 bookingId={b.id}
                                 sessionId={sessionId}
@@ -383,7 +384,7 @@ export function ClassDetailModal({
                 waitlistPending={joinWaitlist.isPending || leaveWaitlist.isPending}
               />
 
-              {mode === 'manage' && can(role, 'can_edit_classes') && !inPast ? (
+              {mode === 'manage' && canEditClasses && !inPast ? (
                 <Pressable
                   onPress={() => setShowCancelClass(true)}
                   className="self-start px-3 py-1.5 rounded-md border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20">

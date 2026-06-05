@@ -8,8 +8,8 @@ import { Avatar } from '@/components/Avatar';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership } from '@/lib/auth';
+import { useCan } from '@/lib/useCan';
 import { supabase } from '@/lib/supabase';
 
 type CreateRequest = { date?: Date; hour?: number };
@@ -158,8 +158,8 @@ export function ClassesCalendar({
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   const { data: membership } = useGymMembership();
-  const role = useRole();
-  const canCreate = mode === 'manage' && can(role, 'can_edit_classes');
+  const canEditClasses = useCan('can_edit_classes') ?? false;
+  const canCreate = mode === 'manage' && canEditClasses;
   const queryClient = useQueryClient();
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)

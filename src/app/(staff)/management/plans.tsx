@@ -7,11 +7,11 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
-import { can } from '@/lib/can';
+import { useGymMembership } from '@/lib/auth';
 import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 
 type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 
@@ -63,7 +63,6 @@ function rowDiffers(r: EditablePlan): boolean {
 }
 
 export default function PlansScreen() {
-  const role = useRole();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditablePlan[]>([]);
@@ -71,10 +70,10 @@ export default function PlansScreen() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const canEdit = can(role, 'can_manage_plans');
-  const canArchive = can(role, 'can_archive_plans');
-  const canHardDelete = can(role, 'can_hard_delete');
-  const canExport = can(role, 'can_export_members');
+  const canEdit = useCan('can_manage_plans');
+  const canArchive = useCan('can_archive_plans') ?? false;
+  const canHardDelete = useCan('can_hard_delete') ?? false;
+  const canExport = useCan('can_export_members') ?? false;
   const exportMemberships = useExportMembershipsCsv();
 
   const plans = useQuery({
@@ -208,7 +207,7 @@ export default function PlansScreen() {
     onError: (e) => setSaveError(errorMessage(e, 'Save failed')),
   });
 
-  if (role && !canEdit) {
+  if (canEdit === false) {
     return <Redirect href="/management" />;
   }
 
