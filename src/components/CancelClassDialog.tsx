@@ -144,6 +144,14 @@ export function CancelClassDialog({
       )}`
     : '…';
 
+  // The "from this date" anchor for the "This and all future" option —
+  // explicit calendar date instead of the vaguer "earlier sessions".
+  const anchorDate = new Date(startsAt).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+
   const cancelMut = useMutation({
     mutationFn: async () => {
       if (scope === 'one' || !recurrenceId) {
@@ -228,14 +236,14 @@ export function CancelClassDialog({
               />
               <ScopeOption
                 label="This and all future"
-                effect="Series shortened — earlier sessions stay scheduled"
+                effect={`Any sessions in this series before ${anchorDate} will not be cancelled`}
                 selected={scope === 'from'}
                 onPress={() => setScope('from')}
                 detail={`${patternLabel}, from this date onward`}
               />
               <ScopeOption
                 label="The whole series"
-                effect="Series removed — past sessions kept as history"
+                effect="Past sessions kept as history; the recurring schedule is removed"
                 selected={scope === 'series'}
                 onPress={() => setScope('series')}
                 detail={patternLabel}
