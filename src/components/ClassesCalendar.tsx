@@ -42,7 +42,7 @@ type ClassSession = {
   class_type_id: string | null;
   class_types: { name: string; color: string } | null;
   coach_id: string | null;
-  coach: { full_name: string | null } | null;
+  coach: { full_name: string | null; avatar_url: string | null } | null;
 };
 
 const DEFAULT_CLASS_COLOR = '#2563EB';
@@ -175,7 +175,7 @@ export function ClassesCalendar({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color), coach_id, coach:profiles!coach_id(full_name)',
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color), coach_id, coach:profiles!coach_id(full_name, avatar_url)',
         )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
@@ -516,7 +516,11 @@ function DayClassCard({
           {session.capacity} spots
         </Text>
       </View>
-      <Avatar name={session.coach?.full_name} size={36} />
+      <Avatar
+        name={session.coach?.full_name}
+        avatarUrl={session.coach?.avatar_url}
+        size={36}
+      />
     </Pressable>
   );
 }

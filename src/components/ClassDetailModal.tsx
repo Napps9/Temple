@@ -22,7 +22,7 @@ type SessionDetail = {
   coach_id: string | null;
   recurrence_id: string | null;
   class_types: { name: string; color: string } | null;
-  coach: { full_name: string | null } | null;
+  coach: { full_name: string | null; avatar_url: string | null } | null;
 };
 
 type Booking = {
@@ -73,7 +73,7 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color), coach:profiles!coach_id(full_name)',
+          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color), coach:profiles!coach_id(full_name, avatar_url)',
         )
         .eq('id', sessionId!)
         .single();
@@ -259,7 +259,7 @@ export function ClassDetailModal({
                   Coach
                 </Text>
                 <View className="flex-row items-center gap-3">
-                  <Avatar name={coachName} />
+                  <Avatar name={coachName} avatarUrl={detail?.coach?.avatar_url} />
                   <Text className="text-gray-900 dark:text-gray-50 font-medium">
                     {coachName}
                   </Text>
