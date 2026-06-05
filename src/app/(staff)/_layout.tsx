@@ -1,4 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
 import { TopNav, type NavSection } from '@/components/TopNav';
@@ -16,6 +17,24 @@ export default function StaffLayout() {
   const session = useSession();
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area');
+  const { data: membership } = useGymMembership();
+
+  // Diagnostic log for the staff-area access gate. Fires once per
+  // distinct (role, canAccessStaff) state, never on every render. The
+  // intent is to make the production-console story unambiguous when
+  // someone reports "owner cannot access staff": you can see the role
+  // the client thinks it has and what useCan() decided about it.
+  const lastLogged = useRef<string | null>(null);
+  useEffect(() => {
+    const sig = `${membership?.role ?? 'null'}|${String(canAccessStaff)}`;
+    if (lastLogged.current === sig) return;
+    lastLogged.current = sig;
+    // eslint-disable-next-line no-console
+    console.log('[temple-debug] (staff) gate', {
+      role: membership?.role ?? null,
+      canAccessStaff,
+    });
+  }, [membership?.role, canAccessStaff]);
 
   if (session === null) return <Redirect href="/sign-in" />;
   if (canAccessStaff === false) {

@@ -1,15 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { useGymMembership } from './auth';
-import { can, type Capability } from './can';
+import { type Capability } from './can';
+import {
+  computeCan,
+  type OverrideRow,
+} from './can-resolver';
 import { supabase } from './supabase';
-import type { GymRole } from '@/types/database';
-
-type OverrideRow = {
-  role: GymRole;
-  capability: string;
-  enabled: boolean;
-};
 
 // Fetches gym_role_capabilities for the current gym. RLS lets owners
 // see all rows for their gym and everyone else see only rows for their
@@ -45,32 +42,16 @@ export function useGymCapabilities() {
   });
 }
 
-// Returns true if the current user has the capability in the current
-// gym, false if explicitly denied, undefined while membership/overrides
-// are still loading. Mirrors effective_can() in SQL.
-//
-// The undefined-while-loading return lets callers distinguish "denied"
-// from "not yet known":
-//   - visibility gating: `{useCan('X') ? <Btn /> : null}` works either
-//     way — undefined is falsy, so things stay hidden until data loads
-//   - redirects: `if (useCan('X') === false) return <Redirect />` only
-//     fires on an explicit denial, never on a still-loading state
-//
-// Owners always true and members always false short-circuit before the
-// overrides query, so an owner viewing the staff area doesn't pay for
-// a roundtrip and a member can never be granted a staff capability by
-// a misconfigured override.
+// Hook wrapper. Subscribes to membership + override queries and
+// delegates the actual decision to the pure computeCan() function in
+// can-resolver.ts (which is exercised by useCan.test.ts).
 export function useCan(capability: Capability): boolean | undefined {
   const { data: membership, isLoading: membershipLoading } = useGymMembership();
   const { data: overrides, isLoading: overridesLoading } = useGymCapabilities();
-  if (membershipLoading) return undefined;
-  if (!membership) return false;
-  if (membership.role === 'owner') return true;
-  if (membership.role === 'member') return false;
-  if (overridesLoading) return undefined;
-  const override = overrides?.find(
-    (o) => o.role === membership.role && o.capability === capability,
-  );
-  if (override) return override.enabled;
-  return can(membership.role, capability);
+  return computeCan(capability, {
+    membershipLoading,
+    role: membership?.role ?? null,
+    overridesLoading,
+    overrides,
+  });
 }
