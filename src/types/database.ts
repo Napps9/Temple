@@ -918,6 +918,14 @@ export type Database = {
         Args: { p_role: GymRole; p_capability: string };
         Returns: boolean;
       };
+      count_members_as_of: {
+        Args: { p_gym_id: string; p_as_of: string };
+        Returns: number;
+      };
+      count_attendance_attendees: {
+        Args: { p_gym_id: string; p_period_start: string; p_period_end: string };
+        Returns: number;
+      };
       apply_tag_rules: {
         Args: { p_gym_id: string };
         Returns: number;

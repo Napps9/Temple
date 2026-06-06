@@ -6,7 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
-import { StatTile } from '@/components/StatTile';
+import { StatTile, type Delta, type DeltaDirection } from '@/components/StatTile';
 import { useGymMembership, useRole } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -205,11 +205,62 @@ function formatCurrency(cents: number, currency: string): string {
   }
 }
 
+type RevenueRow = { currency: string; gross_cents: number; charge_count: number };
+
+// Build the "previous period" — same length as the current range,
+// immediately preceding it. Inclusive on both ends.
+//
+// e.g. current = (2026-06-01, 2026-06-07) — 7 days
+//      mirror  = (2026-05-25, 2026-05-31) — 7 days, ending the day before current starts
+function mirrorRange(range: { start: string; end: string }): { start: string; end: string } {
+  const start = new Date(`${range.start}T00:00:00Z`);
+  const end = new Date(`${range.end}T00:00:00Z`);
+  const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  const mirrorEnd = new Date(start.getTime() - 86400000);
+  const mirrorStart = new Date(mirrorEnd.getTime() - (days - 1) * 86400000);
+  return { start: isoDate(mirrorStart), end: isoDate(mirrorEnd) };
+}
+
+// The day before a given period — used as the as-of date for the
+// mirror member count, so it's strictly before the current period starts.
+function dayBefore(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return isoDate(new Date(d.getTime() - 86400000));
+}
+
+// Pick the dominant currency by charge_count, otherwise USD. Multi-
+// currency gyms are rare enough that one tile per gym is the right
+// trade — if a gym needs more, the Plans / Reports screens still show
+// per-currency detail.
+function pickPrimaryCurrency(rows: RevenueRow[]): RevenueRow {
+  if (rows.length === 0) return { currency: 'USD', gross_cents: 0, charge_count: 0 };
+  return [...rows].sort((a, b) => b.charge_count - a.charge_count)[0]!;
+}
+
+function pctDelta(current: number, previous: number): Delta {
+  if (previous === 0 && current === 0) return { direction: 'flat', label: 'no change' };
+  if (previous === 0) return { direction: 'up', label: 'new' };
+  const ratio = (current - previous) / previous;
+  if (Math.abs(ratio) < 0.001) return { direction: 'flat', label: '0%' };
+  const pct = ratio * 100;
+  const direction: DeltaDirection = pct > 0 ? 'up' : 'down';
+  const sign = pct > 0 ? '+' : '';
+  return { direction, label: `${sign}${pct.toFixed(1)}%` };
+}
+
+function ppDelta(current: number, previous: number): Delta {
+  const diff = current - previous;
+  if (Math.abs(diff) < 0.05) return { direction: 'flat', label: '0 pp' };
+  const direction: DeltaDirection = diff > 0 ? 'up' : 'down';
+  const sign = diff > 0 ? '+' : '';
+  return { direction, label: `${sign}${diff.toFixed(1)} pp` };
+}
+
 function KeyStats() {
   const { data: membership } = useGymMembership();
 
   const showRevenue = useCan('can_see_money') ?? false;
-  const showInsights = useCan('can_see_insights') ?? false;
+  const showMembers = useCan('can_view_attendance') ?? false;
   const showAttendance = useCan('can_view_attendance') ?? false;
 
   const [preset, setPreset] = useState<Preset>('month');
@@ -224,66 +275,125 @@ function KeyStats() {
   const rangeValid =
     DATE_RE.test(range.start) && DATE_RE.test(range.end) && range.start <= range.end;
 
-  const revenueQuery = useQuery({
-    queryKey: ['manage-revenue', membership?.gymId, range.start, range.end],
-    enabled: !!membership?.gymId && showRevenue && rangeValid,
+  const prev = useMemo(
+    () => (rangeValid ? mirrorRange(range) : null),
+    [range.start, range.end, rangeValid],
+  );
+
+  const gymId = membership?.gymId;
+
+  const revenueCurrent = useQuery({
+    queryKey: ['manage-revenue', gymId, range.start, range.end],
+    enabled: !!gymId && showRevenue && rangeValid,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('compute_revenue_summary', {
-        p_gym_id: membership!.gymId,
+        p_gym_id: gymId!,
         p_period_start: range.start,
         p_period_end: range.end,
       });
       if (error) throw error;
-      return (data ?? []) as {
-        currency: string;
-        gross_cents: number;
-        charge_count: number;
-      }[];
+      return (data ?? []) as RevenueRow[];
+    },
+  });
+  const revenuePrev = useQuery({
+    queryKey: ['manage-revenue', gymId, prev?.start, prev?.end],
+    enabled: !!gymId && showRevenue && rangeValid && !!prev,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('compute_revenue_summary', {
+        p_gym_id: gymId!,
+        p_period_start: prev!.start,
+        p_period_end: prev!.end,
+      });
+      if (error) throw error;
+      return (data ?? []) as RevenueRow[];
     },
   });
 
-  const insightsQuery = useQuery({
-    queryKey: ['manage-insights', membership?.gymId, range.start, range.end],
-    enabled: !!membership?.gymId && showInsights && rangeValid,
+  const membersCurrent = useQuery({
+    queryKey: ['manage-members-asof', gymId, range.end],
+    enabled: !!gymId && showMembers && rangeValid,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('compute_insight_summary', {
-        p_gym_id: membership!.gymId,
+      const { data, error } = await supabase.rpc('count_members_as_of', {
+        p_gym_id: gymId!,
+        p_as_of: range.end,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+  const membersPrev = useQuery({
+    queryKey: ['manage-members-asof', gymId, prev ? dayBefore(range.start) : null],
+    enabled: !!gymId && showMembers && rangeValid && !!prev,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('count_members_as_of', {
+        p_gym_id: gymId!,
+        p_as_of: dayBefore(range.start),
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+
+  const attendeesCurrent = useQuery({
+    queryKey: ['manage-attendees', gymId, range.start, range.end],
+    enabled: !!gymId && showAttendance && rangeValid,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('count_attendance_attendees', {
+        p_gym_id: gymId!,
         p_period_start: range.start,
         p_period_end: range.end,
       });
       if (error) throw error;
-      const rows = (data ?? []) as {
-        intros_new: number;
-        intros_target: number;
-        conversions: number;
-        conversions_target: number;
-        expiring_soon: number;
-        expired: number;
-        paying_now: number;
-        billing_live: boolean;
-      }[];
-      return rows[0] ?? null;
+      return (data as number) ?? 0;
     },
   });
-
-  const attendanceQuery = useQuery({
-    queryKey: ['manage-attendance', membership?.gymId, range.start, range.end],
-    enabled: !!membership?.gymId && showAttendance && rangeValid,
+  const attendeesPrev = useQuery({
+    queryKey: ['manage-attendees', gymId, prev?.start, prev?.end],
+    enabled: !!gymId && showAttendance && rangeValid && !!prev,
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('class_bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('gym_id', membership!.gymId)
-        .gte('attended_at', `${range.start}T00:00:00Z`)
-        .lte('attended_at', `${range.end}T23:59:59Z`);
+      const { data, error } = await supabase.rpc('count_attendance_attendees', {
+        p_gym_id: gymId!,
+        p_period_start: prev!.start,
+        p_period_end: prev!.end,
+      });
       if (error) throw error;
-      return count ?? 0;
+      return (data as number) ?? 0;
     },
   });
 
-  if (!showRevenue && !showInsights && !showAttendance) return null;
+  if (!showRevenue && !showMembers && !showAttendance) return null;
 
-  const queryError = revenueQuery.error ?? insightsQuery.error ?? attendanceQuery.error;
+  const queryError =
+    revenueCurrent.error ??
+    revenuePrev.error ??
+    membersCurrent.error ??
+    membersPrev.error ??
+    attendeesCurrent.error ??
+    attendeesPrev.error;
+
+  // Derive each tile's value + delta.
+  const revenueNow = pickPrimaryCurrency(revenueCurrent.data ?? []);
+  const revenueThen = pickPrimaryCurrency(revenuePrev.data ?? []);
+  const revenueLoading = revenueCurrent.isLoading || revenuePrev.isLoading;
+  const revenueDelta = revenueLoading
+    ? undefined
+    : pctDelta(revenueNow.gross_cents, revenueThen.gross_cents);
+
+  const membersNow = membersCurrent.data ?? 0;
+  const membersThen = membersPrev.data ?? 0;
+  const membersLoading = membersCurrent.isLoading || membersPrev.isLoading;
+  const membersDelta = membersLoading ? undefined : pctDelta(membersNow, membersThen);
+
+  // Attendance rate = distinct attendees / total members at period end * 100.
+  // If we have no members, rate is 0 (avoid divide-by-zero); same for previous.
+  const attendanceLoading =
+    attendeesCurrent.isLoading ||
+    attendeesPrev.isLoading ||
+    membersCurrent.isLoading ||
+    membersPrev.isLoading;
+  const ratePctNow = membersNow > 0 ? ((attendeesCurrent.data ?? 0) / membersNow) * 100 : 0;
+  const ratePctThen = membersThen > 0 ? ((attendeesPrev.data ?? 0) / membersThen) * 100 : 0;
+  const attendanceDelta = attendanceLoading ? undefined : ppDelta(ratePctNow, ratePctThen);
 
   return (
     <View className="gap-3">
@@ -326,28 +436,39 @@ function KeyStats() {
         </Text>
       ) : null}
 
-      {showRevenue ? (
-        <RevenueRow
-          rows={revenueQuery.data ?? []}
-          loading={revenueQuery.isLoading}
-        />
-      ) : null}
-
-      {showInsights ? (
-        <InsightsRow data={insightsQuery.data ?? null} loading={insightsQuery.isLoading} />
-      ) : null}
-
-      {showAttendance ? (
-        <View className="flex-row gap-3 flex-wrap">
+      <View className="flex-row gap-3 flex-wrap">
+        {showRevenue ? (
           <StatTile
-            title="Attended"
-            value={attendanceQuery.isLoading ? '—' : attendanceQuery.data ?? 0}
-            subtitle="check-ins in range"
-            tone="green"
+            title="Revenue"
+            value={
+              revenueLoading
+                ? '—'
+                : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
+            }
+            subtitle="vs previous period"
+            delta={revenueDelta}
+            href="/management/plans"
+          />
+        ) : null}
+        {showMembers ? (
+          <StatTile
+            title="Members"
+            value={membersLoading ? '—' : membersNow}
+            subtitle="vs previous period"
+            delta={membersDelta}
+            href="/management/members"
+          />
+        ) : null}
+        {showAttendance ? (
+          <StatTile
+            title="Attendance"
+            value={attendanceLoading ? '—' : `${ratePctNow.toFixed(0)}%`}
+            subtitle="of members checked in"
+            delta={attendanceDelta}
             href="/management/attendance"
           />
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -376,84 +497,5 @@ function PresetChip({
         {label}
       </Text>
     </Pressable>
-  );
-}
-
-function RevenueRow({
-  rows,
-  loading,
-}: {
-  rows: { currency: string; gross_cents: number; charge_count: number }[];
-  loading: boolean;
-}) {
-  if (loading) {
-    return (
-      <View className="flex-row gap-3 flex-wrap">
-        <StatTile title="Revenue" value="—" subtitle="loading…" href="/management/plans" />
-      </View>
-    );
-  }
-  if (rows.length === 0) {
-    return (
-      <View className="flex-row gap-3 flex-wrap">
-        <StatTile
-          title="Revenue"
-          value={formatCurrency(0, 'USD')}
-          subtitle="no charges in range"
-          href="/management/plans"
-        />
-      </View>
-    );
-  }
-  return (
-    <View className="flex-row gap-3 flex-wrap">
-      {rows.map((r) => (
-        <StatTile
-          key={r.currency}
-          title={rows.length > 1 ? `Revenue · ${r.currency.toUpperCase()}` : 'Revenue'}
-          value={formatCurrency(r.gross_cents, r.currency)}
-          subtitle={`${r.charge_count} ${r.charge_count === 1 ? 'charge' : 'charges'}`}
-          href="/management/plans"
-        />
-      ))}
-    </View>
-  );
-}
-
-function InsightsRow({
-  data,
-  loading,
-}: {
-  data: {
-    intros_new: number;
-    conversions: number;
-    expiring_soon: number;
-  } | null;
-  loading: boolean;
-}) {
-  const intros = loading ? '—' : data?.intros_new ?? 0;
-  const conversions = loading ? '—' : data?.conversions ?? 0;
-  const expiring = loading ? '—' : data?.expiring_soon ?? 0;
-  return (
-    <View className="flex-row gap-3 flex-wrap">
-      <StatTile
-        title="Intros"
-        value={intros}
-        subtitle="new in range"
-        href="/management/insights"
-      />
-      <StatTile
-        title="Conversion"
-        value={conversions}
-        subtitle="paying in range"
-        href="/management/insights"
-      />
-      <StatTile
-        title="Expiring soon"
-        value={expiring}
-        subtitle="≤ 7 days"
-        href="/management/insights"
-      />
-    </View>
   );
 }
