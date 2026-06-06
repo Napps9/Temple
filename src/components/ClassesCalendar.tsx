@@ -288,7 +288,6 @@ export function ClassesCalendar({
       ) : null}
       {view === 'week' ? (
         <WeekView
-          gymId={membership?.gymId ?? null}
           date={date}
           setDate={setDate}
           gotoDay={() => router.setParams({ view: 'day' })}
@@ -526,7 +525,6 @@ function DayClassCard({
 }
 
 function WeekView({
-  gymId,
   date,
   setDate,
   gotoDay,
@@ -535,7 +533,6 @@ function WeekView({
   onSessionPress,
   canCreate,
 }: {
-  gymId: string | null;
   date: Date;
   setDate: (d: Date) => void;
   gotoDay: () => void;
@@ -544,7 +541,6 @@ function WeekView({
   onSessionPress: (id: string) => void;
   canCreate: boolean;
 }) {
-  const queryClient = useQueryClient();
   const weekStart = startOfWeek(date);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -559,22 +555,6 @@ function WeekView({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart.toISOString()]);
-
-  const copyWeek = useMutation({
-    mutationFn: async () => {
-      if (!gymId) throw new Error('No gym');
-      const fromStr = fmtDateLocal(weekStart);
-      const { data, error } = await supabase.rpc('copy_week_forward', {
-        p_gym_id: gymId,
-        p_from: fromStr,
-      });
-      if (error) throw error;
-      return data as number;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
-    },
-  });
 
   return (
     <View className="flex-1">
@@ -595,17 +575,6 @@ function WeekView({
             className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400">›</Text>
           </Pressable>
-          {canCreate ? (
-            <Pressable
-              onPress={() => copyWeek.mutate()}
-              disabled={copyWeek.isPending}
-              hitSlop={8}
-              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
-              <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-                {copyWeek.isPending ? 'Copying…' : 'Copy week forward'}
-              </Text>
-            </Pressable>
-          ) : null}
         </View>
 
         <View className="flex-row pb-2 border-b border-gray-200 dark:border-gray-700">
