@@ -1,6 +1,8 @@
 import { createElement } from 'react';
 import { Platform, Text, TextInput, View } from 'react-native';
 
+import { useThemePreference } from '@/lib/theme';
+
 type Props = {
   label: string;
   value: string; // ISO YYYY-MM-DD (Postgres-friendly), or '' for empty
@@ -42,6 +44,7 @@ export function DatePicker({
   min,
   max,
 }: Props) {
+  const { scheme } = useThemePreference();
   const display = isoToDdmmyyyy(value);
 
   return (
@@ -51,10 +54,12 @@ export function DatePicker({
       </Text>
       {Platform.OS === 'web' ? (
         // Native HTML date input — RNW's TextInput doesn't expose
-        // type="date", so render the element directly. Inline styles
-        // are kept narrow on purpose: matching the Input component
-        // visually is more reliable than trying to thread NativeWind
-        // class names through createElement.
+        // type="date", so render the element directly. Browser
+        // user-agent stylesheets ignore `color: inherit` for date
+        // inputs and fall back to black, which was invisible against
+        // the dark-mode page background. Wire the colour + colorScheme
+        // off the current theme so both the value text AND the native
+        // picker chrome match.
         createElement('input', {
           type: 'date',
           value: ISO_DATE_RE.test(value) ? value : '',
@@ -62,7 +67,7 @@ export function DatePicker({
           max,
           onChange: (e: { target: { value: string } }) => onChange(e.target.value),
           placeholder,
-          style: webInputStyle,
+          style: scheme === 'dark' ? webInputStyleDark : webInputStyleLight,
           className: 'date-picker-input',
         })
       ) : (
@@ -87,21 +92,35 @@ export function DatePicker({
   );
 }
 
-// Inline style that approximates Input.tsx so the date picker doesn't
-// look out of place. Border colours are the gray-200 / gray-700 pair;
-// dark-mode handling on raw <input> isn't covered by NativeWind so the
-// border colour is a single value that reads OK against both palettes.
-const webInputStyle = {
+// Shared shape between light + dark; only colours change. Matches
+// Input.tsx visually: gray-200 border + gray-900 text in light,
+// gray-700 border + gray-50 text in dark.
+const webInputBase = {
   backgroundColor: 'transparent',
   borderWidth: 1,
-  borderColor: '#4B5563',
   borderRadius: 8,
   paddingTop: 12,
   paddingBottom: 12,
   paddingLeft: 16,
   paddingRight: 16,
   fontSize: 16,
-  color: 'inherit',
   fontFamily: 'inherit',
   outline: 'none',
+} as const;
+
+const webInputStyleLight = {
+  ...webInputBase,
+  borderColor: '#E5E7EB', // gray-200
+  color: '#111827', // gray-900
+  // colorScheme tells the browser's native picker UI which palette to
+  // render — without it, the calendar popup stays in light-mode chrome
+  // even when the rest of the app is dark.
+  colorScheme: 'light' as const,
+} as const;
+
+const webInputStyleDark = {
+  ...webInputBase,
+  borderColor: '#374151', // gray-700
+  color: '#F9FAFB', // gray-50
+  colorScheme: 'dark' as const,
 } as const;
