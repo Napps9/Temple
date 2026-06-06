@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
@@ -397,32 +397,19 @@ function KeyStats() {
 
   return (
     <View className="gap-3">
-      <View className="flex-row flex-wrap gap-2">
-        {(Object.keys(PRESET_LABELS) as Exclude<Preset, 'custom'>[]).map((p) => (
-          <PresetChip
-            key={p}
-            label={PRESET_LABELS[p]}
-            active={preset === p}
-            onPress={() => setPreset(p)}
-          />
-        ))}
-        <PresetChip
-          label="Custom"
-          active={preset === 'custom'}
-          onPress={() => setPreset('custom')}
-        />
-      </View>
-
-      {preset === 'custom' ? (
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <DatePicker label="From" value={customStart} onChange={setCustomStart} />
-          </View>
-          <View className="flex-1">
-            <DatePicker label="To" value={customEnd} onChange={setCustomEnd} />
-          </View>
-        </View>
-      ) : null}
+      <DateRangeCta
+        preset={preset}
+        range={range}
+        onChange={(next) => {
+          setPreset(next.preset);
+          if (next.preset === 'custom') {
+            setCustomStart(next.start);
+            setCustomEnd(next.end);
+          }
+        }}
+        customStart={customStart}
+        customEnd={customEnd}
+      />
 
       {!rangeValid ? (
         <Text className="text-red-500 dark:text-red-400 text-sm">
@@ -473,7 +460,128 @@ function KeyStats() {
   );
 }
 
-function PresetChip({
+// Single CTA + modal that owns the date-range picker. Collapses the
+// six preset chips + custom inputs into one tappable label that
+// expands on demand.
+function DateRangeCta({
+  preset,
+  range,
+  customStart,
+  customEnd,
+  onChange,
+}: {
+  preset: Preset;
+  range: { start: string; end: string };
+  customStart: string;
+  customEnd: string;
+  onChange: (next:
+    | { preset: Exclude<Preset, 'custom'> }
+    | { preset: 'custom'; start: string; end: string }
+  ) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  // Local working state while the modal is open — only committed on
+  // Apply (custom) or on preset tap (presets). Keeps the dashboard
+  // queries from re-firing on every keystroke in the date fields.
+  const [draftStart, setDraftStart] = useState(customStart);
+  const [draftEnd, setDraftEnd] = useState(customEnd);
+  const [showCustom, setShowCustom] = useState(preset === 'custom');
+
+  function openModal() {
+    setDraftStart(customStart);
+    setDraftEnd(customEnd);
+    setShowCustom(preset === 'custom');
+    setOpen(true);
+  }
+
+  const label =
+    preset === 'custom'
+      ? `${fmtDdmm(range.start)} – ${fmtDdmm(range.end)}`
+      : PRESET_LABELS[preset];
+
+  return (
+    <View>
+      <Pressable
+        onPress={openModal}
+        className="flex-row items-center justify-between bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full px-4 py-2.5 active:bg-gray-50 dark:active:bg-gray-800">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">{label}</Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">Change</Text>
+      </Pressable>
+
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}>
+        <Pressable
+          onPress={() => setOpen(false)}
+          className="flex-1 bg-black/40 items-center justify-center px-6">
+          <Pressable
+            onPress={() => {}}
+            className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 gap-3">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+              Select period
+            </Text>
+
+            <View className="gap-1">
+              {(Object.keys(PRESET_LABELS) as Exclude<Preset, 'custom'>[]).map((p) => (
+                <PresetOption
+                  key={p}
+                  label={PRESET_LABELS[p]}
+                  active={preset === p && !showCustom}
+                  onPress={() => {
+                    onChange({ preset: p });
+                    setOpen(false);
+                  }}
+                />
+              ))}
+              <PresetOption
+                label="Custom range"
+                active={showCustom}
+                onPress={() => setShowCustom(true)}
+              />
+            </View>
+
+            {showCustom ? (
+              <View className="gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <DatePicker
+                      label="From"
+                      value={draftStart}
+                      onChange={setDraftStart}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <DatePicker
+                      label="To"
+                      value={draftEnd}
+                      onChange={setDraftEnd}
+                    />
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    onChange({
+                      preset: 'custom',
+                      start: draftStart,
+                      end: draftEnd,
+                    });
+                    setOpen(false);
+                  }}
+                  className="bg-primary rounded-lg px-4 py-3 items-center active:bg-primary-dark">
+                  <Text className="text-white font-semibold">Apply custom range</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+}
+
+function PresetOption({
   label,
   active,
   onPress,
@@ -485,17 +593,27 @@ function PresetChip({
   return (
     <Pressable
       onPress={onPress}
-      className={`px-3 py-1.5 rounded-full border ${
-        active
-          ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+      className={`flex-row items-center justify-between px-3 py-3 rounded-lg ${
+        active ? 'bg-primary/10' : 'active:bg-gray-50 dark:active:bg-gray-800'
       }`}>
       <Text
         className={
-          active ? 'text-primary text-sm' : 'text-gray-500 dark:text-gray-400 text-sm'
+          active
+            ? 'text-primary font-medium'
+            : 'text-gray-900 dark:text-gray-50'
         }>
         {label}
       </Text>
+      {active ? <Text className="text-primary">✓</Text> : null}
     </Pressable>
   );
+}
+
+// DD/MM for the CTA label on custom ranges. Year omitted on purpose
+// — the CTA is short and the explicit range is one tap away in the
+// modal if the operator needs to verify.
+function fmtDdmm(iso: string): string {
+  if (!DATE_RE.test(iso)) return iso;
+  const [, m, d] = iso.split('-');
+  return `${d}/${m}`;
 }
