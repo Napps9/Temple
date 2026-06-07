@@ -181,9 +181,35 @@ export default function InsightsScreen() {
           </View>
         ) : null}
 
-        {canSetTargets ? <TargetsSection /> : null}
+        {canSetTargets ? <TargetsLauncher /> : null}
       </ScrollView>
     </Screen>
+  );
+}
+
+// Owners rarely need to revisit targets after initial setup, so tuck
+// the editor behind a "Configure targets" CTA — same launcher pattern
+// as RolePermissionsLauncher on the Team screen, for consistency.
+function TargetsLauncher() {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <View className="mt-4">
+        <Button variant="secondary" onPress={() => setOpen(true)}>
+          Configure targets
+        </Button>
+      </View>
+    );
+  }
+  return (
+    <View className="gap-3">
+      <TargetsSection />
+      <View className="self-start">
+        <Button variant="ghost" onPress={() => setOpen(false)}>
+          Hide targets
+        </Button>
+      </View>
+    </View>
   );
 }
 
