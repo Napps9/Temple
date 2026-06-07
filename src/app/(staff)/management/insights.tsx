@@ -1,10 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { BillingNotLiveTile } from '@/components/BillingNotLiveTile';
 import { Button } from '@/components/Button';
+import {
+  DateRangeCta,
+  type Preset,
+  isoDate,
+  presetRange,
+} from '@/components/DateRangeCta';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
@@ -14,7 +20,11 @@ import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
-type Period = 'month' | 'quarter';
+// "Target period" — distinct from the page-level date picker. Targets
+// are configured monthly OR quarterly on gym_insight_targets; the
+// page picker can show any date range and the compute_insight_summary
+// RPC picks the right target row based on the range length.
+type TargetPeriod = 'month' | 'quarter';
 
 type Summary = {
   intros_new: number;
@@ -31,7 +41,7 @@ type TargetMetric = 'intros_new' | 'conversions' | 'retention';
 
 type TargetRow = {
   metric: TargetMetric;
-  period: Period;
+  period: TargetPeriod;
   target_value: number;
 };
 
@@ -53,36 +63,28 @@ const TARGET_METRICS: { value: TargetMetric; label: string; description: string 
   },
 ];
 
-const TARGET_PERIODS: Period[] = ['month', 'quarter'];
-
-function periodRange(period: Period, today: Date): { start: string; end: string } {
-  const y = today.getUTCFullYear();
-  const m = today.getUTCMonth();
-  if (period === 'month') {
-    const start = new Date(Date.UTC(y, m, 1));
-    const end = new Date(Date.UTC(y, m + 1, 0));
-    return { start: isoDate(start), end: isoDate(end) };
-  }
-  const quarter = Math.floor(m / 3);
-  const start = new Date(Date.UTC(y, quarter * 3, 1));
-  const end = new Date(Date.UTC(y, quarter * 3 + 3, 0));
-  return { start: isoDate(start), end: isoDate(end) };
-}
-
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
+const TARGET_PERIODS: TargetPeriod[] = ['month', 'quarter'];
 
 export default function InsightsScreen() {
   const { data: membership } = useGymMembership();
   const canSeeInsights = useCan('can_see_insights');
   const canSetTargets = useCan('can_set_targets');
-  const [period, setPeriod] = useState<Period>('month');
 
-  const { start, end } = useMemo(() => periodRange(period, new Date()), [period]);
+  // Same six-preset picker the manage dashboard uses, threaded through
+  // the shared DateRangeCta. Custom ranges are committed via the
+  // modal's Apply button so the summary query doesn't re-fire on each
+  // keystroke.
+  const [preset, setPreset] = useState<Preset>('month');
+  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
+  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
+  const range = useMemo(() => {
+    if (preset === 'custom') return { start: customStart, end: customEnd };
+    return presetRange(preset, new Date());
+  }, [preset, customStart, customEnd]);
+  const { start, end } = range;
 
   const summary = useQuery({
-    queryKey: ['insights-summary', membership?.gymId, period, start, end],
+    queryKey: ['insights-summary', membership?.gymId, preset, start, end],
     enabled: !!membership?.gymId,
     queryFn: async (): Promise<Summary> => {
       const { data, error } = await supabase.rpc('compute_insight_summary', {
@@ -125,18 +127,19 @@ export default function InsightsScreen() {
           </Text>
         </View>
 
-        <View className="flex-row gap-2">
-          <PeriodTab
-            label="This month"
-            active={period === 'month'}
-            onPress={() => setPeriod('month')}
-          />
-          <PeriodTab
-            label="This quarter"
-            active={period === 'quarter'}
-            onPress={() => setPeriod('quarter')}
-          />
-        </View>
+        <DateRangeCta
+          preset={preset}
+          range={range}
+          customStart={customStart}
+          customEnd={customEnd}
+          onChange={(next) => {
+            setPreset(next.preset);
+            if (next.preset === 'custom') {
+              setCustomStart(next.start);
+              setCustomEnd(next.end);
+            }
+          }}
+        />
 
         {summary.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
@@ -249,7 +252,7 @@ function TargetsSection() {
       const toUpsert: {
         gym_id: string;
         metric: TargetMetric;
-        period: Period;
+        period: TargetPeriod;
         target_value: number;
         updated_by: string;
       }[] = [];
@@ -339,33 +342,6 @@ function TargetsSection() {
         Save targets
       </Button>
     </View>
-  );
-}
-
-function PeriodTab({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={`px-4 py-2 rounded-full border ${
-        active
-          ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
-      }`}>
-      <Text
-        className={
-          active ? 'text-primary font-medium' : 'text-gray-500 dark:text-gray-400'
-        }>
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
