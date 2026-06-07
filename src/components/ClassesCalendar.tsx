@@ -8,7 +8,7 @@ import { Avatar } from '@/components/Avatar';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 import { supabase } from '@/lib/supabase';
 
@@ -197,6 +197,29 @@ export function ClassesCalendar({
     },
   });
 
+  // Set of class_session_ids the current user has booked into the future.
+  // Drives the "Booked" badge on the per-session cards in book mode so
+  // members can see at a glance which classes they've already booked.
+  // Disabled in manage mode — staff aren't looking at "their" bookings.
+  const session = useSession();
+  const myBookingsQuery = useQuery({
+    queryKey: ['my-future-bookings', session?.user.id],
+    enabled: !!session?.user.id && mode === 'book',
+    queryFn: async () => {
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('class_bookings')
+        .select('class_session_id, class_sessions!inner(starts_at)')
+        .eq('profile_id', session!.user.id)
+        .gt('class_sessions.starts_at', nowIso);
+      if (error) throw error;
+      return new Set<string>(
+        (data ?? []).map((r) => (r as { class_session_id: string }).class_session_id),
+      );
+    },
+  });
+  const bookedSet = myBookingsQuery.data ?? new Set<string>();
+
   const extend = useMutation({
     mutationFn: async (untilDate: string) => {
       const recs = recurrencesQuery.data ?? [];
@@ -284,6 +307,7 @@ export function ClassesCalendar({
           onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
           onSessionPress={openSession}
           canCreate={canCreate}
+          bookedSet={bookedSet}
         />
       ) : null}
       {view === 'week' ? (
@@ -295,6 +319,7 @@ export function ClassesCalendar({
           onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
           onSessionPress={openSession}
           canCreate={canCreate}
+          bookedSet={bookedSet}
         />
       ) : null}
       {view === 'month' ? (
@@ -336,6 +361,7 @@ function DayView({
   onCreateAt,
   onSessionPress,
   canCreate,
+  bookedSet,
 }: {
   mode: 'manage' | 'book';
   date: Date;
@@ -344,6 +370,7 @@ function DayView({
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
   canCreate: boolean;
+  bookedSet: Set<string>;
 }) {
   const weekStart = startOfWeek(date);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -417,6 +444,7 @@ function DayView({
                     key={c.id}
                     session={c}
                     onPress={() => onSessionPress(c.id)}
+                    bookedByMe={bookedSet.has(c.id)}
                   />
                 ))
               ) : (
@@ -492,9 +520,11 @@ function DayHourRow({
 function DayClassCard({
   session,
   onPress,
+  bookedByMe,
 }: {
   session: ClassSession;
   onPress: () => void;
+  bookedByMe?: boolean;
 }) {
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
@@ -503,10 +533,20 @@ function DayClassCard({
       onPress={onPress}
       className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800">
       <View className="flex-1 gap-1.5">
-        <View
-          style={{ backgroundColor: sessionColor(session) }}
-          className="self-start rounded-full px-2.5 py-1">
-          <Text className="text-white text-xs font-semibold">{sessionLabel(session)}</Text>
+        <View className="flex-row items-center gap-2">
+          <View
+            style={{ backgroundColor: sessionColor(session) }}
+            className="self-start rounded-full px-2.5 py-1">
+            <Text className="text-white text-xs font-semibold">{sessionLabel(session)}</Text>
+          </View>
+          {bookedByMe ? (
+            <View className="flex-row items-center gap-1 rounded-full px-2 py-0.5 border border-emerald-300 dark:border-emerald-700">
+              <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+              <Text className="text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold uppercase tracking-widest">
+                Booked
+              </Text>
+            </View>
+          ) : null}
         </View>
         <Text className="text-gray-900 dark:text-gray-50 text-base font-medium">
           {fmtTime(start)} — {fmtTime(end)}
@@ -532,6 +572,7 @@ function WeekView({
   onCreateAt,
   onSessionPress,
   canCreate,
+  bookedSet,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -540,6 +581,7 @@ function WeekView({
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
   canCreate: boolean;
+  bookedSet: Set<string>;
 }) {
   const weekStart = startOfWeek(date);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -632,6 +674,7 @@ function WeekView({
                         <WeekTile
                           session={cellClasses[0]}
                           onPress={() => onSessionPress(cellClasses[0].id)}
+                          bookedByMe={bookedSet.has(cellClasses[0].id)}
                         />
                       ) : canCreate ? (
                         <Pressable
@@ -656,20 +699,30 @@ function WeekView({
 function WeekTile({
   session,
   onPress,
+  bookedByMe,
 }: {
   session: ClassSession;
   onPress: () => void;
+  bookedByMe?: boolean;
 }) {
   const start = new Date(session.starts_at);
   return (
     <Pressable
       onPress={onPress}
-      className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-1.5 min-h-14 gap-1 active:bg-gray-50 dark:active:bg-gray-800">
+      className={`flex-1 bg-white dark:bg-gray-900 rounded-md p-1.5 min-h-14 gap-1 border active:bg-gray-50 dark:active:bg-gray-800 ${
+        bookedByMe
+          ? 'border-emerald-400 dark:border-emerald-600'
+          : 'border-gray-200 dark:border-gray-700'
+      }`}>
       <View className="flex-row items-center gap-1">
-        <View
-          style={{ backgroundColor: sessionColor(session) }}
-          className="w-1.5 h-1.5 rounded-full"
-        />
+        {bookedByMe ? (
+          <Ionicons name="checkmark-circle" size={10} color="#10B981" />
+        ) : (
+          <View
+            style={{ backgroundColor: sessionColor(session) }}
+            className="w-1.5 h-1.5 rounded-full"
+          />
+        )}
         <Text
           className="text-gray-900 dark:text-gray-50 text-[10px] font-semibold flex-1"
           numberOfLines={1}>

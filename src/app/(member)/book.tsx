@@ -1,10 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ClassesCalendar } from '@/components/ClassesCalendar';
-import { useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+
+const EIGHT_WEEKS_MS = 56 * 24 * 60 * 60 * 1000;
 
 type NextBooking = {
   id: string;
@@ -13,6 +17,12 @@ type NextBooking = {
     starts_at: string;
     class_types: { name: string; color: string } | null;
   } | null;
+};
+
+type RecommendedSession = {
+  id: string;
+  starts_at: string;
+  class_types: { name: string; color: string } | null;
 };
 
 function fmtNext(start: Date) {
@@ -26,6 +36,152 @@ function fmtNext(start: Date) {
     .toString()
     .padStart(2, '0')}`;
   return `${date} at ${time}`;
+}
+
+function RecommendedClassCard() {
+  const session = useSession();
+  const { data: membership } = useGymMembership();
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+
+  // Pick the class type the member attended most often over the last
+  // eight weeks (attended_at present, not just booked). Returns null
+  // when the member has no attendance history — we hide the card in
+  // that case to avoid a cold-start recommendation.
+  const favouriteType = useQuery({
+    queryKey: ['my-favourite-class-type', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async (): Promise<string | null> => {
+      const sinceIso = new Date(Date.now() - EIGHT_WEEKS_MS).toISOString();
+      const { data, error: err } = await supabase
+        .from('class_bookings')
+        .select('class_sessions!inner(class_type_id)')
+        .eq('profile_id', session!.user.id)
+        .not('attended_at', 'is', null)
+        .gte('attended_at', sinceIso);
+      if (err) throw err;
+      const counts = new Map<string, number>();
+      for (const row of (data ?? []) as unknown as {
+        class_sessions: { class_type_id: string | null } | null;
+      }[]) {
+        const id = row.class_sessions?.class_type_id;
+        if (!id) continue;
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+      }
+      let topId: string | null = null;
+      let topCount = 0;
+      for (const [id, c] of counts) {
+        if (c > topCount) {
+          topCount = c;
+          topId = id;
+        }
+      }
+      return topId;
+    },
+  });
+
+  // Future bookings the member already has — used to filter out the
+  // class they'd otherwise be recommended to "quick book."
+  const futureBooked = useQuery({
+    queryKey: ['my-future-bookings-set', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async (): Promise<Set<string>> => {
+      const nowIso = new Date().toISOString();
+      const { data, error: err } = await supabase
+        .from('class_bookings')
+        .select('class_session_id, class_sessions!inner(starts_at)')
+        .eq('profile_id', session!.user.id)
+        .gt('class_sessions.starts_at', nowIso);
+      if (err) throw err;
+      return new Set<string>(
+        (data ?? []).map((r) => (r as { class_session_id: string }).class_session_id),
+      );
+    },
+  });
+
+  // Next upcoming session of the favoured class type that the member
+  // hasn't already booked.
+  const recommendation = useQuery({
+    queryKey: [
+      'recommended-class',
+      membership?.gymId,
+      favouriteType.data,
+      // The set's identity changes with each refetch; serialise so
+      // React Query treats logically-equal sets as the same key.
+      futureBooked.data ? Array.from(futureBooked.data).sort().join(',') : '',
+    ],
+    enabled: !!membership?.gymId && !!favouriteType.data && !!futureBooked.data,
+    queryFn: async (): Promise<RecommendedSession | null> => {
+      const nowIso = new Date().toISOString();
+      const { data, error: err } = await supabase
+        .from('class_sessions')
+        .select('id, starts_at, class_type_id, class_types(name, color)')
+        .eq('gym_id', membership!.gymId)
+        .eq('class_type_id', favouriteType.data!)
+        .gt('starts_at', nowIso)
+        .order('starts_at', { ascending: true })
+        .limit(10);
+      if (err) throw err;
+      const filtered = (data ?? []).filter(
+        (r) => !futureBooked.data!.has((r as { id: string }).id),
+      );
+      return (filtered[0] as unknown as RecommendedSession | undefined) ?? null;
+    },
+  });
+
+  const book = useMutation({
+    mutationFn: async () => {
+      const rec = recommendation.data;
+      if (!rec) throw new Error('No class to book');
+      const { error: e } = await supabase.rpc('book_class', { session_id: rec.id });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['my-next-booking'] });
+      queryClient.invalidateQueries({ queryKey: ['my-future-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['my-future-bookings-set'] });
+      queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['recommended-class'] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not book this class')),
+  });
+
+  const rec = recommendation.data;
+  if (!rec || !rec.class_types) return null;
+
+  const start = new Date(rec.starts_at);
+  const typeColor = rec.class_types.color ?? '#2563EB';
+  const typeName = rec.class_types.name ?? 'Class';
+
+  return (
+    <View className="gap-1">
+      <Pressable
+        onPress={() => book.mutate()}
+        disabled={book.isPending}
+        className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+        <View
+          style={{ backgroundColor: typeColor }}
+          className="rounded-full px-2 py-0.5">
+          <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+            Recommended
+          </Text>
+          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            {fmtNext(start)}
+          </Text>
+        </View>
+        <Text className="text-primary text-xs uppercase tracking-widest">
+          {book.isPending ? '…' : 'Quick book'}
+        </Text>
+      </Pressable>
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-xs px-3">{error}</Text>
+      ) : null}
+    </View>
+  );
 }
 
 function NextClassCard() {
@@ -79,5 +235,15 @@ function NextClassCard() {
 }
 
 export default function Book() {
-  return <ClassesCalendar mode="book" topSlot={<NextClassCard />} />;
+  return (
+    <ClassesCalendar
+      mode="book"
+      topSlot={
+        <View className="gap-2">
+          <RecommendedClassCard />
+          <NextClassCard />
+        </View>
+      }
+    />
+  );
 }
