@@ -1037,6 +1037,42 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      tracked_section_movement_tags: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          section_id: string;
+          movement_key: string;
+          track_key: string | null;
+          performed_at: string;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          section_id: string;
+          movement_key: string;
+          track_key?: string | null;
+          performed_at: string;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          section_id: string;
+          movement_key: string;
+          track_key: string | null;
+          performed_at: string;
+          notes: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       v_member_cohort: {
