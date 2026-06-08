@@ -12,7 +12,7 @@ export default function Index() {
   if (session === undefined) return <Loading />;
   if (!session) return <Redirect href="/sign-in" />;
   if (isLoading) return <Loading />;
-  if (!membership) return <Redirect href="/sign-in" />;
+  if (!membership) return <Redirect href="/welcome" />;
   if (canAccessStaff === undefined) return <Loading />;
   return <Redirect href={canAccessStaff ? '/classes' : '/book'} />;
 }

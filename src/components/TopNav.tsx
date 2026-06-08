@@ -8,20 +8,13 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { GymLogo } from './GymLogo';
 import { NavModal, type NavSection } from './NavModal';
-import { useGymMembership } from '@/lib/auth';
+import { useGymBrand } from '@/lib/useGymBrand';
 
 export type { NavSection };
 
 const CLASSES_VIEWS = ['day', 'week', 'month'] as const;
-
-function LogoMark({ initial }: { initial: string }) {
-  return (
-    <View className="w-9 h-9 rounded-lg bg-primary items-center justify-center">
-      <Text className="text-white font-bold text-base">{initial}</Text>
-    </View>
-  );
-}
 
 export function TopNav({
   sections,
@@ -33,11 +26,10 @@ export function TopNav({
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const params = useGlobalSearchParams<{ view?: string }>();
-  const { data: membership } = useGymMembership();
+  const brand = useGymBrand();
   const [navOpen, setNavOpen] = useState(false);
 
-  const gymName = membership?.gymName ?? 'Temple';
-  const initial = (gymName.charAt(0) || 'T').toUpperCase();
+  const gymName = brand.gymName;
 
   const isOnClasses = pathname === '/classes' || pathname === '/book';
   const currentView = params.view ?? 'day';
@@ -52,7 +44,12 @@ export function TopNav({
           onPress={() => setNavOpen(true)}
           hitSlop={6}
           className="flex-row items-center gap-3 active:opacity-70">
-          <LogoMark initial={initial} />
+          <GymLogo
+            size={36}
+            logoUrl={brand.logoUrl}
+            name={gymName}
+            primaryColor={brand.primaryColor}
+          />
           <Text
             className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden md:flex"
             numberOfLines={1}>
@@ -89,7 +86,11 @@ export function TopNav({
         {isManagementSubPage ? (
           <Link href="/management" asChild>
             <Pressable hitSlop={8} className="active:opacity-70">
-              <Text className="text-primary font-medium text-base">← Manage</Text>
+              <Text
+                style={{ color: brand.primaryColor }}
+                className="font-medium text-base">
+                ← Manage
+              </Text>
             </Pressable>
           </Link>
         ) : null}

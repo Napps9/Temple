@@ -160,3 +160,66 @@ export function useSignOut() {
     onSuccess: () => queryClient.clear(),
   });
 }
+
+// Self-serve gym creation. Signs the visitor up as an auth user,
+// creates a profiles row + the gym + the owner membership. Throws
+// at the first step that fails so the caller can surface the error
+// near the input that produced it.
+export async function createGymWithSignup(args: {
+  email: string;
+  password: string;
+  fullName: string;
+  gymName: string;
+  gymSlug: string;
+}): Promise<{ gymId: string }> {
+  const { email, password, fullName, gymName, gymSlug } = args;
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  if (data.user) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({ id: data.user.id, full_name: fullName });
+    if (profileError) throw profileError;
+  }
+  const { data: gymId, error: rpcError } = await supabase.rpc('create_gym', {
+    p_name: gymName,
+    p_slug: gymSlug,
+  });
+  if (rpcError) throw rpcError;
+  return { gymId: gymId as unknown as string };
+}
+
+// Joining via a public /join/[slug] link. Signs up a new auth user
+// and calls join_gym_by_slug to create the member membership.
+export async function joinGymWithSignup(args: {
+  email: string;
+  password: string;
+  fullName: string;
+  slug: string;
+}): Promise<{ gymId: string }> {
+  const { email, password, fullName, slug } = args;
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  if (data.user) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({ id: data.user.id, full_name: fullName });
+    if (profileError) throw profileError;
+  }
+  const { data: gymId, error: rpcError } = await supabase.rpc('join_gym_by_slug', {
+    p_slug: slug,
+  });
+  if (rpcError) throw rpcError;
+  return { gymId: gymId as unknown as string };
+}
+
+// Joining a gym from an already-authenticated session (e.g. an
+// owner adding themselves to a second gym they discovered via a
+// link). Doesn't touch profiles or auth.
+export async function joinGymBySlug(slug: string): Promise<{ gymId: string }> {
+  const { data, error } = await supabase.rpc('join_gym_by_slug', {
+    p_slug: slug,
+  });
+  if (error) throw error;
+  return { gymId: data as unknown as string };
+}

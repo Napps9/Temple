@@ -29,6 +29,11 @@ export type Database = {
           currency: string;
           class_leaderboards_enabled: boolean;
           strength_leaderboards_enabled: boolean;
+          logo_url: string | null;
+          primary_color: string;
+          secondary_color: string;
+          text_color: string;
+          public_signup_enabled: boolean;
         };
         Insert: {
           id?: string;
@@ -39,6 +44,11 @@ export type Database = {
           currency?: string;
           class_leaderboards_enabled?: boolean;
           strength_leaderboards_enabled?: boolean;
+          logo_url?: string | null;
+          primary_color?: string;
+          secondary_color?: string;
+          text_color?: string;
+          public_signup_enabled?: boolean;
         };
         Update: Partial<{
           id: string;
@@ -49,6 +59,11 @@ export type Database = {
           currency: string;
           class_leaderboards_enabled: boolean;
           strength_leaderboards_enabled: boolean;
+          logo_url: string | null;
+          primary_color: string;
+          secondary_color: string;
+          text_color: string;
+          public_signup_enabled: boolean;
         }>;
         Relationships: [];
       };
@@ -1218,6 +1233,49 @@ export type Database = {
       };
       set_coach_credit_policy: {
         Args: { p_gym_id: string; p_policy: 'all_scheduled' | 'only_checked_in' };
+        Returns: null;
+      };
+      gym_by_slug: {
+        Args: { p_slug: string };
+        Returns: {
+          id: string;
+          name: string;
+          slug: string;
+          logo_url: string | null;
+          primary_color: string;
+          secondary_color: string;
+          text_color: string;
+          public_signup_enabled: boolean;
+        }[];
+      };
+      create_gym: {
+        Args: { p_name: string; p_slug: string };
+        Returns: string;
+      };
+      join_gym_by_slug: {
+        Args: { p_slug: string };
+        Returns: string;
+      };
+      set_gym_branding: {
+        Args: {
+          p_gym_id: string;
+          p_logo_url: string | null;
+          p_primary_color: string;
+          p_secondary_color: string;
+          p_text_color: string;
+        };
+        Returns: null;
+      };
+      set_gym_name: {
+        Args: { p_gym_id: string; p_name: string };
+        Returns: null;
+      };
+      set_gym_slug: {
+        Args: { p_gym_id: string; p_slug: string };
+        Returns: null;
+      };
+      set_gym_public_signup: {
+        Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;
       };
       set_leaderboard_config: {
