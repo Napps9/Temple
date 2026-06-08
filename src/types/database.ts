@@ -20,9 +20,60 @@ export type Database = {
   public: {
     Tables: {
       gyms: {
-        Row: { id: string; name: string; slug: string; created_at: string };
-        Insert: { id?: string; name: string; slug: string; created_at?: string };
-        Update: Partial<{ id: string; name: string; slug: string; created_at: string }>;
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          created_at: string;
+          coach_credit_policy: 'all_scheduled' | 'only_checked_in';
+          currency: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          created_at?: string;
+          coach_credit_policy?: 'all_scheduled' | 'only_checked_in';
+          currency?: string;
+        };
+        Update: Partial<{
+          id: string;
+          name: string;
+          slug: string;
+          created_at: string;
+          coach_credit_policy: 'all_scheduled' | 'only_checked_in';
+          currency: string;
+        }>;
+        Relationships: [];
+      };
+      coach_pay_rates: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          class_type_id: string;
+          per_class_cents: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          class_type_id: string;
+          per_class_cents: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          class_type_id: string;
+          per_class_cents: number;
+          created_at: string;
+          updated_at: string;
+        }>;
         Relationships: [];
       };
       profiles: {
@@ -1135,6 +1186,27 @@ export type Database = {
           gross_cents: number;
           charge_count: number;
         }[];
+      };
+      compute_coach_earnings: {
+        Args: {
+          p_gym_id: string;
+          p_coach_id: string;
+          p_period_start: string;
+          p_period_end: string;
+        };
+        Returns: {
+          class_type_id: string;
+          class_type_name: string;
+          class_type_color: string;
+          class_count: number;
+          rate_cents: number;
+          earnings_cents: number;
+          currency: string;
+        }[];
+      };
+      set_coach_credit_policy: {
+        Args: { p_gym_id: string; p_policy: 'all_scheduled' | 'only_checked_in' };
+        Returns: null;
       };
       is_revenue_event: {
         Args: { p_provider: string; p_kind: string };

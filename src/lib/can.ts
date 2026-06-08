@@ -29,7 +29,8 @@ export type Capability =
   | 'can_archive_plans'
   | 'can_archive_members'
   | 'can_hard_delete'
-  | 'can_see_workout_logs';
+  | 'can_see_workout_logs'
+  | 'can_set_coach_pay';
 
 const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_access_staff_area: { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
@@ -61,6 +62,7 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_archive_members:   { owner: true,  admin: true,  coach: false, staff: false, member: false },
   can_hard_delete:       { owner: true,  admin: false, coach: false, staff: false, member: false },
   can_see_workout_logs:  { owner: true,  admin: true,  coach: true,  staff: false, member: false },
+  can_set_coach_pay:     { owner: true,  admin: false, coach: false, staff: false, member: false },
 };
 
 export const RoleOrder: GymRole[] = ['owner', 'admin', 'coach', 'staff', 'member'];

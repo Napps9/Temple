@@ -69,6 +69,7 @@ export default function ManagementHome() {
   const canEditClasses = useCan('can_edit_classes');
   const canManageTags = useCan('can_manage_tags');
   const canManagePlans = useCan('can_manage_plans');
+  const canSetCoachPay = useCan('can_set_coach_pay');
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -114,6 +115,13 @@ export default function ManagementHome() {
             title="Team"
             description="Invite owners, coaches, staff and members."
             href="/management/team"
+          />
+        ) : null}
+        {canSetCoachPay ? (
+          <ManagementCard
+            title="Coach earnings"
+            description="Set per-class-type rates and review what coaches earned."
+            href="/management/coach-earnings"
           />
         ) : null}
         {canEditClasses ? (
