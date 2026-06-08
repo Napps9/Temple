@@ -23,6 +23,12 @@ export type Movement = {
   key: string;
   name: string;
   schemes: Scheme[];
+  // Lower-case substrings that, when found in a programmed body,
+  // identify *this specific movement*. Bare-ambiguous terms like
+  // "squat" / "press" / "snatch" are intentionally NOT registered as
+  // aliases of any movement — the detector skips ambiguous matches
+  // and lets the member pick.
+  aliases?: string[];
 };
 
 export type MovementGroup = {
@@ -85,16 +91,19 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
         key: 'back_squat',
         name: 'Back Squat',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5), REP_MAX(10)],
+        aliases: ['back squat', 'back squats'],
       },
       {
         key: 'front_squat',
         name: 'Front Squat',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5), REP_MAX(10)],
+        aliases: ['front squat', 'front squats'],
       },
       {
         key: 'overhead_squat',
         name: 'Overhead Squat',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5), REP_MAX(10)],
+        aliases: ['overhead squat', 'overhead squats', 'ohs'],
       },
     ],
   },
@@ -109,31 +118,47 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
         key: 'push_press',
         name: 'Push Press',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['push press', 'push presses'],
       },
       {
         key: 'strict_press',
         name: 'Strict Press (Shoulder Press)',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: [
+          'strict press',
+          'shoulder press',
+          'strict shoulder press',
+          'military press',
+        ],
       },
       {
         key: 'shoulder_to_overhead',
         name: 'Shoulder-to-Overhead (Push Jerk)',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: [
+          'shoulder to overhead',
+          'shoulder-to-overhead',
+          'push jerk',
+          's2oh',
+        ],
       },
       {
         key: 'bench_press',
         name: 'Bench Press',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['bench press', 'bench presses'],
       },
       {
         key: 'split_jerk',
         name: 'Split Jerk',
         schemes: [REP_MAX(1), REP_MAX(3)],
+        aliases: ['split jerk', 'split jerks'],
       },
       {
         key: 'thruster',
         name: 'Thruster',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5), REP_MAX(10)],
+        aliases: ['thruster', 'thrusters'],
       },
     ],
   },
@@ -148,6 +173,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
         key: 'deadlift',
         name: 'Deadlift',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['deadlift', 'deadlifts'],
       },
     ],
   },
@@ -162,16 +188,19 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
         key: 'squat_clean',
         name: 'Squat Clean',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['squat clean', 'squat cleans'],
       },
       {
         key: 'hang_clean',
         name: 'Hang Clean',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['hang clean', 'hang cleans'],
       },
       {
         key: 'power_clean',
         name: 'Power Clean',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['power clean', 'power cleans'],
       },
     ],
   },
@@ -186,26 +215,31 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
         key: 'squat_snatch',
         name: 'Squat Snatch',
         schemes: [REP_MAX(1)],
+        aliases: ['squat snatch', 'squat snatches'],
       },
       {
         key: 'hang_snatch',
         name: 'Hang Snatch',
         schemes: [REP_MAX(1), REP_MAX(3)],
+        aliases: ['hang snatch', 'hang snatches'],
       },
       {
         key: 'power_snatch',
         name: 'Power Snatch',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['power snatch', 'power snatches'],
       },
       {
         key: 'snatch_balance',
         name: 'Snatch Balance',
         schemes: [REP_MAX(1)],
+        aliases: ['snatch balance'],
       },
       {
         key: 'sots_press',
         name: 'Sots Press',
         schemes: [REP_MAX(1), REP_MAX(3), REP_MAX(5)],
+        aliases: ['sots press', 'sots presses'],
       },
     ],
   },
@@ -226,6 +260,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
           RUN_TIME('half_marathon', 'Half Marathon Time'),
           RUN_TIME('marathon', 'Marathon Time'),
         ],
+        aliases: ['running', 'run'],
       },
       {
         key: 'assault_bike',
@@ -246,6 +281,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
             better: 'lower',
           },
         ],
+        aliases: ['assault bike', 'air bike', 'echo bike', 'air biking'],
       },
       {
         key: 'rowing',
@@ -261,6 +297,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
             better: 'higher',
           },
         ],
+        aliases: ['rowing', 'row', 'erg row'],
       },
       {
         key: 'ski_erg',
@@ -276,6 +313,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
             better: 'higher',
           },
         ],
+        aliases: ['ski erg', 'ski-erg', 'skierg'],
       },
       {
         key: 'mikko_triangle',
@@ -288,6 +326,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
             better: 'higher',
           },
         ],
+        aliases: ['mikko triangle'],
       },
     ],
   },
@@ -302,31 +341,62 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
         key: 'strict_pull_ups',
         name: 'Strict Pull Ups',
         schemes: [MAX_REPS],
+        aliases: ['strict pull up', 'strict pull ups', 'strict pull-up', 'strict pull-ups'],
       },
       {
         key: 'kipping_pull_up',
         name: 'Kipping / Butterfly Pull Up',
         schemes: [MAX_REPS],
+        // "pull up" alone defaults to kipping per CrossFit convention;
+        // "strict pull up" is a more specific alias on the strict
+        // movement and wins by longest-match.
+        aliases: [
+          'kipping pull up',
+          'kipping pull ups',
+          'butterfly pull up',
+          'butterfly pull ups',
+          'pull up',
+          'pull ups',
+          'pull-up',
+          'pull-ups',
+          'pullup',
+          'pullups',
+        ],
       },
       {
         key: 'strict_toes_to_bar',
         name: 'Strict Toes to Bar',
         schemes: [MAX_REPS],
+        aliases: ['strict toes to bar', 'strict t2b'],
       },
       {
         key: 'kipping_toes_to_bar',
         name: 'Kipping Toes to Bar',
         schemes: [MAX_REPS],
+        aliases: ['kipping toes to bar', 'toes to bar', 't2b', 'ttb'],
       },
       {
         key: 'strict_hspu',
         name: 'Strict Handstand Push Ups',
         schemes: [MAX_REPS],
+        aliases: [
+          'strict handstand push up',
+          'strict handstand push ups',
+          'strict hspu',
+        ],
       },
       {
         key: 'kipping_hspu',
         name: 'Kipping Handstand Push Ups',
         schemes: [MAX_REPS],
+        aliases: [
+          'kipping handstand push up',
+          'kipping handstand push ups',
+          'kipping hspu',
+          'handstand push up',
+          'handstand push ups',
+          'hspu',
+        ],
       },
       {
         key: 'handstand_walks',
@@ -339,6 +409,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
             better: 'higher',
           },
         ],
+        aliases: ['handstand walk', 'handstand walks', 'hs walk'],
       },
       {
         key: 'handstand_holds',
@@ -351,6 +422,7 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
             better: 'higher',
           },
         ],
+        aliases: ['handstand hold', 'handstand holds'],
       },
     ],
   },
