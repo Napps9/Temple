@@ -24,6 +24,7 @@ begin
   update public.gyms set dm_scope = 'member_coach_only' where id = v_gym;
 
   perform set_config('test.gym',   v_gym::text,   true);
+  perform set_config('test.owner', v_owner::text, true);
   perform set_config('test.a',     v_a::text,     true);
   perform set_config('test.b',     v_b::text,     true);
   perform set_config('test.coach', v_coach::text, true);
@@ -65,12 +66,8 @@ select lives_ok(
 
 -- Flip back to full_gym; member A → member B now works.
 do $$
-declare
-  v_owner uuid := current_setting('test.gym')::uuid;
 begin
-  -- Need to be owner to flip the scope; switch user.
-  perform _test_act_as((select profile_id from public.gym_memberships
-    where gym_id = current_setting('test.gym')::uuid and role = 'owner' limit 1));
+  perform _test_act_as(current_setting('test.owner')::uuid);
   perform public.set_dm_scope(current_setting('test.gym')::uuid, 'full_gym');
   perform _test_act_as(current_setting('test.a')::uuid);
 end;
