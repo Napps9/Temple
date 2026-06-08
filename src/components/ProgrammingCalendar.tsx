@@ -7,6 +7,11 @@ import { ProgrammingModal } from '@/components/ProgrammingModal';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
+import {
+  formatLabel,
+  parseSections,
+  type Section,
+} from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -17,8 +22,6 @@ type ClassSession = {
   class_type_id: string | null;
   class_types: { name: string; color: string } | null;
 };
-
-type Section = { title: string; body: string };
 
 type ProgrammingRow = {
   id: string;
@@ -122,7 +125,7 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
       if (error) throw error;
       return (data ?? []).map((row) => ({
         ...row,
-        sections: (row.sections as Section[]) ?? [],
+        sections: parseSections(row.sections),
       })) as ProgrammingRow[];
     },
   });
@@ -311,9 +314,16 @@ function ClassTypeCard({
       <View className="gap-3">
         {sections.map((s, idx) => (
           <View key={idx} className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-              {s.title}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+                {s.title}
+              </Text>
+              <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
+                <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-semibold uppercase tracking-wider">
+                  {formatLabel(s.section_format)}
+                </Text>
+              </View>
+            </View>
             <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
           </View>
         ))}
