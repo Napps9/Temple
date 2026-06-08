@@ -19,7 +19,6 @@ begin
   perform _test_mk_membership(v_gym, v_a,     'member');
   perform _test_mk_membership(v_gym, v_b,     'member');
 
-  perform _test_act_as(v_owner);
   insert into public.tracked_workouts (gym_id, profile_id) values (v_gym, v_a)
     returning id into v_w_a;
   insert into public.tracked_workouts (gym_id, profile_id) values (v_gym, v_b)

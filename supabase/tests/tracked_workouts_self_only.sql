@@ -1,6 +1,11 @@
 -- RLS isolation: a member cannot SELECT another member's
 -- tracked_workouts row, but a coach can (default capability is on).
 -- Backfills the coverage 0023 shipped without.
+--
+-- The do-block setup runs as the migration role (RLS off), so we can
+-- seed rows for each member directly. _test_act_as is only called
+-- once per assertion to switch into 'authenticated' as the subject
+-- whose visibility we're checking.
 
 begin;
 select plan(2);
@@ -14,20 +19,16 @@ declare
   v_a      uuid := _test_mk_user('a@tw.test');
   v_b      uuid := _test_mk_user('b@tw.test');
   v_gym    uuid := _test_mk_gym('Workout Gym', 'workout-gym');
-  v_w_a    uuid;
-  v_w_b    uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   perform _test_mk_membership(v_gym, v_coach, 'coach');
   perform _test_mk_membership(v_gym, v_a,     'member');
   perform _test_mk_membership(v_gym, v_b,     'member');
 
-  -- Seed one workout for each member (bypassing RLS as owner).
-  perform _test_act_as(v_owner);
   insert into public.tracked_workouts (gym_id, profile_id, title)
-    values (v_gym, v_a, 'A workout') returning id into v_w_a;
+    values (v_gym, v_a, 'A workout');
   insert into public.tracked_workouts (gym_id, profile_id, title)
-    values (v_gym, v_b, 'B workout') returning id into v_w_b;
+    values (v_gym, v_b, 'B workout');
 
   perform set_config('test.a',     v_a::text,     true);
   perform set_config('test.b',     v_b::text,     true);

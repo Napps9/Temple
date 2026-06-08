@@ -15,17 +15,15 @@ declare
   v_coach uuid := _test_mk_user('coach@cap.test');
   v_m     uuid := _test_mk_user('member@cap.test');
   v_gym   uuid := _test_mk_gym('Cap Gym', 'cap-gym');
-  v_w     uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   perform _test_mk_membership(v_gym, v_coach, 'coach');
   perform _test_mk_membership(v_gym, v_m,     'member');
 
-  perform _test_act_as(v_owner);
-  insert into public.tracked_workouts (gym_id, profile_id) values (v_gym, v_m)
-    returning id into v_w;
+  insert into public.tracked_workouts (gym_id, profile_id) values (v_gym, v_m);
 
   perform set_config('test.gym',   v_gym::text,   true);
+  perform set_config('test.owner', v_owner::text, true);
   perform set_config('test.coach', v_coach::text, true);
   perform set_config('test.m',     v_m::text,     true);
 end;
@@ -47,15 +45,8 @@ select is(
 
 -- Owner flips the coach override OFF.
 do $$
-declare
-  v_owner uuid;
 begin
-  select profile_id into v_owner
-    from public.gym_memberships
-    where gym_id = current_setting('test.gym')::uuid
-      and role = 'owner'
-    limit 1;
-  perform _test_act_as(v_owner);
+  perform _test_act_as(current_setting('test.owner')::uuid);
   insert into public.gym_role_capabilities (gym_id, role, capability, enabled)
     values (current_setting('test.gym')::uuid, 'coach', 'can_see_workout_logs', false);
 end;
