@@ -8,6 +8,7 @@ import { DatePicker } from './DatePicker';
 import { Input } from './Input';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { detectMovementsInText } from '@/lib/movement-detection';
 import { findMovement, MOVEMENT_GROUPS } from '@/lib/movements';
 import {
   categoryLabel,
@@ -93,6 +94,12 @@ function draftFromProgrammedSection(args: {
     shape.kind === 'entries_only'
       ? Array.from({ length: shape.defaultEntries }, () => emptyEntryDraft())
       : [];
+  // Auto-tag: scan the programmed title + body for movement aliases
+  // and seed the section's tags. Member can edit/remove any before
+  // saving.
+  const detected = detectMovementsInText(
+    `${section.title}\n${section.body}`,
+  );
   return {
     section_category: section.section_category,
     section_format: format,
@@ -106,7 +113,7 @@ function draftFromProgrammedSection(args: {
     free_text_result: '',
     entries,
     source_programming_id: programmingId,
-    movement_tags: [],
+    movement_tags: detected,
   };
 }
 
@@ -157,6 +164,9 @@ export function RecordWorkoutModal({
   const [movementPickerForIdx, setMovementPickerForIdx] = useState<
     number | null
   >(null);
+  const [editingTag, setEditingTag] = useState<
+    { sectionIdx: number; tagIdx: number } | null
+  >(null);
   const [saved, markSaved] = useSavedFlag();
 
   useEffect(() => {
@@ -168,6 +178,7 @@ export function RecordWorkoutModal({
     setError(null);
     setPickerOpenFor(null);
     setMovementPickerForIdx(null);
+    setEditingTag(null);
   }, [visible, initialDate, initialTitle]);
 
   // Pre-fill source: any programming on this date for class types the
@@ -354,6 +365,25 @@ export function RecordWorkoutModal({
           ? {
               ...d,
               movement_tags: d.movement_tags.filter((_, j) => j !== tagIdx),
+            }
+          : d,
+      ),
+    );
+  }
+
+  function updateTagTrackKey(
+    draftIdx: number,
+    tagIdx: number,
+    track_key: string | null,
+  ) {
+    setDrafts((cur) =>
+      cur.map((d, i) =>
+        i === draftIdx
+          ? {
+              ...d,
+              movement_tags: d.movement_tags.map((t, j) =>
+                j === tagIdx ? { ...t, track_key } : t,
+              ),
             }
           : d,
       ),
@@ -570,7 +600,9 @@ export function RecordWorkoutModal({
                   onAddEntry={() => addEntry(idx)}
                   onRemoveEntry={(entryIdx) => removeEntry(idx, entryIdx)}
                   onAddTag={() => setMovementPickerForIdx(idx)}
-                  onRemoveTag={(tagIdx) => removeTag(idx, tagIdx)}
+                  onEditTag={(tagIdx) =>
+                    setEditingTag({ sectionIdx: idx, tagIdx })
+                  }
                   onRemove={() => removeDraft(idx)}
                 />
               ))}
@@ -640,6 +672,33 @@ export function RecordWorkoutModal({
         }}
         onClose={() => setMovementPickerForIdx(null)}
       />
+
+      <TagEditModal
+        visible={editingTag !== null}
+        tag={
+          editingTag
+            ? drafts[editingTag.sectionIdx]?.movement_tags[editingTag.tagIdx] ??
+              null
+            : null
+        }
+        onPickScheme={(trackKey) => {
+          if (editingTag) {
+            updateTagTrackKey(
+              editingTag.sectionIdx,
+              editingTag.tagIdx,
+              trackKey,
+            );
+          }
+          setEditingTag(null);
+        }}
+        onRemove={() => {
+          if (editingTag) {
+            removeTag(editingTag.sectionIdx, editingTag.tagIdx);
+          }
+          setEditingTag(null);
+        }}
+        onClose={() => setEditingTag(null)}
+      />
     </Modal>
   );
 }
@@ -654,7 +713,7 @@ function SectionDraftCard({
   onAddEntry,
   onRemoveEntry,
   onAddTag,
-  onRemoveTag,
+  onEditTag,
   onRemove,
 }: {
   draft: SectionDraft;
@@ -666,7 +725,7 @@ function SectionDraftCard({
   onAddEntry: () => void;
   onRemoveEntry: (entryIdx: number) => void;
   onAddTag: () => void;
-  onRemoveTag: (tagIdx: number) => void;
+  onEditTag: (tagIdx: number) => void;
   onRemove: () => void;
 }) {
   return (
@@ -729,7 +788,7 @@ function SectionDraftCard({
       <MovementTagList
         tags={draft.movement_tags}
         onAdd={onAddTag}
-        onRemove={onRemoveTag}
+        onEdit={onEditTag}
       />
 
       <Input
@@ -746,11 +805,11 @@ function SectionDraftCard({
 function MovementTagList({
   tags,
   onAdd,
-  onRemove,
+  onEdit,
 }: {
   tags: MovementTagDraft[];
   onAdd: () => void;
-  onRemove: (idx: number) => void;
+  onEdit: (idx: number) => void;
 }) {
   return (
     <View className="gap-2">
@@ -766,12 +825,12 @@ function MovementTagList({
           return (
             <Pressable
               key={j}
-              onPress={() => onRemove(j)}
+              onPress={() => onEdit(j)}
               className="flex-row items-center gap-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-2.5 py-1 active:opacity-70">
               <Text className="text-gray-900 dark:text-gray-50 text-xs">
                 {label}
               </Text>
-              <Ionicons name="close" size={12} color="#9CA3AF" />
+              <Ionicons name="chevron-down" size={12} color="#9CA3AF" />
             </Pressable>
           );
         })}
@@ -1071,6 +1130,121 @@ function PickerButton({
         <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
       </Pressable>
     </View>
+  );
+}
+
+function TagEditModal({
+  visible,
+  tag,
+  onPickScheme,
+  onRemove,
+  onClose,
+}: {
+  visible: boolean;
+  tag: MovementTagDraft | null;
+  onPickScheme: (trackKey: string | null) => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  const meta = tag ? findMovement(tag.movement_key) : undefined;
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm gap-3">
+          <View className="gap-1">
+            <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+              Edit tag
+            </Text>
+            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+              {meta?.movement.name ?? tag?.movement_key ?? '—'}
+            </Text>
+            {meta ? (
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {meta.group.name}
+              </Text>
+            ) : null}
+          </View>
+
+          {meta && meta.movement.schemes.length > 0 ? (
+            <View className="gap-1">
+              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                Rep scheme
+              </Text>
+              <View className="gap-1">
+                <SchemeRow
+                  label="No scheme"
+                  selected={!tag?.track_key}
+                  onPress={() => onPickScheme(null)}
+                />
+                {meta.movement.schemes.map((s) => (
+                  <SchemeRow
+                    key={s.key}
+                    label={s.label}
+                    selected={tag?.track_key === s.key}
+                    onPress={() => onPickScheme(s.key)}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button variant="destructive" onPress={onRemove}>
+                Remove
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button variant="secondary" onPress={onClose}>
+                Done
+              </Button>
+            </View>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function SchemeRow({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`flex-row items-center gap-2 rounded-lg px-3 py-2 active:opacity-70 ${
+        selected
+          ? 'bg-primary/10 border border-primary/30'
+          : 'bg-gray-50 dark:bg-gray-800 border border-transparent'
+      }`}>
+      <Ionicons
+        name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+        size={16}
+        color={selected ? '#2563EB' : '#9CA3AF'}
+      />
+      <Text
+        className={
+          selected
+            ? 'text-primary text-sm font-medium'
+            : 'text-gray-700 dark:text-gray-200 text-sm'
+        }>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
