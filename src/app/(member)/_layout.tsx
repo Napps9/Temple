@@ -9,6 +9,7 @@ const MEMBER_SECTIONS: NavSection[] = [
   { name: 'book', href: '/book', label: 'Book', icon: 'calendar-clear-outline' },
   { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
   { name: 'bookings', href: '/bookings', label: 'Bookings', icon: 'ticket-outline' },
+  { name: 'track', href: '/track', label: 'Track', icon: 'trending-up-outline' },
 ];
 
 export default function MemberLayout() {
@@ -29,6 +30,7 @@ export default function MemberLayout() {
         <Tabs.Screen name="book" options={{ title: 'Book' }} />
         <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
         <Tabs.Screen name="bookings" options={{ title: 'Bookings' }} />
+        <Tabs.Screen name="track" options={{ title: 'Track' }} />
         <Tabs.Screen name="account" options={{ title: 'Account' }} />
       </Tabs>
     </View>

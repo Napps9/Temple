@@ -839,6 +839,84 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      tracked_workouts: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          class_session_id: string | null;
+          performed_at: string;
+          title: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          class_session_id?: string | null;
+          performed_at?: string;
+          title?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          class_session_id: string | null;
+          performed_at: string;
+          title: string | null;
+          notes: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      tracked_movement_results: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          movement_key: string;
+          track_key: string;
+          value_numeric: number | null;
+          value_seconds: number | null;
+          value_unit: string | null;
+          notes: string | null;
+          performed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          movement_key: string;
+          track_key: string;
+          value_numeric?: number | null;
+          value_seconds?: number | null;
+          value_unit?: string | null;
+          notes?: string | null;
+          performed_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          movement_key: string;
+          track_key: string;
+          value_numeric: number | null;
+          value_seconds: number | null;
+          value_unit: string | null;
+          notes: string | null;
+          performed_at: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       v_member_cohort: {

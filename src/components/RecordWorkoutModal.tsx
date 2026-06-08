@@ -1,0 +1,535 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+
+import { Button } from './Button';
+import { DatePicker } from './DatePicker';
+import { Input } from './Input';
+import { useGymMembership, useSession } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
+import {
+  allSchemeOptions,
+  findScheme,
+  type Metric,
+  type SchemeOption,
+} from '@/lib/movements';
+import { supabase } from '@/lib/supabase';
+import { defaultUnit, parseDuration } from '@/lib/track';
+import { useSavedFlag } from '@/lib/useSavedFlag';
+
+type DraftResult = {
+  // The (movement, scheme) pair the user picked, or null while still
+  // picking. We keep the option around so the form can render the
+  // metric-specific input (weight vs. time vs. reps...) without
+  // re-resolving from the catalog each render.
+  option: SchemeOption | null;
+  value: string;
+  notes: string;
+};
+
+function todayLocalIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${(d.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+}
+
+function emptyDraft(option: SchemeOption | null = null): DraftResult {
+  return { option, value: '', notes: '' };
+}
+
+export function RecordWorkoutModal({
+  visible,
+  onClose,
+  initialDate,
+  initialClassSessionId,
+  initialTitle,
+  // When the modal is opened with a specific movement preselected
+  // (e.g. from the movement detail page), seed the first draft with it.
+  initialMovementKey,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  initialDate?: string;
+  initialClassSessionId?: string | null;
+  initialTitle?: string | null;
+  initialMovementKey?: string;
+}) {
+  const session = useSession();
+  const { data: membership } = useGymMembership();
+  const queryClient = useQueryClient();
+
+  const [date, setDate] = useState<string>(initialDate ?? todayLocalIso());
+  const [title, setTitle] = useState<string>(initialTitle ?? '');
+  const [notes, setNotes] = useState<string>('');
+  const [drafts, setDrafts] = useState<DraftResult[]>([emptyDraft()]);
+  const [error, setError] = useState<string | null>(null);
+  const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
+  const [saved, markSaved] = useSavedFlag();
+
+  const schemeOptions = useMemo(() => allSchemeOptions(), []);
+
+  useEffect(() => {
+    if (!visible) return;
+    setDate(initialDate ?? todayLocalIso());
+    setTitle(initialTitle ?? '');
+    setNotes('');
+    setError(null);
+    setPickerOpenFor(null);
+    if (initialMovementKey) {
+      const firstScheme = schemeOptions.find(
+        (s) => s.movementKey === initialMovementKey,
+      );
+      setDrafts([emptyDraft(firstScheme ?? null)]);
+    } else {
+      setDrafts([emptyDraft()]);
+    }
+  }, [
+    visible,
+    initialDate,
+    initialTitle,
+    initialMovementKey,
+    schemeOptions,
+  ]);
+
+  function updateDraft(idx: number, next: Partial<DraftResult>) {
+    setDrafts((cur) =>
+      cur.map((d, i) => (i === idx ? { ...d, ...next } : d)),
+    );
+  }
+
+  function addDraft() {
+    setDrafts((cur) => [...cur, emptyDraft()]);
+  }
+
+  function removeDraft(idx: number) {
+    setDrafts((cur) => cur.filter((_, i) => i !== idx));
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!membership || !session) throw new Error('Missing context');
+      if (!date) throw new Error('Pick a date');
+      const filled = drafts.filter((d) => d.option && d.value.trim().length > 0);
+      if (filled.length === 0) {
+        throw new Error('Add at least one result');
+      }
+      const parsed = filled.map((d) => {
+        const opt = d.option!;
+        const scheme = findScheme(opt.movementKey, opt.schemeKey);
+        if (!scheme) throw new Error('Unknown movement');
+        const parsedValue = parseValueForMetric(d.value, scheme.metric);
+        if (parsedValue == null) {
+          throw new Error(
+            `Could not parse "${d.value.trim()}" for ${opt.movementName} — ${opt.schemeLabel}`,
+          );
+        }
+        return { draft: d, scheme, parsedValue };
+      });
+
+      const performedAtIso = new Date(`${date}T12:00:00`).toISOString();
+
+      const { data: workoutRow, error: workoutError } = await supabase
+        .from('tracked_workouts')
+        .insert({
+          gym_id: membership.gymId,
+          profile_id: session.user.id,
+          class_session_id: initialClassSessionId ?? null,
+          performed_at: performedAtIso,
+          title: title.trim() || null,
+          notes: notes.trim() || null,
+        })
+        .select('id')
+        .single();
+      if (workoutError) throw workoutError;
+      const workoutId = workoutRow!.id;
+
+      const rows = parsed.map(({ draft, scheme, parsedValue }) => {
+        const opt = draft.option!;
+        const isTime = scheme.metric === 'time';
+        return {
+          gym_id: membership.gymId,
+          profile_id: session.user.id,
+          workout_id: workoutId,
+          movement_key: opt.movementKey,
+          track_key: opt.schemeKey,
+          value_numeric: isTime ? null : parsedValue,
+          value_seconds: isTime ? parsedValue : null,
+          value_unit: isTime ? null : defaultUnit(scheme.metric),
+          notes: draft.notes.trim() || null,
+          performed_at: performedAtIso,
+        };
+      });
+      const { error: resultsError } = await supabase
+        .from('tracked_movement_results')
+        .insert(rows);
+      if (resultsError) throw resultsError;
+    },
+    onSuccess: () => {
+      setError(null);
+      markSaved();
+      queryClient.invalidateQueries({ queryKey: ['tracked-journal'] });
+      queryClient.invalidateQueries({ queryKey: ['tracked-results-by-movement'] });
+      queryClient.invalidateQueries({ queryKey: ['tracked-results-by-group'] });
+      setTimeout(() => onClose(), 600);
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not save workout')),
+  });
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[90vh]">
+          <View className="gap-1">
+            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+              Record workout
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Log a session and any movement results.
+            </Text>
+          </View>
+
+          <ScrollView className="max-h-[55vh]" contentContainerClassName="gap-4">
+            <DatePicker label="Date" value={date} onChange={setDate} />
+            <Input
+              label="Title (optional)"
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Morning session"
+              autoCapitalize="sentences"
+            />
+
+            <View className="gap-3">
+              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                Results
+              </Text>
+              {drafts.map((d, idx) => (
+                <DraftCard
+                  key={idx}
+                  draft={d}
+                  index={idx}
+                  total={drafts.length}
+                  onPickOption={() => setPickerOpenFor(idx)}
+                  onUpdate={(next) => updateDraft(idx, next)}
+                  onRemove={() => removeDraft(idx)}
+                />
+              ))}
+              <Pressable
+                onPress={addDraft}
+                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <Ionicons name="add" size={16} color="#6B7280" />
+                <Text className="text-gray-500 dark:text-gray-400">
+                  Add result
+                </Text>
+              </Pressable>
+            </View>
+
+            <Input
+              label="Workout notes (optional)"
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Felt strong; warmed up with row"
+              multiline
+              numberOfLines={3}
+              style={{ minHeight: 80, textAlignVertical: 'top' }}
+              autoCapitalize="sentences"
+            />
+          </ScrollView>
+
+          {error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          ) : null}
+
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button variant="secondary" onPress={onClose}>
+                Cancel
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button
+                onPress={() => save.mutate()}
+                loading={save.isPending}
+                success={saved}>
+                Save workout
+              </Button>
+            </View>
+          </View>
+        </Pressable>
+      </Pressable>
+
+      <SchemePickerModal
+        visible={pickerOpenFor !== null}
+        options={schemeOptions}
+        onPick={(opt) => {
+          if (pickerOpenFor !== null) updateDraft(pickerOpenFor, { option: opt });
+          setPickerOpenFor(null);
+        }}
+        onClose={() => setPickerOpenFor(null)}
+      />
+    </Modal>
+  );
+}
+
+function DraftCard({
+  draft,
+  index,
+  total,
+  onPickOption,
+  onUpdate,
+  onRemove,
+}: {
+  draft: DraftResult;
+  index: number;
+  total: number;
+  onPickOption: () => void;
+  onUpdate: (next: Partial<DraftResult>) => void;
+  onRemove: () => void;
+}) {
+  const opt = draft.option;
+  return (
+    <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3">
+      <View className="flex-row items-center gap-2">
+        <Pressable
+          onPress={onPickOption}
+          className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
+          <View className="flex-1">
+            {opt ? (
+              <>
+                <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+                  {opt.movementName}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {opt.schemeLabel} · {opt.groupName}
+                </Text>
+              </>
+            ) : (
+              <Text className="text-gray-400 dark:text-gray-500 text-sm">
+                Pick a movement
+              </Text>
+            )}
+          </View>
+          <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+        </Pressable>
+        {total > 1 ? (
+          <Pressable
+            onPress={onRemove}
+            hitSlop={4}
+            className="w-9 h-9 rounded-lg items-center justify-center active:bg-gray-200 dark:active:bg-gray-700">
+            <Ionicons name="close" size={18} color="#9CA3AF" />
+          </Pressable>
+        ) : null}
+      </View>
+      {opt ? (
+        <>
+          <Input
+            label={valueInputLabel(opt.metric)}
+            value={draft.value}
+            onChangeText={(v) => onUpdate({ value: v })}
+            placeholder={valuePlaceholder(opt.metric)}
+            keyboardType={opt.metric === 'time' ? 'default' : 'numeric'}
+            inputMode={opt.metric === 'time' ? undefined : 'decimal'}
+          />
+          <Input
+            label="Notes (optional)"
+            value={draft.notes}
+            onChangeText={(v) => onUpdate({ notes: v })}
+            placeholder="Belt + sleeves"
+            autoCapitalize="sentences"
+          />
+        </>
+      ) : null}
+      <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+        Result {index + 1}
+      </Text>
+    </View>
+  );
+}
+
+function SchemePickerModal({
+  visible,
+  options,
+  onPick,
+  onClose,
+}: {
+  visible: boolean;
+  options: SchemeOption[];
+  onPick: (opt: SchemeOption) => void;
+  onClose: () => void;
+}) {
+  // Group the flat scheme list back by category for navigation.
+  const groups = useMemo(() => {
+    const byGroup = new Map<
+      string,
+      { groupName: string; movements: Map<string, { name: string; options: SchemeOption[] }> }
+    >();
+    for (const opt of options) {
+      let g = byGroup.get(opt.groupKey);
+      if (!g) {
+        g = { groupName: opt.groupName, movements: new Map() };
+        byGroup.set(opt.groupKey, g);
+      }
+      let m = g.movements.get(opt.movementKey);
+      if (!m) {
+        m = { name: opt.movementName, options: [] };
+        g.movements.set(opt.movementKey, m);
+      }
+      m.options.push(opt);
+    }
+    return Array.from(byGroup.entries()).map(([key, g]) => ({
+      key,
+      name: g.groupName,
+      movements: Array.from(g.movements.entries()).map(([mk, m]) => ({
+        key: mk,
+        name: m.name,
+        options: m.options,
+      })),
+    }));
+  }, [options]);
+
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [expandedMovement, setExpandedMovement] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!visible) {
+      setExpandedGroup(null);
+      setExpandedMovement(null);
+    }
+  }, [visible]);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
+          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            Pick a movement
+          </Text>
+          <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
+            {groups.map((g) => (
+              <View key={g.key}>
+                <Pressable
+                  onPress={() =>
+                    setExpandedGroup((cur) => (cur === g.key ? null : g.key))
+                  }
+                  className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
+                  <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                    {g.name}
+                  </Text>
+                  <Ionicons
+                    name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color="#9CA3AF"
+                  />
+                </Pressable>
+                {expandedGroup === g.key ? (
+                  <View className="pt-2 pl-3 gap-2">
+                    {g.movements.map((m) => (
+                      <View key={m.key}>
+                        <Pressable
+                          onPress={() =>
+                            setExpandedMovement((cur) =>
+                              cur === m.key ? null : m.key,
+                            )
+                          }
+                          className="rounded-lg px-3 py-2 flex-row items-center gap-2 active:opacity-70">
+                          <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+                            {m.name}
+                          </Text>
+                          <Ionicons
+                            name={
+                              expandedMovement === m.key
+                                ? 'chevron-up'
+                                : 'chevron-down'
+                            }
+                            size={14}
+                            color="#9CA3AF"
+                          />
+                        </Pressable>
+                        {expandedMovement === m.key ? (
+                          <View className="pl-3 gap-1">
+                            {m.options.map((opt) => (
+                              <Pressable
+                                key={`${opt.movementKey}-${opt.schemeKey}`}
+                                onPress={() => onPick(opt)}
+                                className="rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                                <Text className="text-primary text-sm">
+                                  {opt.schemeLabel}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        ) : null}
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </ScrollView>
+          <View>
+            <Button variant="secondary" onPress={onClose}>
+              Close
+            </Button>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function valueInputLabel(metric: Metric): string {
+  switch (metric) {
+    case 'weight':
+      return 'Weight (kg)';
+    case 'time':
+      return 'Time (MM:SS or HH:MM:SS)';
+    case 'reps':
+      return 'Reps';
+    case 'calories':
+      return 'Calories';
+    case 'distance':
+      return 'Distance (m)';
+  }
+}
+
+function valuePlaceholder(metric: Metric): string {
+  switch (metric) {
+    case 'weight':
+      return '100';
+    case 'time':
+      return '4:32';
+    case 'reps':
+      return '20';
+    case 'calories':
+      return '85';
+    case 'distance':
+      return '120';
+  }
+}
+
+function parseValueForMetric(input: string, metric: Metric): number | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  if (metric === 'time') return parseDuration(trimmed);
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n < 0) return null;
+  if (metric === 'reps') return Math.round(n);
+  return n;
+}

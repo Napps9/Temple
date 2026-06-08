@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ProgrammingModal } from '@/components/ProgrammingModal';
+import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -81,6 +83,7 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
     classType: DayClassType;
     date: Date;
   } | null>(null);
+  const [recordingDate, setRecordingDate] = useState<Date | null>(null);
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
     .toString()
@@ -213,6 +216,23 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2 gap-3">
+          {mode === 'view' && dayTypes.length > 0 ? (
+            <Pressable
+              onPress={() => setRecordingDate(date)}
+              className="bg-primary active:bg-primary-dark rounded-xl p-3 flex-row items-center gap-3">
+              <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
+                <Ionicons name="add" size={20} color="#FFFFFF" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-white font-semibold text-sm">
+                  Record results
+                </Text>
+                <Text className="text-white/80 text-xs">
+                  Log how today's session went.
+                </Text>
+              </View>
+            </Pressable>
+          ) : null}
           {dayTypes.length === 0 ? (
             <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -241,6 +261,12 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
         classType={openFor?.classType ?? null}
         date={openFor?.date ?? null}
         onClose={() => setOpenFor(null)}
+      />
+
+      <RecordWorkoutModal
+        visible={recordingDate !== null}
+        onClose={() => setRecordingDate(null)}
+        initialDate={recordingDate ? fmtDateLocal(recordingDate) : undefined}
       />
     </Screen>
   );
