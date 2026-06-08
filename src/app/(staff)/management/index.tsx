@@ -118,6 +118,13 @@ export default function ManagementHome() {
             href="/management/team"
           />
         ) : null}
+        {canManageStaff ? (
+          <ManagementCard
+            title="Branding"
+            description="Logo, colours, gym name, public join link."
+            href="/management/branding"
+          />
+        ) : null}
         {canSetCoachPay ? (
           <ManagementCard
             title="Coach earnings"
