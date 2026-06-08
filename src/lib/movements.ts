@@ -30,6 +30,11 @@ export type MovementGroup = {
   name: string;
   // Short description shown on the category card.
   blurb: string;
+  // Ionicons name + accent hex; renderers cast the icon to
+  // keyof typeof Ionicons.glyphMap. Kept as plain strings here so
+  // this module stays free of React Native imports.
+  icon: string;
+  accent: string;
   movements: Movement[];
 };
 
@@ -73,6 +78,8 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
     key: 'squats',
     name: 'Squats',
     blurb: 'Back, front, and overhead variations.',
+    icon: 'barbell-outline',
+    accent: '#3B82F6',
     movements: [
       {
         key: 'back_squat',
@@ -95,6 +102,8 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
     key: 'pushing',
     name: 'Pushing',
     blurb: 'Presses, jerks, bench, and thrusters.',
+    icon: 'arrow-up-circle-outline',
+    accent: '#EF4444',
     movements: [
       {
         key: 'push_press',
@@ -132,6 +141,8 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
     key: 'pulling',
     name: 'Pulling',
     blurb: 'Deadlift and pulling variations.',
+    icon: 'fitness-outline',
+    accent: '#F59E0B',
     movements: [
       {
         key: 'deadlift',
@@ -144,6 +155,8 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
     key: 'cleans',
     name: 'Cleans',
     blurb: 'Squat, hang, and power clean variations.',
+    icon: 'flash-outline',
+    accent: '#10B981',
     movements: [
       {
         key: 'squat_clean',
@@ -166,6 +179,8 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
     key: 'snatch',
     name: 'Snatch',
     blurb: 'Squat, hang, power, and accessory variations.',
+    icon: 'rocket-outline',
+    accent: '#8B5CF6',
     movements: [
       {
         key: 'squat_snatch',
@@ -198,6 +213,8 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
     key: 'aerobic',
     name: 'Aerobic Conditioning',
     blurb: 'Running, rowing, biking, and ski erg benchmarks.',
+    icon: 'pulse-outline',
+    accent: '#EC4899',
     movements: [
       {
         key: 'running',
@@ -278,6 +295,8 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
     key: 'bodyweight',
     name: 'Bodyweight Movements',
     blurb: 'Pull ups, toes to bar, HSPU, handstand walks and holds.',
+    icon: 'body-outline',
+    accent: '#06B6D4',
     movements: [
       {
         key: 'strict_pull_ups',

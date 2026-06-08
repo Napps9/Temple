@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
 import { useQuery } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
@@ -102,25 +104,19 @@ export default function TrackHome() {
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Movements
           </Text>
-          <View className="gap-2">
+          <View className="flex-row flex-wrap -mx-1">
             {MOVEMENT_GROUPS.map((g) => (
-              <Pressable
-                key={g.key}
-                onPress={() => router.push(`/track/group/${g.key}` as never)}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
-                <View className="flex-1">
-                  <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                    {g.name}
-                  </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                    {g.blurb}
-                  </Text>
-                </View>
-                <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                  {g.movements.length}
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-              </Pressable>
+              <View key={g.key} className="w-1/2 p-1">
+                <GroupTile
+                  name={g.name}
+                  count={g.movements.length}
+                  icon={g.icon as IoniconName}
+                  accent={g.accent}
+                  onPress={() =>
+                    router.push(`/track/group/${g.key}` as never)
+                  }
+                />
+              </View>
             ))}
           </View>
         </View>
@@ -131,6 +127,46 @@ export default function TrackHome() {
         onClose={() => setRecording(false)}
       />
     </Screen>
+  );
+}
+
+function GroupTile({
+  name,
+  count,
+  icon,
+  accent,
+  onPress,
+}: {
+  name: string;
+  count: number;
+  icon: IoniconName;
+  accent: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3 min-h-[124px] overflow-hidden active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name={icon} size={22} color={accent} />
+      </View>
+      <View className="flex-1 justify-end">
+        <Text
+          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          numberOfLines={2}>
+          {name}
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {count} {count === 1 ? 'movement' : 'movements'}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 
