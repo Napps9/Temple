@@ -201,10 +201,10 @@ begin
     raise exception 'Period end must be after period start';
   end if;
 
-  select coach_credit_policy, currency
+  select g.coach_credit_policy, g.currency
     into v_policy, v_currency
-    from public.gyms
-    where id = p_gym_id;
+    from public.gyms g
+    where g.id = p_gym_id;
 
   if v_policy is null then
     raise exception 'Gym not found';
