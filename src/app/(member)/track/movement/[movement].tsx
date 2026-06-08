@@ -4,7 +4,7 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
+import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { findMovement, type Metric } from '@/lib/movements';
@@ -155,7 +155,7 @@ export default function MovementDetail() {
         </View>
       </ScrollView>
 
-      <RecordWorkoutModal
+      <RecordMovementResultModal
         visible={recording}
         onClose={() => setRecording(false)}
         initialMovementKey={movement.key}
