@@ -30,6 +30,7 @@ type SectionDraft = {
   section_format: SectionFormatKey | null;
   title: string;
   body: string;
+  leaderboard_enabled: boolean;
 };
 
 type ProgrammingRow = {
@@ -58,6 +59,7 @@ function emptyDraft(): SectionDraft {
     section_format: null,
     title: '',
     body: '',
+    leaderboard_enabled: false,
   };
 }
 
@@ -67,6 +69,7 @@ function sectionToDraft(s: Section): SectionDraft {
     section_format: s.section_format as SectionFormatKey,
     title: s.title,
     body: s.body,
+    leaderboard_enabled: s.leaderboard_enabled,
   };
 }
 
@@ -156,6 +159,7 @@ export function ProgrammingModal({
           section_format: d.section_format,
           title,
           body,
+          leaderboard_enabled: d.leaderboard_enabled,
         });
       }
       if (cleaned.length === 0) {
@@ -397,6 +401,26 @@ function DraftCard({
         style={{ minHeight: 100, textAlignVertical: 'top' }}
         autoCapitalize="sentences"
       />
+
+      <Pressable
+        onPress={() =>
+          onUpdate({ leaderboard_enabled: !draft.leaderboard_enabled })
+        }
+        className="flex-row items-center gap-3 active:opacity-70">
+        <Ionicons
+          name={draft.leaderboard_enabled ? 'checkbox' : 'square-outline'}
+          size={20}
+          color={draft.leaderboard_enabled ? '#2563EB' : '#9CA3AF'}
+        />
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+            Add to leaderboard
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Members who log this section will be ranked against each other.
+          </Text>
+        </View>
+      </Pressable>
     </View>
   );
 }

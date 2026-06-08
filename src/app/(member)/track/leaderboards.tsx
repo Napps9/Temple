@@ -1,0 +1,147 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+
+import { Screen } from '@/components/Screen';
+import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
+import { useGymMembership } from '@/lib/auth';
+import { MOVEMENT_GROUPS, type Movement, type Scheme } from '@/lib/movements';
+import { supabase } from '@/lib/supabase';
+
+// A curated set of common benchmarks. Tap any movement to see the
+// full per-scheme leaderboard for it.
+const HEADLINE_BENCHMARKS: { movementKey: string; schemeKey: string }[] = [
+  { movementKey: 'back_squat', schemeKey: '1rm' },
+  { movementKey: 'front_squat', schemeKey: '1rm' },
+  { movementKey: 'deadlift', schemeKey: '1rm' },
+  { movementKey: 'bench_press', schemeKey: '1rm' },
+  { movementKey: 'strict_press', schemeKey: '1rm' },
+  { movementKey: 'power_clean', schemeKey: '1rm' },
+  { movementKey: 'power_snatch', schemeKey: '1rm' },
+  { movementKey: 'running', schemeKey: '5k' },
+  { movementKey: 'rowing', schemeKey: '2000m' },
+];
+
+function findMovementByKey(key: string): Movement | undefined {
+  for (const g of MOVEMENT_GROUPS) {
+    const m = g.movements.find((m) => m.key === key);
+    if (m) return m;
+  }
+  return undefined;
+}
+
+export default function LeaderboardsIndex() {
+  const { data: membership } = useGymMembership();
+  const enabled = useQuery({
+    queryKey: ['gym-leaderboard-flags', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gyms')
+        .select('strength_leaderboards_enabled')
+        .eq('id', membership!.gymId)
+        .single();
+      if (error) throw error;
+      return data.strength_leaderboards_enabled;
+    },
+  });
+
+  const [activeKey, setActiveKey] = useState<string>(
+    HEADLINE_BENCHMARKS[0].movementKey + '|' + HEADLINE_BENCHMARKS[0].schemeKey,
+  );
+
+  if (enabled.data === false) {
+    return (
+      <Screen>
+        <View className="mt-8 gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            Leaderboards off
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Strength comparisons are disabled for this gym.
+          </Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  const benchmarks = HEADLINE_BENCHMARKS.map((b) => {
+    const movement = findMovementByKey(b.movementKey);
+    const scheme = movement?.schemes.find((s) => s.key === b.schemeKey);
+    return movement && scheme ? { movement, scheme } : null;
+  }).filter((x): x is { movement: Movement; scheme: Scheme } => x !== null);
+
+  const active = benchmarks.find(
+    (b) => `${b.movement.key}|${b.scheme.key}` === activeKey,
+  );
+
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
+        <View className="flex-row items-center gap-2">
+          <Link href="/track" asChild>
+            <Pressable hitSlop={6} className="active:opacity-70">
+              <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
+            </Pressable>
+          </Link>
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              Leaderboards
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Top of the gym across common benchmarks.
+            </Text>
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-2 px-0.5">
+          {benchmarks.map((b) => {
+            const key = `${b.movement.key}|${b.scheme.key}`;
+            const selected = key === activeKey;
+            return (
+              <Pressable
+                key={key}
+                onPress={() => setActiveKey(key)}
+                className={`rounded-full px-3 py-1.5 border active:opacity-70 ${
+                  selected
+                    ? 'bg-primary border-primary'
+                    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                }`}>
+                <Text
+                  className={
+                    selected
+                      ? 'text-white text-xs font-medium'
+                      : 'text-gray-700 dark:text-gray-200 text-xs'
+                  }>
+                  {b.movement.name} · {b.scheme.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {active ? (
+          <View className="gap-3">
+            <View>
+              <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                {active.scheme.label}
+              </Text>
+              <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+                {active.movement.name}
+              </Text>
+            </View>
+            <StrengthLeaderboard
+              movementKey={active.movement.key}
+              scheme={active.scheme}
+            />
+          </View>
+        ) : null}
+      </ScrollView>
+    </Screen>
+  );
+}

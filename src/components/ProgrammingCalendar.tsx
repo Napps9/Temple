@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { ProgrammingModal } from '@/components/ProgrammingModal';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
@@ -153,10 +154,13 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
   })();
 
   const dateStr = fmtDateLocal(date);
-  const sectionsByTypeId = new Map<string, Section[]>(
+  const programmingByTypeId = new Map<
+    string,
+    { id: string; sections: Section[] }
+  >(
     (programmingMonthQuery.data ?? [])
       .filter((p) => p.date === dateStr)
-      .map((p) => [p.class_type_id, p.sections]),
+      .map((p) => [p.class_type_id, { id: p.id, sections: p.sections }]),
   );
 
   return (
@@ -244,12 +248,13 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
             </View>
           ) : (
             dayTypes.map((t) => {
-              const sections = sectionsByTypeId.get(t.id) ?? [];
+              const prog = programmingByTypeId.get(t.id);
               return (
                 <ClassTypeCard
                   key={t.id}
                   classType={t}
-                  sections={sections}
+                  programmingId={prog?.id ?? null}
+                  sections={prog?.sections ?? []}
                   mode={mode}
                   onEdit={() => setOpenFor({ classType: t, date })}
                 />
@@ -277,15 +282,20 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
 
 function ClassTypeCard({
   classType,
+  programmingId,
   sections,
   mode,
   onEdit,
 }: {
   classType: DayClassType;
+  programmingId: string | null;
   sections: Section[];
   mode: 'manage' | 'view';
   onEdit: () => void;
 }) {
+  const [leaderboardOpenFor, setLeaderboardOpenFor] = useState<
+    { sectionIndex: number; sectionTitle: string } | null
+  >(null);
   const header = (
     <View className="flex-row items-center gap-3">
       <View
@@ -325,6 +335,21 @@ function ClassTypeCard({
               </View>
             </View>
             <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
+            {s.leaderboard_enabled && programmingId ? (
+              <Pressable
+                onPress={() =>
+                  setLeaderboardOpenFor({
+                    sectionIndex: idx,
+                    sectionTitle: s.title,
+                  })
+                }
+                className="self-start mt-1 flex-row items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 active:opacity-70">
+                <Ionicons name="trophy-outline" size={12} color="#2563EB" />
+                <Text className="text-primary text-[10px] font-semibold uppercase tracking-wider">
+                  Leaderboard
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ))}
       </View>
@@ -332,19 +357,37 @@ function ClassTypeCard({
 
   if (mode === 'manage') {
     return (
-      <Pressable
-        onPress={onEdit}
-        className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800">
-        {header}
-        {body}
-      </Pressable>
+      <>
+        <Pressable
+          onPress={onEdit}
+          className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800">
+          {header}
+          {body}
+        </Pressable>
+        <ClassLeaderboardModal
+          visible={leaderboardOpenFor !== null}
+          programmingId={programmingId}
+          sectionIndex={leaderboardOpenFor?.sectionIndex ?? null}
+          sectionTitle={leaderboardOpenFor?.sectionTitle ?? ''}
+          onClose={() => setLeaderboardOpenFor(null)}
+        />
+      </>
     );
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-      {header}
-      {body}
-    </View>
+    <>
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        {header}
+        {body}
+      </View>
+      <ClassLeaderboardModal
+        visible={leaderboardOpenFor !== null}
+        programmingId={programmingId}
+        sectionIndex={leaderboardOpenFor?.sectionIndex ?? null}
+        sectionTitle={leaderboardOpenFor?.sectionTitle ?? ''}
+        onClose={() => setLeaderboardOpenFor(null)}
+      />
+    </>
   );
 }

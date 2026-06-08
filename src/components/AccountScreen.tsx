@@ -6,6 +6,7 @@ import { AvatarUploader } from './AvatarUploader';
 import { Button } from './Button';
 import { CoachEarningsCard } from './CoachEarningsCard';
 import { Input } from './Input';
+import { LeaderboardPrivacyCard } from './LeaderboardPrivacyCard';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
 import { Screen } from './Screen';
 import {
@@ -151,6 +152,8 @@ export function AccountScreen() {
         </View>
 
         {role === 'coach' || role === 'owner' ? <CoachEarningsCard /> : null}
+
+        <LeaderboardPrivacyCard />
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
