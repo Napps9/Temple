@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Button } from './Button';
@@ -8,13 +8,16 @@ import { DatePicker } from './DatePicker';
 import { Input } from './Input';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { findMovement, MOVEMENT_GROUPS } from '@/lib/movements';
 import {
   categoryLabel,
   categoryToTitle,
   formatLabel,
+  parseSections,
   SECTION_CATEGORIES,
   SECTION_FORMATS,
   titleMatchesAnyCategory,
+  type Section,
   type SectionCategoryKey,
   type SectionFormatKey,
 } from '@/lib/programming';
@@ -30,6 +33,11 @@ import {
 import { parseDuration } from '@/lib/track';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
+type MovementTagDraft = {
+  movement_key: string;
+  track_key: string | null;
+};
+
 type SectionDraft = {
   section_category: SectionCategoryKey | null;
   section_format: SectionFormatKey | null;
@@ -44,6 +52,9 @@ type SectionDraft = {
   free_text_result: string;
   // Entries — for entries-only formats and optional expand on aggregate-first.
   entries: SectionEntryDraft[];
+  // PR 3 additions:
+  source_programming_id: string | null;
+  movement_tags: MovementTagDraft[];
 };
 
 function todayLocalIso(): string {
@@ -66,7 +77,56 @@ function emptyDraft(): SectionDraft {
     did_not_finish: false,
     free_text_result: '',
     entries: [],
+    source_programming_id: null,
+    movement_tags: [],
   };
+}
+
+function draftFromProgrammedSection(args: {
+  section: Section;
+  format: SectionFormatKey;
+  programmingId: string;
+}): SectionDraft {
+  const { section, format, programmingId } = args;
+  const shape = FORMAT_SHAPES[format];
+  const entries =
+    shape.kind === 'entries_only'
+      ? Array.from({ length: shape.defaultEntries }, () => emptyEntryDraft())
+      : [];
+  return {
+    section_category: section.section_category,
+    section_format: format,
+    title: section.title,
+    body: section.body,
+    notes: '',
+    total_time_seconds: '',
+    total_rounds: '',
+    total_extra_reps: '',
+    did_not_finish: false,
+    free_text_result: '',
+    entries,
+    source_programming_id: programmingId,
+    movement_tags: [],
+  };
+}
+
+type ProgrammedSectionForDay = {
+  programming_id: string;
+  class_type_id: string;
+  class_type_name: string;
+  class_type_color: string;
+  section: Section;
+};
+
+function isEmptyDraft(d: SectionDraft): boolean {
+  return (
+    d.section_category === null &&
+    d.section_format === null &&
+    d.title.trim() === '' &&
+    d.body.trim() === '' &&
+    d.notes.trim() === '' &&
+    d.movement_tags.length === 0
+  );
 }
 
 export function RecordWorkoutModal({
@@ -94,6 +154,9 @@ export function RecordWorkoutModal({
   const [pickerOpenFor, setPickerOpenFor] = useState<
     { idx: number; kind: 'category' | 'format' } | null
   >(null);
+  const [movementPickerForIdx, setMovementPickerForIdx] = useState<
+    number | null
+  >(null);
   const [saved, markSaved] = useSavedFlag();
 
   useEffect(() => {
@@ -104,7 +167,91 @@ export function RecordWorkoutModal({
     setDrafts([emptyDraft()]);
     setError(null);
     setPickerOpenFor(null);
+    setMovementPickerForIdx(null);
   }, [visible, initialDate, initialTitle]);
+
+  // Pre-fill source: any programming on this date for class types the
+  // member is permitted to see. RLS on class_programming already gates
+  // on user_belongs_to, so we fetch the date directly. Multi-class-type
+  // days are grouped client-side and presented as separate pre-fill
+  // chips.
+  const programmingQuery = useQuery({
+    queryKey: ['record-workout-programming', membership?.gymId, date],
+    enabled: !!membership?.gymId && !!date && visible,
+    queryFn: async (): Promise<ProgrammedSectionForDay[]> => {
+      const { data, error: err } = await supabase
+        .from('class_programming')
+        .select('id, class_type_id, sections, class_types(name, color)')
+        .eq('date', date);
+      if (err) throw err;
+      const out: ProgrammedSectionForDay[] = [];
+      for (const row of (data ?? []) as unknown as {
+        id: string;
+        class_type_id: string;
+        sections: unknown;
+        class_types: { name: string; color: string } | null;
+      }[]) {
+        const sections = parseSections(row.sections);
+        for (const s of sections) {
+          out.push({
+            programming_id: row.id,
+            class_type_id: row.class_type_id,
+            class_type_name: row.class_types?.name ?? 'Class',
+            class_type_color: row.class_types?.color ?? '#2563EB',
+            section: s,
+          });
+        }
+      }
+      return out;
+    },
+  });
+
+  const programmingByClassType = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        class_type_id: string;
+        class_type_name: string;
+        class_type_color: string;
+        sections: ProgrammedSectionForDay[];
+      }
+    >();
+    for (const row of programmingQuery.data ?? []) {
+      const existing = map.get(row.class_type_id);
+      if (existing) {
+        existing.sections.push(row);
+      } else {
+        map.set(row.class_type_id, {
+          class_type_id: row.class_type_id,
+          class_type_name: row.class_type_name,
+          class_type_color: row.class_type_color,
+          sections: [row],
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [programmingQuery.data]);
+
+  function prefillFromClassType(classTypeId: string) {
+    const group = programmingByClassType.find(
+      (g) => g.class_type_id === classTypeId,
+    );
+    if (!group) return;
+    const newDrafts: SectionDraft[] = group.sections.map((row) =>
+      draftFromProgrammedSection({
+        section: row.section,
+        format: row.section.section_format,
+        programmingId: row.programming_id,
+      }),
+    );
+    if (newDrafts.length === 0) return;
+    setDrafts((cur) => {
+      // If the user hasn't touched anything yet (single empty draft),
+      // replace it; otherwise append the pre-filled sections.
+      if (cur.length === 1 && isEmptyDraft(cur[0])) return newDrafts;
+      return [...cur, ...newDrafts];
+    });
+  }
 
   function updateDraft(idx: number, next: Partial<SectionDraft>) {
     setDrafts((cur) =>
@@ -181,6 +328,33 @@ export function RecordWorkoutModal({
       cur.map((d, i) =>
         i === draftIdx
           ? { ...d, entries: d.entries.filter((_, j) => j !== entryIdx) }
+          : d,
+      ),
+    );
+  }
+
+  function addTag(draftIdx: number, tag: MovementTagDraft) {
+    setDrafts((cur) =>
+      cur.map((d, i) => {
+        if (i !== draftIdx) return d;
+        // De-dup: same movement_key + track_key won't double up.
+        const exists = d.movement_tags.some(
+          (t) => t.movement_key === tag.movement_key && t.track_key === tag.track_key,
+        );
+        if (exists) return d;
+        return { ...d, movement_tags: [...d.movement_tags, tag] };
+      }),
+    );
+  }
+
+  function removeTag(draftIdx: number, tagIdx: number) {
+    setDrafts((cur) =>
+      cur.map((d, i) =>
+        i === draftIdx
+          ? {
+              ...d,
+              movement_tags: d.movement_tags.filter((_, j) => j !== tagIdx),
+            }
           : d,
       ),
     );
@@ -279,6 +453,36 @@ export function RecordWorkoutModal({
           .insert(entryRows);
         if (entriesError) throw entriesError;
       }
+
+      // 4. Insert movement tags for sections that have any.
+      const tagRows: {
+        gym_id: string;
+        profile_id: string;
+        section_id: string;
+        movement_key: string;
+        track_key: string | null;
+        performed_at: string;
+      }[] = [];
+      meaningful.forEach((d, i) => {
+        const sectionId = sortedSections[i]?.id;
+        if (!sectionId) return;
+        for (const tag of d.movement_tags) {
+          tagRows.push({
+            gym_id: membership.gymId,
+            profile_id: session.user.id,
+            section_id: sectionId,
+            movement_key: tag.movement_key,
+            track_key: tag.track_key,
+            performed_at: performedAtIso,
+          });
+        }
+      });
+      if (tagRows.length > 0) {
+        const { error: tagsError } = await supabase
+          .from('tracked_section_movement_tags')
+          .insert(tagRows);
+        if (tagsError) throw tagsError;
+      }
     },
     onSuccess: () => {
       setError(null);
@@ -321,6 +525,32 @@ export function RecordWorkoutModal({
               placeholder="Morning session"
               autoCapitalize="sentences"
             />
+            {programmingByClassType.length > 0 ? (
+              <View className="gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3">
+                <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest">
+                  Pre-fill from today's programming
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {programmingByClassType.map((g) => (
+                    <Pressable
+                      key={g.class_type_id}
+                      onPress={() => prefillFromClassType(g.class_type_id)}
+                      className="flex-row items-center gap-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-1.5 active:opacity-70">
+                      <View
+                        style={{ backgroundColor: g.class_type_color }}
+                        className="w-2 h-2 rounded-full"
+                      />
+                      <Text className="text-gray-900 dark:text-gray-50 text-xs font-medium">
+                        {g.class_type_name}
+                      </Text>
+                      <Text className="text-gray-500 dark:text-gray-400 text-[10px]">
+                        {g.sections.length}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
             <View className="gap-3">
               {drafts.map((d, idx) => (
                 <SectionDraftCard
@@ -339,6 +569,8 @@ export function RecordWorkoutModal({
                   }
                   onAddEntry={() => addEntry(idx)}
                   onRemoveEntry={(entryIdx) => removeEntry(idx, entryIdx)}
+                  onAddTag={() => setMovementPickerForIdx(idx)}
+                  onRemoveTag={(tagIdx) => removeTag(idx, tagIdx)}
                   onRemove={() => removeDraft(idx)}
                 />
               ))}
@@ -399,6 +631,15 @@ export function RecordWorkoutModal({
         }}
         onClose={() => setPickerOpenFor(null)}
       />
+
+      <MovementTagPickerModal
+        visible={movementPickerForIdx !== null}
+        onPick={(tag) => {
+          if (movementPickerForIdx !== null) addTag(movementPickerForIdx, tag);
+          setMovementPickerForIdx(null);
+        }}
+        onClose={() => setMovementPickerForIdx(null)}
+      />
     </Modal>
   );
 }
@@ -412,6 +653,8 @@ function SectionDraftCard({
   onUpdateEntry,
   onAddEntry,
   onRemoveEntry,
+  onAddTag,
+  onRemoveTag,
   onRemove,
 }: {
   draft: SectionDraft;
@@ -422,6 +665,8 @@ function SectionDraftCard({
   onUpdateEntry: (entryIdx: number, next: Partial<SectionEntryDraft>) => void;
   onAddEntry: () => void;
   onRemoveEntry: (entryIdx: number) => void;
+  onAddTag: () => void;
+  onRemoveTag: (tagIdx: number) => void;
   onRemove: () => void;
 }) {
   return (
@@ -481,6 +726,12 @@ function SectionDraftCard({
         />
       ) : null}
 
+      <MovementTagList
+        tags={draft.movement_tags}
+        onAdd={onAddTag}
+        onRemove={onRemoveTag}
+      />
+
       <Input
         label="Notes (optional)"
         value={draft.notes}
@@ -490,6 +741,56 @@ function SectionDraftCard({
       />
     </View>
   );
+}
+
+function MovementTagList({
+  tags,
+  onAdd,
+  onRemove,
+}: {
+  tags: MovementTagDraft[];
+  onAdd: () => void;
+  onRemove: (idx: number) => void;
+}) {
+  return (
+    <View className="gap-2">
+      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        Tag movements (optional)
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
+        {tags.map((t, j) => {
+          const meta = findMovement(t.movement_key);
+          const label = meta
+            ? `${meta.movement.name}${t.track_key ? ` · ${trackKeyLabel(t.movement_key, t.track_key)}` : ''}`
+            : t.movement_key;
+          return (
+            <Pressable
+              key={j}
+              onPress={() => onRemove(j)}
+              className="flex-row items-center gap-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-2.5 py-1 active:opacity-70">
+              <Text className="text-gray-900 dark:text-gray-50 text-xs">
+                {label}
+              </Text>
+              <Ionicons name="close" size={12} color="#9CA3AF" />
+            </Pressable>
+          );
+        })}
+        <Pressable
+          onPress={onAdd}
+          className="flex-row items-center gap-1 rounded-full border border-dashed border-gray-300 dark:border-gray-600 px-2.5 py-1 active:opacity-70">
+          <Ionicons name="add" size={12} color="#6B7280" />
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Add tag
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function trackKeyLabel(movementKey: string, trackKey: string): string {
+  const meta = findMovement(movementKey);
+  return meta?.movement.schemes.find((s) => s.key === trackKey)?.label ?? trackKey;
 }
 
 function FormatInputs({
@@ -773,6 +1074,134 @@ function PickerButton({
   );
 }
 
+function MovementTagPickerModal({
+  visible,
+  onPick,
+  onClose,
+}: {
+  visible: boolean;
+  onPick: (tag: MovementTagDraft) => void;
+  onClose: () => void;
+}) {
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [expandedMovement, setExpandedMovement] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!visible) {
+      setExpandedGroup(null);
+      setExpandedMovement(null);
+    }
+  }, [visible]);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
+          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            Tag a movement
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Tag the movement (optionally with a rep scheme) so it lands
+            in your per-movement Journal.
+          </Text>
+          <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
+            {MOVEMENT_GROUPS.map((g) => (
+              <View key={g.key}>
+                <Pressable
+                  onPress={() =>
+                    setExpandedGroup((cur) => (cur === g.key ? null : g.key))
+                  }
+                  className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
+                  <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                    {g.name}
+                  </Text>
+                  <Ionicons
+                    name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color="#9CA3AF"
+                  />
+                </Pressable>
+                {expandedGroup === g.key ? (
+                  <View className="pt-2 pl-3 gap-2">
+                    {g.movements.map((m) => (
+                      <View key={m.key}>
+                        <View className="flex-row items-center gap-2">
+                          <Pressable
+                            onPress={() =>
+                              onPick({ movement_key: m.key, track_key: null })
+                            }
+                            className="flex-1 rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                            <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                              {m.name}
+                            </Text>
+                            <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+                              No rep scheme
+                            </Text>
+                          </Pressable>
+                          {m.schemes.length > 0 ? (
+                            <Pressable
+                              onPress={() =>
+                                setExpandedMovement((cur) =>
+                                  cur === m.key ? null : m.key,
+                                )
+                              }
+                              hitSlop={4}
+                              className="w-8 h-8 rounded items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+                              <Ionicons
+                                name={
+                                  expandedMovement === m.key
+                                    ? 'chevron-up'
+                                    : 'chevron-down'
+                                }
+                                size={14}
+                                color="#9CA3AF"
+                              />
+                            </Pressable>
+                          ) : null}
+                        </View>
+                        {expandedMovement === m.key ? (
+                          <View className="pl-3 gap-1">
+                            {m.schemes.map((s) => (
+                              <Pressable
+                                key={s.key}
+                                onPress={() =>
+                                  onPick({
+                                    movement_key: m.key,
+                                    track_key: s.key,
+                                  })
+                                }
+                                className="rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                                <Text className="text-primary text-xs">
+                                  {s.label}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        ) : null}
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </ScrollView>
+          <Button variant="secondary" onPress={onClose}>
+            Cancel
+          </Button>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 function PickerModal({
   visible,
   kind,
@@ -841,6 +1270,7 @@ function buildSectionInsert(args: {
     gym_id: gymId,
     profile_id: profileId,
     workout_id: workoutId,
+    source_programming_id: draft.source_programming_id,
     section_category: draft.section_category!,
     section_format: format,
     title: title || null,

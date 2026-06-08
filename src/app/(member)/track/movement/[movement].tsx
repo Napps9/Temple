@@ -1,20 +1,48 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { findMovement, type Metric } from '@/lib/movements';
+import {
+  bestOfMerged,
+  deriveTagValue,
+  mergeJournal,
+  type JournalRow,
+  type SectionForDerivation,
+  type TagInputRow,
+} from '@/lib/movement-journal';
+import type { SectionFormatKey } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
 import {
-  bestOf,
   fmtDateShort,
   formatResultValue,
   type TrackedResultRow,
 } from '@/lib/track';
+
+type RawTagRow = {
+  id: string;
+  movement_key: string;
+  track_key: string | null;
+  performed_at: string;
+  notes: string | null;
+  section: {
+    section_format: SectionFormatKey;
+    total_time_seconds: number | null;
+    total_rounds: number | null;
+    entries: {
+      weight_numeric: number | null;
+      reps: number | null;
+      time_seconds: number | null;
+      distance_numeric: number | null;
+      calories: number | null;
+    }[];
+  } | null;
+};
 
 export default function MovementDetail() {
   const { movement: movementKey } = useLocalSearchParams<{ movement: string }>();
@@ -22,7 +50,7 @@ export default function MovementDetail() {
   const meta = movementKey ? findMovement(movementKey) : undefined;
   const [recording, setRecording] = useState(false);
 
-  const results = useQuery({
+  const direct = useQuery({
     queryKey: ['tracked-results-by-movement', session?.user.id, movementKey],
     enabled: !!session?.user.id && !!movementKey,
     queryFn: async (): Promise<TrackedResultRow[]> => {
@@ -39,6 +67,64 @@ export default function MovementDetail() {
     },
   });
 
+  const tags = useQuery({
+    queryKey: ['tracked-tags-by-movement', session?.user.id, movementKey],
+    enabled: !!session?.user.id && !!movementKey,
+    queryFn: async (): Promise<RawTagRow[]> => {
+      const { data, error } = await supabase
+        .from('tracked_section_movement_tags')
+        .select(
+          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+        )
+        .eq('profile_id', session!.user.id)
+        .eq('movement_key', movementKey!)
+        .order('performed_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as RawTagRow[];
+    },
+  });
+
+  const merged = useMemo<JournalRow[]>(() => {
+    if (!meta) return [];
+    const direct_inputs = (direct.data ?? []).map((r) => ({
+      id: r.id,
+      movement_key: r.movement_key,
+      track_key: r.track_key,
+      value_numeric: r.value_numeric,
+      value_seconds: r.value_seconds,
+      value_unit: r.value_unit,
+      notes: r.notes,
+      performed_at: r.performed_at,
+    }));
+    const tag_inputs: TagInputRow[] = (tags.data ?? []).map((t) => {
+      const scheme = t.track_key
+        ? meta.movement.schemes.find((s) => s.key === t.track_key)
+        : undefined;
+      // No track_key, or scheme unknown → keep the row visible but
+      // without a numeric value.
+      const derived =
+        scheme && t.section
+          ? deriveTagValue(scheme, t.section as SectionForDerivation)
+          : { value_numeric: null, value_seconds: null };
+      return {
+        id: t.id,
+        movement_key: t.movement_key,
+        track_key: t.track_key,
+        notes: t.notes,
+        performed_at: t.performed_at,
+        value_numeric: derived.value_numeric,
+        value_seconds: derived.value_seconds,
+        value_unit:
+          scheme?.metric === 'weight'
+            ? 'kg'
+            : scheme?.metric === 'distance'
+              ? 'm'
+              : null,
+      };
+    });
+    return mergeJournal(direct_inputs, tag_inputs);
+  }, [meta, direct.data, tags.data]);
+
   if (!meta) {
     return (
       <Screen>
@@ -50,7 +136,6 @@ export default function MovementDetail() {
   }
 
   const { group, movement } = meta;
-  const rows = results.data ?? [];
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -84,8 +169,7 @@ export default function MovementDetail() {
           </Text>
           <View className="gap-2">
             {movement.schemes.map((scheme) => {
-              const schemeRows = rows.filter((r) => r.track_key === scheme.key);
-              const best = bestOf(schemeRows, scheme);
+              const best = bestOfMerged(merged, scheme.key, scheme);
               const display = best
                 ? formatResultValue(best, scheme.metric)
                 : null;
@@ -100,6 +184,7 @@ export default function MovementDetail() {
                     {best ? (
                       <Text className="text-gray-500 dark:text-gray-400 text-xs">
                         Set {fmtDateShort(best.performed_at)}
+                        {best.source === 'tag' ? ' · from session' : ''}
                       </Text>
                     ) : (
                       <Text className="text-gray-400 dark:text-gray-500 text-xs">
@@ -125,11 +210,11 @@ export default function MovementDetail() {
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Journal
           </Text>
-          {results.isLoading ? (
+          {direct.isLoading || tags.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               Loading…
             </Text>
-          ) : rows.length === 0 ? (
+          ) : merged.length === 0 ? (
             <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 No results for {movement.name} yet.
@@ -137,13 +222,14 @@ export default function MovementDetail() {
             </View>
           ) : (
             <View className="gap-2">
-              {rows.map((r) => (
-                <JournalRow
+              {merged.map((r) => (
+                <JournalRowView
                   key={r.id}
                   row={r}
                   schemeLabel={
                     movement.schemes.find((s) => s.key === r.track_key)?.label ??
-                    r.track_key
+                    r.track_key ??
+                    'Untagged'
                   }
                   metric={
                     movement.schemes.find((s) => s.key === r.track_key)?.metric
@@ -164,12 +250,12 @@ export default function MovementDetail() {
   );
 }
 
-function JournalRow({
+function JournalRowView({
   row,
   schemeLabel,
   metric,
 }: {
-  row: TrackedResultRow;
+  row: JournalRow;
   schemeLabel: string;
   metric: Metric | undefined;
 }) {
@@ -179,9 +265,18 @@ function JournalRow({
       onPress={() => router.push('/track/journal' as never)}
       className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
       <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
-          {schemeLabel}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+            {schemeLabel}
+          </Text>
+          {row.source === 'tag' ? (
+            <View className="rounded-full bg-primary/10 px-1.5 py-0.5">
+              <Text className="text-primary text-[9px] font-semibold uppercase tracking-wider">
+                Session
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           {fmtDateShort(row.performed_at)}
           {row.notes ? ` · ${row.notes}` : ''}
