@@ -284,15 +284,17 @@ begin
     left join ent e on e.section_id = s.id
   ),
   -- One row per member: their best score for this section (in case
-  -- they logged it more than once).
+  -- they logged it more than once). Source columns are aliased
+  -- because RETURNS TABLE turns the output column names into
+  -- PL/pgSQL variables, which would otherwise shadow bare references.
   per_member as (
-    select distinct on (profile_id)
-      profile_id, section_format,
-      total_time_seconds, total_rounds, total_extra_reps,
-      did_not_finish, heaviest_weight, weight_unit,
-      performed_at, score
-    from scored
-    order by profile_id, score desc, performed_at desc
+    select distinct on (sc.profile_id)
+      sc.profile_id, sc.section_format,
+      sc.total_time_seconds, sc.total_rounds, sc.total_extra_reps,
+      sc.did_not_finish, sc.heaviest_weight, sc.weight_unit,
+      sc.performed_at, sc.score
+    from scored sc
+    order by sc.profile_id, sc.score desc, sc.performed_at desc
   )
   select
     p.profile_id,
@@ -452,19 +454,22 @@ begin
     select * from tagged
   ),
   per_member as (
-    select distinct on (profile_id)
-      profile_id, value_numeric, value_seconds, performed_at, source
-    from unioned
-    where (p_metric = 'time' and value_seconds is not null)
-       or (p_metric <> 'time' and value_numeric is not null)
-    order by profile_id,
+    -- Source columns aliased through `u.` because the RETURNS TABLE
+    -- output column names (profile_id, value_numeric, ...) become
+    -- PL/pgSQL variables that shadow bare column references.
+    select distinct on (u.profile_id)
+      u.profile_id, u.value_numeric, u.value_seconds, u.performed_at, u.source
+    from unioned u
+    where (p_metric = 'time' and u.value_seconds is not null)
+       or (p_metric <> 'time' and u.value_numeric is not null)
+    order by u.profile_id,
       case
         when p_metric = 'time' then
-          (case when p_better = 'higher' then -value_seconds else value_seconds end)::numeric
+          (case when p_better = 'higher' then -u.value_seconds else u.value_seconds end)::numeric
         else
-          (case when p_better = 'higher' then -value_numeric else value_numeric end)
+          (case when p_better = 'higher' then -u.value_numeric else u.value_numeric end)
       end asc,
-      performed_at asc
+      u.performed_at asc
   )
   select
     p.profile_id,
