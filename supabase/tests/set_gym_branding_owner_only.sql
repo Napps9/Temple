@@ -10,15 +10,12 @@ do $$
 declare
   v_owner uuid := _test_mk_user('owner@brand.test');
   v_admin uuid := _test_mk_user('admin@brand.test');
-  v_gym   uuid;
+  v_gym   uuid := _test_mk_gym('Brand Gym', 'brand-gym');
 begin
-  perform _test_act_as(v_owner);
-  v_gym := public.create_gym('Brand Gym', 'brand-gym');
-  -- Add the admin AS the owner (only owner can write gym_memberships
-  -- non-self rows via the existing owner_update policy).
-  insert into public.gym_memberships (gym_id, profile_id, role)
-    values (v_gym, v_admin, 'admin');
+  perform _test_mk_membership(v_gym, v_owner, 'owner');
+  perform _test_mk_membership(v_gym, v_admin, 'admin');
   perform set_config('test.gym',   v_gym::text,   true);
+  perform set_config('test.owner', v_owner::text, true);
   perform set_config('test.admin', v_admin::text, true);
 end;
 $$;
@@ -42,12 +39,8 @@ select throws_like(
 
 -- Owner can.
 do $$
-declare
-  v_owner uuid;
 begin
-  select gm.profile_id into v_owner from public.gym_memberships gm
-    where gm.gym_id = current_setting('test.gym')::uuid and gm.role = 'owner';
-  perform _test_act_as(v_owner);
+  perform _test_act_as(current_setting('test.owner')::uuid);
   perform public.set_gym_branding(
     current_setting('test.gym')::uuid,
     null, '#FF0000', '#00FF00', '#0000FF'
