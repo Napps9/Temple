@@ -29,6 +29,7 @@ export type Database = {
           currency: string;
           class_leaderboards_enabled: boolean;
           strength_leaderboards_enabled: boolean;
+          dm_scope: 'full_gym' | 'member_coach_only';
         };
         Insert: {
           id?: string;
@@ -39,6 +40,7 @@ export type Database = {
           currency?: string;
           class_leaderboards_enabled?: boolean;
           strength_leaderboards_enabled?: boolean;
+          dm_scope?: 'full_gym' | 'member_coach_only';
         };
         Update: Partial<{
           id: string;
@@ -49,6 +51,130 @@ export type Database = {
           currency: string;
           class_leaderboards_enabled: boolean;
           strength_leaderboards_enabled: boolean;
+          dm_scope: 'full_gym' | 'member_coach_only';
+        }>;
+        Relationships: [];
+      };
+      direct_messages: {
+        Row: {
+          id: string;
+          gym_id: string;
+          sender_id: string;
+          recipient_id: string;
+          body: string;
+          created_at: string;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          sender_id: string;
+          recipient_id: string;
+          body: string;
+          created_at?: string;
+          read_at?: string | null;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          sender_id: string;
+          recipient_id: string;
+          body: string;
+          created_at: string;
+          read_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      gym_announcements: {
+        Row: {
+          id: string;
+          gym_id: string;
+          posted_by: string | null;
+          title: string;
+          body: string;
+          pinned: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          posted_by?: string | null;
+          title: string;
+          body: string;
+          pinned?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          posted_by: string | null;
+          title: string;
+          body: string;
+          pinned: boolean;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      announcement_reads: {
+        Row: {
+          announcement_id: string;
+          profile_id: string;
+          read_at: string;
+        };
+        Insert: {
+          announcement_id: string;
+          profile_id: string;
+          read_at?: string;
+        };
+        Update: Partial<{
+          announcement_id: string;
+          profile_id: string;
+          read_at: string;
+        }>;
+        Relationships: [];
+      };
+      class_session_broadcasts: {
+        Row: {
+          id: string;
+          gym_id: string;
+          class_session_id: string;
+          sender_id: string | null;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          class_session_id: string;
+          sender_id?: string | null;
+          body: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          class_session_id: string;
+          sender_id: string | null;
+          body: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      class_session_broadcast_reads: {
+        Row: {
+          broadcast_id: string;
+          profile_id: string;
+          read_at: string;
+        };
+        Insert: {
+          broadcast_id: string;
+          profile_id: string;
+          read_at?: string;
+        };
+        Update: Partial<{
+          broadcast_id: string;
+          profile_id: string;
+          read_at: string;
         }>;
         Relationships: [];
       };
@@ -1219,6 +1345,39 @@ export type Database = {
       set_coach_credit_policy: {
         Args: { p_gym_id: string; p_policy: 'all_scheduled' | 'only_checked_in' };
         Returns: null;
+      };
+      set_dm_scope: {
+        Args: { p_gym_id: string; p_scope: 'full_gym' | 'member_coach_only' };
+        Returns: null;
+      };
+      mark_dm_thread_read: {
+        Args: { p_peer_id: string };
+        Returns: null;
+      };
+      dm_inbox: {
+        Args: Record<string, never>;
+        Returns: {
+          peer_profile_id: string;
+          peer_full_name: string;
+          peer_role: GymRole | null;
+          last_message_id: string;
+          last_message_body: string;
+          last_message_at: string;
+          last_message_from_me: boolean;
+          unread_count: number;
+        }[];
+      };
+      inbox_unread_summary: {
+        Args: Record<string, never>;
+        Returns: {
+          dm_unread: number;
+          announcement_unread: number;
+          class_broadcast_unread: number;
+        }[];
+      };
+      can_dm: {
+        Args: { p_gym_id: string; p_sender: string; p_recipient: string };
+        Returns: boolean;
       };
       set_leaderboard_config: {
         Args: {

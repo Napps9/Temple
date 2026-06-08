@@ -132,6 +132,13 @@ export default function ManagementHome() {
             href="/management/leaderboards"
           />
         ) : null}
+        {canManageStaff ? (
+          <ManagementCard
+            title="Messaging"
+            description="Decide who can DM whom inside the gym."
+            href="/management/messaging"
+          />
+        ) : null}
         {canEditClasses ? (
           <ManagementCard
             title="Class types"
