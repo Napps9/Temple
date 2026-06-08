@@ -70,6 +70,7 @@ export default function ManagementHome() {
   const canManageTags = useCan('can_manage_tags');
   const canManagePlans = useCan('can_manage_plans');
   const canSetCoachPay = useCan('can_set_coach_pay');
+  const canConfigureLeaderboards = useCan('can_configure_leaderboards');
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -122,6 +123,13 @@ export default function ManagementHome() {
             title="Coach earnings"
             description="Set per-class-type rates and review what coaches earned."
             href="/management/coach-earnings"
+          />
+        ) : null}
+        {canConfigureLeaderboards ? (
+          <ManagementCard
+            title="Leaderboards"
+            description="Turn class and strength comparisons on or off."
+            href="/management/leaderboards"
           />
         ) : null}
         {canEditClasses ? (

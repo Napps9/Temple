@@ -6,7 +6,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
-import { useSession } from '@/lib/auth';
+import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { findMovement, type Metric } from '@/lib/movements';
 import {
   bestOfMerged,
@@ -209,6 +210,11 @@ export default function MovementDetail() {
           </View>
         </View>
 
+        <MovementLeaderboardSection
+          movementKey={movement.key}
+          schemes={movement.schemes}
+        />
+
         <View className="gap-3">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Journal
@@ -251,6 +257,69 @@ export default function MovementDetail() {
         initialTrackKey={recording?.trackKey}
       />
     </Screen>
+  );
+}
+
+function MovementLeaderboardSection({
+  movementKey,
+  schemes,
+}: {
+  movementKey: string;
+  schemes: { key: string; label: string; metric: Metric; better: 'higher' | 'lower' }[];
+}) {
+  const { data: membership } = useGymMembership();
+  const enabled = useQuery({
+    queryKey: ['gym-leaderboard-flags', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gyms')
+        .select('strength_leaderboards_enabled')
+        .eq('id', membership!.gymId)
+        .single();
+      if (error) throw error;
+      return data.strength_leaderboards_enabled;
+    },
+  });
+  const [activeScheme, setActiveScheme] = useState<string>(schemes[0]?.key ?? '');
+  if (enabled.data === false) return null;
+  if (schemes.length === 0) return null;
+  const scheme = schemes.find((s) => s.key === activeScheme) ?? schemes[0];
+  return (
+    <View className="gap-3">
+      <View className="flex-row items-center gap-2">
+        <Ionicons name="trophy-outline" size={18} color="#2563EB" />
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          Leaderboard
+        </Text>
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        {schemes.map((s) => (
+          <Pressable
+            key={s.key}
+            onPress={() => setActiveScheme(s.key)}
+            className={`rounded-full px-3 py-1 border active:opacity-70 ${
+              s.key === scheme.key
+                ? 'bg-primary border-primary'
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+            }`}>
+            <Text
+              className={
+                s.key === scheme.key
+                  ? 'text-white text-xs'
+                  : 'text-gray-700 dark:text-gray-200 text-xs'
+              }>
+              {s.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <StrengthLeaderboard
+        movementKey={movementKey}
+        scheme={scheme}
+        limit={5}
+      />
+    </View>
   );
 }
 

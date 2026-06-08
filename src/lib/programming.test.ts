@@ -17,7 +17,18 @@ describe('parseSection', () => {
       title: 'Strength & Skill',
       body: 'Back squat 5×5 @ 75%',
     };
-    expect(parseSection(fresh)).toEqual(fresh);
+    expect(parseSection(fresh)).toEqual({ ...fresh, leaderboard_enabled: false });
+  });
+
+  it('preserves leaderboard_enabled when set', () => {
+    const fresh = {
+      section_category: 'wod',
+      section_format: 'for_time',
+      title: 'Fran',
+      body: '21-15-9 thrusters + pull ups',
+      leaderboard_enabled: true,
+    };
+    expect(parseSection(fresh).leaderboard_enabled).toBe(true);
   });
 
   it('coerces a legacy {title, body} row to miscellaneous / other', () => {
@@ -27,6 +38,7 @@ describe('parseSection', () => {
       section_format: 'other',
       title: 'Old',
       body: 'x',
+      leaderboard_enabled: false,
     });
   });
 
@@ -42,6 +54,7 @@ describe('parseSection', () => {
       section_format: 'other',
       title: 'Future',
       body: 'y',
+      leaderboard_enabled: false,
     });
   });
 
@@ -57,6 +70,7 @@ describe('parseSection', () => {
       section_format: 'for_time',
       title: '',
       body: '',
+      leaderboard_enabled: false,
     });
   });
 
@@ -66,12 +80,14 @@ describe('parseSection', () => {
       section_format: 'other',
       title: '',
       body: '',
+      leaderboard_enabled: false,
     });
     expect(parseSection('not an object')).toEqual({
       section_category: 'miscellaneous',
       section_format: 'other',
       title: '',
       body: '',
+      leaderboard_enabled: false,
     });
   });
 });
@@ -93,12 +109,14 @@ describe('parseSections', () => {
         section_format: 'other',
         title: 'Legacy',
         body: 'a',
+        leaderboard_enabled: false,
       },
       {
         section_category: 'mobility',
         section_format: 'no_score',
         title: 'Mobility',
         body: 'shoulder routine',
+        leaderboard_enabled: false,
       },
     ]);
   });

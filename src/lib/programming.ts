@@ -53,6 +53,7 @@ export const sectionSchema = z.object({
   section_format: z.enum(FORMAT_KEYS as [string, ...string[]]),
   title: z.string(),
   body: z.string(),
+  leaderboard_enabled: z.boolean().optional(),
 });
 
 // The zod-inferred type widens enums to string. Override the two
@@ -60,10 +61,11 @@ export const sectionSchema = z.object({
 // dispatch ergonomics.
 export type Section = Omit<
   z.infer<typeof sectionSchema>,
-  'section_category' | 'section_format'
+  'section_category' | 'section_format' | 'leaderboard_enabled'
 > & {
   section_category: SectionCategoryKey;
   section_format: SectionFormatKey;
+  leaderboard_enabled: boolean;
 };
 
 export function categoryLabel(key: SectionCategoryKey): string {
@@ -105,6 +107,7 @@ export function parseSection(raw: unknown): Section {
       section_format: 'other',
       title: '',
       body: '',
+      leaderboard_enabled: false,
     };
   }
   const obj = raw as Record<string, unknown>;
@@ -123,6 +126,7 @@ export function parseSection(raw: unknown): Section {
         : 'other',
     title: typeof obj.title === 'string' ? obj.title : '',
     body: typeof obj.body === 'string' ? obj.body : '',
+    leaderboard_enabled: obj.leaderboard_enabled === true,
   };
 }
 

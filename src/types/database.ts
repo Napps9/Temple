@@ -27,6 +27,8 @@ export type Database = {
           created_at: string;
           coach_credit_policy: 'all_scheduled' | 'only_checked_in';
           currency: string;
+          class_leaderboards_enabled: boolean;
+          strength_leaderboards_enabled: boolean;
         };
         Insert: {
           id?: string;
@@ -35,6 +37,8 @@ export type Database = {
           created_at?: string;
           coach_credit_policy?: 'all_scheduled' | 'only_checked_in';
           currency?: string;
+          class_leaderboards_enabled?: boolean;
+          strength_leaderboards_enabled?: boolean;
         };
         Update: Partial<{
           id: string;
@@ -43,6 +47,8 @@ export type Database = {
           created_at: string;
           coach_credit_policy: 'all_scheduled' | 'only_checked_in';
           currency: string;
+          class_leaderboards_enabled: boolean;
+          strength_leaderboards_enabled: boolean;
         }>;
         Relationships: [];
       };
@@ -111,6 +117,7 @@ export type Database = {
           par_q_id: string | null;
           left_at: string | null;
           created_at: string;
+          appear_in_leaderboards: boolean;
         };
         Insert: {
           id?: string;
@@ -122,6 +129,7 @@ export type Database = {
           par_q_id?: string | null;
           left_at?: string | null;
           created_at?: string;
+          appear_in_leaderboards?: boolean;
         };
         Update: Partial<{
           id: string;
@@ -133,6 +141,7 @@ export type Database = {
           par_q_id: string | null;
           left_at: string | null;
           created_at: string;
+          appear_in_leaderboards: boolean;
         }>;
         Relationships: [
           {
@@ -975,6 +984,7 @@ export type Database = {
           profile_id: string;
           workout_id: string;
           source_programming_id: string | null;
+          source_section_index: number | null;
           section_category: string;
           section_format: string;
           title: string | null;
@@ -994,6 +1004,7 @@ export type Database = {
           profile_id: string;
           workout_id: string;
           source_programming_id?: string | null;
+          source_section_index?: number | null;
           section_category: string;
           section_format: string;
           title?: string | null;
@@ -1013,6 +1024,7 @@ export type Database = {
           profile_id: string;
           workout_id: string;
           source_programming_id: string | null;
+          source_section_index: number | null;
           section_category: string;
           section_format: string;
           title: string | null;
@@ -1207,6 +1219,53 @@ export type Database = {
       set_coach_credit_policy: {
         Args: { p_gym_id: string; p_policy: 'all_scheduled' | 'only_checked_in' };
         Returns: null;
+      };
+      set_leaderboard_config: {
+        Args: {
+          p_gym_id: string;
+          p_class_enabled: boolean;
+          p_strength_enabled: boolean;
+        };
+        Returns: null;
+      };
+      set_appear_in_leaderboards: {
+        Args: { p_gym_id: string; p_value: boolean };
+        Returns: null;
+      };
+      class_leaderboard: {
+        Args: { p_programming_id: string; p_section_index: number };
+        Returns: {
+          profile_id: string;
+          display_name: string;
+          score: number;
+          total_time_seconds: number | null;
+          total_rounds: number | null;
+          total_extra_reps: number | null;
+          did_not_finish: boolean | null;
+          heaviest_weight: number | null;
+          weight_unit: string | null;
+          section_format: string;
+          performed_at: string;
+          rank: number;
+        }[];
+      };
+      strength_leaderboard: {
+        Args: {
+          p_gym_id: string;
+          p_movement_key: string;
+          p_track_key: string;
+          p_metric: 'weight' | 'time' | 'reps' | 'distance' | 'calories';
+          p_better: 'higher' | 'lower';
+        };
+        Returns: {
+          profile_id: string;
+          display_name: string;
+          value_numeric: number | null;
+          value_seconds: number | null;
+          performed_at: string;
+          source: 'direct' | 'tag';
+          rank: number;
+        }[];
       };
       is_revenue_event: {
         Args: { p_provider: string; p_kind: string };

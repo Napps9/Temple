@@ -100,6 +100,8 @@ export default function TrackHome() {
           )}
         </View>
 
+        <LeaderboardsTile />
+
         <View className="gap-3">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Movements
@@ -127,6 +129,28 @@ export default function TrackHome() {
         onClose={() => setRecording(false)}
       />
     </Screen>
+  );
+}
+
+function LeaderboardsTile() {
+  return (
+    <Pressable
+      onPress={() => router.push('/track/leaderboards' as never)}
+      className="bg-white dark:bg-gray-900 rounded-2xl p-4 flex-row items-center gap-3 active:opacity-70">
+      <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+        <Ionicons name="trophy-outline" size={22} color="#2563EB" />
+      </View>
+      <View className="flex-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          Leaderboards
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          See who's lifting heaviest, running fastest, and AMRAP-ing
+          hardest in the gym.
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+    </Pressable>
   );
 }
 

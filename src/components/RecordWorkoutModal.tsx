@@ -55,6 +55,7 @@ type SectionDraft = {
   entries: SectionEntryDraft[];
   // PR 3 additions:
   source_programming_id: string | null;
+  source_section_index: number | null;
   movement_tags: MovementTagDraft[];
 };
 
@@ -79,6 +80,7 @@ function emptyDraft(): SectionDraft {
     free_text_result: '',
     entries: [],
     source_programming_id: null,
+    source_section_index: null,
     movement_tags: [],
   };
 }
@@ -87,8 +89,9 @@ function draftFromProgrammedSection(args: {
   section: Section;
   format: SectionFormatKey;
   programmingId: string;
+  sectionIndex: number;
 }): SectionDraft {
-  const { section, format, programmingId } = args;
+  const { section, format, programmingId, sectionIndex } = args;
   const shape = FORMAT_SHAPES[format];
   const entries =
     shape.kind === 'entries_only'
@@ -113,6 +116,7 @@ function draftFromProgrammedSection(args: {
     free_text_result: '',
     entries,
     source_programming_id: programmingId,
+    source_section_index: sectionIndex,
     movement_tags: detected,
   };
 }
@@ -122,6 +126,7 @@ type ProgrammedSectionForDay = {
   class_type_id: string;
   class_type_name: string;
   class_type_color: string;
+  section_index: number;
   section: Section;
 };
 
@@ -203,13 +208,14 @@ export function RecordWorkoutModal({
         class_types: { name: string; color: string } | null;
       }[]) {
         const sections = parseSections(row.sections);
-        for (const s of sections) {
+        for (let i = 0; i < sections.length; i += 1) {
           out.push({
             programming_id: row.id,
             class_type_id: row.class_type_id,
             class_type_name: row.class_types?.name ?? 'Class',
             class_type_color: row.class_types?.color ?? '#2563EB',
-            section: s,
+            section_index: i,
+            section: sections[i],
           });
         }
       }
@@ -253,6 +259,7 @@ export function RecordWorkoutModal({
         section: row.section,
         format: row.section.section_format,
         programmingId: row.programming_id,
+        sectionIndex: row.section_index,
       }),
     );
     if (newDrafts.length === 0) return;
@@ -1619,6 +1626,7 @@ function buildSectionInsert(args: {
     profile_id: profileId,
     workout_id: workoutId,
     source_programming_id: draft.source_programming_id,
+    source_section_index: draft.source_section_index,
     section_category: draft.section_category!,
     section_format: format,
     title: title || null,
