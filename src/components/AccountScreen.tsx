@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { AvatarUploader } from './AvatarUploader';
 import { Button } from './Button';
+import { CoachEarningsCard } from './CoachEarningsCard';
 import { Input } from './Input';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
 import { Screen } from './Screen';
@@ -148,6 +149,8 @@ export function AccountScreen() {
             </Text>
           </View>
         </View>
+
+        {role === 'coach' || role === 'owner' ? <CoachEarningsCard /> : null}
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
