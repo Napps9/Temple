@@ -9,7 +9,15 @@ import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
-import { fmtDateShort, type TrackedWorkoutRow } from '@/lib/track';
+import { fmtDateShort } from '@/lib/track';
+
+type PreviewWorkout = {
+  id: string;
+  performed_at: string;
+  title: string | null;
+  section_count: { count: number }[] | null;
+  result_count: { count: number }[] | null;
+};
 
 const JOURNAL_PREVIEW_COUNT = 4;
 
@@ -20,17 +28,17 @@ export default function TrackHome() {
   const journal = useQuery({
     queryKey: ['tracked-journal', session?.user.id, 'preview'],
     enabled: !!session?.user.id,
-    queryFn: async (): Promise<TrackedWorkoutRow[]> => {
+    queryFn: async (): Promise<PreviewWorkout[]> => {
       const { data, error } = await supabase
         .from('tracked_workouts')
         .select(
-          'id, performed_at, title, notes, class_session_id, results:tracked_movement_results(id, workout_id, movement_key, track_key, value_numeric, value_seconds, value_unit, notes, performed_at)',
+          'id, performed_at, title, section_count:tracked_workout_sections(count), result_count:tracked_movement_results(count)',
         )
         .eq('profile_id', session!.user.id)
         .order('performed_at', { ascending: false })
         .limit(JOURNAL_PREVIEW_COUNT);
       if (error) throw error;
-      return (data ?? []) as unknown as TrackedWorkoutRow[];
+      return (data ?? []) as unknown as PreviewWorkout[];
     },
   });
 
@@ -126,7 +134,10 @@ export default function TrackHome() {
   );
 }
 
-function JournalCard({ workout }: { workout: TrackedWorkoutRow }) {
+function JournalCard({ workout }: { workout: PreviewWorkout }) {
+  const sections = workout.section_count?.[0]?.count ?? 0;
+  const results = workout.result_count?.[0]?.count ?? 0;
+  const total = sections + results;
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
@@ -140,8 +151,11 @@ function JournalCard({ workout }: { workout: TrackedWorkoutRow }) {
         </Text>
       </View>
       <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        {workout.results.length}{' '}
-        {workout.results.length === 1 ? 'result' : 'results'}
+        {sections > 0
+          ? `${sections} section${sections === 1 ? '' : 's'}`
+          : total === 0
+            ? 'No results yet'
+            : `${results} result${results === 1 ? '' : 's'}`}
       </Text>
     </Pressable>
   );
