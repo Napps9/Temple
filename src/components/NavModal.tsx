@@ -3,7 +3,9 @@ import { router } from 'expo-router';
 import { Modal, Pressable, Text, View } from 'react-native';
 
 import { Avatar } from './Avatar';
-import { useGymMembership, useMyProfile, useSession } from '@/lib/auth';
+import { GymLogo } from './GymLogo';
+import { useMyProfile, useSession } from '@/lib/auth';
+import { useGymBrand } from '@/lib/useGymBrand';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 
@@ -27,14 +29,13 @@ export function NavModal({
   sections: NavSection[];
   variant: 'staff' | 'member';
 }) {
-  const { data: membership } = useGymMembership();
+  const brand = useGymBrand();
   const { data: profile } = useMyProfile();
   const session = useSession();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
   const { scheme, set } = useThemePreference();
   const colors = useThemeColors();
-  const gymName = membership?.gymName ?? 'Temple';
-  const gymInitial = (gymName.charAt(0) || 'T').toUpperCase();
+  const gymName = brand.gymName;
   const displayName = profile?.full_name?.trim() || session?.user.email || '';
   const showCrossLink = variant === 'staff' || canAccessStaff;
   const crossHref = variant === 'staff' ? '/book' : '/classes';
@@ -63,9 +64,12 @@ export function NavModal({
           className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <View className="p-5 border-b border-gray-100 dark:border-gray-800">
             <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-lg bg-primary items-center justify-center">
-                <Text className="text-white font-bold text-base">{gymInitial}</Text>
-              </View>
+              <GymLogo
+                size={40}
+                logoUrl={brand.logoUrl}
+                name={gymName}
+                primaryColor={brand.primaryColor}
+              />
               <Text
                 className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base"
                 numberOfLines={1}>
@@ -119,7 +123,8 @@ export function NavModal({
             {showCrossLink ? (
               <Pressable
                 onPress={() => go(crossHref)}
-                className="bg-primary rounded-full px-4 py-3 flex-row items-center justify-center gap-2 active:bg-primary-dark">
+                style={{ backgroundColor: brand.primaryColor }}
+                className="rounded-full px-4 py-3 flex-row items-center justify-center gap-2 active:opacity-80">
                 <Text className="text-white font-semibold text-sm">{crossLabel}</Text>
                 <Text className="text-white font-semibold text-sm">→</Text>
               </Pressable>

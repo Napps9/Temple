@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { AvatarUploader } from './AvatarUploader';
 import { Button } from './Button';
 import { CoachEarningsCard } from './CoachEarningsCard';
+import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
 import { LeaderboardPrivacyCard } from './LeaderboardPrivacyCard';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
@@ -152,6 +153,8 @@ export function AccountScreen() {
         </View>
 
         {role === 'coach' || role === 'owner' ? <CoachEarningsCard /> : null}
+
+        <GymShareCard />
 
         <LeaderboardPrivacyCard />
 
