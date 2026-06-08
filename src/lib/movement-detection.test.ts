@@ -101,6 +101,85 @@ describe('detectMovementsInText — convention defaults', () => {
   });
 });
 
+describe('detectMovementsInText — squat-group metcon variants', () => {
+  it('detects "Wall Balls" under the Squats group', () => {
+    expect(keys(detect('150 wall balls'))).toEqual(['wall_ball']);
+  });
+
+  it('detects "Air Squats"', () => {
+    expect(keys(detect('30 air squats'))).toEqual(['air_squat']);
+  });
+
+  it('detects "WB" as shorthand for wall ball', () => {
+    expect(keys(detect('10 WB per round'))).toEqual(['wall_ball']);
+  });
+
+  it('detects "Pistols"', () => {
+    expect(keys(detect('20 pistols, alternating legs'))).toEqual(['pistol_squat']);
+  });
+
+  it('detects "Walking lunges"', () => {
+    expect(keys(detect('100m walking lunges'))).toEqual(['lunge']);
+  });
+
+  it('detects "Goblet squat"', () => {
+    expect(keys(detect('Goblet squat 5x10'))).toEqual(['goblet_squat']);
+  });
+});
+
+describe('detectMovementsInText — pulling-group metcon variants', () => {
+  it('detects KB Swing via "KB swings"', () => {
+    expect(keys(detect('50 KB swings @ 24kg'))).toEqual(['kettlebell_swing']);
+  });
+
+  it('detects RDLs', () => {
+    expect(keys(detect('RDL 3x10'))).toEqual(['romanian_deadlift']);
+  });
+
+  it('detects "Sumo deadlift"', () => {
+    expect(keys(detect('Sumo deadlift 5x5'))).toEqual(['sumo_deadlift']);
+  });
+
+  it('"Sumo deadlift" wins over bare "deadlift"', () => {
+    const tags = detect('Sumo deadlift then conventional deadlift');
+    expect(keys(tags)).toEqual(['deadlift', 'sumo_deadlift']);
+  });
+});
+
+describe('detectMovementsInText — bodyweight metcon variants', () => {
+  it('detects Burpees', () => {
+    expect(keys(detect('21-15-9 burpees'))).toEqual(['burpee']);
+  });
+
+  it('detects "Bar facing burpees"', () => {
+    expect(keys(detect('10 bar facing burpees'))).toEqual(['burpee']);
+  });
+
+  it('detects Box Jump', () => {
+    expect(keys(detect('20 box jumps @ 24"'))).toEqual(['box_jump']);
+  });
+
+  it('detects Sit ups', () => {
+    expect(keys(detect('50 sit ups for time'))).toEqual(['sit_up']);
+  });
+
+  it('detects Double Unders', () => {
+    expect(keys(detect('100 double unders'))).toEqual(['double_under']);
+  });
+
+  it('detects DUs', () => {
+    expect(keys(detect('AMRAP: 30 DUs'))).toEqual(['double_under']);
+  });
+
+  it('detects Push Ups', () => {
+    expect(keys(detect('30 push ups'))).toEqual(['push_up']);
+  });
+
+  it('detects Plank hold', () => {
+    expect(keys(detect('Plank hold for max time'))).toEqual(['plank_hold']);
+  });
+});
+
 describe('detectMovementsInText — multi-movement bodies', () => {
   it('catches Fran (thrusters + pull ups)', () => {
     const tags = detect('21-15-9 of thrusters and pull ups');

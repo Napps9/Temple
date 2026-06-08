@@ -48,7 +48,9 @@ export default function MovementDetail() {
   const { movement: movementKey } = useLocalSearchParams<{ movement: string }>();
   const session = useSession();
   const meta = movementKey ? findMovement(movementKey) : undefined;
-  const [recording, setRecording] = useState(false);
+  const [recording, setRecording] = useState<{ trackKey?: string } | null>(
+    null,
+  );
 
   const direct = useQuery({
     queryKey: ['tracked-results-by-movement', session?.user.id, movementKey],
@@ -155,7 +157,7 @@ export default function MovementDetail() {
             </Text>
           </View>
           <Pressable
-            onPress={() => setRecording(true)}
+            onPress={() => setRecording({})}
             hitSlop={6}
             className="bg-primary active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
             <Ionicons name="add" size={14} color="#FFFFFF" />
@@ -174,9 +176,10 @@ export default function MovementDetail() {
                 ? formatResultValue(best, scheme.metric)
                 : null;
               return (
-                <View
+                <Pressable
                   key={scheme.key}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3">
+                  onPress={() => setRecording({ trackKey: scheme.key })}
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
                   <View className="flex-1">
                     <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                       {scheme.label}
@@ -188,7 +191,7 @@ export default function MovementDetail() {
                       </Text>
                     ) : (
                       <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                        No result yet
+                        Tap to log a {scheme.label.toLowerCase()}
                       </Text>
                     )}
                   </View>
@@ -198,9 +201,9 @@ export default function MovementDetail() {
                         ? 'text-gray-900 dark:text-gray-50 text-lg font-semibold'
                         : 'text-gray-400 dark:text-gray-500 text-sm'
                     }>
-                    {display ?? '—'}
+                    {display ?? '+'}
                   </Text>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -242,9 +245,10 @@ export default function MovementDetail() {
       </ScrollView>
 
       <RecordMovementResultModal
-        visible={recording}
-        onClose={() => setRecording(false)}
+        visible={recording !== null}
+        onClose={() => setRecording(null)}
         initialMovementKey={movement.key}
+        initialTrackKey={recording?.trackKey}
       />
     </Screen>
   );

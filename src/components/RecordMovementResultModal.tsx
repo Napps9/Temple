@@ -47,7 +47,11 @@ export function RecordMovementResultModal({
   initialTitle,
   // When the modal is opened with a specific movement preselected
   // (e.g. from the movement detail page), seed the first draft with it.
+  // initialTrackKey narrows further to a specific rep-max scheme so a
+  // tap on the "5 Rep Max" card lands ready for a single number to be
+  // typed in.
   initialMovementKey,
+  initialTrackKey,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -55,6 +59,7 @@ export function RecordMovementResultModal({
   initialClassSessionId?: string | null;
   initialTitle?: string | null;
   initialMovementKey?: string;
+  initialTrackKey?: string;
 }) {
   const session = useSession();
   const { data: membership } = useGymMembership();
@@ -78,10 +83,20 @@ export function RecordMovementResultModal({
     setError(null);
     setPickerOpenFor(null);
     if (initialMovementKey) {
-      const firstScheme = schemeOptions.find(
+      // Prefer an exact (movement, track) match when both supplied;
+      // otherwise fall back to the first scheme on the movement.
+      const exact =
+        initialTrackKey != null
+          ? schemeOptions.find(
+              (s) =>
+                s.movementKey === initialMovementKey &&
+                s.schemeKey === initialTrackKey,
+            )
+          : undefined;
+      const firstOnMovement = schemeOptions.find(
         (s) => s.movementKey === initialMovementKey,
       );
-      setDrafts([emptyDraft(firstScheme ?? null)]);
+      setDrafts([emptyDraft(exact ?? firstOnMovement ?? null)]);
     } else {
       setDrafts([emptyDraft()]);
     }
@@ -90,6 +105,7 @@ export function RecordMovementResultModal({
     initialDate,
     initialTitle,
     initialMovementKey,
+    initialTrackKey,
     schemeOptions,
   ]);
 

@@ -994,6 +994,19 @@ function EntriesTable({
   }
   return (
     <View className="gap-2">
+      {entries.length >= 3 ? (
+        <QuickFillBar
+          format={format}
+          metrics={entryMetrics}
+          count={entries.length}
+          onApply={(range, values) => {
+            for (let i = range.from - 1; i <= range.to - 1; i += 1) {
+              if (i < 0 || i >= entries.length) continue;
+              onUpdateEntry(i, values);
+            }
+          }}
+        />
+      ) : null}
       {entries.map((e, j) => (
         <View
           key={j}
@@ -1024,6 +1037,167 @@ function EntriesTable({
           Add row
         </Text>
       </Pressable>
+    </View>
+  );
+}
+
+function QuickFillBar({
+  format,
+  metrics,
+  count,
+  onApply,
+}: {
+  format: SectionFormatKey;
+  metrics: EntryMetric[];
+  count: number;
+  onApply: (
+    range: { from: number; to: number },
+    values: Partial<SectionEntryDraft>,
+  ) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [weight, setWeight] = useState('');
+  const [reps, setReps] = useState('');
+  const [time, setTime] = useState('');
+  const [distance, setDistance] = useState('');
+  const [calories, setCalories] = useState('');
+  const [from, setFrom] = useState('1');
+  const [to, setTo] = useState(String(count));
+
+  // Re-seed the upper bound when the row count changes (member added /
+  // removed entries) — only when the field still matches the prior
+  // count so a manual edit survives.
+  useEffect(() => {
+    setTo((cur) => {
+      const n = parseInt(cur, 10);
+      return Number.isFinite(n) && n > count ? String(count) : cur;
+    });
+  }, [count]);
+
+  const rowLabel =
+    format === 'emom'
+      ? 'minutes'
+      : format === 'intervals'
+        ? 'intervals'
+        : 'sets';
+
+  if (!expanded) {
+    return (
+      <Pressable
+        onPress={() => setExpanded(true)}
+        className="flex-row items-center gap-2 self-start px-3 py-1.5 rounded-full bg-primary/10 active:opacity-70">
+        <Ionicons name="flash-outline" size={14} color="#2563EB" />
+        <Text className="text-primary text-xs font-medium">
+          Quick fill {rowLabel}
+        </Text>
+      </Pressable>
+    );
+  }
+
+  function apply() {
+    const fromN = Math.max(1, parseInt(from, 10) || 1);
+    const toN = Math.max(fromN, Math.min(count, parseInt(to, 10) || count));
+    const values: Partial<SectionEntryDraft> = {};
+    if (metrics.includes('weight') && weight.trim()) values.weight = weight.trim();
+    if (metrics.includes('reps') && reps.trim()) values.reps = reps.trim();
+    if (metrics.includes('time') && time.trim()) values.time = time.trim();
+    if (metrics.includes('distance') && distance.trim()) values.distance = distance.trim();
+    if (metrics.includes('calories') && calories.trim()) values.calories = calories.trim();
+    if (Object.keys(values).length === 0) return;
+    onApply({ from: fromN, to: toN }, values);
+  }
+
+  return (
+    <View className="bg-primary/5 border border-primary/20 rounded-lg p-3 gap-3">
+      <View className="flex-row items-center gap-2">
+        <Ionicons name="flash-outline" size={14} color="#2563EB" />
+        <Text className="flex-1 text-primary text-xs font-semibold uppercase tracking-wider">
+          Quick fill {rowLabel}
+        </Text>
+        <Pressable
+          onPress={() => setExpanded(false)}
+          hitSlop={4}
+          className="w-6 h-6 rounded items-center justify-center active:opacity-70">
+          <Ionicons name="close" size={14} color="#9CA3AF" />
+        </Pressable>
+      </View>
+
+      <View className="flex-row items-end gap-2">
+        <View className="flex-1">
+          <Input
+            label="From"
+            value={from}
+            onChangeText={setFrom}
+            keyboardType="numeric"
+            inputMode="numeric"
+          />
+        </View>
+        <View className="flex-1">
+          <Input
+            label="To"
+            value={to}
+            onChangeText={setTo}
+            keyboardType="numeric"
+            inputMode="numeric"
+          />
+        </View>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs pb-3">
+          of {count}
+        </Text>
+      </View>
+
+      <View className="gap-2">
+        {metrics.includes('weight') ? (
+          <Input
+            label="Weight (kg)"
+            value={weight}
+            onChangeText={setWeight}
+            placeholder="100"
+            keyboardType="numeric"
+            inputMode="decimal"
+          />
+        ) : null}
+        {metrics.includes('reps') ? (
+          <Input
+            label="Reps"
+            value={reps}
+            onChangeText={setReps}
+            placeholder="5"
+            keyboardType="numeric"
+            inputMode="numeric"
+          />
+        ) : null}
+        {metrics.includes('time') ? (
+          <Input
+            label="Time (MM:SS)"
+            value={time}
+            onChangeText={setTime}
+            placeholder="1:00"
+          />
+        ) : null}
+        {metrics.includes('distance') ? (
+          <Input
+            label="Distance (m)"
+            value={distance}
+            onChangeText={setDistance}
+            placeholder="500"
+            keyboardType="numeric"
+            inputMode="decimal"
+          />
+        ) : null}
+        {metrics.includes('calories') ? (
+          <Input
+            label="Calories"
+            value={calories}
+            onChangeText={setCalories}
+            placeholder="15"
+            keyboardType="numeric"
+            inputMode="numeric"
+          />
+        ) : null}
+      </View>
+
+      <Button onPress={apply}>Apply</Button>
     </View>
   );
 }
