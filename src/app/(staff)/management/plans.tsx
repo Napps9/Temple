@@ -62,7 +62,7 @@ function rowDiffers(r: EditablePlan): boolean {
   );
 }
 
-export default function PlansScreen() {
+export function PlansPanel() {
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditablePlan[]>([]);
@@ -240,19 +240,7 @@ export default function PlansScreen() {
   const archivedRows = rows.filter((r) => !!r.archivedAt);
 
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Plans
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Define your membership plans. Existing subscribers keep the price
-            and credits they signed up with — editing a plan only changes what
-            new subscribers get.
-          </Text>
-        </View>
-
+    <View className="gap-4">
         {canExport ? (
           <View className="gap-2">
             <Button
@@ -476,6 +464,25 @@ export default function PlansScreen() {
               : null}
           </View>
         ) : null}
+    </View>
+  );
+}
+
+export default function PlansScreen() {
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
+        <View className="gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Plans
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Define your membership plans. Existing subscribers keep the price
+            and credits they signed up with — editing a plan only changes what
+            new subscribers get.
+          </Text>
+        </View>
+        <PlansPanel />
       </ScrollView>
     </Screen>
   );

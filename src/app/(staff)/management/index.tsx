@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import type { ComponentProps } from 'react';
@@ -29,6 +30,11 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { BrandingPanel } from './branding';
+import { ClassTypesPanel } from './class-types';
+import { LeaderboardsPanel } from './leaderboards';
+import { MessagingPanel } from './messaging';
+import { PlansPanel } from './plans';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -68,22 +74,32 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'team' | 'settings' | 'members' | 'plans';
+type Category = 'insights' | 'members' | 'team' | 'plans' | 'settings';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
 
 const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
-  team: 'Team',
-  settings: 'Settings',
   members: 'Members',
+  team: 'Team',
   plans: 'Plans',
+  settings: 'Settings',
+};
+
+const CATEGORY_ICONS: Record<Category, IconName> = {
+  insights: 'bar-chart-outline',
+  members: 'people-outline',
+  team: 'briefcase-outline',
+  plans: 'pricetags-outline',
+  settings: 'settings-outline',
 };
 
 const CATEGORY_ORDER: Category[] = [
   'insights',
-  'team',
-  'settings',
   'members',
+  'team',
   'plans',
+  'settings',
 ];
 
 type Card = {
@@ -238,11 +254,14 @@ export default function ManagementHome() {
                 <Pressable
                   key={c}
                   onPress={() => setActive(c)}
-                  className={`px-4 py-2 rounded-full ${
-                    selected
-                      ? 'bg-primary'
-                      : 'bg-gray-100 dark:bg-gray-800'
+                  className={`px-4 py-2 rounded-full flex-row items-center gap-1.5 ${
+                    selected ? 'bg-primary' : 'bg-gray-100 dark:bg-gray-800'
                   }`}>
+                  <Ionicons
+                    name={CATEGORY_ICONS[c]}
+                    size={16}
+                    color={selected ? '#FFFFFF' : '#6B7280'}
+                  />
                   <Text
                     className={`text-sm font-medium ${
                       selected
@@ -260,6 +279,10 @@ export default function ManagementHome() {
           <InsightsTab />
         ) : activeCategory === 'members' ? (
           <MembersTab />
+        ) : activeCategory === 'plans' ? (
+          <PlansPanel />
+        ) : activeCategory === 'settings' ? (
+          <SettingsTab />
         ) : (
           visibleCards.map((c) => (
             <ManagementCard
@@ -272,6 +295,52 @@ export default function ManagementHome() {
         )}
       </ScrollView>
     </Screen>
+  );
+}
+
+function SettingsTab() {
+  const canManageStaff = useCan('can_manage_staff') ?? false;
+  const canConfigureLeaderboards = useCan('can_configure_leaderboards') ?? false;
+  const canEditClasses = useCan('can_edit_classes') ?? false;
+
+  return (
+    <View className="gap-6">
+      {canManageStaff ? (
+        <View className="gap-3">
+          <SectionHeader title="Branding" icon="color-palette-outline" />
+          <BrandingPanel />
+        </View>
+      ) : null}
+      {canConfigureLeaderboards ? (
+        <View className="gap-3">
+          <SectionHeader title="Leaderboards" icon="trophy-outline" />
+          <LeaderboardsPanel />
+        </View>
+      ) : null}
+      {canManageStaff ? (
+        <View className="gap-3">
+          <SectionHeader title="Messaging" icon="chatbubbles-outline" />
+          <MessagingPanel />
+        </View>
+      ) : null}
+      {canEditClasses ? (
+        <View className="gap-3">
+          <SectionHeader title="Class types" icon="calendar-outline" />
+          <ClassTypesPanel />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function SectionHeader({ title, icon }: { title: string; icon: IconName }) {
+  return (
+    <View className="flex-row items-center gap-2 mt-2">
+      <Ionicons name={icon} size={18} color="#6B7280" />
+      <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+        {title}
+      </Text>
+    </View>
   );
 }
 

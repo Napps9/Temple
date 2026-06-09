@@ -25,7 +25,7 @@ const OPTIONS: { key: Cfg['dm_scope']; label: string; blurb: string }[] = [
   },
 ];
 
-export default function MessagingConfig() {
+export function MessagingPanel() {
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
@@ -58,11 +58,63 @@ export default function MessagingConfig() {
     },
   });
 
-  // DM scope is owner-only via the RPC. We surface the staff-mgmt
-  // capability for the "who can configure this?" hint, but the
-  // server enforces owner.
   const state = cfg.data ?? { dm_scope: 'full_gym' };
 
+  return (
+    <View className="gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          Direct message scope
+        </Text>
+        {OPTIONS.map((opt) => {
+          const selected = state.dm_scope === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              onPress={() => setScope.mutate(opt.key)}
+              disabled={setScope.isPending}
+              className={`rounded-lg border p-3 flex-row gap-3 items-start active:opacity-70 ${
+                selected
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-200 dark:border-gray-700'
+              }`}>
+              <Ionicons
+                name={selected ? 'radio-button-on' : 'radio-button-off'}
+                size={18}
+                color={selected ? '#2563EB' : '#9CA3AF'}
+              />
+              <View className="flex-1">
+                <Text
+                  className={
+                    selected
+                      ? 'text-primary font-medium'
+                      : 'text-gray-900 dark:text-gray-50 font-medium'
+                  }>
+                  {opt.label}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {opt.blurb}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+        {setScope.isError ? (
+          <Text className="text-red-500 dark:text-red-400 text-xs">
+            {errorMessage(setScope.error, 'Could not save')}
+          </Text>
+        ) : null}
+      </View>
+
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        Announcement and class-broadcast posting permissions live in
+        {canManageStaff ? ' Team → Configure role permissions.' : ' the role permissions matrix.'}
+      </Text>
+    </View>
+  );
+}
+
+export default function MessagingConfig() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-2xl md:mx-auto md:w-full">
@@ -74,55 +126,7 @@ export default function MessagingConfig() {
             Decide who can DM whom inside the gym.
           </Text>
         </View>
-
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Direct message scope
-          </Text>
-          {OPTIONS.map((opt) => {
-            const selected = state.dm_scope === opt.key;
-            return (
-              <Pressable
-                key={opt.key}
-                onPress={() => setScope.mutate(opt.key)}
-                disabled={setScope.isPending}
-                className={`rounded-lg border p-3 flex-row gap-3 items-start active:opacity-70 ${
-                  selected
-                    ? 'border-primary bg-primary/5'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}>
-                <Ionicons
-                  name={selected ? 'radio-button-on' : 'radio-button-off'}
-                  size={18}
-                  color={selected ? '#2563EB' : '#9CA3AF'}
-                />
-                <View className="flex-1">
-                  <Text
-                    className={
-                      selected
-                        ? 'text-primary font-medium'
-                        : 'text-gray-900 dark:text-gray-50 font-medium'
-                    }>
-                    {opt.label}
-                  </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                    {opt.blurb}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-          {setScope.isError ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">
-              {errorMessage(setScope.error, 'Could not save')}
-            </Text>
-          ) : null}
-        </View>
-
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
-          Announcement and class-broadcast posting permissions live in
-          {canManageStaff ? ' Team → Configure role permissions.' : ' the role permissions matrix.'}
-        </Text>
+        <MessagingPanel />
       </ScrollView>
     </Screen>
   );

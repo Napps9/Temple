@@ -75,7 +75,7 @@ function recurrenceFromServer(r: ServerRecurrence): RecurrenceForm {
   };
 }
 
-export default function ClassTypesScreen() {
+export function ClassTypesPanel() {
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditableType[]>([]);
@@ -407,18 +407,7 @@ export default function ClassTypesScreen() {
   }
 
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Class types
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Name and colour the kinds of class you run, and set up a recurring
-            schedule so they appear on the calendar automatically.
-          </Text>
-        </View>
-
+    <View className="gap-6">
         <View className="gap-2">
           {activeRows.length === 0 ? (
             <Text className="text-gray-500 dark:text-gray-400">
@@ -648,6 +637,24 @@ export default function ClassTypesScreen() {
               : null}
           </View>
         ) : null}
+    </View>
+  );
+}
+
+export default function ClassTypesScreen() {
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
+        <View className="gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Class types
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Name and colour the kinds of class you run, and set up a recurring
+            schedule so they appear on the calendar automatically.
+          </Text>
+        </View>
+        <ClassTypesPanel />
       </ScrollView>
     </Screen>
   );

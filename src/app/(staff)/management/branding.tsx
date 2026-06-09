@@ -26,7 +26,7 @@ type GymRow = {
   public_signup_enabled: boolean;
 };
 
-export default function BrandingPage() {
+export function BrandingPanel() {
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
@@ -158,11 +158,9 @@ export default function BrandingPage() {
 
   if (canManageStaff === false) {
     return (
-      <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 mt-8">
-          Only the owner can edit branding.
-        </Text>
-      </Screen>
+      <Text className="text-gray-500 dark:text-gray-400">
+        Only the owner can edit branding.
+      </Text>
     );
   }
 
@@ -179,17 +177,7 @@ export default function BrandingPage() {
   const cleanedSlug = slugify(slug);
 
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Branding
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Customize how the gym looks to members.
-          </Text>
-        </View>
-
+    <View className="gap-5">
         <BrandPreview
           gymName={name || 'Your gym name'}
           logoUrl={logoUrl}
@@ -328,6 +316,23 @@ export default function BrandingPage() {
         <Button onPress={() => save.mutate()} loading={save.isPending}>
           Save changes
         </Button>
+    </View>
+  );
+}
+
+export default function BrandingPage() {
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-2xl md:mx-auto md:w-full">
+        <View className="gap-1">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Branding
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Customize how the gym looks to members.
+          </Text>
+        </View>
+        <BrandingPanel />
       </ScrollView>
     </Screen>
   );
