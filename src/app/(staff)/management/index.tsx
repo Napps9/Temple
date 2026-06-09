@@ -1,9 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { BillingNotLiveTile } from '@/components/BillingNotLiveTile';
+import { Button } from '@/components/Button';
 import {
   DATE_RE,
   DateRangeCta,
@@ -12,12 +14,21 @@ import {
   isoDate,
   presetRange,
 } from '@/components/DateRangeCta';
+import { Input } from '@/components/Input';
+import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
 import { StatTile, type Delta, type DeltaDirection } from '@/components/StatTile';
-import { useGymMembership, useRole } from '@/lib/auth';
+import {
+  bucketByClassType,
+  type AttendanceBooking,
+  type AttendanceSession,
+} from '@/lib/attendance';
+import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -245,14 +256,20 @@ export default function ManagementHome() {
             })}
           </ScrollView>
         ) : null}
-        {visibleCards.map((c) => (
-          <ManagementCard
-            key={c.title}
-            title={c.title}
-            description={c.description}
-            href={c.href}
-          />
-        ))}
+        {activeCategory === 'insights' ? (
+          <InsightsTab />
+        ) : activeCategory === 'members' ? (
+          <MembersTab />
+        ) : (
+          visibleCards.map((c) => (
+            <ManagementCard
+              key={c.title}
+              title={c.title}
+              description={c.description}
+              href={c.href}
+            />
+          ))
+        )}
       </ScrollView>
     </Screen>
   );
@@ -528,6 +545,506 @@ function KeyStats() {
           />
         ) : null}
       </View>
+    </View>
+  );
+}
+
+// ============================================================================
+// Insights tab — lifecycle metrics on display + attendance summary + CTAs.
+// ============================================================================
+
+type InsightsSummary = {
+  intros_new: number;
+  intros_target: number;
+  conversions: number;
+  conversions_target: number;
+  expiring_soon: number;
+  expired: number;
+  paying_now: number;
+  billing_live: boolean;
+};
+
+type TargetMetric = 'intros_new' | 'conversions' | 'retention';
+type TargetPeriod = 'month' | 'quarter';
+type TargetRow = {
+  metric: TargetMetric;
+  period: TargetPeriod;
+  target_value: number;
+};
+
+const TARGET_METRICS: { value: TargetMetric; label: string; description: string }[] = [
+  {
+    value: 'intros_new',
+    label: 'New intros',
+    description: 'Members starting an intro period (e.g. trial, foundations).',
+  },
+  {
+    value: 'conversions',
+    label: 'Conversions',
+    description: 'Intros who became paying members in the period.',
+  },
+  {
+    value: 'retention',
+    label: 'Retention',
+    description: 'Members who stay active across the period.',
+  },
+];
+
+const TARGET_PERIODS: TargetPeriod[] = ['month', 'quarter'];
+
+function InsightsTab() {
+  const { data: membership } = useGymMembership();
+  const canSeeInsights = useCan('can_see_insights') ?? false;
+  const canSetTargets = useCan('can_set_targets') ?? false;
+
+  const [preset, setPreset] = useState<Preset>('month');
+  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
+  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
+  const range = useMemo(() => {
+    if (preset === 'custom') return { start: customStart, end: customEnd };
+    return presetRange(preset, new Date());
+  }, [preset, customStart, customEnd]);
+  const { start, end } = range;
+
+  const summary = useQuery({
+    queryKey: ['insights-summary', membership?.gymId, preset, start, end],
+    enabled: !!membership?.gymId && canSeeInsights,
+    queryFn: async (): Promise<InsightsSummary> => {
+      const { data, error } = await supabase.rpc('compute_insight_summary', {
+        p_gym_id: membership!.gymId,
+        p_period_start: start,
+        p_period_end: end,
+      });
+      if (error) throw error;
+      const rows = data as unknown as InsightsSummary[];
+      if (!rows || rows.length === 0) {
+        return {
+          intros_new: 0,
+          intros_target: 0,
+          conversions: 0,
+          conversions_target: 0,
+          expiring_soon: 0,
+          expired: 0,
+          paying_now: 0,
+          billing_live: false,
+        };
+      }
+      return rows[0];
+    },
+  });
+
+  if (!canSeeInsights) {
+    return (
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        You don't have permission to see insights.
+      </Text>
+    );
+  }
+
+  return (
+    <View className="gap-4">
+      <DateRangeCta
+        preset={preset}
+        range={range}
+        customStart={customStart}
+        customEnd={customEnd}
+        onChange={(next) => {
+          setPreset(next.preset);
+          if (next.preset === 'custom') {
+            setCustomStart(next.start);
+            setCustomEnd(next.end);
+          }
+        }}
+      />
+
+      {summary.isLoading ? (
+        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+      ) : summary.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(summary.error, 'Could not load insights')}
+        </Text>
+      ) : summary.data ? (
+        <View className="gap-3">
+          <View className="flex-row gap-3 flex-wrap">
+            <StatTile
+              title="Intros"
+              value={summary.data.intros_new}
+              subtitle="new this period"
+            />
+            <StatTile
+              title="Expiring soon"
+              value={summary.data.expiring_soon}
+              subtitle="≤ 7 days"
+            />
+            <StatTile
+              title="Expired"
+              value={summary.data.expired}
+              subtitle="no live access"
+            />
+          </View>
+          {summary.data.billing_live ? (
+            <View className="flex-row gap-3 flex-wrap">
+              <StatTile
+                title="Paying"
+                value={summary.data.paying_now}
+                subtitle="ever paid"
+              />
+              <ConversionTile
+                conversions={summary.data.conversions}
+                target={summary.data.conversions_target}
+              />
+            </View>
+          ) : (
+            <View className="flex-row gap-3 flex-wrap">
+              <BillingNotLiveTile title="Paying" />
+              <BillingNotLiveTile title="Conversion" />
+            </View>
+          )}
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            Period: {start} → {end}. Intros target:{' '}
+            {summary.data.intros_target > 0
+              ? `${summary.data.intros_new} / ${summary.data.intros_target}`
+              : 'not set'}
+            .
+          </Text>
+        </View>
+      ) : null}
+
+      {canSetTargets ? <TargetsLauncher /> : null}
+    </View>
+  );
+}
+
+function ConversionTile({
+  conversions,
+  target,
+}: {
+  conversions: number;
+  target: number;
+}) {
+  const hasTarget = target > 0;
+  const ratio = hasTarget ? Math.min(1, conversions / target) : 0;
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 flex-1 min-w-[150px]">
+      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        Conversion
+      </Text>
+      <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+        {conversions}
+        {hasTarget ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-lg"> / {target}</Text>
+        ) : null}
+      </Text>
+      {hasTarget ? (
+        <View className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <View
+            className="h-full bg-primary"
+            style={{ width: `${ratio * 100}%` }}
+          />
+        </View>
+      ) : (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Target not set
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function TargetsLauncher() {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <View className="mt-2">
+        <Button variant="secondary" onPress={() => setOpen(true)}>
+          Configure targets
+        </Button>
+      </View>
+    );
+  }
+  return (
+    <View className="gap-3">
+      <TargetsSection />
+      <View className="self-start">
+        <Button variant="ghost" onPress={() => setOpen(false)}>
+          Hide targets
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+function TargetsSection() {
+  const session = useSession();
+  const { data: membership } = useGymMembership();
+  const queryClient = useQueryClient();
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [saved, markSaved] = useSavedFlag();
+
+  const targetsQuery = useQuery({
+    queryKey: ['insight-targets', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gym_insight_targets')
+        .select('metric, period, target_value')
+        .eq('gym_id', membership!.gymId);
+      if (error) throw error;
+      return (data ?? []) as TargetRow[];
+    },
+  });
+
+  useEffect(() => {
+    if (!targetsQuery.data) return;
+    const next: Record<string, string> = {};
+    for (const t of targetsQuery.data) {
+      next[`${t.metric}-${t.period}`] = String(t.target_value);
+    }
+    setValues(next);
+  }, [targetsQuery.data]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!membership || !session?.user.id) throw new Error('No gym selected');
+      const toUpsert: {
+        gym_id: string;
+        metric: TargetMetric;
+        period: TargetPeriod;
+        target_value: number;
+        updated_by: string;
+      }[] = [];
+      for (const m of TARGET_METRICS) {
+        for (const p of TARGET_PERIODS) {
+          const key = `${m.value}-${p}`;
+          const raw = values[key]?.trim() ?? '';
+          if (raw.length === 0) continue;
+          const n = Number.parseInt(raw, 10);
+          if (!Number.isFinite(n) || n < 0) {
+            throw new Error(`${m.label} (${p}): must be a non-negative integer`);
+          }
+          toUpsert.push({
+            gym_id: membership.gymId,
+            metric: m.value,
+            period: p,
+            target_value: n,
+            updated_by: session.user.id,
+          });
+        }
+      }
+      if (toUpsert.length === 0) return;
+      const { error } = await supabase
+        .from('gym_insight_targets')
+        .upsert(toUpsert, { onConflict: 'gym_id,metric,period' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setError(null);
+      markSaved();
+      queryClient.invalidateQueries({ queryKey: ['insight-targets'] });
+      queryClient.invalidateQueries({ queryKey: ['insights-summary'] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not save targets')),
+  });
+
+  return (
+    <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+      <View className="gap-2">
+        <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          Targets
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400">
+          Set monthly and quarterly goals. The tiles above show progress
+          against these.
+        </Text>
+      </View>
+
+      <View className="gap-4">
+        {TARGET_METRICS.map((m) => (
+          <View
+            key={m.value}
+            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+            <View className="gap-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                {m.label}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                {m.description}
+              </Text>
+            </View>
+            <View className="flex-row gap-3">
+              {TARGET_PERIODS.map((p) => {
+                const key = `${m.value}-${p}`;
+                return (
+                  <View key={p} className="flex-1">
+                    <Input
+                      label={p === 'month' ? 'Per month' : 'Per quarter'}
+                      value={values[key] ?? ''}
+                      onChangeText={(v) => setValues({ ...values, [key]: v })}
+                      placeholder="0"
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+
+      <Button onPress={() => save.mutate()} loading={save.isPending} success={saved}>
+        Save targets
+      </Button>
+    </View>
+  );
+}
+
+// ============================================================================
+// Members tab — attendance stats first, export CTA, then the member list.
+// Tag rules sit at the bottom as a CTA.
+// ============================================================================
+
+function MembersTab() {
+  const { data: membership } = useGymMembership();
+  const canViewAttendance = useCan('can_view_attendance') ?? false;
+  const canExport = useCan('can_export_members') ?? false;
+  const canManageTags = useCan('can_manage_tags') ?? false;
+  const exportMembers = useExportMembersCsv();
+
+  const [preset, setPreset] = useState<Preset>('month');
+  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
+  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
+  const range = useMemo(() => {
+    if (preset === 'custom') return { start: customStart, end: customEnd };
+    return presetRange(preset, new Date());
+  }, [preset, customStart, customEnd]);
+  const { start, end } = range;
+  const rangeValid =
+    DATE_RE.test(start) && DATE_RE.test(end) && start <= end;
+
+  const sessionsQuery = useQuery({
+    queryKey: ['attendance-sessions', membership?.gymId, start, end],
+    enabled: !!membership?.gymId && canViewAttendance && rangeValid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_sessions')
+        .select('id, class_type_id, starts_at')
+        .gte('starts_at', `${start}T00:00:00Z`)
+        .lte('starts_at', `${end}T23:59:59Z`);
+      if (error) throw error;
+      return (data ?? []) as AttendanceSession[];
+    },
+  });
+
+  const sessionIds = useMemo(
+    () => (sessionsQuery.data ?? []).map((s) => s.id),
+    [sessionsQuery.data],
+  );
+
+  const bookingsQuery = useQuery({
+    queryKey: ['attendance-bookings', membership?.gymId, sessionIds.join(',')],
+    enabled: !!membership?.gymId && canViewAttendance && sessionIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_bookings')
+        .select('class_session_id, attended_at, no_show')
+        .in('class_session_id', sessionIds);
+      if (error) throw error;
+      return (data ?? []) as AttendanceBooking[];
+    },
+  });
+
+  const totals = useMemo(() => {
+    const typeBuckets = bucketByClassType(
+      bookingsQuery.data ?? [],
+      sessionsQuery.data ?? [],
+    );
+    return typeBuckets.reduce(
+      (acc, b) => ({
+        attended: acc.attended + b.attended,
+        no_show: acc.no_show + b.no_show,
+        unmarked: acc.unmarked + b.unmarked,
+      }),
+      { attended: 0, no_show: 0, unmarked: 0 },
+    );
+  }, [bookingsQuery.data, sessionsQuery.data]);
+
+  return (
+    <View className="gap-4">
+      {canViewAttendance ? (
+        <View className="gap-3">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Attendance
+          </Text>
+          <DateRangeCta
+            preset={preset}
+            range={range}
+            customStart={customStart}
+            customEnd={customEnd}
+            onChange={(next) => {
+              setPreset(next.preset);
+              if (next.preset === 'custom') {
+                setCustomStart(next.start);
+                setCustomEnd(next.end);
+              }
+            }}
+          />
+          <View className="flex-row gap-3 flex-wrap">
+            <StatTile
+              title="Attended"
+              value={totals.attended}
+              tone="green"
+              minWidth={120}
+            />
+            <StatTile
+              title="No-show"
+              value={totals.no_show}
+              tone="red"
+              minWidth={120}
+            />
+            <StatTile
+              title="Unmarked"
+              value={totals.unmarked}
+              tone="muted"
+              minWidth={120}
+            />
+          </View>
+        </View>
+      ) : null}
+
+      {canExport ? (
+        <View className="gap-2">
+          <Button
+            variant="secondary"
+            onPress={() => exportMembers.mutate()}
+            loading={exportMembers.isPending}>
+            Export members CSV
+          </Button>
+          {exportMembers.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {exportErrorMessage(exportMembers.error, 'members')}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      {canManageTags ? (
+        <>
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Members
+          </Text>
+          <MembersList />
+          <ManagementCard
+            title="Tag rules"
+            description="Auto-tag members based on cohort state."
+            href="/management/tags"
+          />
+        </>
+      ) : null}
     </View>
   );
 }
