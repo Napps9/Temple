@@ -49,13 +49,15 @@ export default function CreateGymScreen() {
 
   async function submitAccountAndGym() {
     setError(null);
-    if (!email.trim() || !password) {
-      setError('Email and password are required');
-      return;
-    }
-    if (!fullName.trim()) {
-      setError('Your name is required');
-      return;
+    if (!session) {
+      if (!email.trim() || !password) {
+        setError('Email and password are required');
+        return;
+      }
+      if (!fullName.trim()) {
+        setError('Your name is required');
+        return;
+      }
     }
     if (!gymName.trim()) {
       setError('Gym name is required');
@@ -67,13 +69,26 @@ export default function CreateGymScreen() {
     }
     setLoading(true);
     try {
-      const { gymId } = await createGymWithSignup({
-        email: email.trim(),
-        password,
-        fullName: fullName.trim(),
-        gymName: gymName.trim(),
-        gymSlug: effectiveSlug,
-      });
+      let gymId: string;
+      if (session) {
+        // Already signed in (came here from /welcome). Just create the
+        // gym; the create_gym RPC makes the caller the owner.
+        const { data, error: rpcError } = await supabase.rpc('create_gym', {
+          p_name: gymName.trim(),
+          p_slug: effectiveSlug,
+        });
+        if (rpcError) throw rpcError;
+        gymId = data as unknown as string;
+      } else {
+        const result = await createGymWithSignup({
+          email: email.trim(),
+          password,
+          fullName: fullName.trim(),
+          gymName: gymName.trim(),
+          gymSlug: effectiveSlug,
+        });
+        gymId = result.gymId;
+      }
       setCreatedGymId(gymId);
       queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
       setStep('brand');
