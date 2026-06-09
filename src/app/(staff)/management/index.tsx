@@ -454,7 +454,43 @@ function TeamMemberRow({
   showEarnings: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const { data: membership } = useGymMembership();
   const name = member.profiles?.full_name ?? 'Team member';
+  const showCover =
+    member.role === 'coach' ||
+    member.role === 'admin' ||
+    member.role === 'owner';
+
+  const openTasks = useQuery({
+    queryKey: ['team-tasks-open', membership?.gymId, member.profile_id],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('coach_tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('gym_id', membership!.gymId)
+        .eq('assigned_to', member.profile_id)
+        .eq('status', 'open');
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  const openCover = useQuery({
+    queryKey: ['team-cover-open', membership?.gymId, member.profile_id],
+    enabled: !!membership?.gymId && showCover,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('cover_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('gym_id', membership!.gymId)
+        .eq('requested_by', member.profile_id)
+        .is('claimed_by', null);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl">
       <Pressable
@@ -473,6 +509,18 @@ function TeamMemberRow({
             {member.role}
           </Text>
         </View>
+        <CountPill
+          icon="checkbox-outline"
+          value={openTasks.isLoading ? null : openTasks.data ?? 0}
+          href="/management/tasks"
+        />
+        {showCover ? (
+          <CountPill
+            icon="swap-horizontal-outline"
+            value={openCover.isLoading ? null : openCover.data ?? 0}
+            href="/management/cover"
+          />
+        ) : null}
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
@@ -481,10 +529,6 @@ function TeamMemberRow({
       </Pressable>
       {open ? (
         <View className="px-4 pb-4 gap-3 border-t border-gray-100 dark:border-gray-800 pt-3">
-          <TaskCount profileId={member.profile_id} />
-          {member.role === 'coach' || member.role === 'admin' || member.role === 'owner' ? (
-            <CoverCount profileId={member.profile_id} />
-          ) : null}
           {showEarnings && member.role === 'coach' ? (
             <CoachEarningsSummary profileId={member.profile_id} />
           ) : null}
@@ -494,6 +538,32 @@ function TeamMemberRow({
         </View>
       ) : null}
     </View>
+  );
+}
+
+function CountPill({
+  icon,
+  value,
+  href,
+}: {
+  icon: IconName;
+  value: number | null;
+  href: LinkHref;
+}) {
+  const body = (
+    <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-800">
+      <Ionicons name={icon} size={13} color="#6B7280" />
+      <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold min-w-[10px] text-center">
+        {value === null ? '—' : value}
+      </Text>
+    </View>
+  );
+  return (
+    <Link href={href} asChild>
+      <Pressable hitSlop={4} className="active:opacity-70">
+        {body}
+      </Pressable>
+    </Link>
   );
 }
 
@@ -648,78 +718,6 @@ function CoachQualifications({ profileId }: { profileId: string }) {
         </View>
       ) : null}
     </View>
-  );
-}
-
-function TaskCount({ profileId }: { profileId: string }) {
-  const { data: membership } = useGymMembership();
-  const openTasks = useQuery({
-    queryKey: ['team-tasks-open', membership?.gymId, profileId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('coach_tasks')
-        .select('id', { count: 'exact', head: true })
-        .eq('gym_id', membership!.gymId)
-        .eq('assigned_to', profileId)
-        .eq('status', 'open');
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-  return (
-    <Link href="/management/tasks" asChild>
-      <Pressable className="flex-row items-center justify-between active:opacity-70">
-        <View className="flex-row items-center gap-2">
-          <Ionicons name="checkbox-outline" size={16} color="#6B7280" />
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
-            Open tasks
-          </Text>
-        </View>
-        <View className="flex-row items-center gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            {openTasks.isLoading ? '—' : openTasks.data ?? 0}
-          </Text>
-          <Text className="text-primary text-sm">→</Text>
-        </View>
-      </Pressable>
-    </Link>
-  );
-}
-
-function CoverCount({ profileId }: { profileId: string }) {
-  const { data: membership } = useGymMembership();
-  const openCover = useQuery({
-    queryKey: ['team-cover-open', membership?.gymId, profileId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('cover_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('gym_id', membership!.gymId)
-        .eq('requested_by', profileId)
-        .is('claimed_by', null);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-  return (
-    <Link href="/management/cover" asChild>
-      <Pressable className="flex-row items-center justify-between active:opacity-70">
-        <View className="flex-row items-center gap-2">
-          <Ionicons name="swap-horizontal-outline" size={16} color="#6B7280" />
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
-            Open cover requests
-          </Text>
-        </View>
-        <View className="flex-row items-center gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            {openCover.isLoading ? '—' : openCover.data ?? 0}
-          </Text>
-          <Text className="text-primary text-sm">→</Text>
-        </View>
-      </Pressable>
-    </Link>
   );
 }
 
