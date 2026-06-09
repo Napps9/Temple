@@ -14,7 +14,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # HUSKY=0 skips the prepare-script hook install in CI — we don't need
+      # commit hooks in a one-shot runner and the prepare step would fail
+      # before .husky/ is read.
       - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: "0"
       - run: npx tsc --noEmit
       - run: npm test
 
@@ -23,19 +28,45 @@ jobs:
     name: pgTAP (Supabase)
     steps:
       - uses: actions/checkout@v4
+      - name: Read Supabase CLI version
+        id: cli
+        # Single source of truth for the CLI version — local `npm run dev`
+        # warns on mismatch, CI pins to this same value. Bumping
+        # package.json#supabase.cli_version flows everywhere.
+        run: echo "version=$(jq -r '.supabase.cli_version' package.json)" >> "$GITHUB_OUTPUT"
       - uses: supabase/setup-cli@v1
         with:
-          # Pinned so we don't hit the GitHub releases API on every run
-          # (that lookup is rate-limited and was failing intermittently).
-          # Tracks the CLI version used locally — bump alongside local
-          # upgrades so CI and dev see the same behaviour.
-          version: 2.105.0
-      # `supabase start` brings up Postgres in Docker (preinstalled on the
-      # GitHub-hosted runner) and applies every migration in supabase/migrations.
+          version: ${{ steps.cli.outputs.version }}
       - name: Start local Supabase
         run: supabase start
-      # `supabase test db` runs every .sql file in supabase/tests against the
-      # local instance. Migrations 0015-0017 + the 19 Tier 6 pgTAP files land
-      # here for the first time.
       - name: Run pgTAP suite
         run: supabase test db
+
+  db-deploy:
+    # Only on push to main (PRs from forks don't get secrets exposed
+    # anyway). Needs both gates green so a bad migration can't slip past
+    # the pgTAP suite straight into prod.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [check, db-tests]
+    runs-on: ubuntu-latest
+    name: Deploy migrations to hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Supabase CLI version
+        id: cli
+        run: echo "version=$(jq -r '.supabase.cli_version' package.json)" >> "$GITHUB_OUTPUT"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: ${{ steps.cli.outputs.version }}
+      - name: Link to hosted project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+      # --include-all matches the workflow we already run locally — lets us
+      # push migrations whose numbers fall before the latest applied one
+      # (we shipped 0029 after 0030 earlier in the project's history).
+      - name: Push migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --include-all

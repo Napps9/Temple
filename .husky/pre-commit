@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# Author identity — only set if the local .git/config doesn't already have one,
+# so devs who set their own email don't get clobbered.
+git config --local --get user.email >/dev/null \
+  || git config --local user.email noreply@anthropic.com
+git config --local --get user.name >/dev/null \
+  || git config --local user.name Claude
+
+# Catch type + test failures before they reach CI. Vitest is ~1.5s on this repo
+# so the loop stays tight.
+npx tsc --noEmit
+npm test
