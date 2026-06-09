@@ -5,6 +5,7 @@ import type { ComponentProps } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { BillingNotLiveTile } from '@/components/BillingNotLiveTile';
 import { Button } from '@/components/Button';
 import {
@@ -25,9 +26,15 @@ import {
   type AttendanceSession,
 } from '@/lib/attendance';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import {
+  formatMoney,
+  totalEarnings,
+  type EarningsRow,
+} from '@/lib/coach-earnings';
 import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import type { GymRole } from '@/types/database';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { BrandingPanel } from './branding';
@@ -279,6 +286,8 @@ export default function ManagementHome() {
           <InsightsTab />
         ) : activeCategory === 'members' ? (
           <MembersTab />
+        ) : activeCategory === 'team' ? (
+          <TeamTab />
         ) : activeCategory === 'plans' ? (
           <PlansPanel />
         ) : activeCategory === 'settings' ? (
@@ -341,6 +350,260 @@ function SectionHeader({ title, icon }: { title: string; icon: IconName }) {
         {title}
       </Text>
     </View>
+  );
+}
+
+// ============================================================================
+// Team tab — roster of staff first, each row expands to show their tasks,
+// earnings, cover requests. SOPs / invites / role permissions sit at the
+// bottom as CTAs.
+// ============================================================================
+
+type StaffMember = {
+  profile_id: string;
+  role: GymRole;
+  profiles: { full_name: string | null; avatar_url: string | null } | null;
+};
+
+function TeamTab() {
+  const { data: membership } = useGymMembership();
+  const canViewSops = useCan('can_view_sops') ?? false;
+  const canManageStaff = useCan('can_manage_staff') ?? false;
+  const canSetCoachPay = useCan('can_set_coach_pay') ?? false;
+
+  const staffQuery = useQuery({
+    queryKey: ['team-roster', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<StaffMember[]> => {
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select(
+          'profile_id, role, profiles!profile_id(full_name, avatar_url)',
+        )
+        .eq('gym_id', membership!.gymId)
+        .in('role', ['owner', 'admin', 'coach', 'staff'])
+        .is('left_at', null);
+      if (error) throw error;
+      return (data ?? []) as unknown as StaffMember[];
+    },
+  });
+
+  const staff = staffQuery.data ?? [];
+  // Owners first, then admins, coaches, staff — alphabetised within each.
+  const sorted = [...staff].sort((a, b) => {
+    const order: Record<GymRole, number> = {
+      owner: 0,
+      admin: 1,
+      coach: 2,
+      staff: 3,
+      member: 4,
+    };
+    const ra = order[a.role] ?? 5;
+    const rb = order[b.role] ?? 5;
+    if (ra !== rb) return ra - rb;
+    return (a.profiles?.full_name ?? '').localeCompare(
+      b.profiles?.full_name ?? '',
+    );
+  });
+
+  return (
+    <View className="gap-4">
+      {staffQuery.isLoading ? (
+        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+      ) : sorted.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400">
+          No team members yet — invite some below.
+        </Text>
+      ) : (
+        <View className="gap-2">
+          {sorted.map((m) => (
+            <TeamMemberRow
+              key={m.profile_id}
+              member={m}
+              showEarnings={canSetCoachPay}
+            />
+          ))}
+        </View>
+      )}
+
+      <View className="gap-2 mt-2">
+        {canViewSops ? (
+          <ManagementCard
+            title="SOPs"
+            description="Standard operating procedures — add docs the whole team can read."
+            href="/management/sops"
+          />
+        ) : null}
+        {canManageStaff ? (
+          <ManagementCard
+            title="Invite codes"
+            description="Generate a code to add a new owner, admin, coach, staff or member."
+            href="/management/team"
+          />
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function TeamMemberRow({
+  member,
+  showEarnings,
+}: {
+  member: StaffMember;
+  showEarnings: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const name = member.profiles?.full_name ?? 'Team member';
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl">
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="flex-row items-center gap-3 p-4 active:opacity-70">
+        <Avatar
+          name={name}
+          avatarUrl={member.profiles?.avatar_url}
+          size={40}
+        />
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {name}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+            {member.role}
+          </Text>
+        </View>
+        <Ionicons
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color="#9CA3AF"
+        />
+      </Pressable>
+      {open ? (
+        <View className="px-4 pb-4 gap-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+          <TaskCount profileId={member.profile_id} />
+          {member.role === 'coach' || member.role === 'admin' || member.role === 'owner' ? (
+            <CoverCount profileId={member.profile_id} />
+          ) : null}
+          {showEarnings && member.role === 'coach' ? (
+            <CoachEarningsSummary profileId={member.profile_id} />
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function TaskCount({ profileId }: { profileId: string }) {
+  const { data: membership } = useGymMembership();
+  const openTasks = useQuery({
+    queryKey: ['team-tasks-open', membership?.gymId, profileId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('coach_tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('gym_id', membership!.gymId)
+        .eq('assigned_to', profileId)
+        .eq('status', 'open');
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+  return (
+    <Link href="/management/tasks" asChild>
+      <Pressable className="flex-row items-center justify-between active:opacity-70">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="checkbox-outline" size={16} color="#6B7280" />
+          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            Open tasks
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {openTasks.isLoading ? '—' : openTasks.data ?? 0}
+          </Text>
+          <Text className="text-primary text-sm">→</Text>
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
+function CoverCount({ profileId }: { profileId: string }) {
+  const { data: membership } = useGymMembership();
+  const openCover = useQuery({
+    queryKey: ['team-cover-open', membership?.gymId, profileId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('cover_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('gym_id', membership!.gymId)
+        .eq('requested_by', profileId)
+        .is('claimed_by', null);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+  return (
+    <Link href="/management/cover" asChild>
+      <Pressable className="flex-row items-center justify-between active:opacity-70">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="swap-horizontal-outline" size={16} color="#6B7280" />
+          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            Open cover requests
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {openCover.isLoading ? '—' : openCover.data ?? 0}
+          </Text>
+          <Text className="text-primary text-sm">→</Text>
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
+function CoachEarningsSummary({ profileId }: { profileId: string }) {
+  const { data: membership } = useGymMembership();
+  const range = useMemo(() => presetRange('month', new Date()), []);
+  const earnings = useQuery({
+    queryKey: ['team-earnings', membership?.gymId, profileId, range.start, range.end],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<EarningsRow[]> => {
+      const { data, error } = await supabase.rpc('compute_coach_earnings', {
+        p_gym_id: membership!.gymId,
+        p_coach_id: profileId,
+        p_period_start: range.start,
+        p_period_end: range.end,
+      });
+      if (error) throw error;
+      return (data ?? []) as EarningsRow[];
+    },
+  });
+  const rows = earnings.data ?? [];
+  const total = totalEarnings(rows);
+  return (
+    <Link href="/management/coach-earnings" asChild>
+      <Pressable className="flex-row items-center justify-between active:opacity-70">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="cash-outline" size={16} color="#6B7280" />
+          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            Earnings this month
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {earnings.isLoading
+              ? '—'
+              : `${formatMoney(total.cents, total.currency)} · ${total.classes} classes`}
+          </Text>
+          <Text className="text-primary text-sm">→</Text>
+        </View>
+      </Pressable>
+    </Link>
   );
 }
 
