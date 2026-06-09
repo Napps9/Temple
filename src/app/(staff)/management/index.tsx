@@ -57,6 +57,32 @@ function ManagementCard({
   return body;
 }
 
+type Category = 'insights' | 'team' | 'settings' | 'members' | 'plans';
+
+const CATEGORY_LABELS: Record<Category, string> = {
+  insights: 'Insights',
+  team: 'Team',
+  settings: 'Settings',
+  members: 'Members',
+  plans: 'Plans',
+};
+
+const CATEGORY_ORDER: Category[] = [
+  'insights',
+  'team',
+  'settings',
+  'members',
+  'plans',
+];
+
+type Card = {
+  category: Category;
+  title: string;
+  description: string;
+  href: LinkHref;
+  visible: boolean;
+};
+
 export default function ManagementHome() {
   const role = useRole();
   const canSeeInsights = useCan('can_see_insights');
@@ -72,108 +98,161 @@ export default function ManagementHome() {
   const canSetCoachPay = useCan('can_set_coach_pay');
   const canConfigureLeaderboards = useCan('can_configure_leaderboards');
 
+  const cards: Card[] = [
+    {
+      category: 'insights',
+      title: 'Insights',
+      description: 'Intros, expiring members, conversion vs targets.',
+      href: '/management/insights',
+      visible: !!canSeeInsights,
+    },
+    {
+      category: 'insights',
+      title: 'Attendance',
+      description: 'Trends from check-ins on class bookings.',
+      href: '/management/attendance',
+      visible: !!canViewAttendance,
+    },
+    {
+      category: 'team',
+      title: 'Team',
+      description: 'Invite owners, coaches, staff and members.',
+      href: '/management/team',
+      visible: !!canManageStaff,
+    },
+    {
+      category: 'team',
+      title: 'Coach earnings',
+      description: 'Set per-class-type rates and review what coaches earned.',
+      href: '/management/coach-earnings',
+      visible: !!canSetCoachPay,
+    },
+    {
+      category: 'team',
+      title: 'SOPs',
+      description: 'How we do things here — for the whole team.',
+      href: '/management/sops',
+      visible: !!canViewSops,
+    },
+    {
+      category: 'team',
+      title: 'Tasks',
+      description: 'Day-to-day staff work, assigned and tracked.',
+      href: '/management/tasks',
+      visible: !!canManageTasks || role === 'staff',
+    },
+    {
+      category: 'team',
+      title: 'Cover',
+      description: 'Hand a class to another coach; first-claim wins.',
+      href: '/management/cover',
+      visible: !!canRequestCover || !!canClaimCover,
+    },
+    {
+      category: 'settings',
+      title: 'Branding',
+      description: 'Logo, colours, gym name, public join link.',
+      href: '/management/branding',
+      visible: !!canManageStaff,
+    },
+    {
+      category: 'settings',
+      title: 'Leaderboards',
+      description: 'Turn class and strength comparisons on or off.',
+      href: '/management/leaderboards',
+      visible: !!canConfigureLeaderboards,
+    },
+    {
+      category: 'settings',
+      title: 'Messaging',
+      description: 'Decide who can DM whom inside the gym.',
+      href: '/management/messaging',
+      visible: !!canManageStaff,
+    },
+    {
+      category: 'settings',
+      title: 'Class types',
+      description: 'Name and colour the kinds of class you run.',
+      href: '/management/class-types',
+      visible: !!canEditClasses,
+    },
+    {
+      category: 'members',
+      title: 'Members',
+      description: 'View members by cohort, see and edit their tags.',
+      href: '/management/members',
+      visible: !!canManageTags,
+    },
+    {
+      category: 'members',
+      title: 'Tag rules',
+      description: 'Auto-tag members based on cohort state.',
+      href: '/management/tags',
+      visible: !!canManageTags,
+    },
+    {
+      category: 'plans',
+      title: 'Plans',
+      description: 'Define your membership plans, prices, and credit packs.',
+      href: '/management/plans',
+      visible: !!canManagePlans,
+    },
+  ];
+
+  const availableCategories = CATEGORY_ORDER.filter((c) =>
+    cards.some((card) => card.category === c && card.visible),
+  );
+  const [active, setActive] = useState<Category>(
+    availableCategories[0] ?? 'insights',
+  );
+  const activeCategory = availableCategories.includes(active)
+    ? active
+    : availableCategories[0] ?? 'insights';
+  const visibleCards = cards.filter(
+    (c) => c.visible && c.category === activeCategory,
+  );
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
         <KeyStats />
-        {canSeeInsights ? (
-          <ManagementCard
-            title="Insights"
-            description="Intros, expiring members, conversion vs targets."
-            href="/management/insights"
-          />
+        {availableCategories.length > 1 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-2">
+            {availableCategories.map((c) => {
+              const selected = c === activeCategory;
+              return (
+                <Pressable
+                  key={c}
+                  onPress={() => setActive(c)}
+                  className={`px-4 py-2 rounded-full ${
+                    selected
+                      ? 'bg-primary'
+                      : 'bg-gray-100 dark:bg-gray-800'
+                  }`}>
+                  <Text
+                    className={`text-sm font-medium ${
+                      selected
+                        ? 'text-white'
+                        : 'text-gray-700 dark:text-gray-200'
+                    }`}>
+                    {CATEGORY_LABELS[c]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         ) : null}
-        {canViewAttendance ? (
+        {visibleCards.map((c) => (
           <ManagementCard
-            title="Attendance"
-            description="Trends from check-ins on class bookings."
-            href="/management/attendance"
+            key={c.title}
+            title={c.title}
+            description={c.description}
+            href={c.href}
           />
-        ) : null}
-        {canManageTasks || role === 'staff' ? (
-          <ManagementCard
-            title="Tasks"
-            description="Day-to-day staff work, assigned and tracked."
-            href="/management/tasks"
-          />
-        ) : null}
-        {canRequestCover || canClaimCover ? (
-          <ManagementCard
-            title="Cover"
-            description="Hand a class to another coach; first-claim wins."
-            href="/management/cover"
-          />
-        ) : null}
-        {canViewSops ? (
-          <ManagementCard
-            title="SOPs"
-            description="How we do things here — for the whole team."
-            href="/management/sops"
-          />
-        ) : null}
-        {canManageStaff ? (
-          <ManagementCard
-            title="Team"
-            description="Invite owners, coaches, staff and members."
-            href="/management/team"
-          />
-        ) : null}
-        {canManageStaff ? (
-          <ManagementCard
-            title="Branding"
-            description="Logo, colours, gym name, public join link."
-            href="/management/branding"
-          />
-        ) : null}
-        {canSetCoachPay ? (
-          <ManagementCard
-            title="Coach earnings"
-            description="Set per-class-type rates and review what coaches earned."
-            href="/management/coach-earnings"
-          />
-        ) : null}
-        {canConfigureLeaderboards ? (
-          <ManagementCard
-            title="Leaderboards"
-            description="Turn class and strength comparisons on or off."
-            href="/management/leaderboards"
-          />
-        ) : null}
-        {canManageStaff ? (
-          <ManagementCard
-            title="Messaging"
-            description="Decide who can DM whom inside the gym."
-            href="/management/messaging"
-          />
-        ) : null}
-        {canEditClasses ? (
-          <ManagementCard
-            title="Class types"
-            description="Name and colour the kinds of class you run."
-            href="/management/class-types"
-          />
-        ) : null}
-        {canManageTags ? (
-          <ManagementCard
-            title="Members"
-            description="View members by cohort, see and edit their tags."
-            href="/management/members"
-          />
-        ) : null}
-        {canManageTags ? (
-          <ManagementCard
-            title="Tag rules"
-            description="Auto-tag members based on cohort state."
-            href="/management/tags"
-          />
-        ) : null}
-        {canManagePlans ? (
-          <ManagementCard
-            title="Plans"
-            description="Define your membership plans, prices, and credit packs."
-            href="/management/plans"
-          />
-        ) : null}
+        ))}
       </ScrollView>
     </Screen>
   );
