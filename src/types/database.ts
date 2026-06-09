@@ -223,6 +223,33 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      coach_class_type_qualifications: {
+        Row: {
+          gym_id: string;
+          profile_id: string;
+          class_type_id: string;
+          qualified: boolean;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          profile_id: string;
+          class_type_id: string;
+          qualified?: boolean;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          profile_id: string;
+          class_type_id: string;
+          qualified: boolean;
+          updated_by: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;

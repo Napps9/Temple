@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { BillingNotLiveTile } from '@/components/BillingNotLiveTile';
@@ -488,6 +488,163 @@ function TeamMemberRow({
           {showEarnings && member.role === 'coach' ? (
             <CoachEarningsSummary profileId={member.profile_id} />
           ) : null}
+          {showEarnings && member.role === 'coach' ? (
+            <CoachQualifications profileId={member.profile_id} />
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+type ClassTypeLite = { id: string; name: string; color: string };
+type QualRow = { class_type_id: string; qualified: boolean };
+
+function CoachQualifications({ profileId }: { profileId: string }) {
+  const { data: membership } = useGymMembership();
+  const session = useSession();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+
+  const classTypesQuery = useQuery({
+    queryKey: ['class-types-roster', membership?.gymId],
+    enabled: !!membership?.gymId && open,
+    queryFn: async (): Promise<ClassTypeLite[]> => {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('id, name, color')
+        .eq('gym_id', membership!.gymId)
+        .is('archived_at', null)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as ClassTypeLite[];
+    },
+  });
+
+  const qualsQuery = useQuery({
+    queryKey: ['coach-quals', membership?.gymId, profileId],
+    enabled: !!membership?.gymId && open,
+    queryFn: async (): Promise<QualRow[]> => {
+      const { data, error } = await supabase
+        .from('coach_class_type_qualifications')
+        .select('class_type_id, qualified')
+        .eq('gym_id', membership!.gymId)
+        .eq('profile_id', profileId);
+      if (error) throw error;
+      return (data ?? []) as QualRow[];
+    },
+  });
+
+  const qualByType = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const q of qualsQuery.data ?? []) m.set(q.class_type_id, q.qualified);
+    return m;
+  }, [qualsQuery.data]);
+
+  const toggle = useMutation({
+    mutationFn: async ({
+      classTypeId,
+      next,
+    }: {
+      classTypeId: string;
+      next: boolean;
+    }) => {
+      if (!membership || !session?.user.id) throw new Error('No gym');
+      // Default is qualified; only persist a row when the answer is "no" or
+      // when we previously persisted one. Deleting a "yes" row when toggling
+      // back to the default keeps the table small and the read query cheap.
+      const existing = qualByType.get(classTypeId);
+      if (next && existing === undefined) return;
+      if (next) {
+        const { error } = await supabase
+          .from('coach_class_type_qualifications')
+          .delete()
+          .eq('gym_id', membership.gymId)
+          .eq('profile_id', profileId)
+          .eq('class_type_id', classTypeId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('coach_class_type_qualifications')
+          .upsert(
+            {
+              gym_id: membership.gymId,
+              profile_id: profileId,
+              class_type_id: classTypeId,
+              qualified: false,
+              updated_by: session.user.id,
+            },
+            { onConflict: 'gym_id,profile_id,class_type_id' },
+          );
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['coach-quals', membership?.gymId, profileId],
+      });
+    },
+  });
+
+  return (
+    <View>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="flex-row items-center justify-between active:opacity-70 py-1">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="ribbon-outline" size={16} color="#6B7280" />
+          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            Class type qualifications
+          </Text>
+        </View>
+        <Ionicons
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#9CA3AF"
+        />
+      </Pressable>
+      {open ? (
+        <View className="gap-1 mt-2">
+          {classTypesQuery.isLoading ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Loading…
+            </Text>
+          ) : (classTypesQuery.data ?? []).length === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              No class types yet.
+            </Text>
+          ) : (
+            (classTypesQuery.data ?? []).map((ct) => {
+              const explicit = qualByType.get(ct.id);
+              const qualified = explicit ?? true;
+              return (
+                <View
+                  key={ct.id}
+                  className="flex-row items-center justify-between py-2">
+                  <View className="flex-row items-center gap-2 flex-1">
+                    <View
+                      style={{ backgroundColor: ct.color }}
+                      className="w-2 h-2 rounded-full"
+                    />
+                    <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                      {ct.name}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={qualified}
+                    onValueChange={(v) =>
+                      toggle.mutate({ classTypeId: ct.id, next: v })
+                    }
+                    disabled={toggle.isPending}
+                  />
+                </View>
+              );
+            })
+          )}
+          <Text className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+            Off means this coach can't be assigned or claim cover for this
+            class type.
+          </Text>
         </View>
       ) : null}
     </View>
