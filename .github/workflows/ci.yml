@@ -27,9 +27,9 @@ jobs:
         with:
           # Pinned so we don't hit the GitHub releases API on every run
           # (that lookup is rate-limited and was failing intermittently).
-          # Must be recent enough to support db.major_version = 17 in
-          # supabase/config.toml — the 2.20.x line is too old.
-          version: 2.40.7
+          # Tracks the CLI version used locally — bump alongside local
+          # upgrades so CI and dev see the same behaviour.
+          version: 2.105.0
       # `supabase start` brings up Postgres in Docker (preinstalled on the
       # GitHub-hosted runner) and applies every migration in supabase/migrations.
       - name: Start local Supabase
