@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   Link,
   router,
@@ -82,7 +83,7 @@ export function TopNav({
         ) : null}
       </View>
 
-      <View className="flex-1 items-end">
+      <View className="flex-1 flex-row items-center justify-end gap-3">
         {isManagementSubPage ? (
           <Link href="/management" asChild>
             <Pressable hitSlop={8} className="active:opacity-70">
@@ -94,6 +95,16 @@ export function TopNav({
             </Pressable>
           </Link>
         ) : null}
+        <Pressable
+          onPress={() => router.push('/inbox' as never)}
+          hitSlop={6}
+          className="w-9 h-9 rounded-full items-center justify-center active:opacity-70">
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={22}
+            color="#6B7280"
+          />
+        </Pressable>
       </View>
 
       <NavModal

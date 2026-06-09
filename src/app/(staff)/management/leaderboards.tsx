@@ -12,7 +12,7 @@ type Config = {
   strength_leaderboards_enabled: boolean;
 };
 
-export default function LeaderboardsConfigPage() {
+export function LeaderboardsPanel() {
   const { data: membership } = useGymMembership();
   const canConfigure = useCan('can_configure_leaderboards');
   const queryClient = useQueryClient();
@@ -51,11 +51,9 @@ export default function LeaderboardsConfigPage() {
 
   if (canConfigure === false) {
     return (
-      <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 mt-8">
-          Only the owner can configure leaderboards.
-        </Text>
-      </Screen>
+      <Text className="text-gray-500 dark:text-gray-400">
+        Only the owner can configure leaderboards.
+      </Text>
     );
   }
 
@@ -69,6 +67,61 @@ export default function LeaderboardsConfigPage() {
   }
 
   return (
+    <View className="gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="flex-row items-center gap-3">
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Class leaderboards
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Rank members on programmed sections (Tuesday's Fran, the
+              strength session, …). Coaches pick per section.
+            </Text>
+          </View>
+          <Switch
+            value={state.class_leaderboards_enabled}
+            onValueChange={() => flip('class_leaderboards_enabled')}
+            disabled={save.isPending}
+          />
+        </View>
+      </View>
+
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="flex-row items-center gap-3">
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Strength leaderboards
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Rank members on movement PRs (heaviest Back Squat 1RM, fastest
+              5K, …) across the gym.
+            </Text>
+          </View>
+          <Switch
+            value={state.strength_leaderboards_enabled}
+            onValueChange={() => flip('strength_leaderboards_enabled')}
+            disabled={save.isPending}
+          />
+        </View>
+      </View>
+
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        Members can hide themselves from leaderboards on their own account
+        screen.
+      </Text>
+
+      {save.isError ? (
+        <Text className="text-red-500 dark:text-red-400 text-xs">
+          {errorMessage(save.error, 'Could not save')}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+export default function LeaderboardsConfigPage() {
+  return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-1">
@@ -79,55 +132,7 @@ export default function LeaderboardsConfigPage() {
             Decide which kinds of comparison your members see.
           </Text>
         </View>
-
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-          <View className="flex-row items-center gap-3">
-            <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                Class leaderboards
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                Rank members on programmed sections (Tuesday's Fran, the
-                strength session, …). Coaches pick per section.
-              </Text>
-            </View>
-            <Switch
-              value={state.class_leaderboards_enabled}
-              onValueChange={() => flip('class_leaderboards_enabled')}
-              disabled={save.isPending}
-            />
-          </View>
-        </View>
-
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-          <View className="flex-row items-center gap-3">
-            <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                Strength leaderboards
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                Rank members on movement PRs (heaviest Back Squat 1RM, fastest
-                5K, …) across the gym.
-              </Text>
-            </View>
-            <Switch
-              value={state.strength_leaderboards_enabled}
-              onValueChange={() => flip('strength_leaderboards_enabled')}
-              disabled={save.isPending}
-            />
-          </View>
-        </View>
-
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
-          Members can hide themselves from leaderboards on their own account
-          screen.
-        </Text>
-
-        {save.isError ? (
-          <Text className="text-red-500 dark:text-red-400 text-xs">
-            {errorMessage(save.error, 'Could not save')}
-          </Text>
-        ) : null}
+        <LeaderboardsPanel />
       </ScrollView>
     </Screen>
   );

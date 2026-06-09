@@ -31,6 +31,7 @@ export default function MemberLayout() {
         <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
         <Tabs.Screen name="bookings" options={{ title: 'Bookings' }} />
         <Tabs.Screen name="track" options={{ title: 'Track' }} />
+        <Tabs.Screen name="inbox" options={{ title: 'Inbox' }} />
         <Tabs.Screen name="account" options={{ title: 'Account' }} />
       </Tabs>
     </View>
