@@ -1,19 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
-import { useGymMembership, useSession } from '@/lib/auth';
+import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -66,17 +59,12 @@ export function ClassDetailModal({
   onClose: () => void;
 }) {
   const session = useSession();
-  const { data: membership } = useGymMembership();
   const canCheckIn = useCan('can_check_in_member') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
-  const canBroadcast = useCan('can_broadcast_to_class') ?? false;
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCancelClass, setShowCancelClass] = useState(false);
-  const [broadcastBody, setBroadcastBody] = useState('');
-  const [broadcastSent, setBroadcastSent] = useState(false);
-  const [broadcastError, setBroadcastError] = useState<string | null>(null);
 
   const sessionQuery = useQuery({
     queryKey: ['class-session-detail', sessionId],
@@ -200,40 +188,9 @@ export function ClassDetailModal({
     onError: (e) => setError(errorMessage(e, 'Could not leave waitlist')),
   });
 
-  const broadcast = useMutation({
-    mutationFn: async () => {
-      if (!sessionId || !session?.user.id || !membership?.gymId) {
-        throw new Error('Missing context');
-      }
-      const trimmed = broadcastBody.trim();
-      if (!trimmed) throw new Error('Write a message');
-      const { error: e } = await supabase
-        .from('class_session_broadcasts')
-        .insert({
-          gym_id: membership.gymId,
-          class_session_id: sessionId,
-          sender_id: session.user.id,
-          body: trimmed,
-        });
-      if (e) throw e;
-    },
-    onSuccess: () => {
-      setBroadcastError(null);
-      setBroadcastBody('');
-      setBroadcastSent(true);
-      queryClient.invalidateQueries({ queryKey: ['class-session-broadcasts'] });
-      queryClient.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
-    },
-    onError: (e) =>
-      setBroadcastError(errorMessage(e, 'Could not send broadcast')),
-  });
-
   function close() {
     setConfirming(null);
     setError(null);
-    setBroadcastBody('');
-    setBroadcastSent(false);
-    setBroadcastError(null);
     onClose();
   }
 
@@ -376,46 +333,6 @@ export function ClassDetailModal({
                       </View>
                     )}
                   </ScrollView>
-                </View>
-              ) : null}
-
-              {mode === 'manage' && canBroadcast ? (
-                <View className="gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                    Broadcast to attendees
-                  </Text>
-                  <TextInput
-                    value={broadcastBody}
-                    onChangeText={(t) => {
-                      setBroadcastBody(t);
-                      if (broadcastSent) setBroadcastSent(false);
-                    }}
-                    placeholder="Bring a rope. Running late, start without me."
-                    placeholderTextColor="#9CA3AF"
-                    multiline
-                    numberOfLines={3}
-                    style={{ minHeight: 72, textAlignVertical: 'top' }}
-                    autoCapitalize="sentences"
-                    className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-50 text-base"
-                  />
-                  {broadcastError ? (
-                    <Text className="text-red-500 dark:text-red-400 text-xs">
-                      {broadcastError}
-                    </Text>
-                  ) : null}
-                  {broadcastSent ? (
-                    <Text className="text-emerald-600 dark:text-emerald-400 text-xs">
-                      Sent to {bookings.length}{' '}
-                      {bookings.length === 1 ? 'attendee' : 'attendees'}.
-                    </Text>
-                  ) : null}
-                  <Button
-                    variant="secondary"
-                    onPress={() => broadcast.mutate()}
-                    loading={broadcast.isPending}
-                    disabled={!broadcastBody.trim()}>
-                    Send broadcast
-                  </Button>
                 </View>
               ) : null}
 
