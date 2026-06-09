@@ -250,6 +250,138 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      parq_questionnaires: {
+        Row: {
+          id: string;
+          gym_id: string;
+          version: number;
+          is_active: boolean;
+          published_by: string | null;
+          published_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          version: number;
+          is_active?: boolean;
+          published_by?: string | null;
+          published_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          version: number;
+          is_active: boolean;
+          published_by: string | null;
+          published_at: string;
+        }>;
+        Relationships: [];
+      };
+      parq_questions: {
+        Row: {
+          id: string;
+          questionnaire_id: string;
+          sort_order: number;
+          prompt: string;
+          flag_on_yes: boolean;
+        };
+        Insert: {
+          id?: string;
+          questionnaire_id: string;
+          sort_order: number;
+          prompt: string;
+          flag_on_yes?: boolean;
+        };
+        Update: Partial<{
+          id: string;
+          questionnaire_id: string;
+          sort_order: number;
+          prompt: string;
+          flag_on_yes: boolean;
+        }>;
+        Relationships: [];
+      };
+      parq_responses: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          questionnaire_id: string;
+          completed_at: string;
+          has_flag: boolean;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          questionnaire_id: string;
+          completed_at?: string;
+          has_flag?: boolean;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          questionnaire_id: string;
+          completed_at: string;
+          has_flag: boolean;
+        }>;
+        Relationships: [];
+      };
+      parq_answers: {
+        Row: {
+          response_id: string;
+          question_id: string;
+          answered_yes: boolean;
+          explanation: string | null;
+        };
+        Insert: {
+          response_id: string;
+          question_id: string;
+          answered_yes: boolean;
+          explanation?: string | null;
+        };
+        Update: Partial<{
+          response_id: string;
+          question_id: string;
+          answered_yes: boolean;
+          explanation: string | null;
+        }>;
+        Relationships: [];
+      };
+      staff_alerts: {
+        Row: {
+          id: string;
+          gym_id: string;
+          kind: 'parq_flag';
+          subject_profile_id: string | null;
+          related_id: string | null;
+          created_at: string;
+          acknowledged_by: string | null;
+          acknowledged_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          kind: 'parq_flag';
+          subject_profile_id?: string | null;
+          related_id?: string | null;
+          created_at?: string;
+          acknowledged_by?: string | null;
+          acknowledged_at?: string | null;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          kind: 'parq_flag';
+          subject_profile_id: string | null;
+          related_id: string | null;
+          created_at: string;
+          acknowledged_by: string | null;
+          acknowledged_at: string | null;
+        }>;
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -1325,6 +1457,28 @@ export type Database = {
       accept_invite: {
         Args: { invite_code: string };
         Returns: { gym_id: string; role: GymRole }[];
+      };
+      submit_parq_response: {
+        Args: {
+          p_gym_id: string;
+          p_questionnaire_id: string;
+          p_answers: Json;
+        };
+        Returns: string;
+      };
+      current_parq_state: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: {
+          active_questionnaire_id: string | null;
+          last_response_id: string | null;
+          last_completed_at: string | null;
+          last_had_flag: boolean | null;
+          needs_parq: boolean;
+        }[];
+      };
+      acknowledge_staff_alert: {
+        Args: { p_alert_id: string };
+        Returns: null;
       };
       extend_recurrence: {
         Args: { rec_id: string; until_date: string };

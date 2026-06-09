@@ -61,6 +61,7 @@ export function ClassDetailModal({
   const session = useSession();
   const canCheckIn = useCan('can_check_in_member') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
+  const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +108,33 @@ export function ClassDetailModal({
       });
       if (error) throw error;
       return (data as number | null) ?? null;
+    },
+  });
+
+  // Staff with can_see_health_flag get a red PAR-Q chip next to any
+  // booked attendee that has an outstanding health flag, so coaches
+  // can scan the roster before class starts.
+  const flagsQuery = useQuery({
+    queryKey: ['attendee-flags', sessionId],
+    enabled:
+      !!sessionId && visible && mode === 'manage' && canSeeHealthFlag,
+    queryFn: async (): Promise<Set<string>> => {
+      const detail = await supabase
+        .from('class_sessions')
+        .select('gym_id')
+        .eq('id', sessionId!)
+        .single();
+      if (detail.error) throw detail.error;
+      const gymId = (detail.data as { gym_id: string }).gym_id;
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select('profile_id')
+        .eq('gym_id', gymId)
+        .eq('health_flag', true);
+      if (error) throw error;
+      return new Set(
+        (data ?? []).map((r) => (r as { profile_id: string }).profile_id),
+      );
     },
   });
 
@@ -307,9 +335,19 @@ export function ClassDetailModal({
                               size={32}
                             />
                             <View className="flex-1">
-                              <Text className="text-gray-900 dark:text-gray-50">
-                                {b.profiles?.full_name ?? 'Member'}
-                              </Text>
+                              <View className="flex-row items-center gap-2">
+                                <Text className="text-gray-900 dark:text-gray-50">
+                                  {b.profiles?.full_name ?? 'Member'}
+                                </Text>
+                                {canSeeHealthFlag &&
+                                flagsQuery.data?.has(b.profile_id) ? (
+                                  <View className="bg-red-600 rounded-full px-1.5 py-0.5">
+                                    <Text className="text-white text-[9px] font-bold tracking-widest">
+                                      PAR-Q
+                                    </Text>
+                                  </View>
+                                ) : null}
+                              </View>
                               {b.promoted_from_waitlist ? (
                                 <Text className="text-amber-600 dark:text-amber-400 text-[10px] uppercase tracking-widest">
                                   Promoted from waitlist

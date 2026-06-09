@@ -41,6 +41,7 @@ import { BrandingPanel } from './branding';
 import { ClassTypesPanel } from './class-types';
 import { LeaderboardsPanel } from './leaderboards';
 import { MessagingPanel } from './messaging';
+import { ParqPanel } from './parq';
 import { PlansPanel } from './plans';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
@@ -311,6 +312,7 @@ function SettingsTab() {
   const canManageStaff = useCan('can_manage_staff') ?? false;
   const canConfigureLeaderboards = useCan('can_configure_leaderboards') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
+  const canManageParq = useCan('can_manage_parq') ?? false;
 
   return (
     <View className="gap-6">
@@ -318,6 +320,12 @@ function SettingsTab() {
         <View className="gap-3">
           <SectionHeader title="Branding" icon="color-palette-outline" />
           <BrandingPanel />
+        </View>
+      ) : null}
+      {canManageParq ? (
+        <View className="gap-3">
+          <SectionHeader title="PAR-Q" icon="heart-outline" />
+          <ParqPanel />
         </View>
       ) : null}
       {canConfigureLeaderboards ? (

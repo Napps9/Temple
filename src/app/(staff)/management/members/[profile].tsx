@@ -343,15 +343,12 @@ export default function MemberDetailScreen() {
           )}
         </Section>
 
+        <ParqHistorySection
+          profileId={profileId!}
+          gymId={membership!.gymId}
+        />
+
         <Section title="Onboarding">
-          {gymMembership.data?.par_q_id ? (
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                PAR-Q completed at onboarding — health screening available in a
-                later release.
-              </Text>
-            </View>
-          ) : null}
           {onboarding.data && onboarding.data.length > 0 ? (
             onboarding.data.map((r) => (
               <View
@@ -417,5 +414,120 @@ function Badge({ label, color }: { label: string; color: string }) {
     <View style={{ backgroundColor: color }} className="rounded-full px-2 py-0.5">
       <Text className="text-white text-[10px] font-semibold">{label}</Text>
     </View>
+  );
+}
+
+type ParqResponseRow = {
+  id: string;
+  completed_at: string;
+  has_flag: boolean;
+  questionnaire_id: string;
+  parq_questionnaires: { version: number } | null;
+};
+
+type ParqAnswerRow = {
+  question_id: string;
+  answered_yes: boolean;
+  explanation: string | null;
+  parq_questions: { prompt: string; flag_on_yes: boolean; sort_order: number } | null;
+};
+
+function ParqHistorySection({
+  profileId,
+  gymId,
+}: {
+  profileId: string;
+  gymId: string;
+}) {
+  const latest = useQuery({
+    queryKey: ['parq-latest', gymId, profileId],
+    enabled: !!gymId && !!profileId,
+    queryFn: async (): Promise<ParqResponseRow | null> => {
+      const { data, error } = await supabase
+        .from('parq_responses')
+        .select(
+          'id, completed_at, has_flag, questionnaire_id, parq_questionnaires!questionnaire_id(version)',
+        )
+        .eq('gym_id', gymId)
+        .eq('profile_id', profileId)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as ParqResponseRow | null;
+    },
+  });
+
+  const answers = useQuery({
+    queryKey: ['parq-answers', latest.data?.id],
+    enabled: !!latest.data?.id,
+    queryFn: async (): Promise<ParqAnswerRow[]> => {
+      const { data, error } = await supabase
+        .from('parq_answers')
+        .select(
+          'question_id, answered_yes, explanation, parq_questions!question_id(prompt, flag_on_yes, sort_order)',
+        )
+        .eq('response_id', latest.data!.id);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as ParqAnswerRow[];
+      return rows.sort(
+        (a, b) =>
+          (a.parq_questions?.sort_order ?? 0) -
+          (b.parq_questions?.sort_order ?? 0),
+      );
+    },
+  });
+
+  return (
+    <Section title="PAR-Q">
+      {!latest.data ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          Member hasn't filled in the health screening yet.
+        </Text>
+      ) : (
+        <View className="gap-2">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              v{latest.data.parq_questionnaires?.version ?? '—'} ·{' '}
+              {latest.data.completed_at.slice(0, 10)}
+            </Text>
+            {latest.data.has_flag ? (
+              <View className="bg-red-600 rounded-full px-2 py-0.5">
+                <Text className="text-white text-[10px] font-bold tracking-widest">
+                  FLAGGED
+                </Text>
+              </View>
+            ) : (
+              <View className="bg-emerald-600 rounded-full px-2 py-0.5">
+                <Text className="text-white text-[10px] font-bold tracking-widest">
+                  CLEAR
+                </Text>
+              </View>
+            )}
+          </View>
+          {(answers.data ?? []).map((a) => (
+            <View
+              key={a.question_id}
+              className={`rounded-lg p-3 gap-1 ${
+                a.answered_yes && a.parq_questions?.flag_on_yes
+                  ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                  : 'bg-white dark:bg-gray-900'
+              }`}>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {a.parq_questions?.prompt ?? '—'}
+              </Text>
+              <Text className="text-gray-900 dark:text-gray-50">
+                {a.answered_yes ? 'Yes' : 'No'}
+              </Text>
+              {a.explanation ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
+                  {a.explanation}
+                </Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      )}
+    </Section>
   );
 }

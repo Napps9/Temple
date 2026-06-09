@@ -1,0 +1,230 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+
+import { Button } from '@/components/Button';
+import { Screen } from '@/components/Screen';
+import { useGymMembership, useSession } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
+import { supabase } from '@/lib/supabase';
+
+type Questionnaire = {
+  id: string;
+  version: number;
+};
+
+type Question = {
+  id: string;
+  sort_order: number;
+  prompt: string;
+  flag_on_yes: boolean;
+};
+
+type Answer = {
+  questionId: string;
+  answeredYes: boolean | null;
+  explanation: string;
+};
+
+export default function ParqForm() {
+  const { data: membership } = useGymMembership();
+  const session = useSession();
+  const queryClient = useQueryClient();
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const active = useQuery({
+    queryKey: ['parq-active', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<Questionnaire | null> => {
+      const { data, error } = await supabase
+        .from('parq_questionnaires')
+        .select('id, version')
+        .eq('gym_id', membership!.gymId)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Questionnaire | null;
+    },
+  });
+
+  const questions = useQuery({
+    queryKey: ['parq-questions', active.data?.id],
+    enabled: !!active.data?.id,
+    queryFn: async (): Promise<Question[]> => {
+      const { data, error } = await supabase
+        .from('parq_questions')
+        .select('id, sort_order, prompt, flag_on_yes')
+        .eq('questionnaire_id', active.data!.id)
+        .order('sort_order');
+      if (error) throw error;
+      const rows = (data ?? []) as Question[];
+      setAnswers((prev) => {
+        // Preserve any in-flight selection if the prompt list re-resolves.
+        const byId = new Map(prev.map((a) => [a.questionId, a]));
+        return rows.map((q) => ({
+          questionId: q.id,
+          answeredYes: byId.get(q.id)?.answeredYes ?? null,
+          explanation: byId.get(q.id)?.explanation ?? '',
+        }));
+      });
+      return rows;
+    },
+  });
+
+  const submit = useMutation({
+    mutationFn: async () => {
+      if (!membership || !session?.user.id || !active.data) {
+        throw new Error('Missing context');
+      }
+      if (answers.some((a) => a.answeredYes === null)) {
+        throw new Error('Answer every question before submitting');
+      }
+      const payload = answers.map((a) => ({
+        question_id: a.questionId,
+        answered_yes: a.answeredYes,
+        explanation: a.explanation.trim() || null,
+      }));
+      const { error } = await supabase.rpc('submit_parq_response', {
+        p_gym_id: membership.gymId,
+        p_questionnaire_id: active.data.id,
+        p_answers: payload,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['parq-state'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
+      router.replace('/book' as never);
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not submit')),
+  });
+
+  if (active.isLoading) {
+    return (
+      <Screen>
+        <Text className="text-gray-500 dark:text-gray-400 p-6">Loading…</Text>
+      </Screen>
+    );
+  }
+
+  if (!active.data) {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            No PAR-Q yet
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Your gym hasn't published a health screening questionnaire yet.
+            You can keep using the app normally.
+          </Text>
+          <Button onPress={() => router.replace('/book' as never)}>
+            Continue
+          </Button>
+        </ScrollView>
+      </Screen>
+    );
+  }
+
+  const list = questions.data ?? [];
+
+  function set(idx: number, patch: Partial<Answer>) {
+    setAnswers((a) => a.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
+  }
+
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
+        <View className="gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Health screening
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Please answer honestly. Any "yes" answer on a flagged question
+            tells the team to follow up before your first session — you
+            can still book.
+          </Text>
+        </View>
+
+        {list.map((q, idx) => {
+          const answer = answers[idx];
+          if (!answer) return null;
+          return (
+            <View
+              key={q.id}
+              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                {q.prompt}
+              </Text>
+              <View className="flex-row gap-2">
+                <YesNoOption
+                  label="Yes"
+                  selected={answer.answeredYes === true}
+                  onPress={() => set(idx, { answeredYes: true })}
+                />
+                <YesNoOption
+                  label="No"
+                  selected={answer.answeredYes === false}
+                  onPress={() => set(idx, { answeredYes: false })}
+                />
+              </View>
+              {answer.answeredYes === true && q.flag_on_yes ? (
+                <TextInput
+                  value={answer.explanation}
+                  onChangeText={(t) => set(idx, { explanation: t })}
+                  placeholder="Add detail (optional but helpful)"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={3}
+                  style={{ minHeight: 60, textAlignVertical: 'top' }}
+                  autoCapitalize="sentences"
+                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-sm"
+                />
+              ) : null}
+            </View>
+          );
+        })}
+
+        {error ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
+
+        <Button onPress={() => submit.mutate()} loading={submit.isPending}>
+          Submit screening
+        </Button>
+      </ScrollView>
+    </Screen>
+  );
+}
+
+function YesNoOption({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`flex-1 px-4 py-3 rounded-lg border items-center active:opacity-70 ${
+        selected
+          ? 'border-primary bg-primary/10'
+          : 'border-gray-200 dark:border-gray-700'
+      }`}>
+      <Text
+        className={
+          selected
+            ? 'text-primary font-medium'
+            : 'text-gray-700 dark:text-gray-200'
+        }>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}

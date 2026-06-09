@@ -19,7 +19,18 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
-type Tab = 'direct' | 'announcements' | 'classes';
+type Tab = 'direct' | 'announcements' | 'classes' | 'alerts';
+
+type StaffAlertRow = {
+  id: string;
+  gym_id: string;
+  kind: 'parq_flag';
+  subject_profile_id: string | null;
+  related_id: string | null;
+  created_at: string;
+  acknowledged_at: string | null;
+  subject: { full_name: string | null; avatar_url: string | null } | null;
+};
 
 type ClassSessionLite = {
   id: string;
@@ -39,6 +50,7 @@ export default function Inbox() {
   const role = useRole();
   const canPostAnnouncements = useCan('can_post_announcements');
   const canBroadcast = useCan('can_broadcast_to_class');
+  const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
   const queryClient = useQueryClient();
 
   const unread = useQuery({
@@ -110,6 +122,13 @@ export default function Inbox() {
             active={tab === 'classes'}
             onPress={() => setTab('classes')}
           />
+          {canSeeHealthFlag ? (
+            <TabChip
+              label="Alerts"
+              active={tab === 'alerts'}
+              onPress={() => setTab('alerts')}
+            />
+          ) : null}
         </View>
 
         {tab === 'direct' ? (
@@ -121,7 +140,7 @@ export default function Inbox() {
             posterId={session.user.id}
             onChange={refreshUnread}
           />
-        ) : (
+        ) : tab === 'classes' ? (
           <ClassesTab
             canBroadcast={canBroadcast === true}
             gymId={membership.gymId}
@@ -129,6 +148,8 @@ export default function Inbox() {
             role={role}
             onChange={refreshUnread}
           />
+        ) : (
+          <AlertsTab gymId={membership.gymId} />
         )}
       </ScrollView>
     </Screen>
@@ -548,6 +569,114 @@ function ClassesTab({
             </View>
           );
         })
+      )}
+    </View>
+  );
+}
+
+function AlertsTab({ gymId }: { gymId: string }) {
+  const queryClient = useQueryClient();
+  const [showAcked, setShowAcked] = useState(false);
+
+  const alerts = useQuery({
+    queryKey: ['staff-alerts', gymId, showAcked],
+    queryFn: async (): Promise<StaffAlertRow[]> => {
+      let q = supabase
+        .from('staff_alerts')
+        .select(
+          'id, gym_id, kind, subject_profile_id, related_id, created_at, acknowledged_at, subject:profiles!subject_profile_id(full_name, avatar_url)',
+        )
+        .eq('gym_id', gymId)
+        .order('created_at', { ascending: false });
+      if (!showAcked) q = q.is('acknowledged_at', null);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as StaffAlertRow[];
+    },
+  });
+
+  const ack = useMutation({
+    mutationFn: async (alertId: string) => {
+      const { error } = await supabase.rpc('acknowledge_staff_alert', {
+        p_alert_id: alertId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['staff-alerts'] }),
+  });
+
+  const rows = alerts.data ?? [];
+
+  return (
+    <View className="gap-3">
+      <View className="flex-row items-center gap-2">
+        <Switch value={showAcked} onValueChange={setShowAcked} />
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          Show acknowledged
+        </Text>
+      </View>
+      {alerts.isLoading ? (
+        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+      ) : rows.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400">
+          {showAcked
+            ? 'No alerts yet.'
+            : 'No open alerts. Members with health flags will show up here.'}
+        </Text>
+      ) : (
+        rows.map((a) => (
+          <View
+            key={a.id}
+            className={`rounded-xl p-4 gap-2 border ${
+              a.acknowledged_at
+                ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+            }`}>
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="alert-circle" size={18} color="#DC2626" />
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                {a.subject?.full_name ?? 'Member'} flagged a health issue
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {new Date(a.created_at).toLocaleDateString()}
+              </Text>
+            </View>
+            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+              They flagged at least one PAR-Q question. Open their profile
+              to review the response.
+            </Text>
+            <View className="flex-row gap-2">
+              {a.subject_profile_id ? (
+                <Pressable
+                  onPress={() =>
+                    router.push(
+                      `/management/members/${a.subject_profile_id}` as never,
+                    )
+                  }
+                  className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:opacity-70">
+                  <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
+                    Open profile
+                  </Text>
+                </Pressable>
+              ) : null}
+              {!a.acknowledged_at ? (
+                <Pressable
+                  onPress={() => ack.mutate(a.id)}
+                  disabled={ack.isPending}
+                  className="px-3 py-1.5 rounded-md bg-primary active:opacity-70">
+                  <Text className="text-white text-xs uppercase tracking-widest font-semibold">
+                    Acknowledge
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text className="text-gray-500 dark:text-gray-400 text-xs self-center">
+                  Acknowledged
+                </Text>
+              )}
+            </View>
+          </View>
+        ))
       )}
     </View>
   );

@@ -119,6 +119,23 @@ export function MembersList() {
     },
   });
 
+  const flagsQuery = useQuery({
+    queryKey: ['members-health-flags', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select('profile_id')
+        .eq('gym_id', membership!.gymId)
+        .eq('health_flag', true)
+        .is('left_at', null);
+      if (error) throw error;
+      return new Set(
+        (data ?? []).map((r) => (r as { profile_id: string }).profile_id),
+      );
+    },
+  });
+
   const tagsByMember = useMemo(() => {
     const map = new Map<string, TagRow[]>();
     for (const t of tagsQuery.data ?? []) {
@@ -234,7 +251,7 @@ export function MembersList() {
                           Joined {m.joined_at.slice(0, 10)}
                         </Text>
                       </View>
-                      <CohortBadges row={m} />
+                      <CohortBadges row={m} flagged={flagsQuery.data?.has(m.profile_id) ?? false} />
                     </View>
                     {subs.length > 0 || comps.length > 0 ? (
                       <View className="flex-row flex-wrap gap-1">
@@ -334,9 +351,10 @@ function FilterChip({
   );
 }
 
-function CohortBadges({ row }: { row: CohortRow }) {
+function CohortBadges({ row, flagged }: { row: CohortRow; flagged: boolean }) {
   return (
     <View className="flex-row gap-1">
+      {flagged ? <Badge label="PAR-Q" color="#DC2626" /> : null}
       {row.is_intro ? <Badge label="Intro" color="#10B981" /> : null}
       {row.is_expiring_soon ? (
         <Badge label={`${row.days_until_expiry}d`} color="#F97316" />
