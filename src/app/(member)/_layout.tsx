@@ -10,7 +10,6 @@ const MEMBER_SECTIONS: NavSection[] = [
   { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
   { name: 'bookings', href: '/bookings', label: 'Bookings', icon: 'ticket-outline' },
   { name: 'track', href: '/track', label: 'Track', icon: 'trending-up-outline' },
-  { name: 'inbox', href: '/inbox', label: 'Inbox', icon: 'chatbubble-outline' },
 ];
 
 export default function MemberLayout() {

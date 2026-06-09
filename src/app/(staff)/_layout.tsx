@@ -10,7 +10,6 @@ const STAFF_SECTIONS: NavSection[] = [
   { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
   { name: 'classes', href: '/classes', label: 'Classes', icon: 'calendar-outline' },
   { name: 'management', href: '/management', label: 'Manage', icon: 'settings-outline' },
-  { name: 'inbox', href: '/inbox', label: 'Inbox', icon: 'chatbubble-outline' },
 ];
 
 export default function StaffLayout() {

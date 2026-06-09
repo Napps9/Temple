@@ -159,9 +159,7 @@ export function ClassesCalendar({
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   const { data: membership } = useGymMembership();
   const canEditClasses = useCan('can_edit_classes') ?? false;
-  const canBroadcast = useCan('can_broadcast_to_class') ?? false;
   const canCreate = mode === 'manage' && canEditClasses;
-  const canShowBroadcast = mode === 'manage' && canBroadcast;
   const queryClient = useQueryClient();
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
@@ -285,30 +283,16 @@ export function ClassesCalendar({
             className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
           </Pressable>
-          {canCreate || canShowBroadcast ? (
-            <View className="absolute right-0 top-6 flex-row items-center gap-2">
-              {canShowBroadcast ? (
-                <Pressable
-                  onPress={() => router.push('/inbox/broadcast/new' as never)}
-                  hitSlop={6}
-                  className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:opacity-70">
-                  <Ionicons
-                    name="chatbubble-ellipses-outline"
-                    size={18}
-                    color="#6B7280"
-                  />
-                </Pressable>
-              ) : null}
-              {canCreate ? (
-                <Pressable
-                  onPress={() => setCreateAt({ date })}
-                  className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 active:bg-primary-dark">
-                  <Ionicons name="add" size={16} color="#FFFFFF" />
-                  <Text className="hidden md:flex text-white text-sm font-semibold">
-                    Add class
-                  </Text>
-                </Pressable>
-              ) : null}
+          {canCreate ? (
+            <View className="absolute right-0 top-6">
+              <Pressable
+                onPress={() => setCreateAt({ date })}
+                className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 active:bg-primary-dark">
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+                <Text className="hidden md:flex text-white text-sm font-semibold">
+                  Add class
+                </Text>
+              </Pressable>
             </View>
           ) : null}
         </View>
