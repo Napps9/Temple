@@ -70,8 +70,11 @@ export default function JoinGymScreen() {
         slug,
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
+    onSuccess: async () => {
+      // refetch (not invalidate) — useGymMembership is pinned to
+      // refetchOnMount: false so an invalidate-then-redirect race leaves
+      // the cache as null and bounces the joined member back to /welcome.
+      await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
       router.replace('/' as never);
     },
     onError: (e) =>
@@ -83,8 +86,11 @@ export default function JoinGymScreen() {
       if (!slug) throw new Error('Missing slug');
       await joinGymBySlug(slug);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
+    onSuccess: async () => {
+      // refetch (not invalidate) — useGymMembership is pinned to
+      // refetchOnMount: false so an invalidate-then-redirect race leaves
+      // the cache as null and bounces the joined member back to /welcome.
+      await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
       router.replace('/' as never);
     },
     onError: (e) =>
