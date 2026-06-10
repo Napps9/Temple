@@ -90,7 +90,7 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_bookings')
         .select(
-          'id, profile_id, attended_at, no_show, promoted_from_waitlist, profiles(full_name, avatar_url)',
+          'id, profile_id, attended_at, no_show, promoted_from_waitlist, profiles!profile_id(full_name, avatar_url)',
         )
         .eq('class_session_id', sessionId!)
         .order('created_at');

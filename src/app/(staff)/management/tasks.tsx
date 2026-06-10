@@ -75,7 +75,7 @@ export default function TasksScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gym_memberships')
-        .select('profile_id, role, profiles(full_name)')
+        .select('profile_id, role, profiles!profile_id(full_name)')
         .eq('gym_id', membership!.gymId)
         .in('role', ['owner', 'admin', 'coach', 'staff']);
       if (error) throw error;

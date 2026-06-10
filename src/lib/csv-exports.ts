@@ -52,7 +52,7 @@ export function useExportMembersCsv() {
       const { data, error } = await supabase
         .from('v_member_cohort')
         .select(
-          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles(full_name, phone)',
+          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name, phone)',
         )
         .eq('gym_id', membership.gymId);
       if (error) throw error;
@@ -89,7 +89,7 @@ export function useExportMembershipsCsv() {
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, profile_id, status, paid_period_end, created_at, membership_plans(name), profiles(full_name)',
+          'id, profile_id, status, paid_period_end, created_at, membership_plans(name), profiles!profile_id(full_name)',
         )
         .eq('gym_id', membership.gymId)
         .order('created_at', { ascending: false });
@@ -123,7 +123,7 @@ export function useExportAttendanceCsv() {
       const { data, error } = await supabase
         .from('class_bookings')
         .select(
-          'id, profile_id, attended_at, no_show, created_at, profiles(full_name), class_sessions(starts_at, class_types(name))',
+          'id, profile_id, attended_at, no_show, created_at, profiles!profile_id(full_name), class_sessions(starts_at, class_types(name))',
         )
         .eq('gym_id', membership.gymId)
         .order('created_at', { ascending: false })

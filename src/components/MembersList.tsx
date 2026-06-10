@@ -62,7 +62,10 @@ export function MembersList() {
       const { data, error } = await supabase
         .from('v_member_cohort')
         .select(
-          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles(full_name, avatar_url)',
+          // profiles!profile_id: member_injuries' FKs (profiles +
+          // composite to gym_memberships) gave PostgREST a second
+          // resolution path — the bare embed became ambiguous.
+          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name, avatar_url)',
         )
         .eq('gym_id', membership!.gymId);
       if (error) throw error;

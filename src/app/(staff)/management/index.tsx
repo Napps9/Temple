@@ -285,10 +285,7 @@ export default function ManagementHome() {
           </ScrollView>
         ) : null}
         {activeCategory === 'insights' ? (
-          <>
-            <KeyStats />
-            <InsightsTab />
-          </>
+          <InsightsTab />
         ) : activeCategory === 'members' ? (
           <MembersTab />
         ) : activeCategory === 'team' ? (
@@ -889,210 +886,6 @@ function ppDelta(current: number, previous: number): Delta {
   return { direction, label: `${sign}${diff.toFixed(1)} pp` };
 }
 
-function KeyStats() {
-  const { data: membership } = useGymMembership();
-
-  const showRevenue = useCan('can_see_money') ?? false;
-  const showMembers = useCan('can_view_attendance') ?? false;
-  const showAttendance = useCan('can_view_attendance') ?? false;
-
-  const [preset, setPreset] = useState<Preset>('month');
-  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
-  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
-
-  const range = useMemo(() => {
-    if (preset === 'custom') return { start: customStart, end: customEnd };
-    return presetRange(preset, new Date());
-  }, [preset, customStart, customEnd]);
-
-  const rangeValid =
-    DATE_RE.test(range.start) && DATE_RE.test(range.end) && range.start <= range.end;
-
-  const prev = useMemo(
-    () => (rangeValid ? mirrorRange(range) : null),
-    [range.start, range.end, rangeValid],
-  );
-
-  const gymId = membership?.gymId;
-
-  const revenueCurrent = useQuery({
-    queryKey: ['manage-revenue', gymId, range.start, range.end],
-    enabled: !!gymId && showRevenue && rangeValid,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('compute_revenue_summary', {
-        p_gym_id: gymId!,
-        p_period_start: range.start,
-        p_period_end: range.end,
-      });
-      if (error) throw error;
-      return (data ?? []) as RevenueRow[];
-    },
-  });
-  const revenuePrev = useQuery({
-    queryKey: ['manage-revenue', gymId, prev?.start, prev?.end],
-    enabled: !!gymId && showRevenue && rangeValid && !!prev,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('compute_revenue_summary', {
-        p_gym_id: gymId!,
-        p_period_start: prev!.start,
-        p_period_end: prev!.end,
-      });
-      if (error) throw error;
-      return (data ?? []) as RevenueRow[];
-    },
-  });
-
-  const membersCurrent = useQuery({
-    queryKey: ['manage-members-asof', gymId, range.end],
-    enabled: !!gymId && showMembers && rangeValid,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('count_members_as_of', {
-        p_gym_id: gymId!,
-        p_as_of: range.end,
-      });
-      if (error) throw error;
-      return (data as number) ?? 0;
-    },
-  });
-  const membersPrev = useQuery({
-    queryKey: ['manage-members-asof', gymId, prev ? dayBefore(range.start) : null],
-    enabled: !!gymId && showMembers && rangeValid && !!prev,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('count_members_as_of', {
-        p_gym_id: gymId!,
-        p_as_of: dayBefore(range.start),
-      });
-      if (error) throw error;
-      return (data as number) ?? 0;
-    },
-  });
-
-  const attendeesCurrent = useQuery({
-    queryKey: ['manage-attendees', gymId, range.start, range.end],
-    enabled: !!gymId && showAttendance && rangeValid,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('count_attendance_attendees', {
-        p_gym_id: gymId!,
-        p_period_start: range.start,
-        p_period_end: range.end,
-      });
-      if (error) throw error;
-      return (data as number) ?? 0;
-    },
-  });
-  const attendeesPrev = useQuery({
-    queryKey: ['manage-attendees', gymId, prev?.start, prev?.end],
-    enabled: !!gymId && showAttendance && rangeValid && !!prev,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('count_attendance_attendees', {
-        p_gym_id: gymId!,
-        p_period_start: prev!.start,
-        p_period_end: prev!.end,
-      });
-      if (error) throw error;
-      return (data as number) ?? 0;
-    },
-  });
-
-  if (!showRevenue && !showMembers && !showAttendance) return null;
-
-  const queryError =
-    revenueCurrent.error ??
-    revenuePrev.error ??
-    membersCurrent.error ??
-    membersPrev.error ??
-    attendeesCurrent.error ??
-    attendeesPrev.error;
-
-  // Derive each tile's value + delta.
-  const revenueNow = pickPrimaryCurrency(revenueCurrent.data ?? []);
-  const revenueThen = pickPrimaryCurrency(revenuePrev.data ?? []);
-  const revenueLoading = revenueCurrent.isLoading || revenuePrev.isLoading;
-  const revenueDelta = revenueLoading
-    ? undefined
-    : pctDelta(revenueNow.gross_cents, revenueThen.gross_cents);
-
-  const membersNow = membersCurrent.data ?? 0;
-  const membersThen = membersPrev.data ?? 0;
-  const membersLoading = membersCurrent.isLoading || membersPrev.isLoading;
-  const membersDelta = membersLoading ? undefined : pctDelta(membersNow, membersThen);
-
-  // Attendance rate = distinct attendees / total members at period end * 100.
-  // If we have no members, rate is 0 (avoid divide-by-zero); same for previous.
-  const attendanceLoading =
-    attendeesCurrent.isLoading ||
-    attendeesPrev.isLoading ||
-    membersCurrent.isLoading ||
-    membersPrev.isLoading;
-  const ratePctNow = membersNow > 0 ? ((attendeesCurrent.data ?? 0) / membersNow) * 100 : 0;
-  const ratePctThen = membersThen > 0 ? ((attendeesPrev.data ?? 0) / membersThen) * 100 : 0;
-  const attendanceDelta = attendanceLoading ? undefined : ppDelta(ratePctNow, ratePctThen);
-
-  return (
-    <View className="gap-3">
-      <DateRangeCta
-        preset={preset}
-        range={range}
-        onChange={(next) => {
-          setPreset(next.preset);
-          if (next.preset === 'custom') {
-            setCustomStart(next.start);
-            setCustomEnd(next.end);
-          }
-        }}
-        customStart={customStart}
-        customEnd={customEnd}
-      />
-
-      {!rangeValid ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
-          Pick valid dates with From on or before To.
-        </Text>
-      ) : null}
-
-      {queryError ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
-          {errorMessage(queryError, 'Could not load stats')}
-        </Text>
-      ) : null}
-
-      <View className="flex-row gap-3 flex-wrap">
-        {showRevenue ? (
-          <StatTile
-            title="Revenue"
-            value={
-              revenueLoading
-                ? '—'
-                : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
-            }
-            subtitle="vs previous period"
-            delta={revenueDelta}
-            href="/management/plans"
-          />
-        ) : null}
-        {showMembers ? (
-          <StatTile
-            title="Members"
-            value={membersLoading ? '—' : membersNow}
-            subtitle="vs previous period"
-            delta={membersDelta}
-            href="/management/members"
-          />
-        ) : null}
-        {showAttendance ? (
-          <StatTile
-            title="Attendance"
-            value={attendanceLoading ? '—' : `${ratePctNow.toFixed(0)}%`}
-            subtitle="of members checked in"
-            delta={attendanceDelta}
-            href="/management/attendance"
-          />
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
 // ============================================================================
 // Insights tab — lifecycle metrics on display + attendance summary + CTAs.
 // ============================================================================
@@ -1140,7 +933,11 @@ function InsightsTab() {
   const { data: membership } = useGymMembership();
   const canSeeInsights = useCan('can_see_insights') ?? false;
   const canSetTargets = useCan('can_set_targets') ?? false;
+  const showRevenue = useCan('can_see_money') ?? false;
+  const showMembers = useCan('can_view_attendance') ?? false;
 
+  // One range drives every tile on this tab — the headline KPIs and
+  // the lifecycle metrics used to carry their own pickers.
   const [preset, setPreset] = useState<Preset>('month');
   const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
   const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
@@ -1149,10 +946,96 @@ function InsightsTab() {
     return presetRange(preset, new Date());
   }, [preset, customStart, customEnd]);
   const { start, end } = range;
+  const rangeValid =
+    DATE_RE.test(start) && DATE_RE.test(end) && start <= end;
+  const prev = useMemo(
+    () => (rangeValid ? mirrorRange(range) : null),
+    [start, end, rangeValid],
+  );
+  const gymId = membership?.gymId;
+
+  const revenueCurrent = useQuery({
+    queryKey: ['manage-revenue', gymId, start, end],
+    enabled: !!gymId && showRevenue && rangeValid,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('compute_revenue_summary', {
+        p_gym_id: gymId!,
+        p_period_start: start,
+        p_period_end: end,
+      });
+      if (error) throw error;
+      return (data ?? []) as RevenueRow[];
+    },
+  });
+  const revenuePrev = useQuery({
+    queryKey: ['manage-revenue', gymId, prev?.start, prev?.end],
+    enabled: !!gymId && showRevenue && rangeValid && !!prev,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('compute_revenue_summary', {
+        p_gym_id: gymId!,
+        p_period_start: prev!.start,
+        p_period_end: prev!.end,
+      });
+      if (error) throw error;
+      return (data ?? []) as RevenueRow[];
+    },
+  });
+
+  const membersCurrent = useQuery({
+    queryKey: ['manage-members-asof', gymId, end],
+    enabled: !!gymId && showMembers && rangeValid,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('count_members_as_of', {
+        p_gym_id: gymId!,
+        p_as_of: end,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+  const membersPrev = useQuery({
+    queryKey: ['manage-members-asof', gymId, prev ? dayBefore(start) : null],
+    enabled: !!gymId && showMembers && rangeValid && !!prev,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('count_members_as_of', {
+        p_gym_id: gymId!,
+        p_as_of: dayBefore(start),
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+
+  const attendeesCurrent = useQuery({
+    queryKey: ['manage-attendees', gymId, start, end],
+    enabled: !!gymId && showMembers && rangeValid,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('count_attendance_attendees', {
+        p_gym_id: gymId!,
+        p_period_start: start,
+        p_period_end: end,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+  const attendeesPrev = useQuery({
+    queryKey: ['manage-attendees', gymId, prev?.start, prev?.end],
+    enabled: !!gymId && showMembers && rangeValid && !!prev,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('count_attendance_attendees', {
+        p_gym_id: gymId!,
+        p_period_start: prev!.start,
+        p_period_end: prev!.end,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
 
   const summary = useQuery({
     queryKey: ['insights-summary', membership?.gymId, preset, start, end],
-    enabled: !!membership?.gymId && canSeeInsights,
+    enabled: !!membership?.gymId && canSeeInsights && rangeValid,
     queryFn: async (): Promise<InsightsSummary> => {
       const { data, error } = await supabase.rpc('compute_insight_summary', {
         p_gym_id: membership!.gymId,
@@ -1177,13 +1060,44 @@ function InsightsTab() {
     },
   });
 
-  if (!canSeeInsights) {
+  if (!canSeeInsights && !showRevenue && !showMembers) {
     return (
       <Text className="text-gray-500 dark:text-gray-400 text-sm">
         You don't have permission to see insights.
       </Text>
     );
   }
+
+  const queryError =
+    revenueCurrent.error ??
+    revenuePrev.error ??
+    membersCurrent.error ??
+    membersPrev.error ??
+    attendeesCurrent.error ??
+    attendeesPrev.error ??
+    summary.error;
+
+  const revenueNow = pickPrimaryCurrency(revenueCurrent.data ?? []);
+  const revenueThen = pickPrimaryCurrency(revenuePrev.data ?? []);
+  const revenueLoading = revenueCurrent.isLoading || revenuePrev.isLoading;
+  const revenueDelta = revenueLoading
+    ? undefined
+    : pctDelta(revenueNow.gross_cents, revenueThen.gross_cents);
+
+  const membersNow = membersCurrent.data ?? 0;
+  const membersThen = membersPrev.data ?? 0;
+  const membersLoading = membersCurrent.isLoading || membersPrev.isLoading;
+  const membersDelta = membersLoading ? undefined : pctDelta(membersNow, membersThen);
+
+  // Attendance rate = distinct attendees / total members at period end * 100.
+  const attendanceLoading =
+    attendeesCurrent.isLoading ||
+    attendeesPrev.isLoading ||
+    membersCurrent.isLoading ||
+    membersPrev.isLoading;
+  const ratePctNow = membersNow > 0 ? ((attendeesCurrent.data ?? 0) / membersNow) * 100 : 0;
+  const ratePctThen = membersThen > 0 ? ((attendeesPrev.data ?? 0) / membersThen) * 100 : 0;
+  const attendanceDelta = attendanceLoading ? undefined : ppDelta(ratePctNow, ratePctThen);
 
   return (
     <View className="gap-4">
@@ -1201,31 +1115,77 @@ function InsightsTab() {
         }}
       />
 
-      {summary.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
-      ) : summary.error ? (
+      {!rangeValid ? (
         <Text className="text-red-500 dark:text-red-400 text-sm">
-          {errorMessage(summary.error, 'Could not load insights')}
+          Pick valid dates with From on or before To.
         </Text>
-      ) : summary.data ? (
+      ) : null}
+
+      {queryError ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(queryError, 'Could not load insights')}
+        </Text>
+      ) : null}
+
+      {/* One continuous grid so tiles pair up two-per-row on mobile
+          instead of each group stranding a full-width odd one out. */}
+      <View className="flex-row gap-3 flex-wrap">
+        {showRevenue ? (
+          <StatTile
+            title="Revenue"
+            value={
+              revenueLoading
+                ? '—'
+                : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
+            }
+            subtitle="vs previous period"
+            delta={revenueDelta}
+            href="/management/plans"
+          />
+        ) : null}
+        {showMembers ? (
+          <StatTile
+            title="Members"
+            value={membersLoading ? '—' : membersNow}
+            subtitle="vs previous period"
+            delta={membersDelta}
+            href="/management/members"
+          />
+        ) : null}
+        {showMembers ? (
+          <StatTile
+            title="Attendance"
+            value={attendanceLoading ? '—' : `${ratePctNow.toFixed(0)}%`}
+            subtitle="of members checked in"
+            delta={attendanceDelta}
+            href="/management/attendance"
+          />
+        ) : null}
+        {canSeeInsights ? (
+          <StatTile
+            title="Intros"
+            value={summary.data?.intros_new ?? '—'}
+            subtitle="new this period"
+          />
+        ) : null}
+        {canSeeInsights ? (
+          <StatTile
+            title="Expiring soon"
+            value={summary.data?.expiring_soon ?? '—'}
+            subtitle="≤ 7 days"
+          />
+        ) : null}
+        {canSeeInsights ? (
+          <StatTile
+            title="Expired"
+            value={summary.data?.expired ?? '—'}
+            subtitle="no live access"
+          />
+        ) : null}
+      </View>
+
+      {canSeeInsights && summary.data ? (
         <View className="gap-3">
-          <View className="flex-row gap-3 flex-wrap">
-            <StatTile
-              title="Intros"
-              value={summary.data.intros_new}
-              subtitle="new this period"
-            />
-            <StatTile
-              title="Expiring soon"
-              value={summary.data.expiring_soon}
-              subtitle="≤ 7 days"
-            />
-            <StatTile
-              title="Expired"
-              value={summary.data.expired}
-              subtitle="no live access"
-            />
-          </View>
           {summary.data.billing_live ? (
             <View className="flex-row gap-3 flex-wrap">
               <StatTile

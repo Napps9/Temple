@@ -87,37 +87,38 @@ export default function TrackHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Track
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Log workouts and PRs across movements.
-          </Text>
+      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
+        <View className="flex-row items-center gap-3">
+          <View className="flex-1 gap-0.5">
+            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              Track
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Log workouts and PRs across movements.
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => setRecording(true)}
+            className="bg-primary active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
+            <Ionicons name="add" size={16} color="#FFFFFF" />
+            <Text className="text-white text-sm font-semibold">Record</Text>
+          </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => setRecording(true)}
-          className="bg-primary active:bg-primary-dark rounded-xl p-4 flex-row items-center gap-3">
-          <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-            <Ionicons name="add" size={22} color="#FFFFFF" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-white font-semibold text-base">
-              Record workout
-            </Text>
-            <Text className="text-white/80 text-xs">
-              Add results from today or any past session.
-            </Text>
-          </View>
-        </Pressable>
-
-        <View className="gap-3">
-          <View className="flex-row items-center">
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
-              Journal
-            </Text>
+        {/* Journal */}
+        <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+          <View className="flex-row items-center gap-3">
+            <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+              <Ionicons name="book-outline" size={22} color="#2563EB" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Journal
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Your latest logged sessions.
+              </Text>
+            </View>
             <ChipButton
               label="See all"
               icon="arrow-forward"
@@ -130,24 +131,39 @@ export default function TrackHome() {
               Loading…
             </Text>
           ) : (journal.data?.length ?? 0) === 0 ? (
-            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                No workouts logged yet. Tap "Record workout" to start.
-              </Text>
-            </View>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              No workouts logged yet. Tap "Record" to start.
+            </Text>
           ) : (
-            journal.data!.map((w) => <JournalCard key={w.id} workout={w} />)
+            <View>
+              {journal.data!.map((w) => (
+                <JournalRow key={w.id} workout={w} />
+              ))}
+            </View>
           )}
         </View>
 
         <LeaderboardsTile />
 
-        <InjuryTrackerTile />
+        {/* Movements + injury tracker share a home: both are about how
+            the body is moving. */}
+        <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+          <View className="flex-row items-center gap-3">
+            <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+              <Ionicons name="barbell-outline" size={22} color="#2563EB" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Movements
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                PRs and history per movement.
+              </Text>
+            </View>
+          </View>
 
-        <View className="gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            Movements
-          </Text>
+          <InjuryTrackerRow />
+
           <View className="flex-row flex-wrap -mx-1">
             {MOVEMENT_GROUPS.map((g) => (
               <View key={g.key} className="w-1/2 p-1">
@@ -197,19 +213,21 @@ function LeaderboardsTile() {
   );
 }
 
-function InjuryTrackerTile() {
+// Lives inside the Movements container — injuries are part of the
+// same "how is my body moving" picture.
+function InjuryTrackerRow() {
   const injuries = useMyInjuries();
   const open = (injuries.data ?? []).filter((r) => r.status !== 'resolved');
   const due = dueCheckIns(injuries.data);
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-white dark:bg-gray-900 rounded-2xl p-4 flex-row items-center gap-3 active:opacity-70">
-      <View className="w-11 h-11 rounded-full bg-red-500/10 items-center justify-center">
-        <Ionicons name="body-outline" size={22} color="#EF4444" />
+      className="bg-red-500/5 dark:bg-red-500/10 border border-red-200 dark:border-red-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+      <View className="w-9 h-9 rounded-full bg-red-500/10 items-center justify-center">
+        <Ionicons name="body-outline" size={18} color="#EF4444" />
       </View>
       <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
           Injury tracker
         </Text>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
@@ -225,7 +243,7 @@ function InjuryTrackerTile() {
           <Text className="text-white text-[10px] font-bold">{due.length}</Text>
         </View>
       ) : null}
-      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+      <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
     </Pressable>
   );
 }
@@ -248,7 +266,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3 min-h-[124px] overflow-hidden active:opacity-70">
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] overflow-hidden active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -279,29 +297,30 @@ function GroupTile({
   );
 }
 
-function JournalCard({ workout }: { workout: PreviewWorkout }) {
+function JournalRow({ workout }: { workout: PreviewWorkout }) {
   const sections = workout.section_count?.[0]?.count ?? 0;
   const results = workout.result_count?.[0]?.count ?? 0;
   const total = sections + results;
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70">
-      <View className="flex-row items-center">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+      className="flex-row items-center gap-3 py-2.5 border-t border-gray-100 dark:border-gray-800 active:opacity-70">
+      <View className="flex-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
           {workout.title?.trim() || 'Workout'}
         </Text>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
-          {fmtDateShort(workout.performed_at)}
+          {sections > 0
+            ? `${sections} section${sections === 1 ? '' : 's'}`
+            : total === 0
+              ? 'No results yet'
+              : `${results} result${results === 1 ? '' : 's'}`}
         </Text>
       </View>
       <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        {sections > 0
-          ? `${sections} section${sections === 1 ? '' : 's'}`
-          : total === 0
-            ? 'No results yet'
-            : `${results} result${results === 1 ? '' : 's'}`}
+        {fmtDateShort(workout.performed_at)}
       </Text>
+      <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
     </Pressable>
   );
 }
