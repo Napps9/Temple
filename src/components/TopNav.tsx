@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useGlobalSearchParams, usePathname } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,13 +19,12 @@ export type NavSection = {
   icon: IoniconName;
 };
 
-const CLASSES_VIEWS = ['day', 'week', 'month'] as const;
-
 // Persistent top bar — replaced the old NavModal popup. Layout:
-//   [logo + gym name] [section pills] [day/week/month] … [view-switch] [avatar] [inbox] [theme]
+//   [logo + gym name] … [section pills, centred] … [view-switch] [avatar] [inbox] [theme]
 // Section pills live in a single rounded track (same idiom as the
 // calendar's segmented control) with the active section lit in the
-// gym's brand colour. Labels collapse to icons below md.
+// gym's brand colour. Labels collapse to icons below md. The
+// day/week/month switcher lives with the calendar itself, not here.
 export function TopNav({
   sections,
   variant,
@@ -35,7 +34,6 @@ export function TopNav({
 }) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const params = useGlobalSearchParams<{ view?: string }>();
   const brand = useGymBrand();
   const session = useSession();
   const { data: profile } = useMyProfile();
@@ -44,8 +42,6 @@ export function TopNav({
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
 
   const gymName = brand.gymName;
-  const isOnClasses = pathname === '/classes' || pathname === '/book';
-  const currentView = params.view ?? 'day';
 
   const accountHref = variant === 'staff' ? '/management/account' : '/account';
   const homeHref = variant === 'staff' ? '/classes' : '/book';
@@ -76,57 +72,35 @@ export function TopNav({
         </Text>
       </Pressable>
 
-      <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
-        {sections.map((s) => {
-          const active = pathname.startsWith(s.href);
-          return (
-            <Pressable
-              key={s.name}
-              onPress={() => router.replace(s.href as never)}
-              hitSlop={4}
-              className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
-                active ? 'bg-white dark:bg-gray-700' : ''
-              }`}>
-              <Ionicons
-                name={s.icon}
-                size={17}
-                color={active ? brand.primaryColor : colors.iconSecondary}
-              />
-              <Text
-                className={`text-sm font-medium hidden md:flex ${
-                  active
-                    ? 'text-gray-900 dark:text-gray-50'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
-                {s.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
       <View className="flex-1 items-center">
-        {isOnClasses ? (
-          <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
-            {CLASSES_VIEWS.map((v) => (
+        <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+          {sections.map((s) => {
+            const active = pathname.startsWith(s.href);
+            return (
               <Pressable
-                key={v}
-                onPress={() => router.setParams({ view: v })}
-                className={`px-3 md:px-5 py-1.5 rounded-full ${
-                  currentView === v ? 'bg-white dark:bg-gray-700' : ''
+                key={s.name}
+                onPress={() => router.replace(s.href as never)}
+                hitSlop={4}
+                className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
+                  active ? 'bg-white dark:bg-gray-700' : ''
                 }`}>
+                <Ionicons
+                  name={s.icon}
+                  size={17}
+                  color={active ? brand.primaryColor : colors.iconSecondary}
+                />
                 <Text
-                  className={`capitalize text-sm font-medium ${
-                    currentView === v
+                  className={`text-sm font-medium hidden md:flex ${
+                    active
                       ? 'text-gray-900 dark:text-gray-50'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}>
-                  {v}
+                  {s.label}
                 </Text>
               </Pressable>
-            ))}
-          </View>
-        ) : null}
+            );
+          })}
+        </View>
       </View>
 
       <View className="flex-row items-center gap-1.5 md:gap-2">

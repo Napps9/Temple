@@ -257,6 +257,30 @@ export function ClassesCalendar({
       ) : null}
       <View className="w-full max-w-5xl mx-auto px-2">
         <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
+          {/* View switcher sits left of the month header, mirroring the
+              Add-class CTA on the right. It moved here from TopNav so
+              the bar stays purely navigational. */}
+          <View className="absolute left-0 top-6">
+            <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+              {VIEWS.map((v) => (
+                <Pressable
+                  key={v}
+                  onPress={() => router.setParams({ view: v })}
+                  className={`px-3 md:px-4 py-1.5 rounded-full ${
+                    view === v ? 'bg-white dark:bg-gray-700' : ''
+                  }`}>
+                  <Text
+                    className={`capitalize text-sm font-medium ${
+                      view === v
+                        ? 'text-gray-900 dark:text-gray-50'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                    {v}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, -1)))}
             hitSlop={8}
