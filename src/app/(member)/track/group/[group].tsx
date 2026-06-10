@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
@@ -17,6 +17,7 @@ import {
 import type { SectionFormatKey } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
 import { formatResultValue, type TrackedResultRow } from '@/lib/track';
+import { useMarkGroupViewed } from '@/lib/useGroupViewed';
 
 type RawTagRow = {
   id: string;
@@ -25,6 +26,7 @@ type RawTagRow = {
   performed_at: string;
   notes: string | null;
   section: {
+    workout_id: string | null;
     section_format: SectionFormatKey;
     total_time_seconds: number | null;
     total_rounds: number | null;
@@ -42,6 +44,14 @@ export default function GroupPage() {
   const { group: groupKey } = useLocalSearchParams<{ group: string }>();
   const session = useSession();
   const group = groupKey ? findGroup(groupKey) : undefined;
+  const markViewed = useMarkGroupViewed();
+
+  // Visiting the group clears its "N new" badge on Track-home.
+  useEffect(() => {
+    if (group) {
+      void markViewed(group.key);
+    }
+  }, [group, markViewed]);
 
   const movementKeys = useMemo(
     () => group?.movements.map((m) => m.key) ?? [],
@@ -82,7 +92,7 @@ export default function GroupPage() {
       const { data, error } = await supabase
         .from('tracked_section_movement_tags')
         .select(
-          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
         )
         .eq('profile_id', session!.user.id)
         .in('movement_key', movementKeys);
@@ -109,6 +119,7 @@ export default function GroupPage() {
       .filter((r) => r.movement_key === m.key)
       .map((r) => ({
         id: r.id,
+        workout_id: r.workout_id,
         movement_key: r.movement_key,
         track_key: r.track_key,
         value_numeric: r.value_numeric,
@@ -129,6 +140,7 @@ export default function GroupPage() {
             : { value_numeric: null, value_seconds: null };
         return {
           id: t.id,
+          workout_id: t.section?.workout_id ?? null,
           movement_key: t.movement_key,
           track_key: t.track_key,
           notes: t.notes,

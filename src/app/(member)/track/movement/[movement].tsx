@@ -32,6 +32,7 @@ type RawTagRow = {
   performed_at: string;
   notes: string | null;
   section: {
+    workout_id: string | null;
     section_format: SectionFormatKey;
     total_time_seconds: number | null;
     total_rounds: number | null;
@@ -77,7 +78,7 @@ export default function MovementDetail() {
       const { data, error } = await supabase
         .from('tracked_section_movement_tags')
         .select(
-          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
         )
         .eq('profile_id', session!.user.id)
         .eq('movement_key', movementKey!)
@@ -91,6 +92,7 @@ export default function MovementDetail() {
     if (!meta) return [];
     const direct_inputs = (direct.data ?? []).map((r) => ({
       id: r.id,
+      workout_id: r.workout_id,
       movement_key: r.movement_key,
       track_key: r.track_key,
       value_numeric: r.value_numeric,
@@ -111,6 +113,7 @@ export default function MovementDetail() {
           : { value_numeric: null, value_seconds: null };
       return {
         id: t.id,
+        workout_id: t.section?.workout_id ?? null,
         movement_key: t.movement_key,
         track_key: t.track_key,
         notes: t.notes,
@@ -335,7 +338,11 @@ function JournalRowView({
   const display = metric ? formatResultValue(row, metric) : null;
   return (
     <Pressable
-      onPress={() => router.push('/track/journal' as never)}
+      onPress={() =>
+        row.workout_id
+          ? router.push(`/track/workout/${row.workout_id}` as never)
+          : router.push('/track/journal' as never)
+      }
       className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
       <View className="flex-1">
         <View className="flex-row items-center gap-2">

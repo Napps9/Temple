@@ -1,14 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { findMovement, findScheme } from '@/lib/movements';
 import {
+  categoryLabel,
   formatLabel,
   type SectionCategoryKey,
   type SectionFormatKey,
@@ -21,6 +20,10 @@ import {
   type TrackedResultRow,
 } from '@/lib/track';
 import { FORMAT_SHAPES } from '@/lib/track-sections';
+
+// Tap any journal row (movement page, journal preview, group page)
+// and land here: the full recorded workout for that day, with the
+// programmed section bodies visible above each set of results.
 
 type SectionEntryRow = {
   id: string;
@@ -38,6 +41,11 @@ type SectionEntryRow = {
   notes: string | null;
 };
 
+type TagRow = {
+  movement_key: string;
+  track_key: string | null;
+};
+
 type SectionRow = {
   id: string;
   section_category: SectionCategoryKey;
@@ -51,7 +59,9 @@ type SectionRow = {
   total_extra_reps: number | null;
   did_not_finish: boolean | null;
   free_text_result: string | null;
+  source_programming_id: string | null;
   entries: SectionEntryRow[];
+  tags: TagRow[];
 };
 
 type WorkoutRow = {
@@ -64,32 +74,35 @@ type WorkoutRow = {
   legacy_results: TrackedResultRow[];
 };
 
-export default function Journal() {
+export default function WorkoutDetail() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const session = useSession();
-  const [recording, setRecording] = useState(false);
 
-  const journal = useQuery({
-    queryKey: ['tracked-journal', session?.user.id, 'all'],
-    enabled: !!session?.user.id,
-    queryFn: async (): Promise<WorkoutRow[]> => {
+  const workout = useQuery({
+    queryKey: ['tracked-workout', session?.user.id, id],
+    enabled: !!session?.user.id && !!id,
+    queryFn: async (): Promise<WorkoutRow | null> => {
       const { data, error } = await supabase
         .from('tracked_workouts')
         .select(
           [
             'id, performed_at, title, notes, class_session_id',
-            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, did_not_finish, free_text_result, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes))',
+            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, did_not_finish, free_text_result, source_programming_id, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes), tags:tracked_section_movement_tags(movement_key, track_key))',
             'legacy_results:tracked_movement_results(id, workout_id, movement_key, track_key, value_numeric, value_seconds, value_unit, notes, performed_at)',
           ].join(', '),
         )
         .eq('profile_id', session!.user.id)
-        .order('performed_at', { ascending: false });
+        .eq('id', id)
+        .maybeSingle();
       if (error) throw error;
-      return ((data ?? []) as unknown as WorkoutRow[]).map((w) => ({
+      if (!data) return null;
+      const w = data as unknown as WorkoutRow;
+      return {
         ...w,
         sections: (w.sections ?? [])
           .slice()
           .sort((a, b) => a.sort_order - b.sort_order),
-      }));
+      };
     },
   });
 
@@ -97,123 +110,111 @@ export default function Journal() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <Link href="/track" asChild>
-            <Pressable hitSlop={6} className="active:opacity-70">
-              <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-            </Pressable>
-          </Link>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={6}
+            className="active:opacity-70">
+            <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
+          </Pressable>
           <View className="flex-1">
+            <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+              Session
+            </Text>
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-              Journal
+              {workout.data?.title?.trim() || 'Workout'}
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              Every workout you've logged.
+              {workout.data ? fmtDateLong(workout.data.performed_at) : ''}
             </Text>
           </View>
-          <Pressable
-            onPress={() => setRecording(true)}
-            hitSlop={6}
-            className="bg-primary active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
-            <Ionicons name="add" size={14} color="#FFFFFF" />
-            <Text className="text-white text-xs font-semibold">Record</Text>
-          </Pressable>
         </View>
 
-        {journal.isLoading ? (
+        {workout.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
-        ) : (journal.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+        ) : !workout.data ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              No workouts yet.
+              Workout not found.
             </Text>
           </View>
         ) : (
-          journal.data!.map((w) => <WorkoutCard key={w.id} workout={w} />)
+          <>
+            {workout.data.sections.map((s) => (
+              <SectionCard key={s.id} section={s} />
+            ))}
+            {workout.data.legacy_results.length > 0 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Results
+                </Text>
+                {workout.data.legacy_results.map((r) => (
+                  <ResultRow key={r.id} row={r} />
+                ))}
+              </View>
+            ) : null}
+            {workout.data.notes ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+                <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                  Notes
+                </Text>
+                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                  {workout.data.notes}
+                </Text>
+              </View>
+            ) : null}
+            {workout.data.sections.length === 0 &&
+            workout.data.legacy_results.length === 0 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  No results recorded.
+                </Text>
+              </View>
+            ) : null}
+          </>
         )}
       </ScrollView>
-
-      <RecordWorkoutModal
-        visible={recording}
-        onClose={() => setRecording(false)}
-      />
     </Screen>
   );
 }
 
-function WorkoutCard({ workout }: { workout: WorkoutRow }) {
-  return (
-    <Pressable
-      onPress={() =>
-        router.push(`/track/workout/${workout.id}` as never)
-      }
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:opacity-70">
-      <View className="flex-row items-center">
-        <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            {workout.title?.trim() || 'Workout'}
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            {fmtDateLong(workout.performed_at)}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-      </View>
-
-      {workout.sections.length > 0 ? (
-        <View className="gap-3">
-          {workout.sections.map((s) => (
-            <SectionDisplay key={s.id} section={s} />
-          ))}
-        </View>
-      ) : null}
-
-      {workout.legacy_results.length > 0 ? (
-        <View className="gap-2">
-          {workout.legacy_results.map((r) => (
-            <ResultRow key={r.id} row={r} />
-          ))}
-        </View>
-      ) : null}
-
-      {workout.sections.length === 0 && workout.legacy_results.length === 0 ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
-          No results recorded.
-        </Text>
-      ) : null}
-
-      {workout.notes ? (
-        <Text className="text-gray-600 dark:text-gray-300 text-sm">
-          {workout.notes}
-        </Text>
-      ) : null}
-    </Pressable>
-  );
-}
-
-function SectionDisplay({ section }: { section: SectionRow }) {
+function SectionCard({ section }: { section: SectionRow }) {
   const headline = renderHeadline(section);
+  const programmed = section.body?.trim();
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
       <View className="flex-row items-center gap-2">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-sm">
-          {section.title?.trim() || formatLabel(section.section_format)}
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+          {section.title?.trim() || categoryLabel(section.section_category)}
         </Text>
-        <View className="rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-2 py-0.5">
+        <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
           <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-semibold uppercase tracking-wider">
             {formatLabel(section.section_format)}
           </Text>
         </View>
       </View>
-      {section.body ? (
-        <Text className="text-gray-600 dark:text-gray-300 text-xs">
-          {section.body}
-        </Text>
+
+      {programmed ? (
+        <View className="bg-primary/5 border-l-2 border-primary rounded-r-lg px-3 py-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest mb-1">
+            Programmed
+          </Text>
+          <Text className="text-gray-700 dark:text-gray-200 text-sm leading-snug">
+            {programmed}
+          </Text>
+        </View>
       ) : null}
+
       {headline ? (
-        <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
-          {headline}
-        </Text>
+        <View className="flex-row items-baseline gap-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+            Result
+          </Text>
+          <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            {headline}
+          </Text>
+        </View>
       ) : null}
+
       {section.entries.length > 0 ? (
         <View className="gap-1">
           {section.entries
@@ -228,6 +229,33 @@ function SectionDisplay({ section }: { section: SectionRow }) {
             ))}
         </View>
       ) : null}
+
+      {section.tags.length > 0 ? (
+        <View className="flex-row flex-wrap gap-1">
+          {section.tags.map((t, i) => {
+            const meta = findMovement(t.movement_key);
+            const scheme = t.track_key
+              ? findScheme(t.movement_key, t.track_key)
+              : null;
+            const name = meta?.movement.name ?? t.movement_key;
+            return (
+              <Pressable
+                key={`${t.movement_key}-${t.track_key}-${i}`}
+                onPress={() =>
+                  meta &&
+                  router.push(`/track/movement/${meta.movement.key}` as never)
+                }
+                className="rounded-full bg-primary/10 px-2.5 py-1 active:opacity-70">
+                <Text className="text-primary text-[11px] font-semibold">
+                  {name}
+                  {scheme ? ` · ${scheme.label}` : ''}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
       {section.notes ? (
         <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
           {section.notes}
@@ -240,7 +268,7 @@ function SectionDisplay({ section }: { section: SectionRow }) {
 function renderHeadline(section: SectionRow): string | null {
   const shape = FORMAT_SHAPES[section.section_format];
   if (shape.kind === 'notes_only') {
-    return section.free_text_result?.trim() || (section.notes ? null : '—');
+    return section.free_text_result?.trim() || null;
   }
   if (shape.kind === 'aggregate_first') {
     const parts: string[] = [];
@@ -268,16 +296,27 @@ function EntryLine({
   entry: SectionEntryRow;
   format: SectionFormatKey;
 }) {
-  const labelBase = format === 'amrap' ? 'Round' : format === 'emom' ? 'Minute' : format === 'intervals' ? 'Interval' : 'Set';
+  const labelBase =
+    format === 'amrap'
+      ? 'Round'
+      : format === 'emom'
+        ? 'Minute'
+        : format === 'intervals'
+          ? 'Interval'
+          : 'Set';
   const idx = entry.round_index ?? entry.entry_index;
   const pieces: string[] = [];
   if (entry.weight_numeric != null) {
-    pieces.push(`${entry.weight_numeric}${entry.weight_unit ? ' ' + entry.weight_unit : ''}`);
+    pieces.push(
+      `${entry.weight_numeric}${entry.weight_unit ? ' ' + entry.weight_unit : ''}`,
+    );
   }
   if (entry.reps != null) pieces.push(`${entry.reps} reps`);
   if (entry.time_seconds != null) pieces.push(formatSeconds(entry.time_seconds));
   if (entry.distance_numeric != null) {
-    pieces.push(`${entry.distance_numeric}${entry.distance_unit ? ' ' + entry.distance_unit : ''}`);
+    pieces.push(
+      `${entry.distance_numeric}${entry.distance_unit ? ' ' + entry.distance_unit : ''}`,
+    );
   }
   if (entry.calories != null) pieces.push(`${entry.calories} cal`);
   if (entry.done) pieces.push('done');

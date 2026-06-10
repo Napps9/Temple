@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 type IoniconName = keyof typeof Ionicons.glyphMap;
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
@@ -13,6 +13,7 @@ import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { fmtDateShort } from '@/lib/track';
+import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 
 type PreviewWorkout = {
@@ -31,42 +32,54 @@ export default function TrackHome() {
   const session = useSession();
   const [recording, setRecording] = useState(false);
 
-  // Logs from the last week, bucketed by movement group, so the group
-  // tiles can show fresh-activity badges (direct PRs + section tags).
-  const recentByGroup = useQuery({
+  // Logs from the last week per movement group — used to show
+  // fresh-activity badges. The query returns rows with their
+  // movement_key + performed_at so the count can shrink after the
+  // member visits the group (we filter against that group's
+  // last-viewed timestamp at render time, no refetch needed).
+  const recentLogs = useQuery({
     queryKey: ['recent-movement-logs', session?.user.id],
     enabled: !!session?.user.id,
-    queryFn: async (): Promise<Record<string, number>> => {
+    queryFn: async (): Promise<{ movement_key: string; performed_at: string }[]> => {
       const sinceIso = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
       const [direct, tags] = await Promise.all([
         supabase
           .from('tracked_movement_results')
-          .select('movement_key')
+          .select('movement_key, performed_at')
           .eq('profile_id', session!.user.id)
           .gte('performed_at', sinceIso),
         supabase
           .from('tracked_section_movement_tags')
-          .select('movement_key')
+          .select('movement_key, performed_at')
           .eq('profile_id', session!.user.id)
           .gte('performed_at', sinceIso),
       ]);
       if (direct.error) throw direct.error;
       if (tags.error) throw tags.error;
-      const groupOf = new Map<string, string>();
-      for (const g of MOVEMENT_GROUPS)
-        for (const m of g.movements) groupOf.set(m.key, g.key);
-      const counts: Record<string, number> = {};
-      const rows = [...(direct.data ?? []), ...(tags.data ?? [])] as {
-        movement_key: string;
-      }[];
-      for (const r of rows) {
-        const gk = groupOf.get(r.movement_key);
-        if (!gk) continue;
-        counts[gk] = (counts[gk] ?? 0) + 1;
-      }
-      return counts;
+      return [
+        ...(direct.data ?? []),
+        ...(tags.data ?? []),
+      ] as { movement_key: string; performed_at: string }[];
     },
   });
+
+  const groupViewed = useGroupViewedMap();
+
+  const recentByGroup = useMemo<Record<string, number>>(() => {
+    const groupOf = new Map<string, string>();
+    for (const g of MOVEMENT_GROUPS)
+      for (const m of g.movements) groupOf.set(m.key, g.key);
+    const viewed = groupViewed.data ?? {};
+    const counts: Record<string, number> = {};
+    for (const r of recentLogs.data ?? []) {
+      const gk = groupOf.get(r.movement_key);
+      if (!gk) continue;
+      // Only count logs the member hasn't visited the group since.
+      if (viewed[gk] && r.performed_at <= viewed[gk]) continue;
+      counts[gk] = (counts[gk] ?? 0) + 1;
+    }
+    return counts;
+  }, [recentLogs.data, groupViewed.data]);
 
   const journal = useQuery({
     queryKey: ['tracked-journal', session?.user.id, 'preview'],
@@ -170,7 +183,7 @@ export default function TrackHome() {
                   count={g.movements.length}
                   icon={g.icon as IoniconName}
                   accent={g.accent}
-                  recentCount={recentByGroup.data?.[g.key] ?? 0}
+                  recentCount={recentByGroup[g.key] ?? 0}
                   onPress={() =>
                     router.push(`/track/group/${g.key}` as never)
                   }
@@ -316,7 +329,9 @@ function JournalRow({ workout }: { workout: PreviewWorkout }) {
   const total = sections + results;
   return (
     <Pressable
-      onPress={() => router.push('/track/journal' as never)}
+      onPress={() =>
+        router.push(`/track/workout/${workout.id}` as never)
+      }
       className="flex-row items-center gap-3 py-2.5 border-t border-gray-100 dark:border-gray-800 active:opacity-70">
       <View className="flex-1">
         <Text className="text-gray-900 dark:text-gray-50 font-medium">
