@@ -13,6 +13,10 @@
 -- bcrypt-hashed password (GoTrue verifies crypt()'s $2a$ output), a
 -- confirmed email, and a matching auth.identities row — without the
 -- identity row email/password sign-in fails even when the user exists.
+-- The various *_token / email_change / phone_change columns MUST be
+-- empty strings, not NULL: GoTrue scans them into non-nullable Go
+-- strings and a NULL turns every sign-in into
+-- "Database error querying schema".
 
 do $$
 declare
@@ -23,16 +27,21 @@ begin
   insert into auth.users
     (instance_id, id, aud, role, email, encrypted_password,
      email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
-     created_at, updated_at)
+     created_at, updated_at,
+     confirmation_token, recovery_token,
+     email_change, email_change_token_new, email_change_token_current,
+     phone_change, phone_change_token, reauthentication_token)
   values
     ('00000000-0000-0000-0000-000000000000', v_owner_id,
      'authenticated', 'authenticated', 'owner@temple.test',
      extensions.crypt('password123', extensions.gen_salt('bf')), now(),
-     '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+     '{"provider":"email","providers":["email"]}', '{}', now(), now(),
+     '', '', '', '', '', '', '', ''),
     ('00000000-0000-0000-0000-000000000000', v_member_id,
      'authenticated', 'authenticated', 'member@temple.test',
      extensions.crypt('password123', extensions.gen_salt('bf')), now(),
-     '{"provider":"email","providers":["email"]}', '{}', now(), now())
+     '{"provider":"email","providers":["email"]}', '{}', now(), now(),
+     '', '', '', '', '', '', '', '')
   on conflict (id) do nothing;
 
   insert into auth.identities
