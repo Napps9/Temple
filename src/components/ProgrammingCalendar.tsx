@@ -81,7 +81,15 @@ function fmtMonthYear(d: Date) {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
-export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
+export function ProgrammingCalendar({
+  mode,
+  headerAction,
+}: {
+  mode: 'manage' | 'view';
+  // Optional control rendered beside the month header (right-aligned
+  // on desktop, its own row on mobile) — staff use it for Analysis.
+  headerAction?: React.ReactNode;
+}) {
   const { data: membership } = useGymMembership();
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [openFor, setOpenFor] = useState<{
@@ -183,7 +191,17 @@ export function ProgrammingCalendar({ mode }: { mode: 'manage' | 'view' }) {
             className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
           </Pressable>
+          {headerAction ? (
+            <View className="absolute right-0 top-2 hidden md:flex">
+              {headerAction}
+            </View>
+          ) : null}
         </View>
+        {headerAction ? (
+          <View className="md:hidden items-center pb-4 -mt-1">
+            {headerAction}
+          </View>
+        ) : null}
 
         <View className="flex-row gap-2 md:gap-3 md:justify-center pb-4">
           {weekDays.map((d) => {

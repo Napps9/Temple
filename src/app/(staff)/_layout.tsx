@@ -32,6 +32,7 @@ export default function StaffLayout() {
           sceneStyle: { backgroundColor: colors.screenBg },
           animation: 'none',
         }}>
+        <Tabs.Screen name="analysis" options={{ title: 'Analysis' }} />
         <Tabs.Screen name="classes" options={{ title: 'Classes' }} />
         <Tabs.Screen name="management" options={{ title: 'Management' }} />
         <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
