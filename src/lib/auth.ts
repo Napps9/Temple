@@ -1,5 +1,10 @@
 import type { Session } from '@supabase/supabase-js';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
 
 import {
@@ -106,6 +111,16 @@ export function useGymMembership() {
 export function useRole(): GymRole | null {
   const { data } = useGymMembership();
   return data?.role ?? null;
+}
+
+// The one sanctioned way to update the membership cache after a
+// mutation changes it (create gym, join gym, leave gym). Refetch — not
+// invalidate — and await it: useGymMembership is pinned to
+// refetchOnMount: false, and navigation usually reads the result
+// immediately after, so a passive invalidate leaves the redirect
+// reading the stale row (the /welcome bounce loop).
+export async function refreshMembership(queryClient: QueryClient): Promise<void> {
+  await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
 }
 
 export function useMyProfile() {

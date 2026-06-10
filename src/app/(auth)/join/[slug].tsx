@@ -17,6 +17,7 @@ import { Screen } from '@/components/Screen';
 import {
   joinGymBySlug,
   joinGymWithSignup,
+  refreshMembership,
   useSession,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -71,10 +72,7 @@ export default function JoinGymScreen() {
       });
     },
     onSuccess: async () => {
-      // refetch (not invalidate) — useGymMembership is pinned to
-      // refetchOnMount: false so an invalidate-then-redirect race leaves
-      // the cache as null and bounces the joined member back to /welcome.
-      await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
+      await refreshMembership(queryClient);
       router.replace('/' as never);
     },
     onError: (e) =>
@@ -87,10 +85,7 @@ export default function JoinGymScreen() {
       await joinGymBySlug(slug);
     },
     onSuccess: async () => {
-      // refetch (not invalidate) — useGymMembership is pinned to
-      // refetchOnMount: false so an invalidate-then-redirect race leaves
-      // the cache as null and bounces the joined member back to /welcome.
-      await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
+      await refreshMembership(queryClient);
       router.replace('/' as never);
     },
     onError: (e) =>

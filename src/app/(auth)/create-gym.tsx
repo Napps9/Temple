@@ -14,7 +14,7 @@ import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
-import { createGymWithSignup, useSession } from '@/lib/auth';
+import { createGymWithSignup, refreshMembership, useSession } from '@/lib/auth';
 import { DEFAULT_BRAND, normaliseHex, slugify } from '@/lib/brand';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -90,12 +90,7 @@ export default function CreateGymScreen() {
         gymId = result.gymId;
       }
       setCreatedGymId(gymId);
-      // refetchQueries (not invalidateQueries) because useGymMembership is
-      // pinned to refetchOnMount: false to dodge useCan-observer retry
-      // storms — invalidate alone marks data stale but the next /index.tsx
-      // mount won't refetch, leaving the cache as null and bouncing the
-      // freshly-onboarded owner back to /welcome.
-      await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
+      await refreshMembership(queryClient);
       setStep('brand');
     } catch (e) {
       setError(errorMessage(e, 'Could not create the gym'));

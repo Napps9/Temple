@@ -83,20 +83,24 @@ if (!existsSync(envLocalPath)) {
     console.error('Failed to read supabase status -o env.');
     process.exit(1);
   }
-  // supabase status -o env emits lines like `API_URL="http://127.0.0.1:54321"`
-  // and `ANON_KEY="sb_publishable_..."`. We map those onto the EXPO_PUBLIC_
-  // names the app reads.
-  const lines = envOut.stdout.split('\n');
-  const get = (key) => {
-    const hit = lines.find((l) => l.startsWith(`${key}=`));
-    if (!hit) return null;
-    return hit.slice(key.length + 1).replace(/^"|"$/g, '');
-  };
-  const apiUrl = get('API_URL');
-  const anonKey = get('ANON_KEY');
+  // supabase status -o env emits lines like `API_URL="http://127.0.0.1:54321"`.
+  // The publishable key's env name varies by CLI version / config:
+  // older output calls it ANON_KEY, newer publishable-key setups may emit
+  // PUBLISHABLE_KEY instead — accept either.
+  const pairs = new Map(
+    envOut.stdout
+      .split('\n')
+      .map((l) => l.match(/^([A-Z0-9_]+)=("?)(.*)\2$/))
+      .filter(Boolean)
+      .map((m) => [m[1], m[3]]),
+  );
+  const apiUrl = pairs.get('API_URL');
+  const anonKey = pairs.get('ANON_KEY') ?? pairs.get('PUBLISHABLE_KEY');
   if (!apiUrl || !anonKey) {
     console.error(
-      'Could not derive API_URL / ANON_KEY from supabase status. Inspect with `supabase status -o env`.',
+      `Could not derive the API URL + anon/publishable key from supabase status.\n` +
+        `Keys seen: ${[...pairs.keys()].join(', ') || '(none)'}\n` +
+        `Expected API_URL plus ANON_KEY or PUBLISHABLE_KEY — inspect with \`supabase status -o env\`.`,
     );
     process.exit(1);
   }

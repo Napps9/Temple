@@ -47,6 +47,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "sync": "git pull --ff-only && npm install --no-audit --no-fund && supabase db reset",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",

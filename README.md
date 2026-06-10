@@ -18,7 +18,20 @@ npm run dev
 
 `npm run dev` does, in order: start the local Supabase stack if it isn't running, write `.env.local` pointing at it (only if the file doesn't exist), then hand off to `expo start --web`. Open the URL it prints.
 
-Sign up a new account from the welcome screen and walk through **Start a new gym**. You'll land in the management dashboard against an empty local DB.
+The local DB is seeded with two ready-made logins (run `supabase db reset` first if you started the stack before the seed existed):
+
+| Email | Password | Role |
+| --- | --- | --- |
+| `owner@temple.test` | `password123` | owner of the demo gym |
+| `member@temple.test` | `password123` | member |
+
+Seeds run only on local `supabase db reset` — they never reach the hosted project. You can also sign up a fresh account and walk through **Start a new gym**.
+
+To pull main + reinstall deps + replay migrations in one go:
+
+```sh
+npm run sync
+```
 
 ## Local vs hosted Supabase
 
@@ -66,6 +79,10 @@ Without these the job will fail loudly on first push to main; add them before me
 
 Skip with `git commit --no-verify` if you really need to.
 
+## Claude Code sessions
+
+`.claude/settings.json` registers a SessionStart hook (`scripts/session-start.sh`). On every session start it sets the git author if unset and fetches `origin/main`; if the workspace is sitting on a throwaway `claude/*` branch with a clean tree and every commit pushed, it switches to a synced `main`. Cloud containers reset onto stale branches between sessions — this keeps new sessions from building on weeks-old code. It never touches a branch with uncommitted or unpushed work.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -74,4 +91,4 @@ Skip with `git commit --no-verify` if you really need to.
 | `Invalid db.major_version: 17` in CI | Bump `package.json#supabase.cli_version` to a release that supports Postgres 17 (≥ 2.40). |
 | `Missing Supabase env vars` page in browser | Delete `.env.local` and re-run `npm run dev` to regenerate. |
 | CLI mismatch warning from `npm run dev` | Either bump local CLI (`brew upgrade supabase` etc.) or change `package.json#supabase.cli_version` to match your local. |
-| Stuck on `/welcome` after creating a gym | Hard-reload the browser. The membership query is pinned to `refetchOnMount: false` to dodge `useCan` retry storms; we currently `refetchQueries` at the create-gym + join code paths to push past it. |
+| Stuck on `/welcome` after creating a gym | Hard-reload the browser. The membership query is pinned to `refetchOnMount: false`; any flow that changes membership must `await refreshMembership(queryClient)` (exported from `src/lib/auth.ts`) before navigating. |

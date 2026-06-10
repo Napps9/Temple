@@ -50,6 +50,16 @@ jobs:
     needs: [check, db-tests]
     runs-on: ubuntu-latest
     name: Deploy migrations to hosted
+    # Serialise deploys: two quick merges queue instead of interleaving
+    # `db push` against the same hosted project.
+    concurrency:
+      group: db-deploy
+      cancel-in-progress: false
+    # Job-level so both `link` and `push` see credentials — link also
+    # connects to the database and needs the password non-interactively.
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - name: Read Supabase CLI version
@@ -59,14 +69,9 @@ jobs:
         with:
           version: ${{ steps.cli.outputs.version }}
       - name: Link to hosted project
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
       # --include-all matches the workflow we already run locally — lets us
       # push migrations whose numbers fall before the latest applied one
       # (we shipped 0029 after 0030 earlier in the project's history).
       - name: Push migrations
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: supabase db push --include-all
