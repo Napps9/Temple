@@ -9,10 +9,14 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ChipButton } from '@/components/ChipButton';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
+import {
+  WorkoutSectionCard,
+  type WorkoutSectionShape,
+} from '@/components/WorkoutSectionCard';
 import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
-import { fmtDateShort } from '@/lib/track';
+import { fmtDateLong } from '@/lib/track';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 
@@ -20,11 +24,10 @@ type PreviewWorkout = {
   id: string;
   performed_at: string;
   title: string | null;
-  section_count: { count: number }[] | null;
-  result_count: { count: number }[] | null;
+  sections: (WorkoutSectionShape & { sort_order: number })[];
 };
 
-const JOURNAL_PREVIEW_COUNT = 4;
+const JOURNAL_PREVIEW_COUNT = 3;
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -96,13 +99,21 @@ export default function TrackHome() {
       const { data, error } = await supabase
         .from('tracked_workouts')
         .select(
-          'id, performed_at, title, section_count:tracked_workout_sections(count), result_count:tracked_movement_results(count)',
+          [
+            'id, performed_at, title',
+            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, did_not_finish, free_text_result, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes), tags:tracked_section_movement_tags(movement_key, track_key))',
+          ].join(', '),
         )
         .eq('profile_id', session!.user.id)
         .order('performed_at', { ascending: false })
         .limit(JOURNAL_PREVIEW_COUNT);
       if (error) throw error;
-      return (data ?? []) as unknown as PreviewWorkout[];
+      return ((data ?? []) as unknown as PreviewWorkout[]).map((w) => ({
+        ...w,
+        sections: (w.sections ?? [])
+          .slice()
+          .sort((a, b) => a.sort_order - b.sort_order),
+      }));
     },
   });
 
@@ -350,32 +361,41 @@ function GroupTile({
   );
 }
 
+// Rich preview: the workout title + date, then each recorded section
+// rendered with WorkoutSectionCard (programmed body, headline result,
+// entries, tagged movement chips) — same component used by the
+// workout detail page so the two surfaces stay aligned. The whole
+// card is pressable into the detail view for the full session.
 function JournalRow({ workout }: { workout: PreviewWorkout }) {
-  const sections = workout.section_count?.[0]?.count ?? 0;
-  const results = workout.result_count?.[0]?.count ?? 0;
-  const total = sections + results;
+  const sections = workout.sections;
   return (
     <Pressable
       onPress={() =>
         router.push(`/track/workout/${workout.id}` as never)
       }
-      className="flex-row items-center gap-3 py-2.5 border-t border-gray-100 dark:border-gray-800 active:opacity-70">
-      <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
-          {workout.title?.trim() || 'Workout'}
-        </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
-          {sections > 0
-            ? `${sections} section${sections === 1 ? '' : 's'}`
-            : total === 0
-              ? 'No results yet'
-              : `${results} result${results === 1 ? '' : 's'}`}
-        </Text>
+      className="gap-2 py-3 border-t border-gray-100 dark:border-gray-800 active:opacity-70">
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1">
+          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+            {fmtDateLong(workout.performed_at)}
+          </Text>
+          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            {workout.title?.trim() || 'Workout'}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        {fmtDateShort(workout.performed_at)}
-      </Text>
-      <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
+      {sections.length === 0 ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
+          No results recorded.
+        </Text>
+      ) : (
+        <View className="gap-2">
+          {sections.map((s) => (
+            <WorkoutSectionCard key={s.id} section={s} />
+          ))}
+        </View>
+      )}
     </Pressable>
   );
 }
