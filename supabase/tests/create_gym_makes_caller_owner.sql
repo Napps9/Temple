@@ -33,14 +33,29 @@ select is(
   'slug is lowercased and stripped'
 );
 
--- A second call with the same slug fails.
+-- Slug validation, exercised by a FRESH user each time — since 0033
+-- the founder already belongs to a gym, so re-calling create_gym as
+-- them trips the one-gym-per-account guard before slug checks run.
+do $$
+begin
+  execute 'reset role';  -- back to postgres so mk_user may write auth.users
+  perform _test_act_as(_test_mk_user('second@cg.test'));
+end;
+$$;
+
 select throws_like(
   $$ select public.create_gym('Other', 'iron-temple-2026') $$,
   '%Slug already taken%',
   'duplicate slug is rejected'
 );
 
--- Empty slug fails.
+do $$
+begin
+  execute 'reset role';
+  perform _test_act_as(_test_mk_user('third@cg.test'));
+end;
+$$;
+
 select throws_like(
   $$ select public.create_gym('No slug gym', '') $$,
   '%Slug must contain%',
