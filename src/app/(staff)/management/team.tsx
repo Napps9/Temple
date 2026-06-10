@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { can, type Capability } from '@/lib/can';
@@ -456,14 +457,14 @@ function RolePermissionsSection() {
         <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
 
-      <Pressable
+      <ChipButton
+        tone="neutral"
+        className="self-start"
+        label={`Reset ${activeRole} to defaults`}
+        icon="refresh"
         onPress={() => resetRole.mutate()}
         disabled={resetRole.isPending}
-        className="self-start px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
-        <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-          Reset {activeRole} to defaults
-        </Text>
-      </Pressable>
+      />
     </View>
   );
 }

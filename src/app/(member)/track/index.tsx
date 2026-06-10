@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 import { useQuery } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ChipButton } from '@/components/ChipButton';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
@@ -77,13 +78,12 @@ export default function TrackHome() {
             <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
               Journal
             </Text>
-            <Link href="/track/journal" asChild>
-              <Pressable hitSlop={6} className="active:opacity-70">
-                <Text className="text-primary text-xs uppercase tracking-widest">
-                  See all
-                </Text>
-              </Pressable>
-            </Link>
+            <ChipButton
+              label="See all"
+              icon="arrow-forward"
+              iconSide="right"
+              onPress={() => router.push('/track/journal')}
+            />
           </View>
           {journal.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">

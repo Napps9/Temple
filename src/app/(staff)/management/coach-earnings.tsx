@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import {
   DateRangeCta,
   isoDate,
@@ -525,9 +526,10 @@ function ClassTypeRateEditor({
               ? 'No rate set'
               : `${formatMoney(existingCents, currency)} per class`}
           </Text>
-          <Text className="text-primary text-xs uppercase tracking-widest">
-            {existingCents == null ? 'Set' : 'Edit'}
-          </Text>
+          <ChipButton
+            label={existingCents == null ? 'Set' : 'Edit'}
+            icon={existingCents == null ? 'add' : 'pencil'}
+          />
         </Pressable>
       )}
     </View>

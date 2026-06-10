@@ -1,9 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Avatar } from './Avatar';
+import { ChipButton } from './ChipButton';
 import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -71,14 +72,20 @@ export function AvatarUploader({
     <View className="flex-row items-center gap-3">
       <Avatar name={fullName} avatarUrl={currentUrl} size={size} />
       <View className="flex-1 gap-1">
-        <Pressable
+        <ChipButton
+          tone="neutral"
+          className="self-start"
+          label={
+            upload.isPending
+              ? 'Uploading…'
+              : currentUrl
+                ? 'Change photo'
+                : 'Upload photo'
+          }
+          icon="camera-outline"
           onPress={() => upload.mutate()}
           disabled={upload.isPending}
-          className="self-start px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
-          <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-            {upload.isPending ? 'Uploading…' : currentUrl ? 'Change photo' : 'Upload photo'}
-          </Text>
-        </Pressable>
+        />
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
         ) : null}

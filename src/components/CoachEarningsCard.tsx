@@ -1,7 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import {
   DateRangeCta,
@@ -9,6 +8,7 @@ import {
   presetRange,
   type Preset,
 } from './DateRangeCta';
+import { ChipButton } from '@/components/ChipButton';
 import { useGymMembership, useSession } from '@/lib/auth';
 import {
   formatMoney,
@@ -90,18 +90,12 @@ export function CoachEarningsCard() {
             </Text>
           </View>
           {rows.length > 0 ? (
-            <Pressable
+            <ChipButton
+              className="self-start"
+              label={breakdownOpen ? 'Hide breakdown' : 'Show breakdown'}
+              icon={breakdownOpen ? 'chevron-up' : 'chevron-down'}
               onPress={() => setBreakdownOpen((v) => !v)}
-              className="flex-row items-center gap-1 self-start active:opacity-70">
-              <Text className="text-primary text-xs uppercase tracking-widest">
-                {breakdownOpen ? 'Hide breakdown' : 'Show breakdown'}
-              </Text>
-              <Ionicons
-                name={breakdownOpen ? 'chevron-up' : 'chevron-down'}
-                size={12}
-                color="#2563EB"
-              />
-            </Pressable>
+            />
           ) : null}
           {breakdownOpen ? (
             <View className="gap-1.5 pt-1">

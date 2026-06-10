@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { ProgrammingModal } from '@/components/ProgrammingModal';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
@@ -306,9 +307,10 @@ function ClassTypeCard({
         {classType.name}
       </Text>
       {mode === 'manage' ? (
-        <Text className="text-primary text-xs uppercase tracking-widest">
-          {sections.length === 0 ? 'Add' : 'Edit'}
-        </Text>
+        <ChipButton
+          label={sections.length === 0 ? 'Add' : 'Edit'}
+          icon={sections.length === 0 ? 'add' : 'pencil'}
+        />
       ) : null}
     </View>
   );

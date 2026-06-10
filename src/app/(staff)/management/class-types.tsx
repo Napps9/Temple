@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { ColorSwatchPicker, PALETTE } from '@/components/ColorSwatchPicker';
 import { Input } from '@/components/Input';
 import {
@@ -443,9 +444,12 @@ export function ClassTypesPanel() {
                       ? summariseRecurrence(r.recurrence)
                       : 'No recurring schedule yet.'}
                   </Text>
-                  <Text className="text-primary text-xs uppercase tracking-widest">
-                    {r.scheduleOpen ? 'Hide' : hasSchedule ? 'Edit' : 'Set up'}
-                  </Text>
+                  <ChipButton
+                    label={r.scheduleOpen ? 'Hide' : hasSchedule ? 'Edit' : 'Set up'}
+                    icon={
+                      r.scheduleOpen ? 'chevron-up' : hasSchedule ? 'pencil' : 'add'
+                    }
+                  />
                 </Pressable>
 
                 {r.scheduleOpen ? (

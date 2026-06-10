@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
@@ -648,27 +649,25 @@ function AlertsTab({ gymId }: { gymId: string }) {
             </Text>
             <View className="flex-row gap-2">
               {a.subject_profile_id ? (
-                <Pressable
+                <ChipButton
+                  tone="neutral"
+                  label="Open profile"
+                  icon="person-outline"
                   onPress={() =>
                     router.push(
                       `/management/members/${a.subject_profile_id}` as never,
                     )
                   }
-                  className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:opacity-70">
-                  <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-                    Open profile
-                  </Text>
-                </Pressable>
+                />
               ) : null}
               {!a.acknowledged_at ? (
-                <Pressable
+                <ChipButton
+                  tone="filled"
+                  label="Acknowledge"
+                  icon="checkmark"
                   onPress={() => ack.mutate(a.id)}
                   disabled={ack.isPending}
-                  className="px-3 py-1.5 rounded-md bg-primary active:opacity-70">
-                  <Text className="text-white text-xs uppercase tracking-widest font-semibold">
-                    Acknowledge
-                  </Text>
-                </Pressable>
+                />
               ) : (
                 <Text className="text-gray-500 dark:text-gray-400 text-xs self-center">
                   Acknowledged

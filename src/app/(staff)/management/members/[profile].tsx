@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
+import { ChipButton } from '@/components/ChipButton';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
@@ -253,14 +255,13 @@ export default function MemberDetailScreen() {
               grants — re-subscribe them separately.
             </Text>
             {canRemove ? (
-              <Pressable
-                onPress={() => restore.mutate()}
-                disabled={restore.isPending}
-                className="self-start px-3 py-1.5 rounded-md border border-amber-300 dark:border-amber-700 active:bg-amber-100 dark:active:bg-amber-900/40">
-                <Text className="text-amber-700 dark:text-amber-300 text-xs uppercase tracking-widest">
-                  Restore member
-                </Text>
-              </Pressable>
+              <View className="self-start">
+                <ActionButton
+                  kind="restore"
+                  label={restore.isPending ? 'Restoring…' : 'Restore member'}
+                  onPress={() => restore.mutate()}
+                />
+              </View>
             ) : null}
           </View>
         ) : null}
@@ -285,15 +286,17 @@ export default function MemberDetailScreen() {
           ) : (
             <Text className="text-gray-400 dark:text-gray-500 text-xs">No tags yet.</Text>
           )}
-          <Link
-            href={{ pathname: '/management/tags', params: { profile: profileId } }}
-            asChild>
-            <Pressable className="px-2 py-0.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600">
-              <Text className="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-widest">
-                Manage tags
-              </Text>
-            </Pressable>
-          </Link>
+          <ChipButton
+            tone="neutral"
+            label="Manage tags"
+            icon="pricetags-outline"
+            onPress={() =>
+              router.push({
+                pathname: '/management/tags',
+                params: { profile: profileId },
+              })
+            }
+          />
         </View>
 
         <Section title="Plans">
@@ -374,13 +377,13 @@ export default function MemberDetailScreen() {
         ) : null}
 
         {!isRemoved && canRemove ? (
-          <Pressable
-            onPress={() => setShowRemove(true)}
-            className="self-start px-3 py-1.5 rounded-md border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20">
-            <Text className="text-red-600 dark:text-red-400 text-xs uppercase tracking-widest">
-              Remove member
-            </Text>
-          </Pressable>
+          <View className="self-start">
+            <ActionButton
+              kind="remove"
+              label="Remove member"
+              onPress={() => setShowRemove(true)}
+            />
+          </View>
         ) : null}
       </ScrollView>
 

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import {
@@ -268,14 +269,13 @@ function BookingCard({
         {isPast ? (
           <AttendanceBadge label={att} />
         ) : onCancel ? (
-          <Pressable
+          <ChipButton
+            tone="red"
+            label={cancelling ? 'Cancelling…' : 'Cancel'}
+            icon="close"
             onPress={onCancel}
             disabled={cancelling}
-            className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
-            <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-              Cancel
-            </Text>
-          </Pressable>
+          />
         ) : null}
       </View>
       {row.promoted_from_waitlist && !isPast ? (

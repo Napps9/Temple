@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { AvatarUploader } from './AvatarUploader';
 import { Button } from './Button';
+import { ChipButton } from './ChipButton';
 import { CoachEarningsCard } from './CoachEarningsCard';
 import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
@@ -181,7 +182,11 @@ export function AccountScreen() {
               <Text className="text-amber-700 dark:text-amber-300 text-sm">
                 Pending email confirmation: {pendingEmail}
               </Text>
-              <Pressable
+              <ChipButton
+                tone="amber"
+                className="self-start"
+                label="Resend confirmation"
+                icon="mail-outline"
                 onPress={() =>
                   supabase.auth
                     .updateUser({ email: pendingEmail })
@@ -192,11 +197,7 @@ export function AccountScreen() {
                       setDetailsError(errorMessage(e, 'Could not resend')),
                     )
                 }
-                className="self-start px-3 py-1.5 rounded-md border border-amber-300 dark:border-amber-700 active:bg-amber-100 dark:active:bg-amber-900/40">
-                <Text className="text-amber-700 dark:text-amber-300 text-xs uppercase tracking-widest">
-                  Resend confirmation
-                </Text>
-              </Pressable>
+              />
             </View>
           ) : null}
           {detailsMessage ? (
@@ -255,13 +256,13 @@ export function AccountScreen() {
 
         {role && role !== 'owner' && membership && session ? (
           <View className="mt-4 gap-2">
-            <Pressable
+            <ChipButton
+              tone="red"
+              className="self-start"
+              label="Leave this gym"
+              icon="log-out-outline"
               onPress={() => setShowLeave(true)}
-              className="self-start px-3 py-1.5 rounded-md border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20">
-              <Text className="text-red-600 dark:text-red-400 text-xs uppercase tracking-widest">
-                Leave this gym
-              </Text>
-            </Pressable>
+            />
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
               Cancels any active subscriptions and removes your access. History
               is preserved.

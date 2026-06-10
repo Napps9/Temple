@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 
+import { ChipButton } from '@/components/ChipButton';
 import { joinUrl } from '@/lib/brand';
 import { useGymBrand } from '@/lib/useGymBrand';
 
@@ -37,15 +37,7 @@ export function GymShareCard() {
           numberOfLines={1}>
           {url}
         </Text>
-        <Pressable
-          onPress={copy}
-          hitSlop={6}
-          className="active:opacity-70 flex-row items-center gap-1">
-          <Ionicons name="copy-outline" size={16} color="#2563EB" />
-          <Text className="text-primary text-xs uppercase tracking-widest">
-            Copy
-          </Text>
-        </Pressable>
+        <ChipButton label="Copy" icon="copy-outline" onPress={copy} />
       </View>
     </View>
   );

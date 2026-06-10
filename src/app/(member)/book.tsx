@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { ChipButton } from '@/components/ChipButton';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -174,9 +175,10 @@ function RecommendedClassCard() {
             {fmtNext(start)}
           </Text>
         </View>
-        <Text className="text-primary text-xs uppercase tracking-widest">
-          {book.isPending ? '…' : 'Quick book'}
-        </Text>
+        <ChipButton
+          label={book.isPending ? 'Booking…' : 'Quick book'}
+          icon="flash"
+        />
       </Pressable>
       {error ? (
         <Text className="text-red-500 dark:text-red-400 text-xs px-3">{error}</Text>
@@ -230,7 +232,7 @@ function NextClassCard() {
           {fmtNext(start)}
         </Text>
       </View>
-      <Text className="text-primary text-xs uppercase tracking-widest">View</Text>
+      <ChipButton label="View" icon="chevron-forward" iconSide="right" />
     </Pressable>
   );
 }

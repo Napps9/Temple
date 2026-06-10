@@ -14,6 +14,7 @@ import {
 
 import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { ColorSwatchPicker } from '@/components/ColorSwatchPicker';
 import { ColourArea } from '@/components/ColourArea';
 import { GymLogo } from '@/components/GymLogo';
@@ -247,26 +248,28 @@ export function BrandingPanel() {
               primaryColor={previewPrimary}
             />
             <View className="flex-1 gap-2">
-              <Pressable
-                onPress={() => upload.mutate()}
-                disabled={upload.isPending}
-                className="self-start px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:opacity-70">
-                <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-                  {upload.isPending
+              <ChipButton
+                tone="neutral"
+                className="self-start"
+                label={
+                  upload.isPending
                     ? 'Uploading…'
                     : logoUrl
                       ? 'Replace logo'
-                      : 'Upload logo'}
-                </Text>
-              </Pressable>
+                      : 'Upload logo'
+                }
+                icon="image-outline"
+                onPress={() => upload.mutate()}
+                disabled={upload.isPending}
+              />
               {logoUrl ? (
-                <Pressable
+                <ChipButton
+                  tone="red"
+                  className="self-start"
+                  label="Remove"
+                  icon="trash-outline"
                   onPress={() => setLogoUrl(null)}
-                  className="self-start px-3 py-1.5 active:opacity-70">
-                  <Text className="text-red-500 dark:text-red-400 text-xs">
-                    Remove
-                  </Text>
-                </Pressable>
+                />
               ) : null}
             </View>
           </View>
@@ -380,21 +383,12 @@ function ColourField({
             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
           />
         </View>
-        <Pressable
+        <ChipButton
+          tone={pickerOpen ? 'primary' : 'neutral'}
+          label={pickerOpen ? 'Done' : 'Pick'}
+          icon={pickerOpen ? 'checkmark' : 'color-palette-outline'}
           onPress={onPick}
-          hitSlop={4}
-          className={`h-10 px-3 rounded-lg border items-center justify-center active:opacity-70 ${
-            pickerOpen
-              ? 'border-primary bg-primary/10'
-              : 'border-gray-200 dark:border-gray-700'
-          }`}>
-          <Text
-            className={`text-xs uppercase tracking-widest ${
-              pickerOpen ? 'text-primary' : 'text-gray-700 dark:text-gray-200'
-            }`}>
-            {pickerOpen ? 'Done' : 'Pick'}
-          </Text>
-        </Pressable>
+        />
       </View>
       {pickerOpen ? (
         <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3 mt-1">
