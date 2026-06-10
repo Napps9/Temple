@@ -5,6 +5,7 @@ import { ScrollView, Text, View } from 'react-native';
 
 import { AttendanceChart } from '@/components/AttendanceChart';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
@@ -149,12 +150,14 @@ export default function AttendanceScreen() {
 
         {canExport ? (
           <View className="gap-2">
-            <Button
-              variant="secondary"
+            <ChipButton
+              className="self-start"
+              label={exportAttendance.isPending ? 'Exporting…' : 'Export attendance CSV'}
+              icon="download-outline"
+              tone="neutral"
               onPress={() => exportAttendance.mutate()}
-              loading={exportAttendance.isPending}>
-              Export attendance CSV
-            </Button>
+              disabled={exportAttendance.isPending}
+            />
             {exportAttendance.error ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">
                 {exportErrorMessage(exportAttendance.error, 'attendance')}

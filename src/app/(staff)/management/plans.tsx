@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
@@ -261,12 +262,14 @@ export function PlansPanel() {
     <View className="gap-4">
         {canExport ? (
           <View className="gap-2">
-            <Button
-              variant="secondary"
+            <ChipButton
+              className="self-start"
+              label={exportMemberships.isPending ? 'Exporting…' : 'Export memberships CSV'}
+              icon="download-outline"
+              tone="neutral"
               onPress={() => exportMemberships.mutate()}
-              loading={exportMemberships.isPending}>
-              Export memberships CSV
-            </Button>
+              disabled={exportMemberships.isPending}
+            />
             {exportMemberships.error ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">
                 {exportErrorMessage(exportMemberships.error, 'memberships')}
@@ -397,12 +400,12 @@ export function PlansPanel() {
           })}
         </View>
 
-        <Pressable
+        <ChipButton
+          className="self-start"
+          label="Add plan"
+          icon="add"
           onPress={addRow}
-          className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-          <Ionicons name="add" size={16} color="#6B7280" />
-          <Text className="text-gray-500 dark:text-gray-400">Add plan</Text>
-        </Pressable>
+        />
 
         {saveError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{saveError}</Text>

@@ -3,6 +3,7 @@ import { Redirect } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
@@ -48,12 +49,14 @@ export default function MembersScreen() {
 
         {canExport ? (
           <View className="gap-2">
-            <Button
-              variant="secondary"
+            <ChipButton
+              className="self-start"
+              label={exportMembers.isPending ? 'Exporting…' : 'Export members CSV'}
+              icon="download-outline"
+              tone="neutral"
               onPress={() => exportMembers.mutate()}
-              loading={exportMembers.isPending}>
-              Export members CSV
-            </Button>
+              disabled={exportMembers.isPending}
+            />
             {exportMembers.error ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">
                 {exportErrorMessage(exportMembers.error, 'members')}

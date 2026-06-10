@@ -498,12 +498,12 @@ export function ClassTypesPanel() {
           })}
         </View>
 
-        <Pressable
+        <ChipButton
+          className="self-start"
+          label="Add type"
+          icon="add"
           onPress={addRow}
-          className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-          <Ionicons name="add" size={16} color="#6B7280" />
-          <Text className="text-gray-500 dark:text-gray-400">Add type</Text>
-        </Pressable>
+        />
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>

@@ -8,6 +8,7 @@ import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { Avatar } from '@/components/Avatar';
 import { BillingNotLiveTile } from '@/components/BillingNotLiveTile';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import {
   DATE_RE,
   DateRangeCta,
@@ -1512,12 +1513,14 @@ function MembersTab() {
 
       {canExport ? (
         <View className="gap-2">
-          <Button
-            variant="secondary"
+          <ChipButton
+            className="self-start"
+            label={exportMembers.isPending ? 'Exporting…' : 'Export members CSV'}
+            icon="download-outline"
+            tone="neutral"
             onPress={() => exportMembers.mutate()}
-            loading={exportMembers.isPending}>
-            Export members CSV
-          </Button>
+            disabled={exportMembers.isPending}
+          />
           {exportMembers.error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">
               {exportErrorMessage(exportMembers.error, 'members')}

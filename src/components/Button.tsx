@@ -13,10 +13,13 @@ type Props = {
   variant?: Variant;
 };
 
+// Tonal primary on secondary so the button reads as an action — the
+// previous near-invisible white-on-white version disappeared inside
+// modal footers and on light-mode pages.
 const containerStyles: Record<Variant, string> = {
   primary: 'bg-primary active:bg-primary-dark',
   secondary:
-    'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800',
+    'bg-primary/10 border border-primary/30 active:bg-primary/20',
   ghost: 'bg-transparent',
   destructive:
     'bg-white dark:bg-gray-900 border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20',
@@ -24,7 +27,7 @@ const containerStyles: Record<Variant, string> = {
 
 const textStyles: Record<Variant, string> = {
   primary: 'text-white font-semibold',
-  secondary: 'text-gray-900 dark:text-gray-50',
+  secondary: 'text-primary font-semibold',
   ghost: 'text-primary',
   destructive: 'text-red-600 dark:text-red-400 font-semibold',
 };
