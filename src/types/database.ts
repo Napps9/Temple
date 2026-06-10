@@ -1488,6 +1488,14 @@ export type Database = {
         Args: { session_id: string };
         Returns: null;
       };
+      is_booking_eligible: {
+        Args: {
+          p_profile_id: string;
+          p_gym_id: string;
+          p_class_session_id: string;
+        };
+        Returns: boolean;
+      };
       same_gym_as_caller: {
         Args: { target_profile: string };
         Returns: boolean;

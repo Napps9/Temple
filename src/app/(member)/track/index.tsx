@@ -24,9 +24,48 @@ type PreviewWorkout = {
 
 const JOURNAL_PREVIEW_COUNT = 4;
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 export default function TrackHome() {
   const session = useSession();
   const [recording, setRecording] = useState(false);
+
+  // Logs from the last week, bucketed by movement group, so the group
+  // tiles can show fresh-activity badges (direct PRs + section tags).
+  const recentByGroup = useQuery({
+    queryKey: ['recent-movement-logs', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async (): Promise<Record<string, number>> => {
+      const sinceIso = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
+      const [direct, tags] = await Promise.all([
+        supabase
+          .from('tracked_movement_results')
+          .select('movement_key')
+          .eq('profile_id', session!.user.id)
+          .gte('performed_at', sinceIso),
+        supabase
+          .from('tracked_section_movement_tags')
+          .select('movement_key')
+          .eq('profile_id', session!.user.id)
+          .gte('performed_at', sinceIso),
+      ]);
+      if (direct.error) throw direct.error;
+      if (tags.error) throw tags.error;
+      const groupOf = new Map<string, string>();
+      for (const g of MOVEMENT_GROUPS)
+        for (const m of g.movements) groupOf.set(m.key, g.key);
+      const counts: Record<string, number> = {};
+      const rows = [...(direct.data ?? []), ...(tags.data ?? [])] as {
+        movement_key: string;
+      }[];
+      for (const r of rows) {
+        const gk = groupOf.get(r.movement_key);
+        if (!gk) continue;
+        counts[gk] = (counts[gk] ?? 0) + 1;
+      }
+      return counts;
+    },
+  });
 
   const journal = useQuery({
     queryKey: ['tracked-journal', session?.user.id, 'preview'],
@@ -114,6 +153,7 @@ export default function TrackHome() {
                   count={g.movements.length}
                   icon={g.icon as IoniconName}
                   accent={g.accent}
+                  recentCount={recentByGroup.data?.[g.key] ?? 0}
                   onPress={() =>
                     router.push(`/track/group/${g.key}` as never)
                   }
@@ -159,12 +199,14 @@ function GroupTile({
   count,
   icon,
   accent,
+  recentCount = 0,
   onPress,
 }: {
   name: string;
   count: number;
   icon: IoniconName;
   accent: string;
+  recentCount?: number;
   onPress: () => void;
 }) {
   return (
@@ -180,6 +222,13 @@ function GroupTile({
         className="w-11 h-11 rounded-full items-center justify-center">
         <Ionicons name={icon} size={22} color={accent} />
       </View>
+      {recentCount > 0 ? (
+        <View className="absolute right-3 top-3 bg-primary rounded-full px-2 py-0.5">
+          <Text className="text-white text-[10px] font-bold">
+            {recentCount} new
+          </Text>
+        </View>
+      ) : null}
       <View className="flex-1 justify-end">
         <Text
           className="text-gray-900 dark:text-gray-50 font-semibold text-base"

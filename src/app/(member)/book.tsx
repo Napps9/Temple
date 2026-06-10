@@ -102,7 +102,10 @@ function RecommendedClassCard() {
   });
 
   // Next upcoming session of the favoured class type that the member
-  // hasn't already booked.
+  // hasn't already booked AND is actually entitled to book — the
+  // is_booking_eligible RPC applies their membership (plan class-type
+  // allowlists, credit balance, paid period, comp grants), so we never
+  // recommend a class their plan doesn't cover.
   const recommendation = useQuery({
     queryKey: [
       'recommended-class',
@@ -124,10 +127,23 @@ function RecommendedClassCard() {
         .order('starts_at', { ascending: true })
         .limit(10);
       if (err) throw err;
-      const filtered = (data ?? []).filter(
+      const candidates = (data ?? []).filter(
         (r) => !futureBooked.data!.has((r as { id: string }).id),
-      );
-      return (filtered[0] as unknown as RecommendedSession | undefined) ?? null;
+      ) as unknown as RecommendedSession[];
+      // Check eligibility soonest-first; cap the RPC round trips.
+      for (const cand of candidates.slice(0, 6)) {
+        const { data: ok, error: eligErr } = await supabase.rpc(
+          'is_booking_eligible',
+          {
+            p_profile_id: session!.user.id,
+            p_gym_id: membership!.gymId,
+            p_class_session_id: cand.id,
+          },
+        );
+        if (eligErr) throw eligErr;
+        if (ok) return cand;
+      }
+      return null;
     },
   });
 
@@ -187,6 +203,10 @@ function RecommendedClassCard() {
   );
 }
 
+// One card doing two jobs: headline the member's next booked class,
+// and route into the full bookings list (both used to be separate
+// tiles navigating to the same place). Renders even with nothing
+// booked so "My bookings" always has a way in.
 function NextClassCard() {
   const session = useSession();
   const nowIso = new Date().toISOString();
@@ -209,38 +229,13 @@ function NextClassCard() {
     },
   });
 
-  if (!next.data || !next.data.class_sessions) return null;
+  if (next.isLoading) return null;
 
-  const start = new Date(next.data.class_sessions.starts_at);
-  const typeColor = next.data.class_sessions.class_types?.color ?? '#2563EB';
-  const typeName = next.data.class_sessions.class_types?.name ?? 'Class';
+  const sessionRow = next.data?.class_sessions ?? null;
+  const start = sessionRow ? new Date(sessionRow.starts_at) : null;
+  const typeColor = sessionRow?.class_types?.color ?? '#2563EB';
+  const typeName = sessionRow?.class_types?.name ?? 'Class';
 
-  return (
-    <Pressable
-      onPress={() => router.push('/bookings')}
-      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
-      <View
-        style={{ backgroundColor: typeColor }}
-        className="rounded-full px-2 py-0.5">
-        <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
-      </View>
-      <View className="flex-1">
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
-          Your next class
-        </Text>
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
-          {fmtNext(start)}
-        </Text>
-      </View>
-      <ChipButton label="View" icon="chevron-forward" iconSide="right" />
-    </Pressable>
-  );
-}
-
-// Always-visible route into the bookings list — Bookings left the top
-// nav, and "where are my booked classes" belongs on the page where
-// booking happens.
-function MyBookingsCard() {
   return (
     <Pressable
       onPress={() => router.push('/bookings')}
@@ -248,9 +243,21 @@ function MyBookingsCard() {
       <View className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
         <Ionicons name="ticket-outline" size={16} color="#6B7280" />
       </View>
-      <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
-        My bookings
-      </Text>
+      <View className="flex-1">
+        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+          {start ? 'Your next class' : 'My bookings'}
+        </Text>
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          {start ? fmtNext(start) : 'Nothing booked yet'}
+        </Text>
+      </View>
+      {start ? (
+        <View
+          style={{ backgroundColor: typeColor }}
+          className="rounded-full px-2 py-0.5">
+          <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
+        </View>
+      ) : null}
       <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
     </Pressable>
   );
@@ -264,7 +271,6 @@ export default function Book() {
         <View className="gap-2">
           <RecommendedClassCard />
           <NextClassCard />
-          <MyBookingsCard />
         </View>
       }
     />

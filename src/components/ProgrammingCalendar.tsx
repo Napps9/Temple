@@ -338,19 +338,17 @@ function ClassTypeCard({
             </View>
             <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
             {s.leaderboard_enabled && programmingId ? (
-              <Pressable
+              <ChipButton
+                className="self-start mt-1"
+                label="View leaderboard"
+                icon="trophy-outline"
                 onPress={() =>
                   setLeaderboardOpenFor({
                     sectionIndex: idx,
                     sectionTitle: s.title,
                   })
                 }
-                className="self-start mt-1 flex-row items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 active:opacity-70">
-                <Ionicons name="trophy-outline" size={12} color="#2563EB" />
-                <Text className="text-primary text-[10px] font-semibold uppercase tracking-wider">
-                  Leaderboard
-                </Text>
-              </Pressable>
+              />
             ) : null}
           </View>
         ))}
