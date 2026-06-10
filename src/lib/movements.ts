@@ -600,6 +600,10 @@ export function findMovement(
   return undefined;
 }
 
+export function movementName(movementKey: string): string {
+  return findMovement(movementKey)?.movement.name ?? movementKey;
+}
+
 export function findScheme(
   movementKey: string,
   schemeKey: string,

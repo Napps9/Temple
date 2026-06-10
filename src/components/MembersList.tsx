@@ -137,6 +137,25 @@ export function MembersList() {
     },
   });
 
+  // Members with an unresolved injury get an amber badge; RLS hides
+  // the rows from staff without can_see_health_flag, so this set is
+  // simply empty for them.
+  const injuriesQuery = useQuery({
+    queryKey: ['members-open-injuries', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from('member_injuries')
+        .select('profile_id')
+        .eq('gym_id', membership!.gymId)
+        .neq('status', 'resolved');
+      if (error) throw error;
+      return new Set(
+        (data ?? []).map((r) => (r as { profile_id: string }).profile_id),
+      );
+    },
+  });
+
   const tagsByMember = useMemo(() => {
     const map = new Map<string, TagRow[]>();
     for (const t of tagsQuery.data ?? []) {
@@ -252,7 +271,11 @@ export function MembersList() {
                           Joined {m.joined_at.slice(0, 10)}
                         </Text>
                       </View>
-                      <CohortBadges row={m} flagged={flagsQuery.data?.has(m.profile_id) ?? false} />
+                      <CohortBadges
+                        row={m}
+                        flagged={flagsQuery.data?.has(m.profile_id) ?? false}
+                        injured={injuriesQuery.data?.has(m.profile_id) ?? false}
+                      />
                     </View>
                     {subs.length > 0 || comps.length > 0 ? (
                       <View className="flex-row flex-wrap gap-1">
@@ -352,10 +375,19 @@ function FilterChip({
   );
 }
 
-function CohortBadges({ row, flagged }: { row: CohortRow; flagged: boolean }) {
+function CohortBadges({
+  row,
+  flagged,
+  injured,
+}: {
+  row: CohortRow;
+  flagged: boolean;
+  injured: boolean;
+}) {
   return (
     <View className="flex-row gap-1">
       {flagged ? <Badge label="PAR-Q" color="#DC2626" /> : null}
+      {injured ? <Badge label="Injury" color="#F59E0B" /> : null}
       {row.is_intro ? <Badge label="Intro" color="#10B981" /> : null}
       {row.is_expiring_soon ? (
         <Badge label={`${row.days_until_expiry}d`} color="#F97316" />

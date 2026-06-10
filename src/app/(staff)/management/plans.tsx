@@ -22,6 +22,7 @@ type ServerPlan = {
   kind: PlanKind;
   credit_count: number | null;
   monthly_price_cents: number | null;
+  notice_period_days: number | null;
   archived_at: string | null;
 };
 
@@ -32,6 +33,7 @@ type EditablePlan = {
   kind: PlanKind;
   creditCount: string;
   monthlyPriceCents: string;
+  noticePeriodDays: string;
   archivedAt: string | null;
   serverSnapshot: ServerPlan | null;
 };
@@ -44,6 +46,7 @@ function fromServer(p: ServerPlan): EditablePlan {
     kind: p.kind,
     creditCount: p.credit_count?.toString() ?? '',
     monthlyPriceCents: p.monthly_price_cents?.toString() ?? '',
+    noticePeriodDays: p.notice_period_days?.toString() ?? '',
     archivedAt: p.archived_at,
     serverSnapshot: p,
   };
@@ -55,11 +58,14 @@ function rowDiffers(r: EditablePlan): boolean {
   const cc = r.creditCount.trim() === '' ? null : parseInt(r.creditCount, 10);
   const mpc =
     r.monthlyPriceCents.trim() === '' ? null : parseInt(r.monthlyPriceCents, 10);
+  const npd =
+    r.noticePeriodDays.trim() === '' ? null : parseInt(r.noticePeriodDays, 10);
   return (
     r.name.trim() !== s.name ||
     r.kind !== s.kind ||
     cc !== s.credit_count ||
-    mpc !== s.monthly_price_cents
+    mpc !== s.monthly_price_cents ||
+    npd !== s.notice_period_days
   );
 }
 
@@ -83,7 +89,9 @@ export function PlansPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('membership_plans')
-        .select('plan_id, name, kind, credit_count, monthly_price_cents, archived_at')
+        .select(
+          'plan_id, name, kind, credit_count, monthly_price_cents, notice_period_days, archived_at',
+        )
         .order('name');
       if (error) throw error;
       return data as ServerPlan[];
@@ -157,6 +165,8 @@ export function PlansPanel() {
           r.creditCount.trim() === '' ? null : parseInt(r.creditCount, 10);
         const monthlyPriceCents =
           r.monthlyPriceCents.trim() === '' ? null : parseInt(r.monthlyPriceCents, 10);
+        const noticePeriodDays =
+          r.noticePeriodDays.trim() === '' ? null : parseInt(r.noticePeriodDays, 10);
         if (r.kind !== 'unlimited' && (creditCount === null || isNaN(creditCount))) {
           throw new Error(`${name}: credit count required for ${r.kind}`);
         }
@@ -166,6 +176,9 @@ export function PlansPanel() {
         if (monthlyPriceCents !== null && isNaN(monthlyPriceCents)) {
           throw new Error(`${name}: invalid price`);
         }
+        if (noticePeriodDays !== null && (isNaN(noticePeriodDays) || noticePeriodDays < 0)) {
+          throw new Error(`${name}: invalid notice period`);
+        }
 
         if (r.serverId === null) {
           const payload: {
@@ -174,6 +187,7 @@ export function PlansPanel() {
             kind: PlanKind;
             credit_count: number | null;
             monthly_price_cents: number | null;
+            notice_period_days: number | null;
             period_length?: string;
           } = {
             gym_id: membership.gymId,
@@ -181,6 +195,7 @@ export function PlansPanel() {
             kind: r.kind,
             credit_count: creditCount,
             monthly_price_cents: monthlyPriceCents,
+            notice_period_days: noticePeriodDays,
           };
           if (r.kind === 'credit_period') {
             payload.period_length = '30 days';
@@ -195,6 +210,7 @@ export function PlansPanel() {
               kind: r.kind,
               credit_count: creditCount,
               monthly_price_cents: monthlyPriceCents,
+              notice_period_days: noticePeriodDays,
             })
             .eq('plan_id', r.serverId);
           if (error) throw error;
@@ -226,6 +242,7 @@ export function PlansPanel() {
         kind: 'unlimited',
         creditCount: '',
         monthlyPriceCents: '',
+        noticePeriodDays: '',
         archivedAt: null,
         serverSnapshot: null,
       },
@@ -342,6 +359,19 @@ export function PlansPanel() {
                       subscriptions keep the price they signed up at.
                     </Text>
                   ) : null}
+                </View>
+                <View className="gap-1">
+                  <Input
+                    label="Notice period (days)"
+                    value={r.noticePeriodDays}
+                    onChangeText={(v) => update(idx, { noticePeriodDays: v })}
+                    keyboardType="number-pad"
+                    placeholder="30"
+                  />
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                    Shown on member profiles so staff can answer
+                    cancellation questions. Leave blank for no notice.
+                  </Text>
                 </View>
 
                 {r.serverId && canArchive ? (

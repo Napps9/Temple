@@ -16,6 +16,12 @@ export type PlanSubState =
 
 export type MembershipPlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 
+export type StaffAlertKind = 'parq_flag' | 'injury_new' | 'injury_update';
+
+export type InjurySide = 'left' | 'right' | 'both' | 'na';
+export type InjuryStatus = 'active' | 'improving' | 'resolved';
+export type InjuryFeeling = 'better' | 'same' | 'worse';
+
 export type Database = {
   public: {
     Tables: {
@@ -353,7 +359,7 @@ export type Database = {
         Row: {
           id: string;
           gym_id: string;
-          kind: 'parq_flag';
+          kind: StaffAlertKind;
           subject_profile_id: string | null;
           related_id: string | null;
           created_at: string;
@@ -363,7 +369,7 @@ export type Database = {
         Insert: {
           id?: string;
           gym_id: string;
-          kind: 'parq_flag';
+          kind: StaffAlertKind;
           subject_profile_id?: string | null;
           related_id?: string | null;
           created_at?: string;
@@ -373,12 +379,99 @@ export type Database = {
         Update: Partial<{
           id: string;
           gym_id: string;
-          kind: 'parq_flag';
+          kind: StaffAlertKind;
           subject_profile_id: string | null;
           related_id: string | null;
           created_at: string;
           acknowledged_by: string | null;
           acknowledged_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      member_injuries: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          body_region: string;
+          side: InjurySide;
+          description: string | null;
+          pain_level: number;
+          movements_hurt: string[];
+          movements_ok: string[];
+          started_on: string;
+          status: InjuryStatus;
+          created_at: string;
+          updated_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          body_region: string;
+          side?: InjurySide;
+          description?: string | null;
+          pain_level: number;
+          movements_hurt?: string[];
+          movements_ok?: string[];
+          started_on?: string;
+          status?: InjuryStatus;
+          created_at?: string;
+          updated_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          body_region: string;
+          side: InjurySide;
+          description: string | null;
+          pain_level: number;
+          movements_hurt: string[];
+          movements_ok: string[];
+          started_on: string;
+          status: InjuryStatus;
+          created_at: string;
+          updated_at: string;
+          resolved_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      injury_updates: {
+        Row: {
+          id: string;
+          injury_id: string;
+          gym_id: string;
+          profile_id: string;
+          pain_level: number;
+          feeling: InjuryFeeling | null;
+          status: InjuryStatus;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          injury_id: string;
+          gym_id: string;
+          profile_id: string;
+          pain_level: number;
+          feeling?: InjuryFeeling | null;
+          status: InjuryStatus;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          injury_id: string;
+          gym_id: string;
+          profile_id: string;
+          pain_level: number;
+          feeling: InjuryFeeling | null;
+          status: InjuryStatus;
+          note: string | null;
+          created_at: string;
         }>;
         Relationships: [];
       };
@@ -716,6 +809,7 @@ export type Database = {
           credit_count: number | null;
           period_length: string | null;
           monthly_price_cents: number | null;
+          notice_period_days: number | null;
           archived_at: string | null;
           created_at: string;
         };
@@ -727,6 +821,7 @@ export type Database = {
           credit_count?: number | null;
           period_length?: string | null;
           monthly_price_cents?: number | null;
+          notice_period_days?: number | null;
           archived_at?: string | null;
           created_at?: string;
         };
@@ -738,6 +833,7 @@ export type Database = {
           credit_count: number | null;
           period_length: string | null;
           monthly_price_cents: number | null;
+          notice_period_days: number | null;
           archived_at: string | null;
           created_at: string;
         }>;
@@ -1475,6 +1571,29 @@ export type Database = {
           last_had_flag: boolean | null;
           needs_parq: boolean;
         }[];
+      };
+      log_injury: {
+        Args: {
+          p_gym_id: string;
+          p_body_region: string;
+          p_side: string;
+          p_description: string | null;
+          p_pain_level: number;
+          p_movements_hurt: string[];
+          p_movements_ok: string[];
+          p_started_on: string;
+        };
+        Returns: string;
+      };
+      log_injury_update: {
+        Args: {
+          p_injury_id: string;
+          p_pain_level: number;
+          p_feeling: string | null;
+          p_status: string;
+          p_note: string | null;
+        };
+        Returns: string;
       };
       acknowledge_staff_alert: {
         Args: { p_alert_id: string };

@@ -13,6 +13,7 @@ import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { fmtDateShort } from '@/lib/track';
+import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 
 type PreviewWorkout = {
   id: string;
@@ -141,6 +142,8 @@ export default function TrackHome() {
 
         <LeaderboardsTile />
 
+        <InjuryTrackerTile />
+
         <View className="gap-3">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Movements
@@ -189,6 +192,39 @@ function LeaderboardsTile() {
           hardest in the gym.
         </Text>
       </View>
+      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+    </Pressable>
+  );
+}
+
+function InjuryTrackerTile() {
+  const injuries = useMyInjuries();
+  const open = (injuries.data ?? []).filter((r) => r.status !== 'resolved');
+  const due = dueCheckIns(injuries.data);
+  return (
+    <Pressable
+      onPress={() => router.push('/track/injuries' as never)}
+      className="bg-white dark:bg-gray-900 rounded-2xl p-4 flex-row items-center gap-3 active:opacity-70">
+      <View className="w-11 h-11 rounded-full bg-red-500/10 items-center justify-center">
+        <Ionicons name="body-outline" size={22} color="#EF4444" />
+      </View>
+      <View className="flex-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          Injury tracker
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {open.length === 0
+            ? 'Log a niggle so coaching can work around it.'
+            : `${open.length} open ${open.length === 1 ? 'injury' : 'injuries'}${
+                due.length > 0 ? ` · ${due.length} check-in due` : ''
+              }`}
+        </Text>
+      </View>
+      {due.length > 0 ? (
+        <View className="bg-amber-500 rounded-full px-2 py-0.5">
+          <Text className="text-white text-[10px] font-bold">{due.length}</Text>
+        </View>
+      ) : null}
       <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
     </Pressable>
   );

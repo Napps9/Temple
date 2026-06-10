@@ -12,8 +12,16 @@ import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import {
+  daysAgo,
+  injuryTitle,
+  painColour,
+  STATUS_META,
+} from '@/lib/injuries';
+import { movementName } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import type { InjurySide, InjuryStatus } from '@/types/database';
 
 type ProfileRow = {
   full_name: string | null;
@@ -45,8 +53,14 @@ type SubRow = {
   credit_balance: number | null;
   price_cents: number | null;
   paid_period_end: string | null;
+  period_resets_at: string | null;
+  cancelled_at: string | null;
   created_at: string;
-  membership_plans: { name: string; kind: string } | null;
+  membership_plans: {
+    name: string;
+    kind: string;
+    notice_period_days: number | null;
+  } | null;
 };
 
 type CompRow = {
@@ -137,7 +151,9 @@ export default function MemberDetailScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('plan_subscriptions')
-        .select('id, status, credit_balance, price_cents, paid_period_end, created_at, membership_plans(name, kind)')
+        .select(
+          'id, status, credit_balance, price_cents, paid_period_end, period_resets_at, cancelled_at, created_at, membership_plans(name, kind, notice_period_days)',
+        )
         .eq('gym_id', membership!.gymId)
         .eq('profile_id', profileId!)
         .order('created_at', { ascending: false });
@@ -299,6 +315,8 @@ export default function MemberDetailScreen() {
           />
         </View>
 
+        <InjuriesSection gymId={membership!.gymId} profileId={profileId!} />
+
         <Section title="Plans">
           {subs.data && subs.data.length > 0 ? (
             subs.data.map((s) => (
@@ -312,9 +330,24 @@ export default function MemberDetailScreen() {
                   {s.status}
                   {s.price_cents !== null ? ` · £${(s.price_cents / 100).toFixed(2)}/mo` : ''}
                   {s.credit_balance !== null ? ` · ${s.credit_balance} credits` : ''}
-                  {s.paid_period_end
-                    ? ` · paid through ${s.paid_period_end.slice(0, 10)}`
-                    : ''}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {[
+                    s.paid_period_end
+                      ? `paid through ${s.paid_period_end.slice(0, 10)}`
+                      : null,
+                    s.period_resets_at
+                      ? `next payment ${s.period_resets_at.slice(0, 10)}`
+                      : null,
+                    s.membership_plans?.notice_period_days != null
+                      ? `${s.membership_plans.notice_period_days}-day notice period`
+                      : null,
+                    s.cancelled_at
+                      ? `cancelled ${s.cancelled_at.slice(0, 10)}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || `started ${s.created_at.slice(0, 10)}`}
                 </Text>
               </View>
             ))
@@ -417,6 +450,131 @@ function Badge({ label, color }: { label: string; color: string }) {
     <View style={{ backgroundColor: color }} className="rounded-full px-2 py-0.5">
       <Text className="text-white text-[10px] font-semibold">{label}</Text>
     </View>
+  );
+}
+
+type StaffInjuryRow = {
+  id: string;
+  body_region: string;
+  side: InjurySide;
+  description: string | null;
+  pain_level: number;
+  movements_hurt: string[];
+  movements_ok: string[];
+  started_on: string;
+  status: InjuryStatus;
+  updated_at: string;
+  injury_updates: {
+    pain_level: number;
+    feeling: string | null;
+    status: string;
+    note: string | null;
+    created_at: string;
+  }[];
+};
+
+// Coach-facing injury history: every injury (open first) with the
+// member's check-in trail inline, so a coach can see how it's
+// trending before adjusting programming. RLS hides this from staff
+// without can_see_health_flag — the query just returns nothing.
+function InjuriesSection({
+  gymId,
+  profileId,
+}: {
+  gymId: string;
+  profileId: string;
+}) {
+  const injuries = useQuery({
+    queryKey: ['member-injuries-staff', gymId, profileId],
+    queryFn: async (): Promise<StaffInjuryRow[]> => {
+      const { data, error } = await supabase
+        .from('member_injuries')
+        .select(
+          'id, body_region, side, description, pain_level, movements_hurt, movements_ok, started_on, status, updated_at, injury_updates(pain_level, feeling, status, note, created_at)',
+        )
+        .eq('gym_id', gymId)
+        .eq('profile_id', profileId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as StaffInjuryRow[];
+    },
+  });
+
+  const rows = injuries.data ?? [];
+
+  return (
+    <Section title="Injuries">
+      {rows.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          No injuries logged.
+        </Text>
+      ) : (
+        rows.map((r) => {
+          const status = STATUS_META[r.status];
+          const updates = [...(r.injury_updates ?? [])].sort((a, b) =>
+            b.created_at.localeCompare(a.created_at),
+          );
+          return (
+            <View
+              key={r.id}
+              className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-2">
+              <View className="flex-row items-center gap-2">
+                <View
+                  style={{ backgroundColor: painColour(r.pain_level) }}
+                  className="w-6 h-6 rounded-full items-center justify-center">
+                  <Text className="text-white text-[10px] font-bold">
+                    {r.pain_level}
+                  </Text>
+                </View>
+                <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                  {injuryTitle(r.body_region, r.side)}
+                </Text>
+                <View
+                  style={{ borderColor: status.colour }}
+                  className="rounded-full border px-2 py-0.5">
+                  <Text
+                    style={{ color: status.colour }}
+                    className="text-[10px] font-semibold">
+                    {status.label}
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Started {r.started_on} · last update {daysAgo(r.updated_at)}d ago
+              </Text>
+              {r.description ? (
+                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                  {r.description}
+                </Text>
+              ) : null}
+              {r.movements_hurt.length > 0 ? (
+                <Text className="text-red-600 dark:text-red-400 text-xs">
+                  Hurts: {r.movements_hurt.map(movementName).join(', ')}
+                </Text>
+              ) : null}
+              {r.movements_ok.length > 0 ? (
+                <Text className="text-emerald-700 dark:text-emerald-300 text-xs">
+                  Feels fine: {r.movements_ok.map(movementName).join(', ')}
+                </Text>
+              ) : null}
+              {updates.length > 0 ? (
+                <View className="gap-1 border-t border-gray-100 dark:border-gray-800 pt-2">
+                  {updates.slice(0, 4).map((u, i) => (
+                    <Text
+                      key={i}
+                      className="text-gray-500 dark:text-gray-400 text-xs">
+                      {u.created_at.slice(0, 10)} · pain {u.pain_level}/10
+                      {u.feeling ? ` · ${u.feeling}` : ''}
+                      {u.note ? ` — ${u.note}` : ''}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          );
+        })
+      )}
+    </Section>
   );
 }
 

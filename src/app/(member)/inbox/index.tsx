@@ -10,6 +10,7 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { injuryTitle } from '@/lib/injuries';
 import {
   snippet,
   timeAgo,
@@ -19,18 +20,42 @@ import {
 } from '@/lib/messaging';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
+import type { StaffAlertKind } from '@/types/database';
 
 type Tab = 'direct' | 'announcements' | 'classes' | 'alerts';
 
 type StaffAlertRow = {
   id: string;
   gym_id: string;
-  kind: 'parq_flag';
+  kind: StaffAlertKind;
   subject_profile_id: string | null;
   related_id: string | null;
   created_at: string;
   acknowledged_at: string | null;
   subject: { full_name: string | null; avatar_url: string | null } | null;
+};
+
+// Per-kind alert copy. subject name is prefixed by the card.
+const ALERT_COPY: Record<
+  StaffAlertKind,
+  { title: string; body: string; icon: 'alert-circle' | 'bandage' | 'pulse' }
+> = {
+  parq_flag: {
+    title: 'flagged a health issue',
+    body: 'They flagged at least one PAR-Q question. Open their profile to review the response.',
+    icon: 'alert-circle',
+  },
+  injury_new: {
+    title: 'logged a new injury',
+    body: 'They recorded a new injury, including which movements hurt. Open their profile for the details.',
+    icon: 'bandage',
+  },
+  injury_update: {
+    title: 'updated an injury',
+    body: 'They checked in on an existing injury. Open their profile to see how it is trending.',
+    icon: 'pulse',
+  },
 };
 
 type ClassSessionLite = {
@@ -94,6 +119,8 @@ export default function Inbox() {
             Messages from coaches and the gym.
           </Text>
         </View>
+
+        <InjuryCheckInBanner />
 
         <View className="flex-row gap-2 flex-wrap">
           <TabChip
@@ -575,6 +602,38 @@ function ClassesTab({
   );
 }
 
+// The weekly injury nudge: when a member's open injury hasn't been
+// checked in on for a week, the inbox asks for an update.
+function InjuryCheckInBanner() {
+  const injuries = useMyInjuries();
+  const due = dueCheckIns(injuries.data);
+  if (due.length === 0) return null;
+  return (
+    <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl p-4 gap-2">
+      <View className="flex-row items-center gap-2">
+        <Ionicons name="pulse" size={18} color="#D97706" />
+        <Text className="flex-1 text-amber-700 dark:text-amber-300 font-semibold">
+          {due.length === 1
+            ? `How's your ${injuryTitle(due[0].body_region, due[0].side).toLowerCase()}?`
+            : `${due.length} injuries need a check-in`}
+        </Text>
+      </View>
+      <Text className="text-amber-700 dark:text-amber-300 text-sm">
+        It's been a week since your last update — a quick check-in keeps
+        your coaches in the loop.
+      </Text>
+      <ChipButton
+        tone="amber"
+        className="self-start"
+        label="Check in now"
+        icon="arrow-forward"
+        iconSide="right"
+        onPress={() => router.push('/track/injuries' as never)}
+      />
+    </View>
+  );
+}
+
 function AlertsTab({ gymId }: { gymId: string }) {
   const queryClient = useQueryClient();
   const [showAcked, setShowAcked] = useState(false);
@@ -626,26 +685,34 @@ function AlertsTab({ gymId }: { gymId: string }) {
             : 'No open alerts. Members with health flags will show up here.'}
         </Text>
       ) : (
-        rows.map((a) => (
+        rows.map((a) => {
+          const copy = ALERT_COPY[a.kind] ?? ALERT_COPY.parq_flag;
+          const amber = a.kind === 'injury_update';
+          return (
           <View
             key={a.id}
             className={`rounded-xl p-4 gap-2 border ${
               a.acknowledged_at
                 ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
-                : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+                : amber
+                  ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                  : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
             }`}>
             <View className="flex-row items-center gap-2">
-              <Ionicons name="alert-circle" size={18} color="#DC2626" />
+              <Ionicons
+                name={copy.icon}
+                size={18}
+                color={amber ? '#D97706' : '#DC2626'}
+              />
               <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
-                {a.subject?.full_name ?? 'Member'} flagged a health issue
+                {a.subject?.full_name ?? 'Member'} {copy.title}
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
                 {new Date(a.created_at).toLocaleDateString()}
               </Text>
             </View>
             <Text className="text-gray-700 dark:text-gray-200 text-sm">
-              They flagged at least one PAR-Q question. Open their profile
-              to review the response.
+              {copy.body}
             </Text>
             <View className="flex-row gap-2">
               {a.subject_profile_id ? (
@@ -675,7 +742,8 @@ function AlertsTab({ gymId }: { gymId: string }) {
               )}
             </View>
           </View>
-        ))
+          );
+        })
       )}
     </View>
   );
