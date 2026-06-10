@@ -3,8 +3,8 @@ import '@/global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Component, useEffect, type ReactNode } from 'react';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -16,12 +16,59 @@ const queryClient = new QueryClient({
   },
 });
 
+// A crash anywhere in the tree used to render as a silent black screen
+// on the deployed app — no error, no route, nothing to report. Render
+// the message + stack instead so a screenshot of a failure is also the
+// bug report.
+class CrashScreen extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    const { error } = this.state;
+    if (!error) return this.props.children;
+    return (
+      <ScrollView
+        style={{ flex: 1, backgroundColor: '#0B0F1A' }}
+        contentContainerStyle={{ padding: 24, gap: 12 }}>
+        <Text style={{ color: '#F87171', fontSize: 20, fontWeight: '600' }}>
+          The app crashed
+        </Text>
+        <Text style={{ color: '#F9FAFB' }}>{String(error.message || error)}</Text>
+        {error.stack ? (
+          <Text style={{ color: '#9CA3AF', fontFamily: 'monospace', fontSize: 11 }}>
+            {error.stack}
+          </Text>
+        ) : null}
+        <Pressable
+          onPress={() => this.setState({ error: null })}
+          style={{
+            backgroundColor: '#2563EB',
+            borderRadius: 8,
+            paddingVertical: 12,
+            alignItems: 'center',
+          }}>
+          <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Try again</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+}
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemedShell />
+          <CrashScreen>
+            <ThemedShell />
+          </CrashScreen>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
