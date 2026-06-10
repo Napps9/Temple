@@ -508,13 +508,13 @@ function TeamMemberRow({
   member: StaffMember;
   showEarnings: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const { data: membership } = useGymMembership();
   const name = member.profiles?.full_name ?? 'Team member';
   const showCover =
     member.role === 'coach' ||
     member.role === 'admin' ||
     member.role === 'owner';
+  const showCoachDetails = showEarnings && member.role === 'coach';
 
   const openTasks = useQuery({
     queryKey: ['team-tasks-open', membership?.gymId, member.profile_id],
@@ -548,9 +548,7 @@ function TeamMemberRow({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl">
-      <Pressable
-        onPress={() => setOpen((v) => !v)}
-        className="flex-row items-center gap-3 p-4 active:opacity-70">
+      <View className="flex-row items-center gap-3 p-4">
         <Avatar
           name={name}
           avatarUrl={member.profiles?.avatar_url}
@@ -576,20 +574,11 @@ function TeamMemberRow({
             href="/management/cover"
           />
         ) : null}
-        <Ionicons
-          name={open ? 'chevron-up' : 'chevron-down'}
-          size={18}
-          color="#9CA3AF"
-        />
-      </Pressable>
-      {open ? (
+      </View>
+      {showCoachDetails ? (
         <View className="px-4 pb-4 gap-3 border-t border-gray-100 dark:border-gray-800 pt-3">
-          {showEarnings && member.role === 'coach' ? (
-            <CoachEarningsSummary profileId={member.profile_id} />
-          ) : null}
-          {showEarnings && member.role === 'coach' ? (
-            <CoachQualifications profileId={member.profile_id} />
-          ) : null}
+          <CoachEarningsSummary profileId={member.profile_id} />
+          <CoachQualifications profileId={member.profile_id} />
         </View>
       ) : null}
     </View>
