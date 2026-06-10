@@ -17,6 +17,7 @@ import {
   presetRange,
 } from '@/components/DateRangeCta';
 import { Input } from '@/components/Input';
+import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
 import { StatTile, type Delta, type DeltaDirection } from '@/components/StatTile';
@@ -1535,6 +1536,8 @@ function MembersTab() {
           ) : null}
         </View>
       ) : null}
+
+      <MemberSignupLinkCard />
 
       {canManageTags ? (
         <>
