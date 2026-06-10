@@ -22,17 +22,27 @@ const queryClient = new QueryClient({
 // bug report.
 class CrashScreen extends Component<
   { children: ReactNode },
-  { error: Error | null }
+  { error: Error | null; componentStack: string | null }
 > {
-  state = { error: null as Error | null };
+  state = { error: null as Error | null, componentStack: null as string | null };
 
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
+  componentDidCatch(_error: Error, info: { componentStack?: string | null }) {
+    // The component stack names the actual component that looped/threw —
+    // far more useful than the minified JS stack on production builds.
+    this.setState({ componentStack: info?.componentStack ?? null });
+  }
+
   render() {
-    const { error } = this.state;
+    const { error, componentStack } = this.state;
     if (!error) return this.props.children;
+    const pathname =
+      Platform.OS === 'web' && typeof window !== 'undefined'
+        ? window.location.pathname
+        : '(native)';
     return (
       <ScrollView
         style={{ flex: 1, backgroundColor: '#0B0F1A' }}
@@ -40,14 +50,20 @@ class CrashScreen extends Component<
         <Text style={{ color: '#F87171', fontSize: 20, fontWeight: '600' }}>
           The app crashed
         </Text>
+        <Text style={{ color: '#9CA3AF' }}>Route: {pathname}</Text>
         <Text style={{ color: '#F9FAFB' }}>{String(error.message || error)}</Text>
+        {componentStack ? (
+          <Text style={{ color: '#FBBF24', fontFamily: 'monospace', fontSize: 11 }}>
+            {componentStack}
+          </Text>
+        ) : null}
         {error.stack ? (
           <Text style={{ color: '#9CA3AF', fontFamily: 'monospace', fontSize: 11 }}>
             {error.stack}
           </Text>
         ) : null}
         <Pressable
-          onPress={() => this.setState({ error: null })}
+          onPress={() => this.setState({ error: null, componentStack: null })}
           style={{
             backgroundColor: '#2563EB',
             borderRadius: 8,

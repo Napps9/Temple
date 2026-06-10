@@ -1,5 +1,5 @@
 {
-  "buildCommand": "expo export --platform web --output-dir dist",
+  "buildCommand": "expo export --platform web --output-dir dist --no-minify",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false
