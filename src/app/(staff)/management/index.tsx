@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
@@ -315,48 +315,93 @@ function SettingsTab() {
   const canManageParq = useCan('can_manage_parq') ?? false;
 
   return (
-    <View className="gap-6">
+    <View className="gap-3">
       {canManageStaff ? (
-        <View className="gap-3">
-          <SectionHeader title="Branding" icon="color-palette-outline" />
+        <SettingsSection
+          title="Branding"
+          description="Logo, colours, gym name, public join link."
+          icon="color-palette-outline">
           <BrandingPanel />
-        </View>
+        </SettingsSection>
       ) : null}
       {canManageParq ? (
-        <View className="gap-3">
-          <SectionHeader title="PAR-Q" icon="heart-outline" />
+        <SettingsSection
+          title="PAR-Q"
+          description="Health screening questions every member fills in."
+          icon="heart-outline">
           <ParqPanel />
-        </View>
+        </SettingsSection>
       ) : null}
       {canConfigureLeaderboards ? (
-        <View className="gap-3">
-          <SectionHeader title="Leaderboards" icon="trophy-outline" />
+        <SettingsSection
+          title="Leaderboards"
+          description="Turn class and strength comparisons on or off."
+          icon="trophy-outline">
           <LeaderboardsPanel />
-        </View>
+        </SettingsSection>
       ) : null}
       {canManageStaff ? (
-        <View className="gap-3">
-          <SectionHeader title="Messaging" icon="chatbubbles-outline" />
+        <SettingsSection
+          title="Messaging"
+          description="Decide who can DM whom inside the gym."
+          icon="chatbubbles-outline">
           <MessagingPanel />
-        </View>
+        </SettingsSection>
       ) : null}
       {canEditClasses ? (
-        <View className="gap-3">
-          <SectionHeader title="Class types" icon="calendar-outline" />
+        <SettingsSection
+          title="Class types"
+          description="Name, colour and schedule the kinds of class you run."
+          icon="calendar-outline">
           <ClassTypesPanel />
-        </View>
+        </SettingsSection>
       ) : null}
     </View>
   );
 }
 
-function SectionHeader({ title, icon }: { title: string; icon: IconName }) {
+// Collapsed-by-default section card: the header row is the CTA, the
+// panel renders only while open. Keeps the Settings tab scannable —
+// five fully-expanded editors stacked end to end was a wall.
+function SettingsSection({
+  title,
+  description,
+  icon,
+  children,
+}: {
+  title: string;
+  description: string;
+  icon: IconName;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
   return (
-    <View className="flex-row items-center gap-2 mt-2">
-      <Ionicons name={icon} size={18} color="#6B7280" />
-      <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-        {title}
-      </Text>
+    <View className="bg-white dark:bg-gray-900 rounded-xl">
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="flex-row items-center gap-3 p-4 active:opacity-70">
+        <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+          <Ionicons name={icon} size={18} color="#6B7280" />
+        </View>
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {title}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            {description}
+          </Text>
+        </View>
+        <Ionicons
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color="#9CA3AF"
+        />
+      </Pressable>
+      {open ? (
+        <View className="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-800">
+          {children}
+        </View>
+      ) : null}
     </View>
   );
 }

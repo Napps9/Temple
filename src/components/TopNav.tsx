@@ -51,28 +51,42 @@ export function TopNav({
   const onAccount = pathname === accountHref;
   const displayName = profile?.full_name?.trim() || session?.user.email || '';
 
+  // staff = blue, member = green: the switch doubles as a "which side
+  // am I on" indicator, so the tint must change with the variant.
+  const crossTint = variant === 'staff' ? '#3B82F6' : '#10B981';
+  const crossClasses =
+    variant === 'staff'
+      ? 'border-blue-500/40 bg-blue-500/10'
+      : 'border-emerald-500/40 bg-emerald-500/10';
+  const crossTextClass =
+    variant === 'staff' ? 'text-blue-500' : 'text-emerald-500';
+
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
       className="bg-gray-50 dark:bg-gray-950 px-3 md:px-6 pb-3 flex-row items-center gap-2 md:gap-3">
-      <Pressable
-        onPress={() => router.replace(homeHref as never)}
-        hitSlop={6}
-        className="flex-row items-center gap-3 active:opacity-70">
-        <GymLogo
-          size={36}
-          logoUrl={brand.logoUrl}
-          name={gymName}
-          primaryColor={brand.primaryColor}
-        />
-        <Text
-          className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden lg:flex"
-          numberOfLines={1}>
-          {gymName}
-        </Text>
-      </Pressable>
+      {/* Three equal zones (flex-1 left/right) keep the pills on the
+          bar's true centre regardless of how wide the side clusters are. */}
+      <View className="flex-1 flex-row items-center">
+        <Pressable
+          onPress={() => router.replace(homeHref as never)}
+          hitSlop={6}
+          className="flex-row items-center gap-3 active:opacity-70">
+          <GymLogo
+            size={36}
+            logoUrl={brand.logoUrl}
+            name={gymName}
+            primaryColor={brand.primaryColor}
+          />
+          <Text
+            className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden lg:flex"
+            numberOfLines={1}>
+            {gymName}
+          </Text>
+        </Pressable>
+      </View>
 
-      <View className="flex-1 items-center">
+      <View className="items-center">
         <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
           {sections.map((s) => {
             const active = pathname.startsWith(s.href);
@@ -103,19 +117,15 @@ export function TopNav({
         </View>
       </View>
 
-      <View className="flex-row items-center gap-1.5 md:gap-2">
+      <View className="flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
         {showCrossLink ? (
           <Pressable
             onPress={() => router.replace(crossHref as never)}
             hitSlop={4}
             accessibilityLabel={crossLabel}
-            className="h-9 px-3 rounded-full border border-gray-200 dark:border-gray-700 flex-row items-center gap-1.5 active:opacity-70">
-            <Ionicons
-              name="swap-horizontal-outline"
-              size={16}
-              color={colors.iconSecondary}
-            />
-            <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium hidden xl:flex">
+            className={`h-9 px-3 rounded-full border flex-row items-center gap-1.5 active:opacity-70 ${crossClasses}`}>
+            <Ionicons name="swap-horizontal-outline" size={16} color={crossTint} />
+            <Text className={`text-xs font-semibold hidden md:flex ${crossTextClass}`}>
               {crossLabel}
             </Text>
           </Pressable>
@@ -136,11 +146,11 @@ export function TopNav({
           onPress={() => router.push('/inbox' as never)}
           hitSlop={4}
           accessibilityLabel="Inbox"
-          className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:opacity-70">
+          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">
           <Ionicons
             name="chatbubble-ellipses-outline"
-            size={18}
-            color={colors.iconSecondary}
+            size={19}
+            color={colors.iconPrimary}
           />
         </Pressable>
 
@@ -148,11 +158,11 @@ export function TopNav({
           onPress={() => set(scheme === 'dark' ? 'light' : 'dark')}
           hitSlop={4}
           accessibilityLabel="Toggle theme"
-          className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:opacity-70">
+          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">
           <Ionicons
             name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
-            size={18}
-            color={colors.iconSecondary}
+            size={19}
+            color={colors.iconPrimary}
           />
         </Pressable>
       </View>

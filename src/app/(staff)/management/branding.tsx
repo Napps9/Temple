@@ -2,10 +2,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
+import { ColorSwatchPicker } from '@/components/ColorSwatchPicker';
 import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -56,6 +66,18 @@ export function BrandingPanel() {
   const [publicSignup, setPublicSignup] = useState(true);
   const [slugWarn, setSlugWarn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pickerFor, setPickerFor] = useState<'primary' | 'secondary' | 'text' | null>(
+    null,
+  );
+
+  const pickerValue =
+    pickerFor === 'primary' ? primary : pickerFor === 'secondary' ? secondary : textColor;
+  function applyPicked(hex: string) {
+    if (pickerFor === 'primary') setPrimary(hex);
+    else if (pickerFor === 'secondary') setSecondary(hex);
+    else if (pickerFor === 'text') setTextColor(hex);
+    setPickerFor(null);
+  }
 
   useEffect(() => {
     if (gym.data) {
@@ -178,13 +200,42 @@ export function BrandingPanel() {
 
   return (
     <View className="gap-5">
-        <BrandPreview
-          gymName={name || 'Your gym name'}
-          logoUrl={logoUrl}
-          primaryColor={previewPrimary}
-          secondaryColor={previewSecondary}
-          textColor={previewText}
-        />
+        {/* Colours sit beside the live preview so each edit is visible
+            the moment it's typed or picked. Stacks on small screens. */}
+        <View className="md:flex-row gap-4 items-stretch">
+          <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Colours
+            </Text>
+            <ColourField
+              label="Primary"
+              value={primary}
+              onChange={setPrimary}
+              onPick={() => setPickerFor('primary')}
+            />
+            <ColourField
+              label="Secondary"
+              value={secondary}
+              onChange={setSecondary}
+              onPick={() => setPickerFor('secondary')}
+            />
+            <ColourField
+              label="Text"
+              value={textColor}
+              onChange={setTextColor}
+              onPick={() => setPickerFor('text')}
+            />
+          </View>
+          <View className="flex-1 mt-4 md:mt-0">
+            <BrandPreview
+              gymName={name || 'Your gym name'}
+              logoUrl={logoUrl}
+              primaryColor={previewPrimary}
+              secondaryColor={previewSecondary}
+              textColor={previewText}
+            />
+          </View>
+        </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -221,33 +272,6 @@ export function BrandingPanel() {
               ) : null}
             </View>
           </View>
-        </View>
-
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Colours
-          </Text>
-          <Input
-            label="Primary"
-            value={primary}
-            onChangeText={setPrimary}
-            autoCapitalize="characters"
-            placeholder="#2563EB"
-          />
-          <Input
-            label="Secondary"
-            value={secondary}
-            onChangeText={setSecondary}
-            autoCapitalize="characters"
-            placeholder="#0F172A"
-          />
-          <Input
-            label="Text"
-            value={textColor}
-            onChangeText={setTextColor}
-            autoCapitalize="characters"
-            placeholder="#0F172A"
-          />
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
@@ -316,6 +340,82 @@ export function BrandingPanel() {
         <Button onPress={() => save.mutate()} loading={save.isPending}>
           Save changes
         </Button>
+
+        <Modal
+          visible={pickerFor !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setPickerFor(null)}>
+          <Pressable
+            onPress={() => setPickerFor(null)}
+            className="flex-1 bg-black/60 items-center justify-center px-6">
+            <Pressable
+              onPress={() => {}}
+              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm gap-4">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold capitalize">
+                {pickerFor} colour
+              </Text>
+              <ColorSwatchPicker
+                value={normaliseHex(pickerValue) ?? ''}
+                onChange={applyPicked}
+              />
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Or keep typing any hex in the field — the preview follows
+                either way.
+              </Text>
+              <Button variant="secondary" onPress={() => setPickerFor(null)}>
+                Close
+              </Button>
+            </Pressable>
+          </Pressable>
+        </Modal>
+    </View>
+  );
+}
+
+// Hex field + live swatch + picker CTA, one row per brand colour.
+function ColourField({
+  label,
+  value,
+  onChange,
+  onPick,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onPick: () => void;
+}) {
+  const valid = normaliseHex(value);
+  return (
+    <View className="gap-1.5">
+      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        {label}
+      </Text>
+      <View className="flex-row items-center gap-2">
+        <View
+          style={{ backgroundColor: valid ?? '#00000000' }}
+          className="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700"
+        />
+        <View className="flex-1">
+          <TextInput
+            value={value}
+            onChangeText={onChange}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            placeholder="#2563EB"
+            placeholderTextColor="#9CA3AF"
+            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+          />
+        </View>
+        <Pressable
+          onPress={onPick}
+          hitSlop={4}
+          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 items-center justify-center active:opacity-70">
+          <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
+            Pick
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
