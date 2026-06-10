@@ -5,6 +5,13 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BodyMap } from '@/components/BodyMap';
+import {
+  DATE_RE,
+  DateRangeCta,
+  isoDate,
+  presetRange,
+  type Preset,
+} from '@/components/DateRangeCta';
 import { Screen } from '@/components/Screen';
 import {
   computeMovementTrends,
@@ -18,7 +25,30 @@ import {
   regionLabel,
   STATUS_META,
 } from '@/lib/injuries';
+import {
+  ENERGY_COLOURS,
+  ENERGY_LABELS,
+  ENERGY_SYSTEMS,
+  PATTERN_LABELS,
+  type EnergySystem,
+  type MovementPattern,
+} from '@/lib/movement-classification';
 import { findScheme, movementName } from '@/lib/movements';
+import {
+  categoryLabel,
+  parseSections,
+  type Section,
+} from '@/lib/programming';
+import {
+  classifyProgrammedSection,
+  computeBalance,
+  computeEnergyMix,
+  computePatternEnergyMatrix,
+  computePatternMix,
+  computeRegionVolume,
+  untaggedSections,
+  type ClassifiedSection,
+} from '@/lib/programming-balance';
 import { supabase } from '@/lib/supabase';
 import { formatSeconds } from '@/lib/track';
 import { useCan } from '@/lib/useCan';
@@ -153,9 +183,17 @@ export default function AnalysisScreen() {
             Programming analysis
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Open injuries across the gym, and how movements are trending.
+            Balance across energy systems, movement patterns and body
+            regions — plus open injuries and member trends.
           </Text>
         </View>
+
+        {membership?.gymId ? (
+          <ProgrammingBalanceBlock
+            gymId={membership.gymId}
+            canSeeLogs={canSeeLogs}
+          />
+        ) : null}
 
         {/* ----------------------------- Injuries ----------------------------- */}
         <View className="gap-3">
@@ -265,6 +303,525 @@ export default function AnalysisScreen() {
         </View>
       </ScrollView>
     </Screen>
+  );
+}
+
+// ===========================================================================
+// Programming balance — pattern × energy matrix + supporting cards
+// ===========================================================================
+
+type ProgrammingRow = {
+  id: string;
+  date: string;
+  class_type_id: string;
+  sections: unknown;
+};
+
+type ClassTypeLite = {
+  id: string;
+  name: string;
+  color: string;
+};
+
+function ProgrammingBalanceBlock({
+  gymId,
+  canSeeLogs,
+}: {
+  gymId: string;
+  canSeeLogs: boolean;
+}) {
+  const [preset, setPreset] = useState<Preset>('month');
+  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
+  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
+  const range = useMemo(() => {
+    if (preset === 'custom') return { start: customStart, end: customEnd };
+    return presetRange(preset, new Date());
+  }, [preset, customStart, customEnd]);
+  const rangeValid =
+    DATE_RE.test(range.start) &&
+    DATE_RE.test(range.end) &&
+    range.start <= range.end;
+
+  const [classTypeFilter, setClassTypeFilter] = useState<string | null>(null);
+
+  const programming = useQuery({
+    queryKey: ['gym-programming', gymId, range.start, range.end],
+    enabled: canSeeLogs && rangeValid,
+    queryFn: async (): Promise<ProgrammingRow[]> => {
+      const { data, error } = await supabase
+        .from('class_programming')
+        .select('id, date, class_type_id, sections')
+        .eq('gym_id', gymId)
+        .gte('date', range.start)
+        .lte('date', range.end);
+      if (error) throw error;
+      return (data ?? []) as ProgrammingRow[];
+    },
+  });
+
+  const classTypes = useQuery({
+    queryKey: ['class-types-for-analysis', gymId],
+    enabled: canSeeLogs,
+    queryFn: async (): Promise<ClassTypeLite[]> => {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('id, name, color')
+        .eq('gym_id', gymId)
+        .is('archived_at', null)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as ClassTypeLite[];
+    },
+  });
+
+  // Flatten programming rows → ClassifiedSection[] once, filter
+  // client-side when the user taps a class-type chip.
+  const classified = useMemo<ClassifiedSection[]>(() => {
+    const out: ClassifiedSection[] = [];
+    for (const row of programming.data ?? []) {
+      const sections = parseSections(row.sections) as Section[];
+      for (const s of sections) {
+        out.push(classifyProgrammedSection(s, row.date, row.class_type_id));
+      }
+    }
+    return out;
+  }, [programming.data]);
+
+  const filtered = useMemo(
+    () =>
+      classTypeFilter === null
+        ? classified
+        : classified.filter((s) => s.class_type_id === classTypeFilter),
+    [classified, classTypeFilter],
+  );
+
+  const matrix = useMemo(
+    () => computePatternEnergyMatrix(filtered),
+    [filtered],
+  );
+  const energyMix = useMemo(() => computeEnergyMix(filtered), [filtered]);
+  const patternMix = useMemo(() => computePatternMix(filtered), [filtered]);
+  const regionVolume = useMemo(
+    () => computeRegionVolume(filtered),
+    [filtered],
+  );
+  const balance = useMemo(() => computeBalance(filtered), [filtered]);
+  const untagged = useMemo(() => untaggedSections(filtered), [filtered]);
+
+  if (!canSeeLogs) {
+    return (
+      <View className="gap-3">
+        <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          Programming balance
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          You don't have permission to view workout logs.
+        </Text>
+      </View>
+    );
+  }
+
+  const hasData = filtered.length > 0;
+
+  return (
+    <View className="gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+        Programming balance
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        Movement patterns × energy systems across what you programmed
+        in the window.
+      </Text>
+
+      <DateRangeCta
+        preset={preset}
+        range={range}
+        customStart={customStart}
+        customEnd={customEnd}
+        onChange={(next) => {
+          setPreset(next.preset);
+          if (next.preset === 'custom') {
+            setCustomStart(next.start);
+            setCustomEnd(next.end);
+          }
+        }}
+      />
+
+      {(classTypes.data?.length ?? 0) > 1 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-2 pb-1">
+          <ClassTypeChip
+            label="All"
+            color="#9CA3AF"
+            active={classTypeFilter === null}
+            onPress={() => setClassTypeFilter(null)}
+          />
+          {(classTypes.data ?? []).map((ct) => (
+            <ClassTypeChip
+              key={ct.id}
+              label={ct.name}
+              color={ct.color}
+              active={classTypeFilter === ct.id}
+              onPress={() => setClassTypeFilter(ct.id)}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+
+      {programming.isLoading ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          Loading programming…
+        </Text>
+      ) : !hasData ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            No programmed sections in this window. Programme a few
+            classes and the matrices will populate.
+          </Text>
+        </View>
+      ) : (
+        <>
+          <PatternEnergyMatrix matrix={matrix} balance={balance} />
+          <EnergyMixCard mix={energyMix} />
+          <PatternMixCard mix={patternMix} />
+          <RegionHeatCard regions={regionVolume} />
+          {untagged.length > 0 ? (
+            <UntaggedCard sections={untagged} />
+          ) : null}
+        </>
+      )}
+    </View>
+  );
+}
+
+function ClassTypeChip({
+  label,
+  color,
+  active,
+  onPress,
+}: {
+  label: string;
+  color: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={4}
+      className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
+        active
+          ? 'border-primary bg-primary/10'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+      }`}>
+      <View
+        style={{ backgroundColor: color }}
+        className="w-2 h-2 rounded-full"
+      />
+      <Text
+        className={`text-xs font-semibold ${
+          active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+        }`}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+// 4-stop ramp tied to the column's max, so colour intensity reads as
+// "how loaded is this energy column" rather than absolute volume.
+function cellTint(value: number, columnMax: number): string {
+  if (value === 0 || columnMax === 0) return 'transparent';
+  const ratio = value / columnMax;
+  if (ratio >= 0.75) return 'rgba(37,99,235,0.55)';
+  if (ratio >= 0.5) return 'rgba(37,99,235,0.4)';
+  if (ratio >= 0.25) return 'rgba(37,99,235,0.25)';
+  return 'rgba(37,99,235,0.12)';
+}
+
+function PatternEnergyMatrix({
+  matrix,
+  balance,
+}: {
+  matrix: Record<MovementPattern, Record<EnergySystem, number>>;
+  balance: ReturnType<typeof computeBalance>;
+}) {
+  const rows = (Object.keys(matrix) as MovementPattern[])
+    .map((p) => ({
+      pattern: p,
+      cells: matrix[p],
+      total:
+        matrix[p].phosphagen + matrix[p].glycolytic + matrix[p].oxidative,
+    }))
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  const columnMax: Record<EnergySystem, number> = {
+    phosphagen: 0,
+    glycolytic: 0,
+    oxidative: 0,
+  };
+  for (const r of rows) {
+    for (const e of ENERGY_SYSTEMS) {
+      if (r.cells[e] > columnMax[e]) columnMax[e] = r.cells[e];
+    }
+  }
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="flex-row gap-3 flex-wrap">
+        <RatioBadge
+          label="Push : Pull"
+          left={balance.push}
+          right={balance.pull}
+        />
+        <RatioBadge
+          label="Anterior : Posterior"
+          left={balance.anterior}
+          right={balance.posterior}
+        />
+      </View>
+
+      <View>
+        {/* Column headers */}
+        <View className="flex-row items-center gap-1">
+          <View style={{ width: 132 }} />
+          {ENERGY_SYSTEMS.map((e) => (
+            <View key={e} className="flex-1 items-center">
+              <Text
+                style={{ color: ENERGY_COLOURS[e] }}
+                className="text-[10px] font-semibold uppercase tracking-wider">
+                {ENERGY_LABELS[e]}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {rows.length === 0 ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-sm pt-3">
+            No movements classified yet.
+          </Text>
+        ) : (
+          rows.map((r) => (
+            <View key={r.pattern} className="flex-row items-center gap-1 mt-1">
+              <Text
+                style={{ width: 132 }}
+                className="text-gray-700 dark:text-gray-200 text-xs"
+                numberOfLines={1}>
+                {PATTERN_LABELS[r.pattern]}
+              </Text>
+              {ENERGY_SYSTEMS.map((e) => (
+                <View
+                  key={e}
+                  style={{
+                    backgroundColor: cellTint(r.cells[e], columnMax[e]),
+                    borderColor:
+                      r.cells[e] > 0 ? ENERGY_COLOURS[e] : 'transparent',
+                  }}
+                  className="flex-1 h-9 rounded-md border items-center justify-center">
+                  <Text
+                    className={`text-sm font-semibold ${
+                      r.cells[e] > 0
+                        ? 'text-gray-900 dark:text-gray-50'
+                        : 'text-gray-300 dark:text-gray-700'
+                    }`}>
+                    {r.cells[e]}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ))
+        )}
+      </View>
+    </View>
+  );
+}
+
+function RatioBadge({
+  label,
+  left,
+  right,
+}: {
+  label: string;
+  left: number;
+  right: number;
+}) {
+  return (
+    <View className="bg-gray-50 dark:bg-gray-800 rounded-full px-3 py-1">
+      <Text className="text-gray-400 dark:text-gray-500 text-[9px] uppercase tracking-widest">
+        {label}
+      </Text>
+      <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+        {left} : {right}
+      </Text>
+    </View>
+  );
+}
+
+function EnergyMixCard({
+  mix,
+}: {
+  mix: ReturnType<typeof computeEnergyMix>;
+}) {
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        Energy system mix
+      </Text>
+      {mix.map((m) => (
+        <View key={m.system} className="gap-1">
+          <View className="flex-row items-baseline gap-2">
+            <Text
+              style={{ color: ENERGY_COLOURS[m.system] }}
+              className="text-xs font-semibold uppercase tracking-wider">
+              {ENERGY_LABELS[m.system]}
+            </Text>
+            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+              {m.count} {m.count === 1 ? 'section' : 'sections'}
+            </Text>
+            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+              {m.pct}%
+            </Text>
+          </View>
+          <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <View
+              style={{
+                width: `${m.pct}%`,
+                backgroundColor: ENERGY_COLOURS[m.system],
+              }}
+              className="h-full rounded-full"
+            />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function PatternMixCard({
+  mix,
+}: {
+  mix: ReturnType<typeof computePatternMix>;
+}) {
+  const nonzero = mix.filter((m) => m.count > 0);
+  const max = nonzero[0]?.count ?? 0;
+  if (nonzero.length === 0) return null;
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        Movement pattern volume
+      </Text>
+      {nonzero.map((m) => (
+        <View key={m.pattern} className="gap-1">
+          <View className="flex-row items-baseline gap-2">
+            <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+              {PATTERN_LABELS[m.pattern]}
+            </Text>
+            <Text className="flex-1 text-gray-400 dark:text-gray-500 text-[10px]">
+              {m.pct}%
+            </Text>
+            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+              {m.count}
+            </Text>
+          </View>
+          <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <View
+              style={{ width: `${(m.count / max) * 100}%` }}
+              className="h-full rounded-full bg-primary"
+            />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const REGION_RAMP = ['#FCD34D', '#F59E0B', '#F97316', '#EF4444'];
+
+function RegionHeatCard({ regions }: { regions: Record<string, number> }) {
+  const entries = Object.entries(regions)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const max = entries[0]?.[1] ?? 0;
+  const tint: Record<string, string> = {};
+  for (const [key, count] of entries) {
+    const ratio = max === 0 ? 0 : count / max;
+    const i =
+      ratio >= 0.75 ? 3 : ratio >= 0.5 ? 2 : ratio >= 0.25 ? 1 : 0;
+    tint[key] = REGION_RAMP[i];
+  }
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        Region heat
+      </Text>
+      <BodyMap highlights={tint} />
+      {entries.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+          No region-tagged movements yet.
+        </Text>
+      ) : (
+        <View className="flex-row flex-wrap gap-1 justify-center">
+          {entries.map(([region, n]) => (
+            <View
+              key={region}
+              style={{ borderColor: tint[region] }}
+              className="rounded-full border px-2 py-0.5">
+              <Text
+                style={{ color: tint[region] }}
+                className="text-[10px] font-semibold">
+                {regionLabel(region)} · {n}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
+  // Show the freshest 6 — keep the card scannable; the rest stay
+  // discoverable via the Programming page itself.
+  const shown = sections
+    .slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 6);
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        Untagged sections
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        These sections' bodies don't mention a movement we recognise.
+        Add specific movement names so they get counted.
+      </Text>
+      {shown.map((s, i) => (
+        <View
+          key={i}
+          className="flex-row items-baseline gap-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest w-20">
+            {s.date.slice(5)}
+          </Text>
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+              {s.title || categoryLabel(s.section_category)}
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-wider">
+              {categoryLabel(s.section_category)}
+            </Text>
+          </View>
+        </View>
+      ))}
+      {sections.length > shown.length ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+          +{sections.length - shown.length} more.
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
