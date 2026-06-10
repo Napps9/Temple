@@ -162,8 +162,6 @@ export default function TrackHome() {
             </View>
           </View>
 
-          <InjuryTrackerRow />
-
           <View className="flex-row flex-wrap -mx-1">
             {MOVEMENT_GROUPS.map((g) => (
               <View key={g.key} className="w-1/2 p-1">
@@ -179,6 +177,11 @@ export default function TrackHome() {
                 />
               </View>
             ))}
+            {/* Injury tracker fills the trailing slot so the grid never
+                strands a half-row of empty space. */}
+            <View className="w-1/2 p-1">
+              <InjuryTile />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -213,37 +216,47 @@ function LeaderboardsTile() {
   );
 }
 
-// Lives inside the Movements container — injuries are part of the
-// same "how is my body moving" picture.
-function InjuryTrackerRow() {
+// Injury tracker rendered in the same grid as the movement groups —
+// shares GroupTile's shape (accent bubble, name, count, badge) so the
+// row never strands an empty slot, and the user sees injuries as part
+// of the same "how is my body moving" picture.
+function InjuryTile() {
   const injuries = useMyInjuries();
   const open = (injuries.data ?? []).filter((r) => r.status !== 'resolved');
   const due = dueCheckIns(injuries.data);
+  const accent = '#EF4444';
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-red-500/5 dark:bg-red-500/10 border border-red-200 dark:border-red-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
-      <View className="w-9 h-9 rounded-full bg-red-500/10 items-center justify-center">
-        <Ionicons name="body-outline" size={18} color="#EF4444" />
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] overflow-hidden active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name="body-outline" size={22} color={accent} />
       </View>
-      <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+      {due.length > 0 ? (
+        <View className="absolute right-3 top-3 bg-amber-500 rounded-full px-2 py-0.5">
+          <Text className="text-white text-[10px] font-bold">
+            {due.length} due
+          </Text>
+        </View>
+      ) : null}
+      <View className="flex-1 justify-end">
+        <Text
+          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          numberOfLines={2}>
           Injury tracker
         </Text>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           {open.length === 0
-            ? 'Log a niggle so coaching can work around it.'
-            : `${open.length} open ${open.length === 1 ? 'injury' : 'injuries'}${
-                due.length > 0 ? ` · ${due.length} check-in due` : ''
-              }`}
+            ? 'Log a niggle'
+            : `${open.length} open ${open.length === 1 ? 'injury' : 'injuries'}`}
         </Text>
       </View>
-      {due.length > 0 ? (
-        <View className="bg-amber-500 rounded-full px-2 py-0.5">
-          <Text className="text-white text-[10px] font-bold">{due.length}</Text>
-        </View>
-      ) : null}
-      <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
     </Pressable>
   );
 }
