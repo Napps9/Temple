@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 
@@ -19,6 +19,12 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       await signIn(email, password);
+      // Navigate explicitly — the (auth) layout redirect only fires for
+      // users WITH a membership, so without this a gymless (or
+      // unreadable-membership) account signed in and just sat here.
+      // Root index routes: staff → /classes, member → /book or /parq,
+      // no membership → /welcome.
+      router.replace('/' as never);
     } catch (e) {
       setError(errorMessage(e, 'Sign-in failed'));
     } finally {
