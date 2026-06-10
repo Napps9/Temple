@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -234,6 +235,25 @@ function NextClassCard() {
   );
 }
 
+// Always-visible route into the bookings list — Bookings left the top
+// nav, and "where are my booked classes" belongs on the page where
+// booking happens.
+function MyBookingsCard() {
+  return (
+    <Pressable
+      onPress={() => router.push('/bookings')}
+      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+      <View className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+        <Ionicons name="ticket-outline" size={16} color="#6B7280" />
+      </View>
+      <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+        My bookings
+      </Text>
+      <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+    </Pressable>
+  );
+}
+
 export default function Book() {
   return (
     <ClassesCalendar
@@ -242,6 +262,7 @@ export default function Book() {
         <View className="gap-2">
           <RecommendedClassCard />
           <NextClassCard />
+          <MyBookingsCard />
         </View>
       }
     />

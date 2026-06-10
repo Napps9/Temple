@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
 import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
@@ -292,18 +293,18 @@ export function MembersList() {
                   </Pressable>
                 </Link>
                 {canRemove ? (
-                  <Pressable
-                    onPress={() =>
-                      setRemoveTarget({
-                        id: m.profile_id,
-                        name: m.profiles?.full_name ?? 'this member',
-                      })
-                    }
-                    className="self-end px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
-                    <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-                      Remove
-                    </Text>
-                  </Pressable>
+                  <View className="self-end">
+                    <ActionButton
+                      kind="remove"
+                      label="Remove"
+                      onPress={() =>
+                        setRemoveTarget({
+                          id: m.profile_id,
+                          name: m.profiles?.full_name ?? 'this member',
+                        })
+                      }
+                    />
+                  </View>
                 ) : null}
               </View>
             );

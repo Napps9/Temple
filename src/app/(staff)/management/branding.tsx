@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
 import {
   Modal,
   Platform,
@@ -72,11 +72,12 @@ export function BrandingPanel() {
 
   const pickerValue =
     pickerFor === 'primary' ? primary : pickerFor === 'secondary' ? secondary : textColor;
-  function applyPicked(hex: string) {
+  // Live-applies without closing the modal — the field swatch (and the
+  // preview behind the overlay) track every wheel drag / swatch tap.
+  function setPicked(hex: string) {
     if (pickerFor === 'primary') setPrimary(hex);
     else if (pickerFor === 'secondary') setSecondary(hex);
     else if (pickerFor === 'text') setTextColor(hex);
-    setPickerFor(null);
   }
 
   useEffect(() => {
@@ -355,16 +356,43 @@ export function BrandingPanel() {
               <Text className="text-gray-900 dark:text-gray-50 font-semibold capitalize">
                 {pickerFor} colour
               </Text>
-              <ColorSwatchPicker
-                value={normaliseHex(pickerValue) ?? ''}
-                onChange={applyPicked}
-              />
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                Or keep typing any hex in the field — the preview follows
-                either way.
-              </Text>
+              {Platform.OS === 'web' ? (
+                <View className="gap-1.5">
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    Pick any colour
+                  </Text>
+                  {/* Native browser spectrum picker — same trick as
+                      DatePicker's <input type="date">. Full gamut, zero
+                      dependencies; fires per drag so the swatches and
+                      preview follow live. */}
+                  {createElement('input', {
+                    type: 'color',
+                    value: normaliseHex(pickerValue) ?? '#2563EB',
+                    onChange: (e: { target: { value: string } }) =>
+                      setPicked(e.target.value.toUpperCase()),
+                    style: {
+                      width: '100%',
+                      height: 48,
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: 0,
+                      background: 'transparent',
+                      cursor: 'pointer',
+                    },
+                  })}
+                </View>
+              ) : null}
+              <View className="gap-1.5">
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Quick picks
+                </Text>
+                <ColorSwatchPicker
+                  value={normaliseHex(pickerValue) ?? ''}
+                  onChange={setPicked}
+                />
+              </View>
               <Button variant="secondary" onPress={() => setPickerFor(null)}>
-                Close
+                Done
               </Button>
             </Pressable>
           </Pressable>

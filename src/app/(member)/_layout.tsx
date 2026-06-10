@@ -5,10 +5,11 @@ import { TopNav, type NavSection } from '@/components/TopNav';
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
 
+// Bookings intentionally isn't a top-level section — it lives on the
+// Book page ("My bookings" card) where members actually look for it.
 const MEMBER_SECTIONS: NavSection[] = [
   { name: 'book', href: '/book', label: 'Book', icon: 'calendar-clear-outline' },
   { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
-  { name: 'bookings', href: '/bookings', label: 'Bookings', icon: 'ticket-outline' },
   { name: 'track', href: '/track', label: 'Track', icon: 'trending-up-outline' },
 ];
 

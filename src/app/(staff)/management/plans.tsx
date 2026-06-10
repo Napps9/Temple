@@ -4,6 +4,7 @@ import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -344,37 +345,20 @@ export function PlansPanel() {
                 </View>
 
                 {r.serverId && canArchive ? (
-                  <View className="flex-row gap-2 justify-end">
-                    <Pressable
+                  <View className="flex-row gap-2 justify-end flex-wrap">
+                    <ActionButton
+                      kind="archive"
+                      label="Archive"
                       onPress={() => archive.mutate(r.serverId!)}
-                      disabled={archive.isPending}
-                      className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
-                      <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-                        Archive
-                      </Text>
-                    </Pressable>
+                    />
                     {canHardDelete ? (
-                      <Pressable
-                        onPress={() => {
-                          if (deletable) hardDelete.mutate(r.serverId!);
-                        }}
+                      <ActionButton
+                        kind="delete"
+                        label="Delete permanently"
                         disabled={!deletable || hardDelete.isPending}
-                        className={`px-3 py-1.5 rounded-md border ${
-                          deletable
-                            ? 'border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20'
-                            : 'border-gray-200 dark:border-gray-700 opacity-50'
-                        }`}>
-                        <Text
-                          className={`text-xs uppercase tracking-widest ${
-                            deletable
-                              ? 'text-red-600 dark:text-red-400'
-                              : 'text-gray-400 dark:text-gray-500'
-                          }`}>
-                          {deletable
-                            ? 'Delete permanently'
-                            : 'Cannot delete — has subscriptions'}
-                        </Text>
-                      </Pressable>
+                        disabledLabel="Cannot delete — has subscriptions"
+                        onPress={() => hardDelete.mutate(r.serverId!)}
+                      />
                     ) : null}
                   </View>
                 ) : null}
@@ -424,37 +408,20 @@ export function PlansPanel() {
                       className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-2">
                       <Text className="text-gray-700 dark:text-gray-200">{r.name}</Text>
                       {canArchive ? (
-                        <View className="flex-row gap-2 justify-end">
-                          <Pressable
+                        <View className="flex-row gap-2 justify-end flex-wrap">
+                          <ActionButton
+                            kind="restore"
+                            label="Restore"
                             onPress={() => restore.mutate(r.serverId!)}
-                            disabled={restore.isPending}
-                            className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
-                            <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-                              Restore
-                            </Text>
-                          </Pressable>
+                          />
                           {canHardDelete ? (
-                            <Pressable
-                              onPress={() => {
-                                if (deletable) hardDelete.mutate(r.serverId!);
-                              }}
+                            <ActionButton
+                              kind="delete"
+                              label="Delete permanently"
                               disabled={!deletable || hardDelete.isPending}
-                              className={`px-3 py-1.5 rounded-md border ${
-                                deletable
-                                  ? 'border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20'
-                                  : 'border-gray-200 dark:border-gray-700 opacity-50'
-                              }`}>
-                              <Text
-                                className={`text-xs uppercase tracking-widest ${
-                                  deletable
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-gray-400 dark:text-gray-500'
-                                }`}>
-                                {deletable
-                                  ? 'Delete permanently'
-                                  : 'Cannot delete — has subscriptions'}
-                              </Text>
-                            </Pressable>
+                              disabledLabel="Cannot delete — has subscriptions"
+                              onPress={() => hardDelete.mutate(r.serverId!)}
+                            />
                           ) : null}
                         </View>
                       ) : null}

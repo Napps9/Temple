@@ -47,7 +47,10 @@ export function TopNav({
   const homeHref = variant === 'staff' ? '/classes' : '/book';
   const showCrossLink = variant === 'staff' || canAccessStaff;
   const crossHref = variant === 'staff' ? '/book' : '/classes';
-  const crossLabel = variant === 'staff' ? 'Member view' : 'Staff view';
+  // States the CURRENT context ("Viewing Staff"), not the destination —
+  // the old "Member view" label read as where-you-are to half of users
+  // and where-you're-going to the rest.
+  const crossLabel = variant === 'staff' ? 'Viewing Staff' : 'Viewing Member';
   const onAccount = pathname === accountHref;
   const displayName = profile?.full_name?.trim() || session?.user.email || '';
 
@@ -61,63 +64,69 @@ export function TopNav({
   const crossTextClass =
     variant === 'staff' ? 'text-blue-500' : 'text-emerald-500';
 
+  const pills = (
+    <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+      {sections.map((s) => {
+        const active = pathname.startsWith(s.href);
+        return (
+          <Pressable
+            key={s.name}
+            onPress={() => router.replace(s.href as never)}
+            hitSlop={4}
+            className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
+              active ? 'bg-white dark:bg-gray-700' : ''
+            }`}>
+            <Ionicons
+              name={s.icon}
+              size={17}
+              color={active ? brand.primaryColor : colors.iconSecondary}
+            />
+            <Text
+              className={`text-sm font-medium ${
+                active
+                  ? 'text-gray-900 dark:text-gray-50'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}>
+              {s.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-gray-50 dark:bg-gray-950 px-3 md:px-6 pb-3 flex-row items-center gap-2 md:gap-3">
-      {/* Three equal zones (flex-1 left/right) keep the pills on the
-          bar's true centre regardless of how wide the side clusters are. */}
-      <View className="flex-1 flex-row items-center">
-        <Pressable
-          onPress={() => router.replace(homeHref as never)}
-          hitSlop={6}
-          className="flex-row items-center gap-3 active:opacity-70">
-          <GymLogo
-            size={36}
-            logoUrl={brand.logoUrl}
-            name={gymName}
-            primaryColor={brand.primaryColor}
-          />
-          <Text
-            className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden lg:flex"
-            numberOfLines={1}>
-            {gymName}
-          </Text>
-        </Pressable>
-      </View>
-
-      <View className="items-center">
-        <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
-          {sections.map((s) => {
-            const active = pathname.startsWith(s.href);
-            return (
-              <Pressable
-                key={s.name}
-                onPress={() => router.replace(s.href as never)}
-                hitSlop={4}
-                className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
-                  active ? 'bg-white dark:bg-gray-700' : ''
-                }`}>
-                <Ionicons
-                  name={s.icon}
-                  size={17}
-                  color={active ? brand.primaryColor : colors.iconSecondary}
-                />
-                <Text
-                  className={`text-sm font-medium hidden md:flex ${
-                    active
-                      ? 'text-gray-900 dark:text-gray-50'
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                  {s.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+      className="bg-gray-50 dark:bg-gray-950 px-3 md:px-6 pb-3 gap-2">
+      <View className="flex-row items-center gap-2 md:gap-3">
+        {/* Three equal zones (flex-1 left/right) keep the pills on the
+            bar's true centre regardless of how wide the side clusters
+            are. On small screens the centre zone hides and the pills
+            render as their own full-width row below — overlapping
+            icons beat no icons, but a second row beats both. */}
+        <View className="flex-1 flex-row items-center">
+          <Pressable
+            onPress={() => router.replace(homeHref as never)}
+            hitSlop={6}
+            className="flex-row items-center gap-3 active:opacity-70">
+            <GymLogo
+              size={36}
+              logoUrl={brand.logoUrl}
+              name={gymName}
+              primaryColor={brand.primaryColor}
+            />
+            <Text
+              className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden lg:flex"
+              numberOfLines={1}>
+              {gymName}
+            </Text>
+          </Pressable>
         </View>
-      </View>
 
-      <View className="flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
+        <View className="hidden md:flex items-center">{pills}</View>
+
+        <View className="flex-row items-center justify-end gap-1.5 md:gap-2 md:flex-1">
         {showCrossLink ? (
           <Pressable
             onPress={() => router.replace(crossHref as never)}
@@ -165,7 +174,10 @@ export function TopNav({
             color={colors.iconPrimary}
           />
         </Pressable>
+        </View>
       </View>
+
+      <View className="md:hidden items-center">{pills}</View>
     </View>
   );
 }

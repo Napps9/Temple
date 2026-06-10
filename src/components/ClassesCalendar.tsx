@@ -136,6 +136,30 @@ function classesOnDay(sessions: ClassSession[] | undefined, day: Date) {
   return (sessions ?? []).filter((s) => isSameDay(new Date(s.starts_at), day));
 }
 
+function ViewSwitcher({ view }: { view: ViewMode }) {
+  return (
+    <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+      {VIEWS.map((v) => (
+        <Pressable
+          key={v}
+          onPress={() => router.setParams({ view: v })}
+          className={`px-4 py-1.5 rounded-full ${
+            view === v ? 'bg-white dark:bg-gray-700' : ''
+          }`}>
+          <Text
+            className={`capitalize text-sm font-medium ${
+              view === v
+                ? 'text-gray-900 dark:text-gray-50'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}>
+            {v}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 function parseView(v: string | undefined): ViewMode {
   return VIEWS.includes(v as ViewMode) ? (v as ViewMode) : 'day';
 }
@@ -257,29 +281,12 @@ export function ClassesCalendar({
       ) : null}
       <View className="w-full max-w-5xl mx-auto px-2">
         <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
-          {/* View switcher sits left of the month header, mirroring the
-              Add-class CTA on the right. It moved here from TopNav so
-              the bar stays purely navigational. */}
-          <View className="absolute left-0 top-6">
-            <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
-              {VIEWS.map((v) => (
-                <Pressable
-                  key={v}
-                  onPress={() => router.setParams({ view: v })}
-                  className={`px-3 md:px-4 py-1.5 rounded-full ${
-                    view === v ? 'bg-white dark:bg-gray-700' : ''
-                  }`}>
-                  <Text
-                    className={`capitalize text-sm font-medium ${
-                      view === v
-                        ? 'text-gray-900 dark:text-gray-50'
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}>
-                    {v}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+          {/* View switcher sits left of the month header on md+,
+              mirroring the Add-class CTA on the right. On small screens
+              the absolute slot collides with the month title, so it
+              renders as its own row below instead. */}
+          <View className="absolute left-0 top-6 hidden md:flex">
+            <ViewSwitcher view={view} />
           </View>
           <Pressable
             onPress={() => setDate(startOfDay(addMonths(date, -1)))}
@@ -308,6 +315,9 @@ export function ClassesCalendar({
               </Pressable>
             </View>
           ) : null}
+        </View>
+        <View className="md:hidden items-center pb-4 -mt-1">
+          <ViewSwitcher view={view} />
         </View>
       </View>
 
