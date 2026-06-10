@@ -101,9 +101,15 @@ export function useGymMembership() {
       // double-membership (a data bug the RPCs now prevent) into a thrown
       // error, which routed the user to /welcome — whose only CTA mints
       // yet another gym. limit(1) degrades gracefully instead.
+      // gyms!gym_id pins the embed to the direct gym_id FK. Without the
+      // hint PostgREST throws "more than one relationship was found for
+      // 'gym_memberships' and 'gyms'" — the composite (gym_id, profile_id)
+      // FKs that newer tables point at gym_memberships gave it a second
+      // candidate join path, and an ambiguous embed is an ERROR, which
+      // broke sign-in routing everywhere (prod + local) at once.
       const { data, error } = await supabase
         .from('gym_memberships')
-        .select('gym_id, role, gyms ( name )')
+        .select('gym_id, role, gyms!gym_id ( name )')
         .eq('profile_id', session.user.id)
         .is('left_at', null)
         .order('created_at', { ascending: true })
