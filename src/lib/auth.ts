@@ -97,13 +97,20 @@ export function useGymMembership() {
     refetchOnReconnect: false,
     queryFn: async (): Promise<GymMembership | null> => {
       if (!session) return null;
+      // Oldest active membership wins. .maybeSingle() here once turned a
+      // double-membership (a data bug the RPCs now prevent) into a thrown
+      // error, which routed the user to /welcome — whose only CTA mints
+      // yet another gym. limit(1) degrades gracefully instead.
       const { data, error } = await supabase
         .from('gym_memberships')
         .select('gym_id, role, gyms ( name )')
         .eq('profile_id', session.user.id)
-        .maybeSingle();
+        .is('left_at', null)
+        .order('created_at', { ascending: true })
+        .limit(1);
       if (error) throw error;
-      return parseMembershipRow(data as MembershipRowInput | null);
+      const row = (data ?? [])[0] ?? null;
+      return parseMembershipRow(row as MembershipRowInput | null);
     },
   });
 }
