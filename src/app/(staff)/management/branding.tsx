@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { createElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -16,6 +15,7 @@ import {
 import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
 import { ColorSwatchPicker } from '@/components/ColorSwatchPicker';
+import { ColourArea } from '@/components/ColourArea';
 import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -66,19 +66,11 @@ export function BrandingPanel() {
   const [publicSignup, setPublicSignup] = useState(true);
   const [slugWarn, setSlugWarn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Which field's inline picker is expanded (one at a time keeps the
+  // card height sane).
   const [pickerFor, setPickerFor] = useState<'primary' | 'secondary' | 'text' | null>(
     null,
   );
-
-  const pickerValue =
-    pickerFor === 'primary' ? primary : pickerFor === 'secondary' ? secondary : textColor;
-  // Live-applies without closing the modal — the field swatch (and the
-  // preview behind the overlay) track every wheel drag / swatch tap.
-  function setPicked(hex: string) {
-    if (pickerFor === 'primary') setPrimary(hex);
-    else if (pickerFor === 'secondary') setSecondary(hex);
-    else if (pickerFor === 'text') setTextColor(hex);
-  }
 
   useEffect(() => {
     if (gym.data) {
@@ -212,19 +204,24 @@ export function BrandingPanel() {
               label="Primary"
               value={primary}
               onChange={setPrimary}
-              onPick={() => setPickerFor('primary')}
+              pickerOpen={pickerFor === 'primary'}
+              onPick={() => setPickerFor(pickerFor === 'primary' ? null : 'primary')}
             />
             <ColourField
               label="Secondary"
               value={secondary}
               onChange={setSecondary}
-              onPick={() => setPickerFor('secondary')}
+              pickerOpen={pickerFor === 'secondary'}
+              onPick={() =>
+                setPickerFor(pickerFor === 'secondary' ? null : 'secondary')
+              }
             />
             <ColourField
               label="Text"
               value={textColor}
               onChange={setTextColor}
-              onPick={() => setPickerFor('text')}
+              pickerOpen={pickerFor === 'text'}
+              onPick={() => setPickerFor(pickerFor === 'text' ? null : 'text')}
             />
           </View>
           <View className="flex-1 mt-4 md:mt-0">
@@ -341,77 +338,25 @@ export function BrandingPanel() {
         <Button onPress={() => save.mutate()} loading={save.isPending}>
           Save changes
         </Button>
-
-        <Modal
-          visible={pickerFor !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setPickerFor(null)}>
-          <Pressable
-            onPress={() => setPickerFor(null)}
-            className="flex-1 bg-black/60 items-center justify-center px-6">
-            <Pressable
-              onPress={() => {}}
-              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm gap-4">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold capitalize">
-                {pickerFor} colour
-              </Text>
-              {Platform.OS === 'web' ? (
-                <View className="gap-1.5">
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                    Pick any colour
-                  </Text>
-                  {/* Native browser spectrum picker — same trick as
-                      DatePicker's <input type="date">. Full gamut, zero
-                      dependencies; fires per drag so the swatches and
-                      preview follow live. */}
-                  {createElement('input', {
-                    type: 'color',
-                    value: normaliseHex(pickerValue) ?? '#2563EB',
-                    onChange: (e: { target: { value: string } }) =>
-                      setPicked(e.target.value.toUpperCase()),
-                    style: {
-                      width: '100%',
-                      height: 48,
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: 0,
-                      background: 'transparent',
-                      cursor: 'pointer',
-                    },
-                  })}
-                </View>
-              ) : null}
-              <View className="gap-1.5">
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Quick picks
-                </Text>
-                <ColorSwatchPicker
-                  value={normaliseHex(pickerValue) ?? ''}
-                  onChange={setPicked}
-                />
-              </View>
-              <Button variant="secondary" onPress={() => setPickerFor(null)}>
-                Done
-              </Button>
-            </Pressable>
-          </Pressable>
-        </Modal>
     </View>
   );
 }
 
-// Hex field + live swatch + picker CTA, one row per brand colour.
+// Hex field + live swatch + picker toggle. When open, the full
+// saturation/hue picker renders inline directly beneath — no modal, so
+// the live preview beside the card stays visible during every drag.
 function ColourField({
   label,
   value,
   onChange,
   onPick,
+  pickerOpen,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   onPick: () => void;
+  pickerOpen: boolean;
 }) {
   const valid = normaliseHex(value);
   return (
@@ -438,12 +383,25 @@ function ColourField({
         <Pressable
           onPress={onPick}
           hitSlop={4}
-          className="h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 items-center justify-center active:opacity-70">
-          <Text className="text-gray-700 dark:text-gray-200 text-xs uppercase tracking-widest">
-            Pick
+          className={`h-10 px-3 rounded-lg border items-center justify-center active:opacity-70 ${
+            pickerOpen
+              ? 'border-primary bg-primary/10'
+              : 'border-gray-200 dark:border-gray-700'
+          }`}>
+          <Text
+            className={`text-xs uppercase tracking-widest ${
+              pickerOpen ? 'text-primary' : 'text-gray-700 dark:text-gray-200'
+            }`}>
+            {pickerOpen ? 'Done' : 'Pick'}
           </Text>
         </Pressable>
       </View>
+      {pickerOpen ? (
+        <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3 mt-1">
+          <ColourArea value={valid ?? '#2563EB'} onChange={onChange} />
+          <ColorSwatchPicker value={valid ?? ''} onChange={onChange} />
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -19,7 +19,7 @@ export default function MemberLayout() {
   if (session === null) return <Redirect href="/sign-in" />;
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
+    <View className="flex-1 bg-slate-100 dark:bg-gray-950">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
       <Tabs
         screenOptions={{

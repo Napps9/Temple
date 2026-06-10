@@ -65,7 +65,7 @@ export function TopNav({
     variant === 'staff' ? 'text-blue-500' : 'text-emerald-500';
 
   const pills = (
-    <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+    <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-1">
       {sections.map((s) => {
         const active = pathname.startsWith(s.href);
         return (
@@ -98,7 +98,7 @@ export function TopNav({
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-gray-50 dark:bg-gray-950 px-3 md:px-6 pb-3 gap-2">
+      className="bg-slate-100 dark:bg-gray-950 px-3 md:px-6 pb-3 gap-2">
       <View className="flex-row items-center gap-2 md:gap-3">
         {/* Three equal zones (flex-1 left/right) keep the pills on the
             bar's true centre regardless of how wide the side clusters

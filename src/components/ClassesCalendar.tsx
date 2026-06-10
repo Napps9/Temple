@@ -138,7 +138,7 @@ function classesOnDay(sessions: ClassSession[] | undefined, day: Date) {
 
 function ViewSwitcher({ view }: { view: ViewMode }) {
   return (
-    <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+    <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-1">
       {VIEWS.map((v) => (
         <Pressable
           key={v}

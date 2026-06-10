@@ -25,7 +25,7 @@ export default function Root({ children }: PropsWithChildren) {
         />
         <meta
           name="theme-color"
-          content="#F9FAFB"
+          content="#F1F5F9"
           media="(prefers-color-scheme: light)"
         />
         <meta
@@ -36,7 +36,7 @@ export default function Root({ children }: PropsWithChildren) {
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              html, body { margin: 0; background-color: #F9FAFB; }
+              html, body { margin: 0; background-color: #F1F5F9; }
               @media (prefers-color-scheme: dark) {
                 html, body { background-color: #030712; }
               }

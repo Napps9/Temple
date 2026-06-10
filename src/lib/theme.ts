@@ -32,7 +32,7 @@ export function useThemeColors() {
   const { scheme } = useThemePreference();
   const dark = scheme === 'dark';
   return {
-    screenBg: dark ? '#030712' : '#F9FAFB',
+    screenBg: dark ? '#030712' : '#F1F5F9',
     iconPrimary: dark ? '#E5E7EB' : '#1F2937',
     iconSecondary: '#6B7280',
     iconTertiary: dark ? '#6B7280' : '#9CA3AF',

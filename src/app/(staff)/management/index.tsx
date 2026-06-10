@@ -250,7 +250,8 @@ export default function ManagementHome() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
-        <KeyStats />
+        {/* Tabs lead the page; the headline KPI tiles live inside the
+            Insights tab where the rest of the metrics are. */}
         {availableCategories.length > 1 ? (
           <ScrollView
             horizontal
@@ -263,7 +264,7 @@ export default function ManagementHome() {
                   key={c}
                   onPress={() => setActive(c)}
                   className={`px-4 py-2 rounded-full flex-row items-center gap-1.5 ${
-                    selected ? 'bg-primary' : 'bg-gray-100 dark:bg-gray-800'
+                    selected ? 'bg-primary' : 'bg-slate-200 dark:bg-gray-800'
                   }`}>
                   <Ionicons
                     name={CATEGORY_ICONS[c]}
@@ -284,7 +285,10 @@ export default function ManagementHome() {
           </ScrollView>
         ) : null}
         {activeCategory === 'insights' ? (
-          <InsightsTab />
+          <>
+            <KeyStats />
+            <InsightsTab />
+          </>
         ) : activeCategory === 'members' ? (
           <MembersTab />
         ) : activeCategory === 'team' ? (

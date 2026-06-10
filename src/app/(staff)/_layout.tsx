@@ -23,7 +23,7 @@ export default function StaffLayout() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
+    <View className="flex-1 bg-slate-100 dark:bg-gray-950">
       <TopNav sections={STAFF_SECTIONS} variant="staff" />
       <Tabs
         screenOptions={{
