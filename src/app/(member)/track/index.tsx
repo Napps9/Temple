@@ -28,6 +28,14 @@ const JOURNAL_PREVIEW_COUNT = 4;
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
+function chunkPairs<T>(items: T[]): T[][] {
+  const pairs: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) {
+    pairs.push(items.slice(i, i + 2));
+  }
+  return pairs;
+}
+
 export default function TrackHome() {
   const session = useSession();
   const [recording, setRecording] = useState(false);
@@ -175,26 +183,45 @@ export default function TrackHome() {
             </View>
           </View>
 
-          <View className="flex-row flex-wrap -mx-1">
-            {MOVEMENT_GROUPS.map((g) => (
-              <View key={g.key} className="w-1/2 p-1">
-                <GroupTile
-                  name={g.name}
-                  count={g.movements.length}
-                  icon={g.icon as IoniconName}
-                  accent={g.accent}
-                  recentCount={recentByGroup[g.key] ?? 0}
-                  onPress={() =>
-                    router.push(`/track/group/${g.key}` as never)
-                  }
-                />
+          {/* Explicit row pairs (rather than flex-wrap) so the two tiles
+              in each row stretch to the taller item's height — flex-wrap
+              alone wouldn't equalise them, and "Bodyweight Movements"
+              (two-line title) was making the injury tile look squashed. */}
+          <View className="gap-2">
+            {chunkPairs([
+              ...MOVEMENT_GROUPS.map((g) => ({
+                kind: 'group' as const,
+                key: g.key,
+                group: g,
+              })),
+              { kind: 'injury' as const, key: 'injury' },
+            ]).map((pair, i) => (
+              <View key={i} className="flex-row items-stretch gap-2">
+                {pair.map((tile) =>
+                  tile.kind === 'group' ? (
+                    <View key={tile.key} className="flex-1">
+                      <GroupTile
+                        name={tile.group.name}
+                        count={tile.group.movements.length}
+                        icon={tile.group.icon as IoniconName}
+                        accent={tile.group.accent}
+                        recentCount={recentByGroup[tile.group.key] ?? 0}
+                        onPress={() =>
+                          router.push(
+                            `/track/group/${tile.group.key}` as never,
+                          )
+                        }
+                      />
+                    </View>
+                  ) : (
+                    <View key={tile.key} className="flex-1">
+                      <InjuryTile />
+                    </View>
+                  ),
+                )}
+                {pair.length === 1 ? <View className="flex-1" /> : null}
               </View>
             ))}
-            {/* Injury tracker fills the trailing slot so the grid never
-                strands a half-row of empty space. */}
-            <View className="w-1/2 p-1">
-              <InjuryTile />
-            </View>
           </View>
         </View>
       </ScrollView>
@@ -241,7 +268,7 @@ function InjuryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] overflow-hidden active:opacity-70">
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -292,7 +319,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] overflow-hidden active:opacity-70">
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"

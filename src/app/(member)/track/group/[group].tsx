@@ -141,6 +141,9 @@ export default function GroupPage() {
         return {
           id: t.id,
           workout_id: t.section?.workout_id ?? null,
+          // The group page doesn't display per-row section context, but
+          // the field is required by TagInputRow's shape.
+          section_title: null,
           movement_key: t.movement_key,
           track_key: t.track_key,
           notes: t.notes,

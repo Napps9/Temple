@@ -39,6 +39,7 @@ function tag(
     movement_key: 'back_squat',
     track_key: '1rm',
     workout_id: null,
+    section_title: null,
     value_numeric: partial.value_numeric ?? null,
     value_seconds: partial.value_seconds ?? null,
     value_unit: partial.value_unit ?? null,

@@ -29,6 +29,11 @@ export type JournalRow = {
   // links into /track/workout/[id] so tapping a journal row lands
   // on the full recorded session (programmed body, entries, notes).
   workout_id: string | null;
+  // For tag rows: the title (or category fallback) of the workout
+  // section that produced this number — surfaced on the movement
+  // detail page so the member knows which programmed piece the result
+  // came from before tapping in.
+  section_title: string | null;
   // Direct rows carry the raw value columns; tag rows carry whatever
   // numeric the underlying set produced (the renderer can decide
   // what to show — usually the section's headline metric for the
@@ -59,6 +64,9 @@ export type TagInputRow = {
   id: string;
   // Resolved through the section to its parent tracked_workouts row.
   workout_id: string | null;
+  // The section's display title (falls back to category label) — used
+  // to show "Strength & Skill" beside the date on the movement page.
+  section_title: string | null;
   movement_key: string;
   track_key: string | null;
   performed_at: string;
@@ -80,6 +88,7 @@ function direct(row: DirectInputRow): JournalRow {
     movement_key: row.movement_key,
     track_key: row.track_key,
     workout_id: row.workout_id,
+    section_title: null,
     value_numeric: row.value_numeric,
     value_seconds: row.value_seconds,
     value_unit: row.value_unit,
@@ -95,6 +104,7 @@ function tag(row: TagInputRow): JournalRow {
     movement_key: row.movement_key,
     track_key: row.track_key ?? '',
     workout_id: row.workout_id,
+    section_title: row.section_title,
     value_numeric: row.value_numeric,
     value_seconds: row.value_seconds,
     value_unit: row.value_unit,

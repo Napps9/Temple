@@ -17,7 +17,11 @@ import {
   type SectionForDerivation,
   type TagInputRow,
 } from '@/lib/movement-journal';
-import type { SectionFormatKey } from '@/lib/programming';
+import {
+  categoryLabel,
+  type SectionCategoryKey,
+  type SectionFormatKey,
+} from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
 import {
   fmtDateShort,
@@ -33,6 +37,8 @@ type RawTagRow = {
   notes: string | null;
   section: {
     workout_id: string | null;
+    section_category: SectionCategoryKey;
+    title: string | null;
     section_format: SectionFormatKey;
     total_time_seconds: number | null;
     total_rounds: number | null;
@@ -78,7 +84,7 @@ export default function MovementDetail() {
       const { data, error } = await supabase
         .from('tracked_section_movement_tags')
         .select(
-          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_category, title, section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
         )
         .eq('profile_id', session!.user.id)
         .eq('movement_key', movementKey!)
@@ -111,9 +117,13 @@ export default function MovementDetail() {
         scheme && t.section
           ? deriveTagValue(scheme, t.section as SectionForDerivation)
           : { value_numeric: null, value_seconds: null };
+      const sectionTitle = t.section
+        ? t.section.title?.trim() || categoryLabel(t.section.section_category)
+        : null;
       return {
         id: t.id,
         workout_id: t.section?.workout_id ?? null,
+        section_title: sectionTitle,
         movement_key: t.movement_key,
         track_key: t.track_key,
         notes: t.notes,
@@ -347,7 +357,7 @@ function JournalRowView({
       <View className="flex-1">
         <View className="flex-row items-center gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
-            {schemeLabel}
+            {row.section_title ?? schemeLabel}
           </Text>
           {row.source === 'tag' ? (
             <View className="rounded-full bg-primary/10 px-1.5 py-0.5">
@@ -358,6 +368,7 @@ function JournalRowView({
           ) : null}
         </View>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {row.section_title ? `${schemeLabel} · ` : ''}
           {fmtDateShort(row.performed_at)}
           {row.notes ? ` · ${row.notes}` : ''}
         </Text>
