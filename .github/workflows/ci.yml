@@ -5,6 +5,14 @@ on:
     branches: [main, "claude/**"]
   pull_request:
 
+# The Supabase CLI's telemetry client (PostHog) can time out during
+# shutdown on CI runners and turn an otherwise-successful command into
+# exit 1 ("Timeout while shutting down PostHog") — it killed a deploy
+# right after `supabase link` succeeded. DO_NOT_TRACK is the standard
+# console opt-out the CLI honours.
+env:
+  DO_NOT_TRACK: "1"
+
 jobs:
   check:
     runs-on: ubuntu-latest
