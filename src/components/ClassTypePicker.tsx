@@ -9,6 +9,7 @@ import { Input } from './Input';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useClassTypes } from '@/lib/useClassCatalog';
 
 export type ClassType = { id: string; name: string; color: string };
 
@@ -26,18 +27,13 @@ export function ClassTypePicker({
   const [newColor, setNewColor] = useState<string>(PALETTE[0].hex);
   const [error, setError] = useState<string | null>(null);
 
-  const types = useQuery({
-    queryKey: ['class-types', membership?.gymId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('class_types')
-        .select('id, name, color')
-        .order('name');
-      if (error) throw error;
-      return data as ClassType[];
-    },
-  });
+  // Shared canonical query (see useClassCatalog). Archived types are
+  // excluded — they shouldn't be assignable to new classes.
+  const allTypes = useClassTypes();
+  const types = {
+    ...allTypes,
+    data: allTypes.data?.filter((t) => t.archived_at === null),
+  };
 
   const create = useMutation({
     mutationFn: async () => {

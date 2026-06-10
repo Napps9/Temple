@@ -11,14 +11,9 @@ import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 import { supabase } from '@/lib/supabase';
+import { useClassRecurrences } from '@/lib/useClassCatalog';
 
 type CreateRequest = { date?: Date; hour?: number };
-type Recurrence = {
-  id: string;
-  starts_on: string;
-  ends_on: string | null;
-  materialized_until: string | null;
-};
 
 const HORIZON_WEEKS = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
@@ -185,17 +180,11 @@ export function ClassesCalendar({
     },
   });
 
-  const recurrencesQuery = useQuery({
-    queryKey: ['class-recurrences', membership?.gymId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('class_recurrences')
-        .select('id, starts_on, ends_on, materialized_until');
-      if (error) throw error;
-      return data as Recurrence[];
-    },
-  });
+  // Shared canonical query — this key is also observed by the Class
+  // types editor; redefining it inline with a different column set made
+  // the two queryFns overwrite each other's cache entry (visible as the
+  // editor flashing). See useClassCatalog.
+  const recurrencesQuery = useClassRecurrences();
 
   // Set of class_session_ids the current user has booked into the future.
   // Drives the "Booked" badge on the per-session cards in book mode so

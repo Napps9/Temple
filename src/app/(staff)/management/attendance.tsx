@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
 import { useGymMembership } from '@/lib/auth';
+import { useClassTypes } from '@/lib/useClassCatalog';
 import {
   bucketByClassType,
   bucketByDay,
@@ -75,18 +76,9 @@ export default function AttendanceScreen() {
     },
   });
 
-  const classTypesQuery = useQuery({
-    queryKey: ['class-types', membership?.gymId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('class_types')
-        .select('id, name, color')
-        .eq('gym_id', membership!.gymId);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  // Shared canonical query (see useClassCatalog). Archived types stay
+  // included — historical attendance still needs their names.
+  const classTypesQuery = useClassTypes();
 
   const sessions = sessionsQuery.data ?? [];
   const bookings = bookingsQuery.data ?? [];

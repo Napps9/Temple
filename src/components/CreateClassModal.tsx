@@ -16,6 +16,7 @@ import {
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useClassTypes } from '@/lib/useClassCatalog';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
@@ -69,18 +70,13 @@ export function CreateClassModal({
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<'form' | 'confirm'>('form');
 
-  const typesQuery = useQuery({
-    queryKey: ['class-types', membership?.gymId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('class_types')
-        .select('id, name, color')
-        .order('name');
-      if (error) throw error;
-      return data as { id: string; name: string; color: string }[];
-    },
-  });
+  // Shared canonical query (see useClassCatalog); archived types can't
+  // be scheduled.
+  const allTypesQuery = useClassTypes();
+  const typesQuery = {
+    ...allTypesQuery,
+    data: allTypesQuery.data?.filter((t) => t.archived_at === null),
+  };
   const selectedType = typesQuery.data?.find((t) => t.id === classTypeId);
 
   useEffect(() => {

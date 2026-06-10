@@ -18,26 +18,14 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import {
+  useClassRecurrences,
+  useClassTypes,
+  type RecurrenceRow,
+} from '@/lib/useClassCatalog';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 const HORIZON_WEEKS = 12;
-
-type ServerType = {
-  id: string;
-  name: string;
-  color: string;
-  archived_at: string | null;
-};
-type ServerRecurrence = {
-  id: string;
-  class_type_id: string;
-  days_of_week: number[];
-  times: string[];
-  duration_minutes: number;
-  capacity: number;
-  starts_on: string;
-  ends_on: string | null;
-};
 
 type EditableType = {
   id: string | null;
@@ -55,7 +43,7 @@ function fmtDateLocal(d: Date) {
     .padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
 }
 
-function recurrenceFromServer(r: ServerRecurrence): RecurrenceForm {
+function recurrenceFromServer(r: RecurrenceRow): RecurrenceForm {
   const indefinite = r.ends_on === null;
   let weeks = '4';
   if (!indefinite && r.ends_on) {
@@ -88,33 +76,10 @@ export function ClassTypesPanel() {
   const canArchive = useCan('can_archive_classes') ?? false;
   const canHardDelete = useCan('can_hard_delete') ?? false;
 
-  const types = useQuery({
-    queryKey: ['class-types', membership?.gymId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('class_types')
-        .select('id, name, color, archived_at')
-        .order('name');
-      if (error) throw error;
-      return data as ServerType[];
-    },
-  });
-
-  const recurrences = useQuery({
-    queryKey: ['class-recurrences', membership?.gymId],
-    enabled: !!membership?.gymId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('class_recurrences')
-        .select(
-          'id, class_type_id, days_of_week, times, duration_minutes, capacity, starts_on, ends_on',
-        )
-        .order('created_at');
-      if (error) throw error;
-      return data as ServerRecurrence[];
-    },
-  });
+  // Shared canonical queries — see useClassCatalog for why these must
+  // not be redefined inline (queryKey collisions made this editor flash).
+  const types = useClassTypes();
+  const recurrences = useClassRecurrences();
 
   const dependents = useQuery({
     queryKey: ['class-type-dependents', membership?.gymId, types.data?.map((t) => t.id).join(',')],
@@ -136,7 +101,7 @@ export function ClassTypesPanel() {
 
   useEffect(() => {
     if (!types.data || !recurrences.data) return;
-    const recByTypeId = new Map<string, ServerRecurrence>();
+    const recByTypeId = new Map<string, RecurrenceRow>();
     for (const r of recurrences.data) {
       if (!recByTypeId.has(r.class_type_id)) recByTypeId.set(r.class_type_id, r);
     }
