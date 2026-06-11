@@ -14,6 +14,7 @@ export type CoverOffer = {
   class_sessions: {
     starts_at: string;
     duration_minutes: number;
+    class_type_id: string | null;
     class_types: { name: string; color: string } | null;
     name: string;
   } | null;
@@ -23,9 +24,13 @@ export type CoverOffer = {
 type Props = {
   offer: CoverOffer;
   canClaim: boolean;
+  // false when the viewing coach is explicitly disqualified for this
+  // class type — the claim_cover RPC would reject, so we disable up
+  // front and explain why.
+  qualified?: boolean;
 };
 
-export function CoverRequestCard({ offer, canClaim }: Props) {
+export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
   const session = useSession();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +88,13 @@ export function CoverRequestCard({ offer, canClaim }: Props) {
         <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
 
-      {canClaim && !isSelf ? (
+      {canClaim && !isSelf && !qualified ? (
+        <View className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2">
+          <Text className="text-amber-700 dark:text-amber-300 text-xs">
+            You're not qualified to cover {typeName}.
+          </Text>
+        </View>
+      ) : canClaim && !isSelf ? (
         <Button onPress={() => claim.mutate()} loading={claim.isPending}>
           Claim cover
         </Button>

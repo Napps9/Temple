@@ -39,12 +39,32 @@ export default function CoverScreen() {
       const { data, error } = await supabase
         .from('cover_request_sessions')
         .select(
-          'id, original_coach_id, class_session_id, class_sessions(name, starts_at, duration_minutes, class_types(name, color)), original_coach:profiles!original_coach_id(full_name)',
+          'id, original_coach_id, class_session_id, class_sessions(name, starts_at, duration_minutes, class_type_id, class_types(name, color)), original_coach:profiles!original_coach_id(full_name)',
         )
         .eq('gym_id', membership!.gymId)
         .is('claimed_by', null);
       if (error) throw error;
       return (data ?? []) as unknown as CoverOffer[];
+    },
+  });
+
+  // The class types this coach is explicitly disqualified for —
+  // the claim_cover RPC enforces this, but we disable the button
+  // up front and explain why.
+  const disqualifiedQuery = useQuery({
+    queryKey: ['my-cover-disqualifications', membership?.gymId, session?.user.id],
+    enabled: !!membership?.gymId && !!session?.user.id && canClaim === true,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from('coach_class_type_qualifications')
+        .select('class_type_id')
+        .eq('gym_id', membership!.gymId)
+        .eq('profile_id', session!.user.id)
+        .eq('qualified', false);
+      if (error) throw error;
+      return new Set(
+        (data ?? []).map((r) => (r as { class_type_id: string }).class_type_id),
+      );
     },
   });
 
@@ -147,6 +167,15 @@ export default function CoverScreen() {
                 key={o.id}
                 offer={o}
                 canClaim={canClaim ?? false}
+                qualified={
+                  !(
+                    o.class_sessions?.class_type_id != null &&
+                    (disqualifiedQuery.data?.has(
+                      o.class_sessions.class_type_id,
+                    ) ??
+                      false)
+                  )
+                }
               />
             ))
           )}

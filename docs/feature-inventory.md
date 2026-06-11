@@ -93,8 +93,8 @@ The staff area shows up when `can_access_staff_area` is on.
 - **Inline auto-titling** — title auto-fills from the category and
   re-fills on category change *only* when it still matches.
 - **Programming Analysis page** — 12-week injury heat map across the
-  gym body + per-movement member trends + the Programming Balance
-  block:
+  gym body + per-movement member trends (from both direct PR logs and
+  section-tagged workout results) + the Programming Balance block:
   - Pattern × Energy matrix (the headline 2-D grid)
   - Energy system bars (phosphagen / glycolytic / oxidative)
   - Movement pattern volume bars
@@ -112,9 +112,11 @@ The staff area shows up when `can_access_staff_area` is on.
 - **Recurrence materialisation** — schedules turn into individual
   sessions on the calendar, extended to a horizon.
 - **Cover requests** [`can_request_cover` / `can_claim_cover`] — a
-  coach can hand a class to anyone with the qualification for that
-  class type; first-claim wins; refunds and waitlist promotion handled
-  correctly on cancellation.
+  coach can hand a class to another coach; first-claim wins; refunds
+  and waitlist promotion handled correctly on cancellation. **Claims
+  are gated on class-type qualification** — a coach explicitly
+  disqualified for that class type can't claim it (enforced in the
+  `claim_cover` RPC and surfaced as a disabled state in the UI).
 - **Class detail modal** — roster, attendance marking (check-in / no-
   show / unmark), cover request, broadcast, leaderboard for that
   session.
@@ -248,10 +250,6 @@ actions are owner-only by policy:
 
 Items the conversation has flagged but not implemented yet:
 
-- Section-tagged member results feeding the Movement Trend math on
-  Analysis (currently only direct PR logs).
-- Coach class-type qualifications **gating** cover claims (today they
-  display, but don't enforce).
 - Supabase preview branches + Vercel preview environments.
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.

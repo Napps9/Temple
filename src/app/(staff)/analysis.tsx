@@ -41,6 +41,10 @@ import {
   type EnergySystem,
   type MovementPattern,
 } from '@/lib/movement-classification';
+import {
+  deriveTagValue,
+  type SectionForDerivation,
+} from '@/lib/movement-journal';
 import { findScheme, movementName } from '@/lib/movements';
 import {
   categoryLabel,
@@ -86,6 +90,17 @@ type ResultRow = {
   performed_at: string;
 };
 
+// A movement tagged onto a recorded workout section. The section
+// carries the raw data we derive the headline value from (same shape
+// the movement-journal page uses).
+type TagRow = {
+  profile_id: string;
+  movement_key: string;
+  track_key: string | null;
+  performed_at: string;
+  section: SectionForDerivation | null;
+};
+
 // Coach-facing programming analysis: where the gym is hurting (open
 // injuries on a body-map heat view) and how movements are trending
 // per member and collectively, from deliberate PR logs over the last
@@ -129,6 +144,27 @@ export default function AnalysisScreen() {
     },
   });
 
+  // Movements tagged onto recorded workout sections also count toward
+  // the trend — a member who hits a new back-squat 1RM inside a
+  // Strength & Skill section should move the needle the same as a
+  // direct PR log.
+  const tags = useQuery({
+    queryKey: ['gym-section-movement-tags', membership?.gymId],
+    enabled: !!membership?.gymId && canSeeLogs,
+    queryFn: async (): Promise<TagRow[]> => {
+      const sinceIso = new Date(Date.now() - TWELVE_WEEKS_MS).toISOString();
+      const { data, error } = await supabase
+        .from('tracked_section_movement_tags')
+        .select(
+          'profile_id, movement_key, track_key, performed_at, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+        )
+        .eq('gym_id', membership!.gymId)
+        .gte('performed_at', sinceIso);
+      if (error) throw error;
+      return (data ?? []) as unknown as TagRow[];
+    },
+  });
+
   const names = useQuery({
     queryKey: ['gym-member-names', membership?.gymId],
     enabled: !!membership?.gymId,
@@ -151,7 +187,7 @@ export default function AnalysisScreen() {
   });
 
   const trends = useMemo(() => {
-    const points = (results.data ?? [])
+    const directPoints = (results.data ?? [])
       .map((r) => {
         const metric = findScheme(r.movement_key, r.track_key)?.metric;
         const value = metric === 'time' ? r.value_seconds : r.value_numeric;
@@ -165,11 +201,36 @@ export default function AnalysisScreen() {
         };
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
+
+    // Derive a comparable value from each section tag using the same
+    // format-aware logic the movement journal uses, so a tagged result
+    // sits in the same (movement, track) bucket as a direct log.
+    const tagPoints = (tags.data ?? [])
+      .map((t) => {
+        if (!t.track_key || !t.section) return null;
+        const scheme = findScheme(t.movement_key, t.track_key);
+        if (!scheme) return null;
+        const derived = deriveTagValue(scheme, t.section);
+        const value =
+          scheme.metric === 'time'
+            ? derived.value_seconds
+            : derived.value_numeric;
+        if (value == null) return null;
+        return {
+          profile_id: t.profile_id,
+          movement_key: t.movement_key,
+          track_key: t.track_key,
+          value,
+          performed_at: t.performed_at,
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+
     return computeMovementTrends(
-      points,
+      [...directPoints, ...tagPoints],
       (m, t) => findScheme(m, t)?.better ?? 'higher',
     );
-  }, [results.data]);
+  }, [results.data, tags.data]);
 
   const open = injuries.data ?? [];
 
@@ -294,7 +355,7 @@ export default function AnalysisScreen() {
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               You don't have permission to view workout logs.
             </Text>
-          ) : results.isLoading ? (
+          ) : results.isLoading || tags.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
           ) : trends.length === 0 ? (
             <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
