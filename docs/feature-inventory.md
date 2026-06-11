@@ -229,10 +229,42 @@ actions are owner-only by policy:
 
 ---
 
+## Data protection (health data / GDPR Article 9)
+
+PAR-Q and injury data are special-category health data. The protective
+surround:
+
+- **Consent gate** — every member (and staff) must record
+  data-processing consent before entering: name + date of birth +
+  three consent clauses, captured on the `/consent` onboarding screen.
+  No consent, no entry. Bumping `CONSENT_POLICY_VERSION` re-gates
+  everyone. (`member_consents` + `record_consent` RPC.)
+- **Lawful-basis record** — each consent row stores the policy version,
+  lawful basis, and timestamp.
+- **Erasure on removal** — `leave_gym` (the single removal path for
+  both self-leave and admin-remove) hard-deletes the member's PAR-Q
+  responses + answers, injuries + updates, health staff-alerts, consent
+  record, and clears the denormalised `health_flag` / `par_q_id` /
+  `emergency_contact`. Members can also withdraw + erase from their
+  account screen.
+- **Retention purge** — `purge_expired_health_data()` sweeps health
+  data for members who left more than 3 months ago (schedule via
+  pg_cron or a nightly job; safe to run manually).
+- **Access audit trail** — `health_data_access_log` records every
+  health-data view / erase / purge with actor, subject, surface and
+  timestamp, admin-readable only. Staff health surfaces call
+  `log_health_data_access` on open.
+
+> Still pending (needs legal / DPO input, not engineering): formal
+> lawful-basis sign-off + DPIA, the consent-text legal copy, and
+> scheduling the purge job in the hosted environment.
+
+---
+
 ## Technical platform features
 
-- **Auth** — Supabase email/password with annual PAR-Q gate; invite
-  codes for onboarding.
+- **Auth** — Supabase email/password with a consent gate + annual
+  PAR-Q gate; invite codes for onboarding.
 - **RLS everywhere** — every table is gated, every dangerous write
   is funnelled through a `security definer` RPC with explicit
   authorisation.
@@ -250,6 +282,18 @@ actions are owner-only by policy:
 
 Items the conversation has flagged but not implemented yet:
 
+- **Health-data GDPR — policy-dependent remainder**: formal
+  lawful-basis sign-off + DPIA, the consent-text legal copy, and
+  scheduling `purge_expired_health_data()` in the hosted environment
+  (pg_cron / nightly job). The engineering surround (consent gate,
+  erasure, retention sweep, audit log) has shipped.
+- **PAR-Q gate for staff** — staff currently bypass PAR-Q (consent
+  gates them, PAR-Q doesn't) to avoid the owner-can't-publish-the-
+  questionnaire bootstrap deadlock. Gate staff once a questionnaire
+  exists.
+- Health-data reads hardened to definer-function access (today the
+  audit log is written by the app surfaces, not enforced at the row
+  level for raw API calls).
 - Supabase preview branches + Vercel preview environments.
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.

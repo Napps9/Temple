@@ -42,6 +42,35 @@ export function AccountScreen() {
   const [detailsSaved, markDetailsSaved] = useSavedFlag();
   const [passwordSaved, markPasswordSaved] = useSavedFlag();
   const [showLeave, setShowLeave] = useState(false);
+  const [withdrawMessage, setWithdrawMessage] = useState<string | null>(null);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+
+  // Withdraw consent = erase the member's own health data (PAR-Q +
+  // injuries) and drop the consent record, which re-gates them at the
+  // consent screen on next entry. Fulfils the "withdraw at any time"
+  // promise on the consent form.
+  const withdrawConsent = useMutation({
+    mutationFn: async () => {
+      if (!membership || !session) throw new Error('No gym');
+      const { error } = await supabase.rpc('erase_member_health_data', {
+        p_gym_id: membership.gymId,
+        p_profile: session.user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setWithdrawError(null);
+      setWithdrawMessage(
+        'Consent withdrawn and your health data erased. You will be asked ' +
+          'to re-consent next time you enter.',
+      );
+      queryClient.invalidateQueries({ queryKey: ['member-consent'] });
+      queryClient.invalidateQueries({ queryKey: ['my-injuries'] });
+      queryClient.invalidateQueries({ queryKey: ['parq-state'] });
+    },
+    onError: (e) =>
+      setWithdrawError(errorMessage(e, 'Could not withdraw consent')),
+  });
 
   // user.new_email is the Supabase-side authoritative "pending email change"
   // — it survives reloads and clears once the confirmation link is clicked.
@@ -254,6 +283,36 @@ export function AccountScreen() {
           </Button>
         </View>
 
+        {membership && session ? (
+          <View className="mt-4 gap-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Health data & consent
+            </Text>
+            <ChipButton
+              tone="amber"
+              className="self-start"
+              label="Withdraw consent & erase health data"
+              icon="shield-outline"
+              onPress={() => withdrawConsent.mutate()}
+              disabled={withdrawConsent.isPending}
+            />
+            {withdrawMessage ? (
+              <Text className="text-emerald-600 dark:text-emerald-400 text-xs">
+                {withdrawMessage}
+              </Text>
+            ) : null}
+            {withdrawError ? (
+              <Text className="text-red-500 dark:text-red-400 text-xs">
+                {withdrawError}
+              </Text>
+            ) : null}
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Permanently deletes your PAR-Q answers and any injuries you've
+              logged. You'll be asked to consent again before training.
+            </Text>
+          </View>
+        ) : null}
+
         {role && role !== 'owner' && membership && session ? (
           <View className="mt-4 gap-2">
             <ChipButton
@@ -264,8 +323,8 @@ export function AccountScreen() {
               onPress={() => setShowLeave(true)}
             />
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Cancels any active subscriptions and removes your access. History
-              is preserved.
+              Cancels any active subscriptions, removes your access, and
+              erases your health data (PAR-Q + injuries).
             </Text>
           </View>
         ) : null}

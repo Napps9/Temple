@@ -481,6 +481,7 @@ export type Database = {
           full_name: string | null;
           avatar_url: string | null;
           phone: string | null;
+          date_of_birth: string | null;
           created_at: string;
         };
         Insert: {
@@ -488,6 +489,7 @@ export type Database = {
           full_name?: string | null;
           avatar_url?: string | null;
           phone?: string | null;
+          date_of_birth?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -495,6 +497,64 @@ export type Database = {
           full_name: string | null;
           avatar_url: string | null;
           phone: string | null;
+          date_of_birth: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      member_consents: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          policy_version: string;
+          lawful_basis: string;
+          consented_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          policy_version: string;
+          lawful_basis?: string;
+          consented_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          policy_version: string;
+          lawful_basis: string;
+          consented_at: string;
+        }>;
+        Relationships: [];
+      };
+      health_data_access_log: {
+        Row: {
+          id: string;
+          gym_id: string;
+          actor_id: string | null;
+          subject_profile_id: string | null;
+          action: 'view' | 'erase' | 'purge';
+          surface: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          actor_id?: string | null;
+          subject_profile_id?: string | null;
+          action: 'view' | 'erase' | 'purge';
+          surface?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          actor_id: string | null;
+          subject_profile_id: string | null;
+          action: 'view' | 'erase' | 'purge';
+          surface: string | null;
           created_at: string;
         }>;
         Relationships: [];
@@ -1597,6 +1657,26 @@ export type Database = {
       };
       acknowledge_staff_alert: {
         Args: { p_alert_id: string };
+        Returns: null;
+      };
+      record_consent: {
+        Args: {
+          p_gym_id: string;
+          p_policy_version: string;
+          p_lawful_basis?: string;
+        };
+        Returns: null;
+      };
+      erase_member_health_data: {
+        Args: { p_gym_id: string; p_profile: string };
+        Returns: null;
+      };
+      purge_expired_health_data: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      log_health_data_access: {
+        Args: { p_gym_id: string; p_subject: string; p_surface: string };
         Returns: null;
       };
       extend_recurrence: {

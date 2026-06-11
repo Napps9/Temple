@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
@@ -10,7 +10,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
   daysAgo,
@@ -91,6 +91,7 @@ type OnboardingRow = {
 
 export default function MemberDetailScreen() {
   const { data: membership } = useGymMembership();
+  const session = useSession();
   const router = useRouter();
   const params = useLocalSearchParams<{ profile: string }>();
   const profileId = params.profile;
@@ -100,6 +101,26 @@ export default function MemberDetailScreen() {
 
   const canManageTags = useCan('can_manage_tags');
   const canRemove = useCan('can_archive_members') ?? false;
+  const canSeeHealth = useCan('can_see_health_flag') ?? false;
+
+  // Audit trail: opening another member's profile surfaces their PAR-Q
+  // history + injuries, so we log the health-data access once per view.
+  // Skipped when looking at your own profile or without the capability.
+  useEffect(() => {
+    if (
+      !membership?.gymId ||
+      !profileId ||
+      !canSeeHealth ||
+      session?.user.id === profileId
+    ) {
+      return;
+    }
+    void supabase.rpc('log_health_data_access', {
+      p_gym_id: membership.gymId,
+      p_subject: profileId,
+      p_surface: 'member_profile',
+    });
+  }, [membership?.gymId, profileId, canSeeHealth, session?.user.id]);
 
   const profile = useQuery({
     queryKey: ['member-detail-profile', profileId],

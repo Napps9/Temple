@@ -3,6 +3,7 @@ import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
 import { useGymMembership, useSession } from '@/lib/auth';
+import { useConsentState } from '@/lib/consent';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
@@ -18,6 +19,13 @@ export default function Index() {
   const session = useSession();
   const { data: membership, isLoading } = useGymMembership();
   const canAccessStaff = useCan('can_access_staff_area');
+
+  // Data-processing consent gates everyone (member and staff alike) —
+  // no consent, no entry. It's just a name / DOB / tick-box step with
+  // no gym-setup dependency, so it can't deadlock an owner on first
+  // login the way a PAR-Q gate would (PAR-Q needs a questionnaire the
+  // owner hasn't published yet, so that stays members-only below).
+  const consent = useConsentState();
 
   // Annual PAR-Q gate. Members only — staff bypass so they can still
   // operate the gym even if their own screening lapsed.
@@ -42,6 +50,10 @@ export default function Index() {
   if (!session) return <Redirect href="/sign-in" />;
   if (isLoading) return <Loading />;
   if (!membership) return <Redirect href="/welcome" />;
+  if (consent.isLoading) return <Loading />;
+  if (consent.data && !consent.data.consented) {
+    return <Redirect href="/consent" />;
+  }
   if (canAccessStaff === undefined) return <Loading />;
   if (canAccessStaff) return <Redirect href="/classes" />;
   if (parqState.isLoading) return <Loading />;
