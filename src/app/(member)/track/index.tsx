@@ -9,14 +9,10 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ChipButton } from '@/components/ChipButton';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
-import {
-  WorkoutSectionCard,
-  type WorkoutSectionShape,
-} from '@/components/WorkoutSectionCard';
 import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
-import { fmtDateLong } from '@/lib/track';
+import { fmtDateShort } from '@/lib/track';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 
@@ -24,10 +20,13 @@ type PreviewWorkout = {
   id: string;
   performed_at: string;
   title: string | null;
-  sections: (WorkoutSectionShape & { sort_order: number })[];
+  section_count: { count: number }[] | null;
+  result_count: { count: number }[] | null;
 };
 
-const JOURNAL_PREVIEW_COUNT = 3;
+// Four-up so the 2-column grid sits as a clean 2×2 — same shape as
+// the Movements tiles below it.
+const JOURNAL_PREVIEW_COUNT = 4;
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -99,21 +98,13 @@ export default function TrackHome() {
       const { data, error } = await supabase
         .from('tracked_workouts')
         .select(
-          [
-            'id, performed_at, title',
-            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, did_not_finish, free_text_result, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes), tags:tracked_section_movement_tags(movement_key, track_key))',
-          ].join(', '),
+          'id, performed_at, title, section_count:tracked_workout_sections(count), result_count:tracked_movement_results(count)',
         )
         .eq('profile_id', session!.user.id)
         .order('performed_at', { ascending: false })
         .limit(JOURNAL_PREVIEW_COUNT);
       if (error) throw error;
-      return ((data ?? []) as unknown as PreviewWorkout[]).map((w) => ({
-        ...w,
-        sections: (w.sections ?? [])
-          .slice()
-          .sort((a, b) => a.sort_order - b.sort_order),
-      }));
+      return (data ?? []) as unknown as PreviewWorkout[];
     },
   });
 
@@ -167,9 +158,21 @@ export default function TrackHome() {
               No workouts logged yet. Tap "Record" to start.
             </Text>
           ) : (
-            <View>
-              {journal.data!.map((w) => (
-                <JournalRow key={w.id} workout={w} />
+            // Same 2-column tile grid as the Movements section so the
+            // Journal preview reads as a sibling rather than a
+            // full-bleed dump of every recorded section.
+            <View className="gap-2">
+              {chunkPairs(journal.data!).map((pair, i) => (
+                <View key={i} className="flex-row items-stretch gap-2">
+                  {pair.map((w) => (
+                    <View key={w.id} className="flex-1">
+                      <JournalTile workout={w} />
+                    </View>
+                  ))}
+                  {pair.length === 1 ? (
+                    <View className="flex-1" />
+                  ) : null}
+                </View>
               ))}
             </View>
           )}
@@ -362,40 +365,47 @@ function GroupTile({
 }
 
 // Rich preview: the workout title + date, then each recorded section
-// rendered with WorkoutSectionCard (programmed body, headline result,
-// entries, tagged movement chips) — same component used by the
-// workout detail page so the two surfaces stay aligned. The whole
-// card is pressable into the detail view for the full session.
-function JournalRow({ workout }: { workout: PreviewWorkout }) {
-  const sections = workout.sections;
+// matched the Movements grid below it; the full programmed body,
+// result, entries and tagged movements still live on the workout
+// detail page that the tile routes into.
+function JournalTile({ workout }: { workout: PreviewWorkout }) {
+  const sectionCount = workout.section_count?.[0]?.count ?? 0;
+  const resultCount = workout.result_count?.[0]?.count ?? 0;
+  const subtitle =
+    sectionCount > 0
+      ? `${sectionCount} section${sectionCount === 1 ? '' : 's'}`
+      : resultCount > 0
+        ? `${resultCount} result${resultCount === 1 ? '' : 's'}`
+        : 'No results yet';
+  const accent = '#2563EB';
   return (
     <Pressable
       onPress={() =>
         router.push(`/track/workout/${workout.id}` as never)
       }
-      className="gap-2 py-3 border-t border-gray-100 dark:border-gray-800 active:opacity-70">
-      <View className="flex-row items-center gap-2">
-        <View className="flex-1">
-          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
-            {fmtDateLong(workout.performed_at)}
-          </Text>
-          <Text className="text-gray-900 dark:text-gray-50 font-medium">
-            {workout.title?.trim() || 'Workout'}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name="book-outline" size={22} color={accent} />
       </View>
-      {sections.length === 0 ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
-          No results recorded.
+      <View className="flex-1 justify-end">
+        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+          {fmtDateShort(workout.performed_at)}
         </Text>
-      ) : (
-        <View className="gap-2">
-          {sections.map((s) => (
-            <WorkoutSectionCard key={s.id} section={s} />
-          ))}
-        </View>
-      )}
+        <Text
+          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          numberOfLines={2}>
+          {workout.title?.trim() || 'Workout'}
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {subtitle}
+        </Text>
+      </View>
     </Pressable>
   );
 }
