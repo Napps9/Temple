@@ -1,6 +1,15 @@
 import { Text, View } from 'react-native';
-import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Defs,
+  Ellipse,
+  LinearGradient,
+  Path,
+  Rect,
+  Stop,
+} from 'react-native-svg';
 
+import { getSeasonalSkin, type SeasonalSkin } from '@/lib/bodyMapSeasonal';
 import { useThemePreference } from '@/lib/theme';
 import type { InjurySide } from '@/types/database';
 
@@ -74,6 +83,281 @@ const BACK_HITS: Hit[] = [
   { region: 'calf', side: 'right', cx: 69, cy: 188, rx: 7, ry: 19 },
 ];
 
+// Option B anatomy lines: thin centreline hints that distinguish
+// front (pec curve + ab midline + belly button) from back (spine +
+// glute cleft). Pure stroke, low opacity so the highlight tints still
+// dominate the eye.
+function AnatomyOverlay({
+  view,
+  stroke,
+}: {
+  view: ViewKind;
+  stroke: string;
+}) {
+  if (view === 'front') {
+    return (
+      <>
+        <Path
+          d="M 47 50 C 53 56 67 56 73 50"
+          stroke={stroke}
+          strokeWidth={0.7}
+          strokeLinecap="round"
+          fill="none"
+          opacity={0.55}
+        />
+        <Path
+          d="M 60 60 L 60 95"
+          stroke={stroke}
+          strokeWidth={0.7}
+          strokeLinecap="round"
+          fill="none"
+          opacity={0.55}
+        />
+        <Circle cx={60} cy={83} r={0.9} fill={stroke} opacity={0.55} />
+      </>
+    );
+  }
+  return (
+    <>
+      <Path
+        d="M 60 42 L 60 96"
+        stroke={stroke}
+        strokeWidth={0.7}
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.55}
+      />
+      <Path
+        d="M 60 100 L 60 110"
+        stroke={stroke}
+        strokeWidth={0.7}
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.55}
+      />
+    </>
+  );
+}
+
+// Per-skin decoration drawn on top of the silhouette + anatomy. Each
+// arm picks the right side-specific elements; the front/back fork
+// keeps the back coherent (no heart on the back etc.).
+function SeasonalOverlay({
+  view,
+  skin,
+}: {
+  view: ViewKind;
+  skin: SeasonalSkin;
+}) {
+  switch (skin) {
+    case 'halloween':
+      return view === 'front' ? (
+        <>
+          {/* Skull eyes */}
+          <Ellipse cx={56} cy={16} rx={1.6} ry={2} fill="#0F172A" />
+          <Ellipse cx={64} cy={16} rx={1.6} ry={2} fill="#0F172A" />
+          {/* Ribs */}
+          {[50, 56, 62, 68].map((y, i) => (
+            <Path
+              key={i}
+              d={`M 50 ${y} C 55 ${y + 5} 65 ${y + 5} 70 ${y}`}
+              stroke="#0F172A"
+              strokeWidth={0.7}
+              strokeLinecap="round"
+              fill="none"
+              opacity={0.9}
+            />
+          ))}
+          {/* Sternum + pelvis */}
+          <Path
+            d="M 60 44 L 60 100"
+            stroke="#0F172A"
+            strokeWidth={0.7}
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.9}
+          />
+          <Path
+            d="M 52 100 C 55 103 65 103 68 100"
+            stroke="#0F172A"
+            strokeWidth={0.7}
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.9}
+          />
+        </>
+      ) : (
+        <>
+          {/* Skull stitch */}
+          <Path
+            d="M 51 17 L 69 17"
+            stroke="#0F172A"
+            strokeWidth={0.7}
+            opacity={0.9}
+          />
+          {/* Vertebrae */}
+          <Path
+            d="M 60 42 L 60 100"
+            stroke="#0F172A"
+            strokeWidth={0.7}
+            opacity={0.9}
+            fill="none"
+          />
+          {[50, 58, 66, 74, 82, 90].map((y) => (
+            <Circle key={y} cx={60} cy={y} r={0.9} fill="#0F172A" />
+          ))}
+          {/* Back ribs */}
+          <Path
+            d="M 50 54 C 55 50 65 50 70 54"
+            stroke="#0F172A"
+            strokeWidth={0.7}
+            fill="none"
+            opacity={0.9}
+          />
+          <Path
+            d="M 49 62 C 55 58 65 58 71 62"
+            stroke="#0F172A"
+            strokeWidth={0.7}
+            fill="none"
+            opacity={0.9}
+          />
+        </>
+      );
+    case 'christmas':
+      return (
+        <>
+          {/* Santa hat: red triangle with a white brim + pom-pom */}
+          <Path
+            d="M 47 14 C 48 6 67 4 71 12 C 73 14 71 18 71 18 L 49 18 C 49 18 47 16 47 14 Z"
+            fill="#DC2626"
+            stroke="#7F1D1D"
+            strokeWidth={0.6}
+            strokeLinejoin="round"
+          />
+          <Ellipse cx={71} cy={12} rx={2.5} ry={2} fill="#FFFFFF" />
+          <Rect x={47} y={17} width={26} height={3} fill="#FFFFFF" rx={1} />
+          {/* Jingle bell at belly button (front only) */}
+          {view === 'front' ? (
+            <Circle
+              cx={60}
+              cy={86}
+              r={2.6}
+              fill="#16A34A"
+              stroke="#14532D"
+              strokeWidth={0.4}
+            />
+          ) : null}
+        </>
+      );
+    case 'valentine':
+      return view === 'front' ? (
+        <Path
+          d="M 60 64 C 56 58 50 60 50 65 C 50 70 60 76 60 76 C 60 76 70 70 70 65 C 70 60 64 58 60 64 Z"
+          fill="#EC4899"
+          stroke="#9D174D"
+          strokeWidth={0.5}
+          strokeLinejoin="round"
+        />
+      ) : null;
+    case 'pride':
+      // No overlay — body fill IS the decoration (rainbow gradient).
+      return null;
+    case 'newyear':
+      return (
+        <>
+          {/* Party hat */}
+          <Path
+            d="M 60 -10 L 50 14 L 70 14 Z"
+            fill="#F59E0B"
+            stroke="#7C2D12"
+            strokeWidth={0.5}
+            strokeLinejoin="round"
+          />
+          <Circle cx={60} cy={-10} r={1.6} fill="#FBBF24" />
+          {/* Confetti — small rotated rects scattered around */}
+          {[
+            [-10, 20, '#F59E0B'],
+            [130, 30, '#EC4899'],
+            [-5, 80, '#3B82F6'],
+            [125, 100, '#22C55E'],
+            [-10, 150, '#A855F7'],
+            [128, 170, '#F59E0B'],
+          ].map(([x, y, c], i) => (
+            <Rect
+              key={i}
+              x={x as number}
+              y={y as number}
+              width={3}
+              height={1.4}
+              fill={c as string}
+              transform={`rotate(${20 + i * 15} ${x as number} ${y as number})`}
+            />
+          ))}
+        </>
+      );
+    case 'stpatricks':
+      return view === 'front' ? (
+        // Shamrock on chest: three small circles + stem
+        <>
+          {[
+            [-2, -1],
+            [2, -1],
+            [0, -3],
+            [0, 1.5],
+          ].map(([dx, dy], i) => (
+            <Circle
+              key={i}
+              cx={60 + (dx as number)}
+              cy={56 + (dy as number)}
+              r={1.6}
+              fill="#16A34A"
+              stroke="#14532D"
+              strokeWidth={0.3}
+            />
+          ))}
+          <Path
+            d="M 60 57.5 L 60 60.5"
+            stroke="#14532D"
+            strokeWidth={0.5}
+            strokeLinecap="round"
+          />
+        </>
+      ) : null;
+  }
+}
+
+// Skin-specific overrides for the silhouette colours / gradient.
+function silhouetteFor(
+  skin: SeasonalSkin | null,
+  dark: boolean,
+): { fill: string; stroke: string } {
+  if (skin === 'pride') {
+    return { fill: 'url(#bodymapPride)', stroke: '#475569' };
+  }
+  if (skin === 'halloween') {
+    return {
+      fill: dark ? '#1F2937' : '#FDE68A',
+      stroke: dark ? '#4B5563' : '#7C2D12',
+    };
+  }
+  if (skin === 'valentine') {
+    return {
+      fill: dark ? '#1F2937' : '#FCE7F3',
+      stroke: dark ? '#4B5563' : '#9D174D',
+    };
+  }
+  if (skin === 'stpatricks') {
+    return {
+      fill: dark ? '#1F2937' : '#BBF7D0',
+      stroke: dark ? '#4B5563' : '#14532D',
+    };
+  }
+  return {
+    fill: dark ? '#1F2937' : '#E2E8F0',
+    stroke: dark ? '#4B5563' : '#475569',
+  };
+}
+
 function Figure({
   view,
   silhouetteFill,
@@ -83,6 +367,7 @@ function Figure({
   highlights,
   onSelect,
   width,
+  skin,
 }: {
   view: ViewKind;
   silhouetteFill: string;
@@ -92,6 +377,7 @@ function Figure({
   highlights?: Record<string, string>;
   onSelect?: (region: string, side: InjurySide, view: ViewKind) => void;
   width: number;
+  skin: SeasonalSkin | null;
 }) {
   // Shared on every path so the joins read cleanly. Smooth bezier
   // silhouette built up from head/torso/arms/legs.
@@ -101,6 +387,18 @@ function Figure({
   return (
     <View className="items-center gap-1">
       <Svg width={width} height={width * 2} viewBox="0 0 120 240">
+        {/* Pride gradient referenced by url(#bodymapPride); cheap to
+            always emit since unreferenced defs aren't rendered. */}
+        <Defs>
+          <LinearGradient id="bodymapPride" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#E11D48" />
+            <Stop offset="0.2" stopColor="#F97316" />
+            <Stop offset="0.4" stopColor="#FACC15" />
+            <Stop offset="0.6" stopColor="#22C55E" />
+            <Stop offset="0.8" stopColor="#3B82F6" />
+            <Stop offset="1" stopColor="#8B5CF6" />
+          </LinearGradient>
+        </Defs>
         {/* Silhouette — soft fill with a defined edge so the body has
             weight without feeling blocky. */}
         <Circle
@@ -149,6 +447,13 @@ function Figure({
           strokeLinejoin="round"
           d="M 78 102 C 79 118 78 132 76 146 C 76 154 75 158 75 164 C 76 176 75 188 73 200 C 73 208 74 214 76 218 C 76 222 72 224 67 223 C 64 222 64 218 65 212 C 64 200 64 188 64 176 C 64 168 64 162 63 154 C 62 140 61 124 61 110 L 61 106 C 66 104 74 102 78 102 Z"
         />
+        {/* Anatomy detail lines (option B): subtle distinction
+            between front (pec curve + ab midline + belly button) and
+            back (spine + glute cleft) so they don't read as mirrors. */}
+        <AnatomyOverlay view={view} stroke={stroke} />
+        {/* Seasonal easter-egg decoration on top of the body. Pure
+            cosmetic — hit areas below are untouched. */}
+        {skin ? <SeasonalOverlay view={view} skin={skin} /> : null}
         {/* Region hit areas */}
         {hits.map((h, i) => {
           const isSelected =
@@ -184,18 +489,25 @@ export function BodyMap({
   highlights,
   onSelect,
   figureWidth = 120,
+  // Tests pass a fixed date to make the seasonal skin deterministic.
+  now,
 }: {
   selected?: { region: string; side: InjurySide } | null;
   // region key -> tint colour (applies to both sides of the region)
   highlights?: Record<string, string>;
   onSelect?: (region: string, side: InjurySide, view: ViewKind) => void;
   figureWidth?: number;
+  now?: Date;
 }) {
   const { scheme } = useThemePreference();
-  // Soft slate fill + a darker outline so the silhouette has weight
-  // without reading as a blocky mannequin.
-  const silhouetteFill = scheme === 'dark' ? '#1F2937' : '#E2E8F0';
-  const silhouetteStroke = scheme === 'dark' ? '#4B5563' : '#475569';
+  const dark = scheme === 'dark';
+  // Auto-detect seasonal skin from today's date. Returns null on a
+  // normal day, which falls through to the regular silhouette colours.
+  const skin = getSeasonalSkin(now);
+  const { fill: silhouetteFill, stroke: silhouetteStroke } = silhouetteFor(
+    skin,
+    dark,
+  );
   return (
     <View className="flex-row justify-center gap-6">
       <Figure
@@ -207,6 +519,7 @@ export function BodyMap({
         highlights={highlights}
         onSelect={onSelect}
         width={figureWidth}
+        skin={skin}
       />
       <Figure
         view="back"
@@ -217,6 +530,7 @@ export function BodyMap({
         highlights={highlights}
         onSelect={onSelect}
         width={figureWidth}
+        skin={skin}
       />
     </View>
   );
