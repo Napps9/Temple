@@ -105,11 +105,18 @@ end;
 $$;
 
 -- ============================================================================
--- 2. book_class: refuse on archived class types
+-- 2. _book_class_for: refuse on archived class types
 -- ============================================================================
+-- public.book_class is unchanged — it's a thin wrapper that delegates
+-- to _book_class_for, which is where the membership and capacity
+-- checks live (refactor introduced in 0016 so the waitlist promotion
+-- trigger could book on behalf of a different profile). The archived
+-- check belongs alongside those checks.
 
-create or replace function public.book_class(session_id uuid)
-returns void
+create or replace function public._book_class_for(
+  p_session_id uuid,
+  p_profile_id uuid
+) returns uuid
 language plpgsql
 security definer
 set search_path = public
@@ -117,25 +124,35 @@ as $$
 declare
   sess           public.class_sessions;
   current_count  int;
-  uid            uuid;
+  v_booking_id   uuid;
   v_archived_at  timestamptz;
 begin
-  uid := auth.uid();
-  if uid is null then
-    raise exception 'Not signed in';
+  if p_profile_id is null then
+    raise exception 'No profile to book for';
   end if;
 
   -- Lock the parent session row so concurrent bookings serialise.
   select * into sess
     from public.class_sessions
-    where id = session_id
+    where id = p_session_id
     for update;
   if sess is null then
     raise exception 'Class not found';
   end if;
-  if not public.user_belongs_to(sess.gym_id) then
+
+  -- Membership check uses an explicit join (not user_belongs_to /
+  -- auth.uid()) because the trigger calls this with a profile other
+  -- than the session caller, AND because user_belongs_to doesn't
+  -- gate on left_at.
+  if not exists (
+    select 1 from public.gym_memberships
+    where gym_id = sess.gym_id
+      and profile_id = p_profile_id
+      and left_at is null
+  ) then
     raise exception 'Not authorised';
   end if;
+
   if sess.starts_at < now() then
     raise exception 'Class has already started';
   end if;
@@ -152,17 +169,25 @@ begin
 
   select count(*) into current_count
     from public.class_bookings
-    where class_session_id = session_id;
+    where class_session_id = p_session_id;
 
   if current_count >= sess.capacity then
     raise exception 'Class is full';
   end if;
 
   insert into public.class_bookings (gym_id, class_session_id, profile_id)
-  values (sess.gym_id, session_id, uid)
-  on conflict (class_session_id, profile_id) do nothing;
+  values (sess.gym_id, p_session_id, p_profile_id)
+  on conflict (class_session_id, profile_id) do nothing
+  returning id into v_booking_id;
+
+  return v_booking_id;
 end;
 $$;
+
+-- Re-revoke after CREATE OR REPLACE (in case any grants got added
+-- through a previous deployment cycle).
+revoke execute on function public._book_class_for(uuid, uuid)
+  from public, anon, authenticated;
 
 -- ============================================================================
 -- 3. class_programming: block writes against archived class types
