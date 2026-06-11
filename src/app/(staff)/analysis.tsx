@@ -60,6 +60,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { formatSeconds } from '@/lib/track';
 import { useCan } from '@/lib/useCan';
+import { useClassTypes } from '@/lib/useClassCatalog';
 import type { InjurySide, InjuryStatus } from '@/types/database';
 
 const TWELVE_WEEKS_MS = 12 * 7 * 24 * 60 * 60 * 1000;
@@ -328,12 +329,6 @@ type ProgrammingRow = {
   sections: unknown;
 };
 
-type ClassTypeLite = {
-  id: string;
-  name: string;
-  color: string;
-};
-
 function ProgrammingBalanceBlock({
   gymId,
   canSeeLogs,
@@ -370,20 +365,19 @@ function ProgrammingBalanceBlock({
     },
   });
 
-  const classTypes = useQuery({
-    queryKey: ['class-types-for-analysis', gymId],
-    enabled: canSeeLogs,
-    queryFn: async (): Promise<ClassTypeLite[]> => {
-      const { data, error } = await supabase
-        .from('class_types')
-        .select('id, name, color')
-        .eq('gym_id', gymId)
-        .is('archived_at', null)
-        .order('name');
-      if (error) throw error;
-      return (data ?? []) as ClassTypeLite[];
-    },
-  });
+  // Use the canonical catalog hook (one queryKey, one queryFn — see
+  // useClassCatalog.ts). It returns archived class types too, which
+  // is what we want here: a class type that was archived but still
+  // has programming inside the window should remain analyseable.
+  const classTypes = useClassTypes();
+
+  // The chip set is the union of (any class types loaded) and
+  // (any class_type_id present in the actual programming data),
+  // so even a class type that was hard-deleted but still has rows
+  // gets a chip. We also keep archived class types in the chip
+  // set with an 'archived' tag — coaches lose CrossFit from the
+  // dropdown the moment they archive it, but historical analysis
+  // shouldn't disappear with it.
 
   // Flatten programming rows → ClassifiedSection[] once, filter
   // client-side when the user taps a class-type chip.
@@ -405,6 +399,43 @@ function ProgrammingBalanceBlock({
         : classified.filter((s) => s.class_type_id === classTypeFilter),
     [classified, classTypeFilter],
   );
+
+  type ChipSpec = { id: string; name: string; color: string; archived: boolean };
+
+  // Build chip set: every active class type, plus any archived or
+  // orphaned class_type_id that appears in this window's programming.
+  const chipSet = useMemo<ChipSpec[]>(() => {
+    const byId = new Map<string, ChipSpec>();
+    for (const ct of classTypes.data ?? []) {
+      byId.set(ct.id, {
+        id: ct.id,
+        name: ct.name,
+        color: ct.color,
+        archived: ct.archived_at !== null,
+      });
+    }
+    // Any programming row whose class_type_id we don't recognise yet
+    // (deleted class type, or a row we couldn't join) still gets a
+    // chip so its data isn't silently dropped.
+    const seenInData = new Set<string>();
+    for (const s of classified) {
+      if (s.class_type_id) seenInData.add(s.class_type_id);
+    }
+    for (const id of seenInData) {
+      if (!byId.has(id)) {
+        byId.set(id, {
+          id,
+          name: 'Unknown class type',
+          color: '#9CA3AF',
+          archived: true,
+        });
+      }
+    }
+    return [...byId.values()].sort((a, b) => {
+      if (a.archived !== b.archived) return a.archived ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [classTypes.data, classified]);
 
   const matrix = useMemo(
     () => computePatternEnergyMatrix(filtered),
@@ -458,7 +489,7 @@ function ProgrammingBalanceBlock({
         }}
       />
 
-      {(classTypes.data?.length ?? 0) > 1 ? (
+      {chipSet.length > 1 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -469,11 +500,12 @@ function ProgrammingBalanceBlock({
             active={classTypeFilter === null}
             onPress={() => setClassTypeFilter(null)}
           />
-          {(classTypes.data ?? []).map((ct) => (
+          {chipSet.map((ct) => (
             <ClassTypeChip
               key={ct.id}
               label={ct.name}
               color={ct.color}
+              archived={ct.archived}
               active={classTypeFilter === ct.id}
               onPress={() => setClassTypeFilter(ct.id)}
             />
@@ -511,11 +543,13 @@ function ClassTypeChip({
   label,
   color,
   active,
+  archived,
   onPress,
 }: {
   label: string;
   color: string;
   active: boolean;
+  archived?: boolean;
   onPress: () => void;
 }) {
   return (
@@ -528,15 +562,20 @@ function ClassTypeChip({
           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
       }`}>
       <View
-        style={{ backgroundColor: color }}
+        style={{ backgroundColor: color, opacity: archived ? 0.5 : 1 }}
         className="w-2 h-2 rounded-full"
       />
       <Text
         className={`text-xs font-semibold ${
           active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
-        }`}>
+        } ${archived ? 'line-through opacity-70' : ''}`}>
         {label}
       </Text>
+      {archived ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-[9px] uppercase tracking-wider">
+          arch
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
