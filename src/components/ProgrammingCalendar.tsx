@@ -22,7 +22,11 @@ type ClassSession = {
   id: string;
   starts_at: string;
   class_type_id: string | null;
-  class_types: { name: string; color: string } | null;
+  class_types: {
+    name: string;
+    color: string;
+    archived_at: string | null;
+  } | null;
 };
 
 type ProgrammingRow = {
@@ -111,7 +115,7 @@ export function ProgrammingCalendar({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color), coach_id, coach:profiles!coach_id(full_name)',
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color, archived_at), coach_id, coach:profiles!coach_id(full_name)',
         )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
@@ -148,6 +152,10 @@ export function ProgrammingCalendar({
     const map = new Map<string, DayClassType>();
     for (const s of sessions) {
       if (!s.class_type_id || !s.class_types) continue;
+      // Skip archived class types so the coach can't open the
+      // programming editor for one — the server trigger refuses
+      // writes too (0035), but we surface that by not offering it.
+      if (s.class_types.archived_at) continue;
       if (!isSameDay(new Date(s.starts_at), date)) continue;
       if (!map.has(s.class_type_id)) {
         map.set(s.class_type_id, {

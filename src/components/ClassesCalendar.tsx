@@ -35,7 +35,11 @@ type ClassSession = {
   duration_minutes: number;
   capacity: number;
   class_type_id: string | null;
-  class_types: { name: string; color: string } | null;
+  class_types: {
+    name: string;
+    color: string;
+    archived_at: string | null;
+  } | null;
   coach_id: string | null;
   coach: { full_name: string | null; avatar_url: string | null } | null;
 };
@@ -194,13 +198,21 @@ export function ClassesCalendar({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color), coach_id, coach:profiles!coach_id(full_name, avatar_url)',
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color, archived_at), coach_id, coach:profiles!coach_id(full_name, avatar_url)',
         )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
         .order('starts_at');
       if (error) throw error;
-      return data as unknown as ClassSession[];
+      const rows = data as unknown as ClassSession[];
+      // Hide sessions whose class_type has been archived — staff
+      // shouldn't see lingering CrossFit slots if CrossFit is put
+      // away, and members shouldn't be able to book new ones. The
+      // server's book_class refuses these too (see
+      // 0035_archive_class_type_cascades.sql) but filtering here
+      // keeps them out of the calendar so the UI doesn't show
+      // un-bookable phantoms.
+      return rows.filter((s) => !s.class_types?.archived_at);
     },
   });
 
