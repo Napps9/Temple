@@ -74,6 +74,10 @@ begin
   perform public.leave_gym(
     current_setting('test.gym')::uuid,
     current_setting('test.a')::uuid);
+  -- Read the results back as the owner: the access log is admin-only,
+  -- and several health tables are staff-gated, so a just-left member
+  -- couldn't observe their own (now deleted) rows reliably.
+  perform _test_act_as(current_setting('test.owner')::uuid);
 end $$;
 
 select is(
