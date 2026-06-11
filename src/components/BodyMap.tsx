@@ -76,7 +76,8 @@ const BACK_HITS: Hit[] = [
 
 function Figure({
   view,
-  silhouette,
+  silhouetteFill,
+  silhouetteStroke,
   hits,
   selected,
   highlights,
@@ -84,40 +85,68 @@ function Figure({
   width,
 }: {
   view: ViewKind;
-  silhouette: string;
+  silhouetteFill: string;
+  silhouetteStroke: string;
   hits: Hit[];
   selected?: { region: string; side: InjurySide } | null;
   highlights?: Record<string, string>;
   onSelect?: (region: string, side: InjurySide, view: ViewKind) => void;
   width: number;
 }) {
+  // Shared on every path so the joins read cleanly. Smooth bezier
+  // silhouette built up from head/torso/arms/legs.
+  const fill = silhouetteFill;
+  const stroke = silhouetteStroke;
+  const strokeWidth = 1.2;
   return (
     <View className="items-center gap-1">
       <Svg width={width} height={width * 2} viewBox="0 0 120 240">
-        {/* Silhouette — smooth bezier outlines (head, torso, arms,
-            legs share one fill so the joins read as a single body). */}
-        <Circle cx={60} cy={17} r={12.5} fill={silhouette} />
+        {/* Silhouette — soft fill with a defined edge so the body has
+            weight without feeling blocky. */}
+        <Circle
+          cx={60}
+          cy={17}
+          r={12.5}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+        />
         {/* Torso: traps → shoulders → lats → waist taper → hips */}
         <Path
-          fill={silhouette}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
           d="M 54 28 L 54 34 C 46 37 41 40 40 46 C 39 60 41 74 45 84 C 42 92 41 97 42 106 C 48 112 72 112 78 106 C 79 97 78 92 75 84 C 79 74 81 60 80 46 C 79 40 74 37 66 34 L 66 28 C 62 26 58 26 54 28 Z"
         />
         {/* Arms: deltoid cap → elbow → forearm taper → hand */}
         <Path
-          fill={silhouette}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
           d="M 40 46 C 32 47 28 52 27 60 C 25 70 24 78 23 88 C 22 98 21 106 20 114 C 20 120 22 125 25 126 C 28 127 30 123 29 117 C 28 108 30 98 31 90 C 32 80 34 72 36 64 C 37 56 38 50 40 46 Z"
         />
         <Path
-          fill={silhouette}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
           d="M 80 46 C 88 47 92 52 93 60 C 95 70 96 78 97 88 C 98 98 99 106 100 114 C 100 120 98 125 95 126 C 92 127 90 123 91 117 C 92 108 90 98 89 90 C 88 80 86 72 84 64 C 83 56 82 50 80 46 Z"
         />
         {/* Legs: thigh → knee → calf taper → heel + foot */}
         <Path
-          fill={silhouette}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
           d="M 42 102 C 41 118 42 132 44 146 C 44 154 45 158 45 164 C 44 176 45 188 47 200 C 47 208 46 214 44 218 C 44 222 48 224 53 223 C 56 222 56 218 55 212 C 56 200 56 188 56 176 C 56 168 56 162 57 154 C 58 140 59 124 59 110 L 59 106 C 54 104 46 102 42 102 Z"
         />
         <Path
-          fill={silhouette}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
           d="M 78 102 C 79 118 78 132 76 146 C 76 154 75 158 75 164 C 76 176 75 188 73 200 C 73 208 74 214 76 218 C 76 222 72 224 67 223 C 64 222 64 218 65 212 C 64 200 64 188 64 176 C 64 168 64 162 63 154 C 62 140 61 124 61 110 L 61 106 C 66 104 74 102 78 102 Z"
         />
         {/* Region hit areas */}
@@ -163,12 +192,16 @@ export function BodyMap({
   figureWidth?: number;
 }) {
   const { scheme } = useThemePreference();
-  const silhouette = scheme === 'dark' ? '#374151' : '#CBD5E1';
+  // Soft slate fill + a darker outline so the silhouette has weight
+  // without reading as a blocky mannequin.
+  const silhouetteFill = scheme === 'dark' ? '#1F2937' : '#E2E8F0';
+  const silhouetteStroke = scheme === 'dark' ? '#4B5563' : '#475569';
   return (
     <View className="flex-row justify-center gap-6">
       <Figure
         view="front"
-        silhouette={silhouette}
+        silhouetteFill={silhouetteFill}
+        silhouetteStroke={silhouetteStroke}
         hits={FRONT_HITS}
         selected={selected}
         highlights={highlights}
@@ -177,7 +210,8 @@ export function BodyMap({
       />
       <Figure
         view="back"
-        silhouette={silhouette}
+        silhouetteFill={silhouetteFill}
+        silhouetteStroke={silhouetteStroke}
         hits={BACK_HITS}
         selected={selected}
         highlights={highlights}
