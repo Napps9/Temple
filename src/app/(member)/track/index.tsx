@@ -6,27 +6,13 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { ChipButton } from '@/components/ChipButton';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
-import { fmtDateShort } from '@/lib/track';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
-
-type PreviewWorkout = {
-  id: string;
-  performed_at: string;
-  title: string | null;
-  section_count: { count: number }[] | null;
-  result_count: { count: number }[] | null;
-};
-
-// Four-up so the 2-column grid sits as a clean 2×2 — same shape as
-// the Movements tiles below it.
-const JOURNAL_PREVIEW_COUNT = 4;
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -91,20 +77,19 @@ export default function TrackHome() {
     return counts;
   }, [recentLogs.data, groupViewed.data]);
 
-  const journal = useQuery({
-    queryKey: ['tracked-journal', session?.user.id, 'preview'],
+  // The Journal tile only needs to know whether the member has logged
+  // anything (and roughly how recently) — the full journal renders on
+  // /track/journal. A head count with a small cap is enough.
+  const journalCount = useQuery({
+    queryKey: ['tracked-journal-count', session?.user.id],
     enabled: !!session?.user.id,
-    queryFn: async (): Promise<PreviewWorkout[]> => {
-      const { data, error } = await supabase
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
         .from('tracked_workouts')
-        .select(
-          'id, performed_at, title, section_count:tracked_workout_sections(count), result_count:tracked_movement_results(count)',
-        )
-        .eq('profile_id', session!.user.id)
-        .order('performed_at', { ascending: false })
-        .limit(JOURNAL_PREVIEW_COUNT);
+        .select('id', { count: 'exact', head: true })
+        .eq('profile_id', session!.user.id);
       if (error) throw error;
-      return (data ?? []) as unknown as PreviewWorkout[];
+      return count ?? 0;
     },
   });
 
@@ -128,57 +113,17 @@ export default function TrackHome() {
           </Pressable>
         </View>
 
-        {/* Journal */}
-        <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
-          <View className="flex-row items-center gap-3">
-            <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-              <Ionicons name="book-outline" size={22} color="#2563EB" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                Journal
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                Your latest logged sessions.
-              </Text>
-            </View>
-            <ChipButton
-              label="See all"
-              icon="arrow-forward"
-              iconSide="right"
-              onPress={() => router.push('/track/journal')}
-            />
+        {/* Journal + Leaderboards live as a 2-up tile row above the
+            Movements grid — same tile shape as a movement group so they
+            read as siblings instead of a stack of full-width cards. */}
+        <View className="flex-row items-stretch gap-2">
+          <View className="flex-1">
+            <JournalEntryTile workoutCount={journalCount.data ?? 0} />
           </View>
-          {journal.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              Loading…
-            </Text>
-          ) : (journal.data?.length ?? 0) === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              No workouts logged yet. Tap "Record" to start.
-            </Text>
-          ) : (
-            // Same 2-column tile grid as the Movements section so the
-            // Journal preview reads as a sibling rather than a
-            // full-bleed dump of every recorded section.
-            <View className="gap-2">
-              {chunkPairs(journal.data!).map((pair, i) => (
-                <View key={i} className="flex-row items-stretch gap-2">
-                  {pair.map((w) => (
-                    <View key={w.id} className="flex-1">
-                      <JournalTile workout={w} />
-                    </View>
-                  ))}
-                  {pair.length === 1 ? (
-                    <View className="flex-1" />
-                  ) : null}
-                </View>
-              ))}
-            </View>
-          )}
+          <View className="flex-1">
+            <LeaderboardsTile />
+          </View>
         </View>
-
-        <LeaderboardsTile />
 
         {/* Movements + injury tracker share a home: both are about how
             the body is moving. */}
@@ -248,24 +193,61 @@ export default function TrackHome() {
   );
 }
 
+// Group-tile shape (slate background, rounded icon, accent blob).
+function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
+  const accent = '#2563EB';
+  const subtitle =
+    workoutCount === 0
+      ? 'No sessions logged yet'
+      : `${workoutCount} logged ${workoutCount === 1 ? 'session' : 'sessions'}`;
+  return (
+    <Pressable
+      onPress={() => router.push('/track/journal' as never)}
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name="book-outline" size={22} color={accent} />
+      </View>
+      <View className="flex-1 justify-end">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+          Journal
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {subtitle}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 function LeaderboardsTile() {
+  const accent = '#F59E0B';
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
-      className="bg-white dark:bg-gray-900 rounded-2xl p-4 flex-row items-center gap-3 active:opacity-70">
-      <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-        <Ionicons name="trophy-outline" size={22} color="#2563EB" />
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name="trophy-outline" size={22} color={accent} />
       </View>
-      <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+      <View className="flex-1 justify-end">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
           Leaderboards
         </Text>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
-          See who's lifting heaviest, running fastest, and AMRAP-ing
-          hardest in the gym.
+          Heaviest lifts, fastest times, hardest AMRAPs.
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
     </Pressable>
   );
 }
@@ -364,48 +346,3 @@ function GroupTile({
   );
 }
 
-// Rich preview: the workout title + date, then each recorded section
-// matched the Movements grid below it; the full programmed body,
-// result, entries and tagged movements still live on the workout
-// detail page that the tile routes into.
-function JournalTile({ workout }: { workout: PreviewWorkout }) {
-  const sectionCount = workout.section_count?.[0]?.count ?? 0;
-  const resultCount = workout.result_count?.[0]?.count ?? 0;
-  const subtitle =
-    sectionCount > 0
-      ? `${sectionCount} section${sectionCount === 1 ? '' : 's'}`
-      : resultCount > 0
-        ? `${resultCount} result${resultCount === 1 ? '' : 's'}`
-        : 'No results yet';
-  const accent = '#2563EB';
-  return (
-    <Pressable
-      onPress={() =>
-        router.push(`/track/workout/${workout.id}` as never)
-      }
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
-      <View
-        style={{ backgroundColor: accent }}
-        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
-      />
-      <View
-        style={{ backgroundColor: `${accent}26` }}
-        className="w-11 h-11 rounded-full items-center justify-center">
-        <Ionicons name="book-outline" size={22} color={accent} />
-      </View>
-      <View className="flex-1 justify-end">
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
-          {fmtDateShort(workout.performed_at)}
-        </Text>
-        <Text
-          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
-          numberOfLines={2}>
-          {workout.title?.trim() || 'Workout'}
-        </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
-          {subtitle}
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
