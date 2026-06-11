@@ -203,7 +203,7 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -230,7 +230,7 @@ function LeaderboardsTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
