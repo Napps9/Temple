@@ -91,10 +91,34 @@ export const PATTERN_LABELS: Record<MovementPattern, string> = {
   carry: 'Carry',
 };
 
+// Short labels for tight grids on mobile where the full label would
+// either wrap or push the matrix cells too narrow to be useful.
+export const PATTERN_LABELS_SHORT: Record<MovementPattern, string> = {
+  squat: 'Squat',
+  hinge: 'Hinge',
+  horizontal_push: 'H-Push',
+  vertical_push: 'V-Push',
+  horizontal_pull: 'H-Pull',
+  vertical_pull: 'V-Pull',
+  olympic: 'Olympic',
+  gait: 'Gait',
+  monostructural: 'Mono',
+  core: 'Core',
+  gymnastic_static: 'Hold',
+  carry: 'Carry',
+};
+
 export const ENERGY_LABELS: Record<EnergySystem, string> = {
   phosphagen: 'Phosphagen',
   glycolytic: 'Glycolytic',
   oxidative: 'Oxidative',
+};
+
+// 3-letter mobile headers for the matrix.
+export const ENERGY_LABELS_SHORT: Record<EnergySystem, string> = {
+  phosphagen: 'Phos',
+  glycolytic: 'Gly',
+  oxidative: 'Oxi',
 };
 
 // Cooler → hotter through the metabolic spectrum: phosphagen blue,

@@ -2,7 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import { BodyMap } from '@/components/BodyMap';
 import {
@@ -28,8 +34,10 @@ import {
 import {
   ENERGY_COLOURS,
   ENERGY_LABELS,
+  ENERGY_LABELS_SHORT,
   ENERGY_SYSTEMS,
   PATTERN_LABELS,
+  PATTERN_LABELS_SHORT,
   type EnergySystem,
   type MovementPattern,
 } from '@/lib/movement-classification';
@@ -175,9 +183,12 @@ export default function AnalysisScreen() {
     return { map, counts };
   }, [open]);
 
+  const { width } = useWindowDimensions();
+  const figureWidth = width < 360 ? 96 : width < 768 ? 110 : 120;
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-2 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Programming analysis
@@ -205,8 +216,8 @@ export default function AnalysisScreen() {
               You don't have permission to view health data.
             </Text>
           ) : (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-              <BodyMap highlights={highlights.map} />
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+              <BodyMap highlights={highlights.map} figureWidth={figureWidth} />
               {open.length === 0 ? (
                 <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
                   No open injuries. Happy days.
@@ -548,6 +559,17 @@ function PatternEnergyMatrix({
   matrix: Record<MovementPattern, Record<EnergySystem, number>>;
   balance: ReturnType<typeof computeBalance>;
 }) {
+  const { width } = useWindowDimensions();
+  // Below 480 px (every phone) we use the compact label set so the
+  // 3-column grid stops bumping into the row labels. The narrowest
+  // viewport this still has to clear is ~320 px (older iPhone SE)
+  // minus 32 px page padding minus 24 px card padding = 264 px; that
+  // leaves ~67 px per cell after the 60 px label column.
+  const compact = width < 480;
+  const patternLabels = compact ? PATTERN_LABELS_SHORT : PATTERN_LABELS;
+  const energyLabels = compact ? ENERGY_LABELS_SHORT : ENERGY_LABELS;
+  const labelColumnWidth = compact ? 60 : 132;
+
   const rows = (Object.keys(matrix) as MovementPattern[])
     .map((p) => ({
       pattern: p,
@@ -570,30 +592,36 @@ function PatternEnergyMatrix({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-      <View className="flex-row gap-3 flex-wrap">
-        <RatioBadge
-          label="Push : Pull"
-          left={balance.push}
-          right={balance.pull}
-        />
-        <RatioBadge
-          label="Anterior : Posterior"
-          left={balance.anterior}
-          right={balance.posterior}
-        />
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+      {/* Ratio badges share width so they balance visually instead of
+          wrapping into stranded chips on a phone. */}
+      <View className="flex-row gap-2">
+        <View className="flex-1">
+          <RatioBadge
+            label="Push : Pull"
+            left={balance.push}
+            right={balance.pull}
+          />
+        </View>
+        <View className="flex-1">
+          <RatioBadge
+            label="Front : Back"
+            left={balance.anterior}
+            right={balance.posterior}
+          />
+        </View>
       </View>
 
       <View>
         {/* Column headers */}
         <View className="flex-row items-center gap-1">
-          <View style={{ width: 132 }} />
+          <View style={{ width: labelColumnWidth }} />
           {ENERGY_SYSTEMS.map((e) => (
             <View key={e} className="flex-1 items-center">
               <Text
                 style={{ color: ENERGY_COLOURS[e] }}
                 className="text-[10px] font-semibold uppercase tracking-wider">
-                {ENERGY_LABELS[e]}
+                {energyLabels[e]}
               </Text>
             </View>
           ))}
@@ -607,10 +635,10 @@ function PatternEnergyMatrix({
           rows.map((r) => (
             <View key={r.pattern} className="flex-row items-center gap-1 mt-1">
               <Text
-                style={{ width: 132 }}
+                style={{ width: labelColumnWidth }}
                 className="text-gray-700 dark:text-gray-200 text-xs"
                 numberOfLines={1}>
-                {PATTERN_LABELS[r.pattern]}
+                {patternLabels[r.pattern]}
               </Text>
               {ENERGY_SYSTEMS.map((e) => (
                 <View
@@ -666,7 +694,7 @@ function EnergyMixCard({
   mix: ReturnType<typeof computeEnergyMix>;
 }) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
       <Text className="text-gray-900 dark:text-gray-50 font-semibold">
         Energy system mix
       </Text>
@@ -709,7 +737,7 @@ function PatternMixCard({
   const max = nonzero[0]?.count ?? 0;
   if (nonzero.length === 0) return null;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
       <Text className="text-gray-900 dark:text-gray-50 font-semibold">
         Movement pattern volume
       </Text>
@@ -741,6 +769,11 @@ function PatternMixCard({
 const REGION_RAMP = ['#FCD34D', '#F59E0B', '#F97316', '#EF4444'];
 
 function RegionHeatCard({ regions }: { regions: Record<string, number> }) {
+  const { width } = useWindowDimensions();
+  // Two side-by-side figures + the 24 px gap need ~240 px on mobile;
+  // the 120 px default fits, but anything smaller than ~360 wide gets
+  // cramped, so step the figure down a little for the iPhone SE end.
+  const figureWidth = width < 360 ? 96 : width < 768 ? 110 : 120;
   const entries = Object.entries(regions)
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1]);
@@ -754,11 +787,11 @@ function RegionHeatCard({ regions }: { regions: Record<string, number> }) {
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
       <Text className="text-gray-900 dark:text-gray-50 font-semibold">
         Region heat
       </Text>
-      <BodyMap highlights={tint} />
+      <BodyMap highlights={tint} figureWidth={figureWidth} />
       {entries.length === 0 ? (
         <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
           No region-tagged movements yet.
@@ -844,7 +877,7 @@ function TrendCard({
     <View className="bg-white dark:bg-gray-900 rounded-xl">
       <Pressable
         onPress={() => setOpenCard((v) => !v)}
-        className="p-4 gap-1 active:opacity-70">
+        className="p-3 md:p-4 gap-1 active:opacity-70">
         <View className="flex-row items-center gap-2">
           <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
             {movementName(trend.movement_key)}
@@ -870,7 +903,7 @@ function TrendCard({
         </View>
       </Pressable>
       {openCard ? (
-        <View className="px-4 pb-3 gap-1.5 border-t border-gray-100 dark:border-gray-800 pt-2">
+        <View className="px-3 md:px-4 pb-3 gap-1.5 border-t border-gray-100 dark:border-gray-800 pt-2">
           {trend.members.map((m) => (
             <View key={m.profile_id} className="flex-row items-center gap-2">
               <Text
