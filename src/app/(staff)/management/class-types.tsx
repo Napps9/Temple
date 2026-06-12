@@ -545,7 +545,7 @@ export function ClassTypesPanel() {
                           style={{ backgroundColor: r.color }}
                           className="w-8 h-8 rounded-full opacity-50"
                         />
-                        <Text className="flex-1 text-gray-700 dark:text-gray-200">
+                        <Text className="flex-1 text-gray-700 dark:text-gray-200" numberOfLines={1}>
                           {r.name}
                         </Text>
                       </View>

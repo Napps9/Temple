@@ -258,7 +258,7 @@ function DirectList() {
             className="bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70 flex-row items-center gap-3">
             <View className="flex-1">
               <View className="flex-row items-center gap-2">
-                <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+                <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold" numberOfLines={1}>
                   {row.peer_full_name}
                 </Text>
                 {row.peer_role && row.peer_role !== 'member' ? (
@@ -454,7 +454,7 @@ function AnnouncementsTab({
               {a.pinned ? (
                 <Ionicons name="pin" size={14} color={colors.primary} />
               ) : null}
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold" numberOfLines={1}>
                 {a.title}
               </Text>
               <Text className="text-gray-400 dark:text-gray-500 text-xs">
@@ -615,7 +615,7 @@ function InjuryCheckInBanner() {
     <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl p-4 gap-2">
       <View className="flex-row items-center gap-2">
         <Ionicons name="pulse" size={18} color="#D97706" />
-        <Text className="flex-1 text-amber-700 dark:text-amber-300 font-semibold">
+        <Text className="flex-1 text-amber-700 dark:text-amber-300 font-semibold" numberOfLines={1}>
           {due.length === 1
             ? `How's your ${injuryTitle(due[0].body_region, due[0].side).toLowerCase()}?`
             : `${due.length} injuries need a check-in`}
@@ -707,7 +707,7 @@ function AlertsTab({ gymId }: { gymId: string }) {
                 size={18}
                 color={amber ? '#D97706' : '#DC2626'}
               />
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1" numberOfLines={1}>
                 {a.subject?.full_name ?? 'Member'} {copy.title}
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-xs">

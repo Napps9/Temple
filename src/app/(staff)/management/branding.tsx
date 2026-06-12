@@ -401,7 +401,7 @@ export function BrandingPanel() {
                 Share this link
               </Text>
               <View className="flex-row items-center gap-2">
-                <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono">
+                <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono" numberOfLines={1}>
                   {joinUrl(origin, cleanedSlug)}
                 </Text>
                 <Pressable

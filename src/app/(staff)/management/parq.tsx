@@ -157,7 +157,7 @@ export function WaiverPanel() {
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 border border-emerald-500/30">
           <View className="flex-row items-center gap-2">
             <Ionicons name="document-text-outline" size={18} color="#10B981" />
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium" numberOfLines={1}>
               {active.data.title}
             </Text>
             <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">

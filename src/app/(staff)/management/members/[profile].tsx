@@ -549,7 +549,7 @@ function InjuriesSection({
                     {r.pain_level}
                   </Text>
                 </View>
-                <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium" numberOfLines={1}>
                   {injuryTitle(r.body_region, r.side)}
                 </Text>
                 <View

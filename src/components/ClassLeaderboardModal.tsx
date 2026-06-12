@@ -84,7 +84,7 @@ export function ClassLeaderboardModal({
                       {ordinal(r.rank)}
                     </Text>
                   </View>
-                  <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm">
+                  <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm" numberOfLines={1}>
                     {r.display_name}
                   </Text>
                   <Text className="text-gray-900 dark:text-gray-50 font-semibold">

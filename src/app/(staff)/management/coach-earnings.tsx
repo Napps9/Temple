@@ -466,7 +466,7 @@ function ClassTypeRateEditor({
           style={{ backgroundColor: classType.color }}
           className="w-2 h-2 rounded-full"
         />
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium text-sm">
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium text-sm" numberOfLines={1}>
           {classType.name}
         </Text>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">

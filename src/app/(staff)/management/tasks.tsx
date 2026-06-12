@@ -257,12 +257,11 @@ export default function TasksScreen() {
                       <Text className="text-white text-center text-xs leading-5">✓</Text>
                     ) : null}
                   </View>
-                  <Text
-                    className={`flex-1 ${
+                  <Text className={`flex-1 ${
                       t.status === 'done'
                         ? 'text-gray-400 dark:text-gray-500 line-through'
                         : 'text-gray-900 dark:text-gray-50'
-                    }`}>
+                    }`} numberOfLines={1}>
                     {t.title}
                   </Text>
                   {t.due_date ? (

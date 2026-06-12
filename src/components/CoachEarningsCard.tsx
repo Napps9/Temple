@@ -107,7 +107,7 @@ export function CoachEarningsCard() {
                     style={{ backgroundColor: r.class_type_color }}
                     className="w-2 h-2 rounded-full"
                   />
-                  <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+                  <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm" numberOfLines={1}>
                     {r.class_type_name}
                   </Text>
                   <Text className="text-gray-500 dark:text-gray-400 text-xs">

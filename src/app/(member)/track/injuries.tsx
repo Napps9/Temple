@@ -244,7 +244,7 @@ function InjuryCard({ injury }: { injury: InjuryRow }) {
             {injury.pain_level}
           </Text>
         </View>
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold" numberOfLines={1}>
           {injuryTitle(injury.body_region, injury.side)}
         </Text>
         <View

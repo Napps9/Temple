@@ -196,7 +196,7 @@ function SectionDisplay({ section }: { section: SectionRow }) {
   return (
     <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
       <View className="flex-row items-center gap-2">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-sm">
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-sm" numberOfLines={1}>
           {section.title?.trim() || formatLabel(section.section_format)}
         </Text>
         <View className="rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-2 py-0.5">
