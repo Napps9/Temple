@@ -13,6 +13,7 @@ import { errorMessage } from '@/lib/errors';
 import { useMembersFilter } from '@/lib/members-filter';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 type CohortRow = {
   profile_id: string;
@@ -387,6 +388,7 @@ function CohortBadges({
   flagged: boolean;
   injured: boolean;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="flex-row gap-1">
       {flagged ? <Badge label="PAR-Q" color="#DC2626" /> : null}
@@ -396,7 +398,7 @@ function CohortBadges({
         <Badge label={`${row.days_until_expiry}d`} color="#F97316" />
       ) : null}
       {row.is_expired ? <Badge label="Expired" color="#9CA3AF" /> : null}
-      {row.is_paying ? <Badge label="Paying" color="#2563EB" /> : null}
+      {row.is_paying ? <Badge label="Paying" color={colors.primary} /> : null}
     </View>
   );
 }

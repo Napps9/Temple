@@ -12,6 +12,7 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 import { supabase } from '@/lib/supabase';
 import { useClassRecurrences } from '@/lib/useClassCatalog';
+import { useThemeColors } from '@/lib/theme';
 
 type CreateRequest = { date?: Date; hour?: number };
 
@@ -44,10 +45,8 @@ type ClassSession = {
   coach: { full_name: string | null; avatar_url: string | null } | null;
 };
 
-const DEFAULT_CLASS_COLOR = '#2563EB';
-
-function sessionColor(s: ClassSession) {
-  return s.class_types?.color ?? DEFAULT_CLASS_COLOR;
+function sessionColor(s: ClassSession, fallback: string) {
+  return s.class_types?.color ?? fallback;
 }
 
 function sessionLabel(s: ClassSession) {
@@ -561,6 +560,7 @@ function DayClassCard({
   onPress: () => void;
   bookedByMe?: boolean;
 }) {
+  const colors = useThemeColors();
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   return (
@@ -570,7 +570,7 @@ function DayClassCard({
       <View className="flex-1 gap-1.5">
         <View className="flex-row items-center gap-2">
           <View
-            style={{ backgroundColor: sessionColor(session) }}
+            style={{ backgroundColor: sessionColor(session, colors.primary) }}
             className="self-start rounded-full px-2.5 py-1">
             <Text className="text-white text-xs font-semibold">{sessionLabel(session)}</Text>
           </View>
@@ -740,6 +740,7 @@ function WeekTile({
   onPress: () => void;
   bookedByMe?: boolean;
 }) {
+  const colors = useThemeColors();
   const start = new Date(session.starts_at);
   return (
     <Pressable
@@ -754,7 +755,7 @@ function WeekTile({
           <Ionicons name="checkmark-circle" size={10} color="#10B981" />
         ) : (
           <View
-            style={{ backgroundColor: sessionColor(session) }}
+            style={{ backgroundColor: sessionColor(session, colors.primary) }}
             className="w-1.5 h-1.5 rounded-full"
           />
         )}

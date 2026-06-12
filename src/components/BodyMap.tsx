@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
 import { useThemePreference } from '@/lib/theme';
+import { useThemeColors } from '@/lib/theme';
 import type { InjurySide } from '@/types/database';
 
 // Gender-neutral tappable body map: two stylised mannequin figures
@@ -149,6 +150,7 @@ function Figure({
   onSelect?: (region: string, side: InjurySide, view: ViewKind) => void;
   width: number;
 }) {
+  const colors = useThemeColors();
   // Shared on every path so the joins read cleanly. Smooth bezier
   // silhouette built up from head/torso/arms/legs.
   const fill = silhouetteFill;
@@ -221,9 +223,9 @@ function Figure({
               cy={h.cy}
               rx={h.rx}
               ry={h.ry}
-              fill={isSelected ? '#2563EB' : (tint ?? 'transparent')}
+              fill={isSelected ? colors.primary : (tint ?? 'transparent')}
               fillOpacity={isSelected ? 0.55 : tint ? 0.5 : 0}
-              stroke={isSelected ? '#2563EB' : 'transparent'}
+              stroke={isSelected ? colors.primary : 'transparent'}
               strokeWidth={isSelected ? 2 : 0}
               onPress={
                 onSelect ? () => onSelect(h.region, h.side, view) : undefined

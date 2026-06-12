@@ -23,6 +23,7 @@ import {
   type SectionFormatKey,
 } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import {
   fmtDateShort,
   formatResultValue,
@@ -280,6 +281,7 @@ function MovementLeaderboardSection({
   movementKey: string;
   schemes: { key: string; label: string; metric: Metric; better: 'higher' | 'lower' }[];
 }) {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const enabled = useQuery({
     queryKey: ['gym-leaderboard-flags', membership?.gymId],
@@ -301,7 +303,7 @@ function MovementLeaderboardSection({
   return (
     <View className="gap-3">
       <View className="flex-row items-center gap-2">
-        <Ionicons name="trophy-outline" size={18} color="#2563EB" />
+        <Ionicons name="trophy-outline" size={18} color={colors.primary} />
         <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
           Leaderboard
         </Text>

@@ -21,6 +21,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
+import { useThemeColors } from '@/lib/theme';
 import type { StaffAlertKind } from '@/types/database';
 
 type Tab = 'direct' | 'announcements' | 'classes' | 'alerts';
@@ -303,6 +304,7 @@ function AnnouncementsTab({
   posterId: string;
   onChange: () => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [composeOpen, setComposeOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -450,7 +452,7 @@ function AnnouncementsTab({
             className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
             <View className="flex-row items-center gap-2">
               {a.pinned ? (
-                <Ionicons name="pin" size={14} color="#2563EB" />
+                <Ionicons name="pin" size={14} color={colors.primary} />
               ) : null}
               <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
                 {a.title}
@@ -482,6 +484,7 @@ function ClassesTab({
   role: ReturnType<typeof useRole>;
   onChange: () => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const list = useQuery({
     queryKey: ['class-session-broadcasts', gymId],
@@ -559,7 +562,7 @@ function ClassesTab({
         list.data!.map((b) => {
           const sess = b.class_sessions;
           const start = sess ? new Date(sess.starts_at) : null;
-          const typeColor = sess?.class_types?.color ?? '#2563EB';
+          const typeColor = sess?.class_types?.color ?? colors.primary;
           const typeName = sess?.class_types?.name ?? 'Class';
           return (
             <View

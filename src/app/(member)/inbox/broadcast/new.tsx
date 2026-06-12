@@ -11,6 +11,7 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 type Session = {
   id: string;
@@ -37,6 +38,7 @@ function fmtWhen(iso: string): string {
 }
 
 export default function NewClassBroadcast() {
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const canBroadcast = useCan('can_broadcast_to_class');
@@ -134,7 +136,7 @@ export default function NewClassBroadcast() {
           <View className="gap-2">
             {sessions.data!.map((s) => {
               const selectedNow = selected === s.id;
-              const color = s.class_types?.color ?? '#2563EB';
+              const color = s.class_types?.color ?? colors.primary;
               const bookings = s.bookings?.[0]?.count ?? 0;
               return (
                 <Pressable
@@ -161,7 +163,7 @@ export default function NewClassBroadcast() {
                   <Ionicons
                     name={selectedNow ? 'checkmark-circle' : 'ellipse-outline'}
                     size={18}
-                    color={selectedNow ? '#2563EB' : '#9CA3AF'}
+                    color={selectedNow ? colors.primary : '#9CA3AF'}
                   />
                 </Pressable>
               );

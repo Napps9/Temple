@@ -13,6 +13,7 @@ import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
+import { useThemeColors } from '@/lib/theme';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -25,6 +26,7 @@ function chunkPairs<T>(items: T[]): T[][] {
 }
 
 export default function TrackHome() {
+  const colors = useThemeColors();
   const session = useSession();
   const [recording, setRecording] = useState(false);
 
@@ -130,7 +132,7 @@ export default function TrackHome() {
         <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
           <View className="flex-row items-center gap-3">
             <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-              <Ionicons name="barbell-outline" size={22} color="#2563EB" />
+              <Ionicons name="barbell-outline" size={22} color={colors.primary} />
             </View>
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -195,7 +197,8 @@ export default function TrackHome() {
 
 // Group-tile shape (slate background, rounded icon, accent blob).
 function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
-  const accent = '#2563EB';
+  const colors = useThemeColors();
+  const accent = colors.primary;
   const subtitle =
     workoutCount === 0
       ? 'No sessions logged yet'

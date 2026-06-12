@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View as RNView, type View } from 'react-native';
 
+import { useThemeColors } from '@/lib/theme';
+
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
 type Props = {
@@ -43,6 +45,7 @@ export const Button = forwardRef<View, Props>(function Button(
   { children, onPress, loading, success, disabled, variant = 'primary' },
   ref,
 ) {
+  const colors = useThemeColors();
   const isDisabled = disabled || loading;
   return (
     <Pressable
@@ -53,7 +56,7 @@ export const Button = forwardRef<View, Props>(function Button(
         isDisabled ? 'opacity-50' : ''
       }`}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#2563EB'} />
+        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : colors.primary} />
       ) : (
         <RNView className="flex-row items-center gap-2">
           {success ? (

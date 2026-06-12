@@ -9,6 +9,7 @@ import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 
 const EIGHT_WEEKS_MS = 56 * 24 * 60 * 60 * 1000;
 
@@ -41,6 +42,7 @@ function fmtNext(start: Date) {
 }
 
 function RecommendedClassCard() {
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
@@ -181,7 +183,7 @@ function RecommendedClassCard() {
   if (!rec || !rec.class_types) return null;
 
   const start = new Date(rec.starts_at);
-  const typeColor = rec.class_types.color ?? '#2563EB';
+  const typeColor = rec.class_types.color ?? colors.primary;
   const typeName = rec.class_types.name ?? 'Class';
 
   return (
@@ -220,6 +222,7 @@ function RecommendedClassCard() {
 // tiles navigating to the same place). Renders even with nothing
 // booked so "My bookings" always has a way in.
 function NextClassCard() {
+  const colors = useThemeColors();
   const session = useSession();
   const nowIso = new Date().toISOString();
   const next = useQuery({
@@ -245,7 +248,7 @@ function NextClassCard() {
 
   const sessionRow = next.data?.class_sessions ?? null;
   const start = sessionRow ? new Date(sessionRow.starts_at) : null;
-  const typeColor = sessionRow?.class_types?.color ?? '#2563EB';
+  const typeColor = sessionRow?.class_types?.color ?? colors.primary;
   const typeName = sessionRow?.class_types?.name ?? 'Class';
 
   return (

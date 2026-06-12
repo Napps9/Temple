@@ -24,6 +24,7 @@ import {
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 type CoachRow = {
   profile_id: string;
@@ -61,6 +62,7 @@ const POLICIES: { key: 'all_scheduled' | 'only_checked_in'; label: string; blurb
 ];
 
 export default function CoachEarningsPage() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const canSetCoachPay = useCan('can_set_coach_pay');
@@ -208,7 +210,7 @@ export default function CoachEarningsPage() {
                   <Ionicons
                     name={selected ? 'radio-button-on' : 'radio-button-off'}
                     size={18}
-                    color={selected ? '#2563EB' : '#9CA3AF'}
+                    color={selected ? colors.primary : '#9CA3AF'}
                   />
                   <View className="flex-1">
                     <Text

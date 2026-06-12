@@ -22,6 +22,7 @@ import {
 import { MOVEMENT_GROUPS, movementName } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { dueCheckIns, useMyInjuries, type InjuryRow } from '@/lib/useInjuries';
+import { useThemeColors } from '@/lib/theme';
 import type { InjuryFeeling, InjurySide, InjuryStatus } from '@/types/database';
 
 function isoToday(): string {
@@ -312,6 +313,7 @@ function CheckInForm({
   injury: InjuryRow;
   onDone: () => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [pain, setPain] = useState(injury.pain_level);
   const [feeling, setFeeling] = useState<InjuryFeeling | null>(null);
@@ -364,7 +366,7 @@ function CheckInForm({
               <Ionicons
                 name={icon as never}
                 size={13}
-                color={feeling === key ? '#2563EB' : '#9CA3AF'}
+                color={feeling === key ? colors.primary : '#9CA3AF'}
               />
               <Text
                 className={`text-xs font-semibold ${

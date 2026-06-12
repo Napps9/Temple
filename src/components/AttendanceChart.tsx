@@ -1,6 +1,8 @@
 import { Platform, Text, View } from 'react-native';
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg';
 
+import { useThemeColors } from '@/lib/theme';
+
 // Web-only attendance bar chart. Native returns null; the parent
 // renders an equivalent table for mobile.
 
@@ -19,6 +21,7 @@ const PADDING_BOTTOM = 36;
 const BAR_GAP = 6;
 
 export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
+  const colors = useThemeColors();
   if (Platform.OS !== 'web') return null;
 
   if (data.length === 0) {
@@ -79,7 +82,7 @@ export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
                 width={barW}
                 height={h}
                 rx={3}
-                fill="#2563EB"
+                fill={colors.primary}
               />
               <SvgText
                 x={x + barW / 2}

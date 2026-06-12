@@ -10,6 +10,7 @@ import { SignaturePad, type SignatureValue } from '@/components/SignaturePad';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import type { Json } from '@/types/database';
 
 type ActiveWaiver = {
@@ -28,6 +29,7 @@ function openUrl(url: string) {
 }
 
 export default function WaiverForm() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [signature, setSignature] = useState<SignatureValue | null>(null);
@@ -116,7 +118,7 @@ export default function WaiverForm() {
           onPress={() => openUrl(active.data!.file_url)}
           className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70 border border-gray-200 dark:border-gray-800">
           <View className="w-10 h-10 rounded-lg bg-primary/10 items-center justify-center">
-            <Ionicons name="document-text-outline" size={20} color="#2563EB" />
+            <Ionicons name="document-text-outline" size={20} color={colors.primary} />
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-medium">

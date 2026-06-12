@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useGymMembership, useRole } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 
 // Setup checklist shown to the gym owner on the Manage home page while
 // the gym is still being stood up. Each step is derived from a
@@ -84,6 +85,7 @@ const STEPS: Step[] = [
 type ProgressRow = { step_key: Step['key']; done: boolean };
 
 export function GymSetupChecklist() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const role = useRole();
 
@@ -115,7 +117,7 @@ export function GymSetupChecklist() {
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
       <View className="flex-row items-center gap-3">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-          <Ionicons name="rocket-outline" size={22} color="#2563EB" />
+          <Ionicons name="rocket-outline" size={22} color={colors.primary} />
         </View>
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -156,7 +158,7 @@ export function GymSetupChecklist() {
               <Ionicons
                 name={step.done ? 'checkmark' : step.icon}
                 size={15}
-                color={step.done ? '#10B981' : '#2563EB'}
+                color={step.done ? '#10B981' : colors.primary}
               />
             </View>
             <View className="flex-1">

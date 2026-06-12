@@ -21,6 +21,7 @@ import {
 import { movementName } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 import type { InjurySide, InjuryStatus } from '@/types/database';
 
 type ProfileRow = {
@@ -90,6 +91,7 @@ type OnboardingRow = {
 };
 
 export default function MemberDetailScreen() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const router = useRouter();
@@ -306,7 +308,7 @@ export default function MemberDetailScreen() {
         {cohort.data ? (
           <View className="flex-row flex-wrap gap-1">
             {cohort.data.is_intro ? <Badge label="Intro" color="#10B981" /> : null}
-            {cohort.data.is_paying ? <Badge label="Paying" color="#2563EB" /> : null}
+            {cohort.data.is_paying ? <Badge label="Paying" color={colors.primary} /> : null}
             {cohort.data.is_active ? <Badge label="Active" color="#059669" /> : null}
             {cohort.data.is_expiring_soon && cohort.data.days_until_expiry !== null ? (
               <Badge label={`Expires in ${cohort.data.days_until_expiry}d`} color="#F97316" />

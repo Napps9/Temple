@@ -11,6 +11,7 @@ import { useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 type SessionDetail = {
   id: string;
@@ -59,6 +60,7 @@ export function ClassDetailModal({
   mode: 'manage' | 'book';
   onClose: () => void;
 }) {
+  const colors = useThemeColors();
   const session = useSession();
   const canCheckIn = useCan('can_check_in_member') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
@@ -251,7 +253,7 @@ export function ClassDetailModal({
       : null;
   const inPast = start ? start.getTime() < Date.now() : false;
   const isFull = detail ? bookings.length >= detail.capacity : false;
-  const typeColor = detail?.class_types?.color ?? '#2563EB';
+  const typeColor = detail?.class_types?.color ?? colors.primary;
   const typeName = detail?.class_types?.name ?? detail?.name ?? '';
   const coachName = detail?.coach?.full_name ?? 'Coach';
 

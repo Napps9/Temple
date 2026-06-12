@@ -6,6 +6,7 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -26,6 +27,7 @@ const OPTIONS: { key: Cfg['dm_scope']; label: string; blurb: string }[] = [
 ];
 
 export function MessagingPanel() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
@@ -81,7 +83,7 @@ export function MessagingPanel() {
               <Ionicons
                 name={selected ? 'radio-button-on' : 'radio-button-off'}
                 size={18}
-                color={selected ? '#2563EB' : '#9CA3AF'}
+                color={selected ? colors.primary : '#9CA3AF'}
               />
               <View className="flex-1">
                 <Text

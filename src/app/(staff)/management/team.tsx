@@ -15,6 +15,7 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { useThemeColors } from '@/lib/theme';
 import type { GymRole } from '@/types/database';
 
 // Owners can mint any role. Admins can mint coach / staff / member only
@@ -266,6 +267,7 @@ function InviteCodeRow({
   usedAt: string | null;
   canDelete: boolean;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const brand = useGymBrand();
   const [qrOpen, setQrOpen] = useState(false);
@@ -309,7 +311,7 @@ function InviteCodeRow({
           onPress={() => setQrOpen(true)}
           hitSlop={8}
           className="w-8 h-8 rounded-md items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-          <Ionicons name="qr-code-outline" size={18} color="#2563EB" />
+          <Ionicons name="qr-code-outline" size={18} color={colors.primary} />
         </Pressable>
       ) : null}
       {canDelete ? (

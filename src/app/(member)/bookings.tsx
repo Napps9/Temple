@@ -12,6 +12,7 @@ import {
 } from '@/lib/bookings';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 
 type Tab = 'upcoming' | 'waitlisted' | 'past';
 
@@ -245,8 +246,9 @@ function BookingCard({
   onCancel?: () => void;
   cancelling?: boolean;
 }) {
+  const colors = useThemeColors();
   const start = new Date(row.starts_at);
-  const typeColor = row.class_type_color ?? '#2563EB';
+  const typeColor = row.class_type_color ?? colors.primary;
   const typeName = row.class_type_name ?? 'Class';
   const att = attendanceLabel(row);
 
@@ -290,8 +292,9 @@ function BookingCard({
 }
 
 function WaitlistCard({ row }: { row: WaitlistRow }) {
+  const colors = useThemeColors();
   const start = row.class_sessions ? new Date(row.class_sessions.starts_at) : null;
-  const typeColor = row.class_sessions?.class_types?.color ?? '#2563EB';
+  const typeColor = row.class_sessions?.class_types?.color ?? colors.primary;
   const typeName = row.class_sessions?.class_types?.name ?? 'Class';
   if (!start) return null;
   return (

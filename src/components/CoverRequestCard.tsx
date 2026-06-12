@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 
 export type CoverOffer = {
   id: string;
@@ -31,6 +32,7 @@ type Props = {
 };
 
 export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
+  const colors = useThemeColors();
   const session = useSession();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
   });
 
   const start = offer.class_sessions ? new Date(offer.class_sessions.starts_at) : null;
-  const typeColor = offer.class_sessions?.class_types?.color ?? '#2563EB';
+  const typeColor = offer.class_sessions?.class_types?.color ?? colors.primary;
   const typeName =
     offer.class_sessions?.class_types?.name ?? offer.class_sessions?.name ?? '—';
   const isSelf = session?.user.id === offer.original_coach_id;

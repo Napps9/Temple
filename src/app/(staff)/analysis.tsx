@@ -65,6 +65,7 @@ import { supabase } from '@/lib/supabase';
 import { formatSeconds } from '@/lib/track';
 import { useCan } from '@/lib/useCan';
 import { useClassTypes } from '@/lib/useClassCatalog';
+import { useThemeColors } from '@/lib/theme';
 import type { InjurySide, InjuryStatus } from '@/types/database';
 
 const TWELVE_WEEKS_MS = 12 * 7 * 24 * 60 * 60 * 1000;
@@ -614,6 +615,7 @@ function InfoButton({
   active: boolean;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -624,7 +626,7 @@ function InfoButton({
       <Ionicons
         name={active ? 'information-circle' : 'information-circle-outline'}
         size={18}
-        color={active ? '#2563EB' : '#9CA3AF'}
+        color={active ? colors.primary : '#9CA3AF'}
       />
     </Pressable>
   );

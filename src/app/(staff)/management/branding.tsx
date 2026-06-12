@@ -26,6 +26,7 @@ import { deriveDarkColour } from '@/lib/brand-derivation';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 type GymRow = {
   id: string;
@@ -445,6 +446,7 @@ function ColourField({
   // would be. Used by the dark-mode fields under Advanced branding.
   placeholderHex?: string;
 }) {
+  const colors = useThemeColors();
   const valid = normaliseHex(value);
   const swatchColour = valid ?? placeholderHex ?? '#00000000';
   const swatchFaded = !valid && !!placeholderHex;
@@ -464,7 +466,7 @@ function ColourField({
             onChangeText={onChange}
             autoCapitalize="characters"
             autoCorrect={false}
-            placeholder={placeholderHex ?? '#2563EB'}
+            placeholder={placeholderHex ?? colors.primary}
             placeholderTextColor="#9CA3AF"
             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
           />
@@ -479,7 +481,7 @@ function ColourField({
       {pickerOpen ? (
         <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3 mt-1">
           <ColourArea
-            value={valid ?? placeholderHex ?? '#2563EB'}
+            value={valid ?? placeholderHex ?? colors.primary}
             onChange={onChange}
           />
           <ColorSwatchPicker value={valid ?? ''} onChange={onChange} />
@@ -538,6 +540,7 @@ function AdvancedBrandingCard({
   pickerFor: ColourPickerTarget | null;
   onSetPicker: (v: ColourPickerTarget | null) => void;
 }) {
+  const colors = useThemeColors();
   // Resolve what the dark-mode logo row shows. Same fallback logic
   // the read path runs at useGymBrand, so what the owner sees here
   // is what members will get.
@@ -557,7 +560,7 @@ function AdvancedBrandingCard({
         onPress={onToggle}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
         <View className="w-9 h-9 rounded-lg bg-primary/10 items-center justify-center">
-          <Ionicons name="contrast-outline" size={18} color="#2563EB" />
+          <Ionicons name="contrast-outline" size={18} color={colors.primary} />
         </View>
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">

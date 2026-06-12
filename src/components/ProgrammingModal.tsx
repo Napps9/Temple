@@ -21,6 +21,7 @@ import {
 } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { useThemeColors } from '@/lib/theme';
 
 // Draft state allows category and format to be unpicked while the
 // coach is still adding a section. On save, drafts with any content
@@ -350,6 +351,7 @@ function DraftCard({
   onPickFormat: () => void;
   onRemove: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 gap-3">
       <Pressable
@@ -410,7 +412,7 @@ function DraftCard({
         <Ionicons
           name={draft.leaderboard_enabled ? 'checkbox' : 'square-outline'}
           size={20}
-          color={draft.leaderboard_enabled ? '#2563EB' : '#9CA3AF'}
+          color={draft.leaderboard_enabled ? colors.primary : '#9CA3AF'}
         />
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">

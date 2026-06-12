@@ -33,6 +33,7 @@ import {
 } from '@/lib/track-sections';
 import { parseDuration } from '@/lib/track';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { useThemeColors } from '@/lib/theme';
 
 type MovementTagDraft = {
   movement_key: string;
@@ -154,6 +155,7 @@ export function RecordWorkoutModal({
   initialClassSessionId?: string | null;
   initialTitle?: string | null;
 }) {
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
@@ -213,7 +215,7 @@ export function RecordWorkoutModal({
             programming_id: row.id,
             class_type_id: row.class_type_id,
             class_type_name: row.class_types?.name ?? 'Class',
-            class_type_color: row.class_types?.color ?? '#2563EB',
+            class_type_color: row.class_types?.color ?? colors.primary,
             section_index: i,
             section: sections[i],
           });
@@ -1062,6 +1064,7 @@ function QuickFillBar({
     values: Partial<SectionEntryDraft>,
   ) => void;
 }) {
+  const colors = useThemeColors();
   const [expanded, setExpanded] = useState(false);
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
@@ -1093,7 +1096,7 @@ function QuickFillBar({
       <Pressable
         onPress={() => setExpanded(true)}
         className="flex-row items-center gap-2 self-start px-3 py-1.5 rounded-full bg-primary/10 active:opacity-70">
-        <Ionicons name="flash-outline" size={14} color="#2563EB" />
+        <Ionicons name="flash-outline" size={14} color={colors.primary} />
         <Text className="text-primary text-xs font-medium">
           Quick fill {rowLabel}
         </Text>
@@ -1117,7 +1120,7 @@ function QuickFillBar({
   return (
     <View className="bg-primary/5 border border-primary/20 rounded-lg p-3 gap-3">
       <View className="flex-row items-center gap-2">
-        <Ionicons name="flash-outline" size={14} color="#2563EB" />
+        <Ionicons name="flash-outline" size={14} color={colors.primary} />
         <Text className="flex-1 text-primary text-xs font-semibold uppercase tracking-wider">
           Quick fill {rowLabel}
         </Text>
@@ -1404,6 +1407,7 @@ function SchemeRow({
   selected: boolean;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -1415,7 +1419,7 @@ function SchemeRow({
       <Ionicons
         name={selected ? 'checkmark-circle' : 'ellipse-outline'}
         size={16}
-        color={selected ? '#2563EB' : '#9CA3AF'}
+        color={selected ? colors.primary : '#9CA3AF'}
       />
       <Text
         className={
