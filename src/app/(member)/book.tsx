@@ -7,7 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, isParqRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 const EIGHT_WEEKS_MS = 56 * 24 * 60 * 60 * 1000;
@@ -162,7 +162,15 @@ function RecommendedClassCard() {
       queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['recommended-class'] });
     },
-    onError: (e) => setError(errorMessage(e, 'Could not book this class')),
+    onError: (e) => {
+      if (isParqRequiredError(e)) {
+        // Send the booker straight to the screening form rather than
+        // making them parse a raw error.
+        router.push('/parq');
+        return;
+      }
+      setError(errorMessage(e, 'Could not book this class'));
+    },
   });
 
   const rec = recommendation.data;

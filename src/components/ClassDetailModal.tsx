@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -7,7 +8,7 @@ import { Button } from '@/components/Button';
 import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
 import { useSession } from '@/lib/auth';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, isParqRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
@@ -161,7 +162,16 @@ export function ClassDetailModal({
       setConfirming(null);
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
     },
-    onError: (e) => setError(errorMessage(e, 'Could not book class')),
+    onError: (e) => {
+      if (isParqRequiredError(e)) {
+        // Send the booker into the screening form so they don't see
+        // the raw RPC message and have a clear next step.
+        close();
+        router.push('/parq');
+        return;
+      }
+      setError(errorMessage(e, 'Could not book class'));
+    },
   });
 
   const cancel = useMutation({

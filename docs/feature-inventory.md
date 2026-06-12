@@ -22,8 +22,13 @@ permission gate that controls visibility for staff features.
   of RLS).
 - **Self-cancel bookings** — credits refunded according to the plan
   type (unlimited gets none; credit packs / comp grants do).
-- **Health/PAR-Q gate** — annual screening flow, with allow-with-flag
-  if the member ticks a flagged answer.
+- **Health/PAR-Q gate** — annual (365-day) screening flow, with
+  allow-with-flag if the member ticks a flagged answer. Enforced both
+  as a member entry redirect and as a **booking prerequisite** inside
+  `_book_class_for`: coaches and owners (who bypass the entry gate)
+  can't book a class for themselves until they've completed PAR-Q.
+  Bootstrap-safe: a gym with no published questionnaire is unguarded
+  so an owner can publish one in the first place.
 
 ### Plans, payments & onboarding
 - **Plan subscription self-view** — see active plans, credit balance,
@@ -287,10 +292,6 @@ Items the conversation has flagged but not implemented yet:
   scheduling `purge_expired_health_data()` in the hosted environment
   (pg_cron / nightly job). The engineering surround (consent gate,
   erasure, retention sweep, audit log) has shipped.
-- **PAR-Q gate for staff** — staff currently bypass PAR-Q (consent
-  gates them, PAR-Q doesn't) to avoid the owner-can't-publish-the-
-  questionnaire bootstrap deadlock. Gate staff once a questionnaire
-  exists.
 - Health-data reads hardened to definer-function access (today the
   audit log is written by the app surfaces, not enforced at the row
   level for raw API calls).
