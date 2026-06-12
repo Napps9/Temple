@@ -32,11 +32,15 @@ alter table public.gyms
 -- 2. set_gym_branding — extended to write the dark variants too
 -- ============================================================================
 --
--- All dark params are optional / nullable so callers that don't care
--- about dark mode can keep using the original four-arg signature; the
--- new keyword-style args fall through to null, which the read path
--- treats as "use the auto-derived value." A null logo_url_dark falls
--- back to the light logo on the render side.
+-- All dark params have null defaults so the existing client callsite
+-- (5 args) keeps working — those calls leave the dark columns null,
+-- which the read path treats as "auto-derive at render time." The
+-- explicit DROP is needed because `create or replace` won't change a
+-- function's arity in place; without it, Postgres ends up with both
+-- a 5-arg and a 9-arg overload, which can resolve ambiguously when
+-- the 9-arg form is called with the dark args defaulted.
+
+drop function if exists public.set_gym_branding(uuid, text, text, text, text);
 
 create or replace function public.set_gym_branding(
   p_gym_id          uuid,
@@ -77,6 +81,13 @@ grant execute on function public.set_gym_branding(
 -- ============================================================================
 -- 3. gym_by_slug — expose the dark variants on the public read
 -- ============================================================================
+--
+-- Adding columns to a `returns table (...)` shape is a return-type
+-- change, so `create or replace` raises SQLSTATE 42P13 — the function
+-- has to be dropped and recreated. The signature (arg list) is
+-- unchanged so callers don't notice.
+
+drop function if exists public.gym_by_slug(text);
 
 create or replace function public.gym_by_slug(p_slug text)
 returns table (
