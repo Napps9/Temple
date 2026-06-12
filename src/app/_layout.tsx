@@ -19,6 +19,29 @@ const queryClient = new QueryClient({
   },
 });
 
+// Find-or-create a single `<meta name=...>` tag and set its content,
+// so re-rendering doesn't pile up duplicates in <head>.
+function setMetaTag(name: string, content: string) {
+  let tag = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+  if (!tag) {
+    tag = document.createElement('meta');
+    tag.setAttribute('name', name);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('content', content);
+}
+
+// Find-or-create a single `<link rel=...>` tag and set its href.
+function setLinkTag(rel: string, href: string) {
+  let tag = document.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+  if (!tag) {
+    tag = document.createElement('link');
+    tag.setAttribute('rel', rel);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('href', href);
+}
+
 // A crash anywhere in the tree used to render as a silent black screen
 // on the deployed app — no error, no route, nothing to report. Render
 // the message + stack instead so a screenshot of a failure is also the
@@ -147,6 +170,58 @@ function ThemedShell() {
     meta.content = colors.screenBg;
     document.head.appendChild(meta);
   }, [colors.screenBg]);
+
+  // PWA branding — make the browser tab, the iOS "Add to Home Screen"
+  // icon, and the Android PWA install dialog all use the gym's logo and
+  // name. The web build sits on a single domain, so we can't ship per-
+  // gym static favicons — we swap the link / meta tags at runtime once
+  // useGymBrand resolves. Members who tap "Add to Home Screen" while
+  // signed into their gym get a tappable icon that IS their gym's
+  // logo, with the gym's name underneath, launching into the standalone
+  // PWA. Falls back to the Temple defaults when no logo is configured.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const { logoUrl, gymName, primaryColor } = brand;
+
+    document.title = gymName;
+    setMetaTag('apple-mobile-web-app-title', gymName);
+    setMetaTag('apple-mobile-web-app-capable', 'yes');
+    setMetaTag('mobile-web-app-capable', 'yes');
+    setMetaTag(
+      'apple-mobile-web-app-status-bar-style',
+      'black-translucent',
+    );
+
+    if (logoUrl) {
+      setLinkTag('icon', logoUrl);
+      setLinkTag('shortcut icon', logoUrl);
+      setLinkTag('apple-touch-icon', logoUrl);
+    }
+
+    // Inline manifest as a data URL — avoids needing a server route for
+    // a value derived from runtime state. Chrome / Android use this to
+    // populate the "Install app" dialog with the gym's name + icon.
+    const manifest = {
+      name: gymName,
+      short_name: gymName,
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      background_color: colors.screenBg,
+      theme_color: primaryColor,
+      icons: logoUrl
+        ? [
+            { src: logoUrl, sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: logoUrl, sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: logoUrl, sizes: 'any', type: 'image/png', purpose: 'maskable' },
+          ]
+        : [],
+    };
+    const manifestDataUrl =
+      'data:application/manifest+json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(manifest));
+    setLinkTag('manifest', manifestDataUrl);
+  }, [brand, colors.screenBg]);
 
   return (
     <View style={themeVars} className="flex-1">

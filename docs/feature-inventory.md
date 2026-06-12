@@ -260,6 +260,14 @@ actions are owner-only by policy:
 - **Mobile + desktop** — every page responsive; mobile-specific
   tweaks for the body map, the programming matrix, the navigation bar
   pill layout, and the Manage tab strip.
+- **PWA branding** — browser-tab favicon, iOS apple-touch-icon, web
+  manifest (Chrome / Android "Install app"), document title and
+  apple-mobile-web-app-title are all swapped at runtime from
+  `useGymBrand`. A member who taps "Add to Home Screen" while signed
+  into their gym gets an installed app whose icon IS their gym's logo
+  and whose label IS their gym's name — falls back to the Temple
+  defaults when no logo is configured. (Native App Store binaries
+  stay Temple-branded; only the web/PWA install is per-gym.)
 - **Crash screen** — production error boundary with stack +
   componentStack + route + try-again.
 - **Capability matrix** — every staff feature is gated by a single
