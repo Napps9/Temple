@@ -169,14 +169,16 @@ export async function acceptInvite(
   password: string,
   fullName: string,
 ) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  // The on_auth_user_created trigger (0042) creates the profiles row
+  // server-side from raw_user_meta_data.full_name, so the client never
+  // writes to profiles directly — avoids the post-signUp RLS rejection
+  // when the session hasn't propagated to the client's JWT yet.
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  });
   if (error) throw error;
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({ id: data.user.id, full_name: fullName });
-    if (profileError) throw profileError;
-  }
   const { error: rpcError } = await supabase.rpc('accept_invite', { invite_code: code });
   if (rpcError) throw rpcError;
 }
@@ -201,14 +203,12 @@ export async function createGymWithSignup(args: {
   gymSlug: string;
 }): Promise<{ gymId: string }> {
   const { email, password, fullName, gymName, gymSlug } = args;
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  });
   if (error) throw error;
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({ id: data.user.id, full_name: fullName });
-    if (profileError) throw profileError;
-  }
   const { data: gymId, error: rpcError } = await supabase.rpc('create_gym', {
     p_name: gymName,
     p_slug: gymSlug,
@@ -226,14 +226,12 @@ export async function joinGymWithSignup(args: {
   slug: string;
 }): Promise<{ gymId: string }> {
   const { email, password, fullName, slug } = args;
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  });
   if (error) throw error;
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({ id: data.user.id, full_name: fullName });
-    if (profileError) throw profileError;
-  }
   const { data: gymId, error: rpcError } = await supabase.rpc('join_gym_by_slug', {
     p_slug: slug,
   });

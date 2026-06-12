@@ -37,7 +37,11 @@ begin
     '',
     now(), '{}', '{}', now(), now()
   );
-  insert into public.profiles (id, full_name) values (v_id, p_email);
+  -- The on_auth_user_created trigger (0042) inserts a profiles row with
+  -- null full_name (test fixture metadata is empty). Upsert here so the
+  -- helper's chosen name wins for tests that read profiles.full_name.
+  insert into public.profiles (id, full_name) values (v_id, p_email)
+  on conflict (id) do update set full_name = excluded.full_name;
   return v_id;
 end;
 $$;
