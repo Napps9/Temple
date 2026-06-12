@@ -11,20 +11,24 @@ import { supabase } from '@/lib/supabase';
 // the gym is still being stood up. Each step is derived from a
 // concrete query against the live data — when the owner uploads a
 // logo / publishes PAR-Q / adds a plan, the matching step flips done.
-// The whole card disappears once all five are complete, so it never
-// nags a finished gym.
+// The whole card disappears once every *required* step is complete so
+// it never nags a finished gym; the team-invite step is optional so a
+// solo coach isn't kept in the nag state.
 //
-// Admin can finish four of the five (logo, class type, schedule,
-// PAR-Q) but not plans (`can_manage_plans` is owner-only by default),
-// so the checklist is owner-only by role to avoid showing an admin a
-// task they can't complete.
+// Admin can finish the non-plan steps but not plans
+// (`can_manage_plans` is owner-only by default), so the checklist is
+// owner-only by role to avoid showing an admin a task they can't
+// complete.
 
 type Step = {
-  key: 'logo' | 'class_type' | 'schedule' | 'parq' | 'plan';
+  key: 'logo' | 'class_type' | 'schedule' | 'parq' | 'plan' | 'team';
   label: string;
   description: string;
   href: string;
   icon: keyof typeof Ionicons.glyphMap;
+  // Optional steps don't keep the card alive — once every required
+  // step is done the whole thing vanishes regardless of optionals.
+  optional?: boolean;
 };
 
 const STEPS: Step[] = [
@@ -66,6 +70,15 @@ const STEPS: Step[] = [
     href: '/management/plans',
     icon: 'card-outline',
   },
+  {
+    key: 'team',
+    label: 'Invite your team',
+    description:
+      'Generate an invite code for an admin, coach or member of staff. Skip if you run solo.',
+    href: '/management/team',
+    icon: 'people-outline',
+    optional: true,
+  },
 ];
 
 type ProgressRow = { step_key: Step['key']; done: boolean };
@@ -94,8 +107,9 @@ export function GymSetupChecklist() {
 
   if (role !== 'owner') return null;
   if (progress.isLoading || !progress.data) return null;
-  const doneCount = status.filter((s) => s.done).length;
-  if (doneCount === STEPS.length) return null;
+  const requiredSteps = STEPS.filter((s) => !s.optional);
+  const requiredDone = status.filter((s) => !s.optional && s.done).length;
+  if (requiredDone === requiredSteps.length) return null;
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
@@ -108,15 +122,16 @@ export function GymSetupChecklist() {
             Get your gym ready
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            {doneCount} of {STEPS.length} done
+            {requiredDone} of {requiredSteps.length} done
           </Text>
         </View>
       </View>
 
-      {/* Progress bar */}
+      {/* Progress bar tracks the required steps so the bar fills 100%
+          even if the optional team step is still untouched. */}
       <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
         <View
-          style={{ width: `${(doneCount / STEPS.length) * 100}%` }}
+          style={{ width: `${(requiredDone / requiredSteps.length) * 100}%` }}
           className="h-full bg-primary rounded-full"
         />
       </View>
@@ -145,14 +160,21 @@ export function GymSetupChecklist() {
               />
             </View>
             <View className="flex-1">
-              <Text
-                className={`text-sm font-medium ${
-                  step.done
-                    ? 'text-gray-400 dark:text-gray-500 line-through'
-                    : 'text-gray-900 dark:text-gray-50'
-                }`}>
-                {step.label}
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Text
+                  className={`text-sm font-medium ${
+                    step.done
+                      ? 'text-gray-400 dark:text-gray-500 line-through'
+                      : 'text-gray-900 dark:text-gray-50'
+                  }`}>
+                  {step.label}
+                </Text>
+                {step.optional && !step.done ? (
+                  <Text className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                    Optional
+                  </Text>
+                ) : null}
+              </View>
               {!step.done ? (
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
                   {step.description}

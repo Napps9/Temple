@@ -1,9 +1,10 @@
 -- get_gym_setup_progress reflects the actual gym state, step by step.
 -- A fresh gym reports every step pending; doing each setup action
--- flips its matching flag.
+-- flips its matching flag. Six steps in total — the team step is
+-- treated as optional client-side but the RPC still reports it.
 
 begin;
-select plan(7);
+select plan(8);
 
 \ir _helpers.psql
 
@@ -108,12 +109,29 @@ select is(
   'plan step flips done when an active membership plan exists'
 );
 
--- 7. All five complete: count = 5.
+-- 7. team flips after an invite code is generated.
+do $$
+begin
+  insert into public.invite_codes (gym_id, code, role, created_by)
+    values (current_setting('test.gym')::uuid,
+            'TEAM-INVITE-' || substr(gen_random_uuid()::text, 1, 8),
+            'coach',
+            current_setting('test.owner')::uuid);
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'team'),
+  true,
+  'team step flips done when an invite code has been generated'
+);
+
+-- 8. All six complete: count = 6.
 select is(
   (select count(*) from public.get_gym_setup_progress(
      current_setting('test.gym')::uuid) where done)::int,
-  5,
-  'all five steps report done once each table is populated'
+  6,
+  'all six steps report done once each table is populated'
 );
 
 select * from finish();
