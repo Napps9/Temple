@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { gymInitial, inviteUrl, joinUrl, normaliseHex, slugify } from './brand';
+import {
+  gymInitial,
+  hexToPrimaryDarkRgbTriplet,
+  hexToRgbTriplet,
+  inviteUrl,
+  joinUrl,
+  normaliseHex,
+  slugify,
+} from './brand';
 
 describe('normaliseHex', () => {
   it('accepts a valid 6-char hex with or without the hash', () => {
@@ -68,5 +76,36 @@ describe('inviteUrl', () => {
     expect(inviteUrl('https://app.temple/', 'X1Y2')).toBe(
       'https://app.temple/accept-invite?code=X1Y2',
     );
+  });
+});
+
+describe('hexToRgbTriplet', () => {
+  it('converts a hex with the leading hash', () => {
+    expect(hexToRgbTriplet('#2563EB')).toBe('37 99 235');
+  });
+  it('converts a hex without the leading hash', () => {
+    expect(hexToRgbTriplet('EBE925')).toBe('235 233 37');
+  });
+  it('handles pure black and pure white', () => {
+    expect(hexToRgbTriplet('#000000')).toBe('0 0 0');
+    expect(hexToRgbTriplet('#FFFFFF')).toBe('255 255 255');
+  });
+  it('falls back to the default for malformed input', () => {
+    expect(hexToRgbTriplet('#nope')).toBe('37 99 235');
+    expect(hexToRgbTriplet('')).toBe('37 99 235');
+    expect(hexToRgbTriplet('zzzzzz')).toBe('37 99 235');
+  });
+});
+
+describe('hexToPrimaryDarkRgbTriplet', () => {
+  it('darkens each channel by ~15%', () => {
+    // 235 * 0.85 = 199.75 → 200; 99 * 0.85 = 84.15 → 84
+    expect(hexToPrimaryDarkRgbTriplet('#2563EB')).toBe('31 84 200');
+  });
+  it('keeps black at black', () => {
+    expect(hexToPrimaryDarkRgbTriplet('#000000')).toBe('0 0 0');
+  });
+  it('falls back to the default-dark on malformed input', () => {
+    expect(hexToPrimaryDarkRgbTriplet('nope')).toBe('29 78 216');
   });
 });

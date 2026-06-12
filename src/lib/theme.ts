@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'nativewind';
 import { useEffect } from 'react';
 
+import { useGymBrand } from './useGymBrand';
+
 const KEY = 'app_theme';
 
 export type Scheme = 'light' | 'dark';
@@ -30,6 +32,7 @@ export function useThemePreference() {
 
 export function useThemeColors() {
   const { scheme } = useThemePreference();
+  const brand = useGymBrand();
   const dark = scheme === 'dark';
   return {
     screenBg: dark ? '#030712' : '#F1F5F9',
@@ -37,7 +40,9 @@ export function useThemeColors() {
     iconSecondary: '#6B7280',
     iconTertiary: dark ? '#6B7280' : '#9CA3AF',
     statusBar: dark ? ('light' as const) : ('dark' as const),
-    primary: '#2563EB',
+    // Runtime brand primary — components calling `colors.primary`
+    // for an Ionicon tint etc. follow the gym's saved colour.
+    primary: brand.primaryColor,
     white: '#FFFFFF',
   };
 }

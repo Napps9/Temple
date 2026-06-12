@@ -73,3 +73,37 @@ export function inviteUrl(origin: string, code: string): string {
   const cleanedOrigin = origin.replace(/\/+$/, '');
   return `${cleanedOrigin}/accept-invite?code=${encodeURIComponent(code)}`;
 }
+
+// Default RGB triplet for the build-time primary; returned when a hex
+// can't be parsed so a malformed `gyms.primary_color` never blanks the
+// chrome.
+const DEFAULT_PRIMARY_RGB = '37 99 235';
+const DEFAULT_PRIMARY_DARK_RGB = '29 78 216';
+
+// Convert "#2563EB" → "37 99 235" (space-separated RGB triplet) for
+// CSS variables that Tailwind splices into `rgb(... / <alpha-value>)`.
+// Accepts hex with or without the leading hash; falls back to the
+// default blue if the input isn't a valid 6-char hex.
+export function hexToRgbTriplet(hex: string): string {
+  const clean = hex.replace(/^#/, '');
+  if (!/^[0-9A-Fa-f]{6}$/.test(clean)) return DEFAULT_PRIMARY_RGB;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `${r} ${g} ${b}`;
+}
+
+// `primary-dark` is the pressed/hover variant of primary. Tailwind
+// shipped `bg-primary-dark` for active states on Button, so the
+// runtime token needs to track primary at ~15% darker. Returning the
+// triplet form keeps it usable in the same `rgb(... / <alpha-value>)`
+// shape.
+export function hexToPrimaryDarkRgbTriplet(hex: string): string {
+  const clean = hex.replace(/^#/, '');
+  if (!/^[0-9A-Fa-f]{6}$/.test(clean)) return DEFAULT_PRIMARY_DARK_RGB;
+  const darken = (c: number) => Math.max(0, Math.round(c * 0.85));
+  const r = darken(parseInt(clean.slice(0, 2), 16));
+  const g = darken(parseInt(clean.slice(2, 4), 16));
+  const b = darken(parseInt(clean.slice(4, 6), 16));
+  return `${r} ${g} ${b}`;
+}

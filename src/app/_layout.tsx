@@ -3,12 +3,15 @@ import '@/global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Component, useEffect, type ReactNode } from 'react';
+import { vars } from 'nativewind';
+import { Component, useEffect, useMemo, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { hexToPrimaryDarkRgbTriplet, hexToRgbTriplet } from '@/lib/brand';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
+import { useGymBrand } from '@/lib/useGymBrand';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +97,40 @@ export default function RootLayout() {
 function ThemedShell() {
   useThemePreference();
   const colors = useThemeColors();
+  const brand = useGymBrand();
+
+  // Drive Tailwind's `primary` token from the gym's saved colour. The
+  // var() helper writes both web CSS variables (consumed by tailwind's
+  // `rgb(var(--color-primary) / <alpha-value>)`) and NativeWind's
+  // runtime style cascade, so `bg-primary` / `text-primary` / etc.
+  // pick up the brand everywhere in the tree without a per-component
+  // refactor. Memoised so we don't re-create the style object on
+  // unrelated re-renders.
+  const themeVars = useMemo(
+    () =>
+      vars({
+        '--color-primary': hexToRgbTriplet(brand.primaryColor),
+        '--color-primary-dark': hexToPrimaryDarkRgbTriplet(brand.primaryColor),
+      }),
+    [brand.primaryColor],
+  );
+
+  // Belt-and-braces for web: writing the vars onto `documentElement`
+  // means even content rendered outside the React tree (theme-color
+  // meta tag, scroll bar gutter, etc.) sees the same primary, and the
+  // values survive route-level remounts without a frame of default
+  // blue.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    document.documentElement.style.setProperty(
+      '--color-primary',
+      hexToRgbTriplet(brand.primaryColor),
+    );
+    document.documentElement.style.setProperty(
+      '--color-primary-dark',
+      hexToPrimaryDarkRgbTriplet(brand.primaryColor),
+    );
+  }, [brand.primaryColor]);
 
   // Keep the browser's OS-chrome colour (Safari notch tint, Android URL bar)
   // in sync with the in-app theme. +html.tsx ships two prefers-color-scheme
@@ -112,7 +149,7 @@ function ThemedShell() {
   }, [colors.screenBg]);
 
   return (
-    <>
+    <View style={themeVars} className="flex-1">
       <StatusBar style={colors.statusBar} />
       <Stack
         screenOptions={{
@@ -124,6 +161,6 @@ function ThemedShell() {
         <Stack.Screen name="(staff)" />
         <Stack.Screen name="(member)" />
       </Stack>
-    </>
+    </View>
   );
 }
