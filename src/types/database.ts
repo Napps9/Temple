@@ -41,6 +41,10 @@ export type Database = {
           secondary_color: string;
           text_color: string;
           public_signup_enabled: boolean;
+          logo_url_dark: string | null;
+          primary_color_dark: string | null;
+          secondary_color_dark: string | null;
+          text_color_dark: string | null;
         };
         Insert: {
           id?: string;
@@ -57,6 +61,10 @@ export type Database = {
           secondary_color?: string;
           text_color?: string;
           public_signup_enabled?: boolean;
+          logo_url_dark?: string | null;
+          primary_color_dark?: string | null;
+          secondary_color_dark?: string | null;
+          text_color_dark?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -73,6 +81,10 @@ export type Database = {
           secondary_color: string;
           text_color: string;
           public_signup_enabled: boolean;
+          logo_url_dark: string | null;
+          primary_color_dark: string | null;
+          secondary_color_dark: string | null;
+          text_color_dark: string | null;
         }>;
         Relationships: [];
       };
@@ -1882,6 +1894,10 @@ export type Database = {
           secondary_color: string;
           text_color: string;
           public_signup_enabled: boolean;
+          logo_url_dark: string | null;
+          primary_color_dark: string | null;
+          secondary_color_dark: string | null;
+          text_color_dark: string | null;
         }[];
       };
       create_gym: {
@@ -1899,6 +1915,10 @@ export type Database = {
           p_primary_color: string;
           p_secondary_color: string;
           p_text_color: string;
+          p_logo_url_dark?: string | null;
+          p_primary_color_dark?: string | null;
+          p_secondary_color_dark?: string | null;
+          p_text_color_dark?: string | null;
         };
         Returns: null;
       };

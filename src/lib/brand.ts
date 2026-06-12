@@ -9,24 +9,48 @@ export const DEFAULT_BRAND = {
   textColor: '#0F172A',
 } as const;
 
-export type GymBrand = {
-  gymId: string | null;
-  gymName: string;
-  slug: string | null;
+// Per-mode (light vs dark) brand surface. Each mode owns its own logo
+// and its own three brand colours so a gym with an inverse logo for
+// dark backgrounds (and lifted brand colours that read on dark
+// chrome) can configure both. When the dark fields are unset they're
+// derived from the light ones at read time — see useGymBrand.ts.
+export type BrandMode = {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
   textColor: string;
+};
+
+export type GymBrand = {
+  gymId: string | null;
+  gymName: string;
+  slug: string | null;
   publicSignupEnabled: boolean;
+  // Resolved for the active colour scheme — what the chrome should
+  // render right now. Every consumer (TopNav, Button, QR cards, …)
+  // reads from here without caring which mode is active.
+  logoUrl: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  textColor: string;
+  // Both modes, exposed so the Advanced branding editor and the live
+  // preview can render the pair side-by-side. The dark mode is
+  // auto-derived from light when no explicit dark values were saved.
+  modes: { light: BrandMode; dark: BrandMode };
+};
+
+const FALLBACK_MODE: BrandMode = {
+  logoUrl: null,
+  ...DEFAULT_BRAND,
 };
 
 export const FALLBACK_BRAND: GymBrand = {
   gymId: null,
   gymName: 'Temple',
   slug: null,
-  logoUrl: null,
-  ...DEFAULT_BRAND,
   publicSignupEnabled: true,
+  ...FALLBACK_MODE,
+  modes: { light: FALLBACK_MODE, dark: FALLBACK_MODE },
 };
 
 // Normalise a hex input the user typed into the colour fields:

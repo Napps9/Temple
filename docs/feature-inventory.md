@@ -179,7 +179,15 @@ The Manage page presents a tab strip:
   with dependent-row protection.
 - **Settings** — collapsible cards:
   - **Branding** — gym name, slug, logo upload, primary / secondary /
-    text colours with inline HSV picker, public-signup toggle.
+    text colours with inline HSV picker, public-signup toggle. An
+    **Advanced branding** collapsible adds a dark-mode logo and a
+    second colour palette — any field left blank is auto-derived from
+    the light values via WCAG-contrast against the dark screen bg
+    (`deriveDarkColour`), and a one-tap "Auto-generate from light"
+    button fills the lot. The runtime `useGymBrand` resolves the right
+    set based on the active colour scheme, so every chrome consumer
+    (TopNav, Button, QR cards…) flips automatically when the user
+    toggles light/dark.
   - **Health screening** [`can_manage_parq`] — upload a waiver PDF for
     members to sign (primary), and/or build a question-by-question
     PAR-Q (optional extra); publish new versions of either. One is
