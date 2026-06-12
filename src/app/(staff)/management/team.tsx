@@ -1,15 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { InviteQRModal } from '@/components/InviteQRModal';
 import { Screen } from '@/components/Screen';
+import { WalkInQRCard } from '@/components/WalkInQRCard';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import { inviteUrl } from '@/lib/brand';
 import { can, type Capability } from '@/lib/can';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useGymBrand } from '@/lib/useGymBrand';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import type { GymRole } from '@/types/database';
 
@@ -104,6 +108,14 @@ export default function TeamScreen() {
   const [role, setRole] = useState<GymRole>('member');
   const [generated, markGenerated] = useSavedFlag();
 
+  const brand = useGymBrand();
+  const [newQrOpen, setNewQrOpen] = useState(false);
+
+  const origin =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://app.temple';
+
   const roleOptions = callerRole === 'owner' ? ALL_ROLES : ADMIN_ROLES;
 
   const codes = useQuery({
@@ -139,12 +151,15 @@ export default function TeamScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
+        <WalkInQRCard />
+
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Issue invite
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Pick a role and generate a code.
+            Pick a role and generate a code. Each code becomes a scannable QR
+            for the invitee.
           </Text>
         </View>
 
@@ -187,11 +202,26 @@ export default function TeamScreen() {
         ) : null}
 
         {create.data ? (
-          <View className="bg-primary/10 border border-primary/40 rounded-xl p-4 gap-1">
+          <View className="bg-primary/10 border border-primary/40 rounded-xl p-4 gap-2">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               New code (share with the invitee)
             </Text>
             <Text className="text-primary text-2xl tracking-widest">{create.data}</Text>
+            <View className="flex-row gap-2 pt-1">
+              <ChipButton
+                label="Show QR"
+                icon="qr-code-outline"
+                onPress={() => setNewQrOpen(true)}
+              />
+            </View>
+            <InviteQRModal
+              visible={newQrOpen}
+              onClose={() => setNewQrOpen(false)}
+              title={`Join ${brand.gymName}`}
+              subtitle={`Invite code · ${create.data}`}
+              url={inviteUrl(origin, create.data)}
+              primaryColor={brand.primaryColor}
+            />
           </View>
         ) : null}
 
@@ -237,6 +267,8 @@ function InviteCodeRow({
   canDelete: boolean;
 }) {
   const queryClient = useQueryClient();
+  const brand = useGymBrand();
+  const [qrOpen, setQrOpen] = useState(false);
   const remove = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from('invite_codes').delete().eq('id', id);
@@ -246,6 +278,16 @@ function InviteCodeRow({
       queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
     },
   });
+
+  const origin =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://app.temple';
+
+  // Used codes can't be redeemed again, so we hide the QR button for
+  // them — showing it would suggest the link still works.
+  const showQr = !usedAt;
+
   return (
     <View className="flex-row justify-between items-center bg-white dark:bg-gray-900 rounded-lg p-3 gap-3">
       <View className="flex-1">
@@ -262,6 +304,14 @@ function InviteCodeRow({
         }`}>
         {usedAt ? 'used' : 'unused'}
       </Text>
+      {showQr ? (
+        <Pressable
+          onPress={() => setQrOpen(true)}
+          hitSlop={8}
+          className="w-8 h-8 rounded-md items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+          <Ionicons name="qr-code-outline" size={18} color="#2563EB" />
+        </Pressable>
+      ) : null}
       {canDelete ? (
         <Pressable
           onPress={() => remove.mutate()}
@@ -275,6 +325,14 @@ function InviteCodeRow({
           />
         </Pressable>
       ) : null}
+      <InviteQRModal
+        visible={qrOpen}
+        onClose={() => setQrOpen(false)}
+        title={`Join ${brand.gymName}`}
+        subtitle={`${role} invite · ${code}`}
+        url={inviteUrl(origin, code)}
+        primaryColor={brand.primaryColor}
+      />
     </View>
   );
 }

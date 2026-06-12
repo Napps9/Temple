@@ -154,7 +154,10 @@ The Manage page presents a tab strip:
 - **Team** [`can_manage_staff`] — staff roster with inline open-task
   + open-cover-request counts; per-coach earnings + class-type
   qualifications; SOPs card; Invite codes card (one-time codes to
-  add owner / admin / coach / staff / member).
+  add owner / admin / coach / staff / member). Walk-in QR card
+  encodes the public signup URL for the front desk; every issued
+  invite code has a scannable QR pointing at `/accept-invite?code=…`
+  so staff invites can be sent as a single image.
 - **Plans** [`can_manage_plans`] — Unlimited / Credit period /
   Credit pack plans with monthly price + notice period (days);
   Class-type allowlist per plan; Archive / Restore / Hard delete

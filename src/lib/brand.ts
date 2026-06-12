@@ -65,3 +65,11 @@ export function joinUrl(origin: string, slug: string): string {
   const cleanedOrigin = origin.replace(/\/+$/, '');
   return `${cleanedOrigin}/join/${slug}`;
 }
+
+// Construct the accept-invite URL for a specific code. Used by the
+// per-invite QR so scanning it lands in the signup flow with the
+// code pre-filled.
+export function inviteUrl(origin: string, code: string): string {
+  const cleanedOrigin = origin.replace(/\/+$/, '');
+  return `${cleanedOrigin}/accept-invite?code=${encodeURIComponent(code)}`;
+}

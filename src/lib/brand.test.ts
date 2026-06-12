@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { gymInitial, joinUrl, normaliseHex, slugify } from './brand';
+import { gymInitial, inviteUrl, joinUrl, normaliseHex, slugify } from './brand';
 
 describe('normaliseHex', () => {
   it('accepts a valid 6-char hex with or without the hash', () => {
@@ -49,6 +49,24 @@ describe('joinUrl', () => {
   it('handles a trailing slash on the origin', () => {
     expect(joinUrl('https://app.temple/', 'iron-temple')).toBe(
       'https://app.temple/join/iron-temple',
+    );
+  });
+});
+
+describe('inviteUrl', () => {
+  it('builds /accept-invite?code=…', () => {
+    expect(inviteUrl('https://app.temple', 'ABCD1234')).toBe(
+      'https://app.temple/accept-invite?code=ABCD1234',
+    );
+  });
+  it('url-encodes codes that contain unsafe characters', () => {
+    expect(inviteUrl('https://app.temple', 'A B/C')).toBe(
+      'https://app.temple/accept-invite?code=A%20B%2FC',
+    );
+  });
+  it('handles a trailing slash on the origin', () => {
+    expect(inviteUrl('https://app.temple/', 'X1Y2')).toBe(
+      'https://app.temple/accept-invite?code=X1Y2',
     );
   });
 });
