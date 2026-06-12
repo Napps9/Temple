@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -278,6 +279,16 @@ export function ClassDetailModal({
         <Pressable
           onPress={() => {}}
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5">
+          {/* Close X — discoverable affordance on mobile where the
+              tap-outside isn't obvious. */}
+          <Pressable
+            onPress={close}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            className="absolute right-3 top-3 w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+            <Ionicons name="close" size={20} color="#6B7280" />
+          </Pressable>
           {sessionQuery.isLoading || !detail ? (
             <View className="py-6 items-center">
               <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
