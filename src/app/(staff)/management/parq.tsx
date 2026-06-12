@@ -270,8 +270,9 @@ export function HealthScreeningPanel() {
               Question-by-question PAR-Q
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Optional extra — structured health questions that raise a
-              staff flag on a "yes". Adds to the waiver, doesn't replace it.
+              Optional. Adds structured health questions on top of the
+              waiver — any "yes" on a flagged question raises a staff
+              alert so coaches can follow up.
             </Text>
           </View>
         </Pressable>
@@ -439,9 +440,8 @@ export function ParqPanel() {
   return (
     <View className="gap-4">
       <Text className="text-gray-500 dark:text-gray-400 text-sm">
-        Members fill this in at signup and again every 12 months. A "yes"
-        answer on any flagged question raises a health alert that staff
-        with the see-health-flag capability will see.
+        Members re-answer every 12 months. Toggle the flag on the
+        questions where a "yes" should reach a coach.
       </Text>
 
       {active.data ? (
@@ -457,8 +457,8 @@ export function ParqPanel() {
       <View className="gap-3">
         {rows.length === 0 ? (
           <Text className="text-gray-500 dark:text-gray-400">
-            Add questions below. Drag-handles in v2; for now they stay in
-            the order shown.
+            No questions yet. Add your first one below — they'll appear
+            to members in the order you add them.
           </Text>
         ) : null}
         {rows.map((r, idx) => (
@@ -477,10 +477,10 @@ export function ParqPanel() {
             <View className="flex-row items-center gap-3">
               <View className="flex-1">
                 <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-                  Raise health flag on "yes"
+                  Alert coaches on "yes"
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Turn off for non-medical prompts (goals, preferences).
+                  Leave off for non-medical questions like goals or preferences.
                 </Text>
               </View>
               <Switch
@@ -514,9 +514,9 @@ export function ParqPanel() {
       </Button>
 
       <Text className="text-gray-400 dark:text-gray-500 text-xs">
-        Publishing creates a new version. Existing responses stay tied to
-        the version members saw at submission, and every member will be
-        prompted to re-fill the new one on their next visit.
+        Publishing creates a new version and asks every member to answer
+        again on their next visit. Older responses stay tied to the
+        version members saw, so your history is preserved.
       </Text>
     </View>
   );
