@@ -69,6 +69,7 @@ export default function AcceptInviteScreen() {
                 onChangeText={setName}
                 autoCapitalize="words"
                 textContentType="name"
+                autoComplete="name"
               />
               <Input
                 label="Email"
@@ -76,6 +77,7 @@ export default function AcceptInviteScreen() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 textContentType="emailAddress"
+                autoComplete="email"
               />
               <Input
                 label="Password"
@@ -83,6 +85,7 @@ export default function AcceptInviteScreen() {
                 onChangeText={setPassword}
                 secureTextEntry
                 textContentType="newPassword"
+                autoComplete="new-password"
               />
             </View>
             {error ? (

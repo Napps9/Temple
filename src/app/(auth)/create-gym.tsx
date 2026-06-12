@@ -166,6 +166,7 @@ export default function CreateGymScreen() {
                       onChangeText={setFullName}
                       autoCapitalize="words"
                       textContentType="name"
+                      autoComplete="name"
                     />
                     <Input
                       label="Email"
@@ -173,6 +174,7 @@ export default function CreateGymScreen() {
                       onChangeText={setEmail}
                       keyboardType="email-address"
                       textContentType="emailAddress"
+                      autoComplete="email"
                     />
                     <Input
                       label="Password"
@@ -180,6 +182,7 @@ export default function CreateGymScreen() {
                       onChangeText={setPassword}
                       secureTextEntry
                       textContentType="newPassword"
+                      autoComplete="new-password"
                     />
                   </>
                 ) : null}

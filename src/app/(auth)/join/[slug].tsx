@@ -201,6 +201,7 @@ export default function JoinGymScreen() {
                   onChangeText={setFullName}
                   autoCapitalize="words"
                   textContentType="name"
+                  autoComplete="name"
                 />
                 <Input
                   label="Email"
@@ -208,6 +209,7 @@ export default function JoinGymScreen() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   textContentType="emailAddress"
+                  autoComplete="email"
                 />
                 <Input
                   label="Password"
@@ -215,6 +217,7 @@ export default function JoinGymScreen() {
                   onChangeText={setPassword}
                   secureTextEntry
                   textContentType="newPassword"
+                  autoComplete="new-password"
                 />
                 {error ? (
                   <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>

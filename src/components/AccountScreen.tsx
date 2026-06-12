@@ -198,6 +198,7 @@ export function AccountScreen() {
             onChangeText={setFullName}
             autoCapitalize="words"
             textContentType="name"
+            autoComplete="name"
           />
           <Input
             label="Email"
@@ -205,6 +206,7 @@ export function AccountScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             textContentType="emailAddress"
+            autoComplete="email"
           />
           {pendingEmail ? (
             <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 gap-2">
@@ -257,6 +259,7 @@ export function AccountScreen() {
             onChangeText={setPassword}
             secureTextEntry
             textContentType="newPassword"
+            autoComplete="new-password"
           />
           <Input
             label="Confirm new password"
@@ -264,6 +267,7 @@ export function AccountScreen() {
             onChangeText={setConfirmPassword}
             secureTextEntry
             textContentType="newPassword"
+            autoComplete="new-password"
           />
           {passwordMessage ? (
             <Text className="text-gray-600 dark:text-gray-300 text-sm">

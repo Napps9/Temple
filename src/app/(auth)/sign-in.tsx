@@ -53,6 +53,7 @@ export default function SignInScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               textContentType="emailAddress"
+              autoComplete="email"
             />
             <Input
               label="Password"
@@ -60,6 +61,7 @@ export default function SignInScreen() {
               onChangeText={setPassword}
               secureTextEntry
               textContentType="password"
+              autoComplete="current-password"
             />
           </View>
           {error ? (
