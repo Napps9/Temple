@@ -95,15 +95,20 @@ do $$
 declare
   v_sess3 uuid;
 begin
-  -- Cancel the just-made booking so capacity isn't an issue and we can
-  -- isolate the staleness check.
-  delete from public.class_bookings
-    where class_session_id = current_setting('test.sess2')::uuid
-      and profile_id = current_setting('test.member')::uuid;
+  -- Fixture mutation: parq_responses has no UPDATE RLS policy
+  -- (responses are immutable from the API), so we drop to the test
+  -- DB role to age the row directly. Same trick the helpers use to
+  -- set up state RLS would otherwise block.
+  reset role;
   update public.parq_responses
     set completed_at = now() - interval '400 days'
     where profile_id = current_setting('test.member')::uuid;
   perform _test_act_as(current_setting('test.owner')::uuid);
+  -- Cancel the just-made booking so capacity isn't an issue and we
+  -- isolate the staleness check.
+  delete from public.class_bookings
+    where class_session_id = current_setting('test.sess2')::uuid
+      and profile_id = current_setting('test.member')::uuid;
   v_sess3 := _test_mk_session(
     current_setting('test.gym')::uuid,
     current_setting('test.owner')::uuid,
