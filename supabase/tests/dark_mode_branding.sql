@@ -60,17 +60,27 @@ select is(
   'omitting the dark args nulls the dark columns (auto-derive sentinel)'
 );
 
--- 3. The CHECK constraint rejects a malformed dark hex.
+-- 3. The CHECK constraint rejects a malformed dark hex. We're not
+-- testing RLS here — gyms has no direct-UPDATE policy (all writes go
+-- through security-definer RPCs), so we drop to the test DB role to
+-- attempt the bare UPDATE and let the CHECK fire. Same trick the parq
+-- and health-data tests use for fixture mutations.
+do $$ begin reset role; end $$;
+
 select throws_ok(
-  $sql$
-    update public.gyms
-      set primary_color_dark = 'not-a-hex'
-      where id = current_setting('test.gym')::uuid
-  $sql$,
+  format(
+    'update public.gyms set primary_color_dark = ''not-a-hex'' where id = %L::uuid',
+    current_setting('test.gym')
+  ),
   '23514',
   null,
   'primary_color_dark check rejects a malformed hex'
 );
+
+do $$
+begin
+  perform _test_act_as(current_setting('test.owner')::uuid);
+end $$;
 
 -- 4. gym_by_slug returns the dark columns alongside the light ones.
 do $$
