@@ -130,6 +130,15 @@ The staff area shows up when `can_access_staff_area` is on.
 
 ### Manage tabs
 
+- **Gym setup checklist** (owner-only, auto-hides when complete) —
+  shown above the tab strip on a new gym. Five steps derived live
+  from the data: add a logo, add a class type, schedule a class,
+  publish a PAR-Q questionnaire, create a membership plan. Each step
+  is a deep link to the page that completes it. The card disappears
+  once everything is done. Backed by `get_gym_setup_progress(gym_id)`
+  so it never drifts from reality — delete a class type and the step
+  flips back open.
+
 The Manage page presents a tab strip:
 
 - **Insights** [`can_see_insights`] — one date range driving every

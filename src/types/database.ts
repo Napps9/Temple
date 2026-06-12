@@ -1679,6 +1679,10 @@ export type Database = {
         Args: { p_gym_id: string; p_subject: string; p_surface: string };
         Returns: null;
       };
+      get_gym_setup_progress: {
+        Args: { p_gym_id: string };
+        Returns: { step_key: string; done: boolean }[];
+      };
       extend_recurrence: {
         Args: { rec_id: string; until_date: string };
         Returns: null;

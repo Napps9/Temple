@@ -17,6 +17,7 @@ import {
   isoDate,
   presetRange,
 } from '@/components/DateRangeCta';
+import { GymSetupChecklist } from '@/components/GymSetupChecklist';
 import { Input } from '@/components/Input';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
@@ -252,6 +253,9 @@ export default function ManagementHome() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
+        {/* Owner-only setup nudge. Self-hides once all five steps are
+            done so the card never nags a finished gym. */}
+        <GymSetupChecklist />
         {/* Tabs lead the page; the headline KPI tiles live inside the
             Insights tab where the rest of the metrics are. */}
         {availableCategories.length > 1 ? (

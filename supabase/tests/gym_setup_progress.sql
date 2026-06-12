@@ -1,0 +1,120 @@
+-- get_gym_setup_progress reflects the actual gym state, step by step.
+-- A fresh gym reports every step pending; doing each setup action
+-- flips its matching flag.
+
+begin;
+select plan(7);
+
+\ir _helpers.psql
+
+do $$
+declare
+  v_owner uuid := _test_mk_user('owner@setup.test');
+  v_gym   uuid := _test_mk_gym('Setup Gym', 'setup-gym');
+begin
+  perform _test_mk_membership(v_gym, v_owner, 'owner');
+  perform set_config('test.gym',   v_gym::text,   true);
+  perform set_config('test.owner', v_owner::text, true);
+  perform _test_act_as(v_owner);
+end $$;
+
+-- 1. Fresh gym: every step pending.
+select is(
+  (select count(*) from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where done)::int,
+  0,
+  'a fresh gym reports zero setup steps complete'
+);
+
+-- 2. logo flips after gyms.logo_url is set.
+do $$
+begin
+  reset role;
+  update public.gyms set logo_url = 'https://example.com/logo.png'
+    where id = current_setting('test.gym')::uuid;
+  perform _test_act_as(current_setting('test.owner')::uuid);
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'logo'),
+  true,
+  'logo step flips done when a logo url is present'
+);
+
+-- 3. class_type flips after a class type is added.
+do $$
+declare v_ct uuid;
+begin
+  insert into public.class_types (gym_id, name, color)
+    values (current_setting('test.gym')::uuid, 'CrossFit', '#10B981')
+    returning id into v_ct;
+  perform set_config('test.ct', v_ct::text, true);
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'class_type'),
+  true,
+  'class_type step flips done when a class type exists'
+);
+
+-- 4. schedule flips after a recurrence ties a class type to a day/time.
+do $$
+begin
+  insert into public.class_recurrences
+    (gym_id, class_type_id, days_of_week, times, duration_minutes,
+     capacity, starts_on, tz, created_by)
+  values
+    (current_setting('test.gym')::uuid,
+     current_setting('test.ct')::uuid,
+     array[1,3,5], array['09:00'], 60, 12, current_date, 'UTC',
+     current_setting('test.owner')::uuid);
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'schedule'),
+  true,
+  'schedule step flips done when a recurrence exists for an active class type'
+);
+
+-- 5. parq flips after publishing an active questionnaire.
+do $$
+begin
+  insert into public.parq_questionnaires (gym_id, version, published_by)
+    values (current_setting('test.gym')::uuid, 1,
+            current_setting('test.owner')::uuid);
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'parq'),
+  true,
+  'parq step flips done when an active questionnaire is published'
+);
+
+-- 6. plan flips after a membership plan is added.
+do $$
+begin
+  insert into public.membership_plans (gym_id, name, kind)
+    values (current_setting('test.gym')::uuid, 'Unlimited', 'unlimited');
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'plan'),
+  true,
+  'plan step flips done when an active membership plan exists'
+);
+
+-- 7. All five complete: count = 5.
+select is(
+  (select count(*) from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where done)::int,
+  5,
+  'all five steps report done once each table is populated'
+);
+
+select * from finish();
+rollback;
