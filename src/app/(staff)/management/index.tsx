@@ -44,7 +44,7 @@ import { BrandingPanel } from './branding';
 import { ClassTypesPanel } from './class-types';
 import { LeaderboardsPanel } from './leaderboards';
 import { MessagingPanel } from './messaging';
-import { ParqPanel } from './parq';
+import { HealthScreeningPanel } from './parq';
 import { PlansPanel } from './plans';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
@@ -333,10 +333,10 @@ function SettingsTab() {
       ) : null}
       {canManageParq ? (
         <SettingsSection
-          title="PAR-Q"
-          description="Health screening questions every member fills in."
+          title="Health screening"
+          description="Upload a waiver to sign, or build a PAR-Q. One is enough."
           icon="heart-outline">
-          <ParqPanel />
+          <HealthScreeningPanel />
         </SettingsSection>
       ) : null}
       {canConfigureLeaderboards ? (

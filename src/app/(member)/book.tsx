@@ -7,7 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { errorMessage, isParqRequiredError } from '@/lib/errors';
+import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 const EIGHT_WEEKS_MS = 56 * 24 * 60 * 60 * 1000;
@@ -163,6 +163,10 @@ function RecommendedClassCard() {
       queryClient.invalidateQueries({ queryKey: ['recommended-class'] });
     },
     onError: (e) => {
+      if (isWaiverRequiredError(e)) {
+        router.push('/waiver');
+        return;
+      }
       if (isParqRequiredError(e)) {
         // Send the booker straight to the screening form rather than
         // making them parse a raw error.

@@ -13,3 +13,10 @@ export function errorMessage(e: unknown, fallback = 'Something went wrong'): str
 export function isParqRequiredError(e: unknown): boolean {
   return errorMessage(e, '').startsWith('PAR-Q required');
 }
+
+// Likewise, the booking gate raises this prefix when the gym has an
+// active waiver the booker hasn't signed (see 0041). Surfaces route
+// into /waiver.
+export function isWaiverRequiredError(e: unknown): boolean {
+  return errorMessage(e, '').startsWith('Waiver required');
+}

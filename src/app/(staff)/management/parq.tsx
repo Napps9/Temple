@@ -1,9 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as DocumentPicker from 'expo-document-picker';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import {
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -11,6 +21,265 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+
+function openUrl(url: string) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.open(url, '_blank');
+  } else {
+    Linking.openURL(url).catch(() => {});
+  }
+}
+
+type ActiveWaiver = {
+  id: string;
+  version: number;
+  title: string;
+  file_url: string;
+  published_at: string;
+};
+
+// WaiverPanel — upload a PDF and publish it as the gym's signable
+// waiver. The primary health-screening path: most gyms already have a
+// liability waiver as a PDF, so this is one upload away from "members
+// can sign and book". Publishing a new version re-prompts every member
+// to re-sign (their old signature stays tied to the version they saw).
+export function WaiverPanel() {
+  const { data: membership } = useGymMembership();
+  const canManage = useCan('can_manage_parq');
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [pending, setPending] = useState<{
+    path: string;
+    url: string;
+    name: string;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, markSaved] = useSavedFlag();
+
+  const active = useQuery({
+    queryKey: ['waiver-active', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<ActiveWaiver | null> => {
+      const { data, error } = await supabase
+        .from('waiver_documents')
+        .select('id, version, title, file_url, published_at')
+        .eq('gym_id', membership!.gymId)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (error) throw error;
+      return data as ActiveWaiver | null;
+    },
+  });
+
+  const sigCount = useQuery({
+    queryKey: ['waiver-signature-count', active.data?.id],
+    enabled: !!active.data?.id,
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('waiver_signatures')
+        .select('id', { count: 'exact', head: true })
+        .eq('waiver_id', active.data!.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  const pick = useMutation({
+    mutationFn: async () => {
+      if (!membership) throw new Error('Missing context');
+      const res = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled || !res.assets?.length) return null;
+      const asset = res.assets[0];
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const path = `${membership.gymId}/${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from('gym-waivers')
+        .upload(path, blob, { contentType: 'application/pdf', upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage
+        .from('gym-waivers')
+        .getPublicUrl(path);
+      return { path, url: pub.publicUrl, name: asset.name ?? 'waiver.pdf' };
+    },
+    onSuccess: (v) => {
+      if (v) {
+        setPending(v);
+        setError(null);
+      }
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not upload the PDF')),
+  });
+
+  const publish = useMutation({
+    mutationFn: async () => {
+      if (!membership || !pending) throw new Error('Upload a PDF first');
+      const { error } = await supabase.rpc('publish_waiver', {
+        p_gym_id: membership.gymId,
+        p_title: title.trim() || 'Liability waiver',
+        p_file_path: pending.path,
+        p_file_url: pending.url,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setError(null);
+      markSaved();
+      setPending(null);
+      setTitle('');
+      queryClient.invalidateQueries({ queryKey: ['waiver-active'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not publish the waiver')),
+  });
+
+  if (canManage === false) {
+    return (
+      <Text className="text-gray-500 dark:text-gray-400">
+        Only owners and admins can manage the waiver.
+      </Text>
+    );
+  }
+
+  return (
+    <View className="gap-4">
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        Upload your liability waiver as a PDF. Members read it and sign
+        with their finger or mouse before they can book — their signature
+        is stored against the exact version they saw.
+      </Text>
+
+      {active.data ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 border border-emerald-500/30">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="document-text-outline" size={18} color="#10B981" />
+            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+              {active.data.title}
+            </Text>
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              v{active.data.version}
+            </Text>
+          </View>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            {sigCount.data ?? 0}{' '}
+            {sigCount.data === 1 ? 'member has' : 'members have'} signed this
+            version.
+          </Text>
+          <View className="flex-row gap-2 pt-1">
+            <ChipButton
+              label="View PDF"
+              icon="open-outline"
+              onPress={() => openUrl(active.data!.file_url)}
+            />
+          </View>
+        </View>
+      ) : (
+        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          No waiver published yet
+        </Text>
+      )}
+
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <Input
+          label="Waiver title (optional)"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Liability waiver"
+          autoCapitalize="sentences"
+        />
+
+        {pending ? (
+          <View className="flex-row items-center gap-2 bg-emerald-500/10 rounded-lg px-3 py-2">
+            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+            <Text
+              className="flex-1 text-gray-700 dark:text-gray-200 text-sm"
+              numberOfLines={1}>
+              {pending.name}
+            </Text>
+            <Pressable onPress={() => setPending(null)} hitSlop={8}>
+              <Ionicons name="close" size={16} color="#9CA3AF" />
+            </Pressable>
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={() => pick.mutate()}
+          disabled={pick.isPending}
+          className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
+          <Ionicons name="cloud-upload-outline" size={18} color="#6B7280" />
+          <Text className="text-gray-600 dark:text-gray-300 font-medium">
+            {pick.isPending
+              ? 'Uploading…'
+              : pending
+                ? 'Choose a different PDF'
+                : active.data
+                  ? 'Upload a new PDF'
+                  : 'Upload waiver PDF'}
+          </Text>
+        </Pressable>
+
+        {error ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
+
+        <Button
+          onPress={() => publish.mutate()}
+          loading={publish.isPending}
+          disabled={!pending}
+          success={saved}>
+          {active.data ? 'Publish new version' : 'Publish waiver'}
+        </Button>
+
+        {active.data ? (
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            Publishing a new version asks every member to re-sign on their
+            next visit. Existing signatures stay tied to the version they
+            signed.
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+// HealthScreeningPanel — the waiver (primary) plus the question-by-
+// question PAR-Q kept as an optional extra. Both surfaces share the
+// can_manage_parq capability. A gym only needs one of the two to let
+// members book, but if both are published a member must clear both.
+export function HealthScreeningPanel() {
+  const [showParq, setShowParq] = useState(false);
+  return (
+    <View className="gap-5">
+      <WaiverPanel />
+
+      <View className="border-t border-gray-200 dark:border-gray-800 pt-5 gap-3">
+        <Pressable
+          onPress={() => setShowParq((v) => !v)}
+          className="flex-row items-center gap-2 active:opacity-70">
+          <Ionicons
+            name={showParq ? 'chevron-down' : 'chevron-forward'}
+            size={18}
+            color="#6B7280"
+          />
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Question-by-question PAR-Q
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Optional extra — structured health questions that raise a
+              staff flag on a "yes". Adds to the waiver, doesn't replace it.
+            </Text>
+          </View>
+        </Pressable>
+        {showParq ? <ParqPanel /> : null}
+      </View>
+    </View>
+  );
+}
 
 type Questionnaire = {
   id: string;
@@ -259,13 +528,14 @@ export default function ParqPage() {
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            PAR-Q
+            Health screening
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Health screening questions every member fills in.
+            Upload a waiver for members to sign, or build a PAR-Q. You only
+            need one before members can book.
           </Text>
         </View>
-        <ParqPanel />
+        <HealthScreeningPanel />
       </ScrollView>
     </Screen>
   );

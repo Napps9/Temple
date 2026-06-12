@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
 import { useSession } from '@/lib/auth';
-import { errorMessage, isParqRequiredError } from '@/lib/errors';
+import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
@@ -163,6 +163,11 @@ export function ClassDetailModal({
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
     },
     onError: (e) => {
+      if (isWaiverRequiredError(e)) {
+        close();
+        router.push('/waiver');
+        return;
+      }
       if (isParqRequiredError(e)) {
         // Send the booker into the screening form so they don't see
         // the raw RPC message and have a clear next step.

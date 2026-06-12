@@ -355,6 +355,69 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      waiver_documents: {
+        Row: {
+          id: string;
+          gym_id: string;
+          version: number;
+          is_active: boolean;
+          title: string;
+          file_path: string;
+          file_url: string;
+          published_by: string | null;
+          published_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          version: number;
+          is_active?: boolean;
+          title?: string;
+          file_path: string;
+          file_url: string;
+          published_by?: string | null;
+          published_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          version: number;
+          is_active: boolean;
+          title: string;
+          file_path: string;
+          file_url: string;
+          published_by: string | null;
+          published_at: string;
+        }>;
+        Relationships: [];
+      };
+      waiver_signatures: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          waiver_id: string;
+          signature: Json;
+          signed_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          waiver_id: string;
+          signature: Json;
+          signed_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          waiver_id: string;
+          signature: Json;
+          signed_at: string;
+        }>;
+        Relationships: [];
+      };
       staff_alerts: {
         Row: {
           id: string;
@@ -1630,6 +1693,28 @@ export type Database = {
           last_completed_at: string | null;
           last_had_flag: boolean | null;
           needs_parq: boolean;
+        }[];
+      };
+      publish_waiver: {
+        Args: {
+          p_gym_id: string;
+          p_title: string;
+          p_file_path: string;
+          p_file_url: string;
+        };
+        Returns: string;
+      };
+      sign_waiver: {
+        Args: { p_gym_id: string; p_waiver_id: string; p_signature: Json };
+        Returns: string;
+      };
+      current_waiver_state: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: {
+          active_waiver_id: string | null;
+          last_signature_id: string | null;
+          last_signed_at: string | null;
+          needs_waiver: boolean;
         }[];
       };
       log_injury: {

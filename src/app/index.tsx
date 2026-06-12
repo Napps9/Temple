@@ -15,6 +15,13 @@ type ParqState = {
   needs_parq: boolean;
 };
 
+type WaiverState = {
+  active_waiver_id: string | null;
+  last_signature_id: string | null;
+  last_signed_at: string | null;
+  needs_waiver: boolean;
+};
+
 export default function Index() {
   const session = useSession();
   const { data: membership, isLoading } = useGymMembership();
@@ -26,6 +33,26 @@ export default function Index() {
   // login the way a PAR-Q gate would (PAR-Q needs a questionnaire the
   // owner hasn't published yet, so that stays members-only below).
   const consent = useConsentState();
+
+  // Waiver gate. Members only — staff bypass (same rationale as PAR-Q:
+  // they need to operate the gym; the booking-time gate in
+  // _book_class_for still catches anyone who actually books).
+  const waiverState = useQuery({
+    queryKey: ['waiver-state', membership?.gymId, session?.user.id],
+    enabled:
+      !!session?.user.id &&
+      !!membership?.gymId &&
+      canAccessStaff === false,
+    queryFn: async (): Promise<WaiverState | null> => {
+      const { data, error } = await supabase.rpc('current_waiver_state', {
+        p_gym_id: membership!.gymId,
+        p_profile_id: session!.user.id,
+      });
+      if (error) throw error;
+      const row = (data ?? [])[0] as WaiverState | undefined;
+      return row ?? null;
+    },
+  });
 
   // Annual PAR-Q gate. Members only — staff bypass so they can still
   // operate the gym even if their own screening lapsed.
@@ -56,6 +83,8 @@ export default function Index() {
   }
   if (canAccessStaff === undefined) return <Loading />;
   if (canAccessStaff) return <Redirect href="/classes" />;
+  if (waiverState.isLoading) return <Loading />;
+  if (waiverState.data?.needs_waiver) return <Redirect href="/waiver" />;
   if (parqState.isLoading) return <Loading />;
   if (parqState.data?.needs_parq) return <Redirect href="/parq" />;
   return <Redirect href="/book" />;

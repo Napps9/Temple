@@ -29,6 +29,16 @@ permission gate that controls visibility for staff features.
   can't book a class for themselves until they've completed PAR-Q.
   Bootstrap-safe: a gym with no published questionnaire is unguarded
   so an owner can publish one in the first place.
+- **Waiver gate** — a gym can upload a liability waiver as a PDF
+  (`waiver_documents`, versioned like PAR-Q) and members sign it with a
+  **drawn signature** (captured as SVG vector paths in
+  `waiver_signatures`, no image upload). Same booking-prerequisite +
+  entry-redirect enforcement as PAR-Q, bootstrap-safe the same way. A
+  gym needs only **one** of {waiver, PAR-Q} to go live; if it publishes
+  **both**, a member must clear both. Signatures are retained as
+  liability records — deliberately *not* swept by the health-data
+  erasure/purge (lawful basis: defence of legal claims). Publishing a
+  new waiver version re-prompts everyone to re-sign.
 
 ### Plans, payments & onboarding
 - **Plan subscription self-view** — see active plans, credit balance,
@@ -135,12 +145,13 @@ The staff area shows up when `can_access_staff_area` is on.
 ### Manage tabs
 
 - **Gym setup checklist** (owner-only, auto-hides when complete) —
-  shown above the tab strip on a new gym. Five steps derived live
-  from the data: add a logo, add a class type, schedule a class,
-  publish a PAR-Q questionnaire, create a membership plan. Each step
-  is a deep link to the page that completes it. The card disappears
-  once everything is done. Backed by `get_gym_setup_progress(gym_id)`
-  so it never drifts from reality — delete a class type and the step
+  shown above the tab strip on a new gym. Steps derived live from the
+  data: add a logo, add a class type, schedule a class, set up health
+  screening (a waiver **or** a PAR-Q satisfies it), create a membership
+  plan, plus an optional invite-your-team step. Each step is a deep
+  link to the page that completes it. The card disappears once every
+  required step is done. Backed by `get_gym_setup_progress(gym_id)` so
+  it never drifts from reality — delete a class type and the step
   flips back open.
 
 The Manage page presents a tab strip:
@@ -169,8 +180,10 @@ The Manage page presents a tab strip:
 - **Settings** — collapsible cards:
   - **Branding** — gym name, slug, logo upload, primary / secondary /
     text colours with inline HSV picker, public-signup toggle.
-  - **PAR-Q editor** [`can_manage_parq`] — publish new versions of the
-    health questionnaire; mark which questions raise a flag.
+  - **Health screening** [`can_manage_parq`] — upload a waiver PDF for
+    members to sign (primary), and/or build a question-by-question
+    PAR-Q (optional extra); publish new versions of either. One is
+    enough to satisfy the setup checklist.
   - **Leaderboards** [`can_configure_leaderboards`] — toggle class
     leaderboards and strength leaderboards.
   - **Messaging** — choose who can DM whom (open / coach-only /

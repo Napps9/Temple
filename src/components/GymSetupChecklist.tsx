@@ -57,9 +57,9 @@ const STEPS: Step[] = [
   },
   {
     key: 'parq',
-    label: 'Publish a PAR-Q questionnaire',
+    label: 'Set up health screening',
     description:
-      'Members must complete this before booking. Until you publish one, the safety gate is off.',
+      'Upload a waiver to sign or build a PAR-Q — one is enough. Until you do, the booking safety gate is off.',
     href: '/management/parq',
     icon: 'medkit-outline',
   },
