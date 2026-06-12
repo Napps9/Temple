@@ -340,7 +340,8 @@ function DraftCard({
           <Pressable
             onPress={onRemove}
             hitSlop={4}
-            className="w-9 h-9 rounded-lg items-center justify-center active:bg-gray-200 dark:active:bg-gray-700">
+            className="w-9 h-9 rounded-lg items-center justify-center active:bg-gray-200 dark:active:bg-gray-700"
+          accessibilityLabel="Close">
             <Ionicons name="close" size={18} color="#9CA3AF" />
           </Pressable>
         ) : null}

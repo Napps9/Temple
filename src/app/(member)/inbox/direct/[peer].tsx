@@ -93,7 +93,8 @@ export default function DirectThread() {
       <View className="flex-1 px-4 md:max-w-2xl md:mx-auto md:w-full py-6">
         <View className="flex-row items-center gap-3 px-2 pb-3">
           <Link href="/inbox" asChild>
-            <Pressable hitSlop={6} className="active:opacity-70">
+            <Pressable hitSlop={6} className="active:opacity-70"
+          accessibilityLabel="Back">
               <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
             </Pressable>
           </Link>

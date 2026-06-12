@@ -159,7 +159,8 @@ export default function MovementDetail() {
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
           <Link href={`/track/group/${group.key}` as never} asChild>
-            <Pressable hitSlop={6} className="active:opacity-70">
+            <Pressable hitSlop={6} className="active:opacity-70"
+          accessibilityLabel="Back">
               <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
             </Pressable>
           </Link>
