@@ -106,6 +106,10 @@ The staff area shows up when `can_access_staff_area` is on.
   - Region heat (BodyMap silhouette tinted by programmed volume)
   - Untagged sections (programming that didn't classify, so the coach
     can fix the wording).
+  - Every Programming Balance card (and the block header) has an (i)
+    toggle that reveals a "What this shows / Why it matters" panel —
+    plain-language explanation of the energy-system / pattern jargon
+    and how to act on each view.
 - **Class-type filter chip** for the analysis matrices, including
   archived class types so historical analysis still works.
 

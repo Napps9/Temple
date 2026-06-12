@@ -528,13 +528,13 @@ function ProgrammingBalanceBlock({
 
   return (
     <View className="gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-        Programming balance
-      </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        Movement patterns × energy systems across what you programmed
-        in the window.
-      </Text>
+      <CardHeading
+        size="section"
+        title="Programming balance"
+        subtitle="Movement patterns × energy systems across what you programmed in the window."
+        what="Reads every section you programmed in the selected window and classifies each one by the movement patterns and energy systems it trains. Use the date picker to change the window and the class-type chips to scope it to a single programme."
+        why="It's built from what you wrote in the programming, not what members logged — so it answers 'what am I actually asking of people?'. Spotting a blind spot here, a pattern or energy system you keep skipping, is far easier than catching it class by class."
+      />
 
       <DateRangeCta
         preset={preset}
@@ -596,6 +596,101 @@ function ProgrammingBalanceBlock({
           ) : null}
         </>
       )}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Info disclosure — a small (i) toggle that reveals a "what this shows /
+// why it matters" panel in the card's white space. Coaches see plain
+// language explaining the jargon (energy systems, patterns) and how to
+// act on each view, without it cluttering the default read.
+// ---------------------------------------------------------------------------
+
+function InfoButton({
+  active,
+  onPress,
+}: {
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="What this shows"
+      className="w-6 h-6 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+      <Ionicons
+        name={active ? 'information-circle' : 'information-circle-outline'}
+        size={18}
+        color={active ? '#2563EB' : '#9CA3AF'}
+      />
+    </Pressable>
+  );
+}
+
+function InfoPanel({ what, why }: { what: string; why: string }) {
+  return (
+    <View className="bg-gray-50 dark:bg-gray-800/60 rounded-lg p-3 gap-2">
+      <View className="gap-0.5">
+        <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider">
+          What this shows
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-300 text-xs leading-5">
+          {what}
+        </Text>
+      </View>
+      <View className="gap-0.5">
+        <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider">
+          Why it matters
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-300 text-xs leading-5">
+          {why}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+// Titled header with an (i) toggle. `size='section'` is the larger
+// block heading; the default is a white-card heading. Owns its own
+// open state so each card's info is independent.
+function CardHeading({
+  title,
+  subtitle,
+  what,
+  why,
+  size = 'card',
+}: {
+  title: string;
+  subtitle?: string;
+  what: string;
+  why: string;
+  size?: 'card' | 'section';
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View className="gap-2">
+      <View className="flex-row items-start gap-2">
+        <View className="flex-1">
+          <Text
+            className={
+              size === 'section'
+                ? 'text-gray-900 dark:text-gray-50 text-lg font-semibold'
+                : 'text-gray-900 dark:text-gray-50 font-semibold'
+            }>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+        <InfoButton active={open} onPress={() => setOpen((v) => !v)} />
+      </View>
+      {open ? <InfoPanel what={what} why={why} /> : null}
     </View>
   );
 }
@@ -693,6 +788,11 @@ function PatternEnergyMatrix({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+      <CardHeading
+        title="Pattern × energy"
+        what="Rows are movement patterns, columns are the three energy systems — phosphagen (short, heavy, near-maximal), glycolytic (hard 1–10 min efforts), oxidative (longer aerobic work). Each cell counts the sections that train that pattern through that system. The badges show your push-to-pull and front-to-back (anterior vs posterior) balance."
+        why="Empty cells and lopsided rows are your gaps — squats only ever trained heavy and never under fatigue, or no oxidative pulling all month. A push:pull or front:back ratio that drifts far from even over weeks is a common driver of overuse niggles, and it's hard to feel without seeing it laid out."
+      />
       {/* Ratio badges share width so they balance visually instead of
           wrapping into stranded chips on a phone. */}
       <View className="flex-row gap-2">
@@ -795,9 +895,11 @@ function EnergyMixCard({
 }) {
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-        Energy system mix
-      </Text>
+      <CardHeading
+        title="Energy system mix"
+        what="The share of your programmed sections that fall under each energy system across the window."
+        why="A balanced general programme spreads work across all three systems rather than living in one. If you're almost entirely glycolytic 'pain cave', members gain conditioning but little maximal strength or true aerobic base — and fatigue faster. This is the quick sanity check."
+      />
       {mix.map((m) => (
         <View key={m.system} className="gap-1">
           <View className="flex-row items-baseline gap-2">
@@ -838,9 +940,11 @@ function PatternMixCard({
   if (nonzero.length === 0) return null;
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-        Movement pattern volume
-      </Text>
+      <CardHeading
+        title="Movement pattern volume"
+        what="How many sections touched each movement pattern, ranked highest to lowest."
+        why="Shows where your programming's centre of gravity sits. If hinge and pull sit at the bottom week after week while squat and push dominate, that's the imbalance to correct — for both performance and joint health."
+      />
       {nonzero.map((m) => (
         <View key={m.pattern} className="gap-1">
           <View className="flex-row items-baseline gap-2">
@@ -888,9 +992,11 @@ function RegionHeatCard({ regions }: { regions: Record<string, number> }) {
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-        Region heat
-      </Text>
+      <CardHeading
+        title="Region heat"
+        what="Lights up the body silhouette by how often the movements you programmed load each region — hotter means more volume."
+        why="A fast read of what's getting hammered. Cross-reference the Injury map below: if a region runs hot here and you already have open injuries there, that's a signal to ease off before it becomes a pattern."
+      />
       <BodyMap highlights={tint} figureWidth={figureWidth} />
       {entries.length === 0 ? (
         <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
@@ -925,13 +1031,12 @@ function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
     .slice(0, 6);
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-        Untagged sections
-      </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        These sections' bodies don't mention a movement we recognise.
-        Add specific movement names so they get counted.
-      </Text>
+      <CardHeading
+        title="Untagged sections"
+        subtitle="These sections' bodies don't mention a movement we recognise. Add specific movement names so they get counted."
+        what="Sections whose written body doesn't contain a movement name we recognise, so they couldn't be classified into the matrices above."
+        why="Every untagged section is volume that's invisible to this analysis. Spelling out the movements in the body (e.g. 'back squat', not just 'squats') makes the numbers above trustworthy."
+      />
       {shown.map((s, i) => (
         <View
           key={i}
