@@ -252,7 +252,7 @@ export default function ManagementHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         {/* Owner-only setup nudge. Self-hides once all five steps are
             done so the card never nags a finished gym. */}
         <GymSetupChecklist />

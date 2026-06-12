@@ -163,7 +163,7 @@ export default function GroupPage() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
           <Link href="/track" asChild>
             <Pressable hitSlop={6} className="active:opacity-70">

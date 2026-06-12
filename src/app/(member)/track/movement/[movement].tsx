@@ -155,7 +155,7 @@ export default function MovementDetail() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
           <Link href={`/track/group/${group.key}` as never} asChild>
             <Pressable hitSlop={6} className="active:opacity-70">

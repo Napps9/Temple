@@ -106,7 +106,7 @@ function MemberTags({ profileId }: { profileId: string }) {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             {profileQuery.data?.full_name ?? 'Member'}
@@ -209,7 +209,7 @@ function RulesEditor() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Tag rules
