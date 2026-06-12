@@ -36,7 +36,7 @@ export default function SignInScreen() {
     <Screen>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1 justify-center">
+        className="flex-1 justify-center px-4">
         <View className="gap-6 w-full max-w-md mx-auto">
           <View className="gap-2">
             <Text className="text-gray-900 dark:text-gray-50 text-4xl font-semibold">

@@ -45,7 +45,7 @@ export default function AcceptInviteScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">
-        <ScrollView contentContainerClassName="flex-grow justify-center py-8">
+        <ScrollView contentContainerClassName="flex-grow justify-center py-8 px-4">
           <View className="gap-6 w-full max-w-md mx-auto">
             <View className="gap-2">
               <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">

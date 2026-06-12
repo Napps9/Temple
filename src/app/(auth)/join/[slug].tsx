@@ -157,7 +157,7 @@ export default function JoinGymScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">
-        <ScrollView contentContainerClassName="py-8">
+        <ScrollView contentContainerClassName="py-8 px-4">
           <View className="gap-6 w-full max-w-md mx-auto">
             <View className="items-center gap-3 pt-4">
               <GymLogo
