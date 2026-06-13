@@ -140,6 +140,7 @@ export default function ManagementHome() {
   const canSetCoachPay = useCan('can_set_coach_pay');
   const canConfigureLeaderboards = useCan('can_configure_leaderboards');
   const canManageComms = useCan('can_manage_comms');
+  const canAssignPlan = useCan('can_assign_plan');
 
   const cards: Card[] = [
     {
@@ -254,6 +255,13 @@ export default function ManagementHome() {
       description: 'Stage members from Mindbody, PushPress, Glofox, Wodify or a spreadsheet.',
       href: '/management/members/import',
       visible: !!canManageStaff,
+    },
+    {
+      category: 'members',
+      title: 'Leads',
+      description: 'Track prospects from first contact through conversion.',
+      href: '/management/leads',
+      visible: !!canAssignPlan,
     },
     {
       category: 'plans',

@@ -221,6 +221,21 @@ The Manage page presents a tab strip:
     staff-only).
   - **Class types** — same editor reachable from above.
 
+### Leads
+
+[`can_assign_plan`] Reachable from Manage → Members → Leads
+(`/management/leads`). Track prospects from first contact through
+conversion. Each lead row stores name, email, phone, source (from a
+per-gym `lead_sources` vocabulary), a notes field, and a fixed status
+pipeline: `cold → contacted → intro_booked → trial_attended →
+converted | lost`. `record_lead` and `set_lead_status` RPCs gate
+writes; tenant RLS uses `user_can_assign_plan`. Moving to
+`converted` requires a member profile to link to (the rule is
+enforced in the RPC), so the conversion dashboard can attribute
+revenue to its source. The list page filters by status pill (Active
+/ All / per-status) and supports inline status changes via the
+detail modal.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → Import members

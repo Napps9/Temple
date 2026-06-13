@@ -22,6 +22,14 @@ export type InjurySide = 'left' | 'right' | 'both' | 'na';
 export type InjuryStatus = 'active' | 'improving' | 'resolved';
 export type InjuryFeeling = 'better' | 'same' | 'worse';
 
+export type LeadStatus =
+  | 'cold'
+  | 'contacted'
+  | 'intro_booked'
+  | 'trial_attended'
+  | 'converted'
+  | 'lost';
+
 export type Database = {
   public: {
     Tables: {
@@ -154,6 +162,87 @@ export type Database = {
           body: string;
           created_at: string;
           read_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      lead_sources: {
+        Row: {
+          id: string;
+          gym_id: string;
+          label: string;
+          color: string;
+          archived_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          label: string;
+          color?: string;
+          archived_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          label: string;
+          color: string;
+          archived_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      leads: {
+        Row: {
+          id: string;
+          gym_id: string;
+          full_name: string;
+          email: string | null;
+          phone: string | null;
+          source_id: string | null;
+          status: LeadStatus;
+          notes: string | null;
+          captured_at: string;
+          captured_by: string | null;
+          converted_at: string | null;
+          converted_profile_id: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          full_name: string;
+          email?: string | null;
+          phone?: string | null;
+          source_id?: string | null;
+          status?: LeadStatus;
+          notes?: string | null;
+          captured_at?: string;
+          captured_by?: string | null;
+          converted_at?: string | null;
+          converted_profile_id?: string | null;
+          archived_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          full_name: string;
+          email: string | null;
+          phone: string | null;
+          source_id: string | null;
+          status: LeadStatus;
+          notes: string | null;
+          captured_at: string;
+          captured_by: string | null;
+          converted_at: string | null;
+          converted_profile_id: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -2295,6 +2384,25 @@ export type Database = {
           p_booking_id: string;
           p_entitlement_kind: 'comp_grant' | 'plan_subscription';
           p_entitlement_id: string;
+        };
+        Returns: null;
+      };
+      record_lead: {
+        Args: {
+          p_gym_id: string;
+          p_full_name: string;
+          p_email?: string | null;
+          p_phone?: string | null;
+          p_source_id?: string | null;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+      set_lead_status: {
+        Args: {
+          p_lead_id: string;
+          p_status: LeadStatus;
+          p_converted_profile_id?: string | null;
         };
         Returns: null;
       };
