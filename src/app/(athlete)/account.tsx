@@ -1,26 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
 import { useSession, useSignOut } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 export default function AthleteAccount() {
   const session = useSession();
   const signOut = useSignOut();
   const queryClient = useQueryClient();
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const athleteActive = useQuery({
     queryKey: ['athlete-active', session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async (): Promise<boolean> => {
-      const { data, error } = await supabase.rpc('is_athlete_active', {
-        p_profile_id: session!.user.id,
-      });
+      const { data, error } = await supabase.rpc('is_athlete_active');
       if (error) throw error;
       return data as boolean;
     },
@@ -31,7 +32,11 @@ export default function AthleteAccount() {
       const { error } = await supabase.rpc('cancel_athlete_subscription', {});
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['athlete-active'] }),
+    onSuccess: () => {
+      setCancelError(null);
+      queryClient.invalidateQueries({ queryKey: ['athlete-active'] });
+    },
+    onError: (e) => setCancelError(errorMessage(e, 'Could not cancel')),
   });
 
   return (
@@ -83,6 +88,11 @@ export default function AthleteAccount() {
               onPress={() => cancel.mutate()}
               disabled={cancel.isPending}
             />
+            {cancelError ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {cancelError}
+              </Text>
+            ) : null}
           </View>
         ) : null}
 

@@ -2483,7 +2483,7 @@ export type Database = {
         Returns: string;
       };
       is_athlete_active: {
-        Args: { p_profile_id: string };
+        Args: Record<string, never>;
         Returns: boolean;
       };
       start_athlete_subscription: {

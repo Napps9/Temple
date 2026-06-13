@@ -18,7 +18,7 @@ do $$ begin perform _test_act_as(current_setting('test.ath')::uuid); end $$;
 
 -- 1. No subscription yet → inactive.
 select is(
-  public.is_athlete_active(current_setting('test.ath')::uuid),
+  public.is_athlete_active(),
   false,
   'a fresh athlete has no active subscription'
 );
@@ -26,7 +26,7 @@ select is(
 -- 2. Self-activate (free beta) → active.
 do $$ begin perform public.start_athlete_subscription(); end $$;
 select is(
-  public.is_athlete_active(current_setting('test.ath')::uuid),
+  public.is_athlete_active(),
   true,
   'start_athlete_subscription activates the entitlement'
 );
@@ -43,7 +43,7 @@ select lives_ok(
 -- 4. Cancel → inactive.
 do $$ begin perform public.cancel_athlete_subscription(); end $$;
 select is(
-  public.is_athlete_active(current_setting('test.ath')::uuid),
+  public.is_athlete_active(),
   false,
   'cancel_athlete_subscription deactivates the entitlement'
 );

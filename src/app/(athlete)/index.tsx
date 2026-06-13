@@ -28,9 +28,7 @@ export default function AthleteHome() {
     queryKey: ['athlete-active', session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async (): Promise<boolean> => {
-      const { data, error } = await supabase.rpc('is_athlete_active', {
-        p_profile_id: session!.user.id,
-      });
+      const { data, error } = await supabase.rpc('is_athlete_active');
       if (error) throw error;
       return data as boolean;
     },
@@ -216,8 +214,8 @@ export default function AthleteHome() {
             <View className="bg-white dark:bg-gray-900 rounded-2xl p-6 items-center gap-2">
               <Ionicons name="barbell-outline" size={28} color="#9CA3AF" />
               <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-                No logged movements yet. Join a gym to start tracking — your PRs
-                and history will live here.
+                No logged movements yet. Start solo tracking above, or join a
+                gym — your PRs and history live here either way.
               </Text>
             </View>
           ) : (
