@@ -560,9 +560,9 @@ surround:
 - **RLS everywhere** — every table is gated, every dangerous write
   is funnelled through a `security definer` RPC with explicit
   authorisation.
-- **Cloud-only dev workflow** — push to main → CI (tsc + 297 vitest
-  + 62 pgTAP files / ~178 assertions) → migrations auto-deploy to the
-  hosted Supabase project → Vercel auto-deploys Production.
+- **Cloud-only dev workflow** — push to main → CI (tsc + 403 vitest
+  + 90 pgTAP files) → migrations auto-deploy to the hosted Supabase
+  project → Vercel auto-deploys Production.
 - **Vercel rewrites for dynamic routes** — `/join/:slug`,
   `/track/movement/:movement`, `/track/group/:group`,
   `/track/workout/:id`, `/inbox/direct/:peer`,
