@@ -138,14 +138,27 @@ Deno.serve(async (req: Request) => {
     return json({ error: `Campaign is ${campaign.status}, not sending` }, 409);
   }
 
-  const [{ data: settings }, { data: gym }] = await Promise.all([
+  const [{ data: settings }, { data: gym }, { data: sendingDomain }] = await Promise.all([
     service.from('gym_comms_settings').select('*').eq('gym_id', campaign.gym_id).maybeSingle(),
     service.from('gyms').select('name').eq('id', campaign.gym_id).single(),
+    service
+      .from('gym_sending_domains')
+      .select('domain, from_local, status')
+      .eq('gym_id', campaign.gym_id)
+      .maybeSingle(),
   ]);
 
   const fromName =
     campaign.from_name || settings?.from_name || gym?.name || 'Your gym';
   const replyTo = campaign.reply_to || settings?.reply_to || undefined;
+
+  // Send from the gym's own verified domain when they've authenticated one
+  // (DKIM-aligned, their address); otherwise fall back to the shared
+  // platform address.
+  const fromAddress =
+    sendingDomain?.status === 'verified' && sendingDomain.domain
+      ? `${sendingDomain.from_local}@${sendingDomain.domain}`
+      : RESEND_FROM;
 
   const { data: recipients, error: rErr } = await service
     .from('email_campaign_recipients')
@@ -155,7 +168,7 @@ Deno.serve(async (req: Request) => {
   if (rErr) return json({ error: rErr.message }, 500);
 
   const trackBase = `${SUPABASE_URL}/functions/v1/track`;
-  const live = Boolean(RESEND_API_KEY && RESEND_FROM);
+  const live = Boolean(RESEND_API_KEY && fromAddress);
   let sent = 0;
   let failed = 0;
   let simulated = 0;
@@ -207,7 +220,7 @@ Deno.serve(async (req: Request) => {
           'Idempotency-Key': `${campaignId}:${r.id}`,
         },
         body: JSON.stringify({
-          from: `${fromName} <${RESEND_FROM}>`,
+          from: `${fromName} <${fromAddress}>`,
           to: [r.email],
           subject: campaign.subject || '(no subject)',
           html,

@@ -41,3 +41,8 @@ verify_jwt = true
 
 [functions.track]
 verify_jwt = false
+
+# Per-gym sending domain management (Resend Management API). Signed-in
+# staff caller; re-checks can_manage_comms per action.
+[functions.sending-domain]
+verify_jwt = true

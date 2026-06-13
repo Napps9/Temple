@@ -255,6 +255,18 @@ surface, reachable from the **Comms** tab on Manage or
 - **Sender & footer settings** — from-name, reply-to, and the CAN-SPAM
   postal-address footer every send carries beside a one-click
   unsubscribe.
+- **Sending domain, per-gym (0048)** — a gym can authenticate a domain
+  they own to send from their own address (Mailchimp's
+  domain-authentication tier). `gym_sending_domains` + the
+  `sending-domain` edge function drive Resend's Management API: connect a
+  domain → add the returned DKIM / SPF / DMARC records → verify, and
+  `send-campaign` then sends from `<from_local>@<their-domain>`
+  (DKIM-aligned, DMARC-passing, no "via" label) instead of the shared
+  platform address. Free providers (gmail.com, …) are refused and a
+  subdomain (mail.yourgym.com) is encouraged; the table is read-gated on
+  `can_manage_comms` with **no client write path** (all writes go through
+  the function under the service role). Falls back to the shared address
+  until a domain is verified.
 - **Hardening (0045)** — `effective_can` now gates on `left_at is
   null` (a soft-deleted admin loses every staff capability),
   `comms_send_campaign` takes a row lock to serialise concurrent
@@ -422,9 +434,10 @@ Items the conversation has flagged but not implemented yet:
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.
 - **Communications Suite — live delivery + extras**: the send /
-  tracking pipeline ships behind a pluggable ESP. Going live needs a
-  verified sending domain + `RESEND_API_KEY` / `RESEND_FROM_EMAIL` on
-  the `send-campaign` function; until then sends are simulated.
-  Scheduled sends, A/B subject testing, a hand-pick-members audience
-  picker, and a reusable saved-segment / template library are scoped
-  but not yet built.
+  tracking / domain-authentication pipeline ships behind a pluggable
+  ESP. Going live just needs `RESEND_API_KEY` (+ `RESEND_FROM_EMAIL`
+  for the shared-domain fallback) on the `send-campaign` /
+  `sending-domain` functions; until then sends are simulated.
+  Per-gym sending domains are built (0048); scheduled sends, A/B
+  subject testing, a hand-pick-members audience picker, and a reusable
+  saved-segment / template library are scoped but not yet built.

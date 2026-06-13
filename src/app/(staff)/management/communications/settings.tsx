@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { SendingDomainCard } from '@/components/email/SendingDomainCard';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCommsSettings } from '@/lib/comms';
 import { errorMessage } from '@/lib/errors';
@@ -101,6 +102,8 @@ export default function CommsSettingsScreen() {
           </Text>
         </View>
 
+        <SendingDomainCard />
+
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Footer
@@ -128,9 +131,10 @@ export default function CommsSettingsScreen() {
             Delivery
           </Text>
           <Text className="text-amber-700/90 dark:text-amber-300/90 text-xs">
-            Until a sending domain (RESEND_API_KEY + verified RESEND_FROM_EMAIL)
-            is connected to the send-campaign function, sends are recorded as a
-            simulation so you can build and review end-to-end.
+            With no Resend API key configured yet, sends are recorded as a
+            simulation so you can build and review end-to-end. Once it’s set,
+            campaigns send from your verified domain above — or the shared
+            platform address if you haven’t connected one.
           </Text>
         </View>
 

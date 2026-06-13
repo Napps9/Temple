@@ -1985,6 +1985,48 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_sending_domains: {
+        Row: {
+          gym_id: string;
+          domain: string;
+          from_local: string;
+          resend_domain_id: string | null;
+          status: 'pending' | 'verified' | 'failed' | 'temporary_failure';
+          records: Json;
+          last_checked_at: string | null;
+          verified_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          domain: string;
+          from_local?: string;
+          resend_domain_id?: string | null;
+          status?: 'pending' | 'verified' | 'failed' | 'temporary_failure';
+          records?: Json;
+          last_checked_at?: string | null;
+          verified_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          domain: string;
+          from_local: string;
+          resend_domain_id: string | null;
+          status: 'pending' | 'verified' | 'failed' | 'temporary_failure';
+          records: Json;
+          last_checked_at: string | null;
+          verified_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       v_member_cohort: {

@@ -92,3 +92,4 @@ jobs:
         run: |
           supabase functions deploy send-campaign
           supabase functions deploy track
+          supabase functions deploy sending-domain

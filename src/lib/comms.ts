@@ -9,7 +9,7 @@ import type { AudienceDefinition } from './email/audience';
 import type { EmailDocument } from './email/blocks';
 import { renderEmailHtml, renderEmailText } from './email/render';
 import { supabase } from './supabase';
-import type { Json } from '@/types/database';
+import type { Database, Json } from '@/types/database';
 
 export type CampaignStatus =
   | 'draft'
@@ -205,6 +205,71 @@ export function useSendCampaign() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comms-campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['comms-campaign'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Sending domain (per-gym domain authentication via the sending-domain
+// edge function).
+// ---------------------------------------------------------------------------
+
+export type SendingDomainRow =
+  Database['public']['Tables']['gym_sending_domains']['Row'];
+
+export function useSendingDomain() {
+  const { data: membership } = useGymMembership();
+  return useQuery({
+    queryKey: ['comms-sending-domain', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<SendingDomainRow | null> => {
+      const { data, error } = await supabase
+        .from('gym_sending_domains')
+        .select('*')
+        .eq('gym_id', membership!.gymId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as SendingDomainRow) ?? null;
+    },
+  });
+}
+
+export type DomainAction =
+  | { action: 'connect'; domain: string; from_local?: string }
+  | { action: 'verify' }
+  | { action: 'disconnect' }
+  | { action: 'update_from_local'; from_local: string };
+
+// supabase.functions.invoke surfaces a non-2xx as a FunctionsHttpError whose
+// `.context` is the raw Response — our functions answer with { error } JSON,
+// so dig that friendly message out rather than showing "non-2xx status".
+async function functionErrorMessage(error: unknown): Promise<string> {
+  const ctx = (error as { context?: Response } | null)?.context;
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = await ctx.json();
+      if (body?.error) return String(body.error);
+    } catch {
+      // not JSON — fall through
+    }
+  }
+  return error instanceof Error ? error.message : 'Something went wrong';
+}
+
+export function useSendingDomainAction() {
+  const queryClient = useQueryClient();
+  const { data: membership } = useGymMembership();
+  return useMutation<{ ok?: boolean }, Error, DomainAction>({
+    mutationFn: async (input) => {
+      if (!membership?.gymId) throw new Error('No gym selected');
+      const { data, error } = await supabase.functions.invoke('sending-domain', {
+        body: { ...input, gym_id: membership.gymId },
+      });
+      if (error) throw new Error(await functionErrorMessage(error));
+      return (data as { ok?: boolean }) ?? {};
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comms-sending-domain'] });
     },
   });
 }
