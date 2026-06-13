@@ -268,6 +268,18 @@ ones, so a member who unsubscribed from "Promos" still receives
 "Billing reminders". Campaigns sent without a topic keep the
 pre-0058 behaviour (only blanket unsubs apply).
 
+### Member email preferences
+
+Reachable from Account → "Manage email preferences"
+(`/email-preferences`). A master toggle ("Receive any emails from
+this gym") plus a per-topic toggle for each non-archived
+`gym_email_topics` row. Subscribing to any topic also clears the
+master "off" — the member's "yes" to this topic shouldn't lose to
+the master "no". Behind the scenes, three SECURITY DEFINER RPCs
+(`list_my_email_preferences`, `set_my_email_topic_subscription`,
+`set_my_email_blanket_unsub`) gate writes on the caller's current
+gym membership and `auth.users.email`.
+
 ### Communications Suite
 
 [`can_manage_comms`, owner + admin by default] A Mailchimp-shaped email

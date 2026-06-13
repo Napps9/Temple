@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
@@ -288,6 +289,27 @@ export function AccountScreen() {
             Update password
           </Button>
         </View>
+
+        {membership && session ? (
+          <View className="mt-4 gap-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Communication preferences
+            </Text>
+            <Link href="/email-preferences" asChild>
+              <ChipButton
+                tone="neutral"
+                className="self-start"
+                label="Manage email preferences"
+                icon="mail-outline"
+                iconSide="right"
+              />
+            </Link>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Choose which topics you hear from this gym about — newsletter,
+              programming, promos, billing.
+            </Text>
+          </View>
+        ) : null}
 
         {membership && session ? (
           <View className="mt-4 gap-2">

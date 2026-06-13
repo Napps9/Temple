@@ -2812,6 +2812,28 @@ export type Database = {
         Args: { p_gym_id: string; p_definition: Json; p_topic_id?: string | null };
         Returns: number;
       };
+      list_my_email_preferences: {
+        Args: { p_gym_id: string };
+        Returns: {
+          topic_id: string;
+          label: string;
+          description: string | null;
+          subscribed: boolean;
+          blanket_unsub: boolean;
+        }[];
+      };
+      set_my_email_topic_subscription: {
+        Args: {
+          p_gym_id: string;
+          p_topic_id: string;
+          p_subscribed: boolean;
+        };
+        Returns: null;
+      };
+      set_my_email_blanket_unsub: {
+        Args: { p_gym_id: string; p_unsubscribed: boolean };
+        Returns: null;
+      };
       comms_audience_sample: {
         Args: { p_gym_id: string; p_definition: Json; p_limit?: number };
         Returns: { profile_id: string; full_name: string | null; email: string }[];
