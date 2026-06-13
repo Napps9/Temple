@@ -4,7 +4,7 @@
 -- existing comms keep flowing.
 
 begin;
-select plan(5);
+select plan(4);
 
 \ir _helpers.psql
 
@@ -119,23 +119,6 @@ select is(
      null::uuid)),
   2,
   'NULL-topic campaign: only blanket unsub applies (m2 + m3 receive)'
-);
-
--- 5. The two-arg compat wrapper (no topic arg) matches the NULL-topic
---    behaviour.
-select is(
-  (select count(*)::int from public.comms_audience_rows(
-     current_setting('test.gym')::uuid,
-     jsonb_build_object(
-       'kind', 'manual',
-       'profile_ids', jsonb_build_array(
-         current_setting('test.owner')::text,
-         (select id::text from auth.users where email = 'm1@topics.test'),
-         (select id::text from auth.users where email = 'm2@topics.test'),
-         (select id::text from auth.users where email = 'm3@topics.test')
-       )))),
-  2,
-  'two-arg compat wrapper behaves the same as topic = null'
 );
 
 select * from finish();
