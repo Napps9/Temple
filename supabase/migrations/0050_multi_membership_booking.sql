@@ -74,6 +74,11 @@ security definer
 stable
 set search_path = public
 as $$
+-- The RETURNS TABLE column `id` collides with table columns named id
+-- inside the query body (gyms.id, eligible_plans.id, credit_pick.id).
+-- Tell plpgsql the column always wins; the OUT name is only used as
+-- the result schema, never as a value inside the body.
+#variable_conflict use_column
 declare
   v_mode text;
 begin

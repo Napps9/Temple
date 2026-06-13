@@ -31,8 +31,8 @@ begin
   perform _test_mk_membership(v_gym, v_owner,  'owner');
   v_gm := _test_mk_membership(v_gym, v_member, 'member');
 
-  insert into public.membership_plans (gym_id, name, kind)
-    values (v_gym, 'Plan A (credits)', 'credit_pack')
+  insert into public.membership_plans (gym_id, name, kind, credit_count)
+    values (v_gym, 'Plan A (credits)', 'credit_pack', 10)
     returning plan_id into v_plan_a;
   insert into public.membership_plans (gym_id, name, kind)
     values (v_gym, 'Plan B (unlimited)', 'unlimited')
