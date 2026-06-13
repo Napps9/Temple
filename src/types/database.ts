@@ -923,6 +923,9 @@ export type Database = {
           no_show: boolean;
           no_show_marked_at: string | null;
           promoted_from_waitlist: boolean;
+          used_entitlement_kind: 'comp_grant' | 'plan_subscription' | null;
+          used_entitlement_id: string | null;
+          booked_by_profile_id: string | null;
         };
         Insert: {
           id?: string;
@@ -935,6 +938,9 @@ export type Database = {
           no_show?: boolean;
           no_show_marked_at?: string | null;
           promoted_from_waitlist?: boolean;
+          used_entitlement_kind?: 'comp_grant' | 'plan_subscription' | null;
+          used_entitlement_id?: string | null;
+          booked_by_profile_id?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -947,6 +953,9 @@ export type Database = {
           no_show: boolean;
           no_show_marked_at: string | null;
           promoted_from_waitlist: boolean;
+          used_entitlement_kind: 'comp_grant' | 'plan_subscription' | null;
+          used_entitlement_id: string | null;
+          booked_by_profile_id: string | null;
         }>;
         Relationships: [];
       };
@@ -1049,6 +1058,7 @@ export type Database = {
           awaiting_payment_authentication: boolean;
           cancelled_at: string | null;
           price_cents: number | null;
+          priority: number;
           created_at: string;
         };
         Insert: {
@@ -1065,6 +1075,7 @@ export type Database = {
           awaiting_payment_authentication?: boolean;
           cancelled_at?: string | null;
           price_cents?: number | null;
+          priority?: number;
           created_at?: string;
         };
         Update: Partial<{
@@ -1081,6 +1092,7 @@ export type Database = {
           awaiting_payment_authentication: boolean;
           cancelled_at: string | null;
           price_cents: number | null;
+          priority: number;
           created_at: string;
         }>;
         Relationships: [];
@@ -2253,8 +2265,12 @@ export type Database = {
         Returns: null;
       };
       book_class: {
-        Args: { session_id: string };
-        Returns: null;
+        Args: {
+          session_id: string;
+          p_entitlement_kind?: 'comp_grant' | 'plan_subscription' | null;
+          p_entitlement_id?: string | null;
+        };
+        Returns: string | null;
       };
       is_booking_eligible: {
         Args: {
@@ -2263,6 +2279,18 @@ export type Database = {
           p_class_session_id: string;
         };
         Returns: boolean;
+      };
+      list_booking_entitlements: {
+        Args: {
+          p_class_session_id: string;
+          p_target_profile_id?: string | null;
+        };
+        Returns: {
+          kind: 'comp_grant' | 'plan_subscription';
+          id: string;
+          is_default: boolean;
+          label: string;
+        }[];
       };
       same_gym_as_caller: {
         Args: { target_profile: string };

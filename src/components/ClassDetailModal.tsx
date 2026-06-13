@@ -43,6 +43,13 @@ type WaitlistEntry = {
   joined_at: string;
 };
 
+type BookingEntitlement = {
+  kind: 'comp_grant' | 'plan_subscription';
+  id: string;
+  is_default: boolean;
+  label: string;
+};
+
 function fmtTime(d: Date) {
   return `${d.getHours().toString().padStart(2, '0')}:${d
     .getMinutes()
@@ -70,6 +77,10 @@ export function ClassDetailModal({
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCancelClass, setShowCancelClass] = useState(false);
+  const [chosenEntitlement, setChosenEntitlement] =
+    useState<{ kind: 'comp_grant' | 'plan_subscription'; id: string } | null>(
+      null,
+    );
 
   const sessionQuery = useQuery({
     queryKey: ['class-session-detail', sessionId],
@@ -154,15 +165,44 @@ export function ClassDetailModal({
     },
   });
 
+  // Member-side picker. Only fetched when the user enters the confirm
+  // step in book mode — staff manage views skip it. The list also tells
+  // us which entitlement the server would pick by default, which we
+  // preselect so single-option members never see a menu.
+  const entitlements = useQuery({
+    queryKey: ['booking-entitlements', sessionId, session?.user.id],
+    enabled:
+      !!sessionId &&
+      visible &&
+      mode === 'book' &&
+      confirming === 'book' &&
+      !!session?.user.id,
+    queryFn: async (): Promise<BookingEntitlement[]> => {
+      const { data, error: e } = await supabase.rpc(
+        'list_booking_entitlements',
+        { p_class_session_id: sessionId! },
+      );
+      if (e) throw e;
+      return (data ?? []) as BookingEntitlement[];
+    },
+  });
+
   const book = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (
+      pick: { kind: 'comp_grant' | 'plan_subscription'; id: string } | null,
+    ) => {
       if (!sessionId) throw new Error('No class selected');
-      const { error: e } = await supabase.rpc('book_class', { session_id: sessionId });
+      const { error: e } = await supabase.rpc('book_class', {
+        session_id: sessionId,
+        p_entitlement_kind: pick?.kind ?? null,
+        p_entitlement_id: pick?.id ?? null,
+      });
       if (e) throw e;
     },
     onSuccess: () => {
       setError(null);
       setConfirming(null);
+      setChosenEntitlement(null);
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
     },
     onError: (e) => {
@@ -441,13 +481,17 @@ export function ClassDetailModal({
                 myWaitlistRank={myWaitlistRank.data ?? null}
                 confirming={confirming}
                 setConfirming={setConfirming}
-                onBook={() => book.mutate()}
+                onBook={() => book.mutate(chosenEntitlement)}
                 onCancel={() => cancel.mutate()}
                 onJoinWaitlist={() => joinWaitlist.mutate()}
                 onLeaveWaitlist={() => leaveWaitlist.mutate()}
                 bookPending={book.isPending}
                 cancelPending={cancel.isPending}
                 waitlistPending={joinWaitlist.isPending || leaveWaitlist.isPending}
+                entitlements={entitlements.data ?? null}
+                entitlementsLoading={entitlements.isLoading}
+                chosenEntitlement={chosenEntitlement}
+                setChosenEntitlement={setChosenEntitlement}
               />
 
               {mode === 'manage' && canEditClasses && !inPast ? (
@@ -497,6 +541,10 @@ function BookActions({
   bookPending,
   cancelPending,
   waitlistPending,
+  entitlements,
+  entitlementsLoading,
+  chosenEntitlement,
+  setChosenEntitlement,
 }: {
   inPast: boolean;
   isFull: boolean;
@@ -511,6 +559,14 @@ function BookActions({
   bookPending: boolean;
   cancelPending: boolean;
   waitlistPending: boolean;
+  entitlements: BookingEntitlement[] | null;
+  entitlementsLoading: boolean;
+  chosenEntitlement:
+    | { kind: 'comp_grant' | 'plan_subscription'; id: string }
+    | null;
+  setChosenEntitlement: (
+    v: { kind: 'comp_grant' | 'plan_subscription'; id: string } | null,
+  ) => void;
 }) {
   if (inPast && !myBookingExists) {
     return (
@@ -520,19 +576,84 @@ function BookActions({
     );
   }
   if (confirming === 'book') {
+    const hasChoice = (entitlements?.length ?? 0) > 1;
+    const defaultPick =
+      entitlements?.find((e) => e.is_default) ?? entitlements?.[0] ?? null;
+    const selected = chosenEntitlement
+      ? entitlements?.find(
+          (e) =>
+            e.kind === chosenEntitlement.kind && e.id === chosenEntitlement.id,
+        ) ?? defaultPick
+      : defaultPick;
     return (
-      <View className="gap-2">
+      <View className="gap-3">
         <Text className="text-gray-900 dark:text-gray-50 font-medium">
-          Confirm your booking for this class?
+          {hasChoice
+            ? 'Which membership do you want to use?'
+            : 'Confirm your booking for this class?'}
         </Text>
+        {entitlementsLoading ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            Checking your memberships…
+          </Text>
+        ) : hasChoice && entitlements ? (
+          <View className="gap-2">
+            {entitlements.map((e) => {
+              const isSel =
+                selected?.kind === e.kind && selected?.id === e.id;
+              return (
+                <Pressable
+                  key={`${e.kind}:${e.id}`}
+                  onPress={() =>
+                    setChosenEntitlement({ kind: e.kind, id: e.id })
+                  }
+                  className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
+                    isSel
+                      ? 'border-primary bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Ionicons
+                    name={isSel ? 'radio-button-on' : 'radio-button-off'}
+                    size={18}
+                    color={isSel ? '#2563EB' : '#9CA3AF'}
+                  />
+                  <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
+                    {e.label}
+                  </Text>
+                  {e.is_default ? (
+                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                      Default
+                    </Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <Button variant="secondary" onPress={() => setConfirming(null)}>
+            <Button
+              variant="secondary"
+              onPress={() => {
+                setConfirming(null);
+                setChosenEntitlement(null);
+              }}>
               Back
             </Button>
           </View>
           <View className="flex-1">
-            <Button onPress={onBook} loading={bookPending}>
+            <Button
+              onPress={() => {
+                if (selected && hasChoice) {
+                  setChosenEntitlement({
+                    kind: selected.kind,
+                    id: selected.id,
+                  });
+                }
+                onBook();
+              }}
+              loading={bookPending}
+              disabled={entitlementsLoading}>
               Yes, book
             </Button>
           </View>

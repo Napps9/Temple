@@ -21,7 +21,19 @@ permission gate that controls visibility for staff features.
   rank shown to the member (computed over the full queue regardless
   of RLS).
 - **Self-cancel bookings** — credits refunded according to the plan
-  type (unlimited gets none; credit packs / comp grants do).
+  type (unlimited gets none; credit packs / comp grants do). When a
+  booking was made against a specific entitlement (post-0050) the
+  refund targets that one precisely; legacy bookings fall back to the
+  0018 inference rule.
+- **Multi-membership picker** — a member holding more than one
+  eligible plan / comp grant for a class sees a labelled radio picker
+  on the confirm step (rendered by `list_booking_entitlements`) with
+  the gym's default pre-selected. The default is chosen by the gym's
+  `subscription_resolution` setting (`credits_first` | `newest_first`
+  | `highest_priority`) and the chosen entitlement is recorded on the
+  booking row so the refund path can target it precisely. Members
+  holding a single entitlement see the unchanged single-button
+  confirm.
 - **Health/PAR-Q gate** — annual (365-day) screening flow, with
   allow-with-flag if the member ticks a flagged answer. Enforced both
   as a member entry redirect and as a **booking prerequisite** inside
