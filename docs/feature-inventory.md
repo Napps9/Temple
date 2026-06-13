@@ -264,6 +264,18 @@ owner in the editor to preview before send. A live linking-progress
 counter ticks up while members sign up. Plan-name → membership_plan
 mapping is deliberately deferred to a follow-up flow.
 
+### Campaign topic picker
+
+[`can_manage_comms`] Reachable from the campaign editor
+(`/management/communications/<id>`). A horizontal chip row above the
+audience builder lets the sender choose which topic the campaign is
+sent under, or leave it as "No topic" (the pre-0058 default, only
+suppresses members who hit the master "stop all" toggle). The live
+audience count beneath the AudienceBuilder reflects the topic
+suppression in real time; `comms_send_campaign` reads the chosen
+topic and passes it to `comms_audience_rows` so the per-topic
+suppression actually fires at send.
+
 ### Email topics
 
 [`can_manage_comms`] Reachable from Manage → Communications → Email

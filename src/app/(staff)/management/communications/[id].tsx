@@ -118,6 +118,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   const [audience, setAudience] = useState<AudienceDefinition>(() =>
     normalizeAudience(campaign.audience),
   );
+  const [topicId, setTopicId] = useState<string | null>(campaign.topic_id ?? null);
 
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [confirming, setConfirming] = useState(false);
@@ -136,6 +137,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     setFromName(campaign.from_name ?? '');
     setDocument(coerceDocument(campaign.design, brandSeed));
     setAudience(normalizeAudience(campaign.audience));
+    setTopicId(campaign.topic_id ?? null);
     initialized.current = true;
   }, [campaign, brandSeed]);
 
@@ -152,6 +154,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             from_name: fromName.trim() || null,
             design: document as unknown as Json,
             audience: audience as unknown as Json,
+            topic_id: topicId,
             updated_at: new Date().toISOString(),
           })
           .eq('id', campaign.id);
@@ -162,7 +165,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
           setSaveState('saved');
         }
       },
-    [title, subject, preheader, fromName, document, audience, campaign.id],
+    [title, subject, preheader, fromName, document, audience, topicId, campaign.id],
   );
 
   // Debounced autosave on any edit.
@@ -187,7 +190,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     [document, preheader, footer.businessName, footer.address],
   );
 
-  const audienceCount = useAudienceCount(audience);
+  const audienceCount = useAudienceCount(audience, topicId);
   const warnings = documentWarnings(document);
   const audienceEmpty = isAudienceEmptyByConstruction(audience);
   const noSubject = subject.trim().length === 0;
@@ -256,6 +259,18 @@ function EditorView({ campaign }: { campaign: Campaign }) {
           onChangeText={setFromName}
           autoCapitalize="words"
           placeholder={brand.gymName}
+        />
+      </View>
+
+      {/* Topic */}
+      <View className="gap-2">
+        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          Topic
+        </Text>
+        <TopicPicker
+          gymId={membership?.gymId ?? null}
+          value={topicId}
+          onChange={setTopicId}
         />
       </View>
 
@@ -556,6 +571,88 @@ function ReportView({ campaign }: { campaign: Campaign }) {
         </Text>
         <HtmlPreview html={previewHtml} height={420} />
       </View>
+    </View>
+  );
+}
+
+function TopicPicker({
+  gymId,
+  value,
+  onChange,
+}: {
+  gymId: string | null;
+  value: string | null;
+  onChange: (next: string | null) => void;
+}) {
+  const topics = useQuery({
+    queryKey: ['gym-email-topics', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<{ id: string; label: string }[]> => {
+      const { data, error } = await supabase
+        .from('gym_email_topics')
+        .select('id, label')
+        .eq('gym_id', gymId!)
+        .is('archived_at', null)
+        .order('sort_order')
+        .order('created_at');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const rows = topics.data ?? [];
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        Members who unsubscribed from this topic won't receive this send.
+        Leave on "No topic" to suppress only members who hit the master "stop
+        all" toggle.
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
+        <Pressable
+          onPress={() => onChange(null)}
+          className={`px-3 py-1.5 rounded-full border ${
+            value === null
+              ? 'border-primary bg-primary/10'
+              : 'border-gray-200 dark:border-gray-700'
+          }`}>
+          <Text
+            className={`text-xs font-medium ${
+              value === null
+                ? 'text-primary'
+                : 'text-gray-700 dark:text-gray-200'
+            }`}>
+            No topic
+          </Text>
+        </Pressable>
+        {rows.map((t) => {
+          const sel = value === t.id;
+          return (
+            <Pressable
+              key={t.id}
+              onPress={() => onChange(t.id)}
+              className={`px-3 py-1.5 rounded-full border ${
+                sel
+                  ? 'border-primary bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-700'
+              }`}>
+              <Text
+                className={`text-xs font-medium ${
+                  sel ? 'text-primary' : 'text-gray-700 dark:text-gray-200'
+                }`}>
+                {t.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {rows.length === 0 ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          No topics set up yet. Go to Communications → Email topics to add
+          some.
+        </Text>
+      ) : null}
     </View>
   );
 }

@@ -129,15 +129,19 @@ export function useGymTagLabels() {
 }
 
 // Live recipient count for the current audience definition.
-export function useAudienceCount(definition: AudienceDefinition | null) {
+export function useAudienceCount(
+  definition: AudienceDefinition | null,
+  topicId: string | null = null,
+) {
   const { data: membership } = useGymMembership();
   return useQuery({
-    queryKey: ['comms-audience-count', membership?.gymId, definition],
+    queryKey: ['comms-audience-count', membership?.gymId, definition, topicId],
     enabled: !!membership?.gymId && !!definition,
     queryFn: async (): Promise<number> => {
       const { data, error } = await supabase.rpc('comms_audience_count', {
         p_gym_id: membership!.gymId,
         p_definition: definition as unknown as Json,
+        p_topic_id: topicId,
       });
       if (error) throw error;
       return (data as number) ?? 0;
