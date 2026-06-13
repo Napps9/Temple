@@ -28,6 +28,24 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 // Mirrors UNSUBSCRIBE_PLACEHOLDER in src/lib/email/render.ts.
 const UNSUB_PLACEHOLDER = '{{unsubscribe_url}}';
 
+// HTML-escaped href values come back with &amp; / &lt; / &gt; / &quot;.
+// The renderer's escapeHtml() runs over every URL it emits, so the
+// stored compiled HTML carries entity-encoded ampersands inside
+// hrefs. URL-encoding the literal `&amp;` percent-encodes the `amp;`
+// part, and when the tracker URL-decodes its `u` query param we end
+// up redirecting the browser to a URL with a literal "&amp;" in it
+// — which a browser treats as text, not a query-param separator. So
+// undo the HTML escaping on the raw URL string BEFORE handing it to
+// encodeURIComponent.
+function unescapeHtmlEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -42,20 +60,33 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+// Pre-build the tracker URLs we wrap into so the unsubscribe link
+// (also a tracker URL) and the open pixel can't be re-wrapped on a
+// second pass — the wrap loop's regex would otherwise rewrite our own
+// `${trackBase}?e=...` hrefs, doubling the encoding on the embedded
+// destination URL.
 function personalize(
   html: string,
   ctx: { campaignId: string; recipientId: string; trackBase: string; unsubUrl: string },
 ): string {
-  // Wrap absolute http(s) links so clicks redirect through the tracker.
-  // The unsubscribe placeholder isn't an http link yet, so it's skipped
-  // here and substituted below.
-  let out = html.replace(/href="(https?:\/\/[^"]+)"/g, (_m, url) => {
+  // Swap the unsubscribe placeholder FIRST so the resulting href (the
+  // tracker URL) isn't a candidate for click-wrapping below.
+  let out = html.split(UNSUB_PLACEHOLDER).join(ctx.unsubUrl);
+
+  // Wrap absolute http(s) hrefs so clicks redirect through the tracker.
+  // Skip anything pointing at the tracker itself.
+  out = out.replace(/href="(https?:\/\/[^"]+)"/g, (_m, raw: string) => {
+    if (raw.startsWith(ctx.trackBase)) return `href="${raw}"`;
+    // The href value comes back HTML-entity-encoded (renderer used
+    // escapeHtml). Decode before percent-encoding so the redirect lands
+    // on the original URL, not one with literal "&amp;" in its query.
+    const decoded = unescapeHtmlEntities(raw);
     const wrapped = `${ctx.trackBase}?e=c&c=${ctx.campaignId}&r=${ctx.recipientId}&u=${encodeURIComponent(
-      url,
+      decoded,
     )}`;
     return `href="${wrapped}"`;
   });
-  out = out.split(UNSUB_PLACEHOLDER).join(ctx.unsubUrl);
+
   const pixel = `<img src="${ctx.trackBase}?e=o&c=${ctx.campaignId}&r=${ctx.recipientId}" width="1" height="1" alt="" style="display:none;border:0;" />`;
   out = out.includes('</body>') ? out.replace('</body>', `${pixel}</body>`) : out + pixel;
   return out;
@@ -129,7 +160,15 @@ Deno.serve(async (req: Request) => {
   let failed = 0;
   let simulated = 0;
 
-  for (const r of recipients ?? []) {
+  // Concurrency-limited per-recipient send. A sequential loop at
+  // ~200ms per Resend call hits Supabase Edge's 60s wall around the
+  // 300-recipient mark, so anything above that times out mid-send
+  // and leaves the campaign half-delivered. CONCURRENCY=8 keeps us
+  // well inside Resend's per-second rate limits while clearing a
+  // 1000-member gym in well under a minute.
+  const CONCURRENCY = 8;
+
+  async function deliver(r: { id: string; email: string; full_name: string | null }) {
     const unsubUrl = `${trackBase}?e=u&c=${campaignId}&r=${r.id}`;
     const nowIso = new Date().toISOString();
 
@@ -145,7 +184,7 @@ Deno.serve(async (req: Request) => {
         kind: 'simulated',
       });
       simulated += 1;
-      continue;
+      return;
     }
 
     const html = personalize(campaign.compiled_html ?? '', {
@@ -162,6 +201,10 @@ Deno.serve(async (req: Request) => {
         headers: {
           Authorization: `Bearer ${RESEND_API_KEY}`,
           'content-type': 'application/json',
+          // Idempotency key — if the function is invoked twice (network
+          // retry, accidental double-tap) Resend deduplicates and we
+          // never double-send to a member. Same per (campaign, recipient).
+          'Idempotency-Key': `${campaignId}:${r.id}`,
         },
         body: JSON.stringify({
           from: `${fromName} <${RESEND_FROM}>`,
@@ -170,7 +213,14 @@ Deno.serve(async (req: Request) => {
           html,
           text,
           reply_to: replyTo,
-          headers: { 'List-Unsubscribe': `<${unsubUrl}>` },
+          headers: {
+            'List-Unsubscribe': `<${unsubUrl}>`,
+            // Signals RFC 8058 one-click unsubscribe. The tracker
+            // accepts POSTs and records the opt-out then; the GET
+            // shows a confirm page so a corporate scanner / link
+            // prefetcher can't auto-unsubscribe a member.
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         }),
       });
       if (!res.ok) {
@@ -187,7 +237,7 @@ Deno.serve(async (req: Request) => {
           meta: { error: errTxt },
         });
         failed += 1;
-        continue;
+        return;
       }
       const payload = await res.json().catch(() => ({}));
       await service
@@ -213,6 +263,21 @@ Deno.serve(async (req: Request) => {
       failed += 1;
     }
   }
+
+  const queue = [...(recipients ?? [])];
+  const workers: Promise<void>[] = [];
+  for (let i = 0; i < CONCURRENCY; i += 1) {
+    workers.push(
+      (async () => {
+        while (queue.length > 0) {
+          const next = queue.shift();
+          if (!next) return;
+          await deliver(next);
+        }
+      })(),
+    );
+  }
+  await Promise.all(workers);
 
   const finalStatus = sent === 0 && simulated === 0 && failed > 0 ? 'failed' : 'sent';
   await service

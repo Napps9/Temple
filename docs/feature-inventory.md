@@ -235,6 +235,21 @@ surface, reachable from the **Comms** tab on Manage or
 - **Sender & footer settings** — from-name, reply-to, and the CAN-SPAM
   postal-address footer every send carries beside a one-click
   unsubscribe.
+- **Hardening (0045)** — `effective_can` now gates on `left_at is
+  null` (a soft-deleted admin loses every staff capability),
+  `comms_send_campaign` takes a row lock to serialise concurrent
+  "Send" clicks, and `email_campaigns.compiled_html` / `compiled_text`
+  carry size CHECK constraints (2 MB / 512 KB) so runaway editors
+  can't bloat the row. The `send-campaign` worker now (a) decodes
+  HTML-entity-escaped `href` values before tracker-wrapping so links
+  with `&amp;` round-trip correctly, (b) fans recipients out at a
+  concurrency of 8 with a per-recipient Resend `Idempotency-Key` so
+  big-gym sends complete inside the function timeout without risk of
+  double-delivery, and (c) sets the `List-Unsubscribe-Post:
+  List-Unsubscribe=One-Click` header so Gmail / Yahoo unsubscribes
+  POST instead of GET — the `track` function now shows a confirm page
+  on GET and only records the opt-out on POST, so a corporate scanner
+  / link prefetcher can't auto-unsubscribe a member.
 - **Compliance / privacy** — a per-gym `email_unsubscribes` suppression
   list the resolver always subtracts; member email (which lives in
   `auth.users`, not `profiles`) is only ever exposed through
