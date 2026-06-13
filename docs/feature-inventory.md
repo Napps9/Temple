@@ -340,6 +340,22 @@ actions are owner-only by policy:
 
 ## Cross-cutting platform features
 
+- **Operating defaults** (owner-only, Manage → Settings → Operating
+  defaults) — per-gym dials that used to be hard-coded into SQL:
+  `week_starts_on` (Mon vs Sun), `timezone`, `default_class_capacity` +
+  `default_class_minutes`, `expiring_within_days` (the cohort "expiring
+  soon" window, read by `v_member_cohort`), `parq_expiry_days` (read by
+  `_book_class_for` + `current_parq_state`), `health_retention_months`
+  (read by `purge_expired_health_data`), `lead_conversion_window_days`,
+  `materialisation_horizon_weeks`, `subscription_resolution`. All
+  default to the prior hard-coded value so existing gyms see zero
+  behaviour change. `class_types` gained `default_capacity` (overrides
+  the gym default), `coach_required` and `unsupervised_label` (replaces
+  the literal "Unsupervised" string with a per-class-type customisable
+  one). `class_sessions` + `class_recurrences` gained a `location`
+  field for multi-room gyms. The colour-swatch palette grew from 8 to
+  16 hand-tuned stops to give multi-class-type gyms distinguishable
+  options at thumbnail size.
 - **Persistent top nav** — Programming / Classes / Manage pills for
   staff; Book / Programming / Track for members. Inbox icon, theme
   toggle, avatar (account), Viewing-Staff / Viewing-Member switch on

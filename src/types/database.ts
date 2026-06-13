@@ -45,6 +45,16 @@ export type Database = {
           primary_color_dark: string | null;
           secondary_color_dark: string | null;
           text_color_dark: string | null;
+          week_starts_on: 'mon' | 'sun';
+          timezone: string;
+          default_class_capacity: number;
+          default_class_minutes: number;
+          expiring_within_days: number;
+          parq_expiry_days: number;
+          health_retention_months: number;
+          lead_conversion_window_days: number;
+          materialisation_horizon_weeks: number;
+          subscription_resolution: 'credits_first' | 'newest_first' | 'highest_priority';
         };
         Insert: {
           id?: string;
@@ -65,6 +75,16 @@ export type Database = {
           primary_color_dark?: string | null;
           secondary_color_dark?: string | null;
           text_color_dark?: string | null;
+          week_starts_on?: 'mon' | 'sun';
+          timezone?: string;
+          default_class_capacity?: number;
+          default_class_minutes?: number;
+          expiring_within_days?: number;
+          parq_expiry_days?: number;
+          health_retention_months?: number;
+          lead_conversion_window_days?: number;
+          materialisation_horizon_weeks?: number;
+          subscription_resolution?: 'credits_first' | 'newest_first' | 'highest_priority';
         };
         Update: Partial<{
           id: string;
@@ -85,6 +105,16 @@ export type Database = {
           primary_color_dark: string | null;
           secondary_color_dark: string | null;
           text_color_dark: string | null;
+          week_starts_on: 'mon' | 'sun';
+          timezone: string;
+          default_class_capacity: number;
+          default_class_minutes: number;
+          expiring_within_days: number;
+          parq_expiry_days: number;
+          health_retention_months: number;
+          lead_conversion_window_days: number;
+          materialisation_horizon_weeks: number;
+          subscription_resolution: 'credits_first' | 'newest_first' | 'highest_priority';
         }>;
         Relationships: [];
       };
@@ -757,6 +787,7 @@ export type Database = {
           created_at: string;
           class_type_id: string | null;
           recurrence_id: string | null;
+          location: string | null;
         };
         Insert: {
           id?: string;
@@ -771,6 +802,7 @@ export type Database = {
           created_at?: string;
           class_type_id?: string | null;
           recurrence_id?: string | null;
+          location?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -785,6 +817,7 @@ export type Database = {
           created_at: string;
           class_type_id: string | null;
           recurrence_id: string | null;
+          location: string | null;
         }>;
         Relationships: [];
       };
@@ -796,6 +829,9 @@ export type Database = {
           color: string;
           archived_at: string | null;
           created_at: string;
+          default_capacity: number | null;
+          coach_required: boolean;
+          unsupervised_label: string;
         };
         Insert: {
           id?: string;
@@ -804,6 +840,9 @@ export type Database = {
           color: string;
           archived_at?: string | null;
           created_at?: string;
+          default_capacity?: number | null;
+          coach_required?: boolean;
+          unsupervised_label?: string;
         };
         Update: Partial<{
           id: string;
@@ -812,6 +851,9 @@ export type Database = {
           color: string;
           archived_at: string | null;
           created_at: string;
+          default_capacity: number | null;
+          coach_required: boolean;
+          unsupervised_label: string;
         }>;
         Relationships: [];
       };
@@ -831,6 +873,7 @@ export type Database = {
           materialized_until: string | null;
           created_by: string;
           created_at: string;
+          location: string | null;
         };
         Insert: {
           id?: string;
@@ -847,6 +890,7 @@ export type Database = {
           materialized_until?: string | null;
           created_by: string;
           created_at?: string;
+          location?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -863,6 +907,7 @@ export type Database = {
           materialized_until: string | null;
           created_by: string;
           created_at: string;
+          location: string | null;
         }>;
         Relationships: [];
       };
@@ -2355,6 +2400,25 @@ export type Database = {
       };
       set_gym_public_signup: {
         Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_gym_operating_defaults: {
+        Args: {
+          p_gym_id: string;
+          p_week_starts_on: 'mon' | 'sun';
+          p_timezone: string;
+          p_default_class_capacity: number;
+          p_default_class_minutes: number;
+          p_expiring_within_days: number;
+          p_parq_expiry_days: number;
+          p_health_retention_months: number;
+          p_lead_conversion_window_days: number;
+          p_materialisation_horizon_weeks: number;
+          p_subscription_resolution:
+            | 'credits_first'
+            | 'newest_first'
+            | 'highest_priority';
+        };
         Returns: null;
       };
       set_leaderboard_config: {

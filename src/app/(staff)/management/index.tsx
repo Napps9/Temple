@@ -220,6 +220,14 @@ export default function ManagementHome() {
       visible: !!canEditClasses,
     },
     {
+      category: 'settings',
+      title: 'Operating defaults',
+      description:
+        'Week start, PAR-Q expiry, cohort windows, plan resolution, retention.',
+      href: '/management/operating',
+      visible: !!canManageStaff,
+    },
+    {
       category: 'members',
       title: 'Members',
       description: 'View members by cohort, see and edit their tags.',
