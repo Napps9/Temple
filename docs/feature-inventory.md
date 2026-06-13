@@ -24,10 +24,18 @@ dead-end). It carries:
 - **Join / start-a-gym CTAs** — the athlete home and account screen
   both offer "Join a gym" (invite) and "Start a gym", so the gymless
   landing subsumes what `/welcome` used to do.
-- Solo (gymless) workout *logging* behind a paid athlete tier is the
-  next increment — the read-only history + surface ship first; the
-  schema already supports it once `tracked_*.gym_id` goes nullable and
-  an athlete entitlement gates inserts.
+- **Solo (gymless) workout logging** — behind a paid athlete tier that
+  is **free during beta**. `athlete_subscriptions` is the entitlement;
+  `is_athlete_active()` gates it. The athlete taps "Start solo
+  tracking" (free in beta) to self-activate, then logs lifts/PRs via
+  the recorder in `solo` mode — rows are written with `gym_id = NULL`,
+  allowed by the extended tracking insert RLS
+  (`gym_id IS NULL AND is_athlete_active(auth.uid())`). Solo rows are
+  visible only to the athlete (no gym's coaches see them). The account
+  screen shows the subscription state and a cancel. When the payments
+  phase lands, `start_athlete_subscription` is the single seam that
+  takes a charge before activating (`source` / `current_period_end`
+  carry billing state); the gate itself doesn't change.
 
 ### Bookings & classes
 - **Calendar (Day / Week / Month views)** — browse the gym's class

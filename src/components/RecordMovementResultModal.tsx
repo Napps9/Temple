@@ -52,6 +52,10 @@ export function RecordMovementResultModal({
   // typed in.
   initialMovementKey,
   initialTrackKey,
+  // Solo mode: a gym-less athlete logging their own training. The rows
+  // are written with gym_id = null (the athlete-subscription RLS path),
+  // so no membership is required.
+  solo = false,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -60,6 +64,7 @@ export function RecordMovementResultModal({
   initialTitle?: string | null;
   initialMovementKey?: string;
   initialTrackKey?: string;
+  solo?: boolean;
 }) {
   const session = useSession();
   const { data: membership } = useGymMembership();
@@ -125,7 +130,9 @@ export function RecordMovementResultModal({
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!membership || !session) throw new Error('Missing context');
+      if (!session) throw new Error('Missing context');
+      if (!solo && !membership) throw new Error('Missing context');
+      const gymId = solo ? null : membership!.gymId;
       if (!date) throw new Error('Pick a date');
       const filled = drafts.filter((d) => d.option && d.value.trim().length > 0);
       if (filled.length === 0) {
@@ -149,9 +156,9 @@ export function RecordMovementResultModal({
       const { data: workoutRow, error: workoutError } = await supabase
         .from('tracked_workouts')
         .insert({
-          gym_id: membership.gymId,
+          gym_id: gymId,
           profile_id: session.user.id,
-          class_session_id: initialClassSessionId ?? null,
+          class_session_id: solo ? null : (initialClassSessionId ?? null),
           performed_at: performedAtIso,
           title: title.trim() || null,
           notes: notes.trim() || null,
@@ -165,7 +172,7 @@ export function RecordMovementResultModal({
         const opt = draft.option!;
         const isTime = scheme.metric === 'time';
         return {
-          gym_id: membership.gymId,
+          gym_id: gymId,
           profile_id: session.user.id,
           workout_id: workoutId,
           movement_key: opt.movementKey,
@@ -188,6 +195,8 @@ export function RecordMovementResultModal({
       queryClient.invalidateQueries({ queryKey: ['tracked-journal'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-movement'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-group'] });
+      queryClient.invalidateQueries({ queryKey: ['athlete-logged-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['athlete-workout-count'] });
       setTimeout(() => onClose(), 600);
     },
     onError: (e) => setError(errorMessage(e, 'Could not save workout')),

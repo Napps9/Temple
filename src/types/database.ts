@@ -1600,7 +1600,7 @@ export type Database = {
       tracked_workouts: {
         Row: {
           id: string;
-          gym_id: string;
+          gym_id: string | null;
           profile_id: string;
           class_session_id: string | null;
           performed_at: string;
@@ -1610,7 +1610,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          gym_id: string;
+          gym_id?: string | null;
           profile_id: string;
           class_session_id?: string | null;
           performed_at?: string;
@@ -1620,7 +1620,7 @@ export type Database = {
         };
         Update: Partial<{
           id: string;
-          gym_id: string;
+          gym_id: string | null;
           profile_id: string;
           class_session_id: string | null;
           performed_at: string;
@@ -1633,7 +1633,7 @@ export type Database = {
       tracked_movement_results: {
         Row: {
           id: string;
-          gym_id: string;
+          gym_id: string | null;
           profile_id: string;
           workout_id: string;
           movement_key: string;
@@ -1647,7 +1647,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          gym_id: string;
+          gym_id?: string | null;
           profile_id: string;
           workout_id: string;
           movement_key: string;
@@ -1661,7 +1661,7 @@ export type Database = {
         };
         Update: Partial<{
           id: string;
-          gym_id: string;
+          gym_id: string | null;
           profile_id: string;
           workout_id: string;
           movement_key: string;
@@ -1672,6 +1672,39 @@ export type Database = {
           notes: string | null;
           performed_at: string;
           created_at: string;
+        }>;
+        Relationships: [];
+      };
+      athlete_subscriptions: {
+        Row: {
+          profile_id: string;
+          status: 'active' | 'cancelled';
+          source: string;
+          activated_at: string;
+          current_period_end: string | null;
+          cancelled_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          status?: 'active' | 'cancelled';
+          source?: string;
+          activated_at?: string;
+          current_period_end?: string | null;
+          cancelled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          profile_id: string;
+          status: 'active' | 'cancelled';
+          source: string;
+          activated_at: string;
+          current_period_end: string | null;
+          cancelled_at: string | null;
+          created_at: string;
+          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -2448,6 +2481,18 @@ export type Database = {
           p_notes?: string | null;
         };
         Returns: string;
+      };
+      is_athlete_active: {
+        Args: { p_profile_id: string };
+        Returns: boolean;
+      };
+      start_athlete_subscription: {
+        Args: Record<string, never>;
+        Returns: null;
+      };
+      cancel_athlete_subscription: {
+        Args: Record<string, never>;
+        Returns: null;
       };
       set_lead_status: {
         Args: {

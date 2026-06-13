@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { GymLogo } from '@/components/GymLogo';
+import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { findMovement } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
@@ -15,6 +19,34 @@ type LoggedMovement = { key: string; name: string; group: string; last: string }
 export default function AthleteHome() {
   const session = useSession();
   const colors = useThemeColors();
+  const queryClient = useQueryClient();
+  const [recording, setRecording] = useState(false);
+  const [activateError, setActivateError] = useState<string | null>(null);
+
+  // The paid athlete tier (free during beta) — gates solo logging.
+  const athleteActive = useQuery({
+    queryKey: ['athlete-active', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase.rpc('is_athlete_active', {
+        p_profile_id: session!.user.id,
+      });
+      if (error) throw error;
+      return data as boolean;
+    },
+  });
+
+  const activate = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('start_athlete_subscription', {});
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setActivateError(null);
+      queryClient.invalidateQueries({ queryKey: ['athlete-active'] });
+    },
+    onError: (e) => setActivateError(errorMessage(e, 'Could not start tracking')),
+  });
 
   // Every movement the athlete has ever logged — directly (a recorded
   // rep-max) or via a tagged workout section — unioned across all gyms
@@ -100,6 +132,51 @@ export default function AthleteHome() {
           gym on the network when you join.
         </Text>
 
+        {/* Solo tracking — the paid athlete tier (free during beta). */}
+        {athleteActive.data ? (
+          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-full bg-primary/15 items-center justify-center">
+                <Ionicons name="barbell-outline" size={20} color={colors.primary} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Solo tracking is on
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Log lifts and PRs without a gym.
+                </Text>
+              </View>
+            </View>
+            <Button onPress={() => setRecording(true)}>Log a result</Button>
+          </View>
+        ) : (
+          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                Keep tracking on your own
+              </Text>
+              <View className="rounded-full bg-emerald-500/15 px-2 py-0.5">
+                <Text className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest">
+                  Free in beta
+                </Text>
+              </View>
+            </View>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Turn on solo tracking to log workouts and PRs even when you're not
+              in a gym. It's free while we're in beta.
+            </Text>
+            {activateError ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {activateError}
+              </Text>
+            ) : null}
+            <Button onPress={() => activate.mutate()} loading={activate.isPending}>
+              Start solo tracking
+            </Button>
+          </View>
+        )}
+
         {/* Join / start CTAs replace /welcome for gymless users. */}
         <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -165,6 +242,12 @@ export default function AthleteHome() {
           )}
         </View>
       </ScrollView>
+
+      <RecordMovementResultModal
+        visible={recording}
+        solo
+        onClose={() => setRecording(false)}
+      />
     </Screen>
   );
 }

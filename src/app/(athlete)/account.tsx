@@ -1,14 +1,38 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
 import { useSession, useSignOut } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 export default function AthleteAccount() {
   const session = useSession();
   const signOut = useSignOut();
+  const queryClient = useQueryClient();
+
+  const athleteActive = useQuery({
+    queryKey: ['athlete-active', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase.rpc('is_athlete_active', {
+        p_profile_id: session!.user.id,
+      });
+      if (error) throw error;
+      return data as boolean;
+    },
+  });
+
+  const cancel = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('cancel_athlete_subscription', {});
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['athlete-active'] }),
+  });
 
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
@@ -34,6 +58,33 @@ export default function AthleteAccount() {
             {session?.user.email ?? '—'}
           </Text>
         </View>
+
+        {athleteActive.data ? (
+          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-2">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                Solo tracking
+              </Text>
+              <View className="rounded-full bg-emerald-500/15 px-2 py-0.5">
+                <Text className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest">
+                  Active · free in beta
+                </Text>
+              </View>
+            </View>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              You can log workouts and PRs without a gym. Cancelling stops new
+              logging — your history stays.
+            </Text>
+            <ChipButton
+              tone="red"
+              className="self-start"
+              label="Cancel solo tracking"
+              icon="close-circle-outline"
+              onPress={() => cancel.mutate()}
+              disabled={cancel.isPending}
+            />
+          </View>
+        ) : null}
 
         <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
