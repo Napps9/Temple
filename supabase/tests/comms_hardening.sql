@@ -56,13 +56,16 @@ update public.email_campaigns set status = 'sent'
   where id = current_setting('test.cid')::uuid;
 do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
 
+-- A data-modifying CTE is only legal at the top level of the statement
+-- (not nested inside is()'s argument), so the WITH leads here.
+with u as (
+  update public.email_campaigns
+    set subject = 'Should not change'
+    where id = current_setting('test.cid')::uuid
+    returning id
+)
 select is(
-  (with u as (
-    update public.email_campaigns
-      set subject = 'Should not change'
-      where id = current_setting('test.cid')::uuid
-      returning id
-   ) select count(*)::int from u),
+  (select count(*)::int from u),
   0,
   'an UPDATE on a sent campaign is silently filtered out by RLS (0 rows)'
 );
