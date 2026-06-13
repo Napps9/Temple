@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { useThemeColors } from '@/lib/theme';
+import { localDayKey, workoutStreak } from '@/lib/workout-streak';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -95,6 +96,34 @@ export default function TrackHome() {
     },
   });
 
+  // Last 60 days of workout dates, used to compute the streak. Set
+  // of local-date keys; the heavy lifting lives in workout-streak.ts.
+  const recentWorkouts = useQuery({
+    queryKey: ['workout-streak-days', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async (): Promise<Set<string>> => {
+      const sinceIso = new Date(
+        Date.now() - 60 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const { data, error } = await supabase
+        .from('tracked_workouts')
+        .select('performed_at')
+        .eq('profile_id', session!.user.id)
+        .gte('performed_at', sinceIso);
+      if (error) throw error;
+      return new Set(
+        (data ?? []).map((r) =>
+          localDayKey(new Date((r as { performed_at: string }).performed_at)),
+        ),
+      );
+    },
+  });
+  const streak = useMemo(
+    () =>
+      recentWorkouts.data ? workoutStreak(recentWorkouts.data, new Date()) : 0,
+    [recentWorkouts.data],
+  );
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
@@ -114,6 +143,22 @@ export default function TrackHome() {
             <Text className="text-white text-sm font-semibold">Record</Text>
           </Pressable>
         </View>
+
+        {streak > 0 ? (
+          <View className="bg-amber-50 dark:bg-amber-900/15 border border-amber-300 dark:border-amber-800 rounded-xl p-3 flex-row items-center gap-3">
+            <View className="w-9 h-9 rounded-full bg-amber-500/20 items-center justify-center">
+              <Ionicons name="flame" size={18} color="#F59E0B" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-amber-700 dark:text-amber-300 font-semibold">
+                {streak}-day workout streak
+              </Text>
+              <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                Keep it going — log a session today to extend it.
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         {/* Journal + Leaderboards live as a 2-up tile row above the
             Movements grid — same tile shape as a movement group so they

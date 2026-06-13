@@ -74,6 +74,13 @@ permission gate that controls visibility for staff features.
   value; time-based ones use seconds with "lower better". Logic
   lives in `prRowIds` (`src/lib/movement-journal.ts`), unit-tested.
 
+- **Workout streak** — on the /track home, an amber tile showing
+  "X-day workout streak" when the member has logged a workout on
+  consecutive days. Local-time date boundary; today-not-yet-logged
+  doesn't break the streak so a morning visit doesn't shame the
+  member. Logic in `workoutStreak` (`src/lib/workout-streak.ts`),
+  unit-tested.
+
 - **Workout journal** — every recorded session with date, title,
   programmed sections + recorded results, route into a detail view.
 - **Record workout modal** — pre-fill from today's programming for
