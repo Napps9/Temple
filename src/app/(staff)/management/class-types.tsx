@@ -38,6 +38,12 @@ type EditableType = {
   scheduleOpen: boolean;
   recurrenceId: string | null;
   recurrence: RecurrenceForm;
+  rulesOpen: boolean;
+  // String-backed so an empty input maps cleanly to NULL = inherit
+  // the gym default. The save path parses to integer.
+  bookingWindowHoursAhead: string;
+  bookingCutoffMinutesBefore: string;
+  cancelCutoffMinutesBefore: string;
 };
 
 function fmtDateLocal(d: Date) {
@@ -121,6 +127,19 @@ export function ClassTypesPanel() {
           recurrence: rec
             ? recurrenceFromServer(rec)
             : { ...EMPTY_RECURRENCE, indefinite: true },
+          rulesOpen: false,
+          bookingWindowHoursAhead:
+            t.booking_window_hours_ahead === null
+              ? ''
+              : String(t.booking_window_hours_ahead),
+          bookingCutoffMinutesBefore:
+            t.booking_cutoff_minutes_before === null
+              ? ''
+              : String(t.booking_cutoff_minutes_before),
+          cancelCutoffMinutesBefore:
+            t.cancel_cutoff_minutes_before === null
+              ? ''
+              : String(t.cancel_cutoff_minutes_before),
         };
       }),
     );
@@ -174,25 +193,62 @@ export function ClassTypesPanel() {
       const server = types.data ?? [];
       const serverById = new Map(server.map((t) => [t.id, t]));
 
-      type Insert = { localIdx: number; name: string; color: string };
+      type Insert = {
+        localIdx: number;
+        name: string;
+        color: string;
+        booking_window_hours_ahead: number | null;
+        booking_cutoff_minutes_before: number | null;
+        cancel_cutoff_minutes_before: number | null;
+      };
+      type Update = {
+        id: string;
+        name: string;
+        color: string;
+        booking_window_hours_ahead: number | null;
+        booking_cutoff_minutes_before: number | null;
+        cancel_cutoff_minutes_before: number | null;
+      };
       const inserts: Insert[] = [];
-      const updates: { id: string; name: string; color: string }[] = [];
+      const updates: Update[] = [];
+
+      function nullableInt(v: string): number | null {
+        const t = v.trim();
+        if (t === '') return null;
+        const n = parseInt(t, 10);
+        if (!Number.isFinite(n) || n < 0) {
+          throw new Error('Booking-rule values must be non-negative whole numbers');
+        }
+        return n;
+      }
 
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         const name = r.name.trim();
+        const rules = {
+          booking_window_hours_ahead: nullableInt(r.bookingWindowHoursAhead),
+          booking_cutoff_minutes_before: nullableInt(r.bookingCutoffMinutesBefore),
+          cancel_cutoff_minutes_before: nullableInt(r.cancelCutoffMinutesBefore),
+        };
         if (r.id === null) {
           if (!name) throw new Error('Each type needs a name');
-          inserts.push({ localIdx: i, name, color: r.color });
+          inserts.push({ localIdx: i, name, color: r.color, ...rules });
           continue;
         }
-        // Archived rows are read-only in the form (name/color/schedule changes
-        // don't apply to archived types — restore first).
         if (r.archivedAt) continue;
         if (!name) throw new Error('Each type needs a name');
         const sv = serverById.get(r.id);
-        if (sv && (sv.name !== name || sv.color !== r.color)) {
-          updates.push({ id: r.id, name, color: r.color });
+        const changed =
+          sv &&
+          (sv.name !== name ||
+            sv.color !== r.color ||
+            sv.booking_window_hours_ahead !== rules.booking_window_hours_ahead ||
+            sv.booking_cutoff_minutes_before !==
+              rules.booking_cutoff_minutes_before ||
+            sv.cancel_cutoff_minutes_before !==
+              rules.cancel_cutoff_minutes_before);
+        if (changed) {
+          updates.push({ id: r.id, name, color: r.color, ...rules });
         }
       }
 
@@ -205,6 +261,9 @@ export function ClassTypesPanel() {
               gym_id: membership.gymId,
               name: i.name,
               color: i.color,
+              booking_window_hours_ahead: i.booking_window_hours_ahead,
+              booking_cutoff_minutes_before: i.booking_cutoff_minutes_before,
+              cancel_cutoff_minutes_before: i.cancel_cutoff_minutes_before,
             })),
           )
           .select('id');
@@ -219,7 +278,13 @@ export function ClassTypesPanel() {
       for (const u of updates) {
         const { error } = await supabase
           .from('class_types')
-          .update({ name: u.name, color: u.color })
+          .update({
+            name: u.name,
+            color: u.color,
+            booking_window_hours_ahead: u.booking_window_hours_ahead,
+            booking_cutoff_minutes_before: u.booking_cutoff_minutes_before,
+            cancel_cutoff_minutes_before: u.cancel_cutoff_minutes_before,
+          })
           .eq('id', u.id);
         if (error) throw error;
       }
@@ -352,6 +417,10 @@ export function ClassTypesPanel() {
         scheduleOpen: true,
         recurrenceId: null,
         recurrence: { ...EMPTY_RECURRENCE, indefinite: true },
+        rulesOpen: false,
+        bookingWindowHoursAhead: '',
+        bookingCutoffMinutesBefore: '',
+        cancelCutoffMinutesBefore: '',
       },
     ]);
   }
@@ -473,6 +542,67 @@ export function ClassTypesPanel() {
                         </Text>
                       </Pressable>
                     ) : null}
+                  </View>
+                ) : null}
+
+                <Pressable
+                  onPress={() => updateRow(idx, { rulesOpen: !r.rulesOpen })}
+                  className="flex-row items-center justify-between gap-3 px-1 py-1 active:opacity-70">
+                  <Text
+                    className={`flex-1 text-sm ${
+                      r.bookingWindowHoursAhead ||
+                      r.bookingCutoffMinutesBefore ||
+                      r.cancelCutoffMinutesBefore
+                        ? 'text-gray-700 dark:text-gray-200'
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}
+                    numberOfLines={2}>
+                    {r.bookingWindowHoursAhead ||
+                    r.bookingCutoffMinutesBefore ||
+                    r.cancelCutoffMinutesBefore
+                      ? `Custom rules — opens ${r.bookingWindowHoursAhead || 'gym'}h ahead · closes ${r.bookingCutoffMinutesBefore || 'gym'}m before · cancel cutoff ${r.cancelCutoffMinutesBefore || 'gym'}m`
+                      : 'Booking rules inherit the gym defaults.'}
+                  </Text>
+                  <ChipButton
+                    label={r.rulesOpen ? 'Hide' : 'Override'}
+                    icon={r.rulesOpen ? 'chevron-up' : 'options'}
+                  />
+                </Pressable>
+
+                {r.rulesOpen ? (
+                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-3">
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      Leave blank to use the gym-wide setting (Manage →
+                      Operating defaults). Set a number here to override for
+                      this class type only.
+                    </Text>
+                    <Input
+                      label="Booking opens (hours ahead, blank = inherit)"
+                      value={r.bookingWindowHoursAhead}
+                      onChangeText={(v) =>
+                        updateRow(idx, { bookingWindowHoursAhead: v })
+                      }
+                      placeholder="168"
+                      keyboardType="number-pad"
+                    />
+                    <Input
+                      label="Booking closes (minutes before, blank = inherit)"
+                      value={r.bookingCutoffMinutesBefore}
+                      onChangeText={(v) =>
+                        updateRow(idx, { bookingCutoffMinutesBefore: v })
+                      }
+                      placeholder="60"
+                      keyboardType="number-pad"
+                    />
+                    <Input
+                      label="Free-cancel cutoff (minutes before, blank = inherit)"
+                      value={r.cancelCutoffMinutesBefore}
+                      onChangeText={(v) =>
+                        updateRow(idx, { cancelCutoffMinutesBefore: v })
+                      }
+                      placeholder="120"
+                      keyboardType="number-pad"
+                    />
                   </View>
                 ) : null}
 

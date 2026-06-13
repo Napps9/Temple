@@ -21,6 +21,9 @@ export type ClassTypeRow = {
   name: string;
   color: string;
   archived_at: string | null;
+  booking_window_hours_ahead: number | null;
+  booking_cutoff_minutes_before: number | null;
+  cancel_cutoff_minutes_before: number | null;
 };
 
 export function useClassTypes() {
@@ -31,7 +34,9 @@ export function useClassTypes() {
     queryFn: async (): Promise<ClassTypeRow[]> => {
       const { data, error } = await supabase
         .from('class_types')
-        .select('id, name, color, archived_at')
+        .select(
+          'id, name, color, archived_at, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before',
+        )
         .eq('gym_id', membership!.gymId)
         .order('name');
       if (error) throw error;
