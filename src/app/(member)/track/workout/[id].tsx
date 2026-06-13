@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import {
   WorkoutSectionCard,
@@ -72,12 +72,7 @@ export default function WorkoutDetail() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={6}
-            className="active:opacity-70">
-            <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-          </Pressable>
+          <BackLink inline label="Journal" fallbackHref="/track/journal" />
           <View className="flex-1">
             <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
               Session

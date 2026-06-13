@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -92,12 +93,7 @@ export default function DirectThread() {
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="flex-1 px-4 md:max-w-2xl md:mx-auto md:w-full py-6">
         <View className="flex-row items-center gap-3 px-2 pb-3">
-          <Link href="/inbox" asChild>
-            <Pressable hitSlop={6} className="active:opacity-70"
-          accessibilityLabel="Back">
-              <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-            </Pressable>
-          </Link>
+          <BackLink inline label="Inbox" fallbackHref="/inbox" />
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               {peerProfile.data?.full_name?.trim() || 'Member'}

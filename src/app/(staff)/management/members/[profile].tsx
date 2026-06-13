@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
+import { BackLink } from '@/components/BackLink';
 import { ChipButton } from '@/components/ChipButton';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
@@ -255,12 +256,7 @@ export default function MemberDetailScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <Pressable
-          onPress={() => router.back()}
-          className="flex-row items-center gap-1 self-start py-1">
-          <Ionicons name="chevron-back" size={18} color="#6B7280" />
-          <Text className="text-gray-500 dark:text-gray-400">Members</Text>
-        </Pressable>
+        <BackLink label="Members" fallbackHref="/management/members" />
 
         <View className="flex-row items-center gap-3">
           <Avatar

@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -106,12 +107,7 @@ export default function NewClassBroadcast() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <Link href="/inbox" asChild>
-            <Pressable hitSlop={6} className="active:opacity-70"
-          accessibilityLabel="Back">
-              <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-            </Pressable>
-          </Link>
+          <BackLink inline label="Inbox" fallbackHref="/inbox" />
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
               Broadcast to class

@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { findGroup } from '@/lib/movements';
@@ -165,12 +166,7 @@ export default function GroupPage() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <Link href="/track" asChild>
-            <Pressable hitSlop={6} className="active:opacity-70"
-          accessibilityLabel="Back">
-              <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-            </Pressable>
-          </Link>
+          <BackLink inline label="Track" fallbackHref="/track" />
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
               {group.name}

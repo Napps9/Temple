@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -79,12 +79,7 @@ export default function NewDirectMessage() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <Link href="/inbox" asChild>
-            <Pressable hitSlop={6} className="active:opacity-70"
-          accessibilityLabel="Back">
-              <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-            </Pressable>
-          </Link>
+          <BackLink inline label="Inbox" fallbackHref="/inbox" />
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
               New message

@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { Sparkline } from '@/components/Sparkline';
@@ -181,12 +182,11 @@ export function MovementDetailView({
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <Link href={backHref as never} asChild>
-            <Pressable hitSlop={6} className="active:opacity-70"
-          accessibilityLabel="Back">
-              <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-            </Pressable>
-          </Link>
+          <BackLink
+            inline
+            label={isMember ? 'Movements' : 'Athlete'}
+            fallbackHref={backHref as Href}
+          />
           <View className="flex-1">
             <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
               {group.name}

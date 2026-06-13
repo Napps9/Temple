@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
@@ -43,13 +43,7 @@ export default function AthleteAccount() {
     <Screen edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={8}
-            accessibilityLabel="Back"
-            className="active:opacity-70">
-            <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
-          </Pressable>
+          <BackLink inline label="Athlete" fallbackHref="/athlete" />
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Account
           </Text>

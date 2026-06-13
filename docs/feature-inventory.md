@@ -526,6 +526,15 @@ actions are owner-only by policy:
   field for multi-room gyms. The colour-swatch palette grew from 8 to
   16 hand-tuned stops to give multi-class-type gyms distinguishable
   options at thumbnail size.
+- **Unified `BackLink`** — every back affordance on a deep page goes
+  through `src/components/BackLink.tsx`. Two variants
+  (`chevron + label` for Manage / Account-style headers; `inline`
+  chevron-only for row-with-title headers in Track / Inbox / Athlete /
+  Member-detail) share one navigation contract:
+  `router.back()` when there's history, `fallbackHref` when the page
+  was opened cold (shared URL, push notification) so the user never
+  hits a dead-end. Hand-rolled chevrons were removed; only `BackLink`
+  renders the back icon now.
 - **Persistent top nav** — Programming / Classes / Manage pills for
   staff; Book / Programming / Track for members. Inbox icon, theme
   toggle, avatar (account), Viewing-Staff / Viewing-Member switch on
