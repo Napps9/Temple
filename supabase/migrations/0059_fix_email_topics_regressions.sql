@@ -169,4 +169,71 @@ begin
 end;
 $$;
 
+-- ============================================================================
+-- 3. comms_track_event — same ON CONFLICT predicate fix
+-- ============================================================================
+--
+-- The unsubscribe leg pre-0058 used the same arbiter as
+-- apply_pending_member_data. Point it at the blanket partial index.
+
+create or replace function public.comms_track_event(
+  p_campaign_id uuid,
+  p_recipient_id uuid,
+  p_kind text,
+  p_url text default null
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_gym     uuid;
+  v_profile uuid;
+  v_email   text;
+begin
+  select gym_id, profile_id, email
+    into v_gym, v_profile, v_email
+    from public.email_campaign_recipients
+    where id = p_recipient_id and campaign_id = p_campaign_id;
+  if v_gym is null then
+    return;
+  end if;
+
+  if p_kind = 'open' then
+    update public.email_campaign_recipients
+      set open_count      = open_count + 1,
+          last_opened_at   = now(),
+          first_opened_at  = coalesce(first_opened_at, now()),
+          status           = case when status in ('queued','sent') then 'delivered' else status end
+      where id = p_recipient_id;
+    insert into public.email_events (gym_id, campaign_id, recipient_id, kind)
+      values (v_gym, p_campaign_id, p_recipient_id, 'open');
+
+  elsif p_kind = 'click' then
+    update public.email_campaign_recipients
+      set click_count      = click_count + 1,
+          last_clicked_at   = now(),
+          first_clicked_at  = coalesce(first_clicked_at, now()),
+          first_opened_at   = coalesce(first_opened_at, now()),
+          status            = case when status in ('queued','sent') then 'delivered' else status end
+      where id = p_recipient_id;
+    insert into public.email_events (gym_id, campaign_id, recipient_id, kind, url)
+      values (v_gym, p_campaign_id, p_recipient_id, 'click', p_url);
+
+  elsif p_kind = 'unsubscribe' then
+    update public.email_campaign_recipients
+      set unsubscribed_at = coalesce(unsubscribed_at, now())
+      where id = p_recipient_id;
+    insert into public.email_unsubscribes (gym_id, email, profile_id, campaign_id)
+      values (v_gym, v_email, v_profile, p_campaign_id)
+      on conflict (gym_id, lower(email)) where topic_id is null do nothing;
+    insert into public.email_events (gym_id, campaign_id, recipient_id, kind)
+      values (v_gym, p_campaign_id, p_recipient_id, 'unsubscribe');
+
+  else
+    raise exception 'Unknown tracking event kind: %', p_kind;
+  end if;
+end;
+$$;
+
 commit;

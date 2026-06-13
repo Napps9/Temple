@@ -42,6 +42,9 @@ begin
 
   perform set_config('test.gym',     v_gym::text,     true);
   perform set_config('test.owner',   v_owner::text,   true);
+  perform set_config('test.m1',      v_m1::text,      true);
+  perform set_config('test.m2',      v_m2::text,      true);
+  perform set_config('test.m3',      v_m3::text,      true);
   perform set_config('test.t_news',  v_t_news::text,  true);
   perform set_config('test.t_promo', v_t_promo::text, true);
 end $$;
@@ -72,10 +75,10 @@ select is(
      jsonb_build_object(
        'kind', 'manual',
        'profile_ids', jsonb_build_array(
-         current_setting('test.owner')::text,
-         (select id::text from auth.users where email = 'm1@topics.test'),
-         (select id::text from auth.users where email = 'm2@topics.test'),
-         (select id::text from auth.users where email = 'm3@topics.test')
+         current_setting('test.owner'),
+         current_setting('test.m1'),
+         current_setting('test.m2'),
+         current_setting('test.m3')
        )),
      current_setting('test.t_news')::uuid)),
   2,
@@ -89,10 +92,10 @@ select is(
      jsonb_build_object(
        'kind', 'manual',
        'profile_ids', jsonb_build_array(
-         current_setting('test.owner')::text,
-         (select id::text from auth.users where email = 'm1@topics.test'),
-         (select id::text from auth.users where email = 'm2@topics.test'),
-         (select id::text from auth.users where email = 'm3@topics.test')
+         current_setting('test.owner'),
+         current_setting('test.m1'),
+         current_setting('test.m2'),
+         current_setting('test.m3')
        )),
      current_setting('test.t_promo')::uuid)),
   1,
@@ -108,10 +111,10 @@ select is(
      jsonb_build_object(
        'kind', 'manual',
        'profile_ids', jsonb_build_array(
-         current_setting('test.owner')::text,
-         (select id::text from auth.users where email = 'm1@topics.test'),
-         (select id::text from auth.users where email = 'm2@topics.test'),
-         (select id::text from auth.users where email = 'm3@topics.test')
+         current_setting('test.owner'),
+         current_setting('test.m1'),
+         current_setting('test.m2'),
+         current_setting('test.m3')
        )),
      null::uuid)),
   2,
