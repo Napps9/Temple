@@ -444,7 +444,12 @@ actions are owner-only by policy:
   unlimited), `booking_cutoff_minutes_before` (latest a member can
   book; refused inside the window), `cancel_cutoff_minutes_before`
   (cancel always allowed but credit forfeited past this cutoff —
-  enforced inside the refund trigger). All
+  enforced inside the refund trigger). Each of the three
+  booking-window fields can be overridden per class type — a
+  non-NULL `class_types.booking_window_hours_ahead` /
+  `booking_cutoff_minutes_before` / `cancel_cutoff_minutes_before`
+  beats the gym default, NULL falls back. Used for open-gym slots
+  with no cutoff coexisting with strictly-coached classes. All
   default to the prior hard-coded value so existing gyms see zero
   behaviour change. `class_types` gained `default_capacity` (overrides
   the gym default), `coach_required` and `unsupervised_label` (replaces

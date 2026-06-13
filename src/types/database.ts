@@ -930,6 +930,9 @@ export type Database = {
           default_capacity: number | null;
           coach_required: boolean;
           unsupervised_label: string;
+          booking_window_hours_ahead: number | null;
+          booking_cutoff_minutes_before: number | null;
+          cancel_cutoff_minutes_before: number | null;
         };
         Insert: {
           id?: string;
@@ -941,6 +944,9 @@ export type Database = {
           default_capacity?: number | null;
           coach_required?: boolean;
           unsupervised_label?: string;
+          booking_window_hours_ahead?: number | null;
+          booking_cutoff_minutes_before?: number | null;
+          cancel_cutoff_minutes_before?: number | null;
         };
         Update: Partial<{
           id: string;
@@ -952,6 +958,9 @@ export type Database = {
           default_capacity: number | null;
           coach_required: boolean;
           unsupervised_label: string;
+          booking_window_hours_ahead: number | null;
+          booking_cutoff_minutes_before: number | null;
+          cancel_cutoff_minutes_before: number | null;
         }>;
         Relationships: [];
       };
