@@ -21,10 +21,12 @@ permission gate that controls visibility for staff features.
   rank shown to the member (computed over the full queue regardless
   of RLS).
 - **Self-cancel bookings** — credits refunded according to the plan
-  type (unlimited gets none; credit packs / comp grants do). When a
-  booking was made against a specific entitlement (post-0050) the
-  refund targets that one precisely; legacy bookings fall back to the
-  0018 inference rule.
+  type (unlimited gets none; credit packs / comp grants do). The
+  refund fires via a BEFORE DELETE trigger on `class_bookings`, so
+  every cancellation path (member self-cancel, admin session cancel,
+  cascade-on-leave) refunds the chosen entitlement precisely. Until
+  0052 / 0053 bookings never actually decremented credit_balance —
+  finite plans effectively behaved like unlimited ones.
 - **Multi-membership picker** — a member holding more than one
   eligible plan / comp grant for a class sees a labelled radio picker
   on the confirm step (rendered by `list_booking_entitlements`) with
