@@ -213,10 +213,15 @@ The staff area shows up when `can_access_staff_area` is on.
   disqualified for that class type can't claim it (enforced in the
   `claim_cover` RPC and surfaced as a disabled state in the UI).
 - **Class detail modal** — roster, attendance marking (check-in / no-
-  show / unmark), cover request, broadcast, leaderboard for that
-  session. **Add member** [`can_assign_plan`] — staff search the gym
-  roster, pick which entitlement (plan or comp) to charge it against,
-  and book; the staff member is recorded as `booked_by_profile_id`.
+  show / unmark), cover request, leaderboard for that session.
+  **Message class** [`can_broadcast_to_class`] — inline composer
+  attached to the Members section sends a broadcast to every booked
+  member without leaving the modal (same RLS-gated insert as the
+  full broadcast screen; the chip only renders when there are
+  bookings/waitlist entries to receive it). **Add member**
+  [`can_assign_plan`] — staff search the gym roster, pick which
+  entitlement (plan or comp) to charge it against, and book; the
+  staff member is recorded as `booked_by_profile_id`.
   **Switch plan** [`can_assign_plan`] — per-booking swap action lets
   a coach change which entitlement an existing booking is charged
   against (the cancel-refund path follows the pointer, so a swap

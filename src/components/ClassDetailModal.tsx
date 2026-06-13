@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -79,11 +79,16 @@ export function ClassDetailModal({
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
   const canAssignPlan = useCan('can_assign_plan') ?? false;
+  const canBroadcastClass = useCan('can_broadcast_to_class') ?? false;
   const { data: gymDefaults } = useGymOperatingDefaults();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCancelClass, setShowCancelClass] = useState(false);
+  const [composing, setComposing] = useState(false);
+  const [broadcastBody, setBroadcastBody] = useState('');
+  const [broadcastError, setBroadcastError] = useState<string | null>(null);
+  const [broadcastSent, setBroadcastSent] = useState(false);
   const [chosenEntitlement, setChosenEntitlement] =
     useState<{ kind: 'comp_grant' | 'plan_subscription'; id: string } | null>(
       null,
@@ -261,6 +266,47 @@ export function ClassDetailModal({
     onError: (e) => setError(errorMessage(e, 'Could not cancel booking')),
   });
 
+  // Send a broadcast to everyone booked into this class. The insert
+  // RLS gate on class_session_broadcasts checks can_broadcast_to_class +
+  // sender_id = auth.uid(); we mirror the capability check client-side
+  // so the chip never shows for someone who can't actually send.
+  const broadcast = useMutation({
+    mutationFn: async () => {
+      const sess = sessionQuery.data;
+      if (!sessionId || !session?.user.id || !sess) {
+        throw new Error('Missing context');
+      }
+      const trimmed = broadcastBody.trim();
+      if (!trimmed) throw new Error('Write a message');
+      const { error: e } = await supabase
+        .from('class_session_broadcasts')
+        .insert({
+          gym_id: sess.gym_id,
+          class_session_id: sessionId,
+          sender_id: session.user.id,
+          body: trimmed,
+        });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setBroadcastError(null);
+      setBroadcastBody('');
+      setBroadcastSent(true);
+      queryClient.invalidateQueries({
+        queryKey: ['class-session-broadcasts'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
+      // Auto-close the composer after a beat so the sender sees the
+      // "Sent" confirmation, then can carry on managing the class.
+      setTimeout(() => {
+        setComposing(false);
+        setBroadcastSent(false);
+      }, 1200);
+    },
+    onError: (e) =>
+      setBroadcastError(errorMessage(e, 'Could not send broadcast')),
+  });
+
   const joinWaitlist = useMutation({
     mutationFn: async () => {
       if (!sessionId) throw new Error('No class selected');
@@ -296,6 +342,10 @@ export function ClassDetailModal({
   function close() {
     setConfirming(null);
     setError(null);
+    setComposing(false);
+    setBroadcastBody('');
+    setBroadcastError(null);
+    setBroadcastSent(false);
     onClose();
   }
 
@@ -422,18 +472,80 @@ export function ClassDetailModal({
 
               {mode === 'manage' ? (
                 <View className="gap-2">
-                  <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center justify-between gap-2">
                     <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
                       Members
                     </Text>
-                    {canAssignPlan && !inPast ? (
-                      <ChipButton
-                        label="Add member"
-                        icon="add"
-                        onPress={() => setStaffSheet({ mode: 'add' })}
-                      />
-                    ) : null}
+                    <View className="flex-row gap-2">
+                      {canBroadcastClass &&
+                      (bookings.length > 0 || (staffWaitlist.data?.length ?? 0) > 0) ? (
+                        <ChipButton
+                          label="Message class"
+                          icon="chatbubble-ellipses-outline"
+                          tone="neutral"
+                          onPress={() => {
+                            setBroadcastError(null);
+                            setBroadcastSent(false);
+                            setComposing(true);
+                          }}
+                        />
+                      ) : null}
+                      {canAssignPlan && !inPast ? (
+                        <ChipButton
+                          label="Add member"
+                          icon="add"
+                          onPress={() => setStaffSheet({ mode: 'add' })}
+                        />
+                      ) : null}
+                    </View>
                   </View>
+                  {composing ? (
+                    <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-2">
+                      <TextInput
+                        value={broadcastBody}
+                        onChangeText={setBroadcastBody}
+                        placeholder="What does the class need to know?"
+                        placeholderTextColor="#9CA3AF"
+                        multiline
+                        autoFocus
+                        editable={!broadcast.isPending}
+                        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 min-h-[72px]"
+                      />
+                      {broadcastError ? (
+                        <Text className="text-red-500 dark:text-red-400 text-xs">
+                          {broadcastError}
+                        </Text>
+                      ) : null}
+                      {broadcastSent ? (
+                        <Text className="text-emerald-600 dark:text-emerald-400 text-xs">
+                          Sent. Closing…
+                        </Text>
+                      ) : null}
+                      <View className="flex-row justify-end gap-2">
+                        <ChipButton
+                          label="Cancel"
+                          icon="close"
+                          tone="neutral"
+                          onPress={() => {
+                            setComposing(false);
+                            setBroadcastBody('');
+                            setBroadcastError(null);
+                            setBroadcastSent(false);
+                          }}
+                          disabled={broadcast.isPending}
+                        />
+                        <ChipButton
+                          label={broadcast.isPending ? 'Sending…' : 'Send'}
+                          icon="send"
+                          tone="filled"
+                          onPress={() => broadcast.mutate()}
+                          disabled={
+                            broadcast.isPending || broadcastBody.trim() === ''
+                          }
+                        />
+                      </View>
+                    </View>
+                  ) : null}
                   <ScrollView className="max-h-48">
                     {bookings.length === 0 ? (
                       <Text className="text-gray-500 dark:text-gray-400 text-sm">
