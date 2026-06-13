@@ -139,36 +139,34 @@ begin
         )
       )
   ),
-  credit_pick as (
+  -- Plan pick. credits_first keeps the bucket preference (credit-based
+  -- before unlimited, then earliest paid_period_end inside the
+  -- credit-based bucket). newest_first and highest_priority don't
+  -- bucket — the user's setting says "use the newest / highest-
+  -- priority plan", regardless of kind. created_at desc is always
+  -- the last tie-break.
+  plan_pick as (
     select id from eligible_plans
-    where plan_kind in ('credit_period', 'credit_pack')
     order by
-      case v_mode
-        when 'newest_first'      then -extract(epoch from created_at)
-        when 'highest_priority'  then -priority::numeric
-        else extract(epoch from coalesce(paid_period_end, 'infinity'::timestamptz))
-      end
-    limit 1
-  ),
-  unlimited_pick as (
-    select id from eligible_plans where plan_kind = 'unlimited'
-    order by
-      case v_mode
-        when 'newest_first'     then -extract(epoch from created_at)
-        when 'highest_priority' then -priority::numeric
+      case
+        when v_mode = 'credits_first' and plan_kind = 'unlimited' then 1
         else 0
+      end,
+      case
+        when v_mode = 'newest_first'     then -extract(epoch from created_at)
+        when v_mode = 'highest_priority' then -priority::numeric
+        when v_mode = 'credits_first'
+             and plan_kind in ('credit_period', 'credit_pack')
+          then extract(epoch from coalesce(paid_period_end, 'infinity'::timestamptz))
+        else 0::numeric
       end,
       created_at desc
     limit 1
   )
   select 'comp_grant'::public.entitlement_kind, grant_id from comp_pick
   union all
-  select 'plan_subscription'::public.entitlement_kind, id from credit_pick
-    where not exists (select 1 from comp_pick)
-  union all
-  select 'plan_subscription'::public.entitlement_kind, id from unlimited_pick
-    where not exists (select 1 from comp_pick)
-      and not exists (select 1 from credit_pick);
+  select 'plan_subscription'::public.entitlement_kind, id from plan_pick
+    where not exists (select 1 from comp_pick);
 end;
 $$;
 
@@ -203,6 +201,110 @@ begin
 end;
 $$;
 grant execute on function public.select_default_entitlement(uuid, uuid, uuid) to authenticated;
+
+-- ============================================================================
+-- 3b. list_booking_entitlements: same id-shadowing fix
+-- ============================================================================
+--
+-- The 0011 definition uses `where id = p_class_session_id` against
+-- class_sessions inside a plpgsql body where `id` is also the RETURNS
+-- TABLE column. That ambiguity was latent — no caller hit it until
+-- _book_class_for started invoking the function to verify an explicit
+-- entitlement choice. Same `#variable_conflict use_column` fix as the
+-- picker.
+
+create or replace function public.list_booking_entitlements(
+  p_class_session_id   uuid,
+  p_target_profile_id  uuid default null
+) returns table (
+  kind       public.entitlement_kind,
+  id         uuid,
+  is_default boolean,
+  label      text
+)
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+#variable_conflict use_column
+declare
+  v_profile      uuid;
+  v_gym          uuid;
+  v_default_kind public.entitlement_kind;
+  v_default_id   uuid;
+begin
+  v_profile := coalesce(p_target_profile_id, auth.uid());
+  if v_profile is null then
+    return;
+  end if;
+
+  select gym_id into v_gym from public.class_sessions where id = p_class_session_id;
+  if v_gym is null then
+    return;
+  end if;
+
+  if v_profile <> auth.uid() and not public.user_can_assign_plan(v_gym) then
+    raise exception 'Not authorised to view another member''s entitlements';
+  end if;
+
+  select s.kind, s.id into v_default_kind, v_default_id
+  from public.select_default_entitlement(v_profile, v_gym, p_class_session_id) s;
+
+  return query
+    select
+      'comp_grant'::public.entitlement_kind,
+      cg.grant_id,
+      (v_default_kind = 'comp_grant' and cg.grant_id = v_default_id),
+      coalesce(cg.reason, 'Comp grant')::text
+    from public.comp_grants cg
+    join public.class_sessions cs on cs.id = p_class_session_id
+    where cg.profile_id = v_profile
+      and cg.gym_id     = v_gym
+      and cs.starts_at >= cg.starts_at
+      and cs.starts_at <  cg.ends_at
+      and cg.revoked_at is null
+      and (cg.credits_total is null or cg.credits_remaining > 0)
+      and (
+        cardinality(cg.class_type_allowlist) = 0
+        or cs.class_type_id = any(cg.class_type_allowlist)
+      )
+    union all
+    select
+      'plan_subscription'::public.entitlement_kind,
+      ps.id,
+      (v_default_kind = 'plan_subscription' and ps.id = v_default_id),
+      mp.name
+    from public.plan_subscriptions ps
+    join public.membership_plans mp on mp.plan_id = ps.plan_id
+    join public.class_sessions cs on cs.id = p_class_session_id
+    where ps.profile_id = v_profile
+      and ps.gym_id     = v_gym
+      and (
+        ps.status = 'active'
+        or (ps.status = 'cancelled_at_period_end'
+            and ps.paid_period_end is not null
+            and cs.starts_at <= ps.paid_period_end)
+        or (ps.status = 'refunded_retained'
+            and ps.paid_period_end is not null
+            and cs.starts_at <= ps.paid_period_end)
+      )
+      and (
+        mp.kind = 'unlimited'
+        or coalesce(ps.credit_balance, 0) > 0
+      )
+      and (
+        not exists (
+          select 1 from public.plan_class_types pct where pct.plan_id = ps.plan_id
+        )
+        or exists (
+          select 1 from public.plan_class_types pct
+          where pct.plan_id = ps.plan_id and pct.class_type_id = cs.class_type_id
+        )
+      );
+end;
+$$;
+grant execute on function public.list_booking_entitlements(uuid, uuid) to authenticated;
 
 -- ============================================================================
 -- 4. _book_class_for accepts the picker's choice + persists it

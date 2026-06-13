@@ -18,18 +18,24 @@ select plan(8);
 
 do $$
 declare
-  v_owner   uuid := _test_mk_user('owner@subres.test');
-  v_member  uuid := _test_mk_user('m@subres.test');
-  v_gym     uuid := _test_mk_gym('Sub-resolution Gym', 'sub-res');
-  v_plan_a  uuid;
-  v_plan_b  uuid;
-  v_sub_a   uuid;
-  v_sub_b   uuid;
-  v_gm      uuid;
-  v_sess    uuid;
+  v_owner      uuid := _test_mk_user('owner@subres.test');
+  v_member     uuid := _test_mk_user('m@subres.test');
+  v_other      uuid := _test_mk_user('other@subres.test');
+  v_gym        uuid := _test_mk_gym('Sub-resolution Gym', 'sub-res');
+  v_plan_a     uuid;
+  v_plan_b     uuid;
+  v_plan_other uuid;
+  v_sub_a      uuid;
+  v_sub_b      uuid;
+  v_other_sub  uuid;
+  v_gm         uuid;
+  v_gm_other   uuid;
+  v_sess       uuid;
+  v_sess2      uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner,  'owner');
-  v_gm := _test_mk_membership(v_gym, v_member, 'member');
+  v_gm       := _test_mk_membership(v_gym, v_member, 'member');
+  v_gm_other := _test_mk_membership(v_gym, v_other,  'member');
 
   insert into public.membership_plans (gym_id, name, kind, credit_count)
     values (v_gym, 'Plan A (credits)', 'credit_pack', 10)
@@ -37,6 +43,9 @@ begin
   insert into public.membership_plans (gym_id, name, kind)
     values (v_gym, 'Plan B (unlimited)', 'unlimited')
     returning plan_id into v_plan_b;
+  insert into public.membership_plans (gym_id, name, kind)
+    values (v_gym, 'Other plan', 'unlimited')
+    returning plan_id into v_plan_other;
 
   -- Sub A: credit plan, older, low priority, finite credits
   insert into public.plan_subscriptions
@@ -56,14 +65,25 @@ begin
      100, now() - interval '5 days')
   returning id into v_sub_b;
 
-  v_sess := _test_mk_session(v_gym, v_owner, now() + interval '2 days');
+  -- Other member's sub, used in the negative test.
+  insert into public.plan_subscriptions
+    (gym_membership_id, profile_id, gym_id, plan_id, status)
+  values
+    (v_gm_other, v_other, v_gym, v_plan_other,
+     'active'::public.plan_sub_state)
+  returning id into v_other_sub;
 
-  perform set_config('test.gym',    v_gym::text,    true);
-  perform set_config('test.owner',  v_owner::text,  true);
-  perform set_config('test.member', v_member::text, true);
-  perform set_config('test.sub_a',  v_sub_a::text,  true);
-  perform set_config('test.sub_b',  v_sub_b::text,  true);
-  perform set_config('test.sess',   v_sess::text,   true);
+  v_sess  := _test_mk_session(v_gym, v_owner, now() + interval '2 days');
+  v_sess2 := _test_mk_session(v_gym, v_owner, now() + interval '3 days');
+
+  perform set_config('test.gym',       v_gym::text,       true);
+  perform set_config('test.owner',     v_owner::text,     true);
+  perform set_config('test.member',    v_member::text,    true);
+  perform set_config('test.sub_a',     v_sub_a::text,     true);
+  perform set_config('test.sub_b',     v_sub_b::text,     true);
+  perform set_config('test.other_sub', v_other_sub::text, true);
+  perform set_config('test.sess',      v_sess::text,      true);
+  perform set_config('test.sess2',     v_sess2::text,     true);
 end $$;
 
 -- 1. credits_first (default) — picks the credit-based plan (sub_a).
@@ -185,36 +205,9 @@ select is(
 );
 
 -- 8. An entitlement that doesn't belong to this member is refused.
-do $$
-declare
-  v_other      uuid := _test_mk_user('other@subres.test');
-  v_other_plan uuid;
-  v_other_sub  uuid;
-  v_other_gm   uuid;
-  v_sess2      uuid;
-begin
-  reset role;
-  v_other_gm := _test_mk_membership(
-    current_setting('test.gym')::uuid, v_other, 'member');
-  insert into public.membership_plans (gym_id, name, kind)
-    values (current_setting('test.gym')::uuid, 'Other plan', 'unlimited')
-    returning plan_id into v_other_plan;
-  insert into public.plan_subscriptions
-    (gym_membership_id, profile_id, gym_id, plan_id, status)
-  values
-    (v_other_gm, v_other, current_setting('test.gym')::uuid,
-     v_other_plan, 'active'::public.plan_sub_state)
-  returning id into v_other_sub;
-
-  v_sess2 := _test_mk_session(
-    current_setting('test.gym')::uuid,
-    current_setting('test.owner')::uuid,
-    now() + interval '3 days');
-
-  perform set_config('test.other_sub', v_other_sub::text, true);
-  perform set_config('test.sess2',     v_sess2::text,     true);
-  perform _test_act_as(current_setting('test.member')::uuid);
-end $$;
+--    The fixture (v_other / v_other_sub / v_sess2) was pre-created at
+--    the top so the negative test doesn't need to fight the role state.
+do $$ begin perform _test_act_as(current_setting('test.member')::uuid); end $$;
 
 select throws_like(
   format(
