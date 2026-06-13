@@ -31,3 +31,13 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+
+# Communications Suite delivery + tracking workers. send-campaign needs a
+# signed-in staff caller (it re-checks can_manage_comms); track is the
+# public open-pixel / click-redirect / unsubscribe endpoint, so JWT
+# verification is off there.
+[functions.send-campaign]
+verify_jwt = true
+
+[functions.track]
+verify_jwt = false
