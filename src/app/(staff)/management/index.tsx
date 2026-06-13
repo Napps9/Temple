@@ -241,6 +241,13 @@ export default function ManagementHome() {
       visible: !!canManageTags,
     },
     {
+      category: 'members',
+      title: 'Import members',
+      description: 'Stage members from Mindbody, PushPress, Glofox, Wodify or a spreadsheet.',
+      href: '/management/members/import',
+      visible: !!canManageStaff,
+    },
+    {
       category: 'plans',
       title: 'Plans',
       description: 'Define your membership plans, prices, and credit packs.',

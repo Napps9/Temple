@@ -200,6 +200,26 @@ The Manage page presents a tab strip:
     staff-only).
   - **Class types** — same editor reachable from above.
 
+### Member import
+
+[`can_manage_staff`] Reachable from Manage → Members → Import members
+(`/management/members/import`). Drop a CSV from a previous platform
+(Mindbody, PushPress, Glofox, Wodify or a spreadsheet); the column
+mapper auto-detects the common header conventions, the preview
+counts staged vs. skipped rows, and commit writes them into
+`pending_members`. A trigger on `gym_memberships` insert links the
+pending row when the matching email signs up via `/join/<slug>` —
+applying the imported plan metadata onto the membership, copying
+tags into `member_tags`, and propagating "no marketing" into the
+Comms Suite `email_unsubscribes` list. The handover screen shows the
+gym's join URL + QR, a one-click per-member CSV (email, name, join
+URL) the owner can blast from their existing newsletter tool, and an
+opt-in "Send the welcome email from Temple" button that creates a
+campaign with `audience.kind = 'pending_members'` and lands the
+owner in the editor to preview before send. A live linking-progress
+counter ticks up while members sign up. Plan-name → membership_plan
+mapping is deliberately deferred to a follow-up flow.
+
 ### Communications Suite
 
 [`can_manage_comms`, owner + admin by default] A Mailchimp-shaped email

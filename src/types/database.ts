@@ -2001,6 +2001,69 @@ export type Database = {
         };
         Relationships: [];
       };
+      pending_members: {
+        Row: {
+          id: string;
+          gym_id: string;
+          email: string;
+          full_name: string | null;
+          date_of_birth: string | null;
+          plan_name: string | null;
+          plan_start: string | null;
+          plan_end: string | null;
+          credits_remaining: number | null;
+          imported_status: string | null;
+          tags: string[];
+          unsubscribed: boolean;
+          notes: string | null;
+          status: 'pending' | 'invited' | 'linked' | 'skipped';
+          created_by: string | null;
+          created_at: string;
+          linked_at: string | null;
+          linked_profile_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          email: string;
+          full_name?: string | null;
+          date_of_birth?: string | null;
+          plan_name?: string | null;
+          plan_start?: string | null;
+          plan_end?: string | null;
+          credits_remaining?: number | null;
+          imported_status?: string | null;
+          tags?: string[];
+          unsubscribed?: boolean;
+          notes?: string | null;
+          status?: 'pending' | 'invited' | 'linked' | 'skipped';
+          created_by?: string | null;
+          created_at?: string;
+          linked_at?: string | null;
+          linked_profile_id?: string | null;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          email: string;
+          full_name: string | null;
+          date_of_birth: string | null;
+          plan_name: string | null;
+          plan_start: string | null;
+          plan_end: string | null;
+          credits_remaining: number | null;
+          imported_status: string | null;
+          tags: string[];
+          unsubscribed: boolean;
+          notes: string | null;
+          status: 'pending' | 'invited' | 'linked' | 'skipped';
+          created_by: string | null;
+          created_at: string;
+          linked_at: string | null;
+          linked_profile_id: string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Functions: {
       accept_invite: {
@@ -2450,6 +2513,20 @@ export type Database = {
       comms_finalize_simulation: {
         Args: { p_campaign_id: string };
         Returns: number;
+      };
+      import_pending_members: {
+        Args: { p_gym_id: string; p_rows: Json };
+        Returns: { inserted: number; updated: number; skipped: number }[];
+      };
+      pending_members_stats: {
+        Args: { p_gym_id: string };
+        Returns: {
+          pending: number;
+          invited: number;
+          linked: number;
+          skipped: number;
+          total: number;
+        }[];
       };
       comms_campaign_stats: {
         Args: { p_campaign_id: string };
