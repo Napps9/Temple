@@ -12,6 +12,7 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 import { supabase } from '@/lib/supabase';
 import { useClassRecurrences } from '@/lib/useClassCatalog';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 
 type CreateRequest = { date?: Date; hour?: number };
@@ -19,8 +20,16 @@ type CreateRequest = { date?: Date; hour?: number };
 const HORIZON_WEEKS = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const HOUR_HEIGHT = 64;
+// DAY_LETTERS is indexed by JS day-of-week (0=Sun..6=Sat) and used
+// in the day-strip header where the column header tracks the day's
+// real weekday. It does NOT depend on the gym's week_starts_on.
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const WEEK_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+// WEEK_LETTERS_MON / WEEK_LETTERS_SUN are the first-column-first
+// orderings the month grid renders. The calendar picks based on the
+// gym's week_starts_on setting.
+const WEEK_LETTERS_MON = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const WEEK_LETTERS_SUN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const VIEWS = ['day', 'week', 'month'] as const;
 type ViewMode = (typeof VIEWS)[number];
 
@@ -78,9 +87,12 @@ function addMonths(d: Date, months: number) {
   return x;
 }
 
-function startOfWeek(d: Date) {
+function startOfWeek(d: Date, weekStartsOn: 'mon' | 'sun') {
   const x = startOfDay(d);
   const day = x.getDay();
+  if (weekStartsOn === 'sun') {
+    return addDays(x, -day);
+  }
   const diffToMonday = day === 0 ? -6 : 1 - day;
   return addDays(x, diffToMonday);
 }
@@ -89,9 +101,9 @@ function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-function monthGrid(d: Date) {
+function monthGrid(d: Date, weekStartsOn: 'mon' | 'sun') {
   const firstOfMonth = startOfMonth(d);
-  const gridStart = startOfWeek(firstOfMonth);
+  const gridStart = startOfWeek(firstOfMonth, weekStartsOn);
   return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
 }
 
@@ -180,6 +192,8 @@ export function ClassesCalendar({
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   const { data: membership } = useGymMembership();
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canCreate = mode === 'manage' && canEditClasses;
   const queryClient = useQueryClient();
@@ -342,6 +356,7 @@ export function ClassesCalendar({
           onSessionPress={openSession}
           canCreate={canCreate}
           bookedSet={bookedSet}
+          weekStartsOn={weekStartsOn}
         />
       ) : null}
       {view === 'week' ? (
@@ -354,6 +369,7 @@ export function ClassesCalendar({
           onSessionPress={openSession}
           canCreate={canCreate}
           bookedSet={bookedSet}
+          weekStartsOn={weekStartsOn}
         />
       ) : null}
       {view === 'month' ? (
@@ -362,6 +378,7 @@ export function ClassesCalendar({
           setDate={setDate}
           gotoDay={() => router.setParams({ view: 'day' })}
           sessions={sessionsQuery.data}
+          weekStartsOn={weekStartsOn}
         />
       ) : null}
 
@@ -396,6 +413,7 @@ function DayView({
   onSessionPress,
   canCreate,
   bookedSet,
+  weekStartsOn,
 }: {
   mode: 'manage' | 'book';
   date: Date;
@@ -405,9 +423,12 @@ function DayView({
   onSessionPress: (id: string) => void;
   canCreate: boolean;
   bookedSet: Set<string>;
+  weekStartsOn: 'mon' | 'sun';
 }) {
-  const weekStart = startOfWeek(date);
+  const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekLetters =
+    weekStartsOn === 'sun' ? WEEK_LETTERS_SUN : WEEK_LETTERS_MON;
   const dayClasses = classesOnDay(sessions, date).sort(
     (a, b) =>
       new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
@@ -608,6 +629,7 @@ function WeekView({
   onSessionPress,
   canCreate,
   bookedSet,
+  weekStartsOn,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -617,8 +639,9 @@ function WeekView({
   onSessionPress: (id: string) => void;
   canCreate: boolean;
   bookedSet: Set<string>;
+  weekStartsOn: 'mon' | 'sun';
 }) {
-  const weekStart = startOfWeek(date);
+  const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const scrollRef = useRef<ScrollView | null>(null);
@@ -777,19 +800,23 @@ function MonthView({
   setDate,
   gotoDay,
   sessions,
+  weekStartsOn,
 }: {
   date: Date;
   setDate: (d: Date) => void;
   gotoDay: () => void;
   sessions: ClassSession[] | undefined;
+  weekStartsOn: 'mon' | 'sun';
 }) {
-  const grid = monthGrid(date);
+  const grid = monthGrid(date, weekStartsOn);
+  const weekLetters =
+    weekStartsOn === 'sun' ? WEEK_LETTERS_SUN : WEEK_LETTERS_MON;
 
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-2">
         <View className="flex-row pb-2">
-          {WEEK_LETTERS.map((l, i) => (
+          {weekLetters.map((l, i) => (
             <View key={i} className="flex-1 items-center">
               <Text className="text-gray-400 dark:text-gray-500 text-xs font-medium uppercase">
                 {l}

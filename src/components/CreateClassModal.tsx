@@ -17,6 +17,7 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useClassTypes } from '@/lib/useClassCatalog';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
@@ -61,6 +62,7 @@ export function CreateClassModal({
   onCreated: () => void;
 }) {
   const { data: membership } = useGymMembership();
+  const { data: gymDefaults } = useGymOperatingDefaults();
   const [classTypeId, setClassTypeId] = useState<string | null>(null);
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
@@ -86,11 +88,22 @@ export function CreateClassModal({
     setDateStr(fmtDate(d));
     setTimeStr(defaultTimeFor(defaultHour));
     setRecurring(false);
-    setRecurrence({ ...EMPTY_RECURRENCE, indefinite: false });
+    setRecurrence({
+      ...EMPTY_RECURRENCE,
+      indefinite: false,
+      capacity: String(gymDefaults?.default_class_capacity ?? 12),
+      durationMinutes: String(gymDefaults?.default_class_minutes ?? 60),
+    });
     setNotes('');
     setError(null);
     setStage('form');
-  }, [visible, defaultDate, defaultHour]);
+  }, [
+    visible,
+    defaultDate,
+    defaultHour,
+    gymDefaults?.default_class_capacity,
+    gymDefaults?.default_class_minutes,
+  ]);
 
   function validate(): string | null {
     if (!classTypeId) return 'Pick a class type';

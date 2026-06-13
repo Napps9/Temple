@@ -15,6 +15,7 @@ import {
   type Section,
 } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -66,9 +67,12 @@ function addMonths(d: Date, months: number) {
   return x;
 }
 
-function startOfWeek(d: Date) {
+function startOfWeek(d: Date, weekStartsOn: 'mon' | 'sun') {
   const x = startOfDay(d);
   const day = x.getDay();
+  if (weekStartsOn === 'sun') {
+    return addDays(x, -day);
+  }
   const diffToMonday = day === 0 ? -6 : 1 - day;
   return addDays(x, diffToMonday);
 }
@@ -95,6 +99,8 @@ export function ProgrammingCalendar({
   headerAction?: React.ReactNode;
 }) {
   const { data: membership } = useGymMembership();
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [openFor, setOpenFor] = useState<{
     classType: DayClassType;
@@ -144,7 +150,7 @@ export function ProgrammingCalendar({
     },
   });
 
-  const weekStart = startOfWeek(date);
+  const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const dayTypes: DayClassType[] = (() => {
