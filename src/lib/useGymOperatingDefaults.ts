@@ -17,6 +17,9 @@ export type GymOperatingDefaults = {
     | 'credits_first'
     | 'newest_first'
     | 'highest_priority';
+  booking_window_hours_ahead: number | null;
+  booking_cutoff_minutes_before: number;
+  cancel_cutoff_minutes_before: number;
 };
 
 // Per-gym dials that used to be hard-coded into the SQL. Every staff
@@ -32,7 +35,7 @@ export function useGymOperatingDefaults() {
       const { data, error } = await supabase
         .from('gyms')
         .select(
-          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, materialisation_horizon_weeks, subscription_resolution',
+          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, materialisation_horizon_weeks, subscription_resolution, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before',
         )
         .eq('id', membership!.gymId)
         .single();

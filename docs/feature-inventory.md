@@ -368,7 +368,12 @@ actions are owner-only by policy:
   soon" window, read by `v_member_cohort`), `parq_expiry_days` (read by
   `_book_class_for` + `current_parq_state`), `health_retention_months`
   (read by `purge_expired_health_data`), `lead_conversion_window_days`,
-  `materialisation_horizon_weeks`, `subscription_resolution`. All
+  `materialisation_horizon_weeks`, `subscription_resolution`,
+  `booking_window_hours_ahead` (earliest a member can book; null =
+  unlimited), `booking_cutoff_minutes_before` (latest a member can
+  book; refused inside the window), `cancel_cutoff_minutes_before`
+  (cancel always allowed but credit forfeited past this cutoff —
+  enforced inside the refund trigger). All
   default to the prior hard-coded value so existing gyms see zero
   behaviour change. `class_types` gained `default_capacity` (overrides
   the gym default), `coach_required` and `unsupervised_label` (replaces

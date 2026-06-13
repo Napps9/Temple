@@ -55,6 +55,9 @@ export type Database = {
           lead_conversion_window_days: number;
           materialisation_horizon_weeks: number;
           subscription_resolution: 'credits_first' | 'newest_first' | 'highest_priority';
+          booking_window_hours_ahead: number | null;
+          booking_cutoff_minutes_before: number;
+          cancel_cutoff_minutes_before: number;
         };
         Insert: {
           id?: string;
@@ -85,6 +88,9 @@ export type Database = {
           lead_conversion_window_days?: number;
           materialisation_horizon_weeks?: number;
           subscription_resolution?: 'credits_first' | 'newest_first' | 'highest_priority';
+          booking_window_hours_ahead?: number | null;
+          booking_cutoff_minutes_before?: number;
+          cancel_cutoff_minutes_before?: number;
         };
         Update: Partial<{
           id: string;
@@ -115,6 +121,9 @@ export type Database = {
           lead_conversion_window_days: number;
           materialisation_horizon_weeks: number;
           subscription_resolution: 'credits_first' | 'newest_first' | 'highest_priority';
+          booking_window_hours_ahead: number | null;
+          booking_cutoff_minutes_before: number;
+          cancel_cutoff_minutes_before: number;
         }>;
         Relationships: [];
       };
@@ -2463,6 +2472,9 @@ export type Database = {
             | 'credits_first'
             | 'newest_first'
             | 'highest_priority';
+          p_booking_window_hours_ahead?: number | null;
+          p_booking_cutoff_minutes_before?: number;
+          p_cancel_cutoff_minutes_before?: number;
         };
         Returns: null;
       };

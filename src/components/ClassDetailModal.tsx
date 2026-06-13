@@ -14,6 +14,7 @@ import { useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 
 type SessionDetail = {
@@ -78,6 +79,7 @@ export function ClassDetailModal({
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
   const canAssignPlan = useCan('can_assign_plan') ?? false;
+  const { data: gymDefaults } = useGymOperatingDefaults();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -311,6 +313,12 @@ export function ClassDetailModal({
       : null;
   const inPast = start ? start.getTime() < Date.now() : false;
   const isFull = detail ? bookings.length >= detail.capacity : false;
+  const cancelCutoffMs =
+    (gymDefaults?.cancel_cutoff_minutes_before ?? 0) * 60 * 1000;
+  const lateCancel =
+    start !== null &&
+    cancelCutoffMs > 0 &&
+    start.getTime() - cancelCutoffMs <= Date.now();
   const typeColor = detail?.class_types?.color ?? colors.primary;
   const typeName = detail?.class_types?.name ?? detail?.name ?? '';
   const coachName = detail?.coach?.full_name ?? 'Coach';
@@ -540,6 +548,7 @@ export function ClassDetailModal({
                 entitlementsLoading={entitlements.isLoading}
                 chosenEntitlement={chosenEntitlement}
                 setChosenEntitlement={setChosenEntitlement}
+                lateCancel={lateCancel}
               />
 
               {mode === 'manage' && canEditClasses && !inPast ? (
@@ -615,6 +624,7 @@ function BookActions({
   entitlementsLoading,
   chosenEntitlement,
   setChosenEntitlement,
+  lateCancel,
 }: {
   inPast: boolean;
   isFull: boolean;
@@ -637,6 +647,7 @@ function BookActions({
   setChosenEntitlement: (
     v: { kind: 'comp_grant' | 'plan_subscription'; id: string } | null,
   ) => void;
+  lateCancel: boolean;
 }) {
   if (inPast && !myBookingExists) {
     return (
@@ -737,6 +748,11 @@ function BookActions({
         <Text className="text-gray-900 dark:text-gray-50 font-medium">
           Cancel your booking for this class?
         </Text>
+        {lateCancel ? (
+          <Text className="text-amber-600 dark:text-amber-400 text-sm">
+            Late cancel — your credit will be forfeited.
+          </Text>
+        ) : null}
         <View className="flex-row gap-3">
           <View className="flex-1">
             <Button variant="secondary" onPress={() => setConfirming(null)}>

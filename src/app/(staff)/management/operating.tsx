@@ -23,6 +23,9 @@ type Defaults = {
   lead_conversion_window_days: number;
   materialisation_horizon_weeks: number;
   subscription_resolution: 'credits_first' | 'newest_first' | 'highest_priority';
+  booking_window_hours_ahead: number | null;
+  booking_cutoff_minutes_before: number;
+  cancel_cutoff_minutes_before: number;
 };
 
 const RESOLUTION_LABELS: Record<Defaults['subscription_resolution'], string> = {
@@ -48,7 +51,7 @@ export function OperatingDefaultsPanel() {
       const { data, error: e } = await supabase
         .from('gyms')
         .select(
-          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, materialisation_horizon_weeks, subscription_resolution',
+          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, materialisation_horizon_weeks, subscription_resolution, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before',
         )
         .eq('id', membership!.gymId)
         .single();
@@ -77,6 +80,9 @@ export function OperatingDefaultsPanel() {
         p_lead_conversion_window_days: draft.lead_conversion_window_days,
         p_materialisation_horizon_weeks: draft.materialisation_horizon_weeks,
         p_subscription_resolution: draft.subscription_resolution,
+        p_booking_window_hours_ahead: draft.booking_window_hours_ahead,
+        p_booking_cutoff_minutes_before: draft.booking_cutoff_minutes_before,
+        p_cancel_cutoff_minutes_before: draft.cancel_cutoff_minutes_before,
       });
       if (e) throw e;
     },
@@ -185,6 +191,38 @@ export function OperatingDefaultsPanel() {
           blurb="Used by the cohort logic + Members tab badge."
           value={draft.expiring_within_days}
           onChange={num('expiring_within_days')}
+        />
+      </Section>
+
+      <Section title="Booking windows">
+        <NumField
+          label="Booking opens (hours ahead)"
+          blurb="The earliest a member can book a class. 0 here means it stays open until the class fills. 168 gives the classic 'books open one week ahead'."
+          value={draft.booking_window_hours_ahead ?? 0}
+          onChange={(v) => {
+            const n = parseInt(v, 10);
+            if (!Number.isFinite(n)) return;
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    booking_window_hours_ahead: n > 0 ? n : null,
+                  }
+                : d,
+            );
+          }}
+        />
+        <NumField
+          label="Booking closes (minutes before)"
+          blurb="The latest a member can book before class start. 0 means right up to the start time."
+          value={draft.booking_cutoff_minutes_before}
+          onChange={num('booking_cutoff_minutes_before')}
+        />
+        <NumField
+          label="Free cancellation cutoff (minutes before)"
+          blurb="Members can always cancel, but past this cutoff the credit is forfeited. 0 means no late-cancel forfeit."
+          value={draft.cancel_cutoff_minutes_before}
+          onChange={num('cancel_cutoff_minutes_before')}
         />
       </Section>
 
