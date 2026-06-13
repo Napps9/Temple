@@ -249,7 +249,11 @@ writes; tenant RLS uses `user_can_assign_plan`. Moving to
 enforced in the RPC), so the conversion dashboard can attribute
 revenue to its source. The list page filters by status pill (Active
 / All / per-status) and supports inline status changes via the
-detail modal.
+detail modal. The detail modal exposes a manual "Converted" flow
+with an inline member search for cases where auto-attribute on
+signup didn't fire. The Insights page surfaces a "Conversions by
+source" chip row alongside the lead_conversions tile so owners can
+see which acquisition channels are paying off.
 
 ### Member import
 

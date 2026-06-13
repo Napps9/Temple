@@ -113,6 +113,47 @@ export default function InsightsScreen() {
     },
   });
 
+  // Per-source breakdown of converted leads in the period. Surfaced
+  // alongside the lead_conversions tile so owners can tell which
+  // acquisition channels are paying off.
+  const leadBySource = useQuery({
+    queryKey: ['insights-leads-by-source', membership?.gymId, start, end],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('source_id, source:lead_sources!source_id(label, color)')
+        .eq('gym_id', membership!.gymId)
+        .gte('converted_at', start)
+        .lte('converted_at', `${end}T23:59:59`);
+      if (error) throw error;
+      const tally = new Map<string, { label: string; color: string; n: number }>();
+      let untagged = 0;
+      for (const row of data ?? []) {
+        const r = row as unknown as {
+          source_id: string | null;
+          source: { label: string; color: string } | null;
+        };
+        if (!r.source_id || !r.source) {
+          untagged += 1;
+          continue;
+        }
+        const existing = tally.get(r.source_id);
+        if (existing) existing.n += 1;
+        else
+          tally.set(r.source_id, {
+            label: r.source.label,
+            color: r.source.color,
+            n: 1,
+          });
+      }
+      return {
+        untagged,
+        sources: [...tally.values()].sort((a, b) => b.n - a.n),
+      };
+    },
+  });
+
   if (canSeeInsights === false) {
     return <Redirect href="/management" />;
   }
@@ -159,6 +200,48 @@ export default function InsightsScreen() {
               <StatTile title="Expiring soon" value={summary.data.expiring_soon} subtitle="≤ 7 days" />
               <StatTile title="Expired" value={summary.data.expired} subtitle="no live access" />
             </View>
+
+            {(leadBySource.data?.sources.length ?? 0) > 0 ||
+            (leadBySource.data?.untagged ?? 0) > 0 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  Conversions by source
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {leadBySource.data!.sources.map((s) => (
+                    <View
+                      key={s.label}
+                      style={{ backgroundColor: s.color + '22' }}
+                      className="rounded-full px-3 py-1 flex-row items-center gap-1.5">
+                      <View
+                        style={{ backgroundColor: s.color }}
+                        className="w-2 h-2 rounded-full"
+                      />
+                      <Text
+                        style={{ color: s.color }}
+                        className="text-xs font-semibold">
+                        {s.label}
+                      </Text>
+                      <Text
+                        style={{ color: s.color }}
+                        className="text-xs">
+                        · {s.n}
+                      </Text>
+                    </View>
+                  ))}
+                  {leadBySource.data!.untagged > 0 ? (
+                    <View className="rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 flex-row items-center gap-1.5">
+                      <Text className="text-gray-600 dark:text-gray-300 text-xs font-semibold">
+                        No source
+                      </Text>
+                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                        · {leadBySource.data!.untagged}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
 
             {summary.data.billing_live ? (
               <View className="flex-row gap-3 flex-wrap">
