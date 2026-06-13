@@ -441,14 +441,17 @@ function LeadDetailModal({
   onChanged: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const [convertPicker, setConvertPicker] = useState(false);
+  const [memberQuery, setMemberQuery] = useState('');
 
   const setStatus = useMutation({
     mutationFn: async (next: LeadStatus) => {
       if (!lead) throw new Error('No lead selected');
       if (next === 'converted') {
-        throw new Error(
-          'To mark a lead converted, link them to a member from the Members tab once they sign up.',
-        );
+        // Convert flow opens the picker instead; the actual RPC call
+        // happens via `convert` below once the member is chosen.
+        setConvertPicker(true);
+        return;
       }
       const { error: e } = await supabase.rpc('set_lead_status', {
         p_lead_id: lead.id,
@@ -459,9 +462,58 @@ function LeadDetailModal({
     },
     onSuccess: () => {
       setError(null);
-      onChanged();
+      if (!convertPicker) onChanged();
     },
     onError: (e) => setError(errorMessage(e, 'Could not change status')),
+  });
+
+  const members = useQuery({
+    queryKey: ['leads-member-picker', gymId, memberQuery],
+    enabled: convertPicker,
+    queryFn: async () => {
+      const { data, error: e } = await supabase
+        .from('gym_memberships')
+        .select('profile_id, profiles!profile_id(full_name)')
+        .eq('gym_id', gymId)
+        .is('left_at', null)
+        .eq('role', 'member');
+      if (e) throw e;
+      const rows = (data ?? []).map((r) => {
+        const row = r as unknown as {
+          profile_id: string;
+          profiles: { full_name: string | null } | null;
+        };
+        return {
+          profile_id: row.profile_id,
+          full_name: row.profiles?.full_name ?? null,
+        };
+      });
+      const q = memberQuery.trim().toLowerCase();
+      const filtered = q
+        ? rows.filter((r) => (r.full_name ?? '').toLowerCase().includes(q))
+        : rows;
+      return filtered.sort((a, b) =>
+        (a.full_name ?? '').localeCompare(b.full_name ?? ''),
+      );
+    },
+  });
+
+  const convert = useMutation({
+    mutationFn: async (profileId: string) => {
+      if (!lead) throw new Error('No lead selected');
+      const { error: e } = await supabase.rpc('set_lead_status', {
+        p_lead_id: lead.id,
+        p_status: 'converted' as LeadStatus,
+        p_converted_profile_id: profileId,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      setConvertPicker(false);
+      onChanged();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not mark converted')),
   });
 
   if (!lead) return null;
@@ -501,36 +553,93 @@ function LeadDetailModal({
             </View>
           ) : null}
 
-          <View className="gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-              Status
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {STATUS_ORDER.filter((s) => s !== 'converted').map((s) => {
-                const sel = lead.status === s;
-                return (
-                  <Pressable
-                    key={s}
-                    onPress={() => setStatus.mutate(s)}
-                    disabled={setStatus.isPending}
-                    className={`px-3 py-1.5 rounded-full border ${
-                      sel ? 'border-primary' : 'border-gray-200 dark:border-gray-700'
-                    }`}
-                    style={
-                      sel
-                        ? { backgroundColor: STATUS_COLORS[s] + '22' }
-                        : undefined
-                    }>
-                    <Text
-                      className="text-xs font-medium"
-                      style={sel ? { color: STATUS_COLORS[s] } : undefined}>
-                      {STATUS_LABELS[s]}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+          {convertPicker ? (
+            <View className="gap-2">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                Link to a member
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Pick the member this lead became. (Future signups with a
+                matching email auto-link inside the gym's conversion
+                window.)
+              </Text>
+              <Input
+                label=""
+                value={memberQuery}
+                onChangeText={setMemberQuery}
+                placeholder="Search members"
+              />
+              <ScrollView className="max-h-56">
+                {members.isLoading ? (
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    Loading…
+                  </Text>
+                ) : (members.data?.length ?? 0) === 0 ? (
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    No matching members in this gym.
+                  </Text>
+                ) : (
+                  <View className="gap-1.5">
+                    {(members.data ?? []).map((m) => (
+                      <Pressable
+                        key={m.profile_id}
+                        onPress={() => convert.mutate(m.profile_id)}
+                        disabled={convert.isPending}
+                        className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                        <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                          {m.full_name ?? 'Member'}
+                        </Text>
+                        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </ScrollView>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Button
+                    variant="secondary"
+                    onPress={() => {
+                      setConvertPicker(false);
+                      setMemberQuery('');
+                    }}>
+                    Back
+                  </Button>
+                </View>
+              </View>
             </View>
-          </View>
+          ) : (
+            <View className="gap-2">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                Status
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {STATUS_ORDER.map((s) => {
+                  const sel = lead.status === s;
+                  return (
+                    <Pressable
+                      key={s}
+                      onPress={() => setStatus.mutate(s)}
+                      disabled={setStatus.isPending}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        sel ? 'border-primary' : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                      style={
+                        sel
+                          ? { backgroundColor: STATUS_COLORS[s] + '22' }
+                          : undefined
+                      }>
+                      <Text
+                        className="text-xs font-medium"
+                        style={sel ? { color: STATUS_COLORS[s] } : undefined}>
+                        {STATUS_LABELS[s]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>

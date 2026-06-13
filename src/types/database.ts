@@ -2488,6 +2488,7 @@ export type Database = {
           expired: number;
           paying_now: number;
           billing_live: boolean;
+          lead_conversions: number;
         }[];
       };
       compute_revenue_summary: {

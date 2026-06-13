@@ -32,6 +32,7 @@ type Summary = {
   intros_target: number;
   conversions: number;
   conversions_target: number;
+  lead_conversions: number;
   expiring_soon: number;
   expired: number;
   paying_now: number;
@@ -101,6 +102,7 @@ export default function InsightsScreen() {
           intros_target: 0,
           conversions: 0,
           conversions_target: 0,
+          lead_conversions: 0,
           expiring_soon: 0,
           expired: 0,
           paying_now: 0,
@@ -153,6 +155,7 @@ export default function InsightsScreen() {
           <View className="gap-3">
             <View className="flex-row gap-3 flex-wrap">
               <StatTile title="Intros" value={summary.data.intros_new} subtitle="new this period" />
+              <StatTile title="Leads converted" value={summary.data.lead_conversions} subtitle="in this period" />
               <StatTile title="Expiring soon" value={summary.data.expiring_soon} subtitle="≤ 7 days" />
               <StatTile title="Expired" value={summary.data.expired} subtitle="no live access" />
             </View>
