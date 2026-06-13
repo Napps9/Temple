@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
+import { Sparkline } from '@/components/Sparkline';
 import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { findMovement, type Metric } from '@/lib/movements';
@@ -18,6 +19,7 @@ import {
   type SectionForDerivation,
   type TagInputRow,
 } from '@/lib/movement-journal';
+import { normaliseForPlot, trendPoints } from '@/lib/movement-trend';
 import {
   categoryLabel,
   type SectionCategoryKey,
@@ -57,6 +59,7 @@ type RawTagRow = {
 export default function MovementDetail() {
   const { movement: movementKey } = useLocalSearchParams<{ movement: string }>();
   const session = useSession();
+  const colors = useThemeColors();
   const meta = movementKey ? findMovement(movementKey) : undefined;
   const [recording, setRecording] = useState<{ trackKey?: string } | null>(
     null,
@@ -199,6 +202,10 @@ export default function MovementDetail() {
               const display = best
                 ? formatResultValue(best, scheme.metric)
                 : null;
+              const series = normaliseForPlot(
+                trendPoints(merged, scheme.key, scheme.metric),
+                scheme.better,
+              );
               return (
                 <Pressable
                   key={scheme.key}
@@ -219,6 +226,9 @@ export default function MovementDetail() {
                       </Text>
                     )}
                   </View>
+                  {series.length >= 2 ? (
+                    <Sparkline values={series} color={colors.primary} width={88} height={32} />
+                  ) : null}
                   <Text
                     className={
                       display

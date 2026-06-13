@@ -74,6 +74,14 @@ permission gate that controls visibility for staff features.
   value; time-based ones use seconds with "lower better". Logic
   lives in `prRowIds` (`src/lib/movement-journal.ts`), unit-tested.
 
+- **Trend sparklines** — each rep-max row on the movement detail page
+  shows a tiny View-based sparkline (no chart libs) of that scheme's
+  progression once there are 2+ logged points. Lower-is-better
+  schemes (time) are inverted so an improving series still trends
+  upward. Pure helpers `trendPoints` + `normaliseForPlot`
+  (`src/lib/movement-trend.ts`), unit-tested; the line is
+  `src/components/Sparkline.tsx`.
+
 - **Workout streak + 12-week heatmap** — on the /track home, a card
   combines an amber "X-day streak" tile with a 12-week heatmap grid
   drawn from the same Set of locally-keyed logged days. Cells the
