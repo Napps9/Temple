@@ -3,7 +3,7 @@
 -- is found, and only fires when a match is found.
 
 begin;
-select plan(6);
+select plan(9);
 
 \ir _helpers.psql
 
@@ -55,6 +55,37 @@ select is(
       and gym_id = current_setting('test.gym')::uuid),
   2,
   'tags from the pending row are written onto the new member (VIP + Founders)'
+);
+
+-- Lock in the column shape 0047 chose, so a future "improvement" to
+-- apply_pending_member_data can't silently regress to the
+-- ON-CONFLICT-without-required-columns version 0046 shipped (which
+-- threw the moment any imported member with tags signed up).
+select is(
+  (select color from public.member_tags
+    where profile_id = current_setting('test.ada')::uuid
+      and gym_id = current_setting('test.gym')::uuid
+      and label = 'VIP'),
+  '#6B7280',
+  'imported tags get the gym-neutral grey colour'
+);
+
+select is(
+  (select source from public.member_tags
+    where profile_id = current_setting('test.ada')::uuid
+      and gym_id = current_setting('test.gym')::uuid
+      and label = 'VIP'),
+  'manual',
+  'imported tags are written with source=manual (rule_id stays null)'
+);
+
+select is(
+  (select created_by from public.member_tags
+    where profile_id = current_setting('test.ada')::uuid
+      and gym_id = current_setting('test.gym')::uuid
+      and label = 'VIP'),
+  current_setting('test.ada')::uuid,
+  'imported tags are attributed to the new member''s own profile'
 );
 
 select is(
