@@ -8,6 +8,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
+import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
@@ -96,14 +97,15 @@ export default function TrackHome() {
     },
   });
 
-  // Last 60 days of workout dates, used to compute the streak. Set
-  // of local-date keys; the heavy lifting lives in workout-streak.ts.
+  // Last 90 days of workout dates — feeds both the streak tile and
+  // the 12-week heatmap. Set of local-date keys; the heavy lifting
+  // lives in workout-streak.ts and WorkoutHeatmap.
   const recentWorkouts = useQuery({
     queryKey: ['workout-streak-days', session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async (): Promise<Set<string>> => {
       const sinceIso = new Date(
-        Date.now() - 60 * 24 * 60 * 60 * 1000,
+        Date.now() - 90 * 24 * 60 * 60 * 1000,
       ).toISOString();
       const { data, error } = await supabase
         .from('tracked_workouts')
@@ -144,18 +146,32 @@ export default function TrackHome() {
           </Pressable>
         </View>
 
-        {streak > 0 ? (
-          <View className="bg-amber-50 dark:bg-amber-900/15 border border-amber-300 dark:border-amber-800 rounded-xl p-3 flex-row items-center gap-3">
-            <View className="w-9 h-9 rounded-full bg-amber-500/20 items-center justify-center">
-              <Ionicons name="flame" size={18} color="#F59E0B" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-amber-700 dark:text-amber-300 font-semibold">
-                {streak}-day workout streak
+        {(streak > 0 || (recentWorkouts.data?.size ?? 0) > 0) ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+            {streak > 0 ? (
+              <View className="flex-row items-center gap-3">
+                <View className="w-9 h-9 rounded-full bg-amber-500/20 items-center justify-center">
+                  <Ionicons name="flame" size={18} color="#F59E0B" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-amber-700 dark:text-amber-300 font-semibold">
+                    {streak}-day workout streak
+                  </Text>
+                  <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                    Keep it going — log a session today to extend it.
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+            <View className="gap-2">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                Last 12 weeks
               </Text>
-              <Text className="text-amber-600 dark:text-amber-400 text-xs">
-                Keep it going — log a session today to extend it.
-              </Text>
+              <WorkoutHeatmap
+                loggedDays={recentWorkouts.data ?? new Set()}
+                anchor={new Date()}
+                primaryColor={colors.primary}
+              />
             </View>
           </View>
         ) : null}

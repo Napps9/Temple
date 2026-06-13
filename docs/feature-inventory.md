@@ -74,12 +74,13 @@ permission gate that controls visibility for staff features.
   value; time-based ones use seconds with "lower better". Logic
   lives in `prRowIds` (`src/lib/movement-journal.ts`), unit-tested.
 
-- **Workout streak** — on the /track home, an amber tile showing
-  "X-day workout streak" when the member has logged a workout on
-  consecutive days. Local-time date boundary; today-not-yet-logged
-  doesn't break the streak so a morning visit doesn't shame the
-  member. Logic in `workoutStreak` (`src/lib/workout-streak.ts`),
-  unit-tested.
+- **Workout streak + 12-week heatmap** — on the /track home, a card
+  combines an amber "X-day streak" tile with a 12-week heatmap grid
+  drawn from the same Set of locally-keyed logged days. Cells the
+  member trained on glow with the gym's primary colour; everything
+  else stays a soft neutral. Streak logic in `workoutStreak`
+  (`src/lib/workout-streak.ts`), grid in
+  `src/components/WorkoutHeatmap.tsx`, both unit-tested.
 
 - **Workout journal** — every recorded session with date, title,
   programmed sections + recorded results, route into a detail view.
