@@ -4,7 +4,7 @@
 -- existing comms keep flowing.
 
 begin;
-select plan(4);
+select plan(5);
 
 \ir _helpers.psql
 
@@ -119,6 +119,24 @@ select is(
      null::uuid)),
   2,
   'NULL-topic campaign: only blanket unsub applies (m2 + m3 receive)'
+);
+
+-- 5. The two-arg compat wrapper (no topic arg) matches the NULL-topic
+--    behaviour — proves the legacy editor path still suppresses only
+--    blanket unsubs.
+select is(
+  (select count(*)::int from public.comms_audience_rows(
+     current_setting('test.gym')::uuid,
+     jsonb_build_object(
+       'kind', 'manual',
+       'profile_ids', jsonb_build_array(
+         current_setting('test.owner'),
+         current_setting('test.m1'),
+         current_setting('test.m2'),
+         current_setting('test.m3')
+       )))),
+  2,
+  'two-arg compat wrapper behaves the same as topic = null'
 );
 
 select * from finish();
