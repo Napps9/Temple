@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bestOfMerged,
   mergeJournal,
+  prRowIds,
   type DirectInputRow,
   type TagInputRow,
 } from './movement-journal';
@@ -167,5 +168,69 @@ describe('bestOfMerged', () => {
       [],
     );
     expect(bestOfMerged(merged, '1rm', scheme)).toBe(null);
+  });
+});
+
+describe('prRowIds', () => {
+  const higherIsBetter = { metric: 'weight' as const, better: 'higher' as const };
+  const lowerIsBetter = { metric: 'time' as const, better: 'lower' as const };
+
+  it('marks every higher-better entry as PR until a non-improvement', () => {
+    const merged = mergeJournal(
+      [
+        direct({ id: 'd1', performed_at: '2026-01-01T00:00:00Z', value_numeric: 100 }),
+        direct({ id: 'd2', performed_at: '2026-02-01T00:00:00Z', value_numeric: 105 }),
+        direct({ id: 'd3', performed_at: '2026-03-01T00:00:00Z', value_numeric: 105 }),
+        direct({ id: 'd4', performed_at: '2026-04-01T00:00:00Z', value_numeric: 110 }),
+      ],
+      [],
+    );
+    const prs = prRowIds(merged, () => higherIsBetter);
+    expect(Array.from(prs).sort()).toEqual(
+      ['direct:d1', 'direct:d2', 'direct:d4'].sort(),
+    );
+  });
+
+  it('lower-better scheme marks improving times', () => {
+    const merged = mergeJournal(
+      [
+        direct({ id: 'd1', performed_at: '2026-01-01T00:00:00Z', value_seconds: 1200 }),
+        direct({ id: 'd2', performed_at: '2026-02-01T00:00:00Z', value_seconds: 1180 }),
+        direct({ id: 'd3', performed_at: '2026-03-01T00:00:00Z', value_seconds: 1190 }),
+        direct({ id: 'd4', performed_at: '2026-04-01T00:00:00Z', value_seconds: 1100 }),
+      ],
+      [],
+    );
+    const prs = prRowIds(merged, () => lowerIsBetter);
+    expect(Array.from(prs).sort()).toEqual(
+      ['direct:d1', 'direct:d2', 'direct:d4'].sort(),
+    );
+  });
+
+  it('keeps PRs scoped per track_key', () => {
+    const merged = mergeJournal(
+      [
+        direct({ id: 'd1', performed_at: '2026-01-01T00:00:00Z', value_numeric: 100, track_key: '1rm' }),
+        direct({ id: 'd2', performed_at: '2026-02-01T00:00:00Z', value_numeric: 60,  track_key: '5rm' }),
+        direct({ id: 'd3', performed_at: '2026-03-01T00:00:00Z', value_numeric: 80,  track_key: '5rm' }),
+      ],
+      [],
+    );
+    const prs = prRowIds(merged, () => higherIsBetter);
+    expect(prs.has('direct:d1')).toBe(true);
+    expect(prs.has('direct:d2')).toBe(true);
+    expect(prs.has('direct:d3')).toBe(true);
+  });
+
+  it('skips rows with missing values or unknown schemes', () => {
+    const merged = mergeJournal(
+      [
+        direct({ id: 'd1', performed_at: '2026-01-01T00:00:00Z', value_numeric: 100 }),
+        direct({ id: 'd2', performed_at: '2026-02-01T00:00:00Z', value_numeric: null }),
+      ],
+      [],
+    );
+    const prs = prRowIds(merged, () => undefined);
+    expect(prs.size).toBe(0);
   });
 });

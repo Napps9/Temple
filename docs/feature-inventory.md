@@ -66,6 +66,14 @@ permission gate that controls visibility for staff features.
   member-facing join URL.
 
 ### Tracking & training
+
+- **PR badges** — on the movement detail page, every journal row
+  shows a trophy PR chip when the result was a strict improvement
+  (per track-key, per scheme direction) over every earlier entry at
+  the time it was recorded. Higher-better schemes use the numeric
+  value; time-based ones use seconds with "lower better". Logic
+  lives in `prRowIds` (`src/lib/movement-journal.ts`), unit-tested.
+
 - **Workout journal** — every recorded session with date, title,
   programmed sections + recorded results, route into a detail view.
 - **Record workout modal** — pre-fill from today's programming for

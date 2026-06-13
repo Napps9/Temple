@@ -185,6 +185,39 @@ export function deriveTagValue(
   return { value_numeric: v, value_seconds: null };
 }
 
+// Per-scheme PR-at-time-of-recording. Walk the merged journal oldest
+// first; an entry is a PR if it strictly beats every earlier entry
+// for the same track_key under the scheme's "better" direction.
+// Returns the set of row ids that were PRs when recorded.
+export function prRowIds(
+  rows: JournalRow[],
+  schemeFor: (trackKey: string | null) => Pick<Scheme, 'metric' | 'better'> | undefined,
+): Set<string> {
+  const ids = new Set<string>();
+  const bestByTrack = new Map<string, number>();
+  const ascending = [...rows].sort(
+    (a, b) =>
+      new Date(a.performed_at).getTime() -
+      new Date(b.performed_at).getTime(),
+  );
+  for (const row of ascending) {
+    if (!row.track_key) continue;
+    const scheme = schemeFor(row.track_key);
+    if (!scheme) continue;
+    const v = scheme.metric === 'time' ? row.value_seconds : row.value_numeric;
+    if (v == null) continue;
+    const prior = bestByTrack.get(row.track_key);
+    const isPR =
+      prior == null ||
+      (scheme.better === 'higher' ? v > prior : v < prior);
+    if (isPR) {
+      ids.add(row.id);
+      bestByTrack.set(row.track_key, v);
+    }
+  }
+  return ids;
+}
+
 // Best-of across the union for a given scheme. Filters by track_key
 // before delegating to bestOf() from src/lib/track.ts so the same
 // MIN/MAX-by-direction logic is reused.

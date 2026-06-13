@@ -13,6 +13,7 @@ import {
   bestOfMerged,
   deriveTagValue,
   mergeJournal,
+  prRowIds,
   type JournalRow,
   type SectionForDerivation,
   type TagInputRow,
@@ -142,6 +143,13 @@ export default function MovementDetail() {
     return mergeJournal(direct_inputs, tag_inputs);
   }, [meta, direct.data, tags.data]);
 
+  const prIds = useMemo(() => {
+    if (!meta) return new Set<string>();
+    return prRowIds(merged, (key) =>
+      meta.movement.schemes.find((s) => s.key === key),
+    );
+  }, [meta, merged]);
+
   if (!meta) {
     return (
       <Screen>
@@ -258,6 +266,7 @@ export default function MovementDetail() {
                   metric={
                     movement.schemes.find((s) => s.key === r.track_key)?.metric
                   }
+                  isPR={prIds.has(r.id)}
                 />
               ))}
             </View>
@@ -343,10 +352,12 @@ function JournalRowView({
   row,
   schemeLabel,
   metric,
+  isPR,
 }: {
   row: JournalRow;
   schemeLabel: string;
   metric: Metric | undefined;
+  isPR: boolean;
 }) {
   const display = metric ? formatResultValue(row, metric) : null;
   return (
@@ -362,6 +373,14 @@ function JournalRowView({
           <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
             {row.section_title ?? schemeLabel}
           </Text>
+          {isPR ? (
+            <View className="rounded-full bg-amber-500/15 px-1.5 py-0.5 flex-row items-center gap-0.5">
+              <Ionicons name="trophy" size={9} color="#F59E0B" />
+              <Text className="text-amber-600 dark:text-amber-400 text-[9px] font-semibold uppercase tracking-wider">
+                PR
+              </Text>
+            </View>
+          ) : null}
           {row.source === 'tag' ? (
             <View className="rounded-full bg-primary/10 px-1.5 py-0.5">
               <Text className="text-primary text-[9px] font-semibold uppercase tracking-wider">
