@@ -319,6 +319,20 @@ export function ClassDetailModal({
     start !== null &&
     cancelCutoffMs > 0 &&
     start.getTime() - cancelCutoffMs <= Date.now();
+
+  const bookCutoffMs =
+    (gymDefaults?.booking_cutoff_minutes_before ?? 0) * 60 * 1000;
+  const windowMs = gymDefaults?.booking_window_hours_ahead
+    ? gymDefaults.booking_window_hours_ahead * 60 * 60 * 1000
+    : null;
+  const booksOpenAt =
+    start && windowMs !== null ? start.getTime() - windowMs : null;
+  const booksCloseAt =
+    start && bookCutoffMs > 0 ? start.getTime() - bookCutoffMs : null;
+  const bookNotYetOpen =
+    booksOpenAt !== null && Date.now() < booksOpenAt;
+  const bookClosed =
+    booksCloseAt !== null && Date.now() >= booksCloseAt && !inPast;
   const typeColor = detail?.class_types?.color ?? colors.primary;
   const typeName = detail?.class_types?.name ?? detail?.name ?? '';
   const coachName = detail?.coach?.full_name ?? 'Coach';
@@ -549,6 +563,10 @@ export function ClassDetailModal({
                 chosenEntitlement={chosenEntitlement}
                 setChosenEntitlement={setChosenEntitlement}
                 lateCancel={lateCancel}
+                bookNotYetOpen={bookNotYetOpen}
+                bookClosed={bookClosed}
+                booksOpenAt={booksOpenAt}
+                booksCloseAt={booksCloseAt}
               />
 
               {mode === 'manage' && canEditClasses && !inPast ? (
@@ -625,6 +643,10 @@ function BookActions({
   chosenEntitlement,
   setChosenEntitlement,
   lateCancel,
+  bookNotYetOpen,
+  bookClosed,
+  booksOpenAt,
+  booksCloseAt,
 }: {
   inPast: boolean;
   isFull: boolean;
@@ -648,6 +670,10 @@ function BookActions({
     v: { kind: 'comp_grant' | 'plan_subscription'; id: string } | null,
   ) => void;
   lateCancel: boolean;
+  bookNotYetOpen: boolean;
+  bookClosed: boolean;
+  booksOpenAt: number | null;
+  booksCloseAt: number | null;
 }) {
   if (inPast && !myBookingExists) {
     return (
@@ -797,6 +823,38 @@ function BookActions({
         <Button onPress={onJoinWaitlist} loading={waitlistPending}>
           Join waitlist
         </Button>
+      </View>
+    );
+  }
+  if (bookNotYetOpen) {
+    const when = booksOpenAt ? new Date(booksOpenAt) : null;
+    return (
+      <View className="gap-1">
+        <Button disabled>Booking not yet open</Button>
+        {when ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+            Books open {when.toLocaleDateString(undefined, {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+            })}, {when.getHours().toString().padStart(2, '0')}:
+            {when.getMinutes().toString().padStart(2, '0')}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
+  if (bookClosed) {
+    const when = booksCloseAt ? new Date(booksCloseAt) : null;
+    return (
+      <View className="gap-1">
+        <Button disabled>Booking closed</Button>
+        {when ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+            Closed {when.getHours().toString().padStart(2, '0')}:
+            {when.getMinutes().toString().padStart(2, '0')}
+          </Text>
+        ) : null}
       </View>
     );
   }
