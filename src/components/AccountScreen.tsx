@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { AvatarUploader } from './AvatarUploader';
+import { BackLink } from './BackLink';
 import { Button } from './Button';
 import { ChipButton } from './ChipButton';
 import { CoachEarningsCard } from './CoachEarningsCard';
@@ -154,7 +155,8 @@ export function AccountScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Account

@@ -8,6 +8,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { InviteQRModal } from '@/components/InviteQRModal';
 import { Screen } from '@/components/Screen';
 import { WalkInQRCard } from '@/components/WalkInQRCard';
+import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { inviteUrl } from '@/lib/brand';
 import { can, type Capability } from '@/lib/can';
@@ -152,6 +153,7 @@ export default function TeamScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Manage" />
         <WalkInQRCard />
 
         <View className="gap-2">

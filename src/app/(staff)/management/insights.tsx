@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
+import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -117,6 +118,7 @@ export default function InsightsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Manage" />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Insights

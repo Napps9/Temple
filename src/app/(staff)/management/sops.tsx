@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -114,6 +115,7 @@ export default function SopsScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Manage" />
           <Pressable onPress={() => setActiveId(null)}>
             <Text className="text-primary">← All documents</Text>
           </Pressable>

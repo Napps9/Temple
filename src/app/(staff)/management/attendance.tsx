@@ -9,6 +9,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
+import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { useClassTypes } from '@/lib/useClassCatalog';
 import {
@@ -116,6 +117,7 @@ export default function AttendanceScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
+        <BackLink label="Manage" />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Attendance

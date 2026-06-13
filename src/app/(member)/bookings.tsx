@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
+import { BackLink } from '@/components/BackLink';
 import { useSession } from '@/lib/auth';
 import {
   attendanceLabel,
@@ -127,6 +128,7 @@ export default function BookingsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Book" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             My bookings

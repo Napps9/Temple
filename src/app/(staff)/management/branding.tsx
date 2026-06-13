@@ -20,6 +20,7 @@ import { ColourArea } from '@/components/ColourArea';
 import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { DEFAULT_BRAND, joinUrl, normaliseHex, slugify } from '@/lib/brand';
 import { deriveDarkColour } from '@/lib/brand-derivation';
@@ -690,6 +691,7 @@ export default function BrandingPage() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Manage" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Branding

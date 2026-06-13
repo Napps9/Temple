@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ScrollView, Switch, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
+import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -124,6 +125,7 @@ export default function LeaderboardsConfigPage() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Manage" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Leaderboards
