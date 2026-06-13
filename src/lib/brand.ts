@@ -90,6 +90,13 @@ export function joinUrl(origin: string, slug: string): string {
   return `${cleanedOrigin}/join/${slug}`;
 }
 
+// Public lead-capture URL for a gym slug — the shareable "enquire"
+// link distinct from the member join link.
+export function leadUrl(origin: string, slug: string): string {
+  const cleanedOrigin = origin.replace(/\/+$/, '');
+  return `${cleanedOrigin}/lead/${slug}`;
+}
+
 // Construct the accept-invite URL for a specific code. Used by the
 // per-invite QR so scanning it lands in the signup flow with the
 // code pre-filled.

@@ -66,6 +66,7 @@ export type Database = {
           booking_window_hours_ahead: number | null;
           booking_cutoff_minutes_before: number;
           cancel_cutoff_minutes_before: number;
+          public_lead_capture_enabled: boolean;
         };
         Insert: {
           id?: string;
@@ -99,6 +100,7 @@ export type Database = {
           booking_window_hours_ahead?: number | null;
           booking_cutoff_minutes_before?: number;
           cancel_cutoff_minutes_before?: number;
+          public_lead_capture_enabled?: boolean;
         };
         Update: Partial<{
           id: string;
@@ -132,6 +134,7 @@ export type Database = {
           booking_window_hours_ahead: number | null;
           booking_cutoff_minutes_before: number;
           cancel_cutoff_minutes_before: number;
+          public_lead_capture_enabled: boolean;
         }>;
         Relationships: [];
       };
@@ -2573,11 +2576,22 @@ export type Database = {
           secondary_color: string;
           text_color: string;
           public_signup_enabled: boolean;
-          logo_url_dark: string | null;
-          primary_color_dark: string | null;
-          secondary_color_dark: string | null;
-          text_color_dark: string | null;
+          public_lead_capture_enabled: boolean;
         }[];
+      };
+      set_gym_public_lead_capture: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      capture_public_lead: {
+        Args: {
+          p_slug: string;
+          p_full_name: string;
+          p_email: string;
+          p_phone?: string | null;
+          p_message?: string | null;
+        };
+        Returns: null;
       };
       create_gym: {
         Args: { p_name: string; p_slug: string };

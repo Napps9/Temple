@@ -264,6 +264,21 @@ signup didn't fire. The Insights page surfaces a "Conversions by
 source" chip row alongside the lead_conversions tile so owners can
 see which acquisition channels are paying off.
 
+### Public lead capture
+
+A gym can share an enquiry URL (`/lead/<slug>`) that lets a prospect
+leave their name, email, phone and a message without an account.
+Opt-in per gym via `gyms.public_lead_capture_enabled` (default off),
+toggled from the Branding screen alongside the public-signup link.
+The anonymous write goes through `capture_public_lead` (SECURITY
+DEFINER, granted to `anon`), which validates the gym is accepting
+enquiries, checks a loose email shape, and dedups on
+`(gym, lower(email))` within a 30-day window so repeat submissions
+refresh the existing open lead instead of piling up duplicates.
+Captured rows land in Manage → Leads as `cold` with no
+`captured_by`. IP-level throttling is a noted follow-up (would need
+an edge function in front).
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → Import members

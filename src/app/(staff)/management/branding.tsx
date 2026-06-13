@@ -22,7 +22,7 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
-import { DEFAULT_BRAND, joinUrl, normaliseHex, slugify } from '@/lib/brand';
+import { DEFAULT_BRAND, joinUrl, leadUrl, normaliseHex, slugify } from '@/lib/brand';
 import { deriveDarkColour } from '@/lib/brand-derivation';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -38,6 +38,7 @@ type GymRow = {
   secondary_color: string;
   text_color: string;
   public_signup_enabled: boolean;
+  public_lead_capture_enabled: boolean;
   logo_url_dark: string | null;
   primary_color_dark: string | null;
   secondary_color_dark: string | null;
@@ -64,7 +65,7 @@ export function BrandingPanel() {
       const { data, error } = await supabase
         .from('gyms')
         .select(
-          'id, name, slug, logo_url, primary_color, secondary_color, text_color, public_signup_enabled, logo_url_dark, primary_color_dark, secondary_color_dark, text_color_dark',
+          'id, name, slug, logo_url, primary_color, secondary_color, text_color, public_signup_enabled, public_lead_capture_enabled, logo_url_dark, primary_color_dark, secondary_color_dark, text_color_dark',
         )
         .eq('id', membership!.gymId)
         .single();
@@ -88,6 +89,7 @@ export function BrandingPanel() {
   const [textColorDark, setTextColorDark] = useState<string>('');
   const [logoUrlDark, setLogoUrlDark] = useState<string | null>(null);
   const [publicSignup, setPublicSignup] = useState(true);
+  const [leadCapture, setLeadCapture] = useState(false);
   const [slugWarn, setSlugWarn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -108,6 +110,7 @@ export function BrandingPanel() {
       setTextColorDark(gym.data.text_color_dark ?? '');
       setLogoUrlDark(gym.data.logo_url_dark);
       setPublicSignup(gym.data.public_signup_enabled);
+      setLeadCapture(gym.data.public_lead_capture_enabled);
     }
   }, [gym.data]);
 
@@ -218,6 +221,13 @@ export function BrandingPanel() {
           p_enabled: publicSignup,
         });
         if (e4) throw e4;
+      }
+      if (leadCapture !== gym.data.public_lead_capture_enabled) {
+        const { error: e5 } = await supabase.rpc('set_gym_public_lead_capture', {
+          p_gym_id: membership.gymId,
+          p_enabled: leadCapture,
+        });
+        if (e5) throw e5;
       }
     },
     onSuccess: () => {
@@ -407,6 +417,39 @@ export function BrandingPanel() {
                 </Text>
                 <Pressable
                   onPress={() => copyToClipboard(joinUrl(origin, cleanedSlug))}
+                  hitSlop={6}
+                  className="active:opacity-70">
+                  <Ionicons name="copy-outline" size={18} color="#9CA3AF" />
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Lead capture form
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                When on, anyone with your enquiry link can leave their
+                details — they land in Manage → Leads as a cold lead.
+              </Text>
+            </View>
+            <Switch value={leadCapture} onValueChange={setLeadCapture} />
+          </View>
+          {leadCapture && cleanedSlug ? (
+            <View className="gap-1">
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Share this enquiry link
+              </Text>
+              <View className="flex-row items-center gap-2">
+                <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono" numberOfLines={1}>
+                  {leadUrl(origin, cleanedSlug)}
+                </Text>
+                <Pressable
+                  onPress={() => copyToClipboard(leadUrl(origin, cleanedSlug))}
                   hitSlop={6}
                   className="active:opacity-70">
                   <Ionicons name="copy-outline" size={18} color="#9CA3AF" />
