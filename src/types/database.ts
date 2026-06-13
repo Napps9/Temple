@@ -2272,6 +2272,23 @@ export type Database = {
         };
         Returns: string | null;
       };
+      staff_book_member: {
+        Args: {
+          p_session_id: string;
+          p_member_profile_id: string;
+          p_entitlement_kind?: 'comp_grant' | 'plan_subscription' | null;
+          p_entitlement_id?: string | null;
+        };
+        Returns: string | null;
+      };
+      swap_booking_subscription: {
+        Args: {
+          p_booking_id: string;
+          p_entitlement_kind: 'comp_grant' | 'plan_subscription';
+          p_entitlement_id: string;
+        };
+        Returns: null;
+      };
       is_booking_eligible: {
         Args: {
           p_profile_id: string;
