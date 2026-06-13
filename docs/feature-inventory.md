@@ -256,6 +256,18 @@ owner in the editor to preview before send. A live linking-progress
 counter ticks up while members sign up. Plan-name → membership_plan
 mapping is deliberately deferred to a follow-up flow.
 
+### Email topics
+
+[`can_manage_comms`] Reachable from Manage → Communications → Email
+topics (`/management/communications/topics`). Per-gym vocabulary of
+categories — Newsletter, Programming, Promos, Billing — that
+campaigns can be tagged with. The audience resolver
+(`comms_audience_rows`) honours both blanket unsubscribes (the
+historical NULL-topic row in `email_unsubscribes`) and per-topic
+ones, so a member who unsubscribed from "Promos" still receives
+"Billing reminders". Campaigns sent without a topic keep the
+pre-0058 behaviour (only blanket unsubs apply).
+
 ### Communications Suite
 
 [`can_manage_comms`, owner + admin by default] A Mailchimp-shaped email

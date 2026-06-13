@@ -46,6 +46,23 @@ export function CommunicationsHome() {
         </Pressable>
       </Link>
 
+      <Link href="/management/communications/topics" asChild>
+        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70">
+          <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+            <Ionicons name="layers-outline" size={18} color="#6B7280" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Email topics
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Let members subscribe and unsubscribe per topic — newsletter, promos, billing.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </Pressable>
+      </Link>
+
       <CampaignList />
     </View>
   );

@@ -1896,6 +1896,7 @@ export type Database = {
           design: Json;
           audience: Json;
           audience_id: string | null;
+          topic_id: string | null;
           compiled_html: string | null;
           compiled_text: string | null;
           scheduled_for: string | null;
@@ -1917,6 +1918,7 @@ export type Database = {
           design?: Json;
           audience?: Json;
           audience_id?: string | null;
+          topic_id?: string | null;
           compiled_html?: string | null;
           compiled_text?: string | null;
           scheduled_for?: string | null;
@@ -1938,6 +1940,7 @@ export type Database = {
           design: Json;
           audience: Json;
           audience_id: string | null;
+          topic_id: string | null;
           compiled_html: string | null;
           compiled_text: string | null;
           scheduled_for: string | null;
@@ -2117,6 +2120,7 @@ export type Database = {
           email: string;
           profile_id: string | null;
           campaign_id: string | null;
+          topic_id: string | null;
           reason: string | null;
           created_at: string;
         };
@@ -2126,6 +2130,7 @@ export type Database = {
           email: string;
           profile_id?: string | null;
           campaign_id?: string | null;
+          topic_id?: string | null;
           reason?: string | null;
           created_at?: string;
         };
@@ -2135,8 +2140,42 @@ export type Database = {
           email: string;
           profile_id: string | null;
           campaign_id: string | null;
+          topic_id: string | null;
           reason: string | null;
           created_at: string;
+        }>;
+        Relationships: [];
+      };
+      gym_email_topics: {
+        Row: {
+          id: string;
+          gym_id: string;
+          label: string;
+          description: string | null;
+          sort_order: number;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          label: string;
+          description?: string | null;
+          sort_order?: number;
+          archived_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          label: string;
+          description: string | null;
+          sort_order: number;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -2770,7 +2809,7 @@ export type Database = {
         Returns: { rank: number; profile_id: string; joined_at: string }[];
       };
       comms_audience_count: {
-        Args: { p_gym_id: string; p_definition: Json };
+        Args: { p_gym_id: string; p_definition: Json; p_topic_id?: string | null };
         Returns: number;
       };
       comms_audience_sample: {
