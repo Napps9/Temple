@@ -63,8 +63,9 @@ select is(
   'no audience members today (no plan / cohort fixtures) — sanity check before manual cohort'
 );
 
--- 2. Manual cohort — explicit profile list. Use this so cohort
---    eligibility doesn't depend on the v_member_cohort plumbing.
+-- 2. Manual cohort — explicit profile list. comms_audience_rows
+--    filters its base CTE to role = 'member', so the owner is
+--    excluded even when listed.
 select is(
   (select count(*)::int from public.comms_audience_rows(
      current_setting('test.gym')::uuid,
@@ -77,11 +78,11 @@ select is(
          (select id::text from auth.users where email = 'm3@topics.test')
        )),
      current_setting('test.t_news')::uuid)),
-  3,
-  'newsletter audience: m1 blanket-suppressed; m2 + m3 + owner receive'
+  2,
+  'newsletter audience: owner filtered by role; m1 blanket; m2 + m3 receive'
 );
 
--- 3. Promos audience — m1 blanket, m2 per-topic, only m3 + owner.
+-- 3. Promos audience — m1 blanket, m2 per-topic; only m3 receives.
 select is(
   (select count(*)::int from public.comms_audience_rows(
      current_setting('test.gym')::uuid,
@@ -94,8 +95,8 @@ select is(
          (select id::text from auth.users where email = 'm3@topics.test')
        )),
      current_setting('test.t_promo')::uuid)),
-  2,
-  'promos audience: m1 blanket + m2 per-topic suppressed; m3 + owner receive'
+  1,
+  'promos audience: m1 blanket + m2 per-topic suppressed; only m3 receives'
 );
 
 -- 4. NULL-topic (legacy / no topic chosen): only blanket suppressions
@@ -113,8 +114,8 @@ select is(
          (select id::text from auth.users where email = 'm3@topics.test')
        )),
      null::uuid)),
-  3,
-  'NULL-topic campaign: only blanket unsub applies (legacy semantics)'
+  2,
+  'NULL-topic campaign: only blanket unsub applies (m2 + m3 receive)'
 );
 
 -- 5. The two-arg compat wrapper (no topic arg) matches the NULL-topic
@@ -130,7 +131,7 @@ select is(
          (select id::text from auth.users where email = 'm2@topics.test'),
          (select id::text from auth.users where email = 'm3@topics.test')
        )))),
-  3,
+  2,
   'two-arg compat wrapper behaves the same as topic = null'
 );
 
