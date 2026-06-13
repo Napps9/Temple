@@ -9,6 +9,7 @@
     { "source": "/track/group/:group", "destination": "/track/group/[group]" },
     { "source": "/track/workout/:id", "destination": "/track/workout/[id]" },
     { "source": "/inbox/direct/:peer", "destination": "/inbox/direct/[peer]" },
-    { "source": "/management/members/:profile", "destination": "/management/members/[profile]" }
+    { "source": "/management/members/:profile", "destination": "/management/members/[profile]" },
+    { "source": "/management/communications/:id", "destination": "/management/communications/[id]" }
   ]
 }

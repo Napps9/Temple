@@ -42,6 +42,7 @@ import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { BrandingPanel } from './branding';
 import { ClassTypesPanel } from './class-types';
+import { CommunicationsHome } from './communications';
 import { LeaderboardsPanel } from './leaderboards';
 import { MessagingPanel } from './messaging';
 import { HealthScreeningPanel } from './parq';
@@ -85,13 +86,14 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'members' | 'team' | 'plans' | 'settings';
+type Category = 'insights' | 'members' | 'comms' | 'team' | 'plans' | 'settings';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
   members: 'Members',
+  comms: 'Comms',
   team: 'Team',
   plans: 'Plans',
   settings: 'Settings',
@@ -100,6 +102,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
 const CATEGORY_ICONS: Record<Category, IconName> = {
   insights: 'bar-chart-outline',
   members: 'people-outline',
+  comms: 'mail-outline',
   team: 'briefcase-outline',
   plans: 'pricetags-outline',
   settings: 'settings-outline',
@@ -108,6 +111,7 @@ const CATEGORY_ICONS: Record<Category, IconName> = {
 const CATEGORY_ORDER: Category[] = [
   'insights',
   'members',
+  'comms',
   'team',
   'plans',
   'settings',
@@ -135,6 +139,7 @@ export default function ManagementHome() {
   const canManagePlans = useCan('can_manage_plans');
   const canSetCoachPay = useCan('can_set_coach_pay');
   const canConfigureLeaderboards = useCan('can_configure_leaderboards');
+  const canManageComms = useCan('can_manage_comms');
 
   const cards: Card[] = [
     {
@@ -222,6 +227,13 @@ export default function ManagementHome() {
       visible: !!canManageTags,
     },
     {
+      category: 'comms',
+      title: 'Communications',
+      description: 'Design, send and analyse email campaigns to your members.',
+      href: '/management/communications',
+      visible: !!canManageComms,
+    },
+    {
       category: 'members',
       title: 'Tag rules',
       description: 'Auto-tag members based on cohort state.',
@@ -294,6 +306,8 @@ export default function ManagementHome() {
           <InsightsTab />
         ) : activeCategory === 'members' ? (
           <MembersTab />
+        ) : activeCategory === 'comms' ? (
+          <CommunicationsHome />
         ) : activeCategory === 'team' ? (
           <TeamTab />
         ) : activeCategory === 'plans' ? (

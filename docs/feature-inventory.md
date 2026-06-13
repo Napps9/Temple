@@ -177,6 +177,8 @@ The Manage page presents a tab strip:
   Credit pack plans with monthly price + notice period (days);
   Class-type allowlist per plan; Archive / Restore / Hard delete
   with dependent-row protection.
+- **Communications** [`can_manage_comms`] — the email campaign suite
+  (detailed below under *Communications Suite*).
 - **Settings** — collapsible cards:
   - **Branding** — gym name, slug, logo upload, primary / secondary /
     text colours with inline HSV picker, public-signup toggle. An
@@ -197,6 +199,47 @@ The Manage page presents a tab strip:
   - **Messaging** — choose who can DM whom (open / coach-only /
     staff-only).
   - **Class types** — same editor reachable from above.
+
+### Communications Suite
+
+[`can_manage_comms`, owner + admin by default] A Mailchimp-shaped email
+surface, reachable from the **Comms** tab on Manage or
+`/management/communications`.
+
+- **Campaigns list + overview** — every draft / sent campaign with a
+  status badge, plus headline tiles (campaigns, sent, emails delivered).
+- **Block-based editor** — a WYSIWYG canvas built from stackable blocks
+  (Heading / Text / Button / Image / Divider / Spacer). Each block
+  reorders, duplicates and deletes; an inspector edits its text,
+  alignment, colours and links. New content is seeded from the gym's
+  brand palette, and a starter layout (logo + heading + copy + button)
+  is dropped into every new campaign. Image blocks upload to the
+  `email-assets` bucket or take a pasted URL. The document compiles to
+  responsive, table-based HTML email (plus a plain-text alternative) via
+  a pure, unit-tested renderer; a web iframe shows the real render.
+- **Audience builder** — a mailing list from the gym's own members: all
+  members, by lifecycle cohort (Intro / Active / Paying / Expiring /
+  Expired), or by member tag. A live count resolves server-side, always
+  excluding members without a usable email and anyone suppressed.
+- **Send + delivery** — `comms_send_campaign` authorises, snapshots the
+  resolved recipients, stores the compiled HTML, and flips the campaign
+  to *sending*; the `send-campaign` edge function delivers via Resend (a
+  pluggable ESP) — wrapping links for click tracking, injecting the open
+  pixel, filling the unsubscribe URL per recipient. With no sending
+  domain configured it records a clearly-labelled **simulated** send so
+  the suite runs end-to-end.
+- **Analytics** — a per-campaign funnel (recipients, delivered, open %,
+  click %, unsubscribed, failed / bounced) recomputed from the recipient
+  table, alongside the sent email's render. Opens / clicks / unsubscribes
+  arrive via the public `track` edge function + `comms_track_event`.
+- **Sender & footer settings** — from-name, reply-to, and the CAN-SPAM
+  postal-address footer every send carries beside a one-click
+  unsubscribe.
+- **Compliance / privacy** — a per-gym `email_unsubscribes` suppression
+  list the resolver always subtracts; member email (which lives in
+  `auth.users`, not `profiles`) is only ever exposed through
+  `can_manage_comms`-gated security-definer RPCs, never handed to the
+  client raw.
 
 ### Coach-specific
 
@@ -343,3 +386,10 @@ Items the conversation has flagged but not implemented yet:
 - Supabase preview branches + Vercel preview environments.
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.
+- **Communications Suite — live delivery + extras**: the send /
+  tracking pipeline ships behind a pluggable ESP. Going live needs a
+  verified sending domain + `RESEND_API_KEY` / `RESEND_FROM_EMAIL` on
+  the `send-campaign` function; until then sends are simulated.
+  Scheduled sends, A/B subject testing, a hand-pick-members audience
+  picker, and a reusable saved-segment / template library are scoped
+  but not yet built.

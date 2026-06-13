@@ -1667,6 +1667,324 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_comms_settings: {
+        Row: {
+          gym_id: string;
+          from_name: string | null;
+          reply_to: string | null;
+          footer_business_name: string | null;
+          footer_address: string | null;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          from_name?: string | null;
+          reply_to?: string | null;
+          footer_business_name?: string | null;
+          footer_address?: string | null;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          from_name: string | null;
+          reply_to: string | null;
+          footer_business_name: string | null;
+          footer_address: string | null;
+          updated_by: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      email_audiences: {
+        Row: {
+          id: string;
+          gym_id: string;
+          name: string;
+          definition: Json;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          name: string;
+          definition?: Json;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          name: string;
+          definition: Json;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      email_campaigns: {
+        Row: {
+          id: string;
+          gym_id: string;
+          created_by: string | null;
+          title: string;
+          subject: string;
+          preheader: string;
+          from_name: string | null;
+          reply_to: string | null;
+          status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
+          design: Json;
+          audience: Json;
+          audience_id: string | null;
+          compiled_html: string | null;
+          compiled_text: string | null;
+          scheduled_for: string | null;
+          sent_at: string | null;
+          recipient_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          created_by?: string | null;
+          title?: string;
+          subject?: string;
+          preheader?: string;
+          from_name?: string | null;
+          reply_to?: string | null;
+          status?: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
+          design?: Json;
+          audience?: Json;
+          audience_id?: string | null;
+          compiled_html?: string | null;
+          compiled_text?: string | null;
+          scheduled_for?: string | null;
+          sent_at?: string | null;
+          recipient_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          created_by: string | null;
+          title: string;
+          subject: string;
+          preheader: string;
+          from_name: string | null;
+          reply_to: string | null;
+          status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
+          design: Json;
+          audience: Json;
+          audience_id: string | null;
+          compiled_html: string | null;
+          compiled_text: string | null;
+          scheduled_for: string | null;
+          sent_at: string | null;
+          recipient_count: number;
+          created_at: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      email_campaign_recipients: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          gym_id: string;
+          profile_id: string | null;
+          email: string;
+          full_name: string | null;
+          status: 'queued' | 'sent' | 'delivered' | 'simulated' | 'bounced' | 'failed' | 'skipped';
+          error: string | null;
+          provider_message_id: string | null;
+          sent_at: string | null;
+          delivered_at: string | null;
+          first_opened_at: string | null;
+          last_opened_at: string | null;
+          open_count: number;
+          first_clicked_at: string | null;
+          last_clicked_at: string | null;
+          click_count: number;
+          unsubscribed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          gym_id: string;
+          profile_id?: string | null;
+          email: string;
+          full_name?: string | null;
+          status?: 'queued' | 'sent' | 'delivered' | 'simulated' | 'bounced' | 'failed' | 'skipped';
+          error?: string | null;
+          provider_message_id?: string | null;
+          sent_at?: string | null;
+          delivered_at?: string | null;
+          first_opened_at?: string | null;
+          last_opened_at?: string | null;
+          open_count?: number;
+          first_clicked_at?: string | null;
+          last_clicked_at?: string | null;
+          click_count?: number;
+          unsubscribed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          campaign_id: string;
+          gym_id: string;
+          profile_id: string | null;
+          email: string;
+          full_name: string | null;
+          status: 'queued' | 'sent' | 'delivered' | 'simulated' | 'bounced' | 'failed' | 'skipped';
+          error: string | null;
+          provider_message_id: string | null;
+          sent_at: string | null;
+          delivered_at: string | null;
+          first_opened_at: string | null;
+          last_opened_at: string | null;
+          open_count: number;
+          first_clicked_at: string | null;
+          last_clicked_at: string | null;
+          click_count: number;
+          unsubscribed_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      email_events: {
+        Row: {
+          id: string;
+          gym_id: string;
+          campaign_id: string;
+          recipient_id: string | null;
+          kind:
+            | 'queued'
+            | 'sent'
+            | 'delivered'
+            | 'open'
+            | 'click'
+            | 'bounce'
+            | 'complaint'
+            | 'unsubscribe'
+            | 'failed'
+            | 'simulated';
+          url: string | null;
+          meta: Json | null;
+          occurred_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          campaign_id: string;
+          recipient_id?: string | null;
+          kind:
+            | 'queued'
+            | 'sent'
+            | 'delivered'
+            | 'open'
+            | 'click'
+            | 'bounce'
+            | 'complaint'
+            | 'unsubscribe'
+            | 'failed'
+            | 'simulated';
+          url?: string | null;
+          meta?: Json | null;
+          occurred_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          campaign_id: string;
+          recipient_id: string | null;
+          kind:
+            | 'queued'
+            | 'sent'
+            | 'delivered'
+            | 'open'
+            | 'click'
+            | 'bounce'
+            | 'complaint'
+            | 'unsubscribe'
+            | 'failed'
+            | 'simulated';
+          url: string | null;
+          meta: Json | null;
+          occurred_at: string;
+        }>;
+        Relationships: [];
+      };
+      email_assets: {
+        Row: {
+          id: string;
+          gym_id: string;
+          uploaded_by: string | null;
+          path: string;
+          url: string;
+          file_name: string | null;
+          byte_size: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          uploaded_by?: string | null;
+          path: string;
+          url: string;
+          file_name?: string | null;
+          byte_size?: number | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          uploaded_by: string | null;
+          path: string;
+          url: string;
+          file_name: string | null;
+          byte_size: number | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      email_unsubscribes: {
+        Row: {
+          id: string;
+          gym_id: string;
+          email: string;
+          profile_id: string | null;
+          campaign_id: string | null;
+          reason: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          email: string;
+          profile_id?: string | null;
+          campaign_id?: string | null;
+          reason?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          email: string;
+          profile_id: string | null;
+          campaign_id: string | null;
+          reason: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       v_member_cohort: {
@@ -2116,6 +2434,36 @@ export type Database = {
       waitlist_for_session: {
         Args: { p_session_id: string };
         Returns: { rank: number; profile_id: string; joined_at: string }[];
+      };
+      comms_audience_count: {
+        Args: { p_gym_id: string; p_definition: Json };
+        Returns: number;
+      };
+      comms_audience_sample: {
+        Args: { p_gym_id: string; p_definition: Json; p_limit?: number };
+        Returns: { profile_id: string; full_name: string | null; email: string }[];
+      };
+      comms_send_campaign: {
+        Args: { p_campaign_id: string; p_html: string; p_text: string };
+        Returns: number;
+      };
+      comms_finalize_simulation: {
+        Args: { p_campaign_id: string };
+        Returns: number;
+      };
+      comms_campaign_stats: {
+        Args: { p_campaign_id: string };
+        Returns: {
+          recipients: number;
+          sent: number;
+          delivered: number;
+          simulated: number;
+          failed: number;
+          bounced: number;
+          opened: number;
+          clicked: number;
+          unsubscribed: number;
+        }[];
       };
     };
     Enums: {
