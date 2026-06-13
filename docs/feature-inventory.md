@@ -8,6 +8,27 @@ permission gate that controls visibility for staff features.
 
 ## Member-facing features
 
+### Athlete mode (gymless users)
+
+A signed-in user with no active gym membership — a brand-new sign-up,
+or an **ex-member** — lands in the `(athlete)` area (the root index
+routes gymless users to `/athlete`, replacing the old `/welcome`
+dead-end). It carries:
+- **Portable training history** — every movement they've logged,
+  unioned across all gyms they've trained at (`leave_gym` never
+  deletes `tracked_*` data, and the tracking RLS self-select branch is
+  membership-independent, so the history survives leaving and is read
+  back by `profile_id`). Read-only per-movement detail reuses the
+  shared `MovementDetailView` (`mode="athlete"`): best-of, PR badges,
+  trend sparklines, journal — minus the leaderboard + Record affordances.
+- **Join / start-a-gym CTAs** — the athlete home and account screen
+  both offer "Join a gym" (invite) and "Start a gym", so the gymless
+  landing subsumes what `/welcome` used to do.
+- Solo (gymless) workout *logging* behind a paid athlete tier is the
+  next increment — the read-only history + surface ship first; the
+  schema already supports it once `tracked_*.gym_id` goes nullable and
+  an athlete entitlement gates inserts.
+
 ### Bookings & classes
 - **Calendar (Day / Week / Month views)** — browse the gym's class
   schedule with class-type colour coding, coach avatars, capacity and

@@ -5,7 +5,9 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/join/:slug", "destination": "/join/[slug]" },
+    { "source": "/lead/:slug", "destination": "/lead/[slug]" },
     { "source": "/track/movement/:movement", "destination": "/track/movement/[movement]" },
+    { "source": "/athlete/movement/:movement", "destination": "/athlete/movement/[movement]" },
     { "source": "/track/group/:group", "destination": "/track/group/[group]" },
     { "source": "/track/workout/:id", "destination": "/track/workout/[id]" },
     { "source": "/inbox/direct/:peer", "destination": "/inbox/direct/[peer]" },

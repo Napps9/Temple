@@ -76,7 +76,10 @@ export default function Index() {
   if (session === undefined) return <Loading />;
   if (!session) return <Redirect href="/sign-in" />;
   if (isLoading) return <Loading />;
-  if (!membership) return <Redirect href="/welcome" />;
+  // Gymless users (brand-new sign-ups and ex-members alike) land in the
+  // athlete area — read-only portable training history plus the
+  // join / start-a-gym CTAs that /welcome used to be the only home for.
+  if (!membership) return <Redirect href="/athlete" />;
   if (consent.isLoading) return <Loading />;
   if (consent.data && !consent.data.consented) {
     return <Redirect href="/consent" />;
