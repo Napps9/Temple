@@ -2576,6 +2576,10 @@ export type Database = {
           secondary_color: string;
           text_color: string;
           public_signup_enabled: boolean;
+          logo_url_dark: string | null;
+          primary_color_dark: string | null;
+          secondary_color_dark: string | null;
+          text_color_dark: string | null;
           public_lead_capture_enabled: boolean;
         }[];
       };

@@ -60,6 +60,10 @@ returns table (
   secondary_color             text,
   text_color                  text,
   public_signup_enabled       boolean,
+  logo_url_dark               text,
+  primary_color_dark          text,
+  secondary_color_dark        text,
+  text_color_dark             text,
   public_lead_capture_enabled boolean
 )
 language sql
@@ -69,7 +73,10 @@ set search_path = public
 as $$
   select g.id, g.name, g.slug, g.logo_url,
          g.primary_color, g.secondary_color, g.text_color,
-         g.public_signup_enabled, g.public_lead_capture_enabled
+         g.public_signup_enabled,
+         g.logo_url_dark, g.primary_color_dark,
+         g.secondary_color_dark, g.text_color_dark,
+         g.public_lead_capture_enabled
   from public.gyms g
   where g.slug = lower(p_slug);
 $$;
