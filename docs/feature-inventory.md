@@ -22,11 +22,20 @@ permission gate that controls visibility for staff features.
   of RLS).
 - **Self-cancel bookings** — credits refunded according to the plan
   type (unlimited gets none; credit packs / comp grants do). The
-  refund fires via a BEFORE DELETE trigger on `class_bookings`, so
-  every cancellation path (member self-cancel, admin session cancel,
-  cascade-on-leave) refunds the chosen entitlement precisely. Until
-  0052 / 0053 bookings never actually decremented credit_balance —
-  finite plans effectively behaved like unlimited ones.
+  refund fires via a BEFORE DELETE trigger on `class_bookings` for the
+  member self-cancel path; admin session-cancel refunds every booking
+  in full (no cancel-cutoff penalty when the gym cancels) and the
+  cascade stays intact (0065 uses a transaction-local skip flag, not
+  the replica-mode hack that had been orphaning bookings). Credit
+  balances are guarded by non-negative CHECK constraints, so a
+  double-book race aborts rather than going negative.
+- **Booking eligibility** — a member self-booking with no eligible
+  entitlement is refused only when they already hold a plan with this
+  gym (out of credits / lapsed); gyms that grant access by membership
+  alone (no plans) book on membership. Booking windows and the
+  entitlement requirement are bypassed for staff on-behalf bookings
+  and for waitlist promotion (a late drop-out still promotes the next
+  member even inside the booking cutoff).
 - **Multi-membership picker** — a member holding more than one
   eligible plan / comp grant for a class sees a labelled radio picker
   on the confirm step (rendered by `list_booking_entitlements`) with
