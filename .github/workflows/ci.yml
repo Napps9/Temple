@@ -83,3 +83,12 @@ jobs:
       # (we shipped 0029 after 0030 earlier in the project's history).
       - name: Push migrations
         run: supabase db push --include-all
+      # Edge functions aren't covered by `db push`. Deploy them after the
+      # migration so the Communications Suite workers ship in lock-step with
+      # the schema they call (track -> comms_track_event, send-campaign ->
+      # the email_* tables / effective_can). Deployed by name and after the
+      # link above; each one's verify_jwt comes from supabase/config.toml.
+      - name: Deploy edge functions
+        run: |
+          supabase functions deploy send-campaign
+          supabase functions deploy track
