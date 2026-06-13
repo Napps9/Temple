@@ -7,7 +7,7 @@
 --     against (e.g. wrong plan picked, refund needs to flip target).
 
 begin;
-select plan(8);
+select plan(9);
 
 \ir _helpers.psql
 

@@ -8,6 +8,8 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
+import { ChipButton } from '@/components/ChipButton';
+import { StaffBookingSheet } from '@/components/StaffBookingSheet';
 import { useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -34,6 +36,8 @@ type Booking = {
   attended_at: string | null;
   no_show: boolean;
   promoted_from_waitlist: boolean;
+  used_entitlement_kind: 'comp_grant' | 'plan_subscription' | null;
+  used_entitlement_id: string | null;
   profiles: { full_name: string | null; avatar_url: string | null } | null;
 };
 
@@ -73,6 +77,7 @@ export function ClassDetailModal({
   const canCheckIn = useCan('can_check_in_member') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
+  const canAssignPlan = useCan('can_assign_plan') ?? false;
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +86,18 @@ export function ClassDetailModal({
     useState<{ kind: 'comp_grant' | 'plan_subscription'; id: string } | null>(
       null,
     );
+  const [staffSheet, setStaffSheet] = useState<
+    | { mode: 'add' }
+    | {
+        mode: 'swap';
+        bookingId: string;
+        profileId: string;
+        profileName: string | null;
+        currentKind: 'comp_grant' | 'plan_subscription' | null;
+        currentId: string | null;
+      }
+    | null
+  >(null);
 
   const sessionQuery = useQuery({
     queryKey: ['class-session-detail', sessionId],
@@ -105,7 +122,7 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_bookings')
         .select(
-          'id, profile_id, attended_at, no_show, promoted_from_waitlist, profiles!profile_id(full_name, avatar_url)',
+          'id, profile_id, attended_at, no_show, promoted_from_waitlist, used_entitlement_kind, used_entitlement_id, profiles!profile_id(full_name, avatar_url)',
         )
         .eq('class_session_id', sessionId!)
         .order('created_at');
@@ -383,9 +400,18 @@ export function ClassDetailModal({
 
               {mode === 'manage' ? (
                 <View className="gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                    Members
-                  </Text>
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                      Members
+                    </Text>
+                    {canAssignPlan && !inPast ? (
+                      <ChipButton
+                        label="Add member"
+                        icon="add"
+                        onPress={() => setStaffSheet({ mode: 'add' })}
+                      />
+                    ) : null}
+                  </View>
                   <ScrollView className="max-h-48">
                     {bookings.length === 0 ? (
                       <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -422,6 +448,28 @@ export function ClassDetailModal({
                                 </Text>
                               ) : null}
                             </View>
+                            {canAssignPlan ? (
+                              <Pressable
+                                onPress={() =>
+                                  setStaffSheet({
+                                    mode: 'swap',
+                                    bookingId: b.id,
+                                    profileId: b.profile_id,
+                                    profileName: b.profiles?.full_name ?? null,
+                                    currentKind: b.used_entitlement_kind,
+                                    currentId: b.used_entitlement_id,
+                                  })
+                                }
+                                hitSlop={6}
+                                accessibilityLabel="Switch plan"
+                                className="active:opacity-70 px-2 py-1">
+                                <Ionicons
+                                  name="swap-horizontal"
+                                  size={16}
+                                  color="#6B7280"
+                                />
+                              </Pressable>
+                            ) : null}
                             {canCheckIn && start && sessionId ? (
                               <CheckInButton
                                 bookingId={b.id}
@@ -521,6 +569,28 @@ export function ClassDetailModal({
           setShowCancelClass(false);
           onClose();
         }}
+      />
+    ) : null}
+    {detail && sessionId ? (
+      <StaffBookingSheet
+        visible={staffSheet !== null}
+        mode={staffSheet?.mode ?? 'add'}
+        sessionId={sessionId}
+        gymId={detail.gym_id}
+        bookedProfileIds={new Set(bookings.map((b) => b.profile_id))}
+        swapTarget={
+          staffSheet?.mode === 'swap'
+            ? {
+                bookingId: staffSheet.bookingId,
+                profileId: staffSheet.profileId,
+                profileName: staffSheet.profileName,
+                currentKind: staffSheet.currentKind,
+                currentId: staffSheet.currentId,
+              }
+            : null
+        }
+        onClose={() => setStaffSheet(null)}
+        onSuccess={() => setStaffSheet(null)}
       />
     ) : null}
     </>

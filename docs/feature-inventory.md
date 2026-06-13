@@ -150,7 +150,14 @@ The staff area shows up when `can_access_staff_area` is on.
   `claim_cover` RPC and surfaced as a disabled state in the UI).
 - **Class detail modal** — roster, attendance marking (check-in / no-
   show / unmark), cover request, broadcast, leaderboard for that
-  session.
+  session. **Add member** [`can_assign_plan`] — staff search the gym
+  roster, pick which entitlement (plan or comp) to charge it against,
+  and book; the staff member is recorded as `booked_by_profile_id`.
+  **Switch plan** [`can_assign_plan`] — per-booking swap action lets
+  a coach change which entitlement an existing booking is charged
+  against (the cancel-refund path follows the pointer, so a swap
+  redirects the refund target too). Both flows verify the pick is
+  eligible via `list_booking_entitlements` against the target member.
 - **Cancel session** — refunds credits, drops waitlist, deletes the
   session.
 
