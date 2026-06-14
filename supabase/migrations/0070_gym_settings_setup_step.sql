@@ -108,6 +108,10 @@ begin
         select 1 from public.parq_questionnaires
         where gym_id = p_gym_id and is_active
       )
+      or exists (
+        select 1 from public.waiver_documents
+        where gym_id = p_gym_id and is_active
+      )
     union all
     select 'plan'::text,
       exists (
