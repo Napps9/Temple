@@ -1,10 +1,10 @@
 -- get_gym_setup_progress reflects the actual gym state, step by step.
 -- A fresh gym reports every step pending; doing each setup action
--- flips its matching flag. Six steps in total — the team step is
+-- flips its matching flag. Seven steps in total — the team step is
 -- treated as optional client-side but the RPC still reports it.
 
 begin;
-select plan(8);
+select plan(9);
 
 \ir _helpers.psql
 
@@ -43,7 +43,25 @@ select is(
   'logo step flips done when a logo url is present'
 );
 
--- 3. class_type flips after a class type is added.
+-- 3. settings flips after the owner saves gym settings once. Driven
+-- through the RPC (which stamps operating_defaults_reviewed_at) rather
+-- than a raw update, so we exercise the real save path.
+do $$
+begin
+  perform public.set_gym_operating_defaults(
+    current_setting('test.gym')::uuid,
+    'mon', 'UTC', 12, 60, 7, 365, 3, 30, 8, 'credits_first'
+  );
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'settings'),
+  true,
+  'settings step flips done once gym settings have been saved'
+);
+
+-- 4. class_type flips after a class type is added.
 do $$
 declare v_ct uuid;
 begin
@@ -60,7 +78,7 @@ select is(
   'class_type step flips done when a class type exists'
 );
 
--- 4. schedule flips after a recurrence ties a class type to a day/time.
+-- 5. schedule flips after a recurrence ties a class type to a day/time.
 do $$
 begin
   insert into public.class_recurrences
@@ -80,7 +98,7 @@ select is(
   'schedule step flips done when a recurrence exists for an active class type'
 );
 
--- 5. parq flips after publishing an active questionnaire.
+-- 6. parq flips after publishing an active questionnaire.
 do $$
 begin
   insert into public.parq_questionnaires (gym_id, version, published_by)
@@ -95,7 +113,7 @@ select is(
   'parq step flips done when an active questionnaire is published'
 );
 
--- 6. plan flips after a membership plan is added.
+-- 7. plan flips after a membership plan is added.
 do $$
 begin
   insert into public.membership_plans (gym_id, name, kind)
@@ -109,7 +127,7 @@ select is(
   'plan step flips done when an active membership plan exists'
 );
 
--- 7. team flips after an invite code is generated.
+-- 8. team flips after an invite code is generated.
 do $$
 begin
   insert into public.invite_codes (gym_id, code, role, created_by)
@@ -126,12 +144,12 @@ select is(
   'team step flips done when an invite code has been generated'
 );
 
--- 8. All six complete: count = 6.
+-- 9. All seven complete: count = 7.
 select is(
   (select count(*) from public.get_gym_setup_progress(
      current_setting('test.gym')::uuid) where done)::int,
-  6,
-  'all six steps report done once each table is populated'
+  7,
+  'all seven steps report done once each table is populated'
 );
 
 select * from finish();

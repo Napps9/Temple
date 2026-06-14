@@ -67,6 +67,7 @@ export type Database = {
           booking_cutoff_minutes_before: number;
           cancel_cutoff_minutes_before: number;
           public_lead_capture_enabled: boolean;
+          operating_defaults_reviewed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -101,6 +102,7 @@ export type Database = {
           booking_cutoff_minutes_before?: number;
           cancel_cutoff_minutes_before?: number;
           public_lead_capture_enabled?: boolean;
+          operating_defaults_reviewed_at?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -135,6 +137,7 @@ export type Database = {
           booking_cutoff_minutes_before: number;
           cancel_cutoff_minutes_before: number;
           public_lead_capture_enabled: boolean;
+          operating_defaults_reviewed_at: string | null;
         }>;
         Relationships: [];
       };

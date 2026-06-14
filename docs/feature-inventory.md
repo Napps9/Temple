@@ -234,13 +234,14 @@ The staff area shows up when `can_access_staff_area` is on.
 
 - **Gym setup checklist** (owner-only, auto-hides when complete) —
   shown above the tab strip on a new gym. Steps derived live from the
-  data: add a logo, add a class type, schedule a class, set up health
-  screening (a waiver **or** a PAR-Q satisfies it), create a membership
-  plan, plus an optional invite-your-team step. Each step is a deep
-  link to the page that completes it. The card disappears once every
-  required step is done. Backed by `get_gym_setup_progress(gym_id)` so
-  it never drifts from reality — delete a class type and the step
-  flips back open.
+  data: add a logo, set your gym settings (operating defaults — done
+  once the owner saves them, stamped by `operating_defaults_reviewed_at`),
+  add a class type, schedule a class, set up health screening (a waiver
+  **or** a PAR-Q satisfies it), create a membership plan, plus an
+  optional invite-your-team step. Each step is a deep link to the page
+  that completes it. The card disappears once every required step is
+  done. Backed by `get_gym_setup_progress(gym_id)` so it never drifts
+  from reality — delete a class type and the step flips back open.
 
 The Manage page presents a tab strip:
 

@@ -22,7 +22,7 @@ import { useThemeColors } from '@/lib/theme';
 // complete.
 
 type Step = {
-  key: 'logo' | 'class_type' | 'schedule' | 'parq' | 'plan' | 'team';
+  key: 'logo' | 'settings' | 'class_type' | 'schedule' | 'parq' | 'plan' | 'team';
   label: string;
   description: string;
   href: string;
@@ -39,6 +39,14 @@ const STEPS: Step[] = [
     description: 'A logo makes the app feel like your gym, not a template.',
     href: '/management/branding',
     icon: 'image-outline',
+  },
+  {
+    key: 'settings',
+    label: 'Set your gym settings',
+    description:
+      'Week start, class defaults, booking and cancellation windows, plan resolution. Open and save once to lock them in.',
+    href: '/management/operating',
+    icon: 'settings-outline',
   },
   {
     key: 'class_type',
