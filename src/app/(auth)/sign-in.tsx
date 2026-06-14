@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-nat
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
-import { signIn } from '@/lib/auth';
+import { resendConfirmation, signIn } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 
 export default function SignInScreen() {
@@ -13,9 +13,18 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // True iff the last sign-in attempt failed with "invalid credentials"
+  // — the message Supabase returns both for wrong passwords and for
+  // unconfirmed-existing accounts. The Resend hint sits under it so a
+  // stuck user can recover without leaving the page.
+  const [recoverable, setRecoverable] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
 
   async function onSubmit() {
     setError(null);
+    setResendNotice(null);
+    setRecoverable(false);
     setLoading(true);
     try {
       await signIn(email, password);
@@ -26,9 +35,31 @@ export default function SignInScreen() {
       // no membership → /welcome.
       router.replace('/' as never);
     } catch (e) {
-      setError(errorMessage(e, 'Sign-in failed'));
+      const msg = errorMessage(e, 'Sign-in failed');
+      setError(msg);
+      if (/invalid login/i.test(msg) || /not confirmed|confirm/i.test(msg)) {
+        setRecoverable(true);
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function resend() {
+    if (!email.trim()) {
+      setError('Type your email above before resending the confirmation.');
+      return;
+    }
+    setResendNotice(null);
+    setError(null);
+    setResendLoading(true);
+    try {
+      await resendConfirmation(email.trim());
+      setResendNotice('Sent — check your inbox (and spam folder).');
+    } catch (e) {
+      setError(errorMessage(e, 'Could not resend the confirmation email'));
+    } finally {
+      setResendLoading(false);
     }
   }
 
@@ -66,6 +97,20 @@ export default function SignInScreen() {
           </View>
           {error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          ) : null}
+          {resendNotice ? (
+            <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+              {resendNotice}
+            </Text>
+          ) : null}
+          {recoverable && !resendNotice ? (
+            <Pressable hitSlop={8} onPress={resend} disabled={resendLoading}>
+              <Text className="text-primary text-sm">
+                {resendLoading
+                  ? 'Sending…'
+                  : 'Didn’t get the confirmation email? Resend it'}
+              </Text>
+            </Pressable>
           ) : null}
           <Button onPress={onSubmit} loading={loading}>
             Sign in

@@ -1,18 +1,48 @@
-import { Link } from 'expo-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useSession, useSignOut } from '@/lib/auth';
+import {
+  completePendingGym,
+  pendingGymFromSession,
+  refreshMembership,
+  useGymMembership,
+  useSession,
+  useSignOut,
+} from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 
 // Shown when a user is signed in but has no gym membership yet —
-// either they just created an auth account via /join/[slug] that
-// failed to bind, or they cleared their membership somewhere.
-// Offers the same three choices as the sign-in page so they can
-// pick a path forward.
+// either they just confirmed an email from the create-gym flow (and we
+// can finish the job in one tap), they joined via /join/[slug] but the
+// binding failed, or they cleared their membership somewhere.
 export default function WelcomeScreen() {
   const signOut = useSignOut();
   const session = useSession();
   const membership = useGymMembership();
+  const queryClient = useQueryClient();
+  const [resumeError, setResumeError] = useState<string | null>(null);
+
+  // Recovered from createGymWithSignup's metadata — when present, the
+  // user finished the email confirmation step and we have their saved
+  // gym name/slug ready to go.
+  const pending = pendingGymFromSession(session ?? null);
+
+  const resume = useMutation({
+    mutationFn: async () => {
+      if (!pending) throw new Error('Nothing to resume');
+      await completePendingGym(pending);
+    },
+    onSuccess: async () => {
+      setResumeError(null);
+      await refreshMembership(queryClient);
+      router.replace('/' as never);
+    },
+    onError: (e) => setResumeError(errorMessage(e, 'Could not create the gym')),
+  });
 
   // Landing here with a session means the membership lookup returned
   // nothing — which has two very different causes (RLS/empty vs a
@@ -35,16 +65,35 @@ export default function WelcomeScreen() {
             Welcome
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-center">
-            You're signed in but not in a gym yet. Create one or join with an
-            invite.
+            {pending
+              ? `You're signed in. Pick up where you left off — finish setting up ${pending.name}.`
+              : "You're signed in but not in a gym yet. Create one or join with an invite."}
           </Text>
         </View>
         <View className="w-full max-w-xs gap-3">
-          <Link href="/create-gym" asChild>
-            <Pressable className="bg-primary rounded-lg p-3 items-center active:opacity-80">
-              <Text className="text-white font-semibold">Start a new gym</Text>
-            </Pressable>
-          </Link>
+          {pending ? (
+            <View className="gap-2">
+              <Button onPress={() => resume.mutate()} loading={resume.isPending}>
+                Finish creating {pending.name}
+              </Button>
+              {resumeError ? (
+                <Text className="text-red-500 dark:text-red-400 text-sm text-center">
+                  {resumeError}
+                </Text>
+              ) : null}
+              <Pressable onPress={() => router.push('/create-gym' as never)}>
+                <Text className="text-gray-500 dark:text-gray-400 text-sm text-center pt-1">
+                  Edit the gym name or slug first
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Link href="/create-gym" asChild>
+              <Pressable className="bg-primary rounded-lg p-3 items-center active:opacity-80">
+                <Text className="text-white font-semibold">Start a new gym</Text>
+              </Pressable>
+            </Link>
+          )}
           <Link href="/accept-invite" asChild>
             <Pressable className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 items-center active:opacity-80">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">

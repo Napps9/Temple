@@ -14,12 +14,17 @@ import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
-import { createGymWithSignup, refreshMembership, useSession } from '@/lib/auth';
+import {
+  createGymWithSignup,
+  refreshMembership,
+  resendConfirmation,
+  useSession,
+} from '@/lib/auth';
 import { DEFAULT_BRAND, normaliseHex, slugify } from '@/lib/brand';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
-type Step = 'account' | 'gym' | 'brand';
+type Step = 'account' | 'gym' | 'check_email' | 'brand';
 
 export default function CreateGymScreen() {
   const session = useSession();
@@ -47,6 +52,11 @@ export default function CreateGymScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Email-confirmation recovery state
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
+
   async function submitAccountAndGym() {
     setError(null);
     if (!session) {
@@ -69,7 +79,6 @@ export default function CreateGymScreen() {
     }
     setLoading(true);
     try {
-      let gymId: string;
       if (session) {
         // Already signed in (came here from /welcome). Just create the
         // gym; the create_gym RPC makes the caller the owner.
@@ -78,7 +87,9 @@ export default function CreateGymScreen() {
           p_slug: effectiveSlug,
         });
         if (rpcError) throw rpcError;
-        gymId = data as unknown as string;
+        setCreatedGymId(data as unknown as string);
+        await refreshMembership(queryClient);
+        setStep('brand');
       } else {
         const result = await createGymWithSignup({
           email: email.trim(),
@@ -87,16 +98,45 @@ export default function CreateGymScreen() {
           gymName: gymName.trim(),
           gymSlug: effectiveSlug,
         });
-        gymId = result.gymId;
+        if (result.status === 'pending_confirmation') {
+          setPendingEmail(result.email);
+          setResendNotice(null);
+          setStep('check_email');
+        } else {
+          setCreatedGymId(result.gymId);
+          await refreshMembership(queryClient);
+          setStep('brand');
+        }
       }
-      setCreatedGymId(gymId);
-      await refreshMembership(queryClient);
-      setStep('brand');
     } catch (e) {
       setError(errorMessage(e, 'Could not create the gym'));
     } finally {
       setLoading(false);
     }
+  }
+
+  async function resend() {
+    if (!pendingEmail) return;
+    setResendNotice(null);
+    setError(null);
+    setResendLoading(true);
+    try {
+      await resendConfirmation(pendingEmail);
+      setResendNotice('Sent — check your inbox (and spam folder).');
+    } catch (e) {
+      setError(errorMessage(e, 'Could not resend the confirmation email'));
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
+  function startOver() {
+    setPendingEmail(null);
+    setResendNotice(null);
+    setError(null);
+    setEmail('');
+    setPassword('');
+    setStep('account');
   }
 
   async function saveBrandAndFinish() {
@@ -150,13 +190,61 @@ export default function CreateGymScreen() {
               <Text className="text-gray-500 dark:text-gray-400">
                 {step === 'brand'
                   ? 'Pick your colours. You can refine these in settings later.'
-                  : 'Tell us about you and the gym you run.'}
+                  : step === 'check_email'
+                    ? "Confirm your email so we can keep your gym safe."
+                    : 'Tell us about you and the gym you run.'}
               </Text>
             </View>
 
             <Steps current={step} />
 
-            {step !== 'brand' ? (
+            {step === 'check_email' && pendingEmail ? (
+              <View className="gap-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+                <View className="gap-2">
+                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                    Check your email
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400">
+                    We sent a confirmation link to{' '}
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      {pendingEmail}
+                    </Text>
+                    . Click it, then come back here and sign in — we've saved your
+                    gym details so you won't have to type them again.
+                  </Text>
+                </View>
+                {resendNotice ? (
+                  <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                    {resendNotice}
+                  </Text>
+                ) : null}
+                {error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  onPress={resend}
+                  loading={resendLoading}>
+                  Resend confirmation email
+                </Button>
+                <Pressable onPress={startOver} className="self-center">
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    Use a different email
+                  </Text>
+                </Pressable>
+                <View className="items-center pt-1">
+                  <Link href="/sign-in" asChild>
+                    <Pressable hitSlop={8}>
+                      <Text className="text-primary text-sm">
+                        Already confirmed? Sign in
+                      </Text>
+                    </Pressable>
+                  </Link>
+                </View>
+              </View>
+            ) : null}
+
+            {step !== 'brand' && step !== 'check_email' ? (
               <View className="gap-4">
                 {!session ? (
                   <>
@@ -280,24 +368,26 @@ function Steps({ current }: { current: Step }) {
     { key: 'gym', label: 'Gym' },
     { key: 'brand', label: 'Brand' },
   ];
+  // 'check_email' sits between 'gym' and 'brand' — for the bar it
+  // counts as "gym done, brand pending" so the user can see they're
+  // most of the way through.
+  const passes: Record<Step, number> = {
+    account: 0,
+    gym: 1,
+    check_email: 2,
+    brand: 2,
+  };
+  const progress = passes[current] ?? 0;
   return (
     <View className="flex-row gap-2">
-      {labels.map((l, i) => {
-        const active = l.key === current;
-        const done =
-          (current === 'gym' && l.key === 'account') ||
-          (current === 'brand' && (l.key === 'account' || l.key === 'gym'));
-        return (
-          <View
-            key={l.key}
-            className={`flex-1 h-1.5 rounded-full ${
-              active || done
-                ? 'bg-primary'
-                : 'bg-gray-200 dark:bg-gray-700'
-            }`}
-          />
-        );
-      })}
+      {labels.map((_, i) => (
+        <View
+          key={i}
+          className={`flex-1 h-1.5 rounded-full ${
+            i <= progress ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+          }`}
+        />
+      ))}
     </View>
   );
 }

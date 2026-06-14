@@ -18,6 +18,7 @@ import {
   joinGymBySlug,
   joinGymWithSignup,
   refreshMembership,
+  resendConfirmation,
   useSession,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -56,6 +57,9 @@ export default function JoinGymScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
 
   const signupAndJoin = useMutation({
     mutationFn: async () => {
@@ -64,20 +68,41 @@ export default function JoinGymScreen() {
       if (!email.trim() || !password) {
         throw new Error('Email and password are required');
       }
-      await joinGymWithSignup({
+      return joinGymWithSignup({
         email: email.trim(),
         password,
         fullName: fullName.trim(),
         slug,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (result.status === 'pending_confirmation') {
+        setPendingEmail(result.email);
+        setResendNotice(null);
+        setError(null);
+        return;
+      }
       await refreshMembership(queryClient);
       router.replace('/' as never);
     },
     onError: (e) =>
       setError(errorMessage(e, 'Could not join the gym')),
   });
+
+  async function resend() {
+    if (!pendingEmail) return;
+    setResendNotice(null);
+    setError(null);
+    setResendLoading(true);
+    try {
+      await resendConfirmation(pendingEmail);
+      setResendNotice('Sent — check your inbox (and spam folder).');
+    } catch (e) {
+      setError(errorMessage(e, 'Could not resend the confirmation email'));
+    } finally {
+      setResendLoading(false);
+    }
+  }
 
   const justJoin = useMutation({
     mutationFn: async () => {
@@ -190,6 +215,53 @@ export default function JoinGymScreen() {
                   className="rounded-lg px-5 py-3 items-center justify-center active:opacity-80">
                   <Text className="text-white font-semibold">
                     {justJoin.isPending ? 'Joining…' : `Join ${info.name}`}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : pendingEmail ? (
+              <View className="gap-4">
+                <View className="gap-2">
+                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                    Check your email
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400">
+                    We sent a confirmation link to{' '}
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      {pendingEmail}
+                    </Text>
+                    . Click it, then come back and sign in — you'll land
+                    straight into {info.name}.
+                  </Text>
+                </View>
+                {resendNotice ? (
+                  <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                    {resendNotice}
+                  </Text>
+                ) : null}
+                {error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                    {error}
+                  </Text>
+                ) : null}
+                <Pressable
+                  onPress={resend}
+                  disabled={resendLoading}
+                  className="rounded-lg px-5 py-3 items-center justify-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:opacity-80">
+                  <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                    {resendLoading ? 'Sending…' : 'Resend confirmation email'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setPendingEmail(null);
+                    setResendNotice(null);
+                    setError(null);
+                    setEmail('');
+                    setPassword('');
+                  }}
+                  className="self-center">
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    Use a different email
                   </Text>
                 </Pressable>
               </View>

@@ -195,58 +195,121 @@ export function useSignOut() {
 // createGymWithSignup + joinGymWithSignup both call supabase.auth.signUp
 // followed immediately by an RPC that needs auth.uid(). On Supabase
 // projects with email confirmation enabled, signUp returns a user but
-// session: null — the RPC then fails with "Not signed in". Calling
-// signInWithPassword right after signUp covers both shapes: when
-// confirmations are off it's a no-op (signUp already established the
-// session, so this branch is skipped); when they're on it surfaces a
-// clear instruction instead of the cryptic RPC error.
+// session: null — the RPC then fails with "Not signed in". The helpers
+// below either establish a session by signing in (confirmations off),
+// surface a recovery-ready 'pending_confirmation' state (confirmations
+// on), or throw a clear error otherwise.
+type SessionResolution =
+  | { status: 'signed_in' }
+  | { status: 'pending_confirmation' };
+
 async function ensureSessionAfterSignUp(
   email: string,
   password: string,
   session: unknown,
-): Promise<void> {
-  if (session) return;
+): Promise<SessionResolution> {
+  if (session) return { status: 'signed_in' };
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    // Supabase returns the generic "Invalid login credentials" both when
-    // the password is wrong AND when the user exists but their email
-    // isn't confirmed (deliberate, to avoid leaking account existence).
-    // We just provided the password we ran signUp with, so this almost
-    // always means "an unconfirmed account already exists for this
-    // email" — say so rather than the cryptic raw error.
-    if (/confirm/i.test(error.message) || /invalid login/i.test(error.message)) {
-      throw new Error(
-        'An account with this email already exists but isn’t confirmed yet. Check your inbox for the confirmation link, click it, then come back and sign in.',
-      );
-    }
-    throw error;
+  if (!error) return { status: 'signed_in' };
+  // Email-confirmation gate: Supabase returns either "Email not
+  // confirmed" or the obfuscated "Invalid login credentials" (so account
+  // existence isn't leaked) — both mean the same thing for our flow.
+  if (/confirm/i.test(error.message) || /invalid login/i.test(error.message)) {
+    return { status: 'pending_confirmation' };
   }
+  throw error;
 }
 
-// creates a profiles row + the gym + the owner membership. Throws
-// at the first step that fails so the caller can surface the error
-// near the input that produced it.
+// Resend a confirmation email for a signup that hasn't been verified.
+// Used by the create-gym "Check your email" panel and the sign-in
+// recovery hint.
+export async function resendConfirmation(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  if (error) throw error;
+}
+
+export type CreateGymWithSignupResult =
+  | { status: 'created'; gymId: string }
+  | { status: 'pending_confirmation'; email: string };
+
+// creates a profiles row + the gym + the owner membership. When email
+// confirmation is required, returns 'pending_confirmation' instead of
+// creating the gym — the gym name/slug are stashed in user_metadata so
+// the post-confirmation flow can finish the job in one tap.
 export async function createGymWithSignup(args: {
   email: string;
   password: string;
   fullName: string;
   gymName: string;
   gymSlug: string;
-}): Promise<{ gymId: string }> {
+}): Promise<CreateGymWithSignupResult> {
   const { email, password, fullName, gymName, gymSlug } = args;
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: {
+      data: {
+        full_name: fullName,
+        pending_gym_name: gymName,
+        pending_gym_slug: gymSlug,
+      },
+    },
   });
   if (error) throw error;
-  await ensureSessionAfterSignUp(email, password, data.session);
+  const resolved = await ensureSessionAfterSignUp(email, password, data.session);
+  if (resolved.status === 'pending_confirmation') {
+    return { status: 'pending_confirmation', email };
+  }
   const { data: gymId, error: rpcError } = await supabase.rpc('create_gym', {
     p_name: gymName,
     p_slug: gymSlug,
   });
   if (rpcError) throw rpcError;
-  return { gymId: gymId as unknown as string };
+  await clearPendingGymMetadata();
+  return { status: 'created', gymId: gymId as unknown as string };
+}
+
+// Called after the post-confirmation create_gym so the pending hints
+// don't keep showing up on the welcome screen. Failure isn't fatal —
+// the metadata is just a hint, the gym already exists.
+async function clearPendingGymMetadata(): Promise<void> {
+  try {
+    await supabase.auth.updateUser({
+      data: { pending_gym_name: null, pending_gym_slug: null },
+    });
+  } catch {
+    // Ignore — best effort.
+  }
+}
+
+// Reads the pending-gym hint left by createGymWithSignup. The welcome
+// page uses this to offer a one-tap "finish creating <name>" instead
+// of making the user re-enter everything after email confirmation.
+export function pendingGymFromSession(
+  session: { user: { user_metadata?: Record<string, unknown> | null } } | null,
+): { name: string; slug: string } | null {
+  const meta = session?.user.user_metadata ?? null;
+  if (!meta) return null;
+  const name = typeof meta.pending_gym_name === 'string' ? meta.pending_gym_name : '';
+  const slug = typeof meta.pending_gym_slug === 'string' ? meta.pending_gym_slug : '';
+  if (!name || !slug) return null;
+  return { name, slug };
+}
+
+// Finishes a gym creation that was deferred by email confirmation:
+// the user has now signed in, we just need to call the RPC with the
+// saved name/slug.
+export async function completePendingGym(args: {
+  name: string;
+  slug: string;
+}): Promise<{ gymId: string }> {
+  const { data, error } = await supabase.rpc('create_gym', {
+    p_name: args.name,
+    p_slug: args.slug,
+  });
+  if (error) throw error;
+  await clearPendingGymMetadata();
+  return { gymId: data as unknown as string };
 }
 
 // Joining via a public /join/[slug] link. Signs up a new auth user
@@ -256,20 +319,28 @@ export async function joinGymWithSignup(args: {
   password: string;
   fullName: string;
   slug: string;
-}): Promise<{ gymId: string }> {
+}): Promise<
+  | { status: 'joined'; gymId: string }
+  | { status: 'pending_confirmation'; email: string }
+> {
   const { email, password, fullName, slug } = args;
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: {
+      data: { full_name: fullName, pending_join_slug: slug },
+    },
   });
   if (error) throw error;
-  await ensureSessionAfterSignUp(email, password, data.session);
+  const resolved = await ensureSessionAfterSignUp(email, password, data.session);
+  if (resolved.status === 'pending_confirmation') {
+    return { status: 'pending_confirmation', email };
+  }
   const { data: gymId, error: rpcError } = await supabase.rpc('join_gym_by_slug', {
     p_slug: slug,
   });
   if (rpcError) throw rpcError;
-  return { gymId: gymId as unknown as string };
+  return { status: 'joined', gymId: gymId as unknown as string };
 }
 
 // Joining a gym from an already-authenticated session (e.g. an
