@@ -148,13 +148,14 @@ select is(
 -- 9. members_imported flips once a pending_members row exists.
 do $$
 begin
-  insert into public.pending_members (gym_id, email, full_name, status, source)
+  insert into public.pending_members
+    (gym_id, email, full_name, status, created_by)
     values (
       current_setting('test.gym')::uuid,
       'imported@setup.test',
       'Imported Member',
       'pending',
-      'csv'
+      current_setting('test.owner')::uuid
     );
 end $$;
 
