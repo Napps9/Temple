@@ -1,0 +1,244 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { Link, router } from 'expo-router';
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
+
+import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
+import { Screen } from '@/components/Screen';
+import {
+  refreshMembership,
+  resendConfirmation,
+  useSession,
+} from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
+import { supabase } from '@/lib/supabase';
+
+// Solo signup. Smaller cousin of /create-gym — name + email + password,
+// then activates the athlete subscription. If email confirmation is on,
+// we surface a Check Your Email panel; once the user confirms and signs
+// in they land on /athlete which already prompts to activate, so no
+// metadata stash is needed for resume.
+export default function StartSoloScreen() {
+  const session = useSession();
+  const queryClient = useQueryClient();
+
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
+
+  // If they're already signed in, skip the form and just activate.
+  async function activateAndGo() {
+    setError(null);
+    setLoading(true);
+    try {
+      const { error: e } = await supabase.rpc('start_athlete_subscription');
+      if (e) throw e;
+      await refreshMembership(queryClient);
+      router.replace('/athlete' as never);
+    } catch (e) {
+      setError(errorMessage(e, 'Could not start solo tracking'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onSubmit() {
+    setError(null);
+    if (session) {
+      await activateAndGo();
+      return;
+    }
+    if (!fullName.trim()) {
+      setError('Your name is required');
+      return;
+    }
+    if (!email.trim() || !password) {
+      setError('Email and password are required');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error: signUpErr } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { full_name: fullName.trim(), intent: 'solo' } },
+      });
+      if (signUpErr) throw signUpErr;
+      if (!data.session) {
+        // Try the password sign-in fallback for projects with email
+        // confirmation off. If that fails too, this is the pending state.
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (signInErr) {
+          setPendingEmail(email.trim());
+          setResendNotice(null);
+          return;
+        }
+      }
+      const { error: rpcErr } = await supabase.rpc('start_athlete_subscription');
+      if (rpcErr) throw rpcErr;
+      await refreshMembership(queryClient);
+      router.replace('/athlete' as never);
+    } catch (e) {
+      setError(errorMessage(e, 'Could not start solo tracking'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resend() {
+    if (!pendingEmail) return;
+    setResendNotice(null);
+    setError(null);
+    setResendLoading(true);
+    try {
+      await resendConfirmation(pendingEmail);
+      setResendNotice('Sent — check your inbox (and spam folder).');
+    } catch (e) {
+      setError(errorMessage(e, 'Could not resend the confirmation email'));
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
+  return (
+    <Screen>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1">
+        <ScrollView contentContainerClassName="py-8 px-4">
+          <View className="gap-6 w-full max-w-md mx-auto">
+            <View className="gap-2">
+              <Text className="text-amber-500 text-[10px] font-semibold uppercase tracking-widest">
+                Solo · free in beta
+              </Text>
+              <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+                Keep pushing.
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400">
+                Log workouts, track PRs, keep your streak alive — even when
+                you're between gyms. Your history is always yours.
+              </Text>
+            </View>
+
+            {pendingEmail ? (
+              <View className="gap-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+                <View className="gap-2">
+                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                    Check your email
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400">
+                    We sent a confirmation link to{' '}
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      {pendingEmail}
+                    </Text>
+                    . Click it, then sign in — we'll set up solo tracking on
+                    your first visit.
+                  </Text>
+                </View>
+                {resendNotice ? (
+                  <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                    {resendNotice}
+                  </Text>
+                ) : null}
+                {error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                    {error}
+                  </Text>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  onPress={resend}
+                  loading={resendLoading}>
+                  Resend confirmation email
+                </Button>
+                <Pressable
+                  onPress={() => {
+                    setPendingEmail(null);
+                    setResendNotice(null);
+                    setError(null);
+                    setEmail('');
+                    setPassword('');
+                  }}
+                  className="self-center">
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    Use a different email
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View className="gap-4">
+                {!session ? (
+                  <>
+                    <Input
+                      label="Your name"
+                      value={fullName}
+                      onChangeText={setFullName}
+                      autoCapitalize="words"
+                      textContentType="name"
+                      autoComplete="name"
+                    />
+                    <Input
+                      label="Email"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      textContentType="emailAddress"
+                      autoComplete="email"
+                    />
+                    <Input
+                      label="Password"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      textContentType="newPassword"
+                      autoComplete="new-password"
+                    />
+                  </>
+                ) : (
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    Signed in as {session.user.email}. Tap below to activate.
+                  </Text>
+                )}
+                {error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                    {error}
+                  </Text>
+                ) : null}
+                <Button onPress={onSubmit} loading={loading}>
+                  {session ? 'Start solo tracking' : 'Create account and start'}
+                </Button>
+              </View>
+            )}
+
+            <View className="items-center pt-2">
+              <Link href="/get-started" asChild>
+                <Pressable hitSlop={8}>
+                  <Text className="text-primary text-sm">
+                    Back to all three options
+                  </Text>
+                </Pressable>
+              </Link>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
+  );
+}

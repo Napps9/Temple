@@ -116,14 +116,9 @@ export default function SignInScreen() {
             Sign in
           </Button>
           <View className="items-center gap-3">
-            <Link href="/accept-invite" asChild>
+            <Link href="/get-started" asChild>
               <Pressable hitSlop={8}>
-                <Text className="text-primary">Have an invite code?</Text>
-              </Pressable>
-            </Link>
-            <Link href="/create-gym" asChild>
-              <Pressable hitSlop={8}>
-                <Text className="text-primary">Start a new gym</Text>
+                <Text className="text-primary">New to Temple? Get started</Text>
               </Pressable>
             </Link>
           </View>
