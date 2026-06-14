@@ -11,7 +11,7 @@ permission gate that controls visibility for staff features.
 ### Athlete mode (gymless users)
 
 A signed-in user with no active gym membership — a brand-new sign-up,
-or an **ex-member** — lands in the `(athlete)` area (the root index
+or an **ex-member** — lands in the `athlete/` area (the root index
 routes gymless users to `/athlete`, replacing the old `/welcome`
 dead-end). It carries:
 - **Portable training history** — every movement they've logged,

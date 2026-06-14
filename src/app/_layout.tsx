@@ -235,7 +235,7 @@ function ThemedShell() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(staff)" />
         <Stack.Screen name="(member)" />
-        <Stack.Screen name="(athlete)" />
+        <Stack.Screen name="athlete" />
       </Stack>
     </View>
   );
