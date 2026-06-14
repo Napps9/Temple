@@ -178,11 +178,10 @@ export function GymSetupChecklist() {
           <Pressable
             key={step.key}
             onPress={() => router.push(step.href as never)}
-            disabled={step.done}
-            className={`flex-row items-center gap-3 rounded-lg px-3 py-2.5 ${
+            className={`flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:opacity-70 ${
               step.done
                 ? 'bg-gray-50 dark:bg-gray-800/40'
-                : 'bg-gray-50 dark:bg-gray-800 active:opacity-70'
+                : 'bg-gray-50 dark:bg-gray-800'
             }`}>
             <View
               className={`w-7 h-7 rounded-full items-center justify-center ${
@@ -218,9 +217,11 @@ export function GymSetupChecklist() {
                 </Text>
               ) : null}
             </View>
-            {!step.done ? (
-              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-            ) : null}
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={step.done ? '#6B7280' : '#9CA3AF'}
+            />
           </Pressable>
         ))}
       </View>
