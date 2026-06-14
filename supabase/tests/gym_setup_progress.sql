@@ -1,10 +1,11 @@
 -- get_gym_setup_progress reflects the actual gym state, step by step.
 -- A fresh gym reports every step pending; doing each setup action
--- flips its matching flag. Seven steps in total — the team step is
--- treated as optional client-side but the RPC still reports it.
+-- flips its matching flag. Nine steps in total — team / members
+-- imported / workouts imported are optional client-side but the RPC
+-- still reports them.
 
 begin;
-select plan(9);
+select plan(10);
 
 \ir _helpers.psql
 
@@ -144,12 +145,34 @@ select is(
   'team step flips done when an invite code has been generated'
 );
 
--- 9. All seven complete: count = 7.
+-- 9. members_imported flips once a pending_members row exists.
+do $$
+begin
+  insert into public.pending_members (gym_id, email, full_name, status, source)
+    values (
+      current_setting('test.gym')::uuid,
+      'imported@setup.test',
+      'Imported Member',
+      'pending',
+      'csv'
+    );
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'members_imported'),
+  true,
+  'members_imported flips done once a pending_members row exists'
+);
+
+-- 10. All nine complete (skipping workouts_imported which requires a
+-- linked profile + tracked_workouts row — covered in
+-- import_member_workouts.sql).
 select is(
   (select count(*) from public.get_gym_setup_progress(
      current_setting('test.gym')::uuid) where done)::int,
-  7,
-  'all seven steps report done once each table is populated'
+  8,
+  'eight of nine steps report done; workouts_imported needs a tracked workout'
 );
 
 select * from finish();

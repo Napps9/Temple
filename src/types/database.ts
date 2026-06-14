@@ -2938,6 +2938,15 @@ export type Database = {
         Args: { p_gym_id: string; p_rows: Json };
         Returns: { inserted: number; updated: number; skipped: number }[];
       };
+      import_member_workouts: {
+        Args: { p_gym_id: string; p_rows: Json };
+        Returns: {
+          inserted_workouts: number;
+          inserted_results: number;
+          skipped_no_member: number;
+          skipped_no_movement: number;
+        }[];
+      };
       pending_members_stats: {
         Args: { p_gym_id: string };
         Returns: {

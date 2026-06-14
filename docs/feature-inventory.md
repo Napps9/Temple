@@ -240,11 +240,13 @@ The staff area shows up when `can_access_staff_area` is on.
   data: add a logo, set your gym settings (operating defaults — done
   once the owner saves them, stamped by `operating_defaults_reviewed_at`),
   add a class type, schedule a class, set up health screening (a waiver
-  **or** a PAR-Q satisfies it), create a membership plan, plus an
-  optional invite-your-team step. Each step is a deep link to the page
-  that completes it. The card disappears once every required step is
-  done. Backed by `get_gym_setup_progress(gym_id)` so it never drifts
-  from reality — delete a class type and the step flips back open.
+  **or** a PAR-Q satisfies it), create a membership plan, plus optional
+  steps for invite-your-team, **bring your members across** (any
+  `pending_members` row), and **import workout history** (any
+  `tracked_workouts` row). Each step is a deep link to the page that
+  completes it. The card disappears once every required step is done.
+  Backed by `get_gym_setup_progress(gym_id)` so it never drifts from
+  reality — delete a class type and the step flips back open.
 
 The Manage page presents a tab strip:
 
@@ -339,23 +341,46 @@ an edge function in front).
 
 ### Member import
 
-[`can_manage_staff`] Reachable from Manage → Members → Import members
-(`/management/members/import`). Drop a CSV from a previous platform
-(Mindbody, PushPress, Glofox, Wodify or a spreadsheet); the column
-mapper auto-detects the common header conventions, the preview
-counts staged vs. skipped rows, and commit writes them into
-`pending_members`. A trigger on `gym_memberships` insert links the
-pending row when the matching email signs up via `/join/<slug>` —
-applying the imported plan metadata onto the membership, copying
-tags into `member_tags`, and propagating "no marketing" into the
-Comms Suite `email_unsubscribes` list. The handover screen shows the
-gym's join URL + QR, a one-click per-member CSV (email, name, join
-URL) the owner can blast from their existing newsletter tool, and an
-opt-in "Send the welcome email from Temple" button that creates a
-campaign with `audience.kind = 'pending_members'` and lands the
-owner in the editor to preview before send. A live linking-progress
-counter ticks up while members sign up. Plan-name → membership_plan
-mapping is deliberately deferred to a follow-up flow.
+[`can_manage_staff`] Reachable from Manage → Members → "Bring data
+across" → Import members (`/management/members/import`), and surfaced
+as an optional checklist step on the setup card. Drop a CSV from a
+previous platform (Mindbody, PushPress, Glofox, Wodify or a
+spreadsheet); the column mapper auto-detects the common header
+conventions, the preview counts staged vs. skipped rows, and commit
+writes them into `pending_members`. A trigger on `gym_memberships`
+insert links the pending row when the matching email signs up via
+`/join/<slug>` — applying the imported plan metadata onto the
+membership, copying tags into `member_tags`, and propagating "no
+marketing" into the Comms Suite `email_unsubscribes` list. The
+handover screen shows the gym's join URL + QR, a one-click per-member
+CSV (email, name, join URL) the owner can blast from their existing
+newsletter tool, and an opt-in "Send the welcome email from Temple"
+button that creates a campaign with
+`audience.kind = 'pending_members'` and lands the owner in the editor
+to preview before send. A live linking-progress counter ticks up
+while members sign up. Plan-name → membership_plan mapping is
+deliberately deferred to a follow-up flow.
+
+### Workout-history import
+
+[`can_manage_staff`] Reachable from Manage → Members → "Bring data
+across" → Import workout history
+(`/management/members/import-workouts`), and surfaced as the final
+optional checklist step. Same CSV/map/preview/commit wizard as the
+members importer; each row is one logged set (email, date,
+movement, weight, reps, unit, notes). The movement name is matched
+client-side against the vocab in `src/lib/movements.ts` so misses
+appear in the preview as an amber "Unknown movements" callout the
+owner can correct before re-importing. The commit RPC
+`import_member_workouts` matches emails against active
+`gym_memberships` (skipping unknowns with a count), groups rows
+sharing (email, date) into one `tracked_workouts` parent, and
+writes one `tracked_movement_results` child per row with
+`track_key = '<reps>rm'`. Re-running the importer for the same
+(member, date) reuses the existing parent so results aren't
+double-counted. Lands in `/track` so PR pages and sparklines light
+up for the member as soon as they sign in. Endurance / time-based
+schemes (run times, row distances) are deliberately deferred.
 
 ### Campaign topic picker
 

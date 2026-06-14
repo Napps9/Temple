@@ -22,7 +22,16 @@ import { useThemeColors } from '@/lib/theme';
 // complete.
 
 type Step = {
-  key: 'logo' | 'settings' | 'class_type' | 'schedule' | 'parq' | 'plan' | 'team';
+  key:
+    | 'logo'
+    | 'settings'
+    | 'class_type'
+    | 'schedule'
+    | 'parq'
+    | 'plan'
+    | 'team'
+    | 'members_imported'
+    | 'workouts_imported';
   label: string;
   description: string;
   href: string;
@@ -86,6 +95,24 @@ const STEPS: Step[] = [
       'Generate an invite code for an admin, coach or member of staff. Skip if you run solo.',
     href: '/management/team',
     icon: 'people-outline',
+    optional: true,
+  },
+  {
+    key: 'members_imported',
+    label: 'Bring your members across',
+    description:
+      'Import a CSV from your previous platform. Members link to their data when they sign up at your join link.',
+    href: '/management/members/import',
+    icon: 'cloud-upload-outline',
+    optional: true,
+  },
+  {
+    key: 'workouts_imported',
+    label: 'Import workout history',
+    description:
+      'Seed past sets so members log in to a populated /track and PR pages — sparklines and trends light up from day one.',
+    href: '/management/members/import-workouts',
+    icon: 'stats-chart-outline',
     optional: true,
   },
 ];

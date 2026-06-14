@@ -259,6 +259,13 @@ export default function ManagementHome() {
     },
     {
       category: 'members',
+      title: 'Import workout history',
+      description: 'Seed past sets per member — lands in /track for PR pages and sparklines.',
+      href: '/management/members/import-workouts',
+      visible: !!canManageStaff,
+    },
+    {
+      category: 'members',
       title: 'Leads',
       description: 'Track prospects from first contact through conversion.',
       href: '/management/leads',
@@ -1458,6 +1465,7 @@ function MembersTab() {
   const canViewAttendance = useCan('can_view_attendance') ?? false;
   const canExport = useCan('can_export_members') ?? false;
   const canManageTags = useCan('can_manage_tags') ?? false;
+  const canManageStaff = useCan('can_manage_staff') ?? false;
   const exportMembers = useExportMembersCsv();
 
   const [preset, setPreset] = useState<Preset>('month');
@@ -1580,6 +1588,24 @@ function MembersTab() {
       ) : null}
 
       <MemberSignupLinkCard />
+
+      {canManageStaff ? (
+        <View className="gap-3">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Bring data across
+          </Text>
+          <ManagementCard
+            title="Import members"
+            description="Drop in a CSV from Mindbody, PushPress, Glofox, Wodify or a spreadsheet — members link to their data when they sign up."
+            href="/management/members/import"
+          />
+          <ManagementCard
+            title="Import workout history"
+            description="Seed past sets per member — one row per movement result. Lands in /track so PR pages and trends light up immediately."
+            href="/management/members/import-workouts"
+          />
+        </View>
+      ) : null}
 
       {canManageTags ? (
         <>
