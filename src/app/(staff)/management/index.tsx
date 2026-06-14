@@ -45,6 +45,7 @@ import { ClassTypesPanel } from './class-types';
 import { CommunicationsHome } from './communications';
 import { LeaderboardsPanel } from './leaderboards';
 import { MessagingPanel } from './messaging';
+import { OperatingDefaultsPanel } from './operating';
 import { HealthScreeningPanel } from './parq';
 import { PlansPanel } from './plans';
 
@@ -360,6 +361,14 @@ function SettingsTab() {
 
   return (
     <View className="gap-3">
+      {canManageStaff ? (
+        <SettingsSection
+          title="Operating defaults"
+          description="Week start, booking windows, cancel cutoff, PAR-Q expiry, plan resolution."
+          icon="options-outline">
+          <OperatingDefaultsPanel />
+        </SettingsSection>
+      ) : null}
       {canManageStaff ? (
         <SettingsSection
           title="Branding"
