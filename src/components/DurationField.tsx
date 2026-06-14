@@ -141,39 +141,38 @@ export function DurationField({
       {blurb ? (
         <Text className="text-gray-500 dark:text-gray-400 text-xs">{blurb}</Text>
       ) : null}
-      <View className="flex-row gap-2 items-center">
-        <TextInput
-          value={amount}
-          onChangeText={changeAmount}
-          keyboardType="number-pad"
-          placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
-          className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
-        />
-        <View className="flex-row gap-1">
-          {units.map((u) => {
-            const on = u === unit;
-            return (
-              <Pressable
-                key={u}
-                onPress={() => changeUnit(u)}
-                className={`px-2.5 py-2 rounded-lg border ${
+      <TextInput
+        value={amount}
+        onChangeText={changeAmount}
+        keyboardType="number-pad"
+        placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+      />
+      {/* Unit toggle on its own row — a segmented control. Stacking under
+          the input keeps all units visible on narrow mobile widths,
+          where row layouts clipped 'weeks' off the edge. */}
+      <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+        {units.map((u) => {
+          const on = u === unit;
+          return (
+            <Pressable
+              key={u}
+              onPress={() => changeUnit(u)}
+              className={`flex-1 py-2 rounded-md items-center ${
+                on ? 'bg-white dark:bg-gray-700' : ''
+              }`}>
+              <Text
+                className={`text-xs ${
                   on
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-gray-700'
+                    ? 'text-gray-900 dark:text-gray-50 font-medium'
+                    : 'text-gray-500 dark:text-gray-400'
                 }`}>
-                <Text
-                  className={`text-xs ${
-                    on
-                      ? 'text-primary font-medium'
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                  {UNIT_LABEL[u]}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                {UNIT_LABEL[u]}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
