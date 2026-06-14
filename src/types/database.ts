@@ -68,6 +68,9 @@ export type Database = {
           cancel_cutoff_minutes_before: number;
           public_lead_capture_enabled: boolean;
           operating_defaults_reviewed_at: string | null;
+          cancel_cutoff_mode: 'relative' | 'day_before';
+          cancel_cutoff_time: string | null;
+          cancel_cutoff_days_before: number;
         };
         Insert: {
           id?: string;
@@ -103,6 +106,9 @@ export type Database = {
           cancel_cutoff_minutes_before?: number;
           public_lead_capture_enabled?: boolean;
           operating_defaults_reviewed_at?: string | null;
+          cancel_cutoff_mode?: 'relative' | 'day_before';
+          cancel_cutoff_time?: string | null;
+          cancel_cutoff_days_before?: number;
         };
         Update: Partial<{
           id: string;
@@ -138,6 +144,9 @@ export type Database = {
           cancel_cutoff_minutes_before: number;
           public_lead_capture_enabled: boolean;
           operating_defaults_reviewed_at: string | null;
+          cancel_cutoff_mode: 'relative' | 'day_before';
+          cancel_cutoff_time: string | null;
+          cancel_cutoff_days_before: number;
         }>;
         Relationships: [];
       };
@@ -2698,6 +2707,9 @@ export type Database = {
           p_booking_window_hours_ahead?: number | null;
           p_booking_cutoff_minutes_before?: number;
           p_cancel_cutoff_minutes_before?: number;
+          p_cancel_cutoff_mode?: 'relative' | 'day_before';
+          p_cancel_cutoff_time?: string | null;
+          p_cancel_cutoff_days_before?: number;
         };
         Returns: null;
       };

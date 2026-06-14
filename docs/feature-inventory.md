@@ -526,8 +526,16 @@ actions are owner-only by policy:
   unlimited), `booking_cutoff_minutes_before` (latest a member can
   book; refused inside the window), `cancel_cutoff_minutes_before`
   (cancel always allowed but credit forfeited past this cutoff —
-  enforced inside the refund trigger). Each of the three
-  booking-window fields can be overridden per class type — a
+  enforced inside the refund trigger). The free-cancel cutoff has a
+  gym-wide **mode**: `relative` (the minutes-before above) or
+  `day_before` — forfeit once now() passes `cancel_cutoff_time`,
+  `cancel_cutoff_days_before` days before the class's own local date,
+  computed in `gyms.timezone` (e.g. "cancel by 9pm the night before").
+  A class type's relative override still wins over the gym mode. The
+  three numeric booking-window fields are entered with a min/hr/day/wk
+  unit toggle (`DurationField`); the client mirrors the absolute cutoff
+  for its late-cancel warning via `src/lib/zoned-time.ts`. Each of the
+  three booking-window fields can be overridden per class type — a
   non-NULL `class_types.booking_window_hours_ahead` /
   `booking_cutoff_minutes_before` / `cancel_cutoff_minutes_before`
   beats the gym default, NULL falls back. Used for open-gym slots

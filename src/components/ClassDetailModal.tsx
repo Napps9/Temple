@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
+import { dayBeforeCutoffEpoch } from '@/lib/zoned-time';
 
 type SessionDetail = {
   id: string;
@@ -365,10 +366,22 @@ export function ClassDetailModal({
   const isFull = detail ? bookings.length >= detail.capacity : false;
   const cancelCutoffMs =
     (gymDefaults?.cancel_cutoff_minutes_before ?? 0) * 60 * 1000;
-  const lateCancel =
-    start !== null &&
-    cancelCutoffMs > 0 &&
-    start.getTime() - cancelCutoffMs <= Date.now();
+  const lateCancel = (() => {
+    if (start === null || !detail) return false;
+    if (
+      gymDefaults?.cancel_cutoff_mode === 'day_before' &&
+      gymDefaults.cancel_cutoff_time
+    ) {
+      const cutoff = dayBeforeCutoffEpoch(
+        detail.starts_at,
+        gymDefaults.timezone || 'UTC',
+        gymDefaults.cancel_cutoff_days_before ?? 1,
+        gymDefaults.cancel_cutoff_time,
+      );
+      return Date.now() >= cutoff;
+    }
+    return cancelCutoffMs > 0 && start.getTime() - cancelCutoffMs <= Date.now();
+  })();
 
   const bookCutoffMs =
     (gymDefaults?.booking_cutoff_minutes_before ?? 0) * 60 * 1000;
