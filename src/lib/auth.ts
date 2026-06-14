@@ -208,9 +208,15 @@ async function ensureSessionAfterSignUp(
   if (session) return;
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    if (/confirm/i.test(error.message)) {
+    // Supabase returns the generic "Invalid login credentials" both when
+    // the password is wrong AND when the user exists but their email
+    // isn't confirmed (deliberate, to avoid leaking account existence).
+    // We just provided the password we ran signUp with, so this almost
+    // always means "an unconfirmed account already exists for this
+    // email" — say so rather than the cryptic raw error.
+    if (/confirm/i.test(error.message) || /invalid login/i.test(error.message)) {
       throw new Error(
-        'Check your email to confirm your account, then come back and sign in to finish setting up your gym.',
+        'An account with this email already exists but isn’t confirmed yet. Check your inbox for the confirmation link, click it, then come back and sign in.',
       );
     }
     throw error;
