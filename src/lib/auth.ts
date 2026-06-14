@@ -192,6 +192,31 @@ export function useSignOut() {
 }
 
 // Self-serve gym creation. Signs the visitor up as an auth user,
+// createGymWithSignup + joinGymWithSignup both call supabase.auth.signUp
+// followed immediately by an RPC that needs auth.uid(). On Supabase
+// projects with email confirmation enabled, signUp returns a user but
+// session: null — the RPC then fails with "Not signed in". Calling
+// signInWithPassword right after signUp covers both shapes: when
+// confirmations are off it's a no-op (signUp already established the
+// session, so this branch is skipped); when they're on it surfaces a
+// clear instruction instead of the cryptic RPC error.
+async function ensureSessionAfterSignUp(
+  email: string,
+  password: string,
+  session: unknown,
+): Promise<void> {
+  if (session) return;
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    if (/confirm/i.test(error.message)) {
+      throw new Error(
+        'Check your email to confirm your account, then come back and sign in to finish setting up your gym.',
+      );
+    }
+    throw error;
+  }
+}
+
 // creates a profiles row + the gym + the owner membership. Throws
 // at the first step that fails so the caller can surface the error
 // near the input that produced it.
@@ -203,12 +228,13 @@ export async function createGymWithSignup(args: {
   gymSlug: string;
 }): Promise<{ gymId: string }> {
   const { email, password, fullName, gymName, gymSlug } = args;
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName } },
   });
   if (error) throw error;
+  await ensureSessionAfterSignUp(email, password, data.session);
   const { data: gymId, error: rpcError } = await supabase.rpc('create_gym', {
     p_name: gymName,
     p_slug: gymSlug,
@@ -226,12 +252,13 @@ export async function joinGymWithSignup(args: {
   slug: string;
 }): Promise<{ gymId: string }> {
   const { email, password, fullName, slug } = args;
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName } },
   });
   if (error) throw error;
+  await ensureSessionAfterSignUp(email, password, data.session);
   const { data: gymId, error: rpcError } = await supabase.rpc('join_gym_by_slug', {
     p_slug: slug,
   });
