@@ -28,6 +28,8 @@ type ServerPlan = {
   archived_at: string | null;
 };
 
+type ClassTypeLite = { id: string; name: string; color: string };
+
 type EditablePlan = {
   serverId: string | null;
   localId: string;
@@ -36,11 +38,17 @@ type EditablePlan = {
   creditCount: string;
   monthlyPriceCents: string;
   noticePeriodDays: string;
+  // Empty classTypeIds + coverageMode 'all' = the plan covers every class
+  // type (the plan_class_types allowlist is empty). 'specific' restricts
+  // booking to the selected class types.
+  coverageMode: 'all' | 'specific';
+  classTypeIds: string[];
+  serverClassTypeIds: string[];
   archivedAt: string | null;
   serverSnapshot: ServerPlan | null;
 };
 
-function fromServer(p: ServerPlan): EditablePlan {
+function fromServer(p: ServerPlan, classTypeIds: string[]): EditablePlan {
   return {
     serverId: p.plan_id,
     localId: p.plan_id,
@@ -49,6 +57,9 @@ function fromServer(p: ServerPlan): EditablePlan {
     creditCount: p.credit_count?.toString() ?? '',
     monthlyPriceCents: p.monthly_price_cents?.toString() ?? '',
     noticePeriodDays: p.notice_period_days?.toString() ?? '',
+    coverageMode: classTypeIds.length > 0 ? 'specific' : 'all',
+    classTypeIds,
+    serverClassTypeIds: classTypeIds,
     archivedAt: p.archived_at,
     serverSnapshot: p,
   };
@@ -115,10 +126,51 @@ export function PlansPanel() {
     },
   });
 
+  const classTypes = useQuery({
+    queryKey: ['plan-coverage-class-types', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<ClassTypeLite[]> => {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('id, name, color')
+        .eq('gym_id', membership!.gymId)
+        .is('archived_at', null)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as ClassTypeLite[];
+    },
+  });
+
+  const coverage = useQuery({
+    queryKey: ['plan-coverage', planIds.join(',')],
+    enabled: planIds.length > 0,
+    queryFn: async (): Promise<Map<string, string[]>> => {
+      const { data, error } = await supabase
+        .from('plan_class_types')
+        .select('plan_id, class_type_id')
+        .in('plan_id', planIds);
+      if (error) throw error;
+      const map = new Map<string, string[]>();
+      for (const row of (data ?? []) as {
+        plan_id: string;
+        class_type_id: string;
+      }[]) {
+        const arr = map.get(row.plan_id) ?? [];
+        arr.push(row.class_type_id);
+        map.set(row.plan_id, arr);
+      }
+      return map;
+    },
+  });
+
+  // Seed once plans land; re-seed when coverage resolves so existing rows
+  // pick up their allowlist. Coverage defaults to 'all' until it loads, so
+  // the editor renders without waiting on the second query.
   useEffect(() => {
     if (!plans.data) return;
-    setRows(plans.data.map(fromServer));
-  }, [plans.data]);
+    const cov = coverage.data ?? new Map<string, string[]>();
+    setRows(plans.data.map((p) => fromServer(p, cov.get(p.plan_id) ?? [])));
+  }, [plans.data, coverage.data]);
 
   const archive = useMutation({
     mutationFn: async (planId: string) => {
@@ -182,6 +234,15 @@ export function PlansPanel() {
           throw new Error(`${name}: invalid notice period`);
         }
 
+        const desiredCoverage =
+          r.coverageMode === 'specific' ? r.classTypeIds : [];
+        if (r.coverageMode === 'specific' && desiredCoverage.length === 0) {
+          throw new Error(
+            `${name}: pick at least one class type, or choose All classes`,
+          );
+        }
+
+        let planId = r.serverId;
         if (r.serverId === null) {
           const payload: {
             gym_id: string;
@@ -202,8 +263,13 @@ export function PlansPanel() {
           if (r.kind === 'credit_period') {
             payload.period_length = '30 days';
           }
-          const { error } = await supabase.from('membership_plans').insert(payload);
+          const { data: inserted, error } = await supabase
+            .from('membership_plans')
+            .insert(payload)
+            .select('plan_id')
+            .single();
           if (error) throw error;
+          planId = (inserted as { plan_id: string }).plan_id;
         } else if (rowDiffers(r)) {
           const { error } = await supabase
             .from('membership_plans')
@@ -217,11 +283,40 @@ export function PlansPanel() {
             .eq('plan_id', r.serverId);
           if (error) throw error;
         }
+
+        // Reconcile the class-type allowlist (same owner gate as the plan
+        // write). Empty desired set = covers all classes.
+        if (planId) {
+          const pid = planId;
+          const desiredSet = new Set(desiredCoverage);
+          const currentSet = new Set(r.serverClassTypeIds);
+          const toRemove = r.serverClassTypeIds.filter(
+            (id) => !desiredSet.has(id),
+          );
+          const toAdd = desiredCoverage.filter((id) => !currentSet.has(id));
+          if (toRemove.length > 0) {
+            const { error } = await supabase
+              .from('plan_class_types')
+              .delete()
+              .eq('plan_id', pid)
+              .in('class_type_id', toRemove);
+            if (error) throw error;
+          }
+          if (toAdd.length > 0) {
+            const { error } = await supabase
+              .from('plan_class_types')
+              .insert(
+                toAdd.map((class_type_id) => ({ plan_id: pid, class_type_id })),
+              );
+            if (error) throw error;
+          }
+        }
       }
     },
     onSuccess: () => {
       setSaveError(null);
       queryClient.invalidateQueries({ queryKey: ['membership-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['plan-coverage'] });
     },
     onError: (e) => setSaveError(errorMessage(e, 'Save failed')),
   });
@@ -232,6 +327,21 @@ export function PlansPanel() {
 
   function update(idx: number, patch: Partial<EditablePlan>) {
     setRows((curr) => curr.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  }
+
+  function toggleClassType(idx: number, id: string) {
+    setRows((curr) =>
+      curr.map((r, i) => {
+        if (i !== idx) return r;
+        const on = r.classTypeIds.includes(id);
+        return {
+          ...r,
+          classTypeIds: on
+            ? r.classTypeIds.filter((x) => x !== id)
+            : [...r.classTypeIds, id],
+        };
+      }),
+    );
   }
 
   function addRow() {
@@ -245,6 +355,9 @@ export function PlansPanel() {
         creditCount: '',
         monthlyPriceCents: '',
         noticePeriodDays: '',
+        coverageMode: 'all',
+        classTypeIds: [],
+        serverClassTypeIds: [],
         archivedAt: null,
         serverSnapshot: null,
       },
@@ -376,6 +489,77 @@ export function PlansPanel() {
                     Shown on member profiles so staff can answer
                     cancellation questions. Leave blank for no notice.
                   </Text>
+                </View>
+
+                <View className="gap-2">
+                  <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                    Classes this plan covers
+                  </Text>
+                  <View className="flex-row gap-2">
+                    {(['all', 'specific'] as const).map((m) => (
+                      <Pressable
+                        key={m}
+                        onPress={() => update(idx, { coverageMode: m })}
+                        className={`px-3 py-1.5 rounded-md border ${
+                          r.coverageMode === m
+                            ? 'border-primary bg-primary/10'
+                            : 'border-gray-200 dark:border-gray-700'
+                        }`}>
+                        <Text
+                          className={
+                            r.coverageMode === m
+                              ? 'text-primary text-xs uppercase tracking-widest'
+                              : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                          }>
+                          {m === 'all' ? 'All classes' : 'Specific classes'}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  {r.coverageMode === 'all' ? (
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                      Members on this plan can book any class type.
+                    </Text>
+                  ) : (classTypes.data?.length ?? 0) === 0 ? (
+                    <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                      No class types yet — add some under Class types first.
+                    </Text>
+                  ) : (
+                    <View className="gap-1.5">
+                      <View className="flex-row gap-2 flex-wrap">
+                        {classTypes.data!.map((ct) => {
+                          const on = r.classTypeIds.includes(ct.id);
+                          return (
+                            <Pressable
+                              key={ct.id}
+                              onPress={() => toggleClassType(idx, ct.id)}
+                              className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
+                                on
+                                  ? 'border-primary bg-primary/10'
+                                  : 'border-gray-200 dark:border-gray-700'
+                              }`}>
+                              <View
+                                style={{ backgroundColor: ct.color }}
+                                className="w-2 h-2 rounded-full"
+                              />
+                              <Text
+                                className={`text-xs ${
+                                  on
+                                    ? 'text-gray-900 dark:text-gray-50 font-medium'
+                                    : 'text-gray-600 dark:text-gray-300'
+                                }`}>
+                                {ct.name}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                        When a member holds more than one eligible plan, they
+                        choose which to use at booking.
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 {r.serverId && canArchive ? (

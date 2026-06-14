@@ -263,11 +263,19 @@ The Manage page presents a tab strip:
   so staff invites can be sent as a single image.
 - **Plans** [`can_manage_plans`] — Unlimited / Credit period /
   Credit pack plans with monthly price + notice period (days);
-  Class-type allowlist per plan; Archive / Restore / Hard delete
-  with dependent-row protection.
+  per-plan **class-type coverage** (All classes, or a Specific
+  allowlist of class types — writes `plan_class_types`, which the
+  booking entitlement filter reads so a restricted plan only books its
+  classes); Archive / Restore / Hard delete with dependent-row
+  protection.
 - **Communications** [`can_manage_comms`] — the email campaign suite
   (detailed below under *Communications Suite*).
 - **Settings** — collapsible cards:
+  - **Operating defaults** [`can_manage_staff`] — week start, default
+    class capacity / duration / materialisation horizon, plan-resolution
+    order, "expiring soon" window, booking windows (open / close / free-
+    cancel cutoff), PAR-Q expiry, health-data retention, lead conversion
+    window. Same editor as the standalone `/management/operating` page.
   - **Branding** — gym name, slug, logo upload, primary / secondary /
     text colours with inline HSV picker, public-signup toggle. An
     **Advanced branding** collapsible adds a dark-mode logo and a
