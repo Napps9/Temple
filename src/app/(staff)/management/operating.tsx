@@ -5,6 +5,7 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-na
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { DurationField } from '@/components/DurationField';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -195,34 +196,56 @@ export function OperatingDefaultsPanel() {
       </Section>
 
       <Section title="Booking windows">
-        <NumField
-          label="Booking opens (hours ahead)"
-          blurb="The earliest a member can book a class. 0 here means it stays open until the class fills. 168 gives the classic 'books open one week ahead'."
-          value={draft.booking_window_hours_ahead ?? 0}
+        <DurationField
+          label="Booking opens ahead"
+          blurb="The earliest a member can book a class. 0 keeps it open until the class fills; 1 week gives the classic 'books open one week ahead'."
+          value={String(draft.booking_window_hours_ahead ?? 0)}
           onChange={(v) => {
-            const n = parseInt(v, 10);
-            if (!Number.isFinite(n)) return;
+            const n = v.trim() === '' ? 0 : parseInt(v, 10);
+            setDraft((d) =>
+              d
+                ? { ...d, booking_window_hours_ahead: n > 0 ? n : null }
+                : d,
+            );
+          }}
+          base="hours"
+          units={['hours', 'days', 'weeks']}
+        />
+        <DurationField
+          label="Booking closes before start"
+          blurb="The latest a member can book before class start. 0 means right up to the start time."
+          value={String(draft.booking_cutoff_minutes_before)}
+          onChange={(v) =>
             setDraft((d) =>
               d
                 ? {
                     ...d,
-                    booking_window_hours_ahead: n > 0 ? n : null,
+                    booking_cutoff_minutes_before:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
                   }
                 : d,
-            );
-          }}
+            )
+          }
+          base="minutes"
+          units={['minutes', 'hours', 'days', 'weeks']}
         />
-        <NumField
-          label="Booking closes (minutes before)"
-          blurb="The latest a member can book before class start. 0 means right up to the start time."
-          value={draft.booking_cutoff_minutes_before}
-          onChange={num('booking_cutoff_minutes_before')}
-        />
-        <NumField
-          label="Free cancellation cutoff (minutes before)"
+        <DurationField
+          label="Free cancellation cutoff before start"
           blurb="Members can always cancel, but past this cutoff the credit is forfeited. 0 means no late-cancel forfeit."
-          value={draft.cancel_cutoff_minutes_before}
-          onChange={num('cancel_cutoff_minutes_before')}
+          value={String(draft.cancel_cutoff_minutes_before)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    cancel_cutoff_minutes_before:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="minutes"
+          units={['minutes', 'hours', 'days', 'weeks']}
         />
       </Section>
 
@@ -401,11 +424,11 @@ export default function OperatingDefaultsPage() {
         <BackLink label="Manage" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Operating defaults
+            Gym settings
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Per-gym dials that used to be hard-coded — week start, PAR-Q
-            expiry, cohort windows, plan resolution, retention periods.
+            Per-gym dials — week start, class defaults, booking and
+            cancellation windows, PAR-Q expiry, plan resolution, retention.
           </Text>
         </View>
         <OperatingDefaultsPanel />

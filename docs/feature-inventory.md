@@ -200,8 +200,11 @@ The staff area shows up when `can_access_staff_area` is on.
   archived class types so historical analysis still works.
 
 ### Classes & operations
-- **Class types editor** [`can_edit_classes`] — name, colour, recurring
-  schedule (days, times, duration, capacity, end-on or indefinite),
+- **Class types editor** [`can_edit_classes`] — name, colour (the
+  swatch picker dots any hue already used by a sibling class type so
+  two don't clash), recurring schedule (days, times, duration,
+  capacity, end-on or indefinite), per-type booking-window overrides
+  (with the same min/hr/day/wk unit toggle as the gym defaults),
   archive / restore / hard-delete.  **Archiving cascades**: blocks new
   bookings, new programming, future materialisation.
 - **Recurrence materialisation** — schedules turn into individual
@@ -272,11 +275,14 @@ The Manage page presents a tab strip:
 - **Communications** [`can_manage_comms`] — the email campaign suite
   (detailed below under *Communications Suite*).
 - **Settings** — collapsible cards:
-  - **Operating defaults** [`can_manage_staff`] — week start, default
+  - **Gym settings** [`can_manage_staff`] — week start, default
     class capacity / duration / materialisation horizon, plan-resolution
     order, "expiring soon" window, booking windows (open / close / free-
-    cancel cutoff), PAR-Q expiry, health-data retention, lead conversion
-    window. Same editor as the standalone `/management/operating` page.
+    cancel cutoff, each with a min/hr/day/wk unit toggle so "2 weeks" or
+    "48 hours" is entered directly), PAR-Q expiry, health-data retention,
+    lead conversion window. Same editor as the standalone
+    `/management/operating` page. (Internally still "operating defaults":
+    the `set_gym_operating_defaults` RPC + `gyms` columns.)
   - **Branding** — gym name, slug, logo upload, primary / secondary /
     text colours with inline HSV picker, public-signup toggle. An
     **Advanced branding** collapsible adds a dark-mode logo and a
@@ -507,8 +513,9 @@ actions are owner-only by policy:
 
 ## Cross-cutting platform features
 
-- **Operating defaults** (owner-only, Manage → Settings → Operating
-  defaults) — per-gym dials that used to be hard-coded into SQL:
+- **Gym settings** (owner-only, Manage → Settings → Gym settings;
+  surfaced as "Gym settings" but internally still the operating-defaults
+  RPC + columns) — per-gym dials that used to be hard-coded into SQL:
   `week_starts_on` (Mon vs Sun), `timezone`, `default_class_capacity` +
   `default_class_minutes`, `expiring_within_days` (the cohort "expiring
   soon" window, read by `v_member_cohort`), `parq_expiry_days` (read by

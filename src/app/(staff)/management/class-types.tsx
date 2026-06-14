@@ -7,6 +7,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ColorSwatchPicker, PALETTE } from '@/components/ColorSwatchPicker';
+import { DurationField, formatBaseDuration } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import {
   EMPTY_RECURRENCE,
@@ -494,6 +495,9 @@ export function ClassTypesPanel() {
                     <ColorSwatchPicker
                       value={r.color}
                       onChange={(c) => updateRow(idx, { color: c })}
+                      inUse={rows
+                        .filter((o, i) => i !== idx && !o.archivedAt)
+                        .map((o) => o.color)}
                     />
                   </View>
                 ) : null}
@@ -560,7 +564,7 @@ export function ClassTypesPanel() {
                     {r.bookingWindowHoursAhead ||
                     r.bookingCutoffMinutesBefore ||
                     r.cancelCutoffMinutesBefore
-                      ? `Custom rules — opens ${r.bookingWindowHoursAhead || 'gym'}h ahead · closes ${r.bookingCutoffMinutesBefore || 'gym'}m before · cancel cutoff ${r.cancelCutoffMinutesBefore || 'gym'}m`
+                      ? `Custom rules — opens ${r.bookingWindowHoursAhead ? formatBaseDuration(parseInt(r.bookingWindowHoursAhead, 10), 'hours') : 'gym'} ahead · closes ${r.bookingCutoffMinutesBefore ? formatBaseDuration(parseInt(r.bookingCutoffMinutesBefore, 10), 'minutes') : 'gym'} before · cancel ${r.cancelCutoffMinutesBefore ? formatBaseDuration(parseInt(r.cancelCutoffMinutesBefore, 10), 'minutes') : 'gym'}`
                       : 'Booking rules inherit the gym defaults.'}
                   </Text>
                   <ChipButton
@@ -573,35 +577,38 @@ export function ClassTypesPanel() {
                   <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-3">
                     <Text className="text-gray-500 dark:text-gray-400 text-xs">
                       Leave blank to use the gym-wide setting (Manage →
-                      Operating defaults). Set a number here to override for
-                      this class type only.
+                      Gym settings). Set a value here to override for this
+                      class type only.
                     </Text>
-                    <Input
-                      label="Booking opens (hours ahead, blank = inherit)"
+                    <DurationField
+                      label="Booking opens ahead (blank = inherit)"
                       value={r.bookingWindowHoursAhead}
-                      onChangeText={(v) =>
+                      onChange={(v) =>
                         updateRow(idx, { bookingWindowHoursAhead: v })
                       }
-                      placeholder="168"
-                      keyboardType="number-pad"
+                      base="hours"
+                      units={['hours', 'days', 'weeks']}
+                      placeholder="inherit"
                     />
-                    <Input
-                      label="Booking closes (minutes before, blank = inherit)"
+                    <DurationField
+                      label="Booking closes before start (blank = inherit)"
                       value={r.bookingCutoffMinutesBefore}
-                      onChangeText={(v) =>
+                      onChange={(v) =>
                         updateRow(idx, { bookingCutoffMinutesBefore: v })
                       }
-                      placeholder="60"
-                      keyboardType="number-pad"
+                      base="minutes"
+                      units={['minutes', 'hours', 'days', 'weeks']}
+                      placeholder="inherit"
                     />
-                    <Input
-                      label="Free-cancel cutoff (minutes before, blank = inherit)"
+                    <DurationField
+                      label="Free-cancel cutoff before start (blank = inherit)"
                       value={r.cancelCutoffMinutesBefore}
-                      onChangeText={(v) =>
+                      onChange={(v) =>
                         updateRow(idx, { cancelCutoffMinutesBefore: v })
                       }
-                      placeholder="120"
-                      keyboardType="number-pad"
+                      base="minutes"
+                      units={['minutes', 'hours', 'days', 'weeks']}
+                      placeholder="inherit"
                     />
                   </View>
                 ) : null}

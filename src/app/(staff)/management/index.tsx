@@ -223,9 +223,9 @@ export default function ManagementHome() {
     },
     {
       category: 'settings',
-      title: 'Operating defaults',
+      title: 'Gym settings',
       description:
-        'Week start, PAR-Q expiry, cohort windows, plan resolution, retention.',
+        'Week start, booking windows, PAR-Q expiry, plan resolution, retention.',
       href: '/management/operating',
       visible: !!canManageStaff,
     },
@@ -363,7 +363,7 @@ function SettingsTab() {
     <View className="gap-3">
       {canManageStaff ? (
         <SettingsSection
-          title="Operating defaults"
+          title="Gym settings"
           description="Week start, booking windows, cancel cutoff, PAR-Q expiry, plan resolution."
           icon="options-outline">
           <OperatingDefaultsPanel />
