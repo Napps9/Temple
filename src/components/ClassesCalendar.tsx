@@ -731,13 +731,16 @@ function WeekView({
                 {weekDays.map((d) => {
                   const cellClasses = classesAtDayHour(sessions, d, hour);
                   return (
-                    <View key={d.toISOString()} className="flex-1 px-0.5">
+                    <View key={d.toISOString()} className="flex-1 px-0.5 gap-0.5">
                       {cellClasses.length > 0 ? (
-                        <WeekTile
-                          session={cellClasses[0]}
-                          onPress={() => onSessionPress(cellClasses[0].id)}
-                          bookedByMe={bookedSet.has(cellClasses[0].id)}
-                        />
+                        cellClasses.map((c) => (
+                          <WeekTile
+                            key={c.id}
+                            session={c}
+                            onPress={() => onSessionPress(c.id)}
+                            bookedByMe={bookedSet.has(c.id)}
+                          />
+                        ))
                       ) : canCreate ? (
                         <Pressable
                           onPress={() => onCreateAt(d, hour)}
