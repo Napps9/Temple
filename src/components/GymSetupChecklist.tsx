@@ -26,8 +26,7 @@ type Step = {
   key:
     | 'logo'
     | 'settings'
-    | 'class_type'
-    | 'schedule'
+    | 'class_type_and_schedule'
     | 'parq'
     | 'plan'
     | 'team'
@@ -59,20 +58,12 @@ const STEPS: Step[] = [
     icon: 'settings-outline',
   },
   {
-    key: 'class_type',
-    label: 'Add a class type',
+    key: 'class_type_and_schedule',
+    label: 'Add a class type & schedule',
     description:
-      'Name the kinds of class you run (CrossFit, Hyrox, mobility…) and pick a colour.',
+      'Name the kinds of class you run and set the recurring days + times so they appear on the calendar.',
     href: '/management/class-types',
     icon: 'pricetags-outline',
-  },
-  {
-    key: 'schedule',
-    label: 'Set up a class schedule',
-    description:
-      'Recurring days + times turn your class types into actual sessions on the calendar.',
-    href: '/management/class-types',
-    icon: 'calendar-outline',
   },
   {
     key: 'parq',

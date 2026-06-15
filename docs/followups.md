@@ -72,3 +72,51 @@ screen lives) — the Accept button's `onPress` and the mutation
 `onSuccess`. Verify `queryClient.invalidateQueries({ queryKey:
 ['consent-state'] })` fires before navigation.
 
+---
+
+## 4. Member import → working membership without re-billing
+
+Today the members importer stages rows into `pending_members` with
+`plan_name` / `plan_start` / `plan_end` / `credits_remaining` etc., and
+on signup the link trigger stamps the imported metadata onto the new
+`gym_memberships` row as `imported_*` columns. The booking gate
+(`_book_class_for`) still needs a live `plan_subscription` though, so
+imported members can't book a class until staff manually create a
+subscription for them.
+
+User ask: imported members continue "seamlessly without payment
+issues" — they shouldn't have to pay again to keep training.
+
+**Proposed flow:**
+
+1. In the import wizard, after the column-mapping step, show the unique
+   `plan_name` values found in the CSV and let the owner map each one
+   to an existing `membership_plans` row (or "no plan" for trial
+   intros).
+2. Store the chosen `membership_plan_id` on `pending_members` (new
+   column `linked_membership_plan_id`).
+3. Extend the `gym_memberships` insert link trigger: if the linked
+   pending row has `linked_membership_plan_id` set, create a
+   `plan_subscription` with:
+     - `status = 'active'`
+     - `credit_balance = imported_credits_remaining` (for credit
+       packs / credit periods; null for unlimited)
+     - `paid_period_end = imported_plan_end` so the cancel-at-period-
+       end semantics still work
+     - `stripe_subscription_id = null` — Temple billing is bypassed
+       for the imported continuation
+4. Surface a "self-serve renewal" path the member can hit when the
+   imported plan ends — wire it to the same plan picker the gym uses
+   for new joiners.
+
+**Open questions:**
+
+- Should renewals after the imported period flow through Temple's
+  Stripe integration once it lands? (Probably yes — but until billing
+  is live the imported state needs to last through the migration
+  window without forcing the member through Stripe.)
+- For credit packs that were partially used pre-import, do we count
+  expiry from `plan_start` or `plan_end`? Probably `plan_end` if
+  present, otherwise unlimited until manually consumed.
+- Mapping UI: chip-per-unique-plan with a Picker, or a small table?
+  Chip-per-plan is faster for the common 1-3 plan case.

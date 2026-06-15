@@ -178,19 +178,37 @@ export function buildImportRow(
   return out;
 }
 
-// Accepts ISO (YYYY-MM-DD), the two common US slash formats, and the
-// dotted European form. Anything else returns null — the import row
-// is skipped on that field rather than blowing up the whole row.
+// Accepts ISO (YYYY-MM-DD), YYYY-DD-MM (legacy CSV exports that flipped
+// month and day), the two common US slash formats, and the dotted
+// European form. Anything that doesn't look like a date returns null —
+// the import row is skipped on that field rather than blowing up the
+// whole batch in Postgres.
 export function toIsoDate(s: string): string | null {
   const v = s.trim();
   if (!v) return null;
-  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
-  let m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  // YYYY-MM-DD (or YYYY-DD-MM). If the "month" slot is > 12 and the
+  // "day" slot ≤ 12, the parts are flipped — common when a CSV was
+  // built with a UK locale that writes the day first.
+  let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) {
+    const y = +m[1];
+    let mo = +m[2];
+    let d = +m[3];
+    if (mo > 12 && d <= 12) {
+      const tmp = mo;
+      mo = d;
+      d = tmp;
+    }
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (m) {
     // US convention M/D/Y. Two-digit year → 2000s.
     const mo = +m[1], d = +m[2];
     let y = +m[3];
     if (y < 100) y += 2000;
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
     return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   }
   m = v.match(/^(\d{1,2})[.-](\d{1,2})[.-](\d{2,4})$/);
@@ -199,6 +217,7 @@ export function toIsoDate(s: string): string | null {
     const d = +m[1], mo = +m[2];
     let y = +m[3];
     if (y < 100) y += 2000;
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
     return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   }
   return null;

@@ -86,6 +86,15 @@ describe('toIsoDate', () => {
   it('parses EU D.M.Y', () => {
     expect(toIsoDate('12.4.2025')).toBe('2025-04-12');
   });
+  it('flips YYYY-DD-MM when the month slot is > 12', () => {
+    // Specific failure that showed up in the import preview.
+    expect(toIsoDate('1992-16-03')).toBe('1992-03-16');
+  });
+  it('rejects YYYY-MM-DD with an out-of-range day', () => {
+    expect(toIsoDate('1992-03-32')).toBe(null);
+    // Ambiguous: month > 12 AND day > 12 — can't safely flip, return null.
+    expect(toIsoDate('1992-13-13')).toBe(null);
+  });
   it('returns null for nonsense', () => {
     expect(toIsoDate('whenever')).toBe(null);
   });

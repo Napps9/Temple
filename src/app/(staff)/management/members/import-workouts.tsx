@@ -42,6 +42,7 @@ export default function ImportWorkoutsScreen() {
   const [csvText, setCsvText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [mapping, setMapping] = useState<(WorkoutField | 'ignore' | null)[]>([]);
+  const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
@@ -118,17 +119,45 @@ export default function ImportWorkoutsScreen() {
           <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
             {Platform.OS === 'web' ? (
               <>
-                <Pressable
-                  onPress={() => fileInput.current?.click()}
-                  className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 items-center gap-2 active:opacity-70">
+                <div
+                  onClick={() => fileInput.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+                    if (!dragOver) setDragOver(true);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOver(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOver(false);
+                    const f = e.dataTransfer?.files?.[0];
+                    if (f) onFile(f);
+                  }}
+                  className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
+                    dragOver
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                  }`}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Ionicons name="cloud-upload-outline" size={24} color="#6B7280" />
                   <Text className="text-gray-700 dark:text-gray-200 font-medium">
-                    Drop a CSV here or tap to choose a file
+                    {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
                   <Text className="text-gray-500 dark:text-gray-400 text-xs">
                     Columns we look for: email, date, movement, weight, reps, unit.
                   </Text>
-                </Pressable>
+                </div>
                 <input
                   ref={(el) => {
                     fileInput.current = el;

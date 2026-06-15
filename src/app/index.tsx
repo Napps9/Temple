@@ -11,8 +11,7 @@ import { useCan } from '@/lib/useCan';
 const REQUIRED_SETUP_KEYS = new Set([
   'logo',
   'settings',
-  'class_type',
-  'schedule',
+  'class_type_and_schedule',
   'parq',
   'plan',
 ]);

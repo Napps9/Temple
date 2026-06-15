@@ -257,7 +257,10 @@ export function HealthScreeningPanel() {
     <View className="gap-5">
       <WaiverPanel />
 
-      <View className="border-t border-gray-200 dark:border-gray-800 pt-5 gap-3">
+      {/* Same card treatment as WaiverPanel so the two halves of the
+          health-screening surface read as siblings rather than the
+          PAR-Q section feeling orphaned underneath. */}
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
         <Pressable
           onPress={() => setShowParq((v) => !v)}
           className="flex-row items-center gap-2 active:opacity-70">

@@ -5,7 +5,7 @@
 -- still reports them.
 
 begin;
-select plan(13);
+select plan(12);
 
 \ir _helpers.psql
 
@@ -62,7 +62,8 @@ select is(
   'settings step flips done once gym settings have been saved'
 );
 
--- 4. class_type flips after a class type is added.
+-- 4. class_type_and_schedule flips done after the first class type
+-- exists (complete = 1/2 until the schedule is added too).
 do $$
 declare v_ct uuid;
 begin
@@ -74,12 +75,13 @@ end $$;
 
 select is(
   (select done from public.get_gym_setup_progress(
-     current_setting('test.gym')::uuid) where step_key = 'class_type'),
+     current_setting('test.gym')::uuid) where step_key = 'class_type_and_schedule'),
   true,
-  'class_type step flips done when a class type exists'
+  'class_type_and_schedule step flips done when the first class type exists'
 );
 
--- 5. schedule flips after a recurrence ties a class type to a day/time.
+-- 5. After adding the recurrence the combined step's complete count
+-- rises to 2/2 — fully complete.
 do $$
 begin
   insert into public.class_recurrences
@@ -93,10 +95,11 @@ begin
 end $$;
 
 select is(
-  (select done from public.get_gym_setup_progress(
-     current_setting('test.gym')::uuid) where step_key = 'schedule'),
-  true,
-  'schedule step flips done when a recurrence exists for an active class type'
+  (select (complete::text || '/' || target::text)
+   from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'class_type_and_schedule'),
+  '2/2',
+  'class_type_and_schedule sub-count: type + recurrence → 2/2'
 );
 
 -- 6. parq flips after publishing an active questionnaire.
@@ -172,15 +175,14 @@ select is(
 select is(
   (select count(*) from public.get_gym_setup_progress(
      current_setting('test.gym')::uuid) where done)::int,
-  8,
-  'eight of nine steps report done; workouts_imported needs a tracked workout'
+  7,
+  'seven of eight steps report done; workouts_imported needs a tracked workout'
 );
 
--- 11-13. Sub-step counts on the multi-part steps. logo and parq each
--- have target 2 (light + dark logo; waiver + parq) — we've only set
--- one of each, so complete = 1 even though `done` already flipped.
--- schedule has target = class type count: we have one class type
--- with a recurrence, so 1/1.
+-- 11-12. Sub-step counts on the remaining multi-part steps. logo and
+-- parq each have target 2 (light + dark logo; waiver + parq) — we've
+-- only set one of each, so complete = 1 even though `done` already
+-- flipped.
 select is(
   (select (complete::text || '/' || target::text)
    from public.get_gym_setup_progress(
@@ -195,14 +197,6 @@ select is(
      current_setting('test.gym')::uuid) where step_key = 'parq'),
   '1/2',
   'parq sub-count: PAR-Q published, no waiver → 1/2'
-);
-
-select is(
-  (select (complete::text || '/' || target::text)
-   from public.get_gym_setup_progress(
-     current_setting('test.gym')::uuid) where step_key = 'schedule'),
-  '1/1',
-  'schedule sub-count: one class type has a recurrence → 1/1'
 );
 
 select * from finish();

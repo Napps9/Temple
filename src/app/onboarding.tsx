@@ -31,8 +31,7 @@ import { useThemeColors } from '@/lib/theme';
 type StepKey =
   | 'logo'
   | 'settings'
-  | 'class_type'
-  | 'schedule'
+  | 'class_type_and_schedule'
   | 'parq'
   | 'plan'
   | 'team'
@@ -68,22 +67,13 @@ const STEPS: Step[] = [
     estimate: '2 min',
   },
   {
-    key: 'class_type',
-    label: 'Add a class type',
+    key: 'class_type_and_schedule',
+    label: 'Add a class type & schedule',
     description:
-      'Name the kinds of class you run (CrossFit, Hyrox, mobility…) and pick a colour.',
+      'Name the kinds of class you run (CrossFit, Hyrox, mobility…) and set the recurring days + times so they appear on the calendar.',
     href: '/management/class-types',
     icon: 'pricetags-outline',
-    estimate: '1 min',
-  },
-  {
-    key: 'schedule',
-    label: 'Set up a class schedule',
-    description:
-      'Recurring days + times turn your class types into actual sessions.',
-    href: '/management/class-types',
-    icon: 'calendar-outline',
-    estimate: '2 min',
+    estimate: '3 min',
   },
   {
     key: 'parq',
