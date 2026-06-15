@@ -51,7 +51,6 @@ export function RecurrenceEditor({
   }
 
   function addTime() {
-    if (value.times.length >= 6) return;
     onChange({ ...value, times: [...value.times, '12:00'] });
   }
 
@@ -112,16 +111,14 @@ export function RecurrenceEditor({
               </Pressable>
             </View>
           ))}
-          {value.times.length < 6 ? (
-            <Pressable
-              onPress={addTime}
-              className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-              <Ionicons name="add" size={14} color="#6B7280" />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Add time
-              </Text>
-            </Pressable>
-          ) : null}
+          <Pressable
+            onPress={addTime}
+            className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+            <Ionicons name="add" size={14} color="#6B7280" />
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Add time
+            </Text>
+          </Pressable>
         </View>
       </View>
 
@@ -182,7 +179,6 @@ export function validateRecurrence(r: RecurrenceForm): string | null {
   for (const t of validTimes) {
     if (!TIME_RE.test(t)) return `Time "${t}" must be HH:MM (24-hour)`;
   }
-  if (validTimes.length > 6) return 'At most 6 times per pattern';
   const dur = parseInt(r.durationMinutes, 10);
   if (!Number.isFinite(dur) || dur <= 0) {
     return 'Duration must be a positive number of minutes';
