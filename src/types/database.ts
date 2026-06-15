@@ -2323,6 +2323,7 @@ export type Database = {
           created_at: string;
           linked_at: string | null;
           linked_profile_id: string | null;
+          linked_membership_plan_id: string | null;
         };
         Insert: {
           id?: string;
@@ -2343,6 +2344,7 @@ export type Database = {
           created_at?: string;
           linked_at?: string | null;
           linked_profile_id?: string | null;
+          linked_membership_plan_id?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -2363,6 +2365,7 @@ export type Database = {
           created_at: string;
           linked_at: string | null;
           linked_profile_id: string | null;
+          linked_membership_plan_id: string | null;
         }>;
         Relationships: [];
       };
@@ -2951,6 +2954,10 @@ export type Database = {
       import_pending_members: {
         Args: { p_gym_id: string; p_rows: Json };
         Returns: { inserted: number; updated: number; skipped: number }[];
+      };
+      record_import_corrections: {
+        Args: { p_gym_id: string; p_rows: Json };
+        Returns: number;
       };
       import_member_workouts: {
         Args: { p_gym_id: string; p_rows: Json };

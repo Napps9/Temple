@@ -19,6 +19,14 @@ import {
   type TempleField,
 } from '@/lib/import/columns';
 import { parseCsv } from '@/lib/import/csv';
+import {
+  buildCorrectionRows,
+  runInference,
+  summariseForInference,
+  type InferenceResponse,
+  type PlanKind,
+  type ReviewedPlan,
+} from '@/lib/import/infer';
 import { supabase } from '@/lib/supabase';
 import { useGymBrand } from '@/lib/useGymBrand';
 import type { Json } from '@/types/database';
@@ -36,7 +44,7 @@ import type { Json } from '@/types/database';
 // creates a campaign with audience.kind='pending_members' and lands
 // the owner in the campaign editor so they can preview before send.
 
-type Phase = 'upload' | 'map' | 'preview' | 'handover';
+type Phase = 'upload' | 'map' | 'review' | 'preview' | 'handover';
 
 type ImportResult = {
   inserted: number;
@@ -62,6 +70,12 @@ export default function ImportMembersScreen() {
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [mapping, setMapping] = useState<(TempleField | 'ignore' | null)[]>([]);
+  const [inference, setInference] = useState<InferenceResponse | null>(null);
+  const [inferenceLoading, setInferenceLoading] = useState(false);
+  const [reviewedPlans, setReviewedPlans] = useState<Map<string, ReviewedPlan>>(
+    new Map(),
+  );
+  const [tagsKeep, setTagsKeep] = useState<Set<string>>(new Set());
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   const fileInput = useRef<HTMLInputElement | null>(null);
@@ -84,11 +98,12 @@ export default function ImportMembersScreen() {
     reader.readAsText(file);
   }
 
-  // Build the RPC payload from the mapped rows. Skips rows with no
-  // email (the RPC also skips them; we filter here for an honest
-  // preview count).
+  // Rows as raw mapped objects (used by both the preview list and the
+  // inference summary). Skips rows with no email — the RPC would skip
+  // them too. No planMap / tagsDrop applied yet; the commit path adds
+  // those after the Review step.
   const importRows = useMemo(() => {
-    if (phase !== 'preview' && phase !== 'map') return [];
+    if (phase === 'upload') return [];
     return rows
       .map((cells) =>
         buildImportRow(
@@ -100,21 +115,157 @@ export default function ImportMembersScreen() {
       .filter((r) => typeof r.email === 'string' && (r.email as string).length > 0);
   }, [rows, headers, mapping, phase]);
 
+  // Trigger inference on entering the Review step. Only once per
+  // distinct mapping+rows combination.
+  async function loadInference() {
+    if (!membership) return;
+    setInferenceLoading(true);
+    setInference(null);
+    try {
+      const r = await runInference({
+        gymId: membership.gymId,
+        rows: importRows as Parameters<typeof runInference>[0]['rows'],
+        // Sourcing the actual gyms.currency value is a small later
+        // tweak — for v1 the inference is grounded in £-denominated
+        // training data; the worst case is the owner edits the
+        // suggested price, which is a one-tap fix.
+        gymCurrency: 'GBP',
+      });
+      setInference(r);
+      // Seed the editable per-plan state from the suggestions.
+      const seed = new Map<string, ReviewedPlan>();
+      for (const p of r.plans) {
+        seed.set(p.raw_name, {
+          raw_name: p.raw_name,
+          name: p.suggested_name,
+          kind: p.suggested_kind,
+          credit_count: p.suggested_credit_count,
+          monthly_price_cents: p.suggested_monthly_price_cents,
+          existing_plan_id: null,
+          drop: false,
+        });
+      }
+      setReviewedPlans(seed);
+      setTagsKeep(new Set(r.tags.keep));
+    } catch (e) {
+      setError(errorMessage(e, 'Could not analyse the CSV'));
+    } finally {
+      setInferenceLoading(false);
+    }
+  }
+
+  function updatePlan(rawName: string, patch: Partial<ReviewedPlan>) {
+    setReviewedPlans((curr) => {
+      const next = new Map(curr);
+      const existing = next.get(rawName);
+      if (existing) next.set(rawName, { ...existing, ...patch });
+      return next;
+    });
+  }
+
+  function toggleTagKeep(value: string) {
+    setTagsKeep((curr) => {
+      const next = new Set(curr);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
+
+  // Commit: insert new membership_plans, stamp linked_membership_plan_id
+  // onto every row that mapped to a plan, call import_pending_members,
+  // and finally record the corrections (accepted + overridden) into
+  // the cross-gym learning store.
   const commit = useMutation({
     mutationFn: async () => {
       if (!membership) throw new Error('Missing context');
+
+      // 1. Insert each non-dropped, non-existing-mapped plan.
+      const planNameToId = new Map<string, string>();
+      for (const p of reviewedPlans.values()) {
+        if (p.drop) continue;
+        if (p.existing_plan_id) {
+          planNameToId.set(p.raw_name, p.existing_plan_id);
+          continue;
+        }
+        const { data: inserted, error: planErr } = await supabase
+          .from('membership_plans')
+          .insert({
+            gym_id: membership.gymId,
+            name: p.name.trim(),
+            kind: p.kind,
+            credit_count: p.kind === 'unlimited' ? null : p.credit_count,
+            monthly_price_cents: p.monthly_price_cents,
+            ...(p.kind === 'credit_period' ? { period_length: '30 days' } : {}),
+          })
+          .select('plan_id')
+          .single();
+        if (planErr) throw planErr;
+        planNameToId.set(p.raw_name, (inserted as { plan_id: string }).plan_id);
+      }
+
+      // 2. Re-build the import rows with the plan map + tag drops.
+      const tagsDrop = new Set(
+        (inference?.tags.keep ?? [])
+          .concat(inference?.tags.drop ?? [])
+          .filter((t) => !tagsKeep.has(t)),
+      );
+      const finalRows = rows
+        .map((cells) =>
+          buildImportRow(
+            headers,
+            mapping.map((m) => (m === 'ignore' ? null : m)) as (TempleField | null)[],
+            cells,
+            { planMap: planNameToId, tagsDrop },
+          ),
+        )
+        .filter(
+          (r) => typeof r.email === 'string' && (r.email as string).length > 0,
+        );
+
+      // 3. Stage the rows.
       const { data, error: e } = await supabase.rpc('import_pending_members', {
         p_gym_id: membership.gymId,
-        p_rows: importRows as unknown as Json,
+        p_rows: finalRows as unknown as Json,
       });
       if (e) throw e;
       const row = (data ?? [])[0] as ImportResult | undefined;
+
+      // 4. Record corrections (fire-and-forget — non-blocking).
+      if (inference) {
+        const planInputsByRaw = new Map(
+          summariseForInference(importRows as Parameters<typeof summariseForInference>[0])
+            .plans.map((p) => [p.raw_name, p]),
+        );
+        const aiTagsKeepSet = new Set(inference.tags.keep);
+        const tagsInputs = summariseForInference(
+          importRows as Parameters<typeof summariseForInference>[0],
+        ).tags;
+        const corrections = buildCorrectionRows({
+          plansInferred: inference.plans,
+          plansFinal: Array.from(reviewedPlans.values()),
+          planInputsByRaw,
+          tagsKeep,
+          tagsInferenceKeep: aiTagsKeepSet,
+          tagsInputs,
+        });
+        if (corrections.length > 0) {
+          supabase
+            .rpc('record_import_corrections', {
+              p_gym_id: membership.gymId,
+              p_rows: corrections as unknown as Json,
+            })
+            .then(() => undefined);
+        }
+      }
+
       return row ?? { inserted: 0, updated: 0, skipped: 0 };
     },
     onSuccess: (r) => {
       setImportResult(r);
       setPhase('handover');
       queryClient.invalidateQueries({ queryKey: ['pending-members-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['membership-plans'] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not import the file')),
   });
@@ -276,15 +427,31 @@ export default function ImportMembersScreen() {
                     return;
                   }
                   setError(null);
-                  setPhase('preview');
+                  setPhase('review');
+                  void loadInference();
                 }}>
-                Preview
+                Continue
               </Button>
             </View>
             {error ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
           </View>
+        ) : null}
+
+        {phase === 'review' ? (
+          <ReviewPanel
+            loading={inferenceLoading}
+            inference={inference}
+            reviewedPlans={reviewedPlans}
+            tagsKeep={tagsKeep}
+            totalRows={importRows.length}
+            onUpdatePlan={updatePlan}
+            onToggleTagKeep={toggleTagKeep}
+            onBack={() => setPhase('map')}
+            onContinue={() => setPhase('preview')}
+            error={error}
+          />
         ) : null}
 
         {phase === 'preview' ? (
@@ -318,7 +485,7 @@ export default function ImportMembersScreen() {
             </View>
 
             <View className="flex-row gap-2 pt-2">
-              <Button variant="secondary" onPress={() => setPhase('map')}>
+              <Button variant="secondary" onPress={() => setPhase('review')}>
                 Back
               </Button>
               <View className="flex-1" />
@@ -346,6 +513,280 @@ export default function ImportMembersScreen() {
         ) : null}
       </ScrollView>
     </Screen>
+  );
+}
+
+function ReviewPanel({
+  loading,
+  inference,
+  reviewedPlans,
+  tagsKeep,
+  totalRows,
+  onUpdatePlan,
+  onToggleTagKeep,
+  onBack,
+  onContinue,
+  error,
+}: {
+  loading: boolean;
+  inference: InferenceResponse | null;
+  reviewedPlans: Map<string, ReviewedPlan>;
+  tagsKeep: Set<string>;
+  totalRows: number;
+  onUpdatePlan: (rawName: string, patch: Partial<ReviewedPlan>) => void;
+  onToggleTagKeep: (value: string) => void;
+  onBack: () => void;
+  onContinue: () => void;
+  error: string | null;
+}) {
+  const planEntries = inference?.plans ?? [];
+  return (
+    <View className="gap-4">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="sparkles-outline" size={18} color="#6B7280" />
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+            What we found in your CSV
+          </Text>
+          {inference ? (
+            <View className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">
+              <Text className="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-widest">
+                {inference.source === 'ai'
+                  ? 'AI suggestions'
+                  : inference.source === 'mixed'
+                    ? 'AI + learned'
+                    : 'Heuristic'}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {loading
+            ? 'AI is sharpening these suggestions…'
+            : 'Edit anything that looks off. We\'ll create the plans and link members on commit.'}
+        </Text>
+      </View>
+
+      {/* Plans */}
+      <View className="gap-3">
+        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
+          Plans found ({planEntries.length})
+        </Text>
+        {loading && planEntries.length === 0 ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Reading the rows and inferring plans…
+            </Text>
+          </View>
+        ) : planEntries.length === 0 ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              No plan_name column was mapped. Members will be staged without a
+              linked plan — staff can attach one later.
+            </Text>
+          </View>
+        ) : (
+          planEntries.map((p) => {
+            const r = reviewedPlans.get(p.raw_name);
+            if (!r) return null;
+            return (
+              <PlanReviewCard
+                key={p.raw_name}
+                suggestion={p}
+                final={r}
+                hint={
+                  inference?.default_plan_hint?.raw_name === p.raw_name
+                    ? inference.default_plan_hint
+                    : null
+                }
+                onChange={(patch) => onUpdatePlan(p.raw_name, patch)}
+              />
+            );
+          })
+        )}
+      </View>
+
+      {/* Tags */}
+      {(inference?.tags.keep.length ?? 0) +
+        (inference?.tags.drop.length ?? 0) >
+      0 ? (
+        <View className="gap-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
+            Tags found
+          </Text>
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Greyed-out chips will be dropped on commit. Tap any chip to flip
+              the decision.
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {[
+                ...(inference?.tags.keep ?? []),
+                ...(inference?.tags.drop ?? []),
+              ].map((value) => {
+                const on = tagsKeep.has(value);
+                return (
+                  <Pressable
+                    key={value}
+                    onPress={() => onToggleTagKeep(value)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      on
+                        ? 'bg-primary/10 border-primary/30'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
+                    }`}>
+                    <Text
+                      className={`text-xs ${
+                        on
+                          ? 'text-primary font-medium'
+                          : 'text-gray-500 dark:text-gray-400'
+                      }`}>
+                      {value}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      {/* Cohort summary */}
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          What you're bringing across
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {totalRows} members ready to stage.
+        </Text>
+      </View>
+
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+
+      <View className="flex-row gap-2 pt-1">
+        <Button variant="secondary" onPress={onBack}>
+          Back
+        </Button>
+        <View className="flex-1" />
+        <Button onPress={onContinue} disabled={loading}>
+          Preview
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+function PlanReviewCard({
+  suggestion,
+  final,
+  hint,
+  onChange,
+}: {
+  suggestion: InferenceResponse['plans'][number];
+  final: ReviewedPlan;
+  hint: { raw_name: string; share_of_members: number } | null;
+  onChange: (patch: Partial<ReviewedPlan>) => void;
+}) {
+  const confidence = suggestion.confidence;
+  const confidenceColor =
+    confidence === 'learned'
+      ? '#10B981'
+      : confidence === 'high'
+        ? '#10B981'
+        : confidence === 'medium'
+          ? '#F59E0B'
+          : '#9CA3AF';
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="flex-row items-center gap-2">
+        <View
+          style={{ backgroundColor: confidenceColor }}
+          className="w-2 h-2 rounded-full"
+        />
+        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest font-mono">
+          From "{suggestion.raw_name}"
+        </Text>
+        {hint ? (
+          <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
+            · Most common
+          </Text>
+        ) : null}
+      </View>
+      <View className="gap-1.5">
+        <Text className="text-gray-700 dark:text-gray-200 text-xs">
+          Plan name
+        </Text>
+        <TextInput
+          value={final.name}
+          onChangeText={(v) => onChange({ name: v })}
+          placeholderTextColor="#9CA3AF"
+          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+        />
+      </View>
+      <View className="gap-1.5">
+        <Text className="text-gray-700 dark:text-gray-200 text-xs">Kind</Text>
+        <View className="flex-row gap-2 flex-wrap">
+          {(['unlimited', 'credit_period', 'credit_pack'] as PlanKind[]).map(
+            (k) => (
+              <Pressable
+                key={k}
+                onPress={() => onChange({ kind: k })}
+                className={`px-3 py-1.5 rounded-md border ${
+                  final.kind === k
+                    ? 'border-primary bg-primary/10'
+                    : 'border-gray-200 dark:border-gray-700'
+                }`}>
+                <Text
+                  className={
+                    final.kind === k
+                      ? 'text-primary text-xs uppercase tracking-widest'
+                      : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                  }>
+                  {k.replace('_', ' ')}
+                </Text>
+              </Pressable>
+            ),
+          )}
+        </View>
+      </View>
+      {final.kind !== 'unlimited' ? (
+        <View className="gap-1.5">
+          <Text className="text-gray-700 dark:text-gray-200 text-xs">
+            Credits per period
+          </Text>
+          <TextInput
+            value={String(final.credit_count ?? '')}
+            onChangeText={(v) =>
+              onChange({ credit_count: v === '' ? null : parseInt(v, 10) })
+            }
+            keyboardType="number-pad"
+            placeholderTextColor="#9CA3AF"
+            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+          />
+        </View>
+      ) : null}
+      <View className="gap-1.5">
+        <Text className="text-gray-700 dark:text-gray-200 text-xs">
+          Monthly price (pence)
+        </Text>
+        <TextInput
+          value={String(final.monthly_price_cents)}
+          onChangeText={(v) => {
+            const n = parseInt(v, 10);
+            onChange({ monthly_price_cents: Number.isFinite(n) ? n : 0 });
+          }}
+          keyboardType="number-pad"
+          placeholderTextColor="#9CA3AF"
+          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+        />
+      </View>
+      {suggestion.reasoning ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+          {suggestion.reasoning}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 

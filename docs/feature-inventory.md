@@ -361,6 +361,50 @@ to preview before send. A live linking-progress counter ticks up
 while members sign up. Plan-name → membership_plan mapping is
 deliberately deferred to a follow-up flow.
 
+### Member-import Review step (AI-assisted plan + tag inference)
+
+[`can_manage_staff`] Sits between the column-mapper and the preview
+inside `/management/members/import`. On entry, the wizard summarises
+the mapped rows (distinct plan names + counts + bucketed credits /
+plan_end stats + distinct tag values — **no emails, names, DOBs**) and
+calls the `infer-import` edge function, which:
+
+1. Look-asides `import_inference_corrections` for each plan name. An
+   exact match (case-insensitive) is served with confidence
+   `learned` and no AI call. Misses gather the most-relevant past
+   corrections (recency + `was_overridden` priority over the
+   `pg_trgm` GIN index) as few-shot examples.
+2. Calls Claude Haiku 4.5 via the Anthropic Messages API with the
+   summary + examples. Tool-use response shape pinned to a JSON
+   schema so we don't parse free-form text. Returns: per plan
+   `suggested_name / suggested_kind / suggested_credit_count /
+   suggested_monthly_price_cents / confidence / reasoning`, plus a
+   tag triage (`keep` / `drop` / `merge_suggestions`) and an optional
+   `default_plan_hint`.
+3. Falls back to deterministic rules (credits present + plan_end →
+   `credit_period`; credits no plan_end → `credit_pack`; otherwise
+   `unlimited`) when `ANTHROPIC_API_KEY` is unset or the API errors,
+   so the wizard never blocks on AI availability.
+
+The owner reviews and edits any field in the rendered cards; tag
+chips toggle keep/drop in a single tap. On commit the wizard inserts
+the chosen `membership_plans`, calls the (extended)
+`import_pending_members` RPC with `linked_membership_plan_id`
+stamped per row, and posts every plan / tag decision (`input`,
+`ai_suggestion`, `final_value`, `was_overridden`) to
+`record_import_corrections` — the cross-gym learning store grows
+every time an owner reviews, so the next gym's import gets a sharper
+prefill.
+
+The `apply_pending_member_data` trigger (extended in 0076) auto-
+creates a `plan_subscription` on signup when
+`pending_members.linked_membership_plan_id` is set: `status='active'`,
+`credit_balance` = `imported_credits_remaining` (for credit-based
+plans), `paid_period_end` = `imported_plan_end`,
+`stripe_subscription_id` `NULL` — Temple billing is bypassed for the
+imported continuation. When `paid_period_end` lapses, the existing
+booking gate naturally refuses the next booking; no new lapse code.
+
 ### Workout-history import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

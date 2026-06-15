@@ -74,7 +74,7 @@ screen lives) — the Accept button's `onPress` and the mutation
 
 ---
 
-## 4. Member import → working membership without re-billing
+## ~~4. Member import → working membership without re-billing~~ (shipped 0076)
 
 Today the members importer stages rows into `pending_members` with
 `plan_name` / `plan_start` / `plan_end` / `credits_remaining` etc., and

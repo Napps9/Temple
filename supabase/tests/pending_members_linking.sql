@@ -3,7 +3,7 @@
 -- is found, and only fires when a match is found.
 
 begin;
-select plan(9);
+select plan(13);
 
 \ir _helpers.psql
 
@@ -138,6 +138,78 @@ select is(
       and gym_id = current_setting('test.gym')::uuid),
   1,
   'pending row in gym A is unaffected by a membership creation in gym B'
+);
+
+-- 4. linked_membership_plan_id → auto-creates a plan_subscription.
+-- Set up a second gym with a plan, stage a pending row pointing at it,
+-- sign that member up, and verify the subscription gets created with
+-- credit_balance / paid_period_end / status pulled from the right
+-- places.
+do $$
+declare
+  v_gym3   uuid := _test_mk_gym('Sub-creating Gym', 'sub-gym');
+  v_owner3 uuid := _test_mk_user('owner@sub.test');
+  v_plan   uuid;
+  v_pend2  uuid;
+begin
+  perform _test_mk_membership(v_gym3, v_owner3, 'owner');
+
+  insert into public.membership_plans (gym_id, name, kind, credit_count)
+    values (v_gym3, 'Imported 12 Pack', 'credit_pack', 12)
+    returning plan_id into v_plan;
+
+  insert into public.pending_members
+    (gym_id, email, full_name, plan_name, plan_end,
+     credits_remaining, linked_membership_plan_id, status, created_by)
+  values
+    (v_gym3, 'leo@example.com', 'Leo Stone', 'Imported 12 Pack',
+     '2099-06-01', 7, v_plan, 'pending', v_owner3)
+  returning id into v_pend2;
+
+  perform set_config('test.gym3',  v_gym3::text,  true);
+  perform set_config('test.plan',  v_plan::text,  true);
+  perform set_config('test.pend2', v_pend2::text, true);
+end $$;
+
+do $$
+declare
+  v_new uuid := _test_mk_user('leo@example.com');
+begin
+  perform set_config('test.leo', v_new::text, true);
+  perform _test_mk_membership(
+    current_setting('test.gym3')::uuid, v_new, 'member');
+end $$;
+
+select is(
+  (select count(*)::int from public.plan_subscriptions
+    where profile_id = current_setting('test.leo')::uuid
+      and gym_id = current_setting('test.gym3')::uuid),
+  1,
+  'linked_membership_plan_id → one plan_subscription created on signup'
+);
+
+select is(
+  (select status::text from public.plan_subscriptions
+    where profile_id = current_setting('test.leo')::uuid
+      and gym_id = current_setting('test.gym3')::uuid),
+  'active',
+  'imported plan_subscription starts active'
+);
+
+select is(
+  (select credit_balance from public.plan_subscriptions
+    where profile_id = current_setting('test.leo')::uuid
+      and gym_id = current_setting('test.gym3')::uuid),
+  7,
+  'credit_balance = pending.credits_remaining (not plan.credit_count) for credit-based plans'
+);
+
+select is(
+  (select paid_period_end::date::text from public.plan_subscriptions
+    where profile_id = current_setting('test.leo')::uuid
+      and gym_id = current_setting('test.gym3')::uuid),
+  '2099-06-01',
+  'paid_period_end = pending.plan_end so existing booking gate handles lapse'
 );
 
 select * from finish();

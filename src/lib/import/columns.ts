@@ -119,10 +119,22 @@ export function autoDetect(headers: string[]): (TempleField | null)[] {
 // drop out; cell values are trimmed; booleans accept y/yes/true/1;
 // tags split on comma OR semicolon; dates pass through as-is (the RPC
 // casts to date inside Postgres and rejects malformed values).
+//
+// `planMap`: when present, stamp `linked_membership_plan_id` on the
+// row when the CSV's plan_name matches a key in the map. Used by the
+// Review step of the wizard to bootstrap plan_subscriptions on signup.
+//
+// `tagsDrop`: case-insensitive set of tag values the owner has chosen
+// to drop in the review step; those tags are removed from the row's
+// staged `tags` array.
 export function buildImportRow(
   headers: string[],
   mapping: (TempleField | null)[],
   cells: string[],
+  opts: {
+    planMap?: Map<string, string>;
+    tagsDrop?: Set<string>;
+  } = {},
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   let first: string | null = null;
@@ -174,6 +186,18 @@ export function buildImportRow(
   }
   if (!out.full_name && (first || last)) {
     out.full_name = [first, last].filter(Boolean).join(' ');
+  }
+  if (opts.tagsDrop && Array.isArray(out.tags)) {
+    const dropLower = new Set(
+      Array.from(opts.tagsDrop, (t) => t.toLowerCase()),
+    );
+    out.tags = (out.tags as string[]).filter(
+      (t) => !dropLower.has(t.toLowerCase()),
+    );
+  }
+  if (opts.planMap && typeof out.plan_name === 'string') {
+    const mapped = opts.planMap.get(out.plan_name as string);
+    if (mapped) out.linked_membership_plan_id = mapped;
   }
   return out;
 }
