@@ -20,9 +20,18 @@ type CreateRequest = { date?: Date; hour?: number };
 // Fallback when the gym defaults query hasn't resolved yet. Matches
 // the SQL default in 0049; the live value comes from gymDefaults.
 const HORIZON_WEEKS_FALLBACK = 12;
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
+// Absolute bounds for the timeline. The visible window inside this
+// range trims to where the gym actually has classes (see
+// visibleHours) so 6am-empty gyms don't show a full hour of
+// pre-dawn whitespace. Owners can still add classes outside the
+// trimmed window by widening it: a session whose start_at extends
+// beyond the live range pushes the window out the next render.
+const HOURS_MIN = 5;
+const HOURS_MAX = 23;
 const HOUR_HEIGHT = 64;
-const GRID_HEIGHT = HOURS.length * HOUR_HEIGHT;
+const DEFAULT_VIEW_START = 6;
+const DEFAULT_VIEW_END = 21;
+const MIN_VISIBLE_HOURS = 8;
 // DAY_LETTERS is indexed by JS day-of-week (0=Sun..6=Sat) and used
 // in the day-strip header where the column header tracks the day's
 // real weekday. It does NOT depend on the gym's week_starts_on.
@@ -36,9 +45,50 @@ const WEEK_LETTERS_SUN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const VIEWS = ['day', 'week', 'month'] as const;
 type ViewMode = (typeof VIEWS)[number];
 
-function scrollYForHour(hour: number) {
-  const clamped = Math.max(HOURS[0], Math.min(hour, HOURS[HOURS.length - 1]));
-  return Math.max(0, (clamped - HOURS[0]) * HOUR_HEIGHT);
+function scrollYForHour(hour: number, baseHour: number, hourCount: number) {
+  const lastHour = baseHour + hourCount - 1;
+  const clamped = Math.max(baseHour, Math.min(hour, lastHour));
+  return Math.max(0, (clamped - baseHour) * HOUR_HEIGHT);
+}
+
+// Trim the rendered hour window to where the visible week's sessions
+// actually run, with ±2h of padding so an owner can drop a class
+// slightly outside the current window without first scrolling. The
+// floor / ceiling and the 8-hour minimum keep the grid feeling like
+// a calendar even on empty weeks.
+function visibleHours(
+  sessions: ClassSession[] | undefined,
+  days: Date[],
+): number[] {
+  let earliest = DEFAULT_VIEW_START;
+  let latest = DEFAULT_VIEW_END;
+  let any = false;
+  for (const s of sessions ?? []) {
+    const start = new Date(s.starts_at);
+    if (!days.some((d) => isSameDay(d, start))) continue;
+    const end = new Date(start.getTime() + s.duration_minutes * 60_000);
+    const startHour = start.getHours();
+    const endHour = end.getHours() + (end.getMinutes() > 0 ? 1 : 0);
+    if (!any) {
+      earliest = startHour;
+      latest = endHour;
+      any = true;
+    } else {
+      earliest = Math.min(earliest, startHour);
+      latest = Math.max(latest, endHour);
+    }
+  }
+  if (any) {
+    earliest = Math.max(HOURS_MIN, earliest - 2);
+    latest = Math.min(HOURS_MAX, latest + 2);
+  }
+  if (latest - earliest < MIN_VISIBLE_HOURS) {
+    latest = Math.min(HOURS_MAX, earliest + MIN_VISIBLE_HOURS);
+    if (latest - earliest < MIN_VISIBLE_HOURS) {
+      earliest = Math.max(HOURS_MIN, latest - MIN_VISIBLE_HOURS);
+    }
+  }
+  return Array.from({ length: latest - earliest }, (_, i) => earliest + i);
 }
 
 type ClassSession = {
@@ -509,17 +559,21 @@ function DayView({
     (a, b) =>
       new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
   );
+  const hours = visibleHours(sessions, [date]);
 
   const scrollRef = useRef<ScrollView | null>(null);
   useEffect(() => {
     if (mode !== 'manage') return;
     const now = new Date();
-    const hourTarget = isSameDay(now, date) ? now.getHours() : HOURS[0];
-    const y = scrollYForHour(hourTarget);
+    const hourTarget = isSameDay(now, date) ? now.getHours() : hours[0];
+    const y = scrollYForHour(hourTarget, hours[0], hours.length);
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y, animated: false });
     });
-  }, [date, mode]);
+    // hours is derived from sessions+date; including its length is
+    // enough to re-scroll if the visible window shifts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, mode, hours[0], hours.length]);
 
   return (
     <View className="flex-1">
@@ -587,10 +641,13 @@ function DayView({
               )}
             </View>
           ) : (
-            <View className="flex-row" style={{ height: GRID_HEIGHT }}>
-              <HourLabelColumn />
+            <View
+              className="flex-row"
+              style={{ height: hours.length * HOUR_HEIGHT }}>
+              <HourLabelColumn hours={hours} />
               <DayColumn
                 day={date}
+                hours={hours}
                 sessions={sessions}
                 onCreateAt={onCreateAt}
                 onSessionPress={onSessionPress}
@@ -676,13 +733,14 @@ function WeekView({
 }) {
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const hours = visibleHours(sessions, weekDays);
 
   const scrollRef = useRef<ScrollView | null>(null);
   useEffect(() => {
     const now = new Date();
     const inWeek = weekDays.some((d) => isSameDay(d, now));
-    const hourTarget = inWeek ? now.getHours() : HOURS[0];
-    const y = scrollYForHour(hourTarget);
+    const hourTarget = inWeek ? now.getHours() : hours[0];
+    const y = scrollYForHour(hourTarget, hours[0], hours.length);
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y, animated: false });
     });
@@ -748,12 +806,15 @@ function WeekView({
         className="flex-1"
         contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2">
-          <View className="flex-row" style={{ height: GRID_HEIGHT }}>
-            <HourLabelColumn />
+          <View
+            className="flex-row"
+            style={{ height: hours.length * HOUR_HEIGHT }}>
+            <HourLabelColumn hours={hours} />
             {weekDays.map((d) => (
               <DayColumn
                 key={d.toISOString()}
                 day={d}
+                hours={hours}
                 sessions={sessions}
                 onCreateAt={onCreateAt}
                 onSessionPress={onSessionPress}
@@ -771,12 +832,12 @@ function WeekView({
 // Hour ticks running down the left edge of the grid. Labels sit just
 // above each hour line; the bottom-most line (the implicit 23:00
 // boundary) doesn't carry a label.
-function HourLabelColumn() {
+function HourLabelColumn({ hours }: { hours: number[] }) {
   return (
     <View
       className="w-10 md:w-14"
-      style={{ height: GRID_HEIGHT, position: 'relative' }}>
-      {HOURS.map((h, i) => (
+      style={{ height: hours.length * HOUR_HEIGHT, position: 'relative' }}>
+      {hours.map((h, i) => (
         <Text
           key={h}
           style={{
@@ -792,6 +853,43 @@ function HourLabelColumn() {
   );
 }
 
+// Live "now" marker — a thin red bar at the current minute offset
+// plus a small dot at the left edge. Only rendered for today's
+// column, and only when the current time falls inside the visible
+// hour window (a 4am open / 22:30 visit shouldn't smear a line on
+// the closest edge).
+function NowLine({ hours }: { hours: number[] }) {
+  const now = new Date();
+  const baseHour = hours[0];
+  const totalMin = (now.getHours() - baseHour) * 60 + now.getMinutes();
+  const maxMin = hours.length * 60;
+  if (totalMin < 0 || totalMin > maxMin) return null;
+  const top = (totalMin / 60) * HOUR_HEIGHT;
+  return (
+    <View
+      pointerEvents="none"
+      style={{ position: 'absolute', top, left: 0, right: 0, zIndex: 10 }}>
+      <View
+        style={{
+          position: 'absolute',
+          top: -4,
+          left: -3,
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: '#EF4444',
+        }}
+      />
+      <View
+        style={{
+          height: 2,
+          backgroundColor: '#EF4444',
+        }}
+      />
+    </View>
+  );
+}
+
 // One day's slice of the timeline. Stacks per-hour hit targets (which
 // double as gridlines + click-to-create when canCreate) and overlays
 // the day's session tiles, positioned by start time and sized by
@@ -799,6 +897,7 @@ function HourLabelColumn() {
 // layoutDay's column packing.
 function DayColumn({
   day,
+  hours,
   sessions,
   onCreateAt,
   onSessionPress,
@@ -806,6 +905,7 @@ function DayColumn({
   bookedSet,
 }: {
   day: Date;
+  hours: number[];
   sessions: ClassSession[] | undefined;
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
@@ -815,15 +915,16 @@ function DayColumn({
   const positioned = layoutDay(
     sessions,
     day,
-    HOURS[0],
+    hours[0],
     HOUR_HEIGHT,
-    HOURS.length,
+    hours.length,
   );
+  const isToday = isSameDay(day, new Date());
   return (
     <View
       className="flex-1 border-l border-gray-100 dark:border-gray-800"
-      style={{ height: GRID_HEIGHT, position: 'relative' }}>
-      {HOURS.map((h, i) => (
+      style={{ height: hours.length * HOUR_HEIGHT, position: 'relative' }}>
+      {hours.map((h, i) => (
         <Pressable
           key={h}
           onPress={canCreate ? () => onCreateAt(day, h) : undefined}
@@ -861,6 +962,7 @@ function DayColumn({
           />
         </View>
       ))}
+      {isToday ? <NowLine hours={hours} /> : null}
     </View>
   );
 }
