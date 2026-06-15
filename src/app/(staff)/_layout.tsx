@@ -1,6 +1,7 @@
 import { Redirect, Tabs } from 'expo-router';
 import { View } from 'react-native';
 
+import { SetupOverlay } from '@/components/SetupOverlay';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
@@ -25,6 +26,7 @@ export default function StaffLayout() {
   return (
     <View className="flex-1 bg-slate-100 dark:bg-gray-950">
       <TopNav sections={STAFF_SECTIONS} variant="staff" />
+      <SetupOverlay />
       <Tabs
         screenOptions={{
           headerShown: false,
