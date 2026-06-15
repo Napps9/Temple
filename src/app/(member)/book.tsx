@@ -8,6 +8,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 
@@ -157,6 +158,7 @@ function RecommendedClassCard() {
       if (e) throw e;
     },
     onSuccess: () => {
+      haptic.success();
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['my-next-booking'] });
       queryClient.invalidateQueries({ queryKey: ['my-future-bookings'] });
@@ -175,6 +177,7 @@ function RecommendedClassCard() {
         router.push('/parq');
         return;
       }
+      haptic.error();
       setError(errorMessage(e, 'Could not book this class'));
     },
   });

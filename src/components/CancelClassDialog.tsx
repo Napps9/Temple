@@ -4,6 +4,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/lib/errors';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 
 type Scope = 'one' | 'from' | 'series';
@@ -176,6 +177,7 @@ export function CancelClassDialog({
       if (e) throw e;
     },
     onSuccess: () => {
+      haptic.warning();
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
       queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
@@ -185,7 +187,10 @@ export function CancelClassDialog({
       onCancelled();
       onClose();
     },
-    onError: (e) => setError(errorMessage(e, 'Could not cancel class')),
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not cancel class'));
+    },
   });
 
   function close() {

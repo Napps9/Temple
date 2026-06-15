@@ -612,7 +612,10 @@ function DayView({
             return (
               <Pressable
                 key={d.toISOString()}
-                onPress={() => setDate(d)}
+                onPress={() => {
+                  haptic.selection();
+                  setDate(d);
+                }}
                 hitSlop={6}
                 className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
                 <Text
@@ -804,7 +807,10 @@ function DayClassCard({
   const compact = inGrid && heightPx! < 70;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.tap();
+        onPress();
+      }}
       style={
         inGrid ? { height: '100%', width: '100%' } : undefined
       }
@@ -917,6 +923,7 @@ function WeekView({
               <Pressable
                 key={d.toISOString()}
                 onPress={() => {
+                  haptic.selection();
                   setDate(d);
                   gotoDay();
                 }}
@@ -1094,7 +1101,10 @@ function WeekTile({
   const compact = heightPx < 38;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.tap();
+        onPress();
+      }}
       style={{ height: '100%', width: '100%' }}
       className={`bg-white dark:bg-gray-900 rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 ${
         bookedByMe
@@ -1167,6 +1177,7 @@ function MonthView({
                   <Pressable
                     key={d.toISOString()}
                     onPress={() => {
+                      haptic.selection();
                       setDate(d);
                       gotoDay();
                     }}

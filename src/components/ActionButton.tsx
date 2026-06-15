@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { Pressable, Text } from 'react-native';
 
+import { haptic } from '@/lib/haptic';
+
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 type Kind = 'delete' | 'remove' | 'archive' | 'restore';
@@ -71,7 +73,13 @@ export function ActionButton({
   const s = KIND_STYLES[kind];
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        // Lifecycle actions (delete/remove/archive) ask for the
+        // heavier thunk so they feel as decisive as they read.
+        if (kind === 'delete' || kind === 'remove') haptic.heavy();
+        else haptic.press();
+        onPress();
+      }}
       hitSlop={4}
       className={`flex-row items-center gap-1.5 px-3 py-2 rounded-lg ${s.container}`}>
       <Ionicons name={s.icon} size={14} color={s.iconColor} />

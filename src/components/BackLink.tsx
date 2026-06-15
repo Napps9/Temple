@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { type Href, router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
+import { haptic } from '@/lib/haptic';
+
 // Standard back affordance for deep-link sub-pages.
 //
 // Two visual variants share one navigation contract:
@@ -33,6 +35,7 @@ export function BackLink({
   inline?: boolean;
 }) {
   function onPress() {
+    haptic.selection();
     if (fallbackHref) {
       router.replace(fallbackHref);
       return;

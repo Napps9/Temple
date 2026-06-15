@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { haptic } from '@/lib/haptic';
+
 // Hand-tuned 16-stop palette. Hues are spaced wide enough that
 // adjacent chips don't read as the same colour at thumbnail size
 // (the previous 8-stop set put blue / indigo as neighbours, which
@@ -47,7 +49,10 @@ export function ColorSwatchPicker({
           return (
             <Pressable
               key={c.hex}
-              onPress={() => onChange(c.hex)}
+              onPress={() => {
+                haptic.selection();
+                onChange(c.hex);
+              }}
               hitSlop={4}
               style={{ backgroundColor: c.hex }}
               className={`w-8 h-8 rounded-full items-center justify-center ${

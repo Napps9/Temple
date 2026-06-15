@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from './Avatar';
 import { GymLogo } from './GymLogo';
 import { useMyProfile, useSession } from '@/lib/auth';
+import { haptic } from '@/lib/haptic';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
@@ -71,7 +72,10 @@ export function TopNav({
         return (
           <Pressable
             key={s.name}
-            onPress={() => router.replace(s.href as never)}
+            onPress={() => {
+              haptic.selection();
+              router.replace(s.href as never);
+            }}
             hitSlop={4}
             className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
               active ? 'bg-white dark:bg-gray-700' : ''
@@ -107,7 +111,10 @@ export function TopNav({
             icons beat no icons, but a second row beats both. */}
         <View className="flex-1 flex-row items-center">
           <Pressable
-            onPress={() => router.replace(homeHref as never)}
+            onPress={() => {
+              haptic.selection();
+              router.replace(homeHref as never);
+            }}
             hitSlop={6}
             className="flex-row items-center gap-3 active:opacity-70">
             <GymLogo
@@ -129,7 +136,10 @@ export function TopNav({
         <View className="flex-row items-center justify-end gap-1.5 md:gap-2 md:flex-1">
         {showCrossLink ? (
           <Pressable
-            onPress={() => router.replace(crossHref as never)}
+            onPress={() => {
+              haptic.selection();
+              router.replace(crossHref as never);
+            }}
             hitSlop={4}
             accessibilityLabel={crossLabel}
             className={`h-9 px-3 rounded-full border flex-row items-center gap-1.5 active:opacity-70 ${crossClasses}`}>
@@ -141,7 +151,10 @@ export function TopNav({
         ) : null}
 
         <Pressable
-          onPress={() => router.push(accountHref as never)}
+          onPress={() => {
+            haptic.tap();
+            router.push(accountHref as never);
+          }}
           hitSlop={4}
           accessibilityLabel="Account"
           style={onAccount ? { borderColor: brand.primaryColor } : undefined}
@@ -152,7 +165,10 @@ export function TopNav({
         </Pressable>
 
         <Pressable
-          onPress={() => router.push('/inbox' as never)}
+          onPress={() => {
+            haptic.tap();
+            router.push('/inbox' as never);
+          }}
           hitSlop={4}
           accessibilityLabel="Inbox"
           className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">
@@ -164,7 +180,10 @@ export function TopNav({
         </Pressable>
 
         <Pressable
-          onPress={() => set(scheme === 'dark' ? 'light' : 'dark')}
+          onPress={() => {
+            haptic.selection();
+            set(scheme === 'dark' ? 'light' : 'dark');
+          }}
           hitSlop={4}
           accessibilityLabel="Toggle theme"
           className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">

@@ -4,6 +4,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/lib/errors';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 
 type Props = {
@@ -77,13 +78,17 @@ export function RemoveMemberDialog({
       if (e) throw e;
     },
     onSuccess: () => {
+      haptic.warning();
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['members-cohort'] });
       queryClient.invalidateQueries({ queryKey: ['members-detail'] });
       onRemoved?.();
       onClose();
     },
-    onError: (e) => setError(errorMessage(e, 'Could not remove member')),
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not remove member'));
+    },
   });
 
   return (

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { errorMessage } from '@/lib/errors';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 
 type Props = {
@@ -36,8 +37,14 @@ export function CheckInButton({
       });
       if (e) throw e;
     },
-    onSuccess: invalidate,
-    onError: (e) => setError(errorMessage(e, 'Could not check in')),
+    onSuccess: () => {
+      haptic.success();
+      invalidate();
+    },
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not check in'));
+    },
   });
 
   const noShowMutation = useMutation({
@@ -47,8 +54,14 @@ export function CheckInButton({
       });
       if (e) throw e;
     },
-    onSuccess: invalidate,
-    onError: (e) => setError(errorMessage(e, 'Could not mark no-show')),
+    onSuccess: () => {
+      haptic.warning();
+      invalidate();
+    },
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not mark no-show'));
+    },
   });
 
   const isAttended = attendedAt !== null;

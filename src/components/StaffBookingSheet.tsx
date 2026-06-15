@@ -6,6 +6,7 @@ import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-nativ
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/lib/errors';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import type { GymRole } from '@/types/database';
 
@@ -122,12 +123,16 @@ export function StaffBookingSheet({
       if (e) throw e;
     },
     onSuccess: () => {
+      haptic.success();
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
       onSuccess();
       reset();
     },
-    onError: (e) => setError(errorMessage(e, 'Could not book this member')),
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not book this member'));
+    },
   });
 
   const swap = useMutation({
@@ -142,12 +147,16 @@ export function StaffBookingSheet({
       if (e) throw e;
     },
     onSuccess: () => {
+      haptic.success();
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
       onSuccess();
       reset();
     },
-    onError: (e) => setError(errorMessage(e, 'Could not swap this booking')),
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not swap this booking'));
+    },
   });
 
   function reset() {

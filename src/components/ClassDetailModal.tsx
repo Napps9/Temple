@@ -12,6 +12,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { StaffBookingSheet } from '@/components/StaffBookingSheet';
 import { useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -232,6 +233,7 @@ export function ClassDetailModal({
       if (e) throw e;
     },
     onSuccess: () => {
+      haptic.success();
       setError(null);
       setConfirming(null);
       setChosenEntitlement(null);
@@ -250,6 +252,7 @@ export function ClassDetailModal({
         router.push('/parq');
         return;
       }
+      haptic.error();
       setError(errorMessage(e, 'Could not book class'));
     },
   });
@@ -265,13 +268,17 @@ export function ClassDetailModal({
       if (e) throw e;
     },
     onSuccess: () => {
+      haptic.warning();
       setError(null);
       setConfirming(null);
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['my-next-booking'] });
     },
-    onError: (e) => setError(errorMessage(e, 'Could not cancel booking')),
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not cancel booking'));
+    },
   });
 
   // Send a broadcast to everyone booked into this class. The insert

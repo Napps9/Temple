@@ -15,6 +15,7 @@ import {
 } from '@/components/RecurrenceEditor';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import { useClassTypes } from '@/lib/useClassCatalog';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -268,10 +269,14 @@ export function CreateClassModal({
       }
     },
     onSuccess: () => {
+      haptic.success();
       setError(null);
       onCreated();
     },
-    onError: (e) => setError(errorMessage(e, 'Could not create class')),
+    onError: (e) => {
+      haptic.error();
+      setError(errorMessage(e, 'Could not create class'));
+    },
   });
 
   return (
