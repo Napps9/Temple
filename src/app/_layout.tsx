@@ -232,6 +232,7 @@ function ThemedShell() {
           contentStyle: { backgroundColor: colors.screenBg },
         }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(staff)" />
         <Stack.Screen name="(member)" />

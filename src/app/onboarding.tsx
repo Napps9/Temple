@@ -2,25 +2,30 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
+import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useThemeColors } from '@/lib/theme';
 
-// Focused first-run experience for a brand-new owner. The same
-// get_gym_setup_progress data the /management checklist consumes, but
-// laid out big and centred so a new owner's first read is "here's what
-// I need to do" — not a calendar full of empty 5am slots.
+// Dedicated, navless onboarding screen. Sits at the top level (not
+// inside the (staff) group) so the staff TopNav doesn't render —
+// the only ways out are Skip, completing setup, or hitting back.
 //
-// Routing: src/app/index.tsx sends an owner with any required step
-// still pending here. Returning owners with everything done go straight
-// to /classes — no extra redirect hop. The "Skip for now" link is the
-// honest escape hatch; the checklist also lives on /management for
-// re-entry.
+// Routing: src/app/index.tsx sends owners with incomplete setup here
+// unless they've hit Skip this session (per-gym sessionStorage flag).
+// Once Skip is set, root redirects them to /classes instead so they
+// can explore freely without being nagged again until next sign-in.
 
 type StepKey =
   | 'logo'
@@ -43,8 +48,6 @@ type Step = {
   estimate: string;
 };
 
-// Same set + order as GymSetupChecklist, plus an estimated time on
-// each step so the "10 minutes" pitch is grounded.
 const STEPS: Step[] = [
   {
     key: 'logo',
@@ -58,7 +61,7 @@ const STEPS: Step[] = [
     key: 'settings',
     label: 'Set your gym settings',
     description:
-      'Week start, class defaults, booking windows. Open and save once to lock them in.',
+      'Week start, class defaults, booking windows. Save once to lock them in.',
     href: '/management/operating',
     icon: 'settings-outline',
     estimate: '2 min',
@@ -76,7 +79,7 @@ const STEPS: Step[] = [
     key: 'schedule',
     label: 'Set up a class schedule',
     description:
-      'Recurring days + times turn your class types into actual sessions on the calendar.',
+      'Recurring days + times turn your class types into actual sessions.',
     href: '/management/class-types',
     icon: 'calendar-outline',
     estimate: '2 min',
@@ -84,8 +87,7 @@ const STEPS: Step[] = [
   {
     key: 'parq',
     label: 'Set up health screening',
-    description:
-      'Upload a waiver or build a PAR-Q — one is enough to satisfy the booking safety gate.',
+    description: 'Upload a waiver or build a PAR-Q — one is enough.',
     href: '/management/parq',
     icon: 'medkit-outline',
     estimate: '2 min',
@@ -102,8 +104,7 @@ const STEPS: Step[] = [
   {
     key: 'team',
     label: 'Invite your team',
-    description:
-      'Generate an invite code for an admin, coach or member of staff. Skip if you run solo.',
+    description: 'Generate an invite code. Skip if you run solo.',
     href: '/management/team',
     icon: 'people-outline',
     optional: true,
@@ -112,8 +113,7 @@ const STEPS: Step[] = [
   {
     key: 'members_imported',
     label: 'Bring your members across',
-    description:
-      'Import a CSV from your previous platform. Members link to their data when they sign up.',
+    description: 'Import a CSV from your previous platform.',
     href: '/management/members/import',
     icon: 'cloud-upload-outline',
     optional: true,
@@ -122,8 +122,7 @@ const STEPS: Step[] = [
   {
     key: 'workouts_imported',
     label: 'Import workout history',
-    description:
-      'Seed past sets so /track and PR pages are populated from day one.',
+    description: 'Seed past sets so /track and PR pages are populated.',
     href: '/management/members/import-workouts',
     icon: 'stats-chart-outline',
     optional: true,
@@ -133,10 +132,24 @@ const STEPS: Step[] = [
 
 type ProgressRow = { step_key: StepKey; done: boolean };
 
+function skipKey(gymId: string): string {
+  return `temple-onboarding-skipped:${gymId}`;
+}
+
+function writeSkipped(gymId: string): void {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+  try {
+    window.sessionStorage?.setItem(skipKey(gymId), '1');
+  } catch {
+    /* storage unavailable — Skip still navigates */
+  }
+}
+
 export default function OnboardingScreen() {
   const colors = useThemeColors();
+  const session = useSession();
   const role = useRole();
-  const { data: membership } = useGymMembership();
+  const { data: membership, isLoading: membershipLoading } = useGymMembership();
   const brand = useGymBrand();
 
   const progress = useQuery({
@@ -157,31 +170,30 @@ export default function OnboardingScreen() {
     return STEPS.map((s) => ({ ...s, done: map.get(s.key) ?? false }));
   }, [progress.data]);
 
-  // Owners only. Non-owners shouldn't see the setup surface and shouldn't
-  // be able to deep-link to it.
-  if (role !== undefined && role !== 'owner') {
-    return <Redirect href="/classes" />;
-  }
-  if (role === undefined || progress.isLoading || !progress.data) {
-    return (
-      <Screen>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.primary} />
-        </View>
-      </Screen>
-    );
-  }
+  // Guards live in the page itself since /onboarding sits outside the
+  // (staff) group.
+  if (session === undefined) return <Loading />;
+  if (session === null) return <Redirect href="/sign-in" />;
+  if (membershipLoading) return <Loading />;
+  if (!membership) return <Redirect href="/athlete" />;
+  if (role !== null && role !== 'owner') return <Redirect href="/classes" />;
+  if (progress.isLoading || !progress.data) return <Loading />;
 
   const requiredSteps = status.filter((s) => !s.optional);
   const optionalSteps = status.filter((s) => s.optional);
   const requiredDone = requiredSteps.filter((s) => s.done).length;
   const allRequiredDone = requiredDone === requiredSteps.length;
 
+  function onSkip() {
+    if (membership?.gymId) writeSkipped(membership.gymId);
+    router.replace('/classes' as never);
+  }
+
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-8 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-3">
-          <View className="flex-row items-center gap-3">
+          <View className="flex-row items-start gap-3">
             <View className="w-12 h-12 rounded-2xl bg-primary/15 items-center justify-center">
               <Ionicons name="rocket-outline" size={26} color={colors.primary} />
             </View>
@@ -214,7 +226,9 @@ export default function OnboardingScreen() {
           </View>
           <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
             <View
-              style={{ width: `${(requiredDone / requiredSteps.length) * 100}%` }}
+              style={{
+                width: `${(requiredDone / Math.max(1, requiredSteps.length)) * 100}%`,
+              }}
               className="h-full bg-primary rounded-full"
             />
           </View>
@@ -244,9 +258,7 @@ export default function OnboardingScreen() {
           </Button>
         ) : (
           <View className="items-center pt-2">
-            <Pressable
-              hitSlop={8}
-              onPress={() => router.replace('/classes' as never)}>
+            <Pressable hitSlop={8} onPress={onSkip}>
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Skip for now — I'll set this up later
               </Text>
@@ -255,6 +267,14 @@ export default function OnboardingScreen() {
         )}
       </ScrollView>
     </Screen>
+  );
+}
+
+function Loading() {
+  return (
+    <View className="flex-1 bg-slate-100 dark:bg-gray-950 items-center justify-center">
+      <ActivityIndicator color="#2563EB" />
+    </View>
   );
 }
 
