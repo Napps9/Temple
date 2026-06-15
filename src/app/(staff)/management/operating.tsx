@@ -32,12 +32,6 @@ type Defaults = {
   cancel_cutoff_days_before: number;
 };
 
-const RESOLUTION_LABELS: Record<Defaults['subscription_resolution'], string> = {
-  credits_first: 'Use finite-credit plans first',
-  newest_first: 'Use the most recently bought plan first',
-  highest_priority: 'Use the highest-priority plan first',
-};
-
 // Top-level page Settings card links to. Owners only — the underlying
 // RPC checks `user_is_owner_of`, but we mirror the gate client-side so
 // admins don't see a useless form.
@@ -193,23 +187,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Membership & booking">
-        <Choice
-          label="When a member has multiple plans, which one books a class?"
-          options={[
-            { key: 'credits_first', label: RESOLUTION_LABELS.credits_first },
-            { key: 'newest_first', label: RESOLUTION_LABELS.newest_first },
-            { key: 'highest_priority', label: RESOLUTION_LABELS.highest_priority },
-          ]}
-          value={draft.subscription_resolution}
-          onChange={(v) =>
-            setDraft((d) =>
-              d
-                ? { ...d, subscription_resolution: v as Defaults['subscription_resolution'] }
-                : d,
-            )
-          }
-        />
+      <Section title="Memberships">
         <NumField
           label="“Expiring soon” window (days)"
           blurb="Used by the cohort logic + Members tab badge."
