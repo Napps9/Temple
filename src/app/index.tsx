@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
-import { useGymMembership, useSession } from '@/lib/auth';
+import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { useConsentState } from '@/lib/consent';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -22,10 +22,25 @@ type WaiverState = {
   needs_waiver: boolean;
 };
 
+type SetupRow = { step_key: string; done: boolean };
+
+// Required steps mirror the non-optional keys in /onboarding's STEPS.
+// Kept inline rather than importing so this file stays cheap to load —
+// the redirect path is in the critical first-paint trace.
+const REQUIRED_SETUP_KEYS = new Set([
+  'logo',
+  'settings',
+  'class_type',
+  'schedule',
+  'parq',
+  'plan',
+]);
+
 export default function Index() {
   const session = useSession();
   const { data: membership, isLoading } = useGymMembership();
   const canAccessStaff = useCan('can_access_staff_area');
+  const role = useRole();
 
   // Data-processing consent gates everyone (member and staff alike) —
   // no consent, no entry. It's just a name / DOB / tick-box step with
@@ -51,6 +66,22 @@ export default function Index() {
       if (error) throw error;
       const row = (data ?? [])[0] as WaiverState | undefined;
       return row ?? null;
+    },
+  });
+
+  // First-run setup gate. Owners with any required setup step still
+  // pending land on the focused /onboarding page so they're not
+  // dropped into an empty calendar. Returning owners with everything
+  // done go straight to /classes — the query short-circuits cheap.
+  const setupProgress = useQuery({
+    queryKey: ['gym-setup-progress', membership?.gymId],
+    enabled: !!membership?.gymId && role === 'owner',
+    queryFn: async (): Promise<SetupRow[]> => {
+      const { data, error } = await supabase.rpc('get_gym_setup_progress', {
+        p_gym_id: membership!.gymId,
+      });
+      if (error) throw error;
+      return (data ?? []) as SetupRow[];
     },
   });
 
@@ -88,7 +119,20 @@ export default function Index() {
     return <Redirect href="/consent" />;
   }
   if (canAccessStaff === undefined) return <Loading />;
-  if (canAccessStaff) return <Redirect href="/classes" />;
+  if (canAccessStaff) {
+    // Owner with anything required still pending → focused onboarding
+    // page. Non-owner staff and owners with complete setup skip
+    // straight to the calendar.
+    if (role === 'owner') {
+      if (setupProgress.isLoading) return <Loading />;
+      const rows = setupProgress.data ?? [];
+      const requiredPending = rows.some(
+        (r) => REQUIRED_SETUP_KEYS.has(r.step_key) && !r.done,
+      );
+      if (requiredPending) return <Redirect href="/onboarding" />;
+    }
+    return <Redirect href="/classes" />;
+  }
   if (waiverState.isLoading) return <Loading />;
   if (waiverState.data?.needs_waiver) return <Redirect href="/waiver" />;
   if (parqState.isLoading) return <Loading />;
