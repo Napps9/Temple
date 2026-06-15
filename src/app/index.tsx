@@ -74,7 +74,10 @@ export default function Index() {
   });
 
   if (session === undefined) return <Loading />;
-  if (!session) return <Redirect href="/sign-in" />;
+  // Accountless visitors land on the three-path picker (Join / Solo /
+  // Start) rather than a sign-in form — we don't yet know which they're
+  // here for, and the picker links to /sign-in for returning users.
+  if (!session) return <Redirect href="/get-started" />;
   if (isLoading) return <Loading />;
   // Gymless users (brand-new sign-ups and ex-members alike) land in the
   // athlete area — read-only portable training history plus the
