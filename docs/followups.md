@@ -51,4 +51,24 @@ env vars on Vercel match the same Supabase project the dashboard
 edits go to. If they point at a different project, Site URL changes
 won't reach the running app.
 
+---
+
+## 3. Consent screen needs two taps on "Accept"
+
+Reported: hitting **Accept** on the consent screen the first time
+didn't register — had to tap a second time before it took.
+
+Most likely causes to check:
+- Submit handler debouncing/state issue — the button might be
+  disabled-on-press but re-enable too fast, swallowing the first tap.
+- Optimistic state not invalidating `useConsentState` so the root
+  index doesn't see the new consent and re-renders /consent.
+- The mutation isn't awaited before navigating, so the redirect fires
+  before the row is written — second tap wins because the row arrived
+  in the meantime.
+
+**Where to look:** `src/app/consent.tsx` (or wherever the consent
+screen lives) — the Accept button's `onPress` and the mutation
+`onSuccess`. Verify `queryClient.invalidateQueries({ queryKey:
+['consent-state'] })` fires before navigation.
 
