@@ -1,25 +1,39 @@
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
-// A number + unit input for the booking-window / cutoff settings. The
-// underlying columns store a single fixed unit (hours for the
-// booking-open window, minutes for the two cutoffs), but a coach
-// thinks in "2 weeks" or "48 hours", not 336 or 2880. This control
-// keeps the stored base unit and lets the user pick the unit they
-// reason in; the conversion is purely presentational.
+// A number + unit input for the duration / window settings on the gym
+// settings page. The underlying columns store a single fixed unit
+// (minutes, hours, days, or months) but a coach thinks in "2 weeks" or
+// "48 hours", not 336 or 2880. This control keeps the stored base unit
+// and lets the user pick the unit they reason in; conversion is purely
+// presentational.
+//
+// Month / year conversions use 30 days / 365 days as approximations —
+// fine for owner-facing rough estimates (PAR-Q expiry, retention,
+// lead conversion window). 12 months ≠ 1 year exactly under this
+// scheme; that's intentional, so each unit converts cleanly against
+// the canonical day count rather than chaining inconsistencies.
 
-export type DurationUnit = 'minutes' | 'hours' | 'days' | 'weeks';
+export type DurationUnit =
+  | 'minutes'
+  | 'hours'
+  | 'days'
+  | 'weeks'
+  | 'months'
+  | 'years';
 
-// The base unit the backing column uses. booking_window_hours_ahead is
-// in hours, so it can't express sub-hour values — its allowed unit set
-// omits minutes.
-export type DurationBase = 'minutes' | 'hours';
+// The base unit the backing column uses. Allowed unit sets omit any
+// option smaller than the base — booking_window_hours_ahead is stored
+// in hours and can't express sub-hour values, for instance.
+export type DurationBase = 'minutes' | 'hours' | 'days' | 'months';
 
 const MIN_PER: Record<DurationUnit, number> = {
   minutes: 1,
   hours: 60,
   days: 1440,
   weeks: 10080,
+  months: 43200, // 30 days
+  years: 525600, // 365 days
 };
 
 const UNIT_LABEL: Record<DurationUnit, string> = {
@@ -27,10 +41,19 @@ const UNIT_LABEL: Record<DurationUnit, string> = {
   hours: 'hrs',
   days: 'days',
   weeks: 'wks',
+  months: 'mths',
+  years: 'yrs',
+};
+
+const BASE_MINUTES: Record<DurationBase, number> = {
+  minutes: 1,
+  hours: 60,
+  days: 1440,
+  months: 43200,
 };
 
 function baseMinutes(base: DurationBase): number {
-  return base === 'hours' ? 60 : 1;
+  return BASE_MINUTES[base];
 }
 
 // Largest allowed unit that divides the value evenly, so a stored 2880
@@ -48,16 +71,22 @@ function pickUnit(
   return units[0];
 }
 
+// Largest-to-smallest unit list each base can render in. Bases never
+// render a smaller unit than themselves (a value stored in days has no
+// sub-day precision available).
+const FORMAT_UNITS: Record<DurationBase, DurationUnit[]> = {
+  minutes: ['years', 'months', 'weeks', 'days', 'hours', 'minutes'],
+  hours:   ['years', 'months', 'weeks', 'days', 'hours'],
+  days:    ['years', 'months', 'weeks', 'days'],
+  months:  ['years', 'months'],
+};
+
 // Render a stored base value in its most natural unit — used for the
 // collapsed summary lines.
 export function formatBaseDuration(baseValue: number, base: DurationBase): string {
   if (baseValue <= 0) return '0';
-  const units: DurationUnit[] =
-    base === 'hours'
-      ? ['weeks', 'days', 'hours']
-      : ['weeks', 'days', 'hours', 'minutes'];
   const mins = baseValue * baseMinutes(base);
-  for (const u of units) {
+  for (const u of FORMAT_UNITS[base]) {
     if (mins % MIN_PER[u] === 0) {
       const n = mins / MIN_PER[u];
       return `${n} ${n === 1 ? UNIT_LABEL[u].replace(/s$/, '') : UNIT_LABEL[u]}`;

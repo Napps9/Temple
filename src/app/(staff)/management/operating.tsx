@@ -188,11 +188,23 @@ export function OperatingDefaultsPanel() {
       </Section>
 
       <Section title="Memberships">
-        <NumField
-          label="“Expiring soon” window (days)"
+        <DurationField
+          label="“Expiring soon” window"
           blurb="Used by the cohort logic + Members tab badge."
-          value={draft.expiring_within_days}
-          onChange={num('expiring_within_days')}
+          value={String(draft.expiring_within_days)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    expiring_within_days:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="days"
+          units={['days', 'weeks', 'months']}
         />
       </Section>
 
@@ -343,26 +355,61 @@ export function OperatingDefaultsPanel() {
       </Section>
 
       <Section title="Health screening & retention">
-        <NumField
-          label="PAR-Q expiry (days)"
+        <DurationField
+          label="PAR-Q expiry"
           blurb="How long a PAR-Q response is valid for. Used for both the entry gate and the booking gate."
-          value={draft.parq_expiry_days}
-          onChange={num('parq_expiry_days')}
+          value={String(draft.parq_expiry_days)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    parq_expiry_days: v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="days"
+          units={['days', 'weeks', 'months', 'years']}
         />
-        <NumField
-          label="Health-data retention after a member leaves (months)"
-          blurb="The retention sweep purges PAR-Q + injury data this many months after a member leaves."
-          value={draft.health_retention_months}
-          onChange={num('health_retention_months')}
+        <DurationField
+          label="Health-data retention after a member leaves"
+          blurb="The retention sweep purges PAR-Q + injury data this long after a member leaves."
+          value={String(draft.health_retention_months)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    health_retention_months:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="months"
+          units={['months', 'years']}
         />
       </Section>
 
       <Section title="Insights">
-        <NumField
-          label="Lead conversion window (days)"
+        <DurationField
+          label="Lead conversion window"
           blurb="The window the leads dashboard reports conversion against."
-          value={draft.lead_conversion_window_days}
-          onChange={num('lead_conversion_window_days')}
+          value={String(draft.lead_conversion_window_days)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    lead_conversion_window_days:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="days"
+          units={['days', 'weeks', 'months']}
         />
       </Section>
 
