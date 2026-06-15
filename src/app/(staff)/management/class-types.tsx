@@ -22,6 +22,7 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import {
   useClassRecurrences,
   useClassTypes,
@@ -29,7 +30,9 @@ import {
 } from '@/lib/useClassCatalog';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
-const HORIZON_WEEKS = 12;
+// Fallback if the gym defaults query hasn't resolved yet — matches the
+// SQL default in 0049.
+const HORIZON_WEEKS_FALLBACK = 12;
 
 type EditableType = {
   id: string | null;
@@ -84,6 +87,7 @@ function recurrenceFromServer(r: RecurrenceRow): RecurrenceForm {
 
 export function ClassTypesPanel() {
   const { data: membership } = useGymMembership();
+  const { data: gymDefaults } = useGymOperatingDefaults();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditableType[]>([]);
   const [openPickerIdx, setOpenPickerIdx] = useState<number | null>(null);
@@ -136,7 +140,16 @@ export function ClassTypesPanel() {
           recurrenceId: rec?.id ?? null,
           recurrence: rec
             ? recurrenceFromServer(rec)
-            : { ...EMPTY_RECURRENCE, indefinite: true },
+            : {
+                ...EMPTY_RECURRENCE,
+                durationMinutes: String(
+                  gymDefaults?.default_class_minutes ?? 60,
+                ),
+                capacity: String(
+                  gymDefaults?.default_class_capacity ?? 12,
+                ),
+                indefinite: true,
+              },
           rulesOpen: false,
           bookingWindowHoursAhead:
             t.booking_window_hours_ahead === null
@@ -166,7 +179,12 @@ export function ClassTypesPanel() {
         };
       }),
     );
-  }, [types.data, recurrences.data]);
+  }, [
+    types.data,
+    recurrences.data,
+    gymDefaults?.default_class_minutes,
+    gymDefaults?.default_class_capacity,
+  ]);
 
   const archive = useMutation({
     mutationFn: async (id: string) => {
@@ -449,7 +467,9 @@ export function ClassTypesPanel() {
         }
 
         const horizon = new Date();
-        horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+        const horizonWeeks =
+          gymDefaults?.materialisation_horizon_weeks ?? HORIZON_WEEKS_FALLBACK;
+        horizon.setDate(horizon.getDate() + horizonWeeks * 7);
         const targetEnd =
           endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
 
@@ -485,7 +505,12 @@ export function ClassTypesPanel() {
         archivedAt: null,
         scheduleOpen: true,
         recurrenceId: null,
-        recurrence: { ...EMPTY_RECURRENCE, indefinite: true },
+        recurrence: {
+          ...EMPTY_RECURRENCE,
+          durationMinutes: String(gymDefaults?.default_class_minutes ?? 60),
+          capacity: String(gymDefaults?.default_class_capacity ?? 12),
+          indefinite: true,
+        },
         rulesOpen: false,
         bookingWindowHoursAhead: '',
         bookingCutoffMinutesBefore: '',

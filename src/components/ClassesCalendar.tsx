@@ -17,7 +17,9 @@ import { useThemeColors } from '@/lib/theme';
 
 type CreateRequest = { date?: Date; hour?: number };
 
-const HORIZON_WEEKS = 12;
+// Fallback when the gym defaults query hasn't resolved yet. Matches
+// the SQL default in 0049; the live value comes from gymDefaults.
+const HORIZON_WEEKS_FALLBACK = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const HOUR_HEIGHT = 64;
 // DAY_LETTERS is indexed by JS day-of-week (0=Sun..6=Sat) and used
@@ -282,7 +284,9 @@ export function ClassesCalendar({
     if (!recurrencesQuery.data || recurrencesQuery.data.length === 0) return;
     if (extend.isPending) return;
     const horizon = new Date();
-    horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+    const horizonWeeks =
+      gymDefaults?.materialisation_horizon_weeks ?? HORIZON_WEEKS_FALLBACK;
+    horizon.setDate(horizon.getDate() + horizonWeeks * 7);
     const visibleEnd = addDays(startOfMonth(addMonths(date, 1)), 7);
     const target = visibleEnd > horizon ? visibleEnd : horizon;
     const targetStr = fmtDateLocal(target);

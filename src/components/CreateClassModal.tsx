@@ -22,7 +22,9 @@ import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const HORIZON_WEEKS = 12;
+// Fallback when the gym defaults query hasn't resolved yet. Matches
+// the SQL default in 0049; live value comes from gymDefaults.
+const HORIZON_WEEKS_FALLBACK = 12;
 
 function fmtDateLocal(d: Date) {
   return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d
@@ -135,7 +137,11 @@ export function CreateClassModal({
     start.setHours(0, 0, 0, 0);
     const horizon = new Date();
     horizon.setHours(0, 0, 0, 0);
-    horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+    horizon.setDate(
+      horizon.getDate() +
+        (gymDefaults?.materialisation_horizon_weeks ?? HORIZON_WEEKS_FALLBACK) *
+          7,
+    );
     let end = horizon;
     if (!recurrence.indefinite) {
       const w = parseInt(recurrence.weeks, 10);
@@ -218,9 +224,15 @@ export function CreateClassModal({
           .single();
         if (recErr || !rec) throw recErr ?? new Error('Could not save recurrence');
 
-        // Materialise the first horizon (12 weeks ahead of today, capped by ends_on).
+        // Materialise the first horizon (gym setting weeks ahead of today,
+        // capped by ends_on).
         const horizon = new Date();
-        horizon.setDate(horizon.getDate() + HORIZON_WEEKS * 7);
+        horizon.setDate(
+          horizon.getDate() +
+            (gymDefaults?.materialisation_horizon_weeks ??
+              HORIZON_WEEKS_FALLBACK) *
+              7,
+        );
         const targetEnd =
           endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
 
