@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -97,7 +98,11 @@ export function ChipButton({
   }
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        if (tone === 'red') haptic.warning();
+        else haptic.tap();
+        onPress();
+      }}
       disabled={disabled}
       hitSlop={6}
       className={containerClass}>

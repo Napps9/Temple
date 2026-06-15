@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View as RNView, type View } from 'react-native';
 
+import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
@@ -50,7 +51,15 @@ export const Button = forwardRef<View, Props>(function Button(
   return (
     <Pressable
       ref={ref}
-      onPress={onPress}
+      onPress={() => {
+        if (!onPress) return;
+        // Destructive presses feel more decisive with a heavier
+        // thunk; everything else gets the lighter "press" so the
+        // primary button doesn't feel like a notification.
+        if (variant === 'destructive') haptic.heavy();
+        else haptic.press();
+        onPress();
+      }}
       disabled={isDisabled}
       className={`rounded-lg px-5 py-3 items-center justify-center ${containerStyles[variant]} ${
         isDisabled ? 'opacity-50' : ''

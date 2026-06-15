@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/Avatar';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
@@ -10,6 +12,7 @@ import { CreateClassModal } from '@/components/CreateClassModal';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import { useClassRecurrences } from '@/lib/useClassCatalog';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -271,7 +274,10 @@ function ViewSwitcher({ view }: { view: ViewMode }) {
       {VIEWS.map((v) => (
         <Pressable
           key={v}
-          onPress={() => router.setParams({ view: v })}
+          onPress={() => {
+            haptic.selection();
+            router.setParams({ view: v });
+          }}
           className={`px-4 py-1.5 rounded-full ${
             view === v ? 'bg-white dark:bg-gray-700' : ''
           }`}>
@@ -415,6 +421,31 @@ export function ClassesCalendar({
     setOpenSessionId(id);
   }
 
+  // Swipe → step the visible date. Step size matches the current
+  // view (day = 1d, week = 7d, month = 1mo). Pan thresholds keep
+  // vertical scroll inside the grid working — only horizontal motion
+  // past ~30px activates the gesture.
+  function shiftDate(direction: -1 | 1) {
+    if (view === 'month') {
+      setDate(startOfDay(addMonths(date, direction)));
+    } else if (view === 'week') {
+      setDate(addDays(date, 7 * direction));
+    } else {
+      setDate(addDays(date, direction));
+    }
+    haptic.selection();
+  }
+  const swipe = Gesture.Pan()
+    .activeOffsetX([-30, 30])
+    .failOffsetY([-15, 15])
+    .onEnd((e) => {
+      'worklet';
+      const enoughDistance = Math.abs(e.translationX) > 60;
+      const enoughVelocity = Math.abs(e.velocityX) > 200;
+      if (!enoughDistance && !enoughVelocity) return;
+      runOnJS(shiftDate)(e.translationX > 0 ? -1 : 1);
+    });
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       {topSlot ? (
@@ -430,7 +461,10 @@ export function ClassesCalendar({
             <ViewSwitcher view={view} />
           </View>
           <Pressable
-            onPress={() => setDate(startOfDay(addMonths(date, -1)))}
+            onPress={() => {
+              haptic.selection();
+              setDate(startOfDay(addMonths(date, -1)));
+            }}
             hitSlop={8}
             className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
@@ -439,7 +473,10 @@ export function ClassesCalendar({
             {fmtMonthYear(date)}
           </Text>
           <Pressable
-            onPress={() => setDate(startOfDay(addMonths(date, 1)))}
+            onPress={() => {
+              haptic.selection();
+              setDate(startOfDay(addMonths(date, 1)));
+            }}
             hitSlop={8}
             className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
@@ -462,41 +499,45 @@ export function ClassesCalendar({
         </View>
       </View>
 
-      {view === 'day' ? (
-        <DayView
-          mode={mode}
-          date={date}
-          setDate={setDate}
-          sessions={sessionsQuery.data}
-          onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
-          onSessionPress={openSession}
-          canCreate={canCreate}
-          bookedSet={bookedSet}
-          weekStartsOn={weekStartsOn}
-        />
-      ) : null}
-      {view === 'week' ? (
-        <WeekView
-          date={date}
-          setDate={setDate}
-          gotoDay={() => router.setParams({ view: 'day' })}
-          sessions={sessionsQuery.data}
-          onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
-          onSessionPress={openSession}
-          canCreate={canCreate}
-          bookedSet={bookedSet}
-          weekStartsOn={weekStartsOn}
-        />
-      ) : null}
-      {view === 'month' ? (
-        <MonthView
-          date={date}
-          setDate={setDate}
-          gotoDay={() => router.setParams({ view: 'day' })}
-          sessions={sessionsQuery.data}
-          weekStartsOn={weekStartsOn}
-        />
-      ) : null}
+      <GestureDetector gesture={swipe}>
+        <View className="flex-1">
+          {view === 'day' ? (
+            <DayView
+              mode={mode}
+              date={date}
+              setDate={setDate}
+              sessions={sessionsQuery.data}
+              onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
+              onSessionPress={openSession}
+              canCreate={canCreate}
+              bookedSet={bookedSet}
+              weekStartsOn={weekStartsOn}
+            />
+          ) : null}
+          {view === 'week' ? (
+            <WeekView
+              date={date}
+              setDate={setDate}
+              gotoDay={() => router.setParams({ view: 'day' })}
+              sessions={sessionsQuery.data}
+              onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
+              onSessionPress={openSession}
+              canCreate={canCreate}
+              bookedSet={bookedSet}
+              weekStartsOn={weekStartsOn}
+            />
+          ) : null}
+          {view === 'month' ? (
+            <MonthView
+              date={date}
+              setDate={setDate}
+              gotoDay={() => router.setParams({ view: 'day' })}
+              sessions={sessionsQuery.data}
+              weekStartsOn={weekStartsOn}
+            />
+          ) : null}
+        </View>
+      </GestureDetector>
 
       <CreateClassModal
         visible={createAt !== null}
