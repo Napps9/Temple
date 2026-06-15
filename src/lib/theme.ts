@@ -43,6 +43,9 @@ export function useThemeColors() {
   return {
     screenBg: dark ? '#030712' : '#F1F5F9',
     iconPrimary: dark ? '#E5E7EB' : '#1F2937',
+    // Foreground for the "inverse" tonal chip — always reads against
+    // the opposite scheme so it pops against ordinary chrome.
+    iconInverse: dark ? '#111827' : '#FFFFFF',
     iconSecondary: '#6B7280',
     iconTertiary: dark ? '#6B7280' : '#9CA3AF',
     statusBar: dark ? ('light' as const) : ('dark' as const),

@@ -678,7 +678,7 @@ function AdvancedBrandingCard({
                 Dark-mode colours
               </Text>
               <ChipButton
-                tone="primary"
+                tone="inverse"
                 label="Auto-generate from light"
                 icon="sparkles-outline"
                 onPress={autoGenerate}

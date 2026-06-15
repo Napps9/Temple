@@ -6,7 +6,12 @@ import { useThemeColors } from '@/lib/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-type Tone = 'primary' | 'neutral' | 'amber' | 'red' | 'filled';
+// 'inverse' renders as the opposite of the current scheme — a dark
+// pill on a light surface, a light pill on a dark one. Useful for
+// emphasis chips (e.g. "Auto-generate from light") that need to
+// stand out against ordinary tonal chrome without competing with
+// the brand primary.
+type Tone = 'primary' | 'neutral' | 'amber' | 'red' | 'filled' | 'inverse';
 
 // Small inline action chips (Edit, View, Copy, Cancel, ...) that live
 // inside cards and rows. The old treatment — bare uppercase text links —
@@ -33,6 +38,11 @@ const TONE_STYLES: Record<Tone, { container: string; text: string }> = {
   filled: {
     container: 'bg-primary border border-primary active:bg-primary-dark',
     text: 'text-white',
+  },
+  inverse: {
+    container:
+      'bg-gray-900 dark:bg-gray-50 border border-gray-900 dark:border-gray-50 active:bg-gray-700 dark:active:bg-gray-200',
+    text: 'text-white dark:text-gray-900',
   },
 };
 
@@ -67,7 +77,9 @@ export function ChipButton({
           ? '#EF4444'
           : tone === 'filled'
             ? '#FFFFFF'
-            : colors.iconPrimary;
+            : tone === 'inverse'
+              ? colors.iconInverse
+              : colors.iconPrimary;
   const iconEl = <Ionicons name={icon} size={13} color={iconColor} />;
   const containerClass = `flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${
     s.container
