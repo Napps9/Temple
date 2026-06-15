@@ -279,7 +279,9 @@ async function callClaude(
     );
     if (!toolUse) return null;
     const parsed = toolUse.input as {
-      plans: PlanSuggestion[];
+      plans: (Omit<PlanSuggestion, 'confidence'> & {
+        confidence: 'high' | 'medium' | 'low';
+      })[];
       tags: InferenceResponse['tags'];
       default_plan_hint: InferenceResponse['default_plan_hint'];
     };
@@ -289,7 +291,7 @@ async function callClaude(
     > = {};
     for (const p of parsed.plans) {
       plan_reasonings[p.raw_name] = {
-        confidence: p.confidence === 'learned' ? 'high' : p.confidence,
+        confidence: p.confidence,
         reasoning: p.reasoning,
       };
     }
@@ -359,11 +361,18 @@ Deno.serve(async (req: Request) => {
 
   for (const p of body.plans) {
     const lower = p.raw_name.toLowerCase();
+    // PostgREST doesn't let us wrap the column in lower(); the GIN
+    // index is on lower(...->>'raw_name') so case-insensitive look-aside
+    // needs to compare against the lowercased value. Escape ilike
+    // wildcards (% _ \) in the raw plan name so e.g. "10% off" doesn't
+    // cross-match every other learned plan in the corpus — a critical
+    // correctness guard for the cross-gym table.
+    const escaped = lower.replace(/[%_\\]/g, '\\$&');
     const { data: exact } = await service
       .from('import_inference_corrections')
       .select('final_value, was_overridden, created_at')
       .eq('field_kind', 'plan')
-      .filter('input_payload->>raw_name', 'ilike', lower)
+      .filter('input_payload->>raw_name', 'ilike', escaped)
       .order('created_at', { ascending: false })
       .limit(1);
     const match = (exact ?? [])[0];

@@ -222,6 +222,7 @@ export function buildCorrectionRows(args: {
       credit_count: final.credit_count,
       monthly_price_cents: final.monthly_price_cents,
       dropped: final.drop,
+      mapped_to_existing: !!final.existing_plan_id,
     };
     const aiValue = ai
       ? {
@@ -231,7 +232,13 @@ export function buildCorrectionRows(args: {
           monthly_price_cents: ai.suggested_monthly_price_cents,
         }
       : null;
+    // The AI baseline always proposes "create a new plan with these
+    // fields". Dropping the plan or routing onto an existing plan is
+    // an override of that baseline by definition, separate from any
+    // field-level edits.
     const was_overridden =
+      final.drop ||
+      !!final.existing_plan_id ||
       !aiValue ||
       aiValue.name !== finalValue.name ||
       aiValue.kind !== finalValue.kind ||

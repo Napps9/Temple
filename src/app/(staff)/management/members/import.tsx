@@ -79,6 +79,28 @@ export default function ImportMembersScreen() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   const fileInput = useRef<HTMLInputElement | null>(null);
+  // Signature of the inputs the last successful loadInference ran with.
+  // Skip re-running on a back-and-forth Map → Review trip when nothing
+  // changed in the mapping or the underlying rows.
+  const lastInferenceKey = useRef<string | null>(null);
+
+  // Existing plans the gym already has — feeds the "Map to an existing
+  // plan" picker in PlanReviewCard. First-import gyms see an empty list
+  // and only get the "Create new" option, which is the right default.
+  const existingPlans = useQuery({
+    queryKey: ['membership-plans', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error: e } = await supabase
+        .from('membership_plans')
+        .select('plan_id, name, kind')
+        .eq('gym_id', membership!.gymId)
+        .is('archived_at', null)
+        .order('name');
+      if (e) throw e;
+      return (data ?? []) as { plan_id: string; name: string; kind: string }[];
+    },
+  });
 
   const parsed = useMemo(() => (csvText ? parseCsv(csvText) : []), [csvText]);
   const headers = parsed[0] ?? [];
@@ -115,10 +137,21 @@ export default function ImportMembersScreen() {
       .filter((r) => typeof r.email === 'string' && (r.email as string).length > 0);
   }, [rows, headers, mapping, phase]);
 
-  // Trigger inference on entering the Review step. Only once per
-  // distinct mapping+rows combination.
+  // Trigger inference on entering the Review step. We memoise on the
+  // mapped rows + the column mapping so a back-and-forth between Map
+  // and Review doesn't burn another Anthropic round-trip when nothing
+  // has changed — the owner's edits to reviewedPlans/tagsKeep persist
+  // across the trip.
   async function loadInference() {
     if (!membership) return;
+    const key = JSON.stringify({
+      mapping,
+      rowCount: importRows.length,
+      planNames: Array.from(
+        new Set(importRows.map((r) => String(r.plan_name ?? '')).filter(Boolean)),
+      ).sort(),
+    });
+    if (lastInferenceKey.current === key && inference) return;
     setInferenceLoading(true);
     setInference(null);
     try {
@@ -132,6 +165,7 @@ export default function ImportMembersScreen() {
         gymCurrency: 'GBP',
       });
       setInference(r);
+      lastInferenceKey.current = key;
       // Seed the editable per-plan state from the suggestions.
       const seed = new Map<string, ReviewedPlan>();
       for (const p of r.plans) {
@@ -179,6 +213,26 @@ export default function ImportMembersScreen() {
   const commit = useMutation({
     mutationFn: async () => {
       if (!membership) throw new Error('Missing context');
+
+      // 0. Pre-flight: the membership_plans CHECK rejects credit_pack /
+      //    credit_period with a null credit_count. Catch it here so we
+      //    don't half-commit some plans before erroring on a later one.
+      for (const p of reviewedPlans.values()) {
+        if (p.drop || p.existing_plan_id) continue;
+        if (
+          p.kind !== 'unlimited' &&
+          (p.credit_count == null || p.credit_count <= 0)
+        ) {
+          throw new Error(
+            `"${p.name || p.raw_name}" needs a credit count — set "credits per period" before importing.`,
+          );
+        }
+        if (!p.name.trim()) {
+          throw new Error(
+            `Set a name for the plan staged from "${p.raw_name}" before importing.`,
+          );
+        }
+      }
 
       // 1. Insert each non-dropped, non-existing-mapped plan.
       const planNameToId = new Map<string, string>();
@@ -250,12 +304,17 @@ export default function ImportMembersScreen() {
           tagsInputs,
         });
         if (corrections.length > 0) {
-          supabase
-            .rpc('record_import_corrections', {
+          // Don't block the user on the learning-loop write — but do
+          // surface real failures (auth, payload shape) to the console
+          // so we notice if the corrections store stops accepting input.
+          const { error: corrErr } = await supabase.rpc(
+            'record_import_corrections',
+            {
               p_gym_id: membership.gymId,
               p_rows: corrections as unknown as Json,
-            })
-            .then(() => undefined);
+            },
+          );
+          if (corrErr) console.warn('record_import_corrections failed', corrErr);
         }
       }
 
@@ -446,6 +505,7 @@ export default function ImportMembersScreen() {
             reviewedPlans={reviewedPlans}
             tagsKeep={tagsKeep}
             totalRows={importRows.length}
+            existingPlans={existingPlans.data ?? []}
             onUpdatePlan={updatePlan}
             onToggleTagKeep={toggleTagKeep}
             onBack={() => setPhase('map')}
@@ -522,6 +582,7 @@ function ReviewPanel({
   reviewedPlans,
   tagsKeep,
   totalRows,
+  existingPlans,
   onUpdatePlan,
   onToggleTagKeep,
   onBack,
@@ -533,6 +594,7 @@ function ReviewPanel({
   reviewedPlans: Map<string, ReviewedPlan>;
   tagsKeep: Set<string>;
   totalRows: number;
+  existingPlans: { plan_id: string; name: string; kind: string }[];
   onUpdatePlan: (rawName: string, patch: Partial<ReviewedPlan>) => void;
   onToggleTagKeep: (value: string) => void;
   onBack: () => void;
@@ -540,6 +602,7 @@ function ReviewPanel({
   error: string | null;
 }) {
   const planEntries = inference?.plans ?? [];
+  const fallback = inference?.source === 'fallback';
   return (
     <View className="gap-4">
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
@@ -562,8 +625,10 @@ function ReviewPanel({
         </View>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           {loading
-            ? 'AI is sharpening these suggestions…'
-            : 'Edit anything that looks off. We\'ll create the plans and link members on commit.'}
+            ? 'Reading your rows and inferring plans…'
+            : fallback
+              ? 'Suggestions based on your CSV. Edit anything that looks off — we\'ll create the plans and link members on commit.'
+              : 'Edit anything that looks off. We\'ll create the plans and link members on commit.'}
         </Text>
       </View>
 
@@ -599,6 +664,7 @@ function ReviewPanel({
                     ? inference.default_plan_hint
                     : null
                 }
+                existingPlans={existingPlans}
                 onChange={(patch) => onUpdatePlan(p.raw_name, patch)}
               />
             );
@@ -607,48 +673,55 @@ function ReviewPanel({
       </View>
 
       {/* Tags */}
-      {(inference?.tags.keep.length ?? 0) +
-        (inference?.tags.drop.length ?? 0) >
-      0 ? (
-        <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
-            Tags found
-          </Text>
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Greyed-out chips will be dropped on commit. Tap any chip to flip
-              the decision.
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {[
-                ...(inference?.tags.keep ?? []),
-                ...(inference?.tags.drop ?? []),
-              ].map((value) => {
-                const on = tagsKeep.has(value);
-                return (
-                  <Pressable
-                    key={value}
-                    onPress={() => onToggleTagKeep(value)}
-                    className={`px-3 py-1.5 rounded-full border ${
-                      on
-                        ? 'bg-primary/10 border-primary/30'
-                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
-                    }`}>
-                    <Text
-                      className={`text-xs ${
+      <View className="gap-2">
+        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
+          Tags found
+        </Text>
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+          {(inference?.tags.keep.length ?? 0) +
+            (inference?.tags.drop.length ?? 0) >
+          0 ? (
+            <>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Greyed-out chips will be dropped on commit. Tap any chip to flip
+                the decision.
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {[
+                  ...(inference?.tags.keep ?? []),
+                  ...(inference?.tags.drop ?? []),
+                ].map((value) => {
+                  const on = tagsKeep.has(value);
+                  return (
+                    <Pressable
+                      key={value}
+                      onPress={() => onToggleTagKeep(value)}
+                      className={`px-3 py-1.5 rounded-full border ${
                         on
-                          ? 'text-primary font-medium'
-                          : 'text-gray-500 dark:text-gray-400'
+                          ? 'bg-primary/10 border-primary/30'
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
                       }`}>
-                      {value}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
+                      <Text
+                        className={`text-xs ${
+                          on
+                            ? 'text-primary font-medium'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                        {value}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              No tags column was mapped. You can add tags to members later from
+              their profile.
+            </Text>
+          )}
         </View>
-      ) : null}
+      </View>
 
       {/* Cohort summary */}
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
@@ -681,11 +754,13 @@ function PlanReviewCard({
   suggestion,
   final,
   hint,
+  existingPlans,
   onChange,
 }: {
   suggestion: InferenceResponse['plans'][number];
   final: ReviewedPlan;
   hint: { raw_name: string; share_of_members: number } | null;
+  existingPlans: { plan_id: string; name: string; kind: string }[];
   onChange: (patch: Partial<ReviewedPlan>) => void;
 }) {
   const confidence = suggestion.confidence;
@@ -697,89 +772,181 @@ function PlanReviewCard({
         : confidence === 'medium'
           ? '#F59E0B'
           : '#9CA3AF';
+  const usingExisting = !!final.existing_plan_id;
+  // Drop / existing → de-emphasise the editable plan body since none of
+  // its fields will be used. Keep the header (raw_name, mode toggles,
+  // confidence) at full opacity so the controls stay visible.
+  const bodyDimmed = final.drop || usingExisting;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View
+      className={`bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 ${
+        final.drop ? 'opacity-60' : ''
+      }`}>
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: confidenceColor }}
           className="w-2 h-2 rounded-full"
         />
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest font-mono">
+        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest font-mono flex-1">
           From "{suggestion.raw_name}"
         </Text>
         {hint ? (
           <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
-            · Most common
+            Most common
           </Text>
         ) : null}
       </View>
-      <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-xs">
-          Plan name
-        </Text>
-        <TextInput
-          value={final.name}
-          onChangeText={(v) => onChange({ name: v })}
-          placeholderTextColor="#9CA3AF"
-          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+
+      {/* Routing toggle — three mutually exclusive modes. Default is
+          "Create new"; the picker for existing plans only renders when
+          the gym already has some, otherwise the third option is
+          omitted (first-import gyms see two buttons). */}
+      <View className="flex-row gap-2 flex-wrap">
+        <PlanModeChip
+          label="Create new"
+          on={!final.drop && !usingExisting}
+          onPress={() => onChange({ drop: false, existing_plan_id: null })}
+        />
+        {existingPlans.length > 0 ? (
+          <PlanModeChip
+            label="Map to existing"
+            on={usingExisting && !final.drop}
+            onPress={() =>
+              onChange({
+                drop: false,
+                existing_plan_id:
+                  final.existing_plan_id ?? existingPlans[0].plan_id,
+              })
+            }
+          />
+        ) : null}
+        <PlanModeChip
+          label="Don't create"
+          on={final.drop}
+          onPress={() => onChange({ drop: true })}
+          tone="warn"
         />
       </View>
-      <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-xs">Kind</Text>
-        <View className="flex-row gap-2 flex-wrap">
-          {(['unlimited', 'credit_period', 'credit_pack'] as PlanKind[]).map(
-            (k) => (
-              <Pressable
-                key={k}
-                onPress={() => onChange({ kind: k })}
-                className={`px-3 py-1.5 rounded-md border ${
-                  final.kind === k
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}>
-                <Text
-                  className={
-                    final.kind === k
-                      ? 'text-primary text-xs uppercase tracking-widest'
-                      : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
-                  }>
-                  {k.replace('_', ' ')}
-                </Text>
-              </Pressable>
-            ),
-          )}
-        </View>
-      </View>
-      {final.kind !== 'unlimited' ? (
+
+      {usingExisting && !final.drop ? (
         <View className="gap-1.5">
           <Text className="text-gray-700 dark:text-gray-200 text-xs">
-            Credits per period
+            Existing plan
+          </Text>
+          {Platform.OS === 'web' ? (
+            // eslint-disable-next-line jsx-a11y/no-onchange
+            <select
+              value={final.existing_plan_id ?? ''}
+              onChange={(e) =>
+                onChange({ existing_plan_id: e.target.value || null })
+              }
+              style={{
+                fontSize: 14,
+                padding: '8px 10px',
+                borderRadius: 8,
+                border: '1px solid #D1D5DB',
+                background: 'transparent',
+                color: 'inherit',
+              }}>
+              {existingPlans.map((ep) => (
+                <option key={ep.plan_id} value={ep.plan_id}>
+                  {ep.name} ({ep.kind.replace('_', ' ')})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+              {existingPlans.find((ep) => ep.plan_id === final.existing_plan_id)
+                ?.name ?? '(pick on web)'}
+            </Text>
+          )}
+          <Text className="text-gray-400 dark:text-gray-500 text-[11px]">
+            Members on "{suggestion.raw_name}" will be subscribed to this
+            existing plan instead of creating a new one.
+          </Text>
+        </View>
+      ) : null}
+
+      {final.drop ? (
+        <Text className="text-amber-700 dark:text-amber-400 text-xs">
+          This plan won't be created. Members on "{suggestion.raw_name}" will
+          still be imported but without a linked plan or subscription — staff
+          can attach one later from the member profile.
+        </Text>
+      ) : null}
+
+      <View className={bodyDimmed ? 'opacity-40 gap-3' : 'gap-3'} pointerEvents={bodyDimmed ? 'none' : 'auto'}>
+        <View className="gap-1.5">
+          <Text className="text-gray-700 dark:text-gray-200 text-xs">
+            Plan name
           </Text>
           <TextInput
-            value={String(final.credit_count ?? '')}
-            onChangeText={(v) =>
-              onChange({ credit_count: v === '' ? null : parseInt(v, 10) })
-            }
+            editable={!bodyDimmed}
+            value={final.name}
+            onChangeText={(v) => onChange({ name: v })}
+            placeholderTextColor="#9CA3AF"
+            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+          />
+        </View>
+        <View className="gap-1.5">
+          <Text className="text-gray-700 dark:text-gray-200 text-xs">Kind</Text>
+          <View className="flex-row gap-2 flex-wrap">
+            {(['unlimited', 'credit_period', 'credit_pack'] as PlanKind[]).map(
+              (k) => (
+                <Pressable
+                  key={k}
+                  onPress={() => !bodyDimmed && onChange({ kind: k })}
+                  className={`px-3 py-1.5 rounded-md border ${
+                    final.kind === k
+                      ? 'border-primary bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Text
+                    className={
+                      final.kind === k
+                        ? 'text-primary text-xs uppercase tracking-widest'
+                        : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                    }>
+                    {k.replace('_', ' ')}
+                  </Text>
+                </Pressable>
+              ),
+            )}
+          </View>
+        </View>
+        {final.kind !== 'unlimited' ? (
+          <View className="gap-1.5">
+            <Text className="text-gray-700 dark:text-gray-200 text-xs">
+              Credits per period
+            </Text>
+            <TextInput
+              editable={!bodyDimmed}
+              value={String(final.credit_count ?? '')}
+              onChangeText={(v) =>
+                onChange({ credit_count: v === '' ? null : parseInt(v, 10) })
+              }
+              keyboardType="number-pad"
+              placeholderTextColor="#9CA3AF"
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+            />
+          </View>
+        ) : null}
+        <View className="gap-1.5">
+          <Text className="text-gray-700 dark:text-gray-200 text-xs">
+            Monthly price (pence)
+          </Text>
+          <TextInput
+            editable={!bodyDimmed}
+            value={String(final.monthly_price_cents)}
+            onChangeText={(v) => {
+              const n = parseInt(v, 10);
+              onChange({ monthly_price_cents: Number.isFinite(n) ? n : 0 });
+            }}
             keyboardType="number-pad"
             placeholderTextColor="#9CA3AF"
             className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
           />
         </View>
-      ) : null}
-      <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-xs">
-          Monthly price (pence)
-        </Text>
-        <TextInput
-          value={String(final.monthly_price_cents)}
-          onChangeText={(v) => {
-            const n = parseInt(v, 10);
-            onChange({ monthly_price_cents: Number.isFinite(n) ? n : 0 });
-          }}
-          keyboardType="number-pad"
-          placeholderTextColor="#9CA3AF"
-          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
-        />
       </View>
       {suggestion.reasoning ? (
         <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
@@ -787,6 +954,41 @@ function PlanReviewCard({
         </Text>
       ) : null}
     </View>
+  );
+}
+
+function PlanModeChip({
+  label,
+  on,
+  onPress,
+  tone = 'primary',
+}: {
+  label: string;
+  on: boolean;
+  onPress: () => void;
+  tone?: 'primary' | 'warn';
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`px-3 py-1.5 rounded-md border ${
+        on
+          ? tone === 'warn'
+            ? 'bg-amber-500/10 border-amber-500/40'
+            : 'bg-primary/10 border-primary'
+          : 'bg-transparent border-gray-200 dark:border-gray-700'
+      }`}>
+      <Text
+        className={`text-xs uppercase tracking-widest ${
+          on
+            ? tone === 'warn'
+              ? 'text-amber-700 dark:text-amber-400 font-semibold'
+              : 'text-primary font-semibold'
+            : 'text-gray-500 dark:text-gray-400'
+        }`}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
