@@ -423,9 +423,11 @@ function HandoverPanel({
     },
   });
 
-  // Build a per-member CSV the owner can drop into Mailchimp /
-  // their existing newsletter tool and merge — `email`, `name`, and
-  // the bare join URL (gyms append ?utm_… themselves if they want).
+  // Two paths to a campaign for the just-imported members. Welcome is
+  // pre-filled and quickest to send; blank is for owners who want to
+  // build their own message from scratch — both pre-set the audience
+  // to `pending_members` so the campaign already targets the right
+  // people, and land in the same editor.
   const sendFromTemple = useMutation({
     mutationFn: async () => {
       if (!gymId) throw new Error('Missing context');
@@ -437,6 +439,30 @@ function HandoverPanel({
           subject: `Welcome to ${gymName} — your new home for booking`,
           preheader: 'Sign in to claim your account and keep your membership.',
           design: welcomeStarter(gymName, url ?? '#', primaryColor),
+          audience: { kind: 'pending_members' },
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return (data as { id: string }).id;
+    },
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+      router.push(`/management/communications/${id}` as never);
+    },
+  });
+
+  const createBlank = useMutation({
+    mutationFn: async () => {
+      if (!gymId) throw new Error('Missing context');
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .insert({
+          gym_id: gymId,
+          title: 'Untitled campaign',
+          subject: '',
+          preheader: '',
+          design: { version: 1, blocks: [] },
           audience: { kind: 'pending_members' },
         })
         .select('id')
@@ -532,8 +558,10 @@ function HandoverPanel({
             Or, let Temple send the welcome
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            We pre-fill a "Welcome to {gymName}" campaign with the join
-            button and open it in the editor so you can preview before send.
+            Both options pre-set the audience to the members you just
+            imported — pick the pre-filled welcome if you want to send in a
+            few clicks, or start from a blank canvas if you'd rather write
+            your own.
           </Text>
         </View>
         <Button
@@ -541,6 +569,12 @@ function HandoverPanel({
           onPress={() => sendFromTemple.mutate()}
           loading={sendFromTemple.isPending}>
           Open welcome campaign
+        </Button>
+        <Button
+          variant="ghost"
+          onPress={() => createBlank.mutate()}
+          loading={createBlank.isPending}>
+          Create campaign from scratch
         </Button>
       </View>
 
