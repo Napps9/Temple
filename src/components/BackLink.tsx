@@ -13,12 +13,16 @@ import { Pressable, Text } from 'react-native';
 //     a flex-row header — the pattern Track / Inbox / Athlete / Member
 //     deep pages reach for.
 //
-// Both call `router.back()` so the destination follows the actual
-// navigation stack (coming from a Manage card → Manage; deep-linked in
-// from a notification → wherever the user was). When there is no stack
-// to go back to (a shared URL opened cold, or a push-notification
-// entry), `fallbackHref` is taken instead so the user never lands on a
-// dead-end / app-close.
+// When `fallbackHref` is given, that path is always the destination —
+// the label is a promise about where you'll land, so we honour it
+// regardless of what's on the back stack. (Earlier behaviour preferred
+// router.back() when any history existed, which broke for a user who
+// navigated Classes → Analysis → a Manage sub-page: tapping "Manage"
+// went to Analysis because that's what router.back() saw.)
+//
+// Without a fallbackHref the component falls back to router.back() and
+// the label should just be "Back" — the destination genuinely is
+// wherever the user came from.
 export function BackLink({
   label = 'Back',
   fallbackHref,
@@ -29,12 +33,12 @@ export function BackLink({
   inline?: boolean;
 }) {
   function onPress() {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
     if (fallbackHref) {
       router.replace(fallbackHref);
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
     }
   }
 
