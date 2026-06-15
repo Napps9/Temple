@@ -561,10 +561,11 @@ function DayView({
     (a, b) =>
       new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
   );
-  // Day view is a focused single-day surface — show a full workday's
-  // worth of scrollable hours so the owner can drop a class outside
-  // the current schedule without first scrolling off the top/bottom.
-  const hours = visibleHours(sessions, [date], 14);
+  // Day view is a focused single-day surface — show enough hours
+  // that morning + evening sessions are both visible without the
+  // trim clipping anything. 17h covers a typical 5am→10pm gym day;
+  // visibleHours expands further if sessions sit outside that range.
+  const hours = visibleHours(sessions, [date], 17);
 
   const scrollRef = useRef<ScrollView | null>(null);
   useEffect(() => {
