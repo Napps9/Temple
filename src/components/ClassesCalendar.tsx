@@ -22,6 +22,7 @@ type CreateRequest = { date?: Date; hour?: number };
 const HORIZON_WEEKS_FALLBACK = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const HOUR_HEIGHT = 64;
+const GRID_HEIGHT = HOURS.length * HOUR_HEIGHT;
 // DAY_LETTERS is indexed by JS day-of-week (0=Sun..6=Sat) and used
 // in the day-strip header where the column header tracks the day's
 // real weekday. It does NOT depend on the gym's week_starts_on.
@@ -138,19 +139,92 @@ function fmtWeekRange(start: Date, end: Date) {
   })}`;
 }
 
-function classesAtDayHour(
-  sessions: ClassSession[] | undefined,
-  day: Date,
-  hour: number,
-) {
-  return (sessions ?? []).filter((s) => {
-    const start = new Date(s.starts_at);
-    return isSameDay(start, day) && start.getHours() === hour;
-  });
-}
-
 function classesOnDay(sessions: ClassSession[] | undefined, day: Date) {
   return (sessions ?? []).filter((s) => isSameDay(new Date(s.starts_at), day));
+}
+
+// Position class sessions absolutely within a day column: convert
+// start time → top offset, duration → height. Sessions that overlap
+// in time tile side-by-side in equal-width sub-columns, the way
+// Google Calendar's week view does. Greedy column packing: each
+// session takes the leftmost column whose previous occupant has
+// already ended.
+type PositionedSession = {
+  session: ClassSession;
+  topPx: number;
+  heightPx: number;
+  leftPct: number;
+  widthPct: number;
+};
+
+function layoutDay(
+  sessions: ClassSession[] | undefined,
+  day: Date,
+  baseHour: number,
+  hourHeight: number,
+  totalHours: number,
+): PositionedSession[] {
+  const items = (sessions ?? [])
+    .filter((s) => isSameDay(new Date(s.starts_at), day))
+    .map((s) => {
+      const start = new Date(s.starts_at);
+      const startMin =
+        (start.getHours() - baseHour) * 60 + start.getMinutes();
+      const endMin = startMin + s.duration_minutes;
+      return { session: s, startMin, endMin };
+    })
+    .filter((it) => it.endMin > 0 && it.startMin < totalHours * 60)
+    .map((it) => ({
+      session: it.session,
+      // Clamp to the visible grid so a class that starts at 04:30
+      // (before 05:00) doesn't render with a negative top.
+      startMin: Math.max(0, it.startMin),
+      endMin: Math.min(totalHours * 60, it.endMin),
+    }))
+    .sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+
+  // Greedy per-item column assignment. columnEnds[c] = the endMin of
+  // whichever item is currently sitting in column c.
+  const columnEnds: number[] = [];
+  const itemColumns = items.map((it) => {
+    let col = columnEnds.findIndex((end) => end <= it.startMin);
+    if (col === -1) col = columnEnds.length;
+    columnEnds[col] = it.endMin;
+    return col;
+  });
+
+  // Sweep into clusters of mutually-overlapping items. Every item in
+  // a cluster shares the same total column count so widths are
+  // consistent across the visual block.
+  const positioned: PositionedSession[] = [];
+  let clusterStart = 0;
+  let clusterEnd = items.length > 0 ? items[0].endMin : -1;
+  for (let i = 1; i <= items.length; i += 1) {
+    if (i < items.length && items[i].startMin < clusterEnd) {
+      clusterEnd = Math.max(clusterEnd, items[i].endMin);
+      continue;
+    }
+    const cols = Math.max(...itemColumns.slice(clusterStart, i)) + 1;
+    for (let j = clusterStart; j < i; j += 1) {
+      const it = items[j];
+      const col = itemColumns[j];
+      positioned.push({
+        session: it.session,
+        topPx: (it.startMin / 60) * hourHeight,
+        heightPx: Math.max(
+          22,
+          ((it.endMin - it.startMin) / 60) * hourHeight - 2,
+        ),
+        leftPct: (col / cols) * 100,
+        widthPct: (1 / cols) * 100,
+      });
+    }
+    if (i < items.length) {
+      clusterStart = i;
+      clusterEnd = items[i].endMin;
+    }
+  }
+  return positioned;
 }
 
 function ViewSwitcher({ view }: { view: ViewMode }) {
@@ -431,8 +505,6 @@ function DayView({
 }) {
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const weekLetters =
-    weekStartsOn === 'sun' ? WEEK_LETTERS_SUN : WEEK_LETTERS_MON;
   const dayClasses = classesOnDay(sessions, date).sort(
     (a, b) =>
       new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
@@ -515,63 +587,20 @@ function DayView({
               )}
             </View>
           ) : (
-            HOURS.map((hour) => {
-              const cellClasses = classesAtDayHour(sessions, date, hour);
-              return (
-                <DayHourRow
-                  key={hour}
-                  hour={hour}
-                  classes={cellClasses}
-                  onCreate={canCreate ? () => onCreateAt(date, hour) : null}
-                  onSessionPress={onSessionPress}
-                />
-              );
-            })
+            <View className="flex-row" style={{ height: GRID_HEIGHT }}>
+              <HourLabelColumn />
+              <DayColumn
+                day={date}
+                sessions={sessions}
+                onCreateAt={onCreateAt}
+                onSessionPress={onSessionPress}
+                canCreate={canCreate}
+                bookedSet={bookedSet}
+              />
+            </View>
           )}
         </View>
       </ScrollView>
-    </View>
-  );
-}
-
-function DayHourRow({
-  hour,
-  classes,
-  onCreate,
-  onSessionPress,
-}: {
-  hour: number;
-  classes: ClassSession[];
-  onCreate: (() => void) | null;
-  onSessionPress: (id: string) => void;
-}) {
-  const label = `${hour.toString().padStart(2, '0')}:00`;
-  return (
-    <View className="flex-row gap-4 py-2 border-t border-gray-100 dark:border-gray-800">
-      <Text className="text-gray-400 dark:text-gray-500 text-sm w-14 pt-3">
-        {label}
-      </Text>
-      <View className="flex-1 py-1.5 gap-2">
-        {classes.length > 0 ? (
-          classes.map((c) => (
-            <DayClassCard
-              key={c.id}
-              session={c}
-              onPress={() => onSessionPress(c.id)}
-            />
-          ))
-        ) : onCreate ? (
-          <Pressable
-            onPress={onCreate}
-            className="border border-dashed border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 active:bg-gray-50 dark:active:bg-gray-800">
-            <Text className="text-gray-400 dark:text-gray-500 text-sm">+ Add a class</Text>
-          </Pressable>
-        ) : (
-          <View className="border border-dashed border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
-            <Text className="text-gray-400 dark:text-gray-500 text-sm">No class scheduled</Text>
-          </View>
-        )}
-      </View>
     </View>
   );
 }
@@ -719,44 +748,119 @@ function WeekView({
         className="flex-1"
         contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2">
-          {HOURS.map((hour) => {
-            const label = `${hour.toString().padStart(2, '0')}:00`;
-            return (
-              <View
-                key={hour}
-                className="flex-row border-t border-gray-100 dark:border-gray-800 min-h-14 py-0.5">
-                <Text className="w-10 md:w-14 text-xs text-gray-400 dark:text-gray-500 pt-2">
-                  {label}
-                </Text>
-                {weekDays.map((d) => {
-                  const cellClasses = classesAtDayHour(sessions, d, hour);
-                  return (
-                    <View key={d.toISOString()} className="flex-1 px-0.5 gap-0.5">
-                      {cellClasses.length > 0 ? (
-                        cellClasses.map((c) => (
-                          <WeekTile
-                            key={c.id}
-                            session={c}
-                            onPress={() => onSessionPress(c.id)}
-                            bookedByMe={bookedSet.has(c.id)}
-                          />
-                        ))
-                      ) : canCreate ? (
-                        <Pressable
-                          onPress={() => onCreateAt(d, hour)}
-                          className="flex-1 border border-dashed border-gray-200 dark:border-gray-700 rounded-md min-h-14 active:bg-gray-50 dark:active:bg-gray-800"
-                        />
-                      ) : (
-                        <View className="flex-1 rounded-md min-h-14" />
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-            );
-          })}
+          <View className="flex-row" style={{ height: GRID_HEIGHT }}>
+            <HourLabelColumn />
+            {weekDays.map((d) => (
+              <DayColumn
+                key={d.toISOString()}
+                day={d}
+                sessions={sessions}
+                onCreateAt={onCreateAt}
+                onSessionPress={onSessionPress}
+                canCreate={canCreate}
+                bookedSet={bookedSet}
+              />
+            ))}
+          </View>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+// Hour ticks running down the left edge of the grid. Labels sit just
+// above each hour line; the bottom-most line (the implicit 23:00
+// boundary) doesn't carry a label.
+function HourLabelColumn() {
+  return (
+    <View
+      className="w-10 md:w-14"
+      style={{ height: GRID_HEIGHT, position: 'relative' }}>
+      {HOURS.map((h, i) => (
+        <Text
+          key={h}
+          style={{
+            position: 'absolute',
+            top: i * HOUR_HEIGHT - 6,
+            right: 4,
+          }}
+          className="text-[10px] text-gray-400 dark:text-gray-500">
+          {`${h.toString().padStart(2, '0')}:00`}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
+// One day's slice of the timeline. Stacks per-hour hit targets (which
+// double as gridlines + click-to-create when canCreate) and overlays
+// the day's session tiles, positioned by start time and sized by
+// duration. Concurrent sessions tile side-by-side, decided by
+// layoutDay's column packing.
+function DayColumn({
+  day,
+  sessions,
+  onCreateAt,
+  onSessionPress,
+  canCreate,
+  bookedSet,
+}: {
+  day: Date;
+  sessions: ClassSession[] | undefined;
+  onCreateAt: (d: Date, hour: number) => void;
+  onSessionPress: (id: string) => void;
+  canCreate: boolean;
+  bookedSet: Set<string>;
+}) {
+  const positioned = layoutDay(
+    sessions,
+    day,
+    HOURS[0],
+    HOUR_HEIGHT,
+    HOURS.length,
+  );
+  return (
+    <View
+      className="flex-1 border-l border-gray-100 dark:border-gray-800"
+      style={{ height: GRID_HEIGHT, position: 'relative' }}>
+      {HOURS.map((h, i) => (
+        <Pressable
+          key={h}
+          onPress={canCreate ? () => onCreateAt(day, h) : undefined}
+          disabled={!canCreate}
+          style={{
+            position: 'absolute',
+            top: i * HOUR_HEIGHT,
+            left: 0,
+            right: 0,
+            height: HOUR_HEIGHT,
+          }}
+          className={`border-t border-gray-100 dark:border-gray-800 ${
+            canCreate
+              ? 'active:bg-gray-100 dark:active:bg-gray-800/40'
+              : ''
+          }`}
+        />
+      ))}
+      {positioned.map((p) => (
+        <View
+          key={p.session.id}
+          style={{
+            position: 'absolute',
+            top: p.topPx,
+            height: p.heightPx,
+            left: `${p.leftPct}%`,
+            width: `${p.widthPct}%`,
+            padding: 1,
+          }}>
+          <WeekTile
+            session={p.session}
+            onPress={() => onSessionPress(p.session.id)}
+            bookedByMe={bookedSet.has(p.session.id)}
+            heightPx={p.heightPx}
+          />
+        </View>
+      ))}
     </View>
   );
 }
@@ -765,17 +869,24 @@ function WeekTile({
   session,
   onPress,
   bookedByMe,
+  heightPx,
 }: {
   session: ClassSession;
   onPress: () => void;
   bookedByMe?: boolean;
+  heightPx: number;
 }) {
   const colors = useThemeColors();
   const start = new Date(session.starts_at);
+  const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
+  // Below ~38 px there's no room for the time row without crowding —
+  // compact tiles show only the start time so the name stays legible.
+  const compact = heightPx < 38;
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-1 bg-white dark:bg-gray-900 rounded-md p-1.5 min-h-14 gap-1 border active:bg-gray-50 dark:active:bg-gray-800 ${
+      style={{ height: '100%', width: '100%' }}
+      className={`bg-white dark:bg-gray-900 rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : 'border-gray-200 dark:border-gray-700'
@@ -796,7 +907,7 @@ function WeekTile({
         </Text>
       </View>
       <Text className="text-gray-500 dark:text-gray-400 text-[10px]" numberOfLines={1}>
-        {fmtTime(start)}
+        {compact ? fmtTime(start) : `${fmtTime(start)} – ${fmtTime(end)}`}
       </Text>
     </Pressable>
   );
