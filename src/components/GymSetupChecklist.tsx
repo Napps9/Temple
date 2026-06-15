@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { StatusDisk } from '@/components/StatusDisk';
 import { useGymMembership, useRole } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
@@ -117,7 +118,12 @@ const STEPS: Step[] = [
   },
 ];
 
-type ProgressRow = { step_key: Step['key']; done: boolean };
+type ProgressRow = {
+  step_key: Step['key'];
+  done: boolean;
+  complete: number;
+  target: number;
+};
 
 export function GymSetupChecklist() {
   const colors = useThemeColors();
@@ -137,9 +143,17 @@ export function GymSetupChecklist() {
   });
 
   const status = useMemo(() => {
-    const map = new Map<Step['key'], boolean>();
-    for (const row of progress.data ?? []) map.set(row.step_key, row.done);
-    return STEPS.map((s) => ({ ...s, done: map.get(s.key) ?? false }));
+    const map = new Map<Step['key'], ProgressRow>();
+    for (const row of progress.data ?? []) map.set(row.step_key, row);
+    return STEPS.map((s) => {
+      const row = map.get(s.key);
+      return {
+        ...s,
+        done: row?.done ?? false,
+        complete: row?.complete ?? 0,
+        target: row?.target ?? 1,
+      };
+    });
   }, [progress.data]);
 
   if (role !== 'owner') return null;
@@ -183,21 +197,17 @@ export function GymSetupChecklist() {
                 ? 'bg-gray-50 dark:bg-gray-800/40'
                 : 'bg-gray-50 dark:bg-gray-800'
             }`}>
-            {/* See onboarding.tsx StepRow — same status-disk treatment so
-                the small inline list and the dedicated /onboarding page
-                read the same. */}
-            <View
-              style={{
-                borderColor: step.done ? '#10B981' : colors.primary,
-                backgroundColor: step.done ? '#10B981' : 'transparent',
-              }}
-              className="w-7 h-7 rounded-full border-2 items-center justify-center">
-              <Ionicons
-                name={step.done ? 'checkmark' : step.icon}
-                size={step.done ? 15 : 13}
-                color={step.done ? '#FFFFFF' : colors.primary}
-              />
-            </View>
+            <StatusDisk
+              size={28}
+              done={step.done}
+              partial={
+                !step.done && step.complete > 0 && step.complete < step.target
+              }
+              complete={step.complete}
+              target={step.target}
+              icon={step.icon}
+              accent={colors.primary}
+            />
             <View className="flex-1">
               <View className="flex-row items-center gap-2">
                 <Text

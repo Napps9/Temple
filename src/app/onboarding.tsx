@@ -13,6 +13,7 @@ import {
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
+import { StatusDisk } from '@/components/StatusDisk';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useGymBrand } from '@/lib/useGymBrand';
@@ -130,7 +131,12 @@ const STEPS: Step[] = [
   },
 ];
 
-type ProgressRow = { step_key: StepKey; done: boolean };
+type ProgressRow = {
+  step_key: StepKey;
+  done: boolean;
+  complete: number;
+  target: number;
+};
 
 function skipKey(gymId: string): string {
   return `temple-onboarding-skipped:${gymId}`;
@@ -165,9 +171,17 @@ export default function OnboardingScreen() {
   });
 
   const status = useMemo(() => {
-    const map = new Map<StepKey, boolean>();
-    for (const row of progress.data ?? []) map.set(row.step_key, row.done);
-    return STEPS.map((s) => ({ ...s, done: map.get(s.key) ?? false }));
+    const map = new Map<StepKey, ProgressRow>();
+    for (const row of progress.data ?? []) map.set(row.step_key, row);
+    return STEPS.map((s) => {
+      const row = map.get(s.key);
+      return {
+        ...s,
+        done: row?.done ?? false,
+        complete: row?.complete ?? 0,
+        target: row?.target ?? 1,
+      };
+    });
   }, [progress.data]);
 
   // Guards live in the page itself since /onboarding sits outside the
@@ -282,31 +296,29 @@ function StepRow({
   step,
   accent,
 }: {
-  step: Step & { done: boolean };
+  step: Step & { done: boolean; complete: number; target: number };
   accent: string;
 }) {
+  const partial = !step.done && step.complete > 0 && step.complete < step.target;
   return (
     <Pressable
       onPress={() => router.push(step.href as never)}
       className={`flex-row items-center gap-3 rounded-xl px-3 py-3 active:opacity-70 ${
         step.done ? 'bg-gray-50 dark:bg-gray-800/40' : 'bg-gray-50 dark:bg-gray-800'
       }`}>
-      {/* Status disk: solid emerald + bold tick when the step is done,
-          otherwise an open circle outlined in the brand primary with the
-          step's specific icon faintly inside so the user can still read
-          "this is the logo step" at a glance. */}
-      <View
-        style={{
-          borderColor: step.done ? '#10B981' : accent,
-          backgroundColor: step.done ? '#10B981' : 'transparent',
-        }}
-        className="w-9 h-9 rounded-full border-2 items-center justify-center">
-        <Ionicons
-          name={step.done ? 'checkmark' : step.icon}
-          size={step.done ? 18 : 16}
-          color={step.done ? '#FFFFFF' : accent}
-        />
-      </View>
+      {/* Status disk: solid emerald + bold tick when fully done, a
+          partial-fill ring when some but not all sub-items are
+          satisfied, an empty primary-outlined circle with the step
+          icon otherwise. */}
+      <StatusDisk
+        size={36}
+        done={step.done}
+        partial={partial}
+        complete={step.complete}
+        target={step.target}
+        icon={step.icon}
+        accent={accent}
+      />
       <View className="flex-1">
         <View className="flex-row items-center gap-2">
           <Text
@@ -320,6 +332,7 @@ function StepRow({
           {!step.done ? (
             <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-mono">
               ~{step.estimate}
+              {step.target > 1 ? ` · ${step.complete}/${step.target}` : ''}
             </Text>
           ) : null}
         </View>

@@ -23,11 +23,11 @@ import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { DEFAULT_BRAND, joinUrl, leadUrl, normaliseHex, slugify } from '@/lib/brand';
-import { deriveDarkColour } from '@/lib/brand-derivation';
+import { deriveDarkColour, deriveLightColour } from '@/lib/brand-derivation';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
-import { useThemeColors } from '@/lib/theme';
+import { useThemeColors, useThemePreference } from '@/lib/theme';
 
 type GymRow = {
   id: string;
@@ -356,6 +356,9 @@ export function BrandingPanel() {
           secondaryDark={secondaryDark}
           textColorDark={textColorDark}
           logoUrlDark={logoUrlDark}
+          onChangePrimary={setPrimary}
+          onChangeSecondary={setSecondary}
+          onChangeText={setTextColor}
           onChangePrimaryDark={setPrimaryDark}
           onChangeSecondaryDark={setSecondaryDark}
           onChangeTextColorDark={setTextColorDark}
@@ -555,6 +558,9 @@ function AdvancedBrandingCard({
   secondaryDark,
   textColorDark,
   logoUrlDark,
+  onChangePrimary,
+  onChangeSecondary,
+  onChangeText,
   onChangePrimaryDark,
   onChangeSecondaryDark,
   onChangeTextColorDark,
@@ -575,6 +581,9 @@ function AdvancedBrandingCard({
   secondaryDark: string;
   textColorDark: string;
   logoUrlDark: string | null;
+  onChangePrimary: (v: string) => void;
+  onChangeSecondary: (v: string) => void;
+  onChangeText: (v: string) => void;
   onChangePrimaryDark: (v: string) => void;
   onChangeSecondaryDark: (v: string) => void;
   onChangeTextColorDark: (v: string) => void;
@@ -585,6 +594,7 @@ function AdvancedBrandingCard({
   onSetPicker: (v: ColourPickerTarget | null) => void;
 }) {
   const colors = useThemeColors();
+  const { scheme } = useThemePreference();
   // Resolve what the dark-mode logo row shows. Same fallback logic
   // the read path runs at useGymBrand, so what the owner sees here
   // is what members will get.
@@ -592,10 +602,37 @@ function AdvancedBrandingCard({
     normaliseHex(primaryDark) ?? deriveDarkColour(lightPrimary);
   const previewLogoDark = logoUrlDark ?? lightLogoUrl;
 
+  // The "auto-generate" CTA flips with the current platform mode.
+  // When the owner is viewing in dark mode, the chrome they're
+  // judging colour choices against is dark — so the colours they
+  // picked above are tuned for dark, and we derive the LIGHT palette
+  // from them. In light mode the original direction (light → dark)
+  // applies. Button label changes accordingly so the source mode
+  // is always explicit.
+  const flipLightToDark = scheme === 'light';
+  const ctaLabel = flipLightToDark
+    ? 'Auto-generate from light'
+    : 'Auto-generate from dark';
+
   function autoGenerate() {
-    onChangePrimaryDark(deriveDarkColour(lightPrimary));
-    onChangeSecondaryDark(deriveDarkColour(lightSecondary));
-    onChangeTextColorDark(deriveDarkColour(lightText));
+    if (flipLightToDark) {
+      onChangePrimaryDark(deriveDarkColour(lightPrimary));
+      onChangeSecondaryDark(deriveDarkColour(lightSecondary));
+      onChangeTextColorDark(deriveDarkColour(lightText));
+    } else {
+      // Source: whatever the user has actually typed for dark; fall
+      // back to the auto-derived dark if a field is blank so we never
+      // round-trip an empty string through deriveLightColour.
+      const fromPrimary =
+        normaliseHex(primaryDark) ?? deriveDarkColour(lightPrimary);
+      const fromSecondary =
+        normaliseHex(secondaryDark) ?? deriveDarkColour(lightSecondary);
+      const fromText =
+        normaliseHex(textColorDark) ?? deriveDarkColour(lightText);
+      onChangePrimary(deriveLightColour(fromPrimary));
+      onChangeSecondary(deriveLightColour(fromSecondary));
+      onChangeText(deriveLightColour(fromText));
+    }
   }
 
   return (
@@ -679,7 +716,7 @@ function AdvancedBrandingCard({
               </Text>
               <ChipButton
                 tone="inverse"
-                label="Auto-generate from light"
+                label={ctaLabel}
                 icon="sparkles-outline"
                 onPress={autoGenerate}
               />

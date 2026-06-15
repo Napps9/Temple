@@ -5,7 +5,7 @@
 -- still reports them.
 
 begin;
-select plan(10);
+select plan(13);
 
 \ir _helpers.psql
 
@@ -174,6 +174,35 @@ select is(
      current_setting('test.gym')::uuid) where done)::int,
   8,
   'eight of nine steps report done; workouts_imported needs a tracked workout'
+);
+
+-- 11-13. Sub-step counts on the multi-part steps. logo and parq each
+-- have target 2 (light + dark logo; waiver + parq) — we've only set
+-- one of each, so complete = 1 even though `done` already flipped.
+-- schedule has target = class type count: we have one class type
+-- with a recurrence, so 1/1.
+select is(
+  (select (complete::text || '/' || target::text)
+   from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'logo'),
+  '1/2',
+  'logo sub-count: light logo set, dark logo blank → 1/2'
+);
+
+select is(
+  (select (complete::text || '/' || target::text)
+   from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'parq'),
+  '1/2',
+  'parq sub-count: PAR-Q published, no waiver → 1/2'
+);
+
+select is(
+  (select (complete::text || '/' || target::text)
+   from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'schedule'),
+  '1/1',
+  'schedule sub-count: one class type has a recurrence → 1/1'
 );
 
 select * from finish();
