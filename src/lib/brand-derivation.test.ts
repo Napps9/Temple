@@ -72,4 +72,31 @@ describe('round-trip', () => {
     const light = deriveLightColour(dark);
     expect(contrastRatio(light, LIGHT_BG)).toBeGreaterThanOrEqual(3);
   });
+
+  // Guard against a future change that makes either derive function
+  // always nudge lightness. For a colour that already clears the
+  // contrast bar on both backgrounds, both functions are no-ops, so
+  // deriveLight(deriveDark(c)) must be an exact identity — otherwise
+  // an owner who flipped the (now-removed) bidirectional auto-derive
+  // would see their brand colour silently drift on every press.
+  it('is exact identity for colours that already pass both backgrounds', () => {
+    // Filter the candidate pool by the property the test claims to
+    // assert, then assert identity on what's left. Avoids the test
+    // being a tautology if the contrast bar moves under us — and
+    // avoids it failing on a hard-coded picks that aren't actually
+    // dual-passing.
+    const candidates = [
+      '#2563EB', '#1E40AF', '#6366F1', '#7C3AED',
+      '#DC2626', '#0EA5E9', '#0891B2', '#15803D',
+    ];
+    const dualPass = candidates.filter(
+      (c) =>
+        contrastRatio(c, DARK_BG) >= 3 && contrastRatio(c, LIGHT_BG) >= 3,
+    );
+    expect(dualPass.length).toBeGreaterThan(0);
+    for (const c of dualPass) {
+      expect(deriveLightColour(deriveDarkColour(c))).toBe(c);
+      expect(deriveDarkColour(deriveLightColour(c))).toBe(c);
+    }
+  });
 });
