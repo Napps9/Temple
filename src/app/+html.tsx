@@ -23,23 +23,16 @@ export default function Root({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
-        <meta
-          name="theme-color"
-          content="#F1F5F9"
-          media="(prefers-color-scheme: light)"
-        />
-        <meta
-          name="theme-color"
-          content="#030712"
-          media="(prefers-color-scheme: dark)"
-        />
+        {/* First paint is always light — Temple defaults to light mode
+            for new visitors regardless of OS preference. The runtime
+            useThemePreference effect swaps to dark for users who've
+            explicitly chosen it; first-paint flash for that group is
+            acceptable since they've opted in. */}
+        <meta name="theme-color" content="#F1F5F9" />
         <style
           dangerouslySetInnerHTML={{
             __html: `
               html, body { margin: 0; background-color: #F1F5F9; }
-              @media (prefers-color-scheme: dark) {
-                html, body { background-color: #030712; }
-              }
             `,
           }}
         />

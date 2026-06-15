@@ -8,6 +8,11 @@ const KEY = 'app_theme';
 
 export type Scheme = 'light' | 'dark';
 
+// Light is the platform default. nativewind's useColorScheme would
+// otherwise fall back to the OS preference, which surprises new
+// signups whose device is on dark — Temple's first impression is
+// always the lighter palette unless the user has explicitly chosen
+// dark from the in-app toggle.
 export function useThemePreference() {
   const { colorScheme, setColorScheme } = useColorScheme();
 
@@ -16,6 +21,7 @@ export function useThemePreference() {
     AsyncStorage.getItem(KEY).then((v) => {
       if (!mounted) return;
       if (v === 'light' || v === 'dark') setColorScheme(v);
+      else setColorScheme('light');
     });
     return () => {
       mounted = false;
