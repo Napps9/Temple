@@ -291,14 +291,20 @@ function StepRow({
       className={`flex-row items-center gap-3 rounded-xl px-3 py-3 active:opacity-70 ${
         step.done ? 'bg-gray-50 dark:bg-gray-800/40' : 'bg-gray-50 dark:bg-gray-800'
       }`}>
+      {/* Status disk: solid emerald + bold tick when the step is done,
+          otherwise an open circle outlined in the brand primary with the
+          step's specific icon faintly inside so the user can still read
+          "this is the logo step" at a glance. */}
       <View
-        className={`w-9 h-9 rounded-xl items-center justify-center ${
-          step.done ? 'bg-emerald-500/15' : 'bg-primary/10'
-        }`}>
+        style={{
+          borderColor: step.done ? '#10B981' : accent,
+          backgroundColor: step.done ? '#10B981' : 'transparent',
+        }}
+        className="w-9 h-9 rounded-full border-2 items-center justify-center">
         <Ionicons
           name={step.done ? 'checkmark' : step.icon}
-          size={18}
-          color={step.done ? '#10B981' : accent}
+          size={step.done ? 18 : 16}
+          color={step.done ? '#FFFFFF' : accent}
         />
       </View>
       <View className="flex-1">

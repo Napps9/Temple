@@ -183,16 +183,19 @@ export function GymSetupChecklist() {
                 ? 'bg-gray-50 dark:bg-gray-800/40'
                 : 'bg-gray-50 dark:bg-gray-800'
             }`}>
+            {/* See onboarding.tsx StepRow — same status-disk treatment so
+                the small inline list and the dedicated /onboarding page
+                read the same. */}
             <View
-              className={`w-7 h-7 rounded-full items-center justify-center ${
-                step.done
-                  ? 'bg-emerald-500/15'
-                  : 'bg-primary/10'
-              }`}>
+              style={{
+                borderColor: step.done ? '#10B981' : colors.primary,
+                backgroundColor: step.done ? '#10B981' : 'transparent',
+              }}
+              className="w-7 h-7 rounded-full border-2 items-center justify-center">
               <Ionicons
                 name={step.done ? 'checkmark' : step.icon}
-                size={15}
-                color={step.done ? '#10B981' : colors.primary}
+                size={step.done ? 15 : 13}
+                color={step.done ? '#FFFFFF' : colors.primary}
               />
             </View>
             <View className="flex-1">
