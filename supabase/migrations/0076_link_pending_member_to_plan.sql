@@ -111,7 +111,7 @@ begin
     insert into public.email_unsubscribes
       (gym_id, email, profile_id, reason)
       values (v_pending.gym_id, v_pending.email, new.profile_id, 'imported')
-      on conflict (gym_id, lower(email)) do nothing;
+      on conflict (gym_id, lower(email)) where topic_id is null do nothing;
   end if;
 
   -- NEW: auto-create the working plan_subscription. Only when the

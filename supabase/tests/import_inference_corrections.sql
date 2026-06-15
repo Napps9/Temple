@@ -14,12 +14,14 @@ select plan(6);
 
 do $$
 declare
-  v_owner uuid := _test_mk_user('owner@iic.test');
-  v_gym   uuid := _test_mk_gym('Corrections Gym', 'iic-gym');
+  v_owner    uuid := _test_mk_user('owner@iic.test');
+  v_outsider uuid := _test_mk_user('outsider@iic.test');
+  v_gym      uuid := _test_mk_gym('Corrections Gym', 'iic-gym');
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
-  perform set_config('test.gym',   v_gym::text,   true);
-  perform set_config('test.owner', v_owner::text, true);
+  perform set_config('test.gym',      v_gym::text,      true);
+  perform set_config('test.owner',    v_owner::text,    true);
+  perform set_config('test.outsider', v_outsider::text, true);
   perform _test_act_as(v_owner);
 end $$;
 
@@ -69,6 +71,12 @@ select is(
   'record_import_corrections inserts each row and returns the count'
 );
 
+-- Tests 2-4 read the corrections table directly. RLS denies all client
+-- reads by design (the edge function uses the service role); drop the
+-- role for these SELECT-back assertions so we can verify what the RPC
+-- actually wrote.
+do $$ begin reset role; end $$;
+
 select is(
   (select count(*)::int from public.import_inference_corrections
    where gym_id = current_setting('test.gym')::uuid),
@@ -76,7 +84,7 @@ select is(
   'three rows landed in the table'
 );
 
--- 2. Exact-match lookup: same raw_name resolves to the prior final_value.
+-- 3. Exact-match lookup: same raw_name resolves to the prior final_value.
 select is(
   (select final_value->>'name'
    from public.import_inference_corrections
@@ -87,9 +95,8 @@ select is(
   'exact-match lookup returns the prior owner''s final value'
 );
 
--- 3. Trigram similarity finds "PREMIUM-UNL-MONTH" when asked about a
--- close variant. Threshold 0.3 here is well below the default (0.3 is
--- pg_trgm's standard similarity baseline).
+-- 4. Trigram similarity finds "PREMIUM-UNL-MONTH" when asked about a
+-- close variant. Threshold 0.3 is pg_trgm's standard baseline.
 select ok(
   (select count(*) >= 1 from public.import_inference_corrections
    where field_kind = 'plan'
@@ -98,13 +105,9 @@ select ok(
   'trigram similarity matches a close variant ("PREMIUM_UNL_MONTHLY")'
 );
 
--- 4. Non-owner can't call the RPC (RLS / capability gate).
-do $$
-declare
-  v_outsider uuid := _test_mk_user('outsider@iic.test');
-begin
-  perform _test_act_as(v_outsider);
-  perform set_config('test.outsider', v_outsider::text, true);
+-- 5. Non-owner can't call the RPC (RLS / capability gate).
+do $$ begin
+  perform _test_act_as(current_setting('test.outsider')::uuid);
 end $$;
 
 select throws_like(
@@ -117,7 +120,7 @@ select throws_like(
   'non-staff caller is rejected by the capability gate'
 );
 
--- 5. Owner override is captured with was_overridden=true.
+-- 6. Owner override is captured with was_overridden=true.
 do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
 
 select is(
