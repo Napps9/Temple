@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
@@ -44,7 +44,16 @@ type EditableType = {
   // the gym default. The save path parses to integer.
   bookingWindowHoursAhead: string;
   bookingCutoffMinutesBefore: string;
+  // Cancel cutoff has three modes:
+  //   'inherit'    — both relative override and absolute mode null
+  //   'relative'   — cancelCutoffMinutesBefore drives, mode null
+  //   'day_before' — cancelCutoffTime + cancelCutoffDaysBefore drive,
+  //                  mode = 'day_before'
+  // String-backed for the same blank-empty-equals-inherit reason.
+  cancelCutoffMode: 'inherit' | 'relative' | 'day_before';
   cancelCutoffMinutesBefore: string;
+  cancelCutoffTime: string;
+  cancelCutoffDaysBefore: string;
 };
 
 function fmtDateLocal(d: Date) {
@@ -137,10 +146,23 @@ export function ClassTypesPanel() {
             t.booking_cutoff_minutes_before === null
               ? ''
               : String(t.booking_cutoff_minutes_before),
+          cancelCutoffMode:
+            t.cancel_cutoff_mode === 'day_before'
+              ? 'day_before'
+              : t.cancel_cutoff_minutes_before !== null
+                ? 'relative'
+                : 'inherit',
           cancelCutoffMinutesBefore:
             t.cancel_cutoff_minutes_before === null
               ? ''
               : String(t.cancel_cutoff_minutes_before),
+          cancelCutoffTime: t.cancel_cutoff_time
+            ? t.cancel_cutoff_time.slice(0, 5)
+            : '',
+          cancelCutoffDaysBefore:
+            t.cancel_cutoff_days_before === null
+              ? '1'
+              : String(t.cancel_cutoff_days_before),
         };
       }),
     );
@@ -194,22 +216,16 @@ export function ClassTypesPanel() {
       const server = types.data ?? [];
       const serverById = new Map(server.map((t) => [t.id, t]));
 
-      type Insert = {
-        localIdx: number;
-        name: string;
-        color: string;
+      type Rules = {
         booking_window_hours_ahead: number | null;
         booking_cutoff_minutes_before: number | null;
         cancel_cutoff_minutes_before: number | null;
+        cancel_cutoff_mode: 'day_before' | null;
+        cancel_cutoff_time: string | null;
+        cancel_cutoff_days_before: number | null;
       };
-      type Update = {
-        id: string;
-        name: string;
-        color: string;
-        booking_window_hours_ahead: number | null;
-        booking_cutoff_minutes_before: number | null;
-        cancel_cutoff_minutes_before: number | null;
-      };
+      type Insert = { localIdx: number; name: string; color: string } & Rules;
+      type Update = { id: string; name: string; color: string } & Rules;
       const inserts: Insert[] = [];
       const updates: Update[] = [];
 
@@ -223,13 +239,53 @@ export function ClassTypesPanel() {
         return n;
       }
 
+      // Derive the three cancel-cutoff columns from the row's mode. Only
+      // one of the relative override / absolute pair is populated at a
+      // time; the other side goes back to null = inherit.
+      function cancelCutoffFromRow(r: EditableType): {
+        cancel_cutoff_minutes_before: number | null;
+        cancel_cutoff_mode: 'day_before' | null;
+        cancel_cutoff_time: string | null;
+        cancel_cutoff_days_before: number | null;
+      } {
+        if (r.cancelCutoffMode === 'relative') {
+          return {
+            cancel_cutoff_minutes_before: nullableInt(r.cancelCutoffMinutesBefore),
+            cancel_cutoff_mode: null,
+            cancel_cutoff_time: null,
+            cancel_cutoff_days_before: null,
+          };
+        }
+        if (r.cancelCutoffMode === 'day_before') {
+          const t = r.cancelCutoffTime.trim();
+          if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) {
+            throw new Error(
+              `${r.name || 'Class type'}: cancel time must be HH:MM (24h), e.g. 21:00`,
+            );
+          }
+          const d = nullableInt(r.cancelCutoffDaysBefore);
+          return {
+            cancel_cutoff_minutes_before: null,
+            cancel_cutoff_mode: 'day_before',
+            cancel_cutoff_time: t,
+            cancel_cutoff_days_before: d ?? 1,
+          };
+        }
+        return {
+          cancel_cutoff_minutes_before: null,
+          cancel_cutoff_mode: null,
+          cancel_cutoff_time: null,
+          cancel_cutoff_days_before: null,
+        };
+      }
+
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         const name = r.name.trim();
-        const rules = {
+        const rules: Rules = {
           booking_window_hours_ahead: nullableInt(r.bookingWindowHoursAhead),
           booking_cutoff_minutes_before: nullableInt(r.bookingCutoffMinutesBefore),
-          cancel_cutoff_minutes_before: nullableInt(r.cancelCutoffMinutesBefore),
+          ...cancelCutoffFromRow(r),
         };
         if (r.id === null) {
           if (!name) throw new Error('Each type needs a name');
@@ -239,6 +295,9 @@ export function ClassTypesPanel() {
         if (r.archivedAt) continue;
         if (!name) throw new Error('Each type needs a name');
         const sv = serverById.get(r.id);
+        const svTime = sv?.cancel_cutoff_time
+          ? sv.cancel_cutoff_time.slice(0, 5)
+          : null;
         const changed =
           sv &&
           (sv.name !== name ||
@@ -247,7 +306,10 @@ export function ClassTypesPanel() {
             sv.booking_cutoff_minutes_before !==
               rules.booking_cutoff_minutes_before ||
             sv.cancel_cutoff_minutes_before !==
-              rules.cancel_cutoff_minutes_before);
+              rules.cancel_cutoff_minutes_before ||
+            sv.cancel_cutoff_mode !== rules.cancel_cutoff_mode ||
+            svTime !== rules.cancel_cutoff_time ||
+            sv.cancel_cutoff_days_before !== rules.cancel_cutoff_days_before);
         if (changed) {
           updates.push({ id: r.id, name, color: r.color, ...rules });
         }
@@ -265,6 +327,9 @@ export function ClassTypesPanel() {
               booking_window_hours_ahead: i.booking_window_hours_ahead,
               booking_cutoff_minutes_before: i.booking_cutoff_minutes_before,
               cancel_cutoff_minutes_before: i.cancel_cutoff_minutes_before,
+              cancel_cutoff_mode: i.cancel_cutoff_mode,
+              cancel_cutoff_time: i.cancel_cutoff_time,
+              cancel_cutoff_days_before: i.cancel_cutoff_days_before,
             })),
           )
           .select('id');
@@ -285,6 +350,9 @@ export function ClassTypesPanel() {
             booking_window_hours_ahead: u.booking_window_hours_ahead,
             booking_cutoff_minutes_before: u.booking_cutoff_minutes_before,
             cancel_cutoff_minutes_before: u.cancel_cutoff_minutes_before,
+            cancel_cutoff_mode: u.cancel_cutoff_mode,
+            cancel_cutoff_time: u.cancel_cutoff_time,
+            cancel_cutoff_days_before: u.cancel_cutoff_days_before,
           })
           .eq('id', u.id);
         if (error) throw error;
@@ -421,7 +489,10 @@ export function ClassTypesPanel() {
         rulesOpen: false,
         bookingWindowHoursAhead: '',
         bookingCutoffMinutesBefore: '',
+        cancelCutoffMode: 'inherit',
         cancelCutoffMinutesBefore: '',
+        cancelCutoffTime: '',
+        cancelCutoffDaysBefore: '1',
       },
     ]);
   }
@@ -600,16 +671,100 @@ export function ClassTypesPanel() {
                       units={['minutes', 'hours', 'days', 'weeks']}
                       placeholder="inherit"
                     />
-                    <DurationField
-                      label="Free-cancel cutoff before start (blank = inherit)"
-                      value={r.cancelCutoffMinutesBefore}
-                      onChange={(v) =>
-                        updateRow(idx, { cancelCutoffMinutesBefore: v })
-                      }
-                      base="minutes"
-                      units={['minutes', 'hours', 'days', 'weeks']}
-                      placeholder="inherit"
-                    />
+                    <View className="gap-2">
+                      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                        Free-cancel cutoff
+                      </Text>
+                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                        Inherit the gym setting, or override with either a
+                        time before class or "by 9pm the night before"-style
+                        absolute cutoff per class type.
+                      </Text>
+                      <View className="flex-row gap-2">
+                        {(
+                          [
+                            ['inherit', 'Inherit'],
+                            ['relative', 'A time before class'],
+                            ['day_before', 'A set time, days before'],
+                          ] as const
+                        ).map(([m, label]) => {
+                          const on = r.cancelCutoffMode === m;
+                          return (
+                            <Pressable
+                              key={m}
+                              onPress={() =>
+                                updateRow(idx, { cancelCutoffMode: m })
+                              }
+                              className={`flex-1 px-3 py-2 rounded-lg border ${
+                                on
+                                  ? 'border-primary bg-primary/10'
+                                  : 'border-gray-200 dark:border-gray-700'
+                              }`}>
+                              <Text
+                                className={`text-xs text-center ${
+                                  on
+                                    ? 'text-primary font-medium'
+                                    : 'text-gray-500 dark:text-gray-400'
+                                }`}>
+                                {label}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                      {r.cancelCutoffMode === 'relative' ? (
+                        <DurationField
+                          label=""
+                          value={r.cancelCutoffMinutesBefore}
+                          onChange={(v) =>
+                            updateRow(idx, { cancelCutoffMinutesBefore: v })
+                          }
+                          base="minutes"
+                          units={['minutes', 'hours', 'days', 'weeks']}
+                          placeholder="e.g. 60"
+                        />
+                      ) : null}
+                      {r.cancelCutoffMode === 'day_before' ? (
+                        <View className="gap-2">
+                          <View className="flex-row gap-2">
+                            <View className="flex-1 gap-1.5">
+                              <Text className="text-gray-700 dark:text-gray-200 text-xs">
+                                Cancel by (24h)
+                              </Text>
+                              <TextInput
+                                value={r.cancelCutoffTime}
+                                onChangeText={(v) =>
+                                  updateRow(idx, { cancelCutoffTime: v })
+                                }
+                                placeholder="21:00"
+                                placeholderTextColor="#9CA3AF"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+                              />
+                            </View>
+                            <View className="w-28 gap-1.5">
+                              <Text className="text-gray-700 dark:text-gray-200 text-xs">
+                                Days before
+                              </Text>
+                              <TextInput
+                                value={r.cancelCutoffDaysBefore}
+                                onChangeText={(v) =>
+                                  updateRow(idx, { cancelCutoffDaysBefore: v })
+                                }
+                                placeholder="1"
+                                placeholderTextColor="#9CA3AF"
+                                keyboardType="number-pad"
+                                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+                              />
+                            </View>
+                          </View>
+                          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                            e.g. 21:00 · 1 day before = “cancel by 9pm the night before”. Time uses the gym timezone.
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
                 ) : null}
 

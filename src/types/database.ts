@@ -948,6 +948,9 @@ export type Database = {
           booking_window_hours_ahead: number | null;
           booking_cutoff_minutes_before: number | null;
           cancel_cutoff_minutes_before: number | null;
+          cancel_cutoff_mode: 'relative' | 'day_before' | null;
+          cancel_cutoff_time: string | null;
+          cancel_cutoff_days_before: number | null;
         };
         Insert: {
           id?: string;
@@ -962,6 +965,9 @@ export type Database = {
           booking_window_hours_ahead?: number | null;
           booking_cutoff_minutes_before?: number | null;
           cancel_cutoff_minutes_before?: number | null;
+          cancel_cutoff_mode?: 'relative' | 'day_before' | null;
+          cancel_cutoff_time?: string | null;
+          cancel_cutoff_days_before?: number | null;
         };
         Update: Partial<{
           id: string;
@@ -976,6 +982,9 @@ export type Database = {
           booking_window_hours_ahead: number | null;
           booking_cutoff_minutes_before: number | null;
           cancel_cutoff_minutes_before: number | null;
+          cancel_cutoff_mode: 'relative' | 'day_before' | null;
+          cancel_cutoff_time: string | null;
+          cancel_cutoff_days_before: number | null;
         }>;
         Relationships: [];
       };

@@ -24,6 +24,9 @@ export type ClassTypeRow = {
   booking_window_hours_ahead: number | null;
   booking_cutoff_minutes_before: number | null;
   cancel_cutoff_minutes_before: number | null;
+  cancel_cutoff_mode: 'relative' | 'day_before' | null;
+  cancel_cutoff_time: string | null;
+  cancel_cutoff_days_before: number | null;
 };
 
 export function useClassTypes() {
@@ -35,7 +38,7 @@ export function useClassTypes() {
       const { data, error } = await supabase
         .from('class_types')
         .select(
-          'id, name, color, archived_at, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before',
+          'id, name, color, archived_at, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before',
         )
         .eq('gym_id', membership!.gymId)
         .order('name');

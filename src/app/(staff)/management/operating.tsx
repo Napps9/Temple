@@ -73,15 +73,6 @@ export function OperatingDefaultsPanel() {
   const save = useMutation({
     mutationFn: async () => {
       if (!membership || !draft) throw new Error('Missing context');
-      const cancelTime = (draft.cancel_cutoff_time ?? '').trim();
-      if (
-        draft.cancel_cutoff_mode === 'day_before' &&
-        !/^([01]\d|2[0-3]):[0-5]\d$/.test(cancelTime)
-      ) {
-        throw new Error(
-          'Enter a cancellation time as HH:MM (24-hour), e.g. 21:00',
-        );
-      }
       const { error: e } = await supabase.rpc('set_gym_operating_defaults', {
         p_gym_id: membership.gymId,
         p_week_starts_on: draft.week_starts_on,
@@ -97,9 +88,12 @@ export function OperatingDefaultsPanel() {
         p_booking_window_hours_ahead: draft.booking_window_hours_ahead,
         p_booking_cutoff_minutes_before: draft.booking_cutoff_minutes_before,
         p_cancel_cutoff_minutes_before: draft.cancel_cutoff_minutes_before,
-        p_cancel_cutoff_mode: draft.cancel_cutoff_mode,
-        p_cancel_cutoff_time:
-          draft.cancel_cutoff_mode === 'day_before' ? cancelTime : null,
+        // gym-level day_before mode is no longer exposed in the UI —
+        // the trigger ignores it, the class-type override owns the
+        // absolute cutoff now. Always send 'relative' to keep the
+        // gyms row honest with the rendered state.
+        p_cancel_cutoff_mode: 'relative',
+        p_cancel_cutoff_time: null,
         p_cancel_cutoff_days_before: draft.cancel_cutoff_days_before,
       });
       if (e) throw e;
@@ -242,116 +236,24 @@ export function OperatingDefaultsPanel() {
           base="minutes"
           units={['minutes', 'hours', 'days', 'weeks']}
         />
-        <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-            Free cancellation cutoff
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Members can always cancel, but past this cutoff the credit is
-            forfeited.
-          </Text>
-          <View className="flex-row gap-2">
-            {(
-              [
-                ['relative', 'A time before class'],
-                ['day_before', 'A set time, days before'],
-              ] as const
-            ).map(([m, label]) => {
-              const on = draft.cancel_cutoff_mode === m;
-              return (
-                <Pressable
-                  key={m}
-                  onPress={() =>
-                    setDraft((d) => (d ? { ...d, cancel_cutoff_mode: m } : d))
+        <DurationField
+          label="Free cancellation cutoff"
+          blurb="Members can always cancel, but past this cutoff the credit is forfeited. 0 means no late-cancel forfeit. (Per-class-type overrides — including the 'cancel by 9pm the night before' style — live on each class type.)"
+          value={String(draft.cancel_cutoff_minutes_before)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    cancel_cutoff_minutes_before:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
                   }
-                  className={`flex-1 px-3 py-2 rounded-lg border ${
-                    on
-                      ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}>
-                  <Text
-                    className={`text-xs text-center ${
-                      on
-                        ? 'text-primary font-medium'
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          {draft.cancel_cutoff_mode === 'relative' ? (
-            <DurationField
-              label=""
-              blurb="0 means no late-cancel forfeit."
-              value={String(draft.cancel_cutoff_minutes_before)}
-              onChange={(v) =>
-                setDraft((d) =>
-                  d
-                    ? {
-                        ...d,
-                        cancel_cutoff_minutes_before:
-                          v.trim() === '' ? 0 : parseInt(v, 10),
-                      }
-                    : d,
-                )
-              }
-              base="minutes"
-              units={['minutes', 'hours', 'days', 'weeks']}
-            />
-          ) : (
-            <View className="gap-2">
-              <View className="flex-row gap-2">
-                <View className="flex-1 gap-1.5">
-                  <Text className="text-gray-700 dark:text-gray-200 text-xs">
-                    Cancel by (24h)
-                  </Text>
-                  <TextInput
-                    value={draft.cancel_cutoff_time ?? ''}
-                    onChangeText={(v) =>
-                      setDraft((d) =>
-                        d ? { ...d, cancel_cutoff_time: v } : d,
-                      )
-                    }
-                    placeholder="21:00"
-                    placeholderTextColor="#9CA3AF"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
-                  />
-                </View>
-                <View className="w-28 gap-1.5">
-                  <Text className="text-gray-700 dark:text-gray-200 text-xs">
-                    Days before
-                  </Text>
-                  <TextInput
-                    value={String(draft.cancel_cutoff_days_before)}
-                    onChangeText={(v) => {
-                      const n = parseInt(v, 10);
-                      setDraft((d) =>
-                        d
-                          ? {
-                              ...d,
-                              cancel_cutoff_days_before: Number.isFinite(n)
-                                ? n
-                                : 0,
-                            }
-                          : d,
-                      );
-                    }}
-                    keyboardType="number-pad"
-                    className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
-                  />
-                </View>
-              </View>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                e.g. 21:00 · 1 day before = “cancel by 9pm the night before”.
-                Times use the gym timezone ({draft.timezone.trim() || 'UTC'}).
-              </Text>
-            </View>
-          )}
-        </View>
+                : d,
+            )
+          }
+          base="minutes"
+          units={['minutes', 'hours', 'days', 'weeks']}
+        />
       </Section>
 
       <Section title="Health screening & retention">

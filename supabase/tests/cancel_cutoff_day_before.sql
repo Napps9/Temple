@@ -1,7 +1,8 @@
--- Absolute "cancel by a set time, N days before" free-cancel cutoff
--- (gyms.cancel_cutoff_mode = 'day_before', cancel_cutoff_time,
--- cancel_cutoff_days_before). The refund trigger computes the cutoff
--- from each class's own local date in the gym timezone.
+-- Absolute "cancel by a set time, N days before" free-cancel cutoff,
+-- now configured per class type (class_types.cancel_cutoff_mode =
+-- 'day_before', cancel_cutoff_time, cancel_cutoff_days_before). The
+-- refund trigger computes the cutoff from each class's own local date
+-- in the gym timezone.
 --
 -- Determinism: timezone is pinned to UTC and days_before is chosen
 -- relative to each session offset so the cutoff lands unambiguously in
@@ -20,6 +21,7 @@ declare
   v_mid    uuid;
   v_plan   uuid;
   v_sub    uuid;
+  v_ct     uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   v_mid := _test_mk_membership(v_gym, v_member, 'member');
@@ -36,15 +38,22 @@ begin
   update public.gyms
     set timezone                      = 'UTC',
         booking_window_hours_ahead    = null,
-        booking_cutoff_minutes_before = 0,
-        cancel_cutoff_mode            = 'day_before',
-        cancel_cutoff_time            = '12:00'
+        booking_cutoff_minutes_before = 0
     where id = v_gym;
+
+  -- Per-class-type day_before mode is what we're testing. Gym stays
+  -- on the relative default (which is the only mode the new UI shows
+  -- at gym level).
+  insert into public.class_types
+    (gym_id, name, color, cancel_cutoff_mode, cancel_cutoff_time)
+    values (v_gym, 'Early Birds', '#3B82F6', 'day_before', '12:00')
+    returning id into v_ct;
 
   perform set_config('test.gym',    v_gym::text,    true);
   perform set_config('test.owner',  v_owner::text,  true);
   perform set_config('test.member', v_member::text, true);
   perform set_config('test.sub',    v_sub::text,    true);
+  perform set_config('test.ct',     v_ct::text,     true);
 end $$;
 
 -- ── Case A: cutoff already passed → late cancel forfeits ───────────────
@@ -54,12 +63,14 @@ declare
   v_sess uuid;
 begin
   reset role;
-  update public.gyms set cancel_cutoff_days_before = 5
-    where id = current_setting('test.gym')::uuid;
+  update public.class_types set cancel_cutoff_days_before = 5
+    where id = current_setting('test.ct')::uuid;
   v_sess := _test_mk_session(
     current_setting('test.gym')::uuid,
     current_setting('test.owner')::uuid,
-    now() + interval '2 days');
+    now() + interval '2 days',
+    60,
+    current_setting('test.ct')::uuid);
   perform set_config('test.late', v_sess::text, true);
   perform _test_act_as(current_setting('test.member')::uuid);
   perform book_class(
@@ -83,7 +94,7 @@ select is(
   (select credit_balance from public.plan_subscriptions
    where id = current_setting('test.sub')::uuid),
   9,
-  'cancelling past the day-before cutoff forfeits the credit (stays 9)'
+  'cancelling past the class-type day-before cutoff forfeits the credit (stays 9)'
 );
 
 -- ── Case B: cutoff still ahead → on-time cancel refunds ────────────────
@@ -93,12 +104,14 @@ declare
   v_sess uuid;
 begin
   reset role;
-  update public.gyms set cancel_cutoff_days_before = 1
-    where id = current_setting('test.gym')::uuid;
+  update public.class_types set cancel_cutoff_days_before = 1
+    where id = current_setting('test.ct')::uuid;
   v_sess := _test_mk_session(
     current_setting('test.gym')::uuid,
     current_setting('test.owner')::uuid,
-    now() + interval '10 days');
+    now() + interval '10 days',
+    60,
+    current_setting('test.ct')::uuid);
   perform set_config('test.early', v_sess::text, true);
   perform _test_act_as(current_setting('test.member')::uuid);
   perform book_class(
@@ -122,7 +135,7 @@ select is(
   (select credit_balance from public.plan_subscriptions
    where id = current_setting('test.sub')::uuid),
   9,
-  'cancelling before the day-before cutoff refunds the credit (8 + 1 = 9)'
+  'cancelling before the class-type day-before cutoff refunds the credit (8 + 1 = 9)'
 );
 
 select * from finish();

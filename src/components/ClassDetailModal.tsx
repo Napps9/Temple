@@ -28,7 +28,14 @@ type SessionDetail = {
   gym_id: string;
   coach_id: string | null;
   recurrence_id: string | null;
-  class_types: { name: string; color: string } | null;
+  class_types: {
+    name: string;
+    color: string;
+    cancel_cutoff_minutes_before: number | null;
+    cancel_cutoff_mode: 'relative' | 'day_before' | null;
+    cancel_cutoff_time: string | null;
+    cancel_cutoff_days_before: number | null;
+  } | null;
   coach: { full_name: string | null; avatar_url: string | null } | null;
 };
 
@@ -114,7 +121,7 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color), coach:profiles!coach_id(full_name, avatar_url)',
+          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach:profiles!coach_id(full_name, avatar_url)',
         )
         .eq('id', sessionId!)
         .single();
@@ -364,22 +371,28 @@ export function ClassDetailModal({
       : null;
   const inPast = start ? start.getTime() < Date.now() : false;
   const isFull = detail ? bookings.length >= detail.capacity : false;
-  const cancelCutoffMs =
-    (gymDefaults?.cancel_cutoff_minutes_before ?? 0) * 60 * 1000;
+  // Mirror the server-side precedence in 0074: class-type day_before
+  // wins, then class-type relative override, then gym relative default.
   const lateCancel = (() => {
     if (start === null || !detail) return false;
+    const ct = detail.class_types;
     if (
-      gymDefaults?.cancel_cutoff_mode === 'day_before' &&
-      gymDefaults.cancel_cutoff_time
+      ct?.cancel_cutoff_mode === 'day_before' &&
+      ct.cancel_cutoff_time
     ) {
       const cutoff = dayBeforeCutoffEpoch(
         detail.starts_at,
-        gymDefaults.timezone || 'UTC',
-        gymDefaults.cancel_cutoff_days_before ?? 1,
-        gymDefaults.cancel_cutoff_time,
+        gymDefaults?.timezone || 'UTC',
+        ct.cancel_cutoff_days_before ?? 1,
+        ct.cancel_cutoff_time,
       );
       return Date.now() >= cutoff;
     }
+    const relativeMin =
+      ct?.cancel_cutoff_minutes_before ??
+      gymDefaults?.cancel_cutoff_minutes_before ??
+      0;
+    const cancelCutoffMs = relativeMin * 60 * 1000;
     return cancelCutoffMs > 0 && start.getTime() - cancelCutoffMs <= Date.now();
   })();
 
