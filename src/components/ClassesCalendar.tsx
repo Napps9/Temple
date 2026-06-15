@@ -54,11 +54,13 @@ function scrollYForHour(hour: number, baseHour: number, hourCount: number) {
 // Trim the rendered hour window to where the visible week's sessions
 // actually run, with ±2h of padding so an owner can drop a class
 // slightly outside the current window without first scrolling. The
-// floor / ceiling and the 8-hour minimum keep the grid feeling like
-// a calendar even on empty weeks.
+// floor / ceiling and the minSpan minimum keep the grid feeling like
+// a calendar even on empty weeks; day view passes a larger minSpan
+// so the focused column has enough vertical room to scroll into.
 function visibleHours(
   sessions: ClassSession[] | undefined,
   days: Date[],
+  minSpan = MIN_VISIBLE_HOURS,
 ): number[] {
   let earliest = DEFAULT_VIEW_START;
   let latest = DEFAULT_VIEW_END;
@@ -82,10 +84,10 @@ function visibleHours(
     earliest = Math.max(HOURS_MIN, earliest - 2);
     latest = Math.min(HOURS_MAX, latest + 2);
   }
-  if (latest - earliest < MIN_VISIBLE_HOURS) {
-    latest = Math.min(HOURS_MAX, earliest + MIN_VISIBLE_HOURS);
-    if (latest - earliest < MIN_VISIBLE_HOURS) {
-      earliest = Math.max(HOURS_MIN, latest - MIN_VISIBLE_HOURS);
+  if (latest - earliest < minSpan) {
+    latest = Math.min(HOURS_MAX, earliest + minSpan);
+    if (latest - earliest < minSpan) {
+      earliest = Math.max(HOURS_MIN, latest - minSpan);
     }
   }
   return Array.from({ length: latest - earliest }, (_, i) => earliest + i);
@@ -559,7 +561,10 @@ function DayView({
     (a, b) =>
       new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
   );
-  const hours = visibleHours(sessions, [date]);
+  // Day view is a focused single-day surface — show a full workday's
+  // worth of scrollable hours so the owner can drop a class outside
+  // the current schedule without first scrolling off the top/bottom.
+  const hours = visibleHours(sessions, [date], 14);
 
   const scrollRef = useRef<ScrollView | null>(null);
   useEffect(() => {
@@ -577,7 +582,7 @@ function DayView({
 
   return (
     <View className="flex-1">
-      <View className="w-full max-w-5xl mx-auto px-2">
+      <View className="w-full max-w-2xl mx-auto px-2">
         <View className="flex-row gap-2 md:gap-3 md:justify-center pt-2 pb-4 md:pb-6">
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
@@ -620,7 +625,7 @@ function DayView({
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="pb-10">
-        <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="w-full max-w-2xl mx-auto px-2">
           {mode === 'book' ? (
             <View className="gap-2">
               {dayClasses.length > 0 ? (
