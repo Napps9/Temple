@@ -67,13 +67,6 @@ select is(
 -- Re-extend through the same horizon. New 17:30 sessions should
 -- appear on the historical days that were already materialised.
 do $$
-begin
-  perform _test_act_as(_test_mk_user('caller@refill.test')); -- any caller
-  -- Use the owner because user_belongs_to is required by extend.
-end;
-$$;
-
-do $$
 declare
   v_owner uuid;
 begin
