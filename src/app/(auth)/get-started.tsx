@@ -6,7 +6,6 @@ import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -201,19 +200,12 @@ export default function GetStartedScreen() {
                   key={p.key}
                   hitSlop={8}
                   onPress={() => goTo(i)}
-                  style={[
-                    {
-                      width: active ? 22 : 7,
-                      height: 7,
-                      borderRadius: 4,
-                      backgroundColor: active ? p.accent : '#334155',
-                    },
-                    Platform.OS === 'web' &&
-                      ({
-                        transitionDuration: '220ms',
-                        transitionProperty: 'width, background-color',
-                      } as object),
-                  ]}
+                  style={{
+                    width: active ? 22 : 7,
+                    height: 7,
+                    borderRadius: 4,
+                    backgroundColor: active ? p.accent : '#334155',
+                  }}
                 />
               );
             })}
@@ -236,63 +228,43 @@ export default function GetStartedScreen() {
 }
 
 function PathCard({ path }: { path: Path }) {
-  const [hovered, setHovered] = useState(false);
-  const web = Platform.OS === 'web';
   return (
-    <Link href={path.href as never} asChild>
-      <Pressable
-        onHoverIn={() => setHovered(true)}
-        onHoverOut={() => setHovered(false)}
-        style={[
-          { transform: [{ translateY: hovered ? -4 : 0 }] },
-          web &&
-            ({
-              transitionDuration: '220ms',
-              transitionProperty: 'transform, border-color',
-              cursor: 'pointer',
-            } as object),
-        ]}
-        className={`rounded-3xl border bg-white/[0.04] p-6 gap-5 shadow-xl ${
-          hovered ? 'border-white/25' : 'border-white/10'
-        }`}>
-        <View className="flex-row items-center gap-3">
-          <View
-            style={{ backgroundColor: `${path.accent}22` }}
-            className="w-12 h-12 rounded-2xl items-center justify-center">
-            <Ionicons name={path.icon} size={24} color={path.accent} />
-          </View>
-          <View className="flex-1">
-            <Text
-              style={{ color: path.accent }}
-              className="text-[10px] font-semibold uppercase tracking-[3px]">
-              {path.kicker}
-            </Text>
-            <Text className="text-white text-2xl font-semibold">
-              {path.title}
-            </Text>
-          </View>
-        </View>
-
-        <Text className="text-gray-100 text-lg font-medium">
-          {path.headline}
-        </Text>
-
-        <View className="gap-2.5">
-          {path.bullets.map((b) => (
-            <View key={b} className="flex-row gap-2.5">
-              <Ionicons name="checkmark-circle" size={18} color={path.accent} />
-              <Text className="flex-1 text-gray-300 text-sm leading-5">{b}</Text>
-            </View>
-          ))}
-        </View>
-
+    <View className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 gap-5 shadow-xl">
+      <View className="flex-row items-center gap-3">
         <View
-          style={{ backgroundColor: path.accent }}
-          className="rounded-xl p-3.5 items-center mt-1">
-          <Text className="text-white font-semibold">{path.cta}</Text>
+          style={{ backgroundColor: `${path.accent}22` }}
+          className="w-12 h-12 rounded-2xl items-center justify-center">
+          <Ionicons name={path.icon} size={24} color={path.accent} />
         </View>
-      </Pressable>
-    </Link>
+        <View className="flex-1">
+          <Text
+            style={{ color: path.accent }}
+            className="text-[10px] font-semibold uppercase tracking-[3px]">
+            {path.kicker}
+          </Text>
+          <Text className="text-white text-2xl font-semibold">{path.title}</Text>
+        </View>
+      </View>
+
+      <Text className="text-gray-100 text-lg font-medium">{path.headline}</Text>
+
+      <View className="gap-2.5">
+        {path.bullets.map((b) => (
+          <View key={b} className="flex-row gap-2.5">
+            <Ionicons name="checkmark-circle" size={18} color={path.accent} />
+            <Text className="flex-1 text-gray-300 text-sm leading-5">{b}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Link href={path.href as never} asChild>
+        <Pressable
+          style={{ backgroundColor: path.accent }}
+          className="rounded-xl p-3.5 items-center active:opacity-80 mt-1">
+          <Text className="text-white font-semibold">{path.cta}</Text>
+        </Pressable>
+      </Link>
+    </View>
   );
 }
 
