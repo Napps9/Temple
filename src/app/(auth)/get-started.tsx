@@ -17,8 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // The three paths are a stacked deck mirroring the logo — each card is one
 // of the brand colours (cream → steel-blue → gold). Advancing shuffles the
 // front card to the back and brings the next colour forward (the deck
-// cycles). All cards fill to the tallest so the deck never resizes;
-// foreground flips ink/cream per card for contrast.
+// cycles). Every card fills to the tallest so the deck never resizes, and
+// the CTA is pinned to the bottom; foreground flips ink/cream per card.
 
 const CREAM = '#F4F2ED';
 const INK = '#111111';
@@ -111,6 +111,9 @@ const TALLEST = PATHS.reduce((a, b) =>
 );
 // Stack offsets per depth: 0 = front, 1 = middle, 2 = back.
 const OFFSET = [0, 13, 26];
+const CARD_PAD = 28;
+const CARD_RADIUS = 24;
+const CTA_GAP = 24;
 
 export default function GetStartedScreen() {
   const [page, setPage] = useState(0);
@@ -189,22 +192,28 @@ export default function GetStartedScreen() {
               {/* Invisible sizer: tallest card sets the deck height so the
                   whole deck stays one fixed, uniform size. */}
               <View style={{ opacity: 0 }} pointerEvents="none">
-                <CardFace
-                  path={TALLEST}
-                  interactive={false}
-                  contentOpacity={1}
-                  fill={false}
-                />
+                <View
+                  style={{
+                    backgroundColor: TALLEST.bg,
+                    borderColor: TALLEST.border,
+                    borderWidth: 1,
+                    borderRadius: CARD_RADIUS,
+                    padding: CARD_PAD,
+                  }}>
+                  <CardContent path={TALLEST} />
+                  <View style={{ paddingTop: CTA_GAP }}>
+                    <CardCta path={TALLEST} interactive={false} />
+                  </View>
+                </View>
               </View>
 
               {PATHS.map((p, i) => {
                 const depth = depthOf(i, page);
                 const sv = slots[i];
-                const translateX = sv.interpolate({
+                const off = sv.interpolate({
                   inputRange: [0, 1, 2],
                   outputRange: OFFSET,
                 });
-                const translateY = translateX;
                 const contentOpacity = sv.interpolate({
                   inputRange: [0, 0.5, 2],
                   outputRange: [1, 0, 0],
@@ -220,14 +229,24 @@ export default function GetStartedScreen() {
                       right: 0,
                       bottom: 0,
                       zIndex: N - depth,
-                      transform: [{ translateX }, { translateY }],
+                      backgroundColor: p.bg,
+                      borderColor: p.border,
+                      borderWidth: 1,
+                      borderRadius: CARD_RADIUS,
+                      padding: CARD_PAD,
+                      transform: [{ translateX: off }, { translateY: off }],
+                      shadowColor: '#000',
+                      shadowOpacity: 0.3,
+                      shadowRadius: 18,
+                      shadowOffset: { width: 0, height: 12 },
+                      elevation: 8,
                     }}>
-                    <CardFace
-                      path={p}
-                      interactive={depth === 0}
-                      contentOpacity={contentOpacity}
-                      fill
-                    />
+                    <Animated.View style={{ opacity: contentOpacity, flex: 1 }}>
+                      <CardContent path={p} />
+                      <View style={{ marginTop: 'auto', paddingTop: CTA_GAP }}>
+                        <CardCta path={p} interactive={depth === 0} />
+                      </View>
+                    </Animated.View>
                   </Animated.View>
                 );
               })}
@@ -276,83 +295,75 @@ export default function GetStartedScreen() {
   );
 }
 
-function CardFace({
+function CardContent({ path }: { path: Path }) {
+  return (
+    <View style={{ gap: CTA_GAP }}>
+      <View className="flex-row items-center gap-4">
+        <View
+          style={{ borderColor: path.fg }}
+          className="w-14 h-14 rounded-full border items-center justify-center">
+          <Ionicons name={path.icon} size={24} color={path.fg} />
+        </View>
+        <View className="flex-1">
+          <Text
+            style={{ color: path.fg }}
+            className="text-[10px] font-semibold uppercase tracking-[3px] opacity-70">
+            {path.kicker}
+          </Text>
+          <Text style={{ color: path.fg }} className="text-2xl font-semibold">
+            {path.title}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={{ color: path.fg }} className="text-lg font-medium">
+        {path.headline}
+      </Text>
+
+      <View className="gap-2.5">
+        {path.bullets.map((b) => (
+          <View key={b} className="flex-row gap-2.5">
+            <Ionicons name="checkmark-circle" size={18} color={path.fg} />
+            <Text
+              style={{ color: path.fg }}
+              className="flex-1 text-sm leading-5 opacity-90">
+              {b}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function CardCta({
   path,
   interactive,
-  contentOpacity,
-  fill,
 }: {
   path: Path;
   interactive: boolean;
-  contentOpacity: Animated.AnimatedInterpolation<number> | number;
-  fill: boolean;
 }) {
+  const label = (
+    <Text style={{ color: path.ctaText }} className="font-semibold">
+      {path.cta}
+    </Text>
+  );
+  if (interactive) {
+    return (
+      <Link href={path.href as never} asChild>
+        <Pressable
+          style={{ backgroundColor: path.ctaBg }}
+          className="rounded-xl p-4 items-center active:opacity-80">
+          {label}
+        </Pressable>
+      </Link>
+    );
+  }
   return (
     <View
-      style={{ backgroundColor: path.bg, borderColor: path.border }}
-      className={`rounded-3xl border p-7 shadow-xl ${fill ? 'flex-1' : ''}`}>
-      <Animated.View
-        style={{ opacity: contentOpacity }}
-        className={fill ? 'flex-1 justify-between gap-6' : 'gap-6'}>
-        <View className="gap-6">
-          <View className="flex-row items-center gap-4">
-            <View
-              style={{ borderColor: path.fg }}
-              className="w-14 h-14 rounded-full border items-center justify-center">
-              <Ionicons name={path.icon} size={24} color={path.fg} />
-            </View>
-            <View className="flex-1">
-              <Text
-                style={{ color: path.fg }}
-                className="text-[10px] font-semibold uppercase tracking-[3px] opacity-70">
-                {path.kicker}
-              </Text>
-              <Text
-                style={{ color: path.fg }}
-                className="text-2xl font-semibold">
-                {path.title}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={{ color: path.fg }} className="text-lg font-medium">
-            {path.headline}
-          </Text>
-
-          <View className="gap-2.5">
-            {path.bullets.map((b) => (
-              <View key={b} className="flex-row gap-2.5">
-                <Ionicons name="checkmark-circle" size={18} color={path.fg} />
-                <Text
-                  style={{ color: path.fg }}
-                  className="flex-1 text-sm leading-5 opacity-90">
-                  {b}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {interactive ? (
-          <Link href={path.href as never} asChild>
-            <Pressable
-              style={{ backgroundColor: path.ctaBg }}
-              className="rounded-xl p-4 items-center active:opacity-80">
-              <Text style={{ color: path.ctaText }} className="font-semibold">
-                {path.cta}
-              </Text>
-            </Pressable>
-          </Link>
-        ) : (
-          <View
-            style={{ backgroundColor: path.ctaBg }}
-            className="rounded-xl p-4 items-center">
-            <Text style={{ color: path.ctaText }} className="font-semibold">
-              {path.cta}
-            </Text>
-          </View>
-        )}
-      </Animated.View>
+      style={{ backgroundColor: path.ctaBg }}
+      className="rounded-xl p-4 items-center">
+      {label}
     </View>
   );
 }
