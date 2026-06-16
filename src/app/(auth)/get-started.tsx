@@ -13,7 +13,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 // Logged-out landing (served at app.jointemple.io). Deliberately always
 // dark and navless: one path card at a time in a swipe/click carousel so
@@ -38,7 +37,7 @@ type Path = {
 const PATHS: Path[] = [
   {
     key: 'member',
-    accent: '#10B981',
+    accent: '#2563EB',
     icon: 'people-outline',
     kicker: 'Member',
     title: 'Join a gym',
@@ -54,7 +53,7 @@ const PATHS: Path[] = [
   },
   {
     key: 'solo',
-    accent: '#F59E0B',
+    accent: '#2563EB',
     icon: 'flame-outline',
     kicker: 'Solo',
     title: 'Train solo',
@@ -115,26 +114,8 @@ export default function GetStartedScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-[#070B16]"
+      className="flex-1 bg-gray-950"
       edges={['top', 'bottom', 'left', 'right']}>
-      {/* Ambient brand-colour glows — static, soft, low opacity. */}
-      <View className="absolute inset-0" pointerEvents="none">
-        <Svg width="100%" height="100%">
-          <Defs>
-            <RadialGradient id="glowBlue" cx="18%" cy="6%" rx="75%" ry="55%">
-              <Stop offset="0%" stopColor="#2563EB" stopOpacity={0.3} />
-              <Stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
-            </RadialGradient>
-            <RadialGradient id="glowEmerald" cx="90%" cy="96%" rx="70%" ry="55%">
-              <Stop offset="0%" stopColor="#10B981" stopOpacity={0.16} />
-              <Stop offset="100%" stopColor="#10B981" stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowBlue)" />
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowEmerald)" />
-        </Svg>
-      </View>
-
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -229,7 +210,7 @@ export default function GetStartedScreen() {
 
 function PathCard({ path }: { path: Path }) {
   return (
-    <View className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 gap-5 shadow-xl">
+    <View className="rounded-3xl border border-gray-800 bg-gray-900 p-6 gap-5 shadow-xl">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: `${path.accent}22` }}
