@@ -24,7 +24,7 @@ type CreateRequest = { date?: Date; hour?: number };
 // the SQL default in 0049; the live value comes from gymDefaults.
 const HORIZON_WEEKS_FALLBACK = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
-const HOUR_HEIGHT = 64;
+const HOUR_HEIGHT = 80;
 // DAY_LETTERS is indexed by JS day-of-week (0=Sun..6=Sat) and used
 // in the day-strip header where the column header tracks the day's
 // real weekday. It does NOT depend on the gym's week_starts_on.
@@ -804,7 +804,11 @@ function DayClassCard({
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   const inGrid = heightPx != null;
-  const compact = inGrid && heightPx! < 70;
+  // The full layout (coach avatar + spot count) needs ~108px to render
+  // without clipping. Below that we use the clean chip + time card, so a
+  // standard 1-hour block (≈78px at the current hour height) reads big
+  // but uncramped; the detail layout kicks in for 90-minute+ sessions.
+  const compact = inGrid && heightPx! < 110;
   return (
     <Pressable
       onPress={() => {
