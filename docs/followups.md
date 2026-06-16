@@ -35,10 +35,10 @@ shows `otp_expired`. The localhost part comes from Supabase Auth's
 
 **Where:** Supabase Dashboard → Authentication → URL Configuration.
 
-- **Site URL** — change from `http://localhost:3000` to the deployed
-  Vercel URL (e.g. `https://temple.vercel.app` or whatever the live
-  domain is). This is what gets baked into every confirmation /
-  recovery / magic-link email.
+- **Site URL** — change from `http://localhost:3000` to the production
+  domain `https://app.jointemple.io` (the custom domain on Vercel). This
+  is what gets baked into every confirmation / recovery / magic-link
+  email.
 - **Redirect URLs** — add the same production URL plus any preview
   domains you need to test from (Vercel previews, custom domains).
   Anything not on this list is refused as a redirect target.
