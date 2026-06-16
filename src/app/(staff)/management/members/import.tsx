@@ -9,7 +9,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { joinUrl } from '@/lib/brand';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -332,7 +332,7 @@ export default function ImportMembersScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Manage" />
+        <BackLink label="Manage" fallbackHref="/management" />
 
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
@@ -1044,6 +1044,8 @@ function HandoverPanel({
   result: ImportResult;
 }) {
   const queryClient = useQueryClient();
+  const session = useSession();
+  const [campaignError, setCampaignError] = useState<string | null>(null);
   const origin =
     Platform.OS === 'web' && typeof window !== 'undefined'
       ? window.location.origin
@@ -1073,11 +1075,14 @@ function HandoverPanel({
   // people, and land in the same editor.
   const sendFromTemple = useMutation({
     mutationFn: async () => {
-      if (!gymId) throw new Error('Missing context');
+      if (!gymId || !session) throw new Error('Missing context');
       const { data, error } = await supabase
         .from('email_campaigns')
         .insert({
           gym_id: gymId,
+          // RLS requires created_by = auth.uid() on insert; omitting it
+          // silently fails the WITH CHECK.
+          created_by: session.user.id,
           title: `Welcome to ${gymName}`,
           subject: `Welcome to ${gymName} — your new home for booking`,
           preheader: 'Sign in to claim your account and keep your membership.',
@@ -1090,18 +1095,22 @@ function HandoverPanel({
       return (data as { id: string }).id;
     },
     onSuccess: (id) => {
+      setCampaignError(null);
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
       router.push(`/management/communications/${id}` as never);
     },
+    onError: (e) =>
+      setCampaignError(errorMessage(e, 'Could not open the welcome campaign')),
   });
 
   const createBlank = useMutation({
     mutationFn: async () => {
-      if (!gymId) throw new Error('Missing context');
+      if (!gymId || !session) throw new Error('Missing context');
       const { data, error } = await supabase
         .from('email_campaigns')
         .insert({
           gym_id: gymId,
+          created_by: session.user.id,
           title: 'Untitled campaign',
           subject: '',
           preheader: '',
@@ -1114,9 +1123,12 @@ function HandoverPanel({
       return (data as { id: string }).id;
     },
     onSuccess: (id) => {
+      setCampaignError(null);
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
       router.push(`/management/communications/${id}` as never);
     },
+    onError: (e) =>
+      setCampaignError(errorMessage(e, 'Could not create the campaign')),
   });
 
   function downloadPerMemberCsv() {
@@ -1219,6 +1231,11 @@ function HandoverPanel({
           loading={createBlank.isPending}>
           Create campaign from scratch
         </Button>
+        {campaignError ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">
+            {campaignError}
+          </Text>
+        ) : null}
       </View>
 
       {stats.data ? (
