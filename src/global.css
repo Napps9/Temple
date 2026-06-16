@@ -8,6 +8,6 @@
    are overridden at runtime by ThemedShell once useGymBrand() resolves
    the gym's saved primary_color. */
 :root {
-  --color-primary: 37 99 235;
-  --color-primary-dark: 29 78 216;
+  --color-primary: 59 107 165;
+  --color-primary-dark: 50 91 140;
 }

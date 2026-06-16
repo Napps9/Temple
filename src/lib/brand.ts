@@ -4,7 +4,7 @@
 // free of React / RN deps and is unit-testable in vitest.
 
 export const DEFAULT_BRAND = {
-  primaryColor: '#2563EB',
+  primaryColor: '#3B6BA5',
   secondaryColor: '#0F172A',
   textColor: '#0F172A',
 } as const;
@@ -108,8 +108,8 @@ export function inviteUrl(origin: string, code: string): string {
 // Default RGB triplet for the build-time primary; returned when a hex
 // can't be parsed so a malformed `gyms.primary_color` never blanks the
 // chrome.
-const DEFAULT_PRIMARY_RGB = '37 99 235';
-const DEFAULT_PRIMARY_DARK_RGB = '29 78 216';
+const DEFAULT_PRIMARY_RGB = '59 107 165';
+const DEFAULT_PRIMARY_DARK_RGB = '50 91 140';
 
 // Convert "#2563EB" → "37 99 235" (space-separated RGB triplet) for
 // CSS variables that Tailwind splices into `rgb(... / <alpha-value>)`.

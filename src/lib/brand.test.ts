@@ -91,9 +91,9 @@ describe('hexToRgbTriplet', () => {
     expect(hexToRgbTriplet('#FFFFFF')).toBe('255 255 255');
   });
   it('falls back to the default for malformed input', () => {
-    expect(hexToRgbTriplet('#nope')).toBe('37 99 235');
-    expect(hexToRgbTriplet('')).toBe('37 99 235');
-    expect(hexToRgbTriplet('zzzzzz')).toBe('37 99 235');
+    expect(hexToRgbTriplet('#nope')).toBe('59 107 165');
+    expect(hexToRgbTriplet('')).toBe('59 107 165');
+    expect(hexToRgbTriplet('zzzzzz')).toBe('59 107 165');
   });
 });
 
@@ -106,6 +106,6 @@ describe('hexToPrimaryDarkRgbTriplet', () => {
     expect(hexToPrimaryDarkRgbTriplet('#000000')).toBe('0 0 0');
   });
   it('falls back to the default-dark on malformed input', () => {
-    expect(hexToPrimaryDarkRgbTriplet('nope')).toBe('29 78 216');
+    expect(hexToPrimaryDarkRgbTriplet('nope')).toBe('50 91 140');
   });
 });
