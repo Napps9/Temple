@@ -2,7 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, Platform, View } from 'react-native';
 
-import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import {
+  pendingGymFromSession,
+  useGymMembership,
+  useRole,
+  useSession,
+} from '@/lib/auth';
 import { useConsentState } from '@/lib/consent';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -117,10 +122,16 @@ export default function Index() {
   // here for, and the picker links to /sign-in for returning users.
   if (!session) return <Redirect href="/get-started" />;
   if (isLoading) return <Loading />;
-  // Gymless users (brand-new sign-ups and ex-members alike) land in the
-  // athlete area — read-only portable training history plus the
-  // join / start-a-gym CTAs that /welcome used to be the only home for.
-  if (!membership) return <Redirect href="/athlete" />;
+  // Gymless users land in the athlete area — read-only portable training
+  // history plus the join / start-a-gym CTAs. The exception: someone who
+  // deferred gym creation for email confirmation has their gym name/slug
+  // stashed in metadata, so send them to /welcome to finish it in one tap
+  // rather than stranding them on the gymless home with no way to resume.
+  if (!membership) {
+    return (
+      <Redirect href={pendingGymFromSession(session) ? '/welcome' : '/athlete'} />
+    );
+  }
   if (consent.isLoading) return <Loading />;
   if (consent.data && !consent.data.consented) {
     return <Redirect href="/consent" />;
