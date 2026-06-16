@@ -28,7 +28,9 @@ import {
   type ReviewedPlan,
 } from '@/lib/import/infer';
 import { supabase } from '@/lib/supabase';
+import { useThemePreference } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
+import { webSelectStyle } from '@/lib/webSelect';
 import type { Json } from '@/types/database';
 
 // Single-file import wizard. Three local phases:
@@ -763,6 +765,7 @@ function PlanReviewCard({
   existingPlans: { plan_id: string; name: string; kind: string }[];
   onChange: (patch: Partial<ReviewedPlan>) => void;
 }) {
+  const { scheme } = useThemePreference();
   const confidence = suggestion.confidence;
   const confidenceColor =
     confidence === 'learned'
@@ -840,14 +843,10 @@ function PlanReviewCard({
               onChange={(e) =>
                 onChange({ existing_plan_id: e.target.value || null })
               }
-              style={{
+              style={webSelectStyle(scheme === 'dark', {
                 fontSize: 14,
                 padding: '8px 10px',
-                borderRadius: 8,
-                border: '1px solid #D1D5DB',
-                background: 'transparent',
-                color: 'inherit',
-              }}>
+              })}>
               {existingPlans.map((ep) => (
                 <option key={ep.plan_id} value={ep.plan_id}>
                   {ep.name} ({ep.kind.replace('_', ' ')})
@@ -1001,20 +1000,17 @@ function FieldPicker({
 }) {
   // Native-feeling picker that works on web (<select>) and skips
   // native, where we ship as a chip-of-chips horizontal scroll.
+  const { scheme } = useThemePreference();
   if (Platform.OS === 'web') {
     return (
       // eslint-disable-next-line jsx-a11y/no-onchange
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as TempleField | 'ignore')}
-        style={{
+        style={webSelectStyle(scheme === 'dark', {
           fontSize: 13,
           padding: '4px 8px',
-          borderRadius: 8,
-          border: '1px solid #D1D5DB',
-          background: 'transparent',
-          color: 'inherit',
-        }}>
+        })}>
         {FIELD_OPTIONS.map((o) => (
           <option key={o.key} value={o.key}>
             {o.label}

@@ -16,6 +16,8 @@ import {
   type WorkoutField,
 } from '@/lib/import/workout-columns';
 import { supabase } from '@/lib/supabase';
+import { useThemePreference } from '@/lib/theme';
+import { webSelectStyle } from '@/lib/webSelect';
 import type { Json } from '@/types/database';
 
 type Phase = 'upload' | 'map' | 'preview' | 'done';
@@ -387,19 +389,16 @@ function FieldPicker({
   value: WorkoutField | 'ignore';
   onChange: (v: WorkoutField | 'ignore') => void;
 }) {
+  const { scheme } = useThemePreference();
   if (Platform.OS === 'web') {
     return (
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as WorkoutField | 'ignore')}
-        style={{
+        style={webSelectStyle(scheme === 'dark', {
           fontSize: 13,
           padding: '4px 8px',
-          borderRadius: 8,
-          border: '1px solid #D1D5DB',
-          background: 'transparent',
-          color: 'inherit',
-        }}>
+        })}>
         {FIELD_OPTIONS.map((o) => (
           <option key={o.key} value={o.key}>
             {o.label}
