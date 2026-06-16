@@ -7,6 +7,9 @@ mark done with `~~strikethrough~~` rather than deleting.
 
 ## 1. Edit the Supabase email template
 
+> Folded into the full SMTP runbook: **`docs/auth-email-setup.md`**
+> (steps 1-3 wire Resend SMTP; step 5 covers the template).
+
 Customize the "Confirm signup" auth email so it doesn't look like a
 generic Supabase email.
 
@@ -28,6 +31,9 @@ send via Resend with the gym's brand pulled from `user_metadata`.
 ---
 
 ## 2. Fix Supabase Site URL + Redirect URLs
+
+> Part of the SMTP runbook: **`docs/auth-email-setup.md`** step 3.
+> SMTP without this fix still produces broken links — do them together.
 
 The confirmation email link redirects to `http://localhost:3000` and
 shows `otp_expired`. The localhost part comes from Supabase Auth's
