@@ -16,18 +16,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Logged-out landing (served at app.jointemple.io). Always dark, navless:
-// one path card at a time in a swipe/tap carousel. Each card container
-// takes one of the logo's three layer colours — cream, steel-blue, gold —
-// with ink/cream foreground flipped for contrast the way the mark's glyphs
-// do. Slides ease via an RN Animated translateX; arrows + dots share one
-// control row. Order Join → Start → Solo.
+// one path card at a time in a swipe/tap carousel. Cards are dark with a
+// per-card brand accent (cream / steel-blue / gold, in that order) and sit
+// on a logo-style stack — two offset colour layers peek out behind each
+// card so all three brand colours show. Slides ease via an RN Animated
+// translateX; arrows + dots share one control row. Order Join → Start → Solo.
+
+const CREAM = '#F4F2ED';
+const INK = '#111111';
+const BLUE = '#3B6BA5';
+const GOLD = '#E8B620';
 
 type Path = {
   key: string;
-  bg: string;
-  fg: string;
-  ctaBg: string;
-  ctaText: string;
+  accent: string;
+  onAccent: string;
+  stack: [string, string];
   icon: keyof typeof Ionicons.glyphMap;
   kicker: string;
   title: string;
@@ -37,16 +41,12 @@ type Path = {
   href: string;
 };
 
-const INK = '#111111';
-const CREAM = '#F4F2ED';
-
 const PATHS: Path[] = [
   {
     key: 'member',
-    bg: CREAM,
-    fg: INK,
-    ctaBg: INK,
-    ctaText: CREAM,
+    accent: CREAM,
+    onAccent: INK,
+    stack: [BLUE, GOLD],
     icon: 'people-outline',
     kicker: 'Member',
     title: 'Join a gym',
@@ -62,10 +62,9 @@ const PATHS: Path[] = [
   },
   {
     key: 'owner',
-    bg: '#3B6BA5',
-    fg: CREAM,
-    ctaBg: CREAM,
-    ctaText: INK,
+    accent: BLUE,
+    onAccent: CREAM,
+    stack: [GOLD, CREAM],
     icon: 'business-outline',
     kicker: 'Owner',
     title: 'Start a gym',
@@ -82,10 +81,9 @@ const PATHS: Path[] = [
   },
   {
     key: 'solo',
-    bg: '#E8B620',
-    fg: INK,
-    ctaBg: INK,
-    ctaText: CREAM,
+    accent: GOLD,
+    onAccent: INK,
+    stack: [BLUE, CREAM],
     icon: 'flame-outline',
     kicker: 'Solo',
     title: 'Train solo',
@@ -217,7 +215,7 @@ export default function GetStartedScreen() {
                       height: active ? 12 : 6,
                       borderRadius: 6,
                       borderWidth: active ? 2 : 0,
-                      borderColor: active ? p.bg : 'transparent',
+                      borderColor: active ? p.accent : 'transparent',
                       backgroundColor: active ? 'transparent' : '#4B5563',
                     }}
                   />
@@ -249,53 +247,75 @@ export default function GetStartedScreen() {
 
 function PathCard({ path }: { path: Path }) {
   return (
-    <View
-      style={{ backgroundColor: path.bg }}
-      className="rounded-3xl p-7 gap-6 shadow-xl">
-      <View className="flex-row items-center gap-4">
+    // Reserve room (pr/pb) for the offset stack layers to peek without
+    // being clipped by the carousel viewport.
+    <View className="pr-6 pb-6">
+      <View className="relative">
+        {/* Logo-style stack: two offset brand-colour layers behind. */}
         <View
-          style={{ borderColor: path.fg }}
-          className="w-14 h-14 rounded-full border items-center justify-center">
-          <Ionicons name={path.icon} size={24} color={path.fg} />
-        </View>
-        <View className="flex-1">
-          <Text
-            style={{ color: path.fg }}
-            className="text-[10px] font-semibold uppercase tracking-[3px] opacity-70">
-            {path.kicker}
-          </Text>
-          <Text style={{ color: path.fg }} className="text-2xl font-semibold">
-            {path.title}
-          </Text>
-        </View>
-      </View>
+          style={{
+            backgroundColor: path.stack[1],
+            transform: [{ translateX: 16 }, { translateY: 16 }],
+          }}
+          className="absolute inset-0 rounded-3xl"
+        />
+        <View
+          style={{
+            backgroundColor: path.stack[0],
+            transform: [{ translateX: 8 }, { translateY: 8 }],
+          }}
+          className="absolute inset-0 rounded-3xl"
+        />
 
-      <Text style={{ color: path.fg }} className="text-lg font-medium">
-        {path.headline}
-      </Text>
-
-      <View className="gap-2.5">
-        {path.bullets.map((b) => (
-          <View key={b} className="flex-row gap-2.5">
-            <Ionicons name="checkmark-circle" size={18} color={path.fg} />
-            <Text
-              style={{ color: path.fg }}
-              className="flex-1 text-sm leading-5 opacity-90">
-              {b}
-            </Text>
+        <View className="rounded-3xl border border-gray-800 bg-gray-900 p-7 gap-6">
+          <View className="flex-row items-center gap-4">
+            <View
+              style={{ borderColor: path.accent }}
+              className="w-14 h-14 rounded-full border items-center justify-center">
+              <Ionicons name={path.icon} size={24} color={path.accent} />
+            </View>
+            <View className="flex-1">
+              <Text
+                style={{ color: path.accent }}
+                className="text-[10px] font-semibold uppercase tracking-[3px]">
+                {path.kicker}
+              </Text>
+              <Text className="text-white text-2xl font-semibold">
+                {path.title}
+              </Text>
+            </View>
           </View>
-        ))}
-      </View>
 
-      <Link href={path.href as never} asChild>
-        <Pressable
-          style={{ backgroundColor: path.ctaBg }}
-          className="rounded-xl p-4 items-center active:opacity-80 mt-1">
-          <Text style={{ color: path.ctaText }} className="font-semibold">
-            {path.cta}
+          <Text className="text-gray-100 text-lg font-medium">
+            {path.headline}
           </Text>
-        </Pressable>
-      </Link>
+
+          <View className="gap-2.5">
+            {path.bullets.map((b) => (
+              <View key={b} className="flex-row gap-2.5">
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color={path.accent}
+                />
+                <Text className="flex-1 text-gray-300 text-sm leading-5">
+                  {b}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Link href={path.href as never} asChild>
+            <Pressable
+              style={{ backgroundColor: path.accent }}
+              className="rounded-xl p-4 items-center active:opacity-80 mt-1">
+              <Text style={{ color: path.onAccent }} className="font-semibold">
+                {path.cta}
+              </Text>
+            </Pressable>
+          </Link>
+        </View>
+      </View>
     </View>
   );
 }
