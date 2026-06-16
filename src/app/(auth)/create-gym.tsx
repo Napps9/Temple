@@ -314,7 +314,9 @@ export default function CreateGymScreen() {
                   {session ? 'Create gym' : 'Create account and gym'}
                 </Button>
               </View>
-            ) : (
+            ) : null}
+
+            {step === 'brand' ? (
               <View className="gap-4">
                 <BrandPreview
                   gymName={gymName}
@@ -362,7 +364,7 @@ export default function CreateGymScreen() {
                   </Text>
                 </Pressable>
               </View>
-            )}
+            ) : null}
 
             <View className="items-center pt-2">
               <Link href="/sign-in" asChild>
