@@ -45,6 +45,17 @@ type Path = {
   bullets: string[];
   cta: string;
   href: string;
+  // Light-mode override: the neutral card flips cream → ink so it
+  // contrasts on the light page (mirrors the logo's front layer, which is
+  // ink on light and cream on dark). Blue / gold don't need it.
+  light?: {
+    bg: string;
+    fg: string;
+    border: string;
+    gradient: string;
+    ctaBg: string;
+    ctaText: string;
+  };
 };
 
 const PATHS: Path[] = [
@@ -68,6 +79,14 @@ const PATHS: Path[] = [
     ],
     cta: 'I have an invite',
     href: '/accept-invite',
+    light: {
+      bg: INK,
+      fg: CREAM,
+      border: '#2A2A2A',
+      gradient: 'linear-gradient(180deg, #2A2A2A 0%, #121212 100%)',
+      ctaBg: CREAM,
+      ctaText: INK,
+    },
   },
   {
     key: 'owner',
@@ -124,9 +143,16 @@ const CARD_PAD = 28;
 const CARD_RADIUS = 24;
 const CTA_GAP = 24;
 
+// In light mode the neutral (cream) card flips to ink so it reads on the
+// light page; the coloured cards (blue, gold) are unchanged.
+function resolveCard(p: Path, dark: boolean): Path {
+  return dark || !p.light ? p : { ...p, ...p.light };
+}
+
 export default function GetStartedScreen() {
   const { scheme } = useThemePreference();
   const dark = scheme === 'dark';
+  const cards = PATHS.map((p) => resolveCard(p, dark));
   const [page, setPage] = useState(0);
 
   // One animated "slot" per card (0 front … N-1 back). Initial arrangement
@@ -216,7 +242,7 @@ export default function GetStartedScreen() {
                 </View>
               </View>
 
-              {PATHS.map((p, i) => {
+              {cards.map((p, i) => {
                 const depth = depthOf(i, page);
                 const sv = slots[i];
                 const off = sv.interpolate({
@@ -271,7 +297,7 @@ export default function GetStartedScreen() {
           <View className="flex-row items-center justify-center gap-4">
             <Arrow dir="left" onPress={() => goRel(-1)} />
             <View className="flex-row items-center gap-2">
-              {PATHS.map((p, i) => {
+              {cards.map((p, i) => {
                 const active = i === page;
                 return (
                   <Pressable
