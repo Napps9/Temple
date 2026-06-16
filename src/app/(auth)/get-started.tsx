@@ -5,22 +5,19 @@ import {
   Animated,
   Easing,
   Image,
-  type LayoutChangeEvent,
   PanResponder,
   Pressable,
   ScrollView,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Logged-out landing (served at app.jointemple.io). Always dark, navless:
-// one path card at a time in a swipe/tap carousel. Each card IS one of the
-// logo's three colours (cream → steel-blue → gold) and sits on a logo-style
-// stack — the other two colours peek out behind it, so as you advance the
-// front colour changes and the one you leave drops to the back. Foreground
-// flips ink/cream per card for contrast. Order Join → Start → Solo.
+// Logged-out landing (served at app.jointemple.io). Always dark, navless.
+// The three paths are a stacked deck mirroring the logo — each card is one
+// of the brand colours (cream → steel-blue → gold). Advancing shuffles the
+// front card to the back and brings the next colour forward (the deck
+// cycles). Foreground flips ink/cream per card for contrast.
 
 const CREAM = '#F4F2ED';
 const INK = '#111111';
@@ -33,7 +30,6 @@ type Path = {
   fg: string;
   ctaBg: string;
   ctaText: string;
-  stack: [string, string];
   icon: keyof typeof Ionicons.glyphMap;
   kicker: string;
   title: string;
@@ -50,7 +46,6 @@ const PATHS: Path[] = [
     fg: INK,
     ctaBg: INK,
     ctaText: CREAM,
-    stack: [BLUE, GOLD],
     icon: 'people-outline',
     kicker: 'Member',
     title: 'Join a gym',
@@ -70,7 +65,6 @@ const PATHS: Path[] = [
     fg: CREAM,
     ctaBg: CREAM,
     ctaText: INK,
-    stack: [GOLD, CREAM],
     icon: 'business-outline',
     kicker: 'Owner',
     title: 'Start a gym',
@@ -91,7 +85,6 @@ const PATHS: Path[] = [
     fg: INK,
     ctaBg: INK,
     ctaText: CREAM,
-    stack: [CREAM, BLUE],
     icon: 'flame-outline',
     kicker: 'Solo',
     title: 'Train solo',
@@ -107,32 +100,38 @@ const PATHS: Path[] = [
   },
 ];
 
+const N = PATHS.length;
+const TALLEST = PATHS.reduce((a, b) =>
+  b.bullets.length > a.bullets.length ? b : a,
+);
+// Stack offsets per depth: 0 = front, 1 = middle, 2 = back.
+const OFFSET = [0, 13, 26];
+
 export default function GetStartedScreen() {
-  const { width: winW } = useWindowDimensions();
   const [page, setPage] = useState(0);
-  const [measured, setMeasured] = useState(0);
 
-  // One carousel page width. Window-width fallback for first paint;
-  // onLayout corrects it before any interaction.
-  const pageW = measured || Math.min(winW, 600);
+  // One animated "slot" per card (0 front … N-1 back). Initial arrangement
+  // matches page 0.
+  const slots = useRef(PATHS.map((_, i) => new Animated.Value(i))).current;
 
-  const tx = useRef(new Animated.Value(0)).current;
+  const depthOf = (i: number, p: number) => (i - p + N) % N;
 
   useEffect(() => {
-    Animated.timing(tx, {
-      toValue: -page * pageW,
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [page, pageW, tx]);
+    Animated.parallel(
+      slots.map((sv, i) =>
+        Animated.timing(sv, {
+          toValue: depthOf(i, page),
+          duration: 360,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ),
+    ).start();
+  }, [page, slots]);
 
-  // Functional updates so the PanResponder (created once) never reads a
-  // stale page.
-  const goRel = (d: number) =>
-    setPage((p) => Math.max(0, Math.min(PATHS.length - 1, p + d)));
-  const goTo = (i: number) =>
-    setPage(Math.max(0, Math.min(PATHS.length - 1, i)));
+  // Cyclic so the front always has a back to drop to.
+  const goRel = (d: number) => setPage((p) => (p + d + N) % N);
+  const goTo = (i: number) => setPage(i);
 
   const pan = useRef(
     PanResponder.create({
@@ -144,14 +143,6 @@ export default function GetStartedScreen() {
       },
     }),
   ).current;
-
-  function onLayout(e: LayoutChangeEvent) {
-    const w = e.nativeEvent.layout.width;
-    if (w && Math.abs(w - measured) > 1) {
-      setMeasured(w);
-      tx.setValue(-page * w);
-    }
-  }
 
   return (
     <SafeAreaView
@@ -187,29 +178,52 @@ export default function GetStartedScreen() {
             </Text>
           </View>
 
-          {/* Carousel — eased translateX track, swipe via PanResponder */}
-          <View
-            className="overflow-hidden"
-            onLayout={onLayout}
-            {...pan.panHandlers}>
-            <Animated.View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                width: pageW * PATHS.length,
-                transform: [{ translateX: tx }],
-              }}>
-              {PATHS.map((p) => (
-                <View key={p.key} style={{ width: pageW }} className="px-1">
-                  <PathCard path={p} />
-                </View>
-              ))}
-            </Animated.View>
+          {/* Deck — reserve room (pr/pb) for the offset cards behind. */}
+          <View className="pr-7 pb-7" {...pan.panHandlers}>
+            <View className="relative">
+              {/* Invisible sizer: tallest card sets the deck height. */}
+              <View style={{ opacity: 0 }} pointerEvents="none">
+                <CardFace path={TALLEST} interactive={false} contentOpacity={1} />
+              </View>
+
+              {PATHS.map((p, i) => {
+                const depth = depthOf(i, page);
+                const sv = slots[i];
+                const translateX = sv.interpolate({
+                  inputRange: [0, 1, 2],
+                  outputRange: OFFSET,
+                });
+                const translateY = translateX;
+                const contentOpacity = sv.interpolate({
+                  inputRange: [0, 0.5, 2],
+                  outputRange: [1, 0, 0],
+                });
+                return (
+                  <Animated.View
+                    key={p.key}
+                    pointerEvents={depth === 0 ? 'auto' : 'none'}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      zIndex: N - depth,
+                      transform: [{ translateX }, { translateY }],
+                    }}>
+                    <CardFace
+                      path={p}
+                      interactive={depth === 0}
+                      contentOpacity={contentOpacity}
+                    />
+                  </Animated.View>
+                );
+              })}
+            </View>
           </View>
 
           {/* Controls — arrows flanking the dots: ‹ • • • › */}
           <View className="flex-row items-center justify-center gap-4">
-            <Arrow dir="left" disabled={page === 0} onPress={() => goRel(-1)} />
+            <Arrow dir="left" onPress={() => goRel(-1)} />
             <View className="flex-row items-center gap-2">
               {PATHS.map((p, i) => {
                 const active = i === page;
@@ -230,11 +244,7 @@ export default function GetStartedScreen() {
                 );
               })}
             </View>
-            <Arrow
-              dir="right"
-              disabled={page === PATHS.length - 1}
-              onPress={() => goRel(1)}
-            />
+            <Arrow dir="right" onPress={() => goRel(1)} />
           </View>
 
           {/* Sign in */}
@@ -253,69 +263,56 @@ export default function GetStartedScreen() {
   );
 }
 
-function PathCard({ path }: { path: Path }) {
+function CardFace({
+  path,
+  interactive,
+  contentOpacity,
+}: {
+  path: Path;
+  interactive: boolean;
+  contentOpacity: Animated.AnimatedInterpolation<number> | number;
+}) {
   return (
-    // Reserve room (pr/pb) for the offset stack layers to peek without
-    // being clipped by the carousel viewport.
-    <View className="pr-6 pb-6">
-      <View className="relative">
-        {/* Logo-style stack: the other two brand colours peek behind. */}
-        <View
-          style={{
-            backgroundColor: path.stack[1],
-            transform: [{ translateX: 16 }, { translateY: 16 }],
-          }}
-          className="absolute inset-0 rounded-3xl"
-        />
-        <View
-          style={{
-            backgroundColor: path.stack[0],
-            transform: [{ translateX: 8 }, { translateY: 8 }],
-          }}
-          className="absolute inset-0 rounded-3xl"
-        />
+    <View
+      style={{ backgroundColor: path.bg }}
+      className="rounded-3xl p-7 shadow-xl">
+      <Animated.View style={{ opacity: contentOpacity }} className="gap-6">
+        <View className="flex-row items-center gap-4">
+          <View
+            style={{ borderColor: path.fg }}
+            className="w-14 h-14 rounded-full border items-center justify-center">
+            <Ionicons name={path.icon} size={24} color={path.fg} />
+          </View>
+          <View className="flex-1">
+            <Text
+              style={{ color: path.fg }}
+              className="text-[10px] font-semibold uppercase tracking-[3px] opacity-70">
+              {path.kicker}
+            </Text>
+            <Text style={{ color: path.fg }} className="text-2xl font-semibold">
+              {path.title}
+            </Text>
+          </View>
+        </View>
 
-        {/* Front card — this slide's colour. */}
-        <View
-          style={{ backgroundColor: path.bg }}
-          className="rounded-3xl p-7 gap-6 shadow-xl">
-          <View className="flex-row items-center gap-4">
-            <View
-              style={{ borderColor: path.fg }}
-              className="w-14 h-14 rounded-full border items-center justify-center">
-              <Ionicons name={path.icon} size={24} color={path.fg} />
-            </View>
-            <View className="flex-1">
+        <Text style={{ color: path.fg }} className="text-lg font-medium">
+          {path.headline}
+        </Text>
+
+        <View className="gap-2.5">
+          {path.bullets.map((b) => (
+            <View key={b} className="flex-row gap-2.5">
+              <Ionicons name="checkmark-circle" size={18} color={path.fg} />
               <Text
                 style={{ color: path.fg }}
-                className="text-[10px] font-semibold uppercase tracking-[3px] opacity-70">
-                {path.kicker}
-              </Text>
-              <Text
-                style={{ color: path.fg }}
-                className="text-2xl font-semibold">
-                {path.title}
+                className="flex-1 text-sm leading-5 opacity-90">
+                {b}
               </Text>
             </View>
-          </View>
+          ))}
+        </View>
 
-          <Text style={{ color: path.fg }} className="text-lg font-medium">
-            {path.headline}
-          </Text>
-
-          <View className="gap-2.5">
-            {path.bullets.map((b) => (
-              <View key={b} className="flex-row gap-2.5">
-                <Ionicons name="checkmark-circle" size={18} color={path.fg} />
-                <Text
-                  style={{ color: path.fg }}
-                  className="flex-1 text-sm leading-5 opacity-90">
-                  {b}
-                </Text>
-              </View>
-            ))}
-          </View>
-
+        {interactive ? (
           <Link href={path.href as never} asChild>
             <Pressable
               style={{ backgroundColor: path.ctaBg }}
@@ -325,27 +322,31 @@ function PathCard({ path }: { path: Path }) {
               </Text>
             </Pressable>
           </Link>
-        </View>
-      </View>
+        ) : (
+          <View
+            style={{ backgroundColor: path.ctaBg }}
+            className="rounded-xl p-4 items-center mt-1">
+            <Text style={{ color: path.ctaText }} className="font-semibold">
+              {path.cta}
+            </Text>
+          </View>
+        )}
+      </Animated.View>
     </View>
   );
 }
 
 function Arrow({
   dir,
-  disabled,
   onPress,
 }: {
   dir: 'left' | 'right';
-  disabled: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
       hitSlop={8}
-      style={{ opacity: disabled ? 0.3 : 1 }}
       className="w-10 h-10 rounded-full items-center justify-center border border-white/20 bg-white/5">
       <Ionicons
         name={dir === 'left' ? 'chevron-back' : 'chevron-forward'}
