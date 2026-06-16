@@ -6,6 +6,7 @@ import {
   Easing,
   Image,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -30,6 +31,7 @@ type Path = {
   bg: string;
   fg: string;
   border: string;
+  gradient: string;
   ctaBg: string;
   ctaText: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -47,6 +49,7 @@ const PATHS: Path[] = [
     bg: CREAM,
     fg: INK,
     border: '#E2DDD1',
+    gradient: 'linear-gradient(180deg, #FFFFFF 0%, #EFEDE4 100%)',
     ctaBg: INK,
     ctaText: CREAM,
     icon: 'people-outline',
@@ -67,6 +70,7 @@ const PATHS: Path[] = [
     bg: BLUE,
     fg: CREAM,
     border: '#335E91',
+    gradient: 'linear-gradient(180deg, #4878B2 0%, #335E91 100%)',
     ctaBg: CREAM,
     ctaText: INK,
     icon: 'business-outline',
@@ -88,6 +92,7 @@ const PATHS: Path[] = [
     bg: GOLD,
     fg: INK,
     border: '#CFA017',
+    gradient: 'linear-gradient(180deg, #F1C53C 0%, #DBA713 100%)',
     ctaBg: INK,
     ctaText: CREAM,
     icon: 'flame-outline',
@@ -222,25 +227,30 @@ export default function GetStartedScreen() {
                   <Animated.View
                     key={p.key}
                     pointerEvents={depth === 0 ? 'auto' : 'none'}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      zIndex: N - depth,
-                      backgroundColor: p.bg,
-                      borderColor: p.border,
-                      borderWidth: 1,
-                      borderRadius: CARD_RADIUS,
-                      padding: CARD_PAD,
-                      transform: [{ translateX: off }, { translateY: off }],
-                      shadowColor: '#000',
-                      shadowOpacity: 0.3,
-                      shadowRadius: 18,
-                      shadowOffset: { width: 0, height: 12 },
-                      elevation: 8,
-                    }}>
+                    style={[
+                      {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: N - depth,
+                        backgroundColor: p.bg,
+                        borderColor: p.border,
+                        borderWidth: 1,
+                        borderRadius: CARD_RADIUS,
+                        padding: CARD_PAD,
+                        transform: [{ translateX: off }, { translateY: off }],
+                        shadowColor: '#000',
+                        shadowOpacity: 0.25,
+                        shadowRadius: 24,
+                        shadowOffset: { width: 0, height: 14 },
+                        elevation: 8,
+                      },
+                      Platform.OS === 'web'
+                        ? ({ backgroundImage: p.gradient } as any)
+                        : null,
+                    ]}>
                     <Animated.View style={{ opacity: contentOpacity, flex: 1 }}>
                       <CardContent path={p} />
                       <View style={{ marginTop: 'auto', paddingTop: CTA_GAP }}>
