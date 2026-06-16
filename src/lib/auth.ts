@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
 
+import { DEFAULT_BRAND } from './brand';
 import {
   parseMembershipRow,
   type GymMembership,
@@ -246,17 +247,49 @@ export type CreateGymWithSignupResult =
   | { status: 'created'; gymId: string }
   | { status: 'pending_confirmation'; email: string };
 
-// creates a profiles row + the gym + the owner membership. When email
-// confirmation is required, returns 'pending_confirmation' instead of
-// creating the gym — the gym name/slug are stashed in user_metadata so
-// the post-confirmation flow can finish the job in one tap.
-export async function createGymWithSignup(args: {
-  email: string;
-  password: string;
-  fullName: string;
-  gymName: string;
-  gymSlug: string;
-}): Promise<CreateGymWithSignupResult> {
+export type PendingBrand = {
+  primaryColor: string;
+  secondaryColor: string;
+  textColor: string;
+};
+
+// Create the gym then stamp its branding, from an authenticated session.
+// Shared by the immediate-signup path and the post-confirmation resume so
+// every route brands the new gym identically.
+async function createGymAndBrand(
+  args: { name: string; slug: string } & PendingBrand,
+): Promise<string> {
+  const { data: gymId, error } = await supabase.rpc('create_gym', {
+    p_name: args.name,
+    p_slug: args.slug,
+  });
+  if (error) throw error;
+  const id = gymId as unknown as string;
+  const { error: brandError } = await supabase.rpc('set_gym_branding', {
+    p_gym_id: id,
+    p_logo_url: null,
+    p_primary_color: args.primaryColor,
+    p_secondary_color: args.secondaryColor,
+    p_text_color: args.textColor,
+  });
+  if (brandError) throw brandError;
+  return id;
+}
+
+// creates a profiles row + the gym + the owner membership, then applies
+// the chosen brand colours. When email confirmation is required, returns
+// 'pending_confirmation' instead — the gym name/slug AND colours are
+// stashed in user_metadata so the post-confirmation resume finishes the
+// job, fully branded, in one tap.
+export async function createGymWithSignup(
+  args: {
+    email: string;
+    password: string;
+    fullName: string;
+    gymName: string;
+    gymSlug: string;
+  } & PendingBrand,
+): Promise<CreateGymWithSignupResult> {
   const { email, password, fullName, gymName, gymSlug } = args;
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -267,6 +300,9 @@ export async function createGymWithSignup(args: {
         full_name: fullName,
         pending_gym_name: gymName,
         pending_gym_slug: gymSlug,
+        pending_gym_primary: args.primaryColor,
+        pending_gym_secondary: args.secondaryColor,
+        pending_gym_text: args.textColor,
       },
     },
   });
@@ -275,13 +311,15 @@ export async function createGymWithSignup(args: {
   if (resolved.status === 'pending_confirmation') {
     return { status: 'pending_confirmation', email };
   }
-  const { data: gymId, error: rpcError } = await supabase.rpc('create_gym', {
-    p_name: gymName,
-    p_slug: gymSlug,
+  const gymId = await createGymAndBrand({
+    name: gymName,
+    slug: gymSlug,
+    primaryColor: args.primaryColor,
+    secondaryColor: args.secondaryColor,
+    textColor: args.textColor,
   });
-  if (rpcError) throw rpcError;
   await clearPendingGymMetadata();
-  return { status: 'created', gymId: gymId as unknown as string };
+  return { status: 'created', gymId };
 }
 
 // Called after the post-confirmation create_gym so the pending hints
@@ -290,7 +328,13 @@ export async function createGymWithSignup(args: {
 async function clearPendingGymMetadata(): Promise<void> {
   try {
     await supabase.auth.updateUser({
-      data: { pending_gym_name: null, pending_gym_slug: null },
+      data: {
+        pending_gym_name: null,
+        pending_gym_slug: null,
+        pending_gym_primary: null,
+        pending_gym_secondary: null,
+        pending_gym_text: null,
+      },
     });
   } catch {
     // Ignore — best effort.
@@ -302,29 +346,31 @@ async function clearPendingGymMetadata(): Promise<void> {
 // of making the user re-enter everything after email confirmation.
 export function pendingGymFromSession(
   session: { user: { user_metadata?: Record<string, unknown> | null } } | null,
-): { name: string; slug: string } | null {
+): ({ name: string; slug: string } & PendingBrand) | null {
   const meta = session?.user.user_metadata ?? null;
   if (!meta) return null;
   const name = typeof meta.pending_gym_name === 'string' ? meta.pending_gym_name : '';
   const slug = typeof meta.pending_gym_slug === 'string' ? meta.pending_gym_slug : '';
   if (!name || !slug) return null;
-  return { name, slug };
+  const str = (v: unknown, fallback: string) =>
+    typeof v === 'string' && v ? v : fallback;
+  return {
+    name,
+    slug,
+    primaryColor: str(meta.pending_gym_primary, DEFAULT_BRAND.primaryColor),
+    secondaryColor: str(meta.pending_gym_secondary, DEFAULT_BRAND.secondaryColor),
+    textColor: str(meta.pending_gym_text, DEFAULT_BRAND.textColor),
+  };
 }
 
-// Finishes a gym creation that was deferred by email confirmation:
-// the user has now signed in, we just need to call the RPC with the
-// saved name/slug.
-export async function completePendingGym(args: {
-  name: string;
-  slug: string;
-}): Promise<{ gymId: string }> {
-  const { data, error } = await supabase.rpc('create_gym', {
-    p_name: args.name,
-    p_slug: args.slug,
-  });
-  if (error) throw error;
+// Finishes a gym creation deferred by email confirmation: the user has
+// now signed in, so create the gym and apply the saved colours.
+export async function completePendingGym(
+  args: { name: string; slug: string } & PendingBrand,
+): Promise<{ gymId: string }> {
+  const gymId = await createGymAndBrand(args);
   await clearPendingGymMetadata();
-  return { gymId: data as unknown as string };
+  return { gymId };
 }
 
 // Joining via a public /join/[slug] link. Signs up a new auth user
@@ -356,6 +402,7 @@ export async function joinGymWithSignup(args: {
     p_slug: slug,
   });
   if (rpcError) throw rpcError;
+  await clearPendingJoinMetadata();
   return { status: 'joined', gymId: gymId as unknown as string };
 }
 
@@ -367,5 +414,38 @@ export async function joinGymBySlug(slug: string): Promise<{ gymId: string }> {
     p_slug: slug,
   });
   if (error) throw error;
+  return { gymId: data as unknown as string };
+}
+
+// Clears the pending-join hint once the membership exists.
+async function clearPendingJoinMetadata(): Promise<void> {
+  try {
+    await supabase.auth.updateUser({ data: { pending_join_slug: null } });
+  } catch {
+    // Ignore — best effort.
+  }
+}
+
+// Reads the pending-join hint left by joinGymWithSignup when email
+// confirmation deferred the join. Mirror of pendingGymFromSession.
+export function pendingJoinFromSession(
+  session: { user: { user_metadata?: Record<string, unknown> | null } } | null,
+): { slug: string } | null {
+  const meta = session?.user.user_metadata ?? null;
+  const slug =
+    typeof meta?.pending_join_slug === 'string' ? meta.pending_join_slug : '';
+  return slug ? { slug } : null;
+}
+
+// Finishes a join deferred by email confirmation: bind the membership
+// from the saved slug now that the user has signed in.
+export async function completePendingJoin(args: {
+  slug: string;
+}): Promise<{ gymId: string }> {
+  const { data, error } = await supabase.rpc('join_gym_by_slug', {
+    p_slug: args.slug,
+  });
+  if (error) throw error;
+  await clearPendingJoinMetadata();
   return { gymId: data as unknown as string };
 }

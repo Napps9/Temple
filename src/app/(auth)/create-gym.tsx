@@ -54,7 +54,6 @@ export default function CreateGymScreen() {
   >(null);
 
   // Save state
-  const [createdGymId, setCreatedGymId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +62,10 @@ export default function CreateGymScreen() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
 
-  async function submitAccountAndGym() {
+  // Brand is collected *before* the gym is created so it can be stashed
+  // in user_metadata and survive an email-confirmation round trip — this
+  // step just validates the account/gym fields and advances.
+  function continueToBrand() {
     setError(null);
     if (!session) {
       if (!email.trim() || !password) {
@@ -83,42 +85,7 @@ export default function CreateGymScreen() {
       setError('Slug must contain at least one letter or digit');
       return;
     }
-    setLoading(true);
-    try {
-      if (session) {
-        // Already signed in (came here from /welcome). Just create the
-        // gym; the create_gym RPC makes the caller the owner.
-        const { data, error: rpcError } = await supabase.rpc('create_gym', {
-          p_name: gymName.trim(),
-          p_slug: effectiveSlug,
-        });
-        if (rpcError) throw rpcError;
-        setCreatedGymId(data as unknown as string);
-        await refreshMembership(queryClient);
-        setStep('brand');
-      } else {
-        const result = await createGymWithSignup({
-          email: email.trim(),
-          password,
-          fullName: fullName.trim(),
-          gymName: gymName.trim(),
-          gymSlug: effectiveSlug,
-        });
-        if (result.status === 'pending_confirmation') {
-          setPendingEmail(result.email);
-          setResendNotice(null);
-          setStep('check_email');
-        } else {
-          setCreatedGymId(result.gymId);
-          await refreshMembership(queryClient);
-          setStep('brand');
-        }
-      }
-    } catch (e) {
-      setError(errorMessage(e, 'Could not create the gym'));
-    } finally {
-      setLoading(false);
-    }
+    setStep('brand');
   }
 
   async function resend() {
@@ -145,37 +112,62 @@ export default function CreateGymScreen() {
     setStep('account');
   }
 
-  async function saveBrandAndFinish() {
-    if (!createdGymId) return;
+  async function createWithBrand() {
     setError(null);
     const p = normaliseHex(primary);
     const s = normaliseHex(secondary);
     const t = normaliseHex(textColor);
     if (!p || !s || !t) {
-      setError('Each colour needs to be a valid 6-character hex (e.g. #2563EB)');
+      setError('Each colour needs to be a valid 6-character hex (e.g. #3B6BA5)');
       return;
     }
     setLoading(true);
     try {
-      const { error: rpcError } = await supabase.rpc('set_gym_branding', {
-        p_gym_id: createdGymId,
-        p_logo_url: null,
-        p_primary_color: p,
-        p_secondary_color: s,
-        p_text_color: t,
-      });
-      if (rpcError) throw rpcError;
-      queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
-      router.replace('/' as never);
+      if (session) {
+        // Already signed in (came from /welcome or the athlete home) —
+        // create the gym and brand it in one go, no signup needed.
+        const { data, error: rpcError } = await supabase.rpc('create_gym', {
+          p_name: gymName.trim(),
+          p_slug: effectiveSlug,
+        });
+        if (rpcError) throw rpcError;
+        const { error: brandError } = await supabase.rpc('set_gym_branding', {
+          p_gym_id: data as unknown as string,
+          p_logo_url: null,
+          p_primary_color: p,
+          p_secondary_color: s,
+          p_text_color: t,
+        });
+        if (brandError) throw brandError;
+        await refreshMembership(queryClient);
+        queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
+        router.replace('/' as never);
+      } else {
+        const result = await createGymWithSignup({
+          email: email.trim(),
+          password,
+          fullName: fullName.trim(),
+          gymName: gymName.trim(),
+          gymSlug: effectiveSlug,
+          primaryColor: p,
+          secondaryColor: s,
+          textColor: t,
+        });
+        if (result.status === 'pending_confirmation') {
+          setPendingEmail(result.email);
+          setResendNotice(null);
+          setStep('check_email');
+        } else {
+          await refreshMembership(queryClient);
+          queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
+          router.replace('/' as never);
+        }
+      }
     } catch (e) {
-      setError(errorMessage(e, 'Could not save branding'));
+      setError(errorMessage(e, 'Could not create the gym'));
     } finally {
       setLoading(false);
     }
-  }
-
-  function skipBrand() {
-    router.replace('/' as never);
   }
 
   const validPrimary = normaliseHex(primary) ?? DEFAULT_BRAND.primaryColor;
@@ -310,9 +302,7 @@ export default function CreateGymScreen() {
                 {error ? (
                   <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
-                <Button onPress={submitAccountAndGym} loading={loading}>
-                  {session ? 'Create gym' : 'Create account and gym'}
-                </Button>
+                <Button onPress={continueToBrand}>Continue</Button>
               </View>
             ) : null}
 
@@ -355,14 +345,9 @@ export default function CreateGymScreen() {
                 {error ? (
                   <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
-                <Button onPress={saveBrandAndFinish} loading={loading}>
-                  Save and finish
+                <Button onPress={createWithBrand} loading={loading}>
+                  Create gym
                 </Button>
-                <Pressable onPress={skipBrand} className="self-center">
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                    Skip — I'll set this up later
-                  </Text>
-                </Pressable>
               </View>
             ) : null}
 

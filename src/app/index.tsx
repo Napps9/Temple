@@ -4,6 +4,7 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 
 import {
   pendingGymFromSession,
+  pendingJoinFromSession,
   useGymMembership,
   useRole,
   useSession,
@@ -128,9 +129,9 @@ export default function Index() {
   // stashed in metadata, so send them to /welcome to finish it in one tap
   // rather than stranding them on the gymless home with no way to resume.
   if (!membership) {
-    return (
-      <Redirect href={pendingGymFromSession(session) ? '/welcome' : '/athlete'} />
-    );
+    const resumable =
+      pendingGymFromSession(session) || pendingJoinFromSession(session);
+    return <Redirect href={resumable ? '/welcome' : '/athlete'} />;
   }
   if (consent.isLoading) return <Loading />;
   if (consent.data && !consent.data.consented) {

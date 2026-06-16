@@ -7,7 +7,9 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import {
   completePendingGym,
+  completePendingJoin,
   pendingGymFromSession,
+  pendingJoinFromSession,
   refreshMembership,
   useGymMembership,
   useSession,
@@ -15,10 +17,10 @@ import {
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 
-// Shown when a user is signed in but has no gym membership yet —
-// either they just confirmed an email from the create-gym flow (and we
-// can finish the job in one tap), they joined via /join/[slug] but the
-// binding failed, or they cleared their membership somewhere.
+// Shown when a user is signed in but has no gym membership yet — either
+// they just confirmed an email from the create-gym or join flow (and we
+// finish the job, fully branded, in one tap), they joined via
+// /join/[slug] but the binding failed, or they cleared their membership.
 export default function WelcomeScreen() {
   const signOut = useSignOut();
   const session = useSession();
@@ -26,22 +28,32 @@ export default function WelcomeScreen() {
   const queryClient = useQueryClient();
   const [resumeError, setResumeError] = useState<string | null>(null);
 
-  // Recovered from createGymWithSignup's metadata — when present, the
-  // user finished the email confirmation step and we have their saved
-  // gym name/slug ready to go.
-  const pending = pendingGymFromSession(session ?? null);
+  // Recovered from the signup metadata — when present, the user finished
+  // email confirmation and we have everything to finish the job: gym
+  // name/slug/colours for a create, or the slug for a join.
+  const pendingGym = pendingGymFromSession(session ?? null);
+  const pendingJoin = pendingJoinFromSession(session ?? null);
 
   const resume = useMutation({
     mutationFn: async () => {
-      if (!pending) throw new Error('Nothing to resume');
-      await completePendingGym(pending);
+      if (pendingGym) {
+        await completePendingGym(pendingGym);
+        return;
+      }
+      if (pendingJoin) {
+        await completePendingJoin(pendingJoin);
+        return;
+      }
+      throw new Error('Nothing to resume');
     },
     onSuccess: async () => {
       setResumeError(null);
       await refreshMembership(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
       router.replace('/' as never);
     },
-    onError: (e) => setResumeError(errorMessage(e, 'Could not create the gym')),
+    onError: (e) =>
+      setResumeError(errorMessage(e, 'Could not finish setting up your gym')),
   });
 
   // Landing here with a session means the membership lookup returned
@@ -57,6 +69,8 @@ export default function WelcomeScreen() {
       ? 'Membership lookup still loading…'
       : `Membership lookup returned no active membership.`;
 
+  const resumable = pendingGym ?? pendingJoin;
+
   return (
     <Screen>
       <View className="flex-1 items-center justify-center gap-6 p-6">
@@ -65,27 +79,33 @@ export default function WelcomeScreen() {
             Welcome
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-center">
-            {pending
-              ? `You're signed in. Pick up where you left off — finish setting up ${pending.name}.`
-              : "You're signed in but not in a gym yet. Create one or join with an invite."}
+            {pendingGym
+              ? `You're signed in. Pick up where you left off — finish setting up ${pendingGym.name}.`
+              : pendingJoin
+                ? "You're signed in. Finish joining your gym."
+                : "You're signed in but not in a gym yet. Create one or join with an invite."}
           </Text>
         </View>
         <View className="w-full max-w-xs gap-3">
-          {pending ? (
+          {resumable ? (
             <View className="gap-2">
               <Button onPress={() => resume.mutate()} loading={resume.isPending}>
-                Finish creating {pending.name}
+                {pendingGym
+                  ? `Finish creating ${pendingGym.name}`
+                  : 'Finish joining'}
               </Button>
               {resumeError ? (
                 <Text className="text-red-500 dark:text-red-400 text-sm text-center">
                   {resumeError}
                 </Text>
               ) : null}
-              <Pressable onPress={() => router.push('/create-gym' as never)}>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm text-center pt-1">
-                  Edit the gym name or slug first
-                </Text>
-              </Pressable>
+              {pendingGym ? (
+                <Pressable onPress={() => router.push('/create-gym' as never)}>
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm text-center pt-1">
+                    Edit the gym name or slug first
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : (
             <Link href="/create-gym" asChild>
