@@ -74,9 +74,15 @@ export default function ConsentForm() {
       });
       if (cErr) throw cErr;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ['member-consent'] });
+      // Await the refetch before navigating. The index consent gate reads
+      // ['member-consent'] on its very next render; a fire-and-forget
+      // invalidate leaves it holding the stale not-consented row, so it
+      // bounces straight back here, remounts the form, and clears the
+      // ticked boxes — the "had to do it twice" reset. Refetch-and-await
+      // mirrors refreshMembership, which exists for this exact hazard.
+      await queryClient.refetchQueries({ queryKey: ['member-consent'] });
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
       // Back to the index gate, which now sends them to PAR-Q (or the
       // app if screening isn't required).

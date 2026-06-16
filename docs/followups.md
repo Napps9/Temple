@@ -59,7 +59,12 @@ won't reach the running app.
 
 ---
 
-## 3. Consent screen needs two taps on "Accept"
+## ~~3. Consent screen needs two taps on "Accept"~~ (fixed)
+
+Fixed: `onSuccess` now `await`s a `refetchQueries(['member-consent'])`
+before `router.replace('/')`, so the index gate sees the fresh
+consented row instead of bouncing back and wiping the form. Was the
+third hypothesis below (navigate-before-cache-refresh).
 
 Reported: hitting **Accept** on the consent screen the first time
 didn't register — had to tap a second time before it took.
