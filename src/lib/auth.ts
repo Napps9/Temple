@@ -163,6 +163,17 @@ export async function signOut() {
   await supabase.auth.signOut();
 }
 
+// Where Supabase redirects after the user clicks the email-confirmation
+// link. On web, send them to /sign-in — the account now exists and just
+// needs a login; without this the link lands on the Site URL root, which
+// drops a logged-out visitor on the marketing landing. Native falls back
+// to the project Site URL.
+export function confirmRedirectTo(): string | undefined {
+  return typeof window !== 'undefined'
+    ? `${window.location.origin}/sign-in`
+    : undefined;
+}
+
 export async function acceptInvite(
   code: string,
   email: string,
@@ -176,7 +187,10 @@ export async function acceptInvite(
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: {
+      emailRedirectTo: confirmRedirectTo(),
+      data: { full_name: fullName },
+    },
   });
   if (error) throw error;
   const { error: rpcError } = await supabase.rpc('accept_invite', { invite_code: code });
@@ -248,6 +262,7 @@ export async function createGymWithSignup(args: {
     email,
     password,
     options: {
+      emailRedirectTo: confirmRedirectTo(),
       data: {
         full_name: fullName,
         pending_gym_name: gymName,
@@ -328,6 +343,7 @@ export async function joinGymWithSignup(args: {
     email,
     password,
     options: {
+      emailRedirectTo: confirmRedirectTo(),
       data: { full_name: fullName, pending_join_slug: slug },
     },
   });

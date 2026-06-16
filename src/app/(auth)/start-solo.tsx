@@ -14,6 +14,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import {
+  confirmRedirectTo,
   refreshMembership,
   resendConfirmation,
   useSession,
@@ -75,7 +76,10 @@ export default function StartSoloScreen() {
       const { data, error: signUpErr } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { full_name: fullName.trim(), intent: 'solo' } },
+        options: {
+          emailRedirectTo: confirmRedirectTo(),
+          data: { full_name: fullName.trim(), intent: 'solo' },
+        },
       });
       if (signUpErr) throw signUpErr;
       if (!data.session) {
