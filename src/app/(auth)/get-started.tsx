@@ -25,6 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 type Path = {
   key: string;
   accent: string;
+  onAccent: string;
   icon: keyof typeof Ionicons.glyphMap;
   kicker: string;
   title: string;
@@ -37,7 +38,8 @@ type Path = {
 const PATHS: Path[] = [
   {
     key: 'member',
-    accent: '#2563EB',
+    accent: '#3B6BA5',
+    onAccent: '#FFFFFF',
     icon: 'people-outline',
     kicker: 'Member',
     title: 'Join a gym',
@@ -53,7 +55,8 @@ const PATHS: Path[] = [
   },
   {
     key: 'solo',
-    accent: '#2563EB',
+    accent: '#E8B620',
+    onAccent: '#111111',
     icon: 'flame-outline',
     kicker: 'Solo',
     title: 'Train solo',
@@ -69,7 +72,8 @@ const PATHS: Path[] = [
   },
   {
     key: 'owner',
-    accent: '#2563EB',
+    accent: '#3B6BA5',
+    onAccent: '#FFFFFF',
     icon: 'business-outline',
     kicker: 'Owner',
     title: 'Start a gym',
@@ -125,15 +129,14 @@ export default function GetStartedScreen() {
           paddingVertical: 32,
         }}>
         <View className="w-full max-w-xl mx-auto gap-8">
-          {/* Logo lockup — present but understated. */}
-          <View className="flex-row items-center justify-center gap-2.5">
+          {/* Brand lockup (mark + wordmark), understated up top. */}
+          <View className="items-center">
             <Image
-              source={require('../../../assets/images/icon.png')}
-              style={{ width: 32, height: 32, borderRadius: 9 }}
+              source={require('../../../assets/images/temple-brand/lockup-on-dark-960px.png')}
+              style={{ width: 220, height: 55 }}
+              resizeMode="contain"
+              accessibilityLabel="Temple"
             />
-            <Text className="text-white text-lg font-semibold tracking-tight">
-              Temple
-            </Text>
           </View>
 
           {/* Header */}
@@ -196,7 +199,7 @@ export default function GetStartedScreen() {
           <View className="items-center pt-1">
             <Link href="/sign-in" asChild>
               <Pressable hitSlop={8}>
-                <Text className="text-[#60A5FA]">
+                <Text className="text-[#6E97C6]">
                   Already have an account? Sign in
                 </Text>
               </Pressable>
@@ -242,7 +245,9 @@ function PathCard({ path }: { path: Path }) {
         <Pressable
           style={{ backgroundColor: path.accent }}
           className="rounded-xl p-3.5 items-center active:opacity-80 mt-1">
-          <Text className="text-white font-semibold">{path.cta}</Text>
+          <Text style={{ color: path.onAccent }} className="font-semibold">
+            {path.cta}
+          </Text>
         </Pressable>
       </Link>
     </View>

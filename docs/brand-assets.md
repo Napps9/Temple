@@ -1,18 +1,13 @@
 # Temple brand assets
 
 Temple-the-company's logo artwork. Lives in
-`assets/images/temple-brand-assets 2/`.
+`assets/images/temple-brand/`.
 
 This is the **product/company identity** — the logo a logged-out visitor
 sees. It is *not* the same thing as the per-gym brand colour the app
 themes at runtime (`useThemeColors().primary`), which every gym sets for
 itself. Keep the two separate: gyms recolour their own surfaces; the
 Temple mark never gets recoloured.
-
-> **Folder name:** it's literally `temple-brand-assets 2` (a space and a
-> trailing `2`). Spaces work in `require()` but are easy to fumble —
-> worth renaming to `temple-brand`. Ask and I'll rename it and fix any
-> references in one pass.
 
 ---
 

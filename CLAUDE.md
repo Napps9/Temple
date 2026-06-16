@@ -202,5 +202,7 @@ read or write any other repository.
 - `supabase/migrations/` for schema + RPC history (read the latest few
   if the area is new to you).
 - `supabase/tests/_helpers.psql` for pgTAP fixture conventions.
+- `docs/brand-assets.md` for the Temple company logo kit
+  (`assets/images/temple-brand/` — mark/lockup/app-icon, palette, usage).
 - The `useGymBrand`, `useThemeColors`, `useCan`, `useGymMembership`
   hooks for the four most-asked-about runtime values.
