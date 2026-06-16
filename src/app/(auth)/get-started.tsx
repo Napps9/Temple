@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
-  Image,
   PanResponder,
   Platform,
   Pressable,
@@ -14,7 +13,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Logged-out landing (served at app.jointemple.io). Always dark, navless.
+import { TempleLockup } from '@/components/TempleLockup';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { useThemePreference } from '@/lib/theme';
+
+// Logged-out landing (served at app.jointemple.io). Theme-aware (the
+// top-right toggle flips the app-wide scheme), navless.
 // The three paths are a stacked deck mirroring the logo — each card is one
 // of the brand colours (cream → steel-blue → gold). Advancing shuffles the
 // front card to the back and brings the next colour forward (the deck
@@ -121,6 +125,8 @@ const CARD_RADIUS = 24;
 const CTA_GAP = 24;
 
 export default function GetStartedScreen() {
+  const { scheme } = useThemePreference();
+  const dark = scheme === 'dark';
   const [page, setPage] = useState(0);
 
   // One animated "slot" per card (0 front … N-1 back). Initial arrangement
@@ -159,8 +165,11 @@ export default function GetStartedScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-gray-950"
+      className="flex-1 bg-slate-100 dark:bg-gray-950"
       edges={['top', 'bottom', 'left', 'right']}>
+      <View className="absolute top-3 right-3 z-10">
+        <ThemeToggle />
+      </View>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -172,20 +181,15 @@ export default function GetStartedScreen() {
         <View className="w-full max-w-xl mx-auto gap-8">
           {/* Brand lockup (mark + wordmark), understated up top. */}
           <View className="items-center">
-            <Image
-              source={require('../../../assets/images/temple-brand/lockup-on-dark-960px.png')}
-              style={{ width: 220, height: 55 }}
-              resizeMode="contain"
-              accessibilityLabel="Temple"
-            />
+            <TempleLockup width={220} height={55} />
           </View>
 
           {/* Header */}
           <View className="gap-2">
-            <Text className="text-white text-3xl font-semibold text-center">
+            <Text className="text-gray-900 dark:text-white text-3xl font-semibold text-center">
               Welcome to Temple
             </Text>
-            <Text className="text-gray-400 text-center">
+            <Text className="text-gray-500 dark:text-gray-400 text-center">
               Pick how you’ll use it — swipe through, you can always switch
               later.
             </Text>
@@ -280,7 +284,11 @@ export default function GetStartedScreen() {
                       borderRadius: 6,
                       borderWidth: active ? 2 : 0,
                       borderColor: active ? p.bg : 'transparent',
-                      backgroundColor: active ? 'transparent' : '#4B5563',
+                      backgroundColor: active
+                        ? 'transparent'
+                        : dark
+                          ? '#4B5563'
+                          : '#CBD5E1',
                     }}
                   />
                 );
@@ -293,7 +301,7 @@ export default function GetStartedScreen() {
           <View className="items-center pt-1">
             <Link href="/sign-in" asChild>
               <Pressable hitSlop={8}>
-                <Text className="text-[#6E97C6]">
+                <Text className="text-[#3B6BA5] dark:text-[#6E97C6]">
                   Already have an account? Sign in
                 </Text>
               </Pressable>
@@ -385,15 +393,16 @@ function Arrow({
   dir: 'left' | 'right';
   onPress: () => void;
 }) {
+  const { scheme } = useThemePreference();
   return (
     <Pressable
       onPress={onPress}
       hitSlop={8}
-      className="w-10 h-10 rounded-full items-center justify-center border border-white/20 bg-white/5">
+      className="w-10 h-10 rounded-full items-center justify-center border border-gray-300 bg-white dark:border-white/20 dark:bg-white/5">
       <Ionicons
         name={dir === 'left' ? 'chevron-back' : 'chevron-forward'}
         size={20}
-        color="#E5E7EB"
+        color={scheme === 'dark' ? '#E5E7EB' : '#374151'}
       />
     </Pressable>
   );
