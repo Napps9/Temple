@@ -345,9 +345,13 @@ an edge function in front).
 across" → Import members (`/management/members/import`), and surfaced
 as an optional checklist step on the setup card. Drop a CSV from a
 previous platform (Mindbody, PushPress, Glofox, Wodify or a
-spreadsheet); the column mapper auto-detects the common header
-conventions, the preview counts staged vs. skipped rows, and commit
-writes them into `pending_members`. A trigger on `gym_memberships`
+spreadsheet); the column mapper pre-fills via an AI pass — `infer-import`
+in `map_columns` mode reads each column's header plus a privacy-safe
+profile (value kind, fill rate, distinct ratio; never raw cell values)
+and maps it to a Temple field, falling back to the alias heuristic
+(`autoDetect`) when the AI key is unset or the call fails. The preview
+counts staged vs. skipped rows, and commit writes them into
+`pending_members`. A trigger on `gym_memberships`
 insert links the pending row when the matching email signs up via
 `/join/<slug>` — applying the imported plan metadata onto the
 membership, copying tags into `member_tags`, and propagating "no

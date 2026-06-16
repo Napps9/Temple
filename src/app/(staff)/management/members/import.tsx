@@ -2,7 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { BackLink } from '@/components/BackLink';
@@ -21,6 +29,7 @@ import {
 import { parseCsv } from '@/lib/import/csv';
 import {
   buildCorrectionRows,
+  runColumnMapping,
   runInference,
   summariseForInference,
   type InferenceResponse,
@@ -62,6 +71,16 @@ const FIELD_OPTIONS: { key: TempleField | 'ignore'; label: string }[] = [
   }))),
 ];
 
+// Element-wise equality on a mapping array — lets the async AI result
+// swap in only while the auto-mapping is still untouched, so it never
+// clobbers edits the owner has already made.
+function sameMapping(
+  a: readonly (TempleField | 'ignore' | null)[],
+  b: readonly (TempleField | 'ignore' | null)[],
+): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 export default function ImportMembersScreen() {
   const { data: membership } = useGymMembership();
   const brand = useGymBrand();
@@ -79,6 +98,10 @@ export default function ImportMembersScreen() {
   );
   const [tagsKeep, setTagsKeep] = useState<Set<string>>(new Set());
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [mappingLoading, setMappingLoading] = useState(false);
+  const [mappingSource, setMappingSource] = useState<'ai' | 'fallback' | null>(
+    null,
+  );
 
   const fileInput = useRef<HTMLInputElement | null>(null);
   // Signature of the inputs the last successful loadInference ran with.
@@ -108,15 +131,35 @@ export default function ImportMembersScreen() {
   const headers = parsed[0] ?? [];
   const rows = parsed.slice(1).filter((r) => r.some((c) => c.length > 0));
 
+  // Enter the Map step: fill from the alias heuristic immediately, then
+  // kick off the AI mapping and swap it in when it lands — but only while
+  // the owner hasn't started editing, so we never clobber their work.
+  function startMapping(hs: string[], rs: string[][]) {
+    const auto = autoDetect(hs).map((f) => f ?? 'ignore');
+    setMapping(auto);
+    setMappingSource(null);
+    setPhase('map');
+    if (!membership) return;
+    setMappingLoading(true);
+    runColumnMapping({ gymId: membership.gymId, headers: hs, rows: rs })
+      .then((res) => {
+        setMapping((curr) => (sameMapping(curr, auto) ? res.mapping : curr));
+        setMappingSource(res.source);
+      })
+      .catch(() => setMappingSource('fallback'))
+      .finally(() => setMappingLoading(false));
+  }
+
   function onFile(file: File) {
     setError(null);
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
       setCsvText(text);
-      const auto = autoDetect((parseCsv(text)[0] ?? []));
-      setMapping(auto.map((f) => f ?? 'ignore'));
-      setPhase('map');
+      const p = parseCsv(text);
+      const hs = p[0] ?? [];
+      const rs = p.slice(1).filter((r) => r.some((c) => c.length > 0));
+      startMapping(hs, rs);
     };
     reader.onerror = () => setError("Couldn't read that file.");
     reader.readAsText(file);
@@ -436,8 +479,7 @@ export default function ImportMembersScreen() {
                   setError('Need at least a header row + one data row.');
                   return;
                 }
-                setMapping(autoDetect(headers).map((f) => f ?? 'ignore'));
-                setPhase('map');
+                startMapping(headers, rows);
               }}
               disabled={!csvText.trim()}>
               Continue
@@ -448,12 +490,34 @@ export default function ImportMembersScreen() {
         {phase === 'map' ? (
           <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
             <View className="gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                Map your columns
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                  Map your columns
+                </Text>
+                {mappingLoading ? (
+                  <View className="flex-row items-center gap-1.5">
+                    <ActivityIndicator size="small" color={brand.primaryColor} />
+                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-widest">
+                      Matching
+                    </Text>
+                  </View>
+                ) : mappingSource === 'ai' ? (
+                  <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
+                    <Ionicons
+                      name="sparkles-outline"
+                      size={12}
+                      color={brand.primaryColor}
+                    />
+                    <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
+                      AI-matched
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                We auto-detected what we could. Adjust anything that's wrong.
-                Columns set to "Ignore" are dropped.
+                {mappingSource === 'ai'
+                  ? 'Matched with AI — adjust anything that\'s off. Columns set to "Ignore" are dropped.'
+                  : 'We auto-detected what we could. Adjust anything that\'s wrong. Columns set to "Ignore" are dropped.'}
               </Text>
             </View>
             <View className="gap-2">

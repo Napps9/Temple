@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { autoDetect, buildImportRow, toIsoDate } from './columns';
+import { autoDetect, buildImportRow, columnHints, toIsoDate } from './columns';
 
 describe('autoDetect', () => {
   it('matches the Mindbody export shape', () => {
@@ -133,5 +133,47 @@ describe('buildImportRow', () => {
     expect(
       buildImportRow(headers, mapping, ['a@b.c', '', '', '', '', '', '']),
     ).toEqual({ email: 'a@b.c' });
+  });
+});
+
+describe('columnHints', () => {
+  it('profiles each column by value kind without leaking raw values', () => {
+    const hints = columnHints(
+      ['Email', 'Name', 'DOB', 'Plan'],
+      [
+        ['ada@example.com', 'Ada Lovelace', '1815-12-10', 'Gold'],
+        ['grace@example.com', 'Grace Hopper', '1906-12-09', 'Gold'],
+        ['alan@example.com', 'Alan Turing', '1912-06-23', 'Drop-in'],
+      ],
+    );
+    expect(hints.map((h) => h.kind)).toEqual(['email', 'text', 'date', 'text']);
+    // The profile carries header + shape only — never the cell values.
+    const serialised = JSON.stringify(hints);
+    expect(serialised).not.toContain('ada@example.com');
+    expect(serialised).not.toContain('Lovelace');
+  });
+
+  it('reports fill rate and distinct ratio over the present values', () => {
+    const [plan, email] = columnHints(
+      ['Plan', 'Email'],
+      [
+        ['Gold', 'a@b.com'],
+        ['Gold', 'c@d.com'],
+        ['', 'e@f.com'],
+        ['Drop-in', 'g@h.com'],
+      ],
+    );
+    expect(plan.fill_rate).toBe(0.75); // 3 of 4 rows present
+    expect(plan.distinct_ratio).toBe(0.67); // 2 distinct of 3 present
+    expect(email.kind).toBe('email');
+    expect(email.fill_rate).toBe(1);
+    expect(email.distinct_ratio).toBe(1);
+  });
+
+  it('marks an all-empty column as empty', () => {
+    const [notes] = columnHints(['Notes'], [[''], [''], ['']]);
+    expect(notes.kind).toBe('empty');
+    expect(notes.fill_rate).toBe(0);
+    expect(notes.distinct_ratio).toBe(0);
   });
 });

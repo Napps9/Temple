@@ -115,6 +115,75 @@ export function autoDetect(headers: string[]): (TempleField | null)[] {
   });
 }
 
+// Privacy-safe per-column profile for AI-assisted mapping. We never send
+// raw cell values to the model — only the header plus the shape of the
+// column (value kind, how full it is, how repetitive). That's enough
+// signal to disambiguate headers the alias heuristic misses, with no
+// member PII leaving the client.
+export type ColumnKind =
+  | 'email'
+  | 'date'
+  | 'number'
+  | 'phone'
+  | 'boolean'
+  | 'text'
+  | 'empty';
+
+export type ColumnHint = {
+  header: string;
+  kind: ColumnKind;
+  fill_rate: number; // share of sampled rows with a value, 0-1
+  distinct_ratio: number; // distinct values / values present, 0-1
+};
+
+function classifyValue(v: string): ColumnKind {
+  if (!v) return 'empty';
+  if (/@/.test(v) && /\.[a-z]{2,}$/i.test(v)) return 'email';
+  if (toIsoDate(v)) return 'date';
+  if (/^(y|yes|n|no|true|false)$/i.test(v)) return 'boolean';
+  if (/^-?\d+(\.\d+)?$/.test(v)) return 'number';
+  if (/^[+(]?\d[\d ()\-.]{7,}$/.test(v)) return 'phone';
+  return 'text';
+}
+
+function dominantKind(values: string[]): ColumnKind {
+  if (values.length === 0) return 'empty';
+  const counts = new Map<ColumnKind, number>();
+  for (const v of values) {
+    const k = classifyValue(v);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  let best: ColumnKind = 'text';
+  let bestN = -1;
+  for (const [k, n] of counts) {
+    if (n > bestN) {
+      best = k;
+      bestN = n;
+    }
+  }
+  return best;
+}
+
+// Per-column profile from a sample of rows. Sampling caps the work on
+// large imports; the shape stabilises well within 50 rows.
+export function columnHints(headers: string[], rows: string[][]): ColumnHint[] {
+  const sample = rows.slice(0, 50);
+  const denom = Math.max(1, sample.length);
+  return headers.map((header, i) => {
+    const values = sample.map((r) => (r[i] ?? '').trim()).filter(Boolean);
+    const distinct = new Set(values.map((v) => v.toLowerCase())).size;
+    return {
+      header,
+      kind: dominantKind(values),
+      fill_rate: Math.round((values.length / denom) * 100) / 100,
+      distinct_ratio:
+        values.length === 0
+          ? 0
+          : Math.round((distinct / values.length) * 100) / 100,
+    };
+  });
+}
+
 // Coerce the source row into the import RPC's row shape. Empty cells
 // drop out; cell values are trimmed; booleans accept y/yes/true/1;
 // tags split on comma OR semicolon; dates pass through as-is (the RPC

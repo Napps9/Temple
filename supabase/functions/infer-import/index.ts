@@ -312,6 +312,112 @@ async function callClaude(
   }
 }
 
+// --- AI column mapping (PII-free) ------------------------------------
+// Same key + fallback discipline as the plan inference, but a separate
+// request shape: headers + a privacy-safe per-column profile (no raw
+// values), mapped to Temple's member fields. The client falls back to
+// its alias heuristic whenever this returns mapping: null.
+type ColumnHint = {
+  header: string;
+  kind: string;
+  fill_rate: number;
+  distinct_ratio: number;
+};
+type FieldDef = { key: string; label: string };
+
+async function callClaudeForMapping(
+  apiKey: string,
+  columns: ColumnHint[],
+  fields: FieldDef[],
+): Promise<{ header: string; field: string }[] | null> {
+  const fieldKeys = fields.map((f) => f.key);
+  const systemPrompt =
+    "You map columns from a gym's exported member CSV to Temple's member " +
+    'fields. For each source column you get its header and a privacy-safe ' +
+    'profile — the value kind, how full the column is (fill_rate 0-1) and how ' +
+    'repetitive it is (distinct_ratio 0-1). You never see raw values. Assign ' +
+    'every column to the single best Temple field, or "ignore" when nothing ' +
+    'fits (phone, address, internal IDs — Temple has no field for those). Each ' +
+    'single-valued field (email, first_name, last_name, full_name, ' +
+    'date_of_birth, plan_start, plan_end, credits_remaining, imported_status, ' +
+    'unsubscribed, notes) may be used at most once. Prefer full_name only when ' +
+    'one column holds the whole name; use first_name + last_name when split. A ' +
+    'high distinct_ratio text column is likely a name, email or notes; a low ' +
+    'distinct_ratio text column is likely a plan, status or tags.';
+
+  const toolSchema = {
+    type: 'object',
+    properties: {
+      mapping: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            header: { type: 'string' },
+            field: { type: 'string', enum: [...fieldKeys, 'ignore'] },
+          },
+          required: ['header', 'field'],
+        },
+      },
+    },
+    required: ['mapping'],
+  };
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: systemPrompt,
+        tools: [
+          {
+            name: 'emit_mapping',
+            description: 'Emit the column-to-field mapping.',
+            input_schema: toolSchema,
+          },
+        ],
+        tool_choice: { type: 'tool', name: 'emit_mapping' },
+        messages: [
+          { role: 'user', content: JSON.stringify({ columns, fields }) },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const toolUse = (data.content ?? []).find(
+      (b: { type: string }) => b.type === 'tool_use',
+    );
+    if (!toolUse) return null;
+    const parsed = toolUse.input as {
+      mapping?: { header: string; field: string }[];
+    };
+    return Array.isArray(parsed.mapping) ? parsed.mapping : null;
+  } catch {
+    return null;
+  }
+}
+
+async function handleColumnMapping(
+  body: { columns?: unknown; fields?: unknown },
+  apiKey: string | undefined,
+): Promise<Response> {
+  const columns: ColumnHint[] = Array.isArray(body.columns) ? body.columns : [];
+  const fields: FieldDef[] = Array.isArray(body.fields) ? body.fields : [];
+  if (!apiKey || columns.length === 0 || fields.length === 0) {
+    return json({ mapping: null, source: 'fallback' });
+  }
+  const mapping = await callClaudeForMapping(apiKey, columns, fields);
+  return mapping
+    ? json({ mapping, source: 'ai' })
+    : json({ mapping: null, source: 'fallback' });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -324,14 +430,14 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Function is not configured' }, 500);
   }
 
-  let body: InferenceRequest;
+  let body: any;
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Expected a JSON body' }, 400);
   }
-  if (!body?.gym_id || !Array.isArray(body.plans)) {
-    return json({ error: 'gym_id and plans are required' }, 400);
+  if (!body?.gym_id) {
+    return json({ error: 'gym_id is required' }, 400);
   }
 
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -341,12 +447,21 @@ Deno.serve(async (req: Request) => {
   });
 
   // Re-authorise as the caller — same gate the wizard's existing
-  // import_pending_members RPC checks.
+  // import_pending_members RPC checks. Covers both modes.
   const { data: allowed, error: aErr } = await caller.rpc(
     'user_can_assign_plan',
     { target_gym_id: body.gym_id },
   );
   if (aErr || allowed !== true) return json({ error: 'Not authorised' }, 403);
+
+  // AI column mapping is a separate, PII-free request shape.
+  if (body.mode === 'map_columns') {
+    return await handleColumnMapping(body, ANTHROPIC_API_KEY);
+  }
+
+  if (!Array.isArray(body.plans)) {
+    return json({ error: 'plans are required' }, 400);
+  }
 
   // Step 1: exact-match look-aside per input plan. Anything we find
   // here gets served with confidence='learned' and never goes to the

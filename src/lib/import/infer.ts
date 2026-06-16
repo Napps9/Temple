@@ -8,6 +8,13 @@
 
 import { supabase } from '@/lib/supabase';
 
+import {
+  autoDetect,
+  columnHints,
+  TEMPLE_FIELD_LABELS,
+  type TempleField,
+} from './columns';
+
 export type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 
 export type PlanInput = {
@@ -172,6 +179,68 @@ export async function runInference(args: {
     };
   }
   return data as InferenceResponse;
+}
+
+export type ColumnMappingResult = {
+  mapping: (TempleField | 'ignore')[];
+  source: 'ai' | 'fallback';
+};
+
+const TEMPLE_FIELD_KEYS = Object.keys(TEMPLE_FIELD_LABELS) as TempleField[];
+// Fields that name a single member attribute — at most one column each.
+const SINGLE_USE_FIELDS: Set<TempleField> = new Set([
+  'email', 'first_name', 'last_name', 'full_name', 'date_of_birth',
+  'plan_start', 'plan_end', 'credits_remaining', 'imported_status',
+  'unsubscribed', 'notes',
+]);
+
+function isTempleField(v: unknown): v is TempleField {
+  return typeof v === 'string' && (TEMPLE_FIELD_KEYS as string[]).includes(v);
+}
+
+// AI-assisted column mapping. Sends headers + a privacy-safe per-column
+// profile (no raw values) to infer-import, which asks Claude to map each
+// column to a Temple field. Falls back to the alias heuristic whenever
+// the AI is unavailable or returns nothing usable, so the Map step is
+// always pre-filled.
+export async function runColumnMapping(args: {
+  gymId: string;
+  headers: string[];
+  rows: string[][];
+}): Promise<ColumnMappingResult> {
+  const baseline = (): (TempleField | 'ignore')[] =>
+    autoDetect(args.headers).map((f) => f ?? 'ignore');
+  try {
+    const { data, error } = await supabase.functions.invoke('infer-import', {
+      body: {
+        mode: 'map_columns',
+        gym_id: args.gymId,
+        columns: columnHints(args.headers, args.rows),
+        fields: TEMPLE_FIELD_KEYS.map((key) => ({
+          key,
+          label: TEMPLE_FIELD_LABELS[key],
+        })),
+      },
+    });
+    const assigns = (
+      data as { mapping?: { header: string; field: string }[] } | null
+    )?.mapping;
+    if (error || !assigns) return { mapping: baseline(), source: 'fallback' };
+    const byHeader = new Map(assigns.map((a) => [a.header, a.field]));
+    const usedSingle = new Set<TempleField>();
+    const mapping = args.headers.map((h): TempleField | 'ignore' => {
+      const raw = byHeader.get(h);
+      if (!isTempleField(raw)) return 'ignore';
+      if (SINGLE_USE_FIELDS.has(raw)) {
+        if (usedSingle.has(raw)) return 'ignore';
+        usedSingle.add(raw);
+      }
+      return raw;
+    });
+    return { mapping, source: 'ai' };
+  } catch {
+    return { mapping: baseline(), source: 'fallback' };
+  }
 }
 
 // Owner's final state per plan after they've reviewed (and possibly
