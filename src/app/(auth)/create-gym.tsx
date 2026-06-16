@@ -12,6 +12,7 @@ import {
 
 import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
+import { ColourField } from '@/components/ColourField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { TempleLockup } from '@/components/TempleLockup';
@@ -48,6 +49,9 @@ export default function CreateGymScreen() {
   const [primary, setPrimary] = useState<string>(DEFAULT_BRAND.primaryColor);
   const [secondary, setSecondary] = useState<string>(DEFAULT_BRAND.secondaryColor);
   const [textColor, setTextColor] = useState<string>(DEFAULT_BRAND.textColor);
+  const [pickerFor, setPickerFor] = useState<
+    null | 'primary' | 'secondary' | 'text'
+  >(null);
 
   // Save state
   const [createdGymId, setCreatedGymId] = useState<string | null>(null);
@@ -319,26 +323,32 @@ export default function CreateGymScreen() {
                   secondaryColor={validSecondary}
                   textColor={validText}
                 />
-                <Input
+                <ColourField
                   label="Primary colour"
                   value={primary}
-                  onChangeText={setPrimary}
-                  autoCapitalize="characters"
-                  placeholder="#2563EB"
+                  onChange={setPrimary}
+                  pickerOpen={pickerFor === 'primary'}
+                  onPick={() =>
+                    setPickerFor(pickerFor === 'primary' ? null : 'primary')
+                  }
                 />
-                <Input
+                <ColourField
                   label="Secondary colour"
                   value={secondary}
-                  onChangeText={setSecondary}
-                  autoCapitalize="characters"
-                  placeholder="#0F172A"
+                  onChange={setSecondary}
+                  pickerOpen={pickerFor === 'secondary'}
+                  onPick={() =>
+                    setPickerFor(pickerFor === 'secondary' ? null : 'secondary')
+                  }
                 />
-                <Input
+                <ColourField
                   label="Text colour"
                   value={textColor}
-                  onChangeText={setTextColor}
-                  autoCapitalize="characters"
-                  placeholder="#0F172A"
+                  onChange={setTextColor}
+                  pickerOpen={pickerFor === 'text'}
+                  onPick={() =>
+                    setPickerFor(pickerFor === 'text' ? null : 'text')
+                  }
                 />
                 {error ? (
                   <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
