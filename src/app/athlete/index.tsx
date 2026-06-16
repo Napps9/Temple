@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { GymLogo } from '@/components/GymLogo';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
+import { TempleMark } from '@/components/TempleMark';
 import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { findMovement } from '@/lib/movements';
@@ -105,7 +105,7 @@ export default function AthleteHome() {
     <Screen edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-3">
-          <GymLogo size={44} logoUrl={null} name="Temple" primaryColor={colors.primary} />
+          <TempleMark size={44} />
           <View className="flex-1">
             <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
               Athlete
@@ -118,7 +118,7 @@ export default function AthleteHome() {
             <Pressable
               hitSlop={8}
               accessibilityLabel="Account"
-              className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 items-center justify-center active:opacity-70">
+              className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 items-center justify-center active:opacity-70">
               <Ionicons name="person-outline" size={18} color={colors.iconPrimary} />
             </Pressable>
           </Link>
@@ -132,7 +132,7 @@ export default function AthleteHome() {
 
         {/* Solo tracking — the paid athlete tier (free during beta). */}
         {athleteActive.data ? (
-          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
             <View className="flex-row items-center gap-3">
               <View className="w-10 h-10 rounded-full bg-primary/15 items-center justify-center">
                 <Ionicons name="barbell-outline" size={20} color={colors.primary} />
@@ -149,13 +149,13 @@ export default function AthleteHome() {
             <Button onPress={() => setRecording(true)}>Log a result</Button>
           </View>
         ) : (
-          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
             <View className="flex-row items-center gap-2">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
                 Keep tracking on your own
               </Text>
-              <View className="rounded-full bg-emerald-500/15 px-2 py-0.5">
-                <Text className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest">
+              <View className="rounded-full bg-amber-500/15 px-2 py-0.5">
+                <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
                   Free in beta
                 </Text>
               </View>
@@ -176,7 +176,7 @@ export default function AthleteHome() {
         )}
 
         {/* Join / start CTAs replace /welcome for gymless users. */}
-        <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Train with a gym
           </Text>
@@ -211,8 +211,8 @@ export default function AthleteHome() {
           {movements.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
           ) : logged.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-2xl p-6 items-center gap-2">
-              <Ionicons name="barbell-outline" size={28} color="#9CA3AF" />
+            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 items-center gap-2">
+              <Ionicons name="barbell-outline" size={28} color={colors.iconTertiary} />
               <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
                 No logged movements yet. Start solo tracking above, or join a
                 gym — your PRs and history live here either way.
@@ -224,7 +224,7 @@ export default function AthleteHome() {
                 <Pressable
                   key={m.key}
                   onPress={() => router.push(`/athlete/movement/${m.key}` as never)}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
+                  className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
                   <View className="flex-1">
                     <Text className="text-gray-900 dark:text-gray-50 font-medium">
                       {m.name}
@@ -233,7 +233,7 @@ export default function AthleteHome() {
                       {m.group}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
                 </Pressable>
               ))}
             </View>
