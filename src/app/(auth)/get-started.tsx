@@ -185,10 +185,12 @@ export default function GetStartedScreen() {
                   hitSlop={8}
                   onPress={() => goTo(i)}
                   style={{
-                    width: active ? 22 : 7,
-                    height: 7,
-                    borderRadius: 4,
-                    backgroundColor: active ? p.accent : '#334155',
+                    width: active ? 12 : 6,
+                    height: active ? 12 : 6,
+                    borderRadius: 6,
+                    borderWidth: active ? 2 : 0,
+                    borderColor: active ? p.accent : 'transparent',
+                    backgroundColor: active ? 'transparent' : '#4B5563',
                   }}
                 />
               );
@@ -213,11 +215,11 @@ export default function GetStartedScreen() {
 
 function PathCard({ path }: { path: Path }) {
   return (
-    <View className="rounded-3xl border border-gray-800 bg-gray-900 p-6 gap-5 shadow-xl">
-      <View className="flex-row items-center gap-3">
+    <View className="rounded-3xl border border-gray-800 bg-gray-900 p-7 gap-6 shadow-xl">
+      <View className="flex-row items-center gap-4">
         <View
-          style={{ backgroundColor: `${path.accent}22` }}
-          className="w-12 h-12 rounded-2xl items-center justify-center">
+          style={{ borderColor: path.accent }}
+          className="w-14 h-14 rounded-full border items-center justify-center">
           <Ionicons name={path.icon} size={24} color={path.accent} />
         </View>
         <View className="flex-1">
@@ -244,7 +246,7 @@ function PathCard({ path }: { path: Path }) {
       <Link href={path.href as never} asChild>
         <Pressable
           style={{ backgroundColor: path.accent }}
-          className="rounded-xl p-3.5 items-center active:opacity-80 mt-1">
+          className="rounded-xl p-4 items-center active:opacity-80 mt-1">
           <Text style={{ color: path.onAccent }} className="font-semibold">
             {path.cta}
           </Text>
@@ -273,10 +275,10 @@ function Arrow({
         top: '50%',
         left: dir === 'left' ? 0 : undefined,
         right: dir === 'right' ? 0 : undefined,
-        transform: [{ translateY: -18 }],
+        transform: [{ translateY: -22 }],
         opacity: hidden ? 0 : 1,
       }}
-      className="w-9 h-9 rounded-full items-center justify-center bg-white/10 border border-white/10">
+      className="w-11 h-11 rounded-full items-center justify-center border border-white/20 bg-white/5">
       <Ionicons
         name={dir === 'left' ? 'chevron-back' : 'chevron-forward'}
         size={20}
