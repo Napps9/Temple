@@ -14,6 +14,8 @@ import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { TempleLockup } from '@/components/TempleLockup';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   createGymWithSignup,
   refreshMembership,
@@ -178,11 +180,17 @@ export default function CreateGymScreen() {
 
   return (
     <Screen>
+      <View className="absolute top-3 right-3 z-10">
+        <ThemeToggle />
+      </View>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">
         <ScrollView contentContainerClassName="py-8 px-4">
           <View className="gap-6 w-full max-w-lg mx-auto">
+            <View className="items-center">
+              <TempleLockup width={160} height={40} />
+            </View>
             <View className="gap-2">
               <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
                 Start a new gym
