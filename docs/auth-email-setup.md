@@ -27,16 +27,22 @@ Auth emails come from **Temple the platform** (the user has no gym yet
 when they confirm), so they send from a Temple-owned domain — not a
 per-gym sending domain.
 
-1. Resend → **Domains → Add Domain** → `mail.jointemple.io`.
-   - A `mail.` subdomain keeps auth/transactional sending reputation
+1. Resend → **Domains → Add Domain** → `support.jointemple.io`.
+   - A dedicated subdomain keeps auth/transactional sending reputation
      isolated from the apex `jointemple.io` (marketing site) and from
      per-gym domains.
-2. Resend shows the exact DNS records to add (generated — copy them
-   verbatim). At **Namecheap → Advanced DNS** for `jointemple.io`, add:
-   - the **MX** record (return-path / bounce handling)
-   - the **TXT SPF** record
-   - the **TXT DKIM** record
-   - (optional but recommended) a **DMARC** TXT record
+At **Namecheap → Advanced DNS** for `jointemple.io`, add the records
+Resend generates (copy each value with its copy button — don't
+hand-type the DKIM key). Enter Hosts *without* the `.jointemple.io`
+suffix — Namecheap appends it:
+
+   - **DKIM** — TXT, host `resend._domainkey.support`
+   - **SPF** — TXT, host `send.support` (`v=spf1 include:amazonses.com ~all`)
+   - **MX** — host `send.support`, priority 10, the `feedback-smtp…amazonses.com`
+     value. Namecheap keeps MX under **Mail Settings → Custom MX**, not
+     the Host Records table; switching to Custom MX replaces default mail
+     handling, so re-add any existing `@jointemple.io` MX too.
+   - (optional) **DMARC** — TXT, host `_dmarc`, `v=DMARC1; p=none;`
 3. Back in Resend, **Verify**. Propagation is usually minutes.
 
 If a Temple-level domain is already verified in Resend (check what
@@ -55,7 +61,7 @@ enable **Custom SMTP**:
 | Port           | `465`                                  |
 | Username       | `resend`                               |
 | Password       | your Resend API key (`re_…`)           |
-| Sender email   | `noreply@mail.jointemple.io`           |
+| Sender email   | `noreply@support.jointemple.io`        |
 | Sender name    | `Temple`                               |
 
 The API key is the same value as the `RESEND_API_KEY` edge-function
@@ -110,7 +116,7 @@ larger follow-up, not part of this setup.
 
 1. Sign up with a fresh address (or use the rate-limited one once it
    resets).
-2. Confirm the email arrives **from `Temple <noreply@mail.jointemple.io>`**,
+2. Confirm the email arrives **from `Temple <noreply@support.jointemple.io>`**,
    not `…@mail.app.supabase.io`.
 3. Click the link → it lands on `https://app.jointemple.io/sign-in`.
 4. Sign in → into the app.
