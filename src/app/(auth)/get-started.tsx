@@ -282,13 +282,20 @@ export default function GetStartedScreen() {
                       width: active ? 12 : 6,
                       height: active ? 12 : 6,
                       borderRadius: 6,
-                      borderWidth: active ? 2 : 0,
-                      borderColor: active ? p.bg : 'transparent',
+                      // Filled with the card colour, plus a contrasting
+                      // hairline so a near-white card (cream) stays visible
+                      // on the light background.
                       backgroundColor: active
-                        ? 'transparent'
+                        ? p.bg
                         : dark
                           ? '#4B5563'
                           : '#CBD5E1',
+                      borderWidth: active ? 1 : 0,
+                      borderColor: active
+                        ? dark
+                          ? 'rgba(255,255,255,0.45)'
+                          : 'rgba(17,17,17,0.30)'
+                        : 'transparent',
                     }}
                   />
                 );
