@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
+  PanResponder,
   Pressable,
   ScrollView,
   Text,
@@ -14,13 +15,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Logged-out landing (served at app.jointemple.io). Deliberately always
-// dark and navless: one path card at a time in a swipe/click carousel so
-// each audience — member, solo athlete, owner — gets the full pitch
-// without three cards competing for the first read. Depth comes from
-// static brand-colour glows ("rich but calm"); the only colour that moves
-// is the per-path accent, and only when you swipe. Order stays
-// Join → Solo → Start so between-gyms athletes aren't an afterthought.
+// Logged-out landing (served at app.jointemple.io). Always dark, navless:
+// one path card at a time in a swipe/tap carousel so each audience —
+// member, solo athlete, owner — gets the full pitch. Slides animate with
+// an eased translateX (RN Animated, JS driver — reliable on web); arrows
+// and dots share one control row beneath. Real Temple lockup up top,
+// brand palette (steel-blue / gold) per card. Order Join → Solo → Start.
 
 type Path = {
   key: string;
@@ -92,28 +92,48 @@ const PATHS: Path[] = [
 
 export default function GetStartedScreen() {
   const { width: winW } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
   const [measured, setMeasured] = useState(0);
 
-  // Width of one carousel page. Fall back to the window width for the
-  // first paint; onLayout corrects it before any interaction.
+  // One carousel page width. Window-width fallback for first paint;
+  // onLayout corrects it before any interaction.
   const pageW = measured || Math.min(winW, 600);
+
+  const tx = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(tx, {
+      toValue: -page * pageW,
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [page, pageW, tx]);
+
+  // Functional updates so the PanResponder (created once) never reads a
+  // stale page.
+  const goRel = (d: number) =>
+    setPage((p) => Math.max(0, Math.min(PATHS.length - 1, p + d)));
+  const goTo = (i: number) =>
+    setPage(Math.max(0, Math.min(PATHS.length - 1, i)));
+
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderRelease: (_, g) => {
+        if (g.dx <= -40) goRel(1);
+        else if (g.dx >= 40) goRel(-1);
+      },
+    }),
+  ).current;
 
   function onLayout(e: LayoutChangeEvent) {
     const w = e.nativeEvent.layout.width;
-    if (w && Math.abs(w - measured) > 1) setMeasured(w);
-  }
-
-  function goTo(i: number) {
-    const next = Math.max(0, Math.min(PATHS.length - 1, i));
-    setPage(next);
-    scrollRef.current?.scrollTo({ x: next * pageW, animated: true });
-  }
-
-  function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const i = Math.round(e.nativeEvent.contentOffset.x / pageW);
-    if (i !== page) setPage(i);
+    if (w && Math.abs(w - measured) > 1) {
+      setMeasured(w);
+      tx.setValue(-page * w);
+    }
   }
 
   return (
@@ -150,51 +170,54 @@ export default function GetStartedScreen() {
             </Text>
           </View>
 
-          {/* Carousel */}
-          <View className="relative" onLayout={onLayout}>
-            <ScrollView
-              ref={scrollRef}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              scrollEventThrottle={16}
-              onScroll={onScroll}>
+          {/* Carousel — eased translateX track, swipe via PanResponder */}
+          <View
+            className="overflow-hidden"
+            onLayout={onLayout}
+            {...pan.panHandlers}>
+            <Animated.View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                width: pageW * PATHS.length,
+                transform: [{ translateX: tx }],
+              }}>
               {PATHS.map((p) => (
                 <View key={p.key} style={{ width: pageW }} className="px-1">
                   <PathCard path={p} />
                 </View>
               ))}
-            </ScrollView>
-
-            {/* Prev / next — overlaid so cards keep full width. */}
-            <Arrow dir="left" hidden={page === 0} onPress={() => goTo(page - 1)} />
-            <Arrow
-              dir="right"
-              hidden={page === PATHS.length - 1}
-              onPress={() => goTo(page + 1)}
-            />
+            </Animated.View>
           </View>
 
-          {/* Dots */}
-          <View className="flex-row items-center justify-center gap-2">
-            {PATHS.map((p, i) => {
-              const active = i === page;
-              return (
-                <Pressable
-                  key={p.key}
-                  hitSlop={8}
-                  onPress={() => goTo(i)}
-                  style={{
-                    width: active ? 12 : 6,
-                    height: active ? 12 : 6,
-                    borderRadius: 6,
-                    borderWidth: active ? 2 : 0,
-                    borderColor: active ? p.accent : 'transparent',
-                    backgroundColor: active ? 'transparent' : '#4B5563',
-                  }}
-                />
-              );
-            })}
+          {/* Controls — arrows flanking the dots: ‹ • • • › */}
+          <View className="flex-row items-center justify-center gap-4">
+            <Arrow dir="left" disabled={page === 0} onPress={() => goRel(-1)} />
+            <View className="flex-row items-center gap-2">
+              {PATHS.map((p, i) => {
+                const active = i === page;
+                return (
+                  <Pressable
+                    key={p.key}
+                    hitSlop={8}
+                    onPress={() => goTo(i)}
+                    style={{
+                      width: active ? 12 : 6,
+                      height: active ? 12 : 6,
+                      borderRadius: 6,
+                      borderWidth: active ? 2 : 0,
+                      borderColor: active ? p.accent : 'transparent',
+                      backgroundColor: active ? 'transparent' : '#4B5563',
+                    }}
+                  />
+                );
+              })}
+            </View>
+            <Arrow
+              dir="right"
+              disabled={page === PATHS.length - 1}
+              onPress={() => goRel(1)}
+            />
           </View>
 
           {/* Sign in */}
@@ -258,27 +281,20 @@ function PathCard({ path }: { path: Path }) {
 
 function Arrow({
   dir,
-  hidden,
+  disabled,
   onPress,
 }: {
   dir: 'left' | 'right';
-  hidden: boolean;
+  disabled: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      disabled={hidden}
+      disabled={disabled}
       hitSlop={8}
-      style={{
-        position: 'absolute',
-        top: '50%',
-        left: dir === 'left' ? 0 : undefined,
-        right: dir === 'right' ? 0 : undefined,
-        transform: [{ translateY: -22 }],
-        opacity: hidden ? 0 : 1,
-      }}
-      className="w-11 h-11 rounded-full items-center justify-center border border-white/20 bg-white/5">
+      style={{ opacity: disabled ? 0.3 : 1 }}
+      className="w-10 h-10 rounded-full items-center justify-center border border-white/20 bg-white/5">
       <Ionicons
         name={dir === 'left' ? 'chevron-back' : 'chevron-forward'}
         size={20}
