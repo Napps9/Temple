@@ -131,9 +131,13 @@ Deno.serve(async (req: Request) => {
   const link = `${origin}/accept-invite?code=${encodeURIComponent(inviteCode)}`;
 
   // The code is already created — if email isn't configured or fails, we
-  // still hand it back so the owner can share it manually.
+  // still hand it back so the owner can share it manually. Say what's
+  // missing so the owner knows it's a setup gap, not a transient error.
   if (!RESEND_API_KEY || !fromAddress) {
-    return json({ ok: true, sent: false, code: inviteCode });
+    const missing = !RESEND_API_KEY
+      ? 'email sending isn’t set up yet'
+      : 'no verified sending domain or default from-address is set';
+    return json({ ok: true, sent: false, code: inviteCode, error: missing });
   }
 
   const subject = `You're invited to join ${gymName} on Temple`;

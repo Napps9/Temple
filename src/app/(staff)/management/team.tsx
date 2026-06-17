@@ -109,7 +109,9 @@ export default function TeamScreen() {
   const queryClient = useQueryClient();
   const [role, setRole] = useState<GymRole>('member');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [emailNotice, setEmailNotice] = useState<string | null>(null);
+  const [emailNotice, setEmailNotice] = useState<
+    { tone: 'ok' | 'warn'; text: string } | null
+  >(null);
 
   const brand = useGymBrand();
   const [newQrOpen, setNewQrOpen] = useState(false);
@@ -167,17 +169,24 @@ export default function TeamScreen() {
         },
       });
       if (error) throw error;
-      return data as { ok: boolean; sent: boolean; code: string };
+      return data as {
+        ok: boolean;
+        sent: boolean;
+        code: string;
+        error?: string;
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
       if (data.sent) {
-        setEmailNotice(`Invite sent to ${inviteEmail.trim()}.`);
+        setEmailNotice({ tone: 'ok', text: `Invite sent to ${inviteEmail.trim()}.` });
         setInviteEmail('');
       } else {
-        setEmailNotice(
-          `Code ${data.code} created, but the email didn't send — copy it from "All invites" and share it manually.`,
-        );
+        const reason = data.error ? ` (${data.error})` : '';
+        setEmailNotice({
+          tone: 'warn',
+          text: `Code ${data.code} created, but the email didn't send${reason}. Copy it from "All invites" and share it manually.`,
+        });
       }
     },
     onError: () => setEmailNotice(null),
@@ -254,8 +263,13 @@ export default function TeamScreen() {
           </Pressable>
 
           {emailNotice ? (
-            <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
-              {emailNotice}
+            <Text
+              className={`text-sm ${
+                emailNotice.tone === 'ok'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-amber-600 dark:text-amber-400'
+              }`}>
+              {emailNotice.text}
             </Text>
           ) : null}
           {emailInvite.error ? (
