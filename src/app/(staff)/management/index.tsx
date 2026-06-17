@@ -342,7 +342,16 @@ export default function ManagementHome() {
         ) : activeCategory === 'team' ? (
           <TeamTab />
         ) : activeCategory === 'plans' ? (
-          <PlansPanel />
+          <View className="gap-4">
+            {role === 'owner' ? (
+              <ManagementCard
+                title="Billing & payments"
+                description="Connect Stripe to charge members for memberships. You keep 100%."
+                href={'/management/billing' as never}
+              />
+            ) : null}
+            <PlansPanel />
+          </View>
         ) : activeCategory === 'settings' ? (
           <SettingsTab />
         ) : (
@@ -361,7 +370,6 @@ export default function ManagementHome() {
 }
 
 function SettingsTab() {
-  const role = useRole();
   const canManageStaff = useCan('can_manage_staff') ?? false;
   const canConfigureLeaderboards = useCan('can_configure_leaderboards') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
@@ -369,13 +377,6 @@ function SettingsTab() {
 
   return (
     <View className="gap-3">
-      {role === 'owner' ? (
-        <ManagementCard
-          title="Billing & payments"
-          description="Connect Stripe to charge members for memberships. You keep 100%."
-          href={'/management/billing' as never}
-        />
-      ) : null}
       {canManageStaff ? (
         <SettingsSection
           title="Gym settings"
