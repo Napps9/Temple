@@ -71,6 +71,7 @@ export type Database = {
           cancel_cutoff_mode: 'relative' | 'day_before';
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
+          members_can_self_checkout: boolean;
         };
         Insert: {
           id?: string;
@@ -2849,6 +2850,10 @@ export type Database = {
       create_invite: {
         Args: { p_gym_id: string; p_role: GymRole; p_expires_at: string | null };
         Returns: string;
+      };
+      set_member_self_checkout: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: undefined;
       };
       class_type_has_dependents: {
         Args: { p_id: string };

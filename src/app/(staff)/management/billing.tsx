@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Platform, ScrollView, Text, View } from 'react-native';
+import { Platform, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
@@ -34,6 +34,33 @@ export default function BillingScreen() {
       if (e) throw e;
       return data;
     },
+  });
+
+  const queryClient = useQueryClient();
+  const selfCheckout = useQuery({
+    queryKey: ['gym-self-checkout', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error: e } = await supabase
+        .from('gyms')
+        .select('members_can_self_checkout')
+        .eq('id', membership!.gymId)
+        .single();
+      if (e) throw e;
+      return data.members_can_self_checkout;
+    },
+  });
+  const setSelfCheckout = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!membership) throw new Error('No gym');
+      const { error: e } = await supabase.rpc('set_member_self_checkout', {
+        p_gym_id: membership.gymId,
+        p_enabled: enabled,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['gym-self-checkout'] }),
   });
 
   const origin =
@@ -153,6 +180,31 @@ export default function BillingScreen() {
               </Button>
             </>
           )}
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Members can choose &amp; pay
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Let members pick a plan and pay themselves. Turn this off if
+                your front desk sets members up instead — staff can always
+                charge a member directly.
+              </Text>
+            </View>
+            <Switch
+              value={selfCheckout.data ?? true}
+              onValueChange={(v) => setSelfCheckout.mutate(v)}
+              disabled={selfCheckout.isLoading || setSelfCheckout.isPending}
+            />
+          </View>
+          {setSelfCheckout.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {errorMessage(setSelfCheckout.error, 'Could not save the setting')}
+            </Text>
+          ) : null}
         </View>
       </ScrollView>
     </Screen>
