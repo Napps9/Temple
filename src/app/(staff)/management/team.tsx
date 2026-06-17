@@ -187,19 +187,18 @@ export default function TeamScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink label="Manage" fallbackHref="/management" />
-        <WalkInQRCard />
-
-        <View className="gap-4">
+        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-5">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-              Issue invite
+              Invites
             </Text>
             <Text className="text-gray-500 dark:text-gray-400">
-              Pick a role, then email the invite — or generate a code to hand
-              over in person.
+              Email an invite, hand over a code/QR, or use the walk-in QR at
+              the front desk.
             </Text>
           </View>
 
+          <View className="gap-3">
           <View className="flex-row flex-wrap gap-2">
             {roleOptions.map((r) => {
               const selected = role === r;
@@ -295,6 +294,10 @@ export default function TeamScreen() {
               />
             </View>
           ) : null}
+          </View>
+
+          <View className="border-t border-gray-200 dark:border-gray-800" />
+          <WalkInQRCard bare />
         </View>
 
         <View className="gap-3 mt-4">

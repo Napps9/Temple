@@ -18,7 +18,7 @@ import { useGymBrand } from '@/lib/useGymBrand';
 // Public signup must be enabled or the URL would render "signup is
 // closed". When off, we replace the QR with a notice pointing at the
 // Branding screen where the flag is flipped.
-export function WalkInQRCard() {
+export function WalkInQRCard({ bare = false }: { bare?: boolean } = {}) {
   const brand = useGymBrand();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -41,7 +41,12 @@ export function WalkInQRCard() {
   if (!url) return null;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800">
+    <View
+      className={
+        bare
+          ? 'gap-3'
+          : 'bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800'
+      }>
       <View className="flex-row items-center gap-2">
         <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
           Walk-in sign-up QR
