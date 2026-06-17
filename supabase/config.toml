@@ -60,3 +60,8 @@ verify_jwt = true
 
 [functions.stripe-connect-callback]
 verify_jwt = false
+
+# Member checkout — opens a Stripe Checkout session (direct charge) for a
+# plan on the gym's connected account. Signed-in member caller.
+[functions.stripe-checkout]
+verify_jwt = true

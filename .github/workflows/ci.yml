@@ -97,3 +97,4 @@ jobs:
           supabase functions deploy send-invite
           supabase functions deploy stripe-connect-start
           supabase functions deploy stripe-connect-callback
+          supabase functions deploy stripe-checkout
