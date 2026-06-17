@@ -7,6 +7,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
@@ -491,19 +492,17 @@ export function PlansPanel() {
                     </Text>
                   ) : null}
                 </View>
-                <View className="gap-1">
-                  <Input
-                    label="Notice period (days)"
+                {r.kind !== 'credit_pack' ? (
+                  <DurationField
+                    label="Notice period"
+                    blurb="How much notice a member gives to cancel — drives their cancel-by date. Leave blank for none."
                     value={r.noticePeriodDays}
-                    onChangeText={(v) => update(idx, { noticePeriodDays: v })}
-                    keyboardType="number-pad"
+                    onChange={(v) => update(idx, { noticePeriodDays: v })}
+                    base="days"
+                    units={['days', 'weeks', 'months']}
                     placeholder="30"
                   />
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                    Shown on member profiles so staff can answer
-                    cancellation questions. Leave blank for no notice.
-                  </Text>
-                </View>
+                ) : null}
 
                 <View className="gap-2">
                   <Text className="text-gray-700 dark:text-gray-200 text-sm">
