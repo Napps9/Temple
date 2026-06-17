@@ -36,7 +36,7 @@ type EditablePlan = {
   name: string;
   kind: PlanKind;
   creditCount: string;
-  monthlyPriceCents: string;
+  monthlyPrice: string;
   noticePeriodDays: string;
   // Empty classTypeIds + coverageMode 'all' = the plan covers every class
   // type (the plan_class_types allowlist is empty). 'specific' restricts
@@ -48,6 +48,20 @@ type EditablePlan = {
   serverSnapshot: ServerPlan | null;
 };
 
+// Prices are stored in minor units (pence) but entered in pounds — nobody
+// thinks in pence. Convert at the edges: pence -> pounds for display,
+// pounds -> pence on save. centsToPounds drops a whole-pound ".00".
+function centsToPounds(cents: number): string {
+  return (cents / 100).toFixed(2).replace(/\.00$/, '');
+}
+function poundsToCents(pounds: string): number | null {
+  const t = pounds.trim();
+  if (t === '') return null;
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 100);
+}
+
 function fromServer(p: ServerPlan, classTypeIds: string[]): EditablePlan {
   return {
     serverId: p.plan_id,
@@ -55,7 +69,7 @@ function fromServer(p: ServerPlan, classTypeIds: string[]): EditablePlan {
     name: p.name,
     kind: p.kind,
     creditCount: p.credit_count?.toString() ?? '',
-    monthlyPriceCents: p.monthly_price_cents?.toString() ?? '',
+    monthlyPrice: p.monthly_price_cents != null ? centsToPounds(p.monthly_price_cents) : '',
     noticePeriodDays: p.notice_period_days?.toString() ?? '',
     coverageMode: classTypeIds.length > 0 ? 'specific' : 'all',
     classTypeIds,
@@ -69,8 +83,7 @@ function rowDiffers(r: EditablePlan): boolean {
   if (!r.serverSnapshot) return true;
   const s = r.serverSnapshot;
   const cc = r.creditCount.trim() === '' ? null : parseInt(r.creditCount, 10);
-  const mpc =
-    r.monthlyPriceCents.trim() === '' ? null : parseInt(r.monthlyPriceCents, 10);
+  const mpc = poundsToCents(r.monthlyPrice);
   const npd =
     r.noticePeriodDays.trim() === '' ? null : parseInt(r.noticePeriodDays, 10);
   return (
@@ -217,8 +230,7 @@ export function PlansPanel() {
         if (!name) throw new Error('Each plan needs a name');
         const creditCount =
           r.creditCount.trim() === '' ? null : parseInt(r.creditCount, 10);
-        const monthlyPriceCents =
-          r.monthlyPriceCents.trim() === '' ? null : parseInt(r.monthlyPriceCents, 10);
+        const monthlyPriceCents = poundsToCents(r.monthlyPrice);
         const noticePeriodDays =
           r.noticePeriodDays.trim() === '' ? null : parseInt(r.noticePeriodDays, 10);
         if (r.kind !== 'unlimited' && (creditCount === null || isNaN(creditCount))) {
@@ -227,7 +239,7 @@ export function PlansPanel() {
         if (r.kind === 'unlimited' && creditCount !== null) {
           throw new Error(`${name}: unlimited plans cannot have a credit count`);
         }
-        if (monthlyPriceCents !== null && isNaN(monthlyPriceCents)) {
+        if (r.monthlyPrice.trim() !== '' && monthlyPriceCents === null) {
           throw new Error(`${name}: invalid price`);
         }
         if (noticePeriodDays !== null && (isNaN(noticePeriodDays) || noticePeriodDays < 0)) {
@@ -353,7 +365,7 @@ export function PlansPanel() {
         name: '',
         kind: 'unlimited',
         creditCount: '',
-        monthlyPriceCents: '',
+        monthlyPrice: '',
         noticePeriodDays: '',
         coverageMode: 'all',
         classTypeIds: [],
@@ -403,8 +415,10 @@ export function PlansPanel() {
             const deletable = canHardDelete && !hasDeps(r.serverId);
             const editingExistingPrice =
               r.serverSnapshot &&
-              r.monthlyPriceCents.trim() !==
-                (r.serverSnapshot.monthly_price_cents?.toString() ?? '');
+              r.monthlyPrice.trim() !==
+                (r.serverSnapshot.monthly_price_cents != null
+                  ? centsToPounds(r.serverSnapshot.monthly_price_cents)
+                  : '');
             const editingExistingCredits =
               r.serverSnapshot &&
               r.creditCount.trim() !==
@@ -464,11 +478,11 @@ export function PlansPanel() {
                 ) : null}
                 <View className="gap-1">
                   <Input
-                    label="Monthly price (pence)"
-                    value={r.monthlyPriceCents}
-                    onChangeText={(v) => update(idx, { monthlyPriceCents: v })}
-                    keyboardType="number-pad"
-                    placeholder="5000"
+                    label="Monthly price (£)"
+                    value={r.monthlyPrice}
+                    onChangeText={(v) => update(idx, { monthlyPrice: v })}
+                    keyboardType="decimal-pad"
+                    placeholder="50"
                   />
                   {editingExistingPrice ? (
                     <Text className="text-amber-600 dark:text-amber-400 text-xs">
