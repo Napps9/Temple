@@ -98,3 +98,4 @@ jobs:
           supabase functions deploy stripe-connect-start
           supabase functions deploy stripe-connect-callback
           supabase functions deploy stripe-checkout
+          supabase functions deploy stripe-webhook

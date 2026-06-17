@@ -65,3 +65,8 @@ verify_jwt = false
 # plan on the gym's connected account. Signed-in member caller.
 [functions.stripe-checkout]
 verify_jwt = true
+
+# Stripe webhook — Connect events from gyms' accounts. No JWT (Stripe
+# carries none); guarded by the signature against STRIPE_WEBHOOK_SECRET.
+[functions.stripe-webhook]
+verify_jwt = false
