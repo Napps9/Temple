@@ -266,7 +266,11 @@ The Manage page presents a tab strip:
   add owner / admin / coach / staff / member). Walk-in QR card
   encodes the public signup URL for the front desk; every issued
   invite code has a scannable QR pointing at `/accept-invite?code=…`
-  so staff invites can be sent as a single image.
+  so staff invites can be sent as a single image. Invites can also be
+  **emailed directly**: enter an address and the `send-invite` edge
+  function mints the code via `create_invite` (caller's role gate
+  applies) and sends the accept link through Resend — from the gym's
+  verified sending domain if connected, else the Temple default.
 - **Plans** [`can_manage_plans`] — Unlimited / Credit period /
   Credit pack plans with monthly price + notice period (days);
   per-plan **class-type coverage** (All classes, or a Specific

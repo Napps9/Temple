@@ -5,6 +5,7 @@ import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { Input } from '@/components/Input';
 import { InviteQRModal } from '@/components/InviteQRModal';
 import { Screen } from '@/components/Screen';
 import { WalkInQRCard } from '@/components/WalkInQRCard';
@@ -109,6 +110,8 @@ export default function TeamScreen() {
   const queryClient = useQueryClient();
   const [role, setRole] = useState<GymRole>('member');
   const [generated, markGenerated] = useSavedFlag();
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
 
   const brand = useGymBrand();
   const [newQrOpen, setNewQrOpen] = useState(false);
@@ -148,6 +151,39 @@ export default function TeamScreen() {
       markGenerated();
       queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
     },
+  });
+
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail.trim());
+
+  // Email the invite directly via the send-invite edge function — it
+  // mints the code through create_invite (so the role gate still
+  // applies) and sends the accept link through Resend.
+  const emailInvite = useMutation({
+    mutationFn: async () => {
+      if (!membership) throw new Error('No gym membership found');
+      const { data, error } = await supabase.functions.invoke('send-invite', {
+        body: {
+          gym_id: membership.gymId,
+          role,
+          email: inviteEmail.trim(),
+          origin,
+        },
+      });
+      if (error) throw error;
+      return data as { ok: boolean; sent: boolean; code: string };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
+      if (data.sent) {
+        setEmailNotice(`Invite sent to ${inviteEmail.trim()}.`);
+        setInviteEmail('');
+      } else {
+        setEmailNotice(
+          `Code ${data.code} created, but the email didn't send — copy it from "All invites" and share it manually.`,
+        );
+      }
+    },
+    onError: () => setEmailNotice(null),
   });
 
   return (
@@ -227,6 +263,47 @@ export default function TeamScreen() {
             />
           </View>
         ) : null}
+
+        {/* Email the invite directly (SMTP via Resend) — mints the same
+            code through create_invite, then sends the accept link. */}
+        <View className="gap-2 border-t border-gray-200 dark:border-gray-800 pt-4">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            Or email it directly
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            We'll send a {role} invite link straight to their inbox.
+          </Text>
+          <Input
+            label="Email address"
+            value={inviteEmail}
+            onChangeText={(v) => {
+              setInviteEmail(v);
+              setEmailNotice(null);
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            textContentType="emailAddress"
+            autoComplete="email"
+            placeholder="coach@example.com"
+          />
+          <Button
+            variant="secondary"
+            onPress={() => emailInvite.mutate()}
+            loading={emailInvite.isPending}
+            disabled={!validEmail}>
+            Email invite
+          </Button>
+          {emailNotice ? (
+            <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+              {emailNotice}
+            </Text>
+          ) : null}
+          {emailInvite.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {errorMessage(emailInvite.error, 'Could not send the invite')}
+            </Text>
+          ) : null}
+        </View>
 
         <View className="gap-3 mt-4">
           <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">

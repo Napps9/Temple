@@ -46,3 +46,8 @@ verify_jwt = false
 # staff caller; re-checks can_manage_comms per action.
 [functions.sending-domain]
 verify_jwt = true
+
+# Emails a gym invite. Signed-in staff caller; mints the code via
+# create_invite (which enforces the role gate) and sends via Resend.
+[functions.send-invite]
+verify_jwt = true
