@@ -29,6 +29,8 @@ import {
 import { parseCsv } from '@/lib/import/csv';
 import {
   buildCorrectionRows,
+  centsToPounds,
+  poundsToCents,
   runColumnMapping,
   runInference,
   summariseForInference,
@@ -219,7 +221,7 @@ export default function ImportMembersScreen() {
           name: p.suggested_name,
           kind: p.suggested_kind,
           credit_count: p.suggested_credit_count,
-          monthly_price_cents: p.suggested_monthly_price_cents,
+          monthly_price: centsToPounds(p.suggested_monthly_price_cents),
           existing_plan_id: null,
           drop: false,
         });
@@ -294,7 +296,7 @@ export default function ImportMembersScreen() {
             name: p.name.trim(),
             kind: p.kind,
             credit_count: p.kind === 'unlimited' ? null : p.credit_count,
-            monthly_price_cents: p.monthly_price_cents,
+            monthly_price_cents: poundsToCents(p.monthly_price) ?? 0,
             ...(p.kind === 'credit_period' ? { period_length: '30 days' } : {}),
           })
           .select('plan_id')
@@ -996,16 +998,13 @@ function PlanReviewCard({
         ) : null}
         <View className="gap-1.5">
           <Text className="text-gray-700 dark:text-gray-200 text-xs">
-            Monthly price (pence)
+            Monthly price (£)
           </Text>
           <TextInput
             editable={!bodyDimmed}
-            value={String(final.monthly_price_cents)}
-            onChangeText={(v) => {
-              const n = parseInt(v, 10);
-              onChange({ monthly_price_cents: Number.isFinite(n) ? n : 0 });
-            }}
-            keyboardType="number-pad"
+            value={final.monthly_price}
+            onChangeText={(v) => onChange({ monthly_price: v })}
+            keyboardType="decimal-pad"
             placeholderTextColor="#9CA3AF"
             className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
           />

@@ -15,6 +15,19 @@ import {
   type TempleField,
 } from './columns';
 
+// Prices are stored in pence but edited in pounds. centsToPounds drops a
+// whole-pound ".00"; poundsToCents returns null for blank/invalid input.
+export function centsToPounds(cents: number): string {
+  return (cents / 100).toFixed(2).replace(/\.00$/, '');
+}
+export function poundsToCents(pounds: string): number | null {
+  const t = pounds.trim();
+  if (t === '') return null;
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 100);
+}
+
 export type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 
 export type PlanInput = {
@@ -250,7 +263,7 @@ export type ReviewedPlan = {
   name: string;
   kind: PlanKind;
   credit_count: number | null;
-  monthly_price_cents: number;
+  monthly_price: string;
   // When set, route members on this raw_name to an existing plan
   // instead of creating a new one. UI default is null = create new.
   existing_plan_id: string | null;
@@ -289,7 +302,7 @@ export function buildCorrectionRows(args: {
       name: final.name,
       kind: final.kind,
       credit_count: final.credit_count,
-      monthly_price_cents: final.monthly_price_cents,
+      monthly_price_cents: poundsToCents(final.monthly_price) ?? 0,
       dropped: final.drop,
       mapped_to_existing: !!final.existing_plan_id,
     };
