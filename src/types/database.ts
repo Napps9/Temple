@@ -1918,6 +1918,27 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_stripe_accounts: {
+        Row: {
+          gym_id: string;
+          stripe_account_id: string;
+          connected_by: string | null;
+          connected_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          stripe_account_id: string;
+          connected_by?: string | null;
+          connected_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          stripe_account_id: string;
+          connected_by: string | null;
+          connected_at: string;
+        }>;
+        Relationships: [];
+      };
       email_audiences: {
         Row: {
           id: string;

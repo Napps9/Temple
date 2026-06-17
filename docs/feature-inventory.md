@@ -271,6 +271,14 @@ The Manage page presents a tab strip:
   function mints the code via `create_invite` (caller's role gate
   applies) and sends the accept link through Resend — from the gym's
   verified sending domain if connected, else the Temple default.
+- **Billing & payments** [owner] — Manage → Settings → Billing &
+  payments (`/management/billing`). Connect the gym's own Stripe (Connect
+  **Standard**, via OAuth) so it can charge members directly; Temple
+  takes no application fee. Phase 1 (built) stores the connected account
+  on `gym_stripe_accounts` via the `stripe-connect-start` /
+  `stripe-connect-callback` edge functions; member charges,
+  subscriptions, and webhooks are not built yet. Needs `STRIPE_SECRET_KEY`
+  + `STRIPE_CONNECT_CLIENT_ID` secrets — see `docs/stripe-setup.md`.
 - **Plans** [`can_manage_plans`] — Unlimited / Credit period /
   Credit pack plans with monthly price + notice period (days);
   per-plan **class-type coverage** (All classes, or a Specific

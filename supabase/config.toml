@@ -51,3 +51,12 @@ verify_jwt = true
 # create_invite (which enforces the role gate) and sends via Resend.
 [functions.send-invite]
 verify_jwt = true
+
+# Stripe Connect (Standard) OAuth. -start mints the authorize URL for a
+# signed-in owner; -callback is hit by Stripe's browser redirect (no JWT)
+# and is guarded by the single-use state token instead.
+[functions.stripe-connect-start]
+verify_jwt = true
+
+[functions.stripe-connect-callback]
+verify_jwt = false

@@ -1,0 +1,160 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
+import { Platform, ScrollView, Text, View } from 'react-native';
+
+import { BackLink } from '@/components/BackLink';
+import { Button } from '@/components/Button';
+import { Screen } from '@/components/Screen';
+import { useGymMembership, useRole } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
+import { supabase } from '@/lib/supabase';
+
+// Phase 1 of Stripe billing: connect the gym's own Stripe (Connect
+// Standard, via OAuth) so it can charge members directly. Charges,
+// subscriptions, and webhooks come in later phases — this screen is the
+// connection gate plus its status.
+export default function BillingScreen() {
+  const { data: membership } = useGymMembership();
+  const role = useRole();
+  const params = useLocalSearchParams<{ stripe?: string }>();
+  const [error, setError] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+
+  const account = useQuery({
+    queryKey: ['gym-stripe-account', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error: e } = await supabase
+        .from('gym_stripe_accounts')
+        .select('stripe_account_id, connected_at')
+        .eq('gym_id', membership!.gymId)
+        .maybeSingle();
+      if (e) throw e;
+      return data;
+    },
+  });
+
+  const origin =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://app.jointemple.io';
+
+  async function connect() {
+    if (!membership) return;
+    setError(null);
+    setConnecting(true);
+    try {
+      const { data, error: e } = await supabase.functions.invoke(
+        'stripe-connect-start',
+        { body: { gym_id: membership.gymId, origin } },
+      );
+      if (e) throw e;
+      const url = (data as { url?: string } | null)?.url;
+      if (!url) throw new Error('Could not start the Stripe connection');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.href = url;
+        return; // navigating away; leave the spinner up
+      }
+      throw new Error('Connecting Stripe is only available on the web for now');
+    } catch (e) {
+      setError(errorMessage(e, 'Could not start the Stripe connection'));
+      setConnecting(false);
+    }
+  }
+
+  const connected = !!account.data?.stripe_account_id;
+
+  if (role && role !== 'owner') {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+          <BackLink label="Manage" fallbackHref="/management" />
+          <Text className="text-gray-500 dark:text-gray-400">
+            Only an owner can manage billing.
+          </Text>
+        </ScrollView>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Manage" fallbackHref="/management" />
+
+        <View className="gap-1">
+          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            Billing & payments
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Connect your gym's Stripe account to charge members for
+            memberships and credit packs. You keep 100% — Temple takes no
+            cut of your payments.
+          </Text>
+        </View>
+
+        {params.stripe === 'connected' && connected ? (
+          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+            <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
+              Stripe connected — you're ready to take payments.
+            </Text>
+          </View>
+        ) : null}
+        {params.stripe === 'error' ? (
+          <View className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
+              That didn't complete — the connection was cancelled or timed
+              out. Try again below.
+            </Text>
+          </View>
+        ) : null}
+
+        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+          {account.isLoading ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Checking connection…
+            </Text>
+          ) : connected ? (
+            <>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                  Connected to Stripe
+                </Text>
+              </View>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Member payments will run through your own Stripe account
+                (`{account.data?.stripe_account_id}`). Subscriptions and
+                checkout land in the next update.
+              </Text>
+            </>
+          ) : (
+            <>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="card-outline" size={20} color="#6B7280" />
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                  Not connected yet
+                </Text>
+              </View>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                You'll be sent to Stripe to sign in (or create an account)
+                and authorise Temple. It takes a minute, and you can use an
+                existing Stripe account if you have one.
+              </Text>
+              {error ? (
+                <Text className="text-red-500 dark:text-red-400 text-sm">
+                  {error}
+                </Text>
+              ) : null}
+              <Button onPress={connect} loading={connecting}>
+                Connect Stripe
+              </Button>
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </Screen>
+  );
+}
