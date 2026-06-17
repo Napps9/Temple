@@ -16,7 +16,6 @@ import { can, type Capability } from '@/lib/can';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useGymBrand } from '@/lib/useGymBrand';
-import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
 import type { GymRole } from '@/types/database';
 
@@ -109,7 +108,6 @@ export default function TeamScreen() {
   const callerRole = useRole();
   const queryClient = useQueryClient();
   const [role, setRole] = useState<GymRole>('member');
-  const [generated, markGenerated] = useSavedFlag();
   const [inviteEmail, setInviteEmail] = useState('');
   const [emailNotice, setEmailNotice] = useState<string | null>(null);
 
@@ -148,7 +146,6 @@ export default function TeamScreen() {
       return data;
     },
     onSuccess: () => {
-      markGenerated();
       queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
     },
   });
@@ -192,87 +189,42 @@ export default function TeamScreen() {
         <BackLink label="Manage" fallbackHref="/management" />
         <WalkInQRCard />
 
-        <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Issue invite
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Pick a role and generate a code. Each code becomes a scannable QR
-            for the invitee.
-          </Text>
-        </View>
-
-        <View className="flex-row flex-wrap gap-2">
-          {roleOptions.map((r) => {
-            const selected = role === r;
-            return (
-              <Pressable
-                key={r}
-                onPress={() => setRole(r)}
-                className={`px-4 py-2 rounded-full border ${
-                  selected
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}>
-                <Text
-                  className={
-                    selected
-                      ? 'text-primary'
-                      : 'text-gray-600 dark:text-gray-300'
-                  }>
-                  {r}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Button
-          onPress={() => create.mutate()}
-          loading={create.isPending}
-          success={generated}>
-          Generate code
-        </Button>
-
-        {create.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
-            {errorMessage(create.error, 'Could not generate code')}
-          </Text>
-        ) : null}
-
-        {create.data ? (
-          <View className="bg-primary/10 border border-primary/40 rounded-xl p-4 gap-2">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              New code (share with the invitee)
+        <View className="gap-4">
+          <View className="gap-1">
+            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              Issue invite
             </Text>
-            <Text className="text-primary text-2xl tracking-widest">{create.data}</Text>
-            <View className="flex-row gap-2 pt-1">
-              <ChipButton
-                label="Show QR"
-                icon="qr-code-outline"
-                onPress={() => setNewQrOpen(true)}
-              />
-            </View>
-            <InviteQRModal
-              visible={newQrOpen}
-              onClose={() => setNewQrOpen(false)}
-              title={`Join ${brand.gymName}`}
-              subtitle={`Invite code · ${create.data}`}
-              url={inviteUrl(origin, create.data)}
-              primaryColor={brand.primaryColor}
-            />
+            <Text className="text-gray-500 dark:text-gray-400">
+              Pick a role, then email the invite — or generate a code to hand
+              over in person.
+            </Text>
           </View>
-        ) : null}
 
-        {/* Email the invite directly (SMTP via Resend) — mints the same
-            code through create_invite, then sends the accept link. */}
-        <View className="gap-2 border-t border-gray-200 dark:border-gray-800 pt-4">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Or email it directly
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            We'll send a {role} invite link straight to their inbox.
-          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {roleOptions.map((r) => {
+              const selected = role === r;
+              return (
+                <Pressable
+                  key={r}
+                  onPress={() => setRole(r)}
+                  className={`px-4 py-2 rounded-full border ${
+                    selected
+                      ? 'border-primary bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Text
+                    className={
+                      selected
+                        ? 'text-primary'
+                        : 'text-gray-600 dark:text-gray-300'
+                    }>
+                    {r}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           <Input
             label="Email address"
             value={inviteEmail}
@@ -284,15 +236,24 @@ export default function TeamScreen() {
             autoCapitalize="none"
             textContentType="emailAddress"
             autoComplete="email"
-            placeholder="coach@example.com"
+            placeholder={`${role}@example.com`}
           />
           <Button
-            variant="secondary"
             onPress={() => emailInvite.mutate()}
             loading={emailInvite.isPending}
             disabled={!validEmail}>
-            Email invite
+            Email {role} invite
           </Button>
+          <Pressable
+            onPress={() => create.mutate()}
+            disabled={create.isPending}
+            hitSlop={6}
+            className="self-center py-1 active:opacity-70">
+            <Text className="text-primary text-sm">
+              {create.isPending ? 'Generating…' : 'No email? Generate a code & QR'}
+            </Text>
+          </Pressable>
+
           {emailNotice ? (
             <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
               {emailNotice}
@@ -302,6 +263,37 @@ export default function TeamScreen() {
             <Text className="text-red-500 dark:text-red-400 text-sm">
               {errorMessage(emailInvite.error, 'Could not send the invite')}
             </Text>
+          ) : null}
+          {create.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {errorMessage(create.error, 'Could not generate code')}
+            </Text>
+          ) : null}
+
+          {create.data ? (
+            <View className="bg-primary/10 border border-primary/40 rounded-xl p-4 gap-2">
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                New code — share with the invitee
+              </Text>
+              <Text className="text-primary text-2xl tracking-widest">
+                {create.data}
+              </Text>
+              <View className="flex-row gap-2 pt-1">
+                <ChipButton
+                  label="Show QR"
+                  icon="qr-code-outline"
+                  onPress={() => setNewQrOpen(true)}
+                />
+              </View>
+              <InviteQRModal
+                visible={newQrOpen}
+                onClose={() => setNewQrOpen(false)}
+                title={`Join ${brand.gymName}`}
+                subtitle={`Invite code · ${create.data}`}
+                url={inviteUrl(origin, create.data)}
+                primaryColor={brand.primaryColor}
+              />
+            </View>
           ) : null}
         </View>
 
