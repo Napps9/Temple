@@ -14,8 +14,14 @@ import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
-import { localDayKey, workoutStreak } from '@/lib/workout-streak';
+import {
+  localDayKey,
+  sessionsThisMonth,
+  weekStreak,
+  workoutStreak,
+} from '@/lib/workout-streak';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -120,9 +126,25 @@ export default function TrackHome() {
       );
     },
   });
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
   const streak = useMemo(
     () =>
       recentWorkouts.data ? workoutStreak(recentWorkouts.data, new Date()) : 0,
+    [recentWorkouts.data],
+  );
+  const weeks = useMemo(
+    () =>
+      recentWorkouts.data
+        ? weekStreak(recentWorkouts.data, new Date(), weekStartsOn)
+        : 0,
+    [recentWorkouts.data, weekStartsOn],
+  );
+  const monthSessions = useMemo(
+    () =>
+      recentWorkouts.data
+        ? sessionsThisMonth(recentWorkouts.data, new Date())
+        : 0,
     [recentWorkouts.data],
   );
 
@@ -146,23 +168,28 @@ export default function TrackHome() {
           </Pressable>
         </View>
 
-        {(streak > 0 || (recentWorkouts.data?.size ?? 0) > 0) ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-            {streak > 0 ? (
-              <View className="flex-row items-center gap-3">
-                <View className="w-9 h-9 rounded-full bg-amber-500/20 items-center justify-center">
-                  <Ionicons name="flame" size={18} color="#F59E0B" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-amber-700 dark:text-amber-300 font-semibold">
-                    {streak}-day workout streak
-                  </Text>
-                  <Text className="text-amber-600 dark:text-amber-400 text-xs">
-                    Keep it going — log a session today to extend it.
-                  </Text>
-                </View>
-              </View>
-            ) : null}
+        {(recentWorkouts.data?.size ?? 0) > 0 ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+            <View className="flex-row gap-2">
+              <Stat
+                icon="flame"
+                tint="#F59E0B"
+                value={streak}
+                label={streak === 1 ? 'day in a row' : 'days in a row'}
+              />
+              <Stat
+                icon="calendar"
+                tint={colors.primary}
+                value={weeks}
+                label={weeks === 1 ? 'week in a row' : 'weeks in a row'}
+              />
+              <Stat
+                icon="barbell"
+                tint="#10B981"
+                value={monthSessions}
+                label="this month"
+              />
+            </View>
             <View className="gap-2">
               <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
                 Last 12 weeks
@@ -253,6 +280,37 @@ export default function TrackHome() {
         onClose={() => setRecording(false)}
       />
     </Screen>
+  );
+}
+
+// Consistency stat — a number the member watches climb (day streak,
+// week streak, sessions this month). Derived from the same logged-day
+// set that feeds the heatmap.
+function Stat({
+  icon,
+  tint,
+  value,
+  label,
+}: {
+  icon: IoniconName;
+  tint: string;
+  value: number;
+  label: string;
+}) {
+  return (
+    <View className="flex-1 bg-slate-100 dark:bg-gray-800 rounded-xl p-3 gap-1">
+      <View
+        style={{ backgroundColor: `${tint}26` }}
+        className="w-8 h-8 rounded-full items-center justify-center">
+        <Ionicons name={icon} size={16} color={tint} />
+      </View>
+      <Text className="text-gray-900 dark:text-gray-50 text-2xl font-bold leading-7">
+        {value}
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-xs leading-4">
+        {label}
+      </Text>
+    </View>
   );
 }
 
