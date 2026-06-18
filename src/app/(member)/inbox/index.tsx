@@ -20,6 +20,7 @@ import {
 } from '@/lib/messaging';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useLogNudge } from '@/lib/notifications';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { useThemeColors } from '@/lib/theme';
 import type { StaffAlertKind } from '@/types/database';
@@ -122,6 +123,7 @@ export default function Inbox() {
         </View>
 
         <InjuryCheckInBanner />
+        <LogNudgeBanner />
 
         <View className="flex-row gap-2 flex-wrap">
           <TabChip
@@ -632,6 +634,41 @@ function InjuryCheckInBanner() {
         icon="arrow-forward"
         iconSide="right"
         onPress={() => router.push('/track/injuries' as never)}
+      />
+    </View>
+  );
+}
+
+// Nudge to log results after an attended class — mirrors the injury
+// banner. Routes to Track, where the post-class prompt opens the
+// recorder pre-filled for that session.
+function LogNudgeBanner() {
+  const nudge = useLogNudge();
+  const items = nudge.data ?? [];
+  if (items.length === 0) return null;
+  return (
+    <View className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-xl p-4 gap-2">
+      <View className="flex-row items-center gap-2">
+        <Ionicons name="checkmark-done-circle" size={18} color="#059669" />
+        <Text
+          className="flex-1 text-emerald-700 dark:text-emerald-300 font-semibold"
+          numberOfLines={1}>
+          {items.length === 1
+            ? `Log your ${items[0].className} session`
+            : `${items.length} sessions to log`}
+        </Text>
+      </View>
+      <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
+        You were marked in — log your results to keep your streak and PRs up to
+        date.
+      </Text>
+      <ChipButton
+        tone="neutral"
+        className="self-start"
+        label="Log results"
+        icon="arrow-forward"
+        iconSide="right"
+        onPress={() => router.push('/track' as never)}
       />
     </View>
   );

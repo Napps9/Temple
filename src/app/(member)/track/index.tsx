@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
+import { useLogNudge } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
@@ -36,7 +37,13 @@ function chunkPairs<T>(items: T[]): T[][] {
 export default function TrackHome() {
   const colors = useThemeColors();
   const session = useSession();
+  const queryClient = useQueryClient();
   const [recording, setRecording] = useState(false);
+  const [recordPrefill, setRecordPrefill] = useState<{
+    date?: string;
+    title?: string;
+  } | null>(null);
+  const logNudge = useLogNudge();
 
   // Logs from the last week per movement group — used to show
   // fresh-activity badges. The query returns rows with their
@@ -161,12 +168,45 @@ export default function TrackHome() {
             </Text>
           </View>
           <Pressable
-            onPress={() => setRecording(true)}
+            onPress={() => {
+              setRecordPrefill(null);
+              setRecording(true);
+            }}
             className="bg-primary active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
             <Ionicons name="add" size={16} color="#FFFFFF" />
             <Text className="text-white text-sm font-semibold">Record</Text>
           </Pressable>
         </View>
+
+        {(logNudge.data?.length ?? 0) > 0 ? (
+          <View className="bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 gap-2">
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="checkmark-done-circle" size={18} color="#10B981" />
+              <Text
+                className="flex-1 text-gray-900 dark:text-gray-50 font-semibold"
+                numberOfLines={1}>
+                {logNudge.data!.length === 1
+                  ? `You trained ${logNudge.data![0].className} — log it?`
+                  : `${logNudge.data!.length} sessions to log`}
+              </Text>
+            </View>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Logging keeps your streak, PRs and history up to date.
+            </Text>
+            <Pressable
+              onPress={() => {
+                const item = logNudge.data![0];
+                setRecordPrefill({ date: item.day, title: item.className });
+                setRecording(true);
+              }}
+              className="self-start flex-row items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/40 px-3 py-1.5 active:opacity-80">
+              <Ionicons name="add" size={14} color="#10B981" />
+              <Text className="text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                Log results
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {(recentWorkouts.data?.size ?? 0) > 0 ? (
           <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
@@ -277,7 +317,12 @@ export default function TrackHome() {
 
       <RecordWorkoutModal
         visible={recording}
-        onClose={() => setRecording(false)}
+        initialDate={recordPrefill?.date}
+        initialTitle={recordPrefill?.title}
+        onClose={() => {
+          setRecording(false);
+          queryClient.invalidateQueries({ queryKey: ['log-nudge'] });
+        }}
       />
     </Screen>
   );

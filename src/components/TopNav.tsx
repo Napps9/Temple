@@ -7,6 +7,7 @@ import { Avatar } from './Avatar';
 import { GymLogo } from './GymLogo';
 import { useMyProfile, useSession } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
+import { useNotificationCount } from '@/lib/notifications';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
@@ -41,6 +42,7 @@ export function TopNav({
   const { scheme, set } = useThemePreference();
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
+  const notifCount = useNotificationCount();
 
   const gymName = brand.gymName;
 
@@ -170,13 +172,22 @@ export function TopNav({
             router.push('/inbox' as never);
           }}
           hitSlop={4}
-          accessibilityLabel="Inbox"
+          accessibilityLabel={
+            notifCount > 0 ? `Inbox, ${notifCount} need your attention` : 'Inbox'
+          }
           className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">
           <Ionicons
             name="chatbubble-ellipses-outline"
             size={19}
             color={colors.iconPrimary}
           />
+          {notifCount > 0 ? (
+            <View className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 items-center justify-center border-2 border-slate-100 dark:border-gray-950">
+              <Text className="text-white text-[10px] font-bold">
+                {notifCount > 9 ? '9+' : notifCount}
+              </Text>
+            </View>
+          ) : null}
         </Pressable>
 
         <Pressable

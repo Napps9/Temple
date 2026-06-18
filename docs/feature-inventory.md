@@ -120,13 +120,14 @@ dead-end). It carries:
   (`src/lib/movement-trend.ts`), unit-tested; the line is
   `src/components/Sparkline.tsx`.
 
-- **Workout streak + 12-week heatmap** — on the /track home, a card
-  combines an amber "X-day streak" tile with a 12-week heatmap grid
-  drawn from the same Set of locally-keyed logged days. Cells the
-  member trained on glow with the gym's primary colour; everything
-  else stays a soft neutral. Streak logic in `workoutStreak`
-  (`src/lib/workout-streak.ts`), grid in
-  `src/components/WorkoutHeatmap.tsx`, both unit-tested.
+- **Consistency stats + 12-week heatmap** — on the /track home, a card
+  leads with a three-up stat row — days in a row, weeks in a row, and
+  sessions this month — above a 12-week heatmap grid, all drawn from the
+  same Set of locally-keyed logged days. Cells the member trained on glow
+  with the gym's primary colour; everything else stays a soft neutral.
+  `workoutStreak` / `weekStreak` (honours week_starts_on) /
+  `sessionsThisMonth` in `src/lib/workout-streak.ts`, grid in
+  `src/components/WorkoutHeatmap.tsx`, all unit-tested.
 
 - **Workout journal** — every recorded session with date, title,
   programmed sections + recorded results, route into a detail view.
@@ -159,8 +160,15 @@ dead-end). It carries:
 - **Class-session broadcasts** — coaches push a message to everyone
   booked into a class; lands in the member's inbox under Classes.
 - **Gym announcements** — gym-wide posts in the inbox.
-- **Inbox unread badge** — one number rolled up across DMs,
-  announcements and broadcasts via `inbox_unread_summary`.
+- **"What needs you" nav badge** — the top-bar inbox bell shows a count
+  rolling up unread messages (`inbox_unread_summary`), injury check-ins
+  due, and classes attended-but-not-logged. `useNotificationCount`
+  (`src/lib/notifications.ts`). All in-app — no push/email.
+- **Post-workout log nudge** — after a class you were marked in for
+  (`class_bookings.attended_at`) with nothing logged that day, the Track
+  home and the Inbox show a "log your results" prompt; on Track it opens
+  the recorder pre-filled for that session (`useLogNudge`). Day-grained,
+  so any log that day clears it.
 
 ### Programming
 - **Programming view** — read-only calendar of what's been programmed
