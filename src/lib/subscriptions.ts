@@ -1,8 +1,50 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Platform } from 'react-native';
 
-import { hasUsableMembership } from '@/lib/membership-access';
 import { supabase } from '@/lib/supabase';
 import type { MembershipPlanKind, PlanSubState } from '@/types/database';
+
+function checkoutOrigin(): string {
+  return Platform.OS === 'web' && typeof window !== 'undefined'
+    ? window.location.origin
+    : 'https://app.jointemple.io';
+}
+
+// Starts a Stripe Checkout for a plan via the stripe-checkout edge
+// function and sends the browser to the returned URL. Shared by the
+// Membership page and the in-booking purchase prompt. mutate(planId).
+export function useStartCheckout(gymId: string | undefined) {
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      if (!gymId) throw new Error('No gym');
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: { gym_id: gymId, plan_id: planId, origin: checkoutOrigin() },
+      });
+      if (error) {
+        // FunctionsHttpError carries the raw Response in .context — our
+        // edge functions answer with { error }, so surface that.
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = String(body.error);
+          } catch {
+            // not JSON — keep the generic message
+          }
+        }
+        throw new Error(msg);
+      }
+      const url = (data as { url?: string } | null)?.url;
+      if (!url) throw new Error('Could not start checkout');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.href = url;
+        return;
+      }
+      throw new Error('Paying online is only available on the web for now.');
+    },
+  });
+}
 
 export type GymPlan = {
   plan_id: string;
@@ -85,48 +127,6 @@ export function useGymSelfCheckout(gymId: string | undefined) {
       return data.members_can_self_checkout;
     },
   });
-}
-
-// Drives the booking gate. `sellsPlans` = the gym has a plan catalogue;
-// `hasActiveMembership` reuses the SQL eligibility mirror (active sub or
-// live comp). A plan-selling gym routes members with neither to the
-// plans page; gyms with no catalogue let membership alone grant booking.
-export function useMembershipAccess(
-  gymId: string | undefined,
-  profileId: string | undefined,
-  enabled = true,
-): { isLoading: boolean; sellsPlans: boolean; hasActiveMembership: boolean } {
-  const plans = useGymPlans(enabled ? gymId : undefined);
-  const subs = useMySubscriptions(enabled ? gymId : undefined, profileId);
-  const comps = useQuery({
-    queryKey: ['my-comp-grants', gymId, profileId],
-    enabled: enabled && !!gymId && !!profileId,
-    queryFn: async (): Promise<
-      { starts_at: string; ends_at: string; revoked_at: string | null }[]
-    > => {
-      const { data, error } = await supabase
-        .from('comp_grants')
-        .select('starts_at, ends_at, revoked_at')
-        .eq('gym_id', gymId!)
-        .eq('profile_id', profileId!);
-      if (error) throw error;
-      return (data ?? []) as {
-        starts_at: string;
-        ends_at: string;
-        revoked_at: string | null;
-      }[];
-    },
-  });
-
-  return {
-    isLoading: plans.isLoading || subs.isLoading || comps.isLoading,
-    sellsPlans: (plans.data?.length ?? 0) > 0,
-    hasActiveMembership: hasUsableMembership(
-      subs.data ?? [],
-      comps.data ?? [],
-      new Date().toISOString(),
-    ),
-  };
 }
 
 export const CURRENT_SUB_STATUSES: ReadonlySet<PlanSubState> = new Set<PlanSubState>([

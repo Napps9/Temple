@@ -11,9 +11,22 @@ import { CheckInButton } from '@/components/CheckInButton';
 import { ChipButton } from '@/components/ChipButton';
 import { StaffBookingSheet } from '@/components/StaffBookingSheet';
 import { useSession } from '@/lib/auth';
-import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
+import {
+  errorMessage,
+  isMembershipRequiredError,
+  isParqRequiredError,
+  isWaiverRequiredError,
+} from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
+import {
+  planKindLabel,
+  planPriceLabel,
+  useGymPlans,
+  useGymSelfCheckout,
+  useStartCheckout,
+  type GymPlan,
+} from '@/lib/subscriptions';
 import { useCan } from '@/lib/useCan';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
@@ -92,6 +105,7 @@ export function ClassDetailModal({
   const { data: gymDefaults } = useGymOperatingDefaults();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
+  const [needMembership, setNeedMembership] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCancelClass, setShowCancelClass] = useState(false);
   const [composing, setComposing] = useState(false);
@@ -220,6 +234,14 @@ export function ClassDetailModal({
     },
   });
 
+  // Inline purchase prompt. When a booking is refused for lack of a
+  // membership (0082), the modal shows the gym's plans here rather than
+  // routing away. Book mode only; gymId resolves once the detail loads.
+  const purchaseGymId = mode === 'book' ? sessionQuery.data?.gym_id : undefined;
+  const plansQuery = useGymPlans(purchaseGymId);
+  const selfCheckoutQuery = useGymSelfCheckout(purchaseGymId);
+  const checkout = useStartCheckout(purchaseGymId);
+
   const book = useMutation({
     mutationFn: async (
       pick: { kind: 'comp_grant' | 'plan_subscription'; id: string } | null,
@@ -250,6 +272,14 @@ export function ClassDetailModal({
         // the raw RPC message and have a clear next step.
         close();
         router.push('/parq');
+        return;
+      }
+      if (isMembershipRequiredError(e)) {
+        // Offer the plans inline instead of routing away, so they can
+        // buy and come back to book.
+        setConfirming(null);
+        setError(null);
+        setNeedMembership(true);
         return;
       }
       haptic.error();
@@ -356,6 +386,7 @@ export function ClassDetailModal({
 
   function close() {
     setConfirming(null);
+    setNeedMembership(false);
     setError(null);
     setComposing(false);
     setBroadcastBody('');
@@ -689,30 +720,39 @@ export function ClassDetailModal({
                 <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
               ) : null}
 
-              <BookActions
-                inPast={inPast}
-                isFull={isFull}
-                myBookingExists={myBookingExists}
-                myWaitlistRank={myWaitlistRank.data ?? null}
-                confirming={confirming}
-                setConfirming={setConfirming}
-                onBook={() => book.mutate(chosenEntitlement)}
-                onCancel={() => cancel.mutate()}
-                onJoinWaitlist={() => joinWaitlist.mutate()}
-                onLeaveWaitlist={() => leaveWaitlist.mutate()}
-                bookPending={book.isPending}
-                cancelPending={cancel.isPending}
-                waitlistPending={joinWaitlist.isPending || leaveWaitlist.isPending}
-                entitlements={entitlements.data ?? null}
-                entitlementsLoading={entitlements.isLoading}
-                chosenEntitlement={chosenEntitlement}
-                setChosenEntitlement={setChosenEntitlement}
-                lateCancel={lateCancel}
-                bookNotYetOpen={bookNotYetOpen}
-                bookClosed={bookClosed}
-                booksOpenAt={booksOpenAt}
-                booksCloseAt={booksCloseAt}
-              />
+              {mode === 'book' && needMembership ? (
+                <BookMembershipPrompt
+                  plans={plansQuery.data ?? []}
+                  canSelfCheckout={selfCheckoutQuery.data ?? true}
+                  checkout={checkout}
+                  onBack={() => setNeedMembership(false)}
+                />
+              ) : (
+                <BookActions
+                  inPast={inPast}
+                  isFull={isFull}
+                  myBookingExists={myBookingExists}
+                  myWaitlistRank={myWaitlistRank.data ?? null}
+                  confirming={confirming}
+                  setConfirming={setConfirming}
+                  onBook={() => book.mutate(chosenEntitlement)}
+                  onCancel={() => cancel.mutate()}
+                  onJoinWaitlist={() => joinWaitlist.mutate()}
+                  onLeaveWaitlist={() => leaveWaitlist.mutate()}
+                  bookPending={book.isPending}
+                  cancelPending={cancel.isPending}
+                  waitlistPending={joinWaitlist.isPending || leaveWaitlist.isPending}
+                  entitlements={entitlements.data ?? null}
+                  entitlementsLoading={entitlements.isLoading}
+                  chosenEntitlement={chosenEntitlement}
+                  setChosenEntitlement={setChosenEntitlement}
+                  lateCancel={lateCancel}
+                  bookNotYetOpen={bookNotYetOpen}
+                  bookClosed={bookClosed}
+                  booksOpenAt={booksOpenAt}
+                  booksCloseAt={booksCloseAt}
+                />
+              )}
 
               {mode === 'manage' && canEditClasses && !inPast ? (
                 <Button
@@ -766,6 +806,83 @@ export function ClassDetailModal({
       />
     ) : null}
     </>
+  );
+}
+
+// Shown in place of the book button when the server refuses a booking
+// for lack of a membership. Lists the gym's plans with a Subscribe
+// button (Stripe Checkout) when self-checkout is on.
+function BookMembershipPrompt({
+  plans,
+  canSelfCheckout,
+  checkout,
+  onBack,
+}: {
+  plans: GymPlan[];
+  canSelfCheckout: boolean;
+  checkout: ReturnType<typeof useStartCheckout>;
+  onBack: () => void;
+}) {
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          Membership required
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          You need an active membership to book this class. Pick a plan to get
+          started.
+        </Text>
+      </View>
+      {plans.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          No plans available yet — ask your gym to set one up.
+        </Text>
+      ) : (
+        plans.map((plan) => (
+          <View
+            key={plan.plan_id}
+            className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-2">
+            <View className="flex-row items-center justify-between gap-3">
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  {plan.name}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {planKindLabel(plan)}
+                </Text>
+              </View>
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                {planPriceLabel(plan)}
+              </Text>
+            </View>
+            {canSelfCheckout ? (
+              <Button
+                icon="card-outline"
+                loading={
+                  checkout.isPending && checkout.variables === plan.plan_id
+                }
+                onPress={() => checkout.mutate(plan.plan_id)}>
+                {plan.kind === 'credit_pack' ? 'Buy pack' : 'Subscribe'}
+              </Button>
+            ) : null}
+          </View>
+        ))
+      )}
+      {!canSelfCheckout && plans.length > 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          Your gym sets up memberships for you — ask a coach.
+        </Text>
+      ) : null}
+      {checkout.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(checkout.error, 'Could not start checkout')}
+        </Text>
+      ) : null}
+      <Button variant="secondary" onPress={onBack}>
+        Back
+      </Button>
+    </View>
   );
 }
 

@@ -284,11 +284,17 @@ The Manage page presents a tab strip:
   themselves at `/membership` (linked from Account): the gym's live
   plans, their current subscription + credit balance, and a Subscribe
   button that opens Stripe Checkout via `stripe-checkout`. Gated by the
-  gym's `members_can_self_checkout` toggle. Booking matches: at a gym
-  that sells plans, a member with no active membership (active sub or
-  live comp) is routed to `/membership` instead of the booker; gyms with
-  no plan catalogue still book on gym-membership alone (mirrors the
-  server `_book_class_for` rule).
+  gym's `members_can_self_checkout` toggle.
+- **Require a membership to book** [owner] — Billing toggle
+  (`gyms.require_membership_to_book`, RPC `set_require_membership_to_book`).
+  When on, members need an active membership/credits to book; staff are
+  exempt unless `gym_memberships.require_membership_to_book` is set true
+  per person (RPC `set_member_booking_requirement`). The calendar stays
+  open to everyone — `_book_class_for` (0082) raises a "Membership
+  required" error at the point of booking, and `ClassDetailModal` shows
+  the gym's plans inline (Subscribe → Stripe) rather than routing away.
+  Off by default; the original out-of-credits / lapsed-plan refusal is
+  unchanged.
 - **Plans** [`can_manage_plans`] — Unlimited / Credit period /
   Credit pack plans with monthly price + notice period (days);
   per-plan **class-type coverage** (All classes, or a Specific

@@ -63,6 +63,32 @@ export default function BillingScreen() {
       queryClient.invalidateQueries({ queryKey: ['gym-self-checkout'] }),
   });
 
+  const requireMembership = useQuery({
+    queryKey: ['gym-require-membership', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const { data, error: e } = await supabase
+        .from('gyms')
+        .select('require_membership_to_book')
+        .eq('id', membership!.gymId)
+        .single();
+      if (e) throw e;
+      return data.require_membership_to_book;
+    },
+  });
+  const setRequireMembership = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!membership) throw new Error('No gym');
+      const { error: e } = await supabase.rpc('set_require_membership_to_book', {
+        p_gym_id: membership.gymId,
+        p_enabled: enabled,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['gym-require-membership'] }),
+  });
+
   const origin =
     Platform.OS === 'web' && typeof window !== 'undefined'
       ? window.location.origin
@@ -203,6 +229,33 @@ export default function BillingScreen() {
           {setSelfCheckout.error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">
               {errorMessage(setSelfCheckout.error, 'Could not save the setting')}
+            </Text>
+          ) : null}
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Require a membership to book
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                When on, members need an active membership or credits to book —
+                without one they're shown your plans at the point of booking.
+                Staff are exempt unless you require it for them on their profile.
+              </Text>
+            </View>
+            <Switch
+              value={requireMembership.data ?? false}
+              onValueChange={(v) => setRequireMembership.mutate(v)}
+              disabled={
+                requireMembership.isLoading || setRequireMembership.isPending
+              }
+            />
+          </View>
+          {setRequireMembership.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {errorMessage(setRequireMembership.error, 'Could not save the setting')}
             </Text>
           ) : null}
         </View>

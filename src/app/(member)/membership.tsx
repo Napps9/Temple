@@ -1,8 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Platform, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
@@ -10,7 +8,6 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
-import { supabase } from '@/lib/supabase';
 import {
   CURRENT_SUB_STATUSES,
   SUB_STATUS_META,
@@ -19,6 +16,7 @@ import {
   useGymPlans,
   useGymSelfCheckout,
   useMySubscriptions,
+  useStartCheckout,
   type GymPlan,
   type MySubscription,
 } from '@/lib/subscriptions';
@@ -87,51 +85,13 @@ export default function MembershipScreen() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const params = useLocalSearchParams<{ checkout?: string }>();
-  const [error, setError] = useState<string | null>(null);
 
   const plans = useGymPlans(membership?.gymId);
   const subs = useMySubscriptions(membership?.gymId, session?.user.id);
   const selfCheckout = useGymSelfCheckout(membership?.gymId);
   const canSelfCheckout = selfCheckout.data ?? true;
 
-  const origin =
-    Platform.OS === 'web' && typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://app.jointemple.io';
-
-  const checkout = useMutation({
-    mutationFn: async (planId: string) => {
-      if (!membership) throw new Error('No gym');
-      const { data, error: e } = await supabase.functions.invoke(
-        'stripe-checkout',
-        { body: { gym_id: membership.gymId, plan_id: planId, origin } },
-      );
-      if (e) {
-        // FunctionsHttpError carries the raw Response in .context — our
-        // edge functions answer with { error }, so surface that.
-        const ctx = (e as { context?: Response }).context;
-        let msg = e.message;
-        if (ctx && typeof ctx.json === 'function') {
-          try {
-            const body = await ctx.json();
-            if (body?.error) msg = String(body.error);
-          } catch {
-            // not JSON — keep the generic message
-          }
-        }
-        throw new Error(msg);
-      }
-      const url = (data as { url?: string } | null)?.url;
-      if (!url) throw new Error('Could not start checkout');
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.location.href = url;
-        return;
-      }
-      throw new Error('Paying online is only available on the web for now.');
-    },
-    onMutate: () => setError(null),
-    onError: (e) => setError(errorMessage(e, 'Could not start checkout')),
-  });
+  const checkout = useStartCheckout(membership?.gymId);
 
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
@@ -179,8 +139,10 @@ export default function MembershipScreen() {
           </View>
         ) : null}
 
-        {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        {checkout.error ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">
+            {errorMessage(checkout.error, 'Could not start checkout')}
+          </Text>
         ) : null}
 
         <View className="gap-3">

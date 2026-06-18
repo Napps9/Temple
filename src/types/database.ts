@@ -72,6 +72,7 @@ export type Database = {
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
           members_can_self_checkout: boolean;
+          require_membership_to_book: boolean;
         };
         Insert: {
           id?: string;
@@ -790,6 +791,7 @@ export type Database = {
           left_at: string | null;
           created_at: string;
           appear_in_leaderboards: boolean;
+          require_membership_to_book: boolean | null;
         };
         Insert: {
           id?: string;
@@ -814,6 +816,7 @@ export type Database = {
           left_at: string | null;
           created_at: string;
           appear_in_leaderboards: boolean;
+          require_membership_to_book: boolean | null;
         }>;
         Relationships: [
           {
@@ -2853,6 +2856,14 @@ export type Database = {
       };
       set_member_self_checkout: {
         Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: undefined;
+      };
+      set_require_membership_to_book: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: undefined;
+      };
+      set_member_booking_requirement: {
+        Args: { p_gym_id: string; p_profile_id: string; p_value: boolean | null };
         Returns: undefined;
       };
       class_type_has_dependents: {

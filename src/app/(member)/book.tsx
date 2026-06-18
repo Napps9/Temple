@@ -1,13 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { useMembershipAccess } from '@/lib/subscriptions';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
@@ -283,25 +282,6 @@ function NextClassCard() {
 }
 
 export default function Book() {
-  const { data: membership } = useGymMembership();
-  const session = useSession();
-  const access = useMembershipAccess(membership?.gymId, session?.user.id);
-
-  // Plan-selling gyms gate booking on an active membership: a member
-  // with nothing active is sent to the plans page to subscribe. Gyms
-  // with no catalogue let membership alone grant booking, matching the
-  // server's _book_class_for behaviour.
-  if (access.isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator />
-      </View>
-    );
-  }
-  if (access.sellsPlans && !access.hasActiveMembership) {
-    return <Redirect href="/membership" />;
-  }
-
   return (
     <ClassesCalendar
       mode="book"

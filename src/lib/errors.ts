@@ -20,3 +20,10 @@ export function isParqRequiredError(e: unknown): boolean {
 export function isWaiverRequiredError(e: unknown): boolean {
   return errorMessage(e, '').startsWith('Waiver required');
 }
+
+// The entitlement gate (0082) raises this prefix when the booker needs an
+// active membership (gym requires one, or their plan lapsed / ran out).
+// The booking modal catches it and offers the plan options inline.
+export function isMembershipRequiredError(e: unknown): boolean {
+  return errorMessage(e, '').startsWith('Membership required');
+}

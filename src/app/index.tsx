@@ -11,7 +11,6 @@ import {
 } from '@/lib/auth';
 import { useConsentState } from '@/lib/consent';
 import { supabase } from '@/lib/supabase';
-import { useMembershipAccess } from '@/lib/subscriptions';
 import { useCan } from '@/lib/useCan';
 
 // Required setup keys mirror the non-optional STEPS in /onboarding.
@@ -57,11 +56,6 @@ export default function Index() {
   const canAccessStaff = useCan('can_access_staff_area');
   const role = useRole();
   const params = useLocalSearchParams<{ checkout?: string }>();
-  const access = useMembershipAccess(
-    membership?.gymId,
-    session?.user.id,
-    canAccessStaff === false,
-  );
 
   // Owner-only setup gate. Returning owners with complete setup short-
   // circuit cheaply; new ones get sent to the dedicated /onboarding
@@ -166,12 +160,9 @@ export default function Index() {
   if (params.checkout) {
     return <Redirect href={`/membership?checkout=${params.checkout}`} />;
   }
-  // Plan-selling gyms gate booking on an active membership — a member
-  // with nothing active starts on the plans page instead of the booker.
-  if (access.isLoading) return <Loading />;
-  if (access.sellsPlans && !access.hasActiveMembership) {
-    return <Redirect href="/membership" />;
-  }
+  // The booking surface stays open to everyone; the membership gate (if
+  // the gym requires one) is applied at the point of booking, in
+  // ClassDetailModal, not by routing away from it.
   return <Redirect href="/book" />;
 }
 
