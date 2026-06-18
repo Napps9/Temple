@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
@@ -38,6 +38,7 @@ type MembershipRow = {
   health_flag: boolean;
   par_q_id: string | null;
   emergency_contact: string | null;
+  require_membership_to_book: boolean | null;
 };
 
 type CohortRow = {
@@ -145,13 +146,27 @@ export default function MemberDetailScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gym_memberships')
-        .select('id, role, created_at, left_at, health_flag, par_q_id, emergency_contact')
+        .select('id, role, created_at, left_at, health_flag, par_q_id, emergency_contact, require_membership_to_book')
         .eq('gym_id', membership!.gymId)
         .eq('profile_id', profileId!)
         .maybeSingle();
       if (error) throw error;
       return data as MembershipRow | null;
     },
+  });
+
+  const setBookingRequirement = useMutation({
+    mutationFn: async (value: boolean) => {
+      if (!membership) throw new Error('No gym');
+      const { error } = await supabase.rpc('set_member_booking_requirement', {
+        p_gym_id: membership.gymId,
+        p_profile_id: profileId!,
+        p_value: value,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['member-detail-membership'] }),
   });
 
   const cohort = useQuery({
@@ -374,6 +389,34 @@ export default function MemberDetailScreen() {
             <Text className="text-gray-500 dark:text-gray-400 text-sm">No plans.</Text>
           )}
         </Section>
+
+        {gymMembership.data &&
+        gymMembership.data.role !== 'member' &&
+        (membership?.role === 'owner' || membership?.role === 'admin') ? (
+          <Section title="Booking">
+            <View className="bg-white dark:bg-gray-900 rounded-lg p-3 flex-row items-center gap-3">
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  Require a membership to book
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Staff book without a membership by default. Turn this on to
+                  require this staff member to hold one, like a member.
+                </Text>
+              </View>
+              <Switch
+                value={gymMembership.data.require_membership_to_book ?? false}
+                onValueChange={(v) => setBookingRequirement.mutate(v)}
+                disabled={setBookingRequirement.isPending}
+              />
+            </View>
+            {setBookingRequirement.error ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {errorMessage(setBookingRequirement.error, 'Could not save')}
+              </Text>
+            ) : null}
+          </Section>
+        ) : null}
 
         <Section title="Comp grants">
           {comps.data && comps.data.length > 0 ? (

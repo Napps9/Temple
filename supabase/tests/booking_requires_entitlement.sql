@@ -6,7 +6,7 @@
 --     override turns the requirement on.
 
 begin;
-select plan(7);
+select plan(8);
 
 \ir _helpers.psql
 
