@@ -276,9 +276,19 @@ The Manage page presents a tab strip:
   **Standard**, via OAuth) so it can charge members directly; Temple
   takes no application fee. Phase 1 (built) stores the connected account
   on `gym_stripe_accounts` via the `stripe-connect-start` /
-  `stripe-connect-callback` edge functions; member charges,
-  subscriptions, and webhooks are not built yet. Needs `STRIPE_SECRET_KEY`
+  `stripe-connect-callback` edge functions. Member checkout and the
+  subscription-recording webhook are built (`stripe-checkout` /
+  `stripe-webhook`). Needs `STRIPE_SECRET_KEY`
   + `STRIPE_CONNECT_CLIENT_ID` secrets — see `docs/stripe-setup.md`.
+- **Membership (self-serve)** [member] — members pick and pay for a plan
+  themselves at `/membership` (linked from Account): the gym's live
+  plans, their current subscription + credit balance, and a Subscribe
+  button that opens Stripe Checkout via `stripe-checkout`. Gated by the
+  gym's `members_can_self_checkout` toggle. Booking matches: at a gym
+  that sells plans, a member with no active membership (active sub or
+  live comp) is routed to `/membership` instead of the booker; gyms with
+  no plan catalogue still book on gym-membership alone (mirrors the
+  server `_book_class_for` rule).
 - **Plans** [`can_manage_plans`] — Unlimited / Credit period /
   Credit pack plans with monthly price + notice period (days);
   per-plan **class-type coverage** (All classes, or a Specific

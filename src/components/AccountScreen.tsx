@@ -11,6 +11,7 @@ import { CoachEarningsCard } from './CoachEarningsCard';
 import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
 import { LeaderboardPrivacyCard } from './LeaderboardPrivacyCard';
+import { MembershipCard } from './MembershipCard';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
 import { Screen } from './Screen';
 import {
@@ -186,6 +187,8 @@ export function AccountScreen() {
         </View>
 
         {role === 'coach' || role === 'owner' ? <CoachEarningsCard /> : null}
+
+        {role === 'member' ? <MembershipCard /> : null}
 
         <GymShareCard />
 

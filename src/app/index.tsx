@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Platform, View } from 'react-native';
 
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/lib/auth';
 import { useConsentState } from '@/lib/consent';
 import { supabase } from '@/lib/supabase';
+import { useMembershipAccess } from '@/lib/subscriptions';
 import { useCan } from '@/lib/useCan';
 
 // Required setup keys mirror the non-optional STEPS in /onboarding.
@@ -55,6 +56,12 @@ export default function Index() {
   const { data: membership, isLoading } = useGymMembership();
   const canAccessStaff = useCan('can_access_staff_area');
   const role = useRole();
+  const params = useLocalSearchParams<{ checkout?: string }>();
+  const access = useMembershipAccess(
+    membership?.gymId,
+    session?.user.id,
+    canAccessStaff === false,
+  );
 
   // Owner-only setup gate. Returning owners with complete setup short-
   // circuit cheaply; new ones get sent to the dedicated /onboarding
@@ -154,6 +161,17 @@ export default function Index() {
   if (waiverState.data?.needs_waiver) return <Redirect href="/waiver" />;
   if (parqState.isLoading) return <Loading />;
   if (parqState.data?.needs_parq) return <Redirect href="/parq" />;
+  // Returning from Stripe Checkout: land on the membership page so the
+  // result (and any pending state) is visible while the webhook settles.
+  if (params.checkout) {
+    return <Redirect href={`/membership?checkout=${params.checkout}`} />;
+  }
+  // Plan-selling gyms gate booking on an active membership — a member
+  // with nothing active starts on the plans page instead of the booker.
+  if (access.isLoading) return <Loading />;
+  if (access.sellsPlans && !access.hasActiveMembership) {
+    return <Redirect href="/membership" />;
+  }
   return <Redirect href="/book" />;
 }
 
