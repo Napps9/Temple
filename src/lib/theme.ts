@@ -52,6 +52,10 @@ export function useThemeColors() {
     // Runtime brand primary — components calling `colors.primary`
     // for an Ionicon tint etc. follow the gym's saved colour.
     primary: brand.primaryColor,
+    // Brand text colour, resolved for the active scheme. Drives the gym
+    // name in the top bar so the Text branding setting is visible in the
+    // chrome (dark mode auto-derives a readable value — see useGymBrand).
+    text: brand.textColor,
     white: '#FFFFFF',
   };
 }

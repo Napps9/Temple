@@ -124,7 +124,8 @@ export function TopNav({
               primaryColor={brand.primaryColor}
             />
             <Text
-              className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden lg:flex"
+              style={{ color: colors.text }}
+              className="font-semibold text-base hidden lg:flex"
               numberOfLines={1}>
               {gymName}
             </Text>
