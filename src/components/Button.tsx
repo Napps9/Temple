@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { forwardRef, type ReactNode } from 'react';
+import { forwardRef, type ComponentProps, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View as RNView, type View } from 'react-native';
 
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+type IconName = ComponentProps<typeof Ionicons>['name'];
 
 type Props = {
   children: ReactNode;
@@ -14,6 +15,9 @@ type Props = {
   success?: boolean;
   disabled?: boolean;
   variant?: Variant;
+  // Leading icon. Pairs with the label so a primary action reads as an
+  // action, not just text — the success checkmark takes precedence.
+  icon?: IconName;
 };
 
 // Tonal primary on secondary so the button reads as an action — the
@@ -43,11 +47,17 @@ const successIconColor: Record<Variant, string> = {
 };
 
 export const Button = forwardRef<View, Props>(function Button(
-  { children, onPress, loading, success, disabled, variant = 'primary' },
+  { children, onPress, loading, success, disabled, variant = 'primary', icon },
   ref,
 ) {
   const colors = useThemeColors();
   const isDisabled = disabled || loading;
+  const iconTint =
+    variant === 'primary'
+      ? '#FFFFFF'
+      : variant === 'destructive'
+        ? '#DC2626'
+        : colors.primary;
   return (
     <Pressable
       ref={ref}
@@ -74,6 +84,8 @@ export const Button = forwardRef<View, Props>(function Button(
               size={18}
               color={successIconColor[variant]}
             />
+          ) : icon ? (
+            <Ionicons name={icon} size={18} color={iconTint} />
           ) : null}
           <Text className={textStyles[variant]}>{children}</Text>
         </RNView>

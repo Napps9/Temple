@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ColorSwatchPicker, PALETTE } from '@/components/ColorSwatchPicker';
 import { DurationField, formatBaseDuration } from '@/components/DurationField';
+import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
 import {
   EMPTY_RECURRENCE,
@@ -542,12 +543,17 @@ export function ClassTypesPanel() {
 
   return (
     <View className="gap-6">
+        {activeRows.length === 0 ? (
+          <EmptyState
+            icon="albums-outline"
+            title="No class types yet"
+            description="Class types are the kinds of class you run, each with its own name and colour."
+            actionLabel="Create your first type"
+            onAction={addRow}
+          />
+        ) : null}
+
         <View className="gap-2">
-          {activeRows.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400">
-              No types yet — add one below.
-            </Text>
-          ) : null}
           {activeRows.map(({ row: r, idx }) => {
             const hasSchedule = r.recurrence.days.length > 0;
             const isSaved = r.id !== null;
@@ -816,12 +822,11 @@ export function ClassTypesPanel() {
           })}
         </View>
 
-        <ChipButton
-          className="self-start"
-          label="Add type"
-          icon="add"
-          onPress={addRow}
-        />
+        {activeRows.length > 0 ? (
+          <Button variant="secondary" icon="add" onPress={addRow}>
+            Add type
+          </Button>
+        ) : null}
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
@@ -830,12 +835,14 @@ export function ClassTypesPanel() {
           <Text className="text-red-500 dark:text-red-400 text-sm">{actionError}</Text>
         ) : null}
 
-        <Button
-          onPress={() => save.mutate()}
-          loading={save.isPending}
-          success={saved}>
-          Save changes
-        </Button>
+        {activeRows.length > 0 ? (
+          <Button
+            onPress={() => save.mutate()}
+            loading={save.isPending}
+            success={saved}>
+            Save changes
+          </Button>
+        ) : null}
 
         {archivedRows.length > 0 ? (
           <View className="gap-2">

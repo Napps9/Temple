@@ -8,6 +8,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { DurationField } from '@/components/DurationField';
+import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
@@ -405,12 +406,17 @@ export function PlansPanel() {
           </View>
         ) : null}
 
+        {activeRows.length === 0 ? (
+          <EmptyState
+            icon="pricetags-outline"
+            title="No plans yet"
+            description="Create your first plan to start selling memberships and taking bookings."
+            actionLabel="Create your first plan"
+            onAction={addRow}
+          />
+        ) : null}
+
         <View className="gap-3">
-          {activeRows.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400">
-              No plans yet — add one below.
-            </Text>
-          ) : null}
           {activeRows.map((r) => {
             const idx = rows.indexOf(r);
             const deletable = canHardDelete && !hasDeps(r.serverId);
@@ -598,12 +604,11 @@ export function PlansPanel() {
           })}
         </View>
 
-        <ChipButton
-          className="self-start"
-          label="Add plan"
-          icon="add"
-          onPress={addRow}
-        />
+        {activeRows.length > 0 ? (
+          <Button variant="secondary" icon="add" onPress={addRow}>
+            Add plan
+          </Button>
+        ) : null}
 
         {saveError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{saveError}</Text>
@@ -612,9 +617,11 @@ export function PlansPanel() {
           <Text className="text-red-500 dark:text-red-400 text-sm">{actionError}</Text>
         ) : null}
 
-        <Button onPress={() => save.mutate()} loading={save.isPending}>
-          Save changes
-        </Button>
+        {activeRows.length > 0 ? (
+          <Button onPress={() => save.mutate()} loading={save.isPending}>
+            Save changes
+          </Button>
+        ) : null}
 
         {archivedRows.length > 0 ? (
           <View className="gap-2">
