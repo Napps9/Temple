@@ -14,6 +14,10 @@ module.exports = {
         // keep working (e.g. `bg-primary/15`).
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         'primary-dark': 'rgb(var(--color-primary-dark) / <alpha-value>)',
+        // Brand "Text" colour — links and CTA copy. Brand "Secondary" —
+        // accent chips / tints. Both runtime-driven like primary.
+        link: 'rgb(var(--color-link) / <alpha-value>)',
+        secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
       },
       fontFamily: {
         display: ['SplineSans', 'Inter', 'system-ui', 'sans-serif'],

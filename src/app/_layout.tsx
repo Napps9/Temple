@@ -134,8 +134,10 @@ function ThemedShell() {
       vars({
         '--color-primary': hexToRgbTriplet(brand.primaryColor),
         '--color-primary-dark': hexToPrimaryDarkRgbTriplet(brand.primaryColor),
+        '--color-link': hexToRgbTriplet(brand.textColor),
+        '--color-secondary': hexToRgbTriplet(brand.secondaryColor),
       }),
-    [brand.primaryColor],
+    [brand.primaryColor, brand.textColor, brand.secondaryColor],
   );
 
   // Belt-and-braces for web: writing the vars onto `documentElement`
@@ -153,7 +155,15 @@ function ThemedShell() {
       '--color-primary-dark',
       hexToPrimaryDarkRgbTriplet(brand.primaryColor),
     );
-  }, [brand.primaryColor]);
+    document.documentElement.style.setProperty(
+      '--color-link',
+      hexToRgbTriplet(brand.textColor),
+    );
+    document.documentElement.style.setProperty(
+      '--color-secondary',
+      hexToRgbTriplet(brand.secondaryColor),
+    );
+  }, [brand.primaryColor, brand.textColor, brand.secondaryColor]);
 
   // Keep the browser's OS-chrome colour (Safari notch tint, Android URL bar)
   // in sync with the in-app theme. +html.tsx ships two prefers-color-scheme

@@ -20,8 +20,8 @@ type Tone = 'primary' | 'neutral' | 'amber' | 'red' | 'filled' | 'inverse';
 // language: a tinted pill, an icon, and a pressed state.
 const TONE_STYLES: Record<Tone, { container: string; text: string }> = {
   primary: {
-    container: 'bg-primary/10 border border-primary/30 active:bg-primary/20',
-    text: 'text-primary',
+    container: 'bg-secondary/10 border border-secondary/30 active:bg-secondary/20',
+    text: 'text-secondary',
   },
   neutral: {
     container:
@@ -71,7 +71,7 @@ export function ChipButton({
   const s = TONE_STYLES[tone];
   const iconColor =
     tone === 'primary'
-      ? colors.primary
+      ? colors.secondary
       : tone === 'amber'
         ? '#F59E0B'
         : tone === 'red'

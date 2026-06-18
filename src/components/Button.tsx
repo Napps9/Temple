@@ -26,7 +26,7 @@ type Props = {
 const containerStyles: Record<Variant, string> = {
   primary: 'bg-primary active:bg-primary-dark',
   secondary:
-    'bg-primary/10 border border-primary/30 active:bg-primary/20',
+    'bg-secondary/10 border border-secondary/30 active:bg-secondary/20',
   ghost: 'bg-transparent',
   destructive:
     'bg-white dark:bg-gray-900 border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20',
@@ -34,8 +34,8 @@ const containerStyles: Record<Variant, string> = {
 
 const textStyles: Record<Variant, string> = {
   primary: 'text-white font-semibold',
-  secondary: 'text-primary font-semibold',
-  ghost: 'text-primary',
+  secondary: 'text-secondary font-semibold',
+  ghost: 'text-link',
   destructive: 'text-red-600 dark:text-red-400 font-semibold',
 };
 
@@ -52,12 +52,19 @@ export const Button = forwardRef<View, Props>(function Button(
 ) {
   const colors = useThemeColors();
   const isDisabled = disabled || loading;
-  const iconTint =
+  // Icon + spinner tint tracks the variant's text colour: white on the
+  // solid fill, brand Text on ghost links, brand Secondary on the tonal
+  // secondary, red on destructive, brand Primary otherwise.
+  const accent =
     variant === 'primary'
       ? '#FFFFFF'
       : variant === 'destructive'
         ? '#DC2626'
-        : colors.primary;
+        : variant === 'ghost'
+          ? colors.text
+          : variant === 'secondary'
+            ? colors.secondary
+            : colors.primary;
   return (
     <Pressable
       ref={ref}
@@ -75,7 +82,7 @@ export const Button = forwardRef<View, Props>(function Button(
         isDisabled ? 'opacity-50' : ''
       }`}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : colors.primary} />
+        <ActivityIndicator color={accent} />
       ) : (
         <RNView className="flex-row items-center gap-2">
           {success ? (
@@ -85,7 +92,7 @@ export const Button = forwardRef<View, Props>(function Button(
               color={successIconColor[variant]}
             />
           ) : icon ? (
-            <Ionicons name={icon} size={18} color={iconTint} />
+            <Ionicons name={icon} size={18} color={accent} />
           ) : null}
           <Text className={textStyles[variant]}>{children}</Text>
         </RNView>

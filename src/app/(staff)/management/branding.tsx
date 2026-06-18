@@ -268,6 +268,7 @@ export function BrandingPanel() {
             </Text>
             <ColourField
               label="Primary"
+              hint="Buttons, active state and icons."
               value={primary}
               onChange={setPrimary}
               pickerOpen={pickerFor === 'primary'}
@@ -275,6 +276,7 @@ export function BrandingPanel() {
             />
             <ColourField
               label="Secondary"
+              hint="Accent chips and tints."
               value={secondary}
               onChange={setSecondary}
               pickerOpen={pickerFor === 'secondary'}
@@ -284,6 +286,7 @@ export function BrandingPanel() {
             />
             <ColourField
               label="Text"
+              hint="Links and CTA text (the gym name stays neutral)."
               value={textColor}
               onChange={setTextColor}
               pickerOpen={pickerFor === 'text'}

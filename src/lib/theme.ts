@@ -50,12 +50,15 @@ export function useThemeColors() {
     iconTertiary: dark ? '#6B7280' : '#9CA3AF',
     statusBar: dark ? ('light' as const) : ('dark' as const),
     // Runtime brand primary — components calling `colors.primary`
-    // for an Ionicon tint etc. follow the gym's saved colour.
+    // for an Ionicon tint etc. follow the gym's saved colour. Drives
+    // solid fills, active-state emphasis and icon tints.
     primary: brand.primaryColor,
-    // Brand text colour, resolved for the active scheme. Drives the gym
-    // name in the top bar so the Text branding setting is visible in the
-    // chrome (dark mode auto-derives a readable value — see useGymBrand).
+    // Brand "Text" colour — links and CTA copy (the `link` Tailwind
+    // token / `text-link`). Resolved per scheme.
     text: brand.textColor,
+    // Brand "Secondary" colour — accent chips and tints (the
+    // `secondary` Tailwind token).
+    secondary: brand.secondaryColor,
     white: '#FFFFFF',
   };
 }

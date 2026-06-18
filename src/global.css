@@ -10,4 +10,6 @@
 :root {
   --color-primary: 59 107 165;
   --color-primary-dark: 50 91 140;
+  --color-link: 15 23 42;
+  --color-secondary: 15 23 42;
 }

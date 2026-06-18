@@ -13,6 +13,7 @@ import { useThemeColors } from '@/lib/theme';
 // same way.
 export function ColourField({
   label,
+  hint,
   value,
   onChange,
   onPick,
@@ -20,6 +21,8 @@ export function ColourField({
   placeholderHex,
 }: {
   label: string;
+  // One-line note on what this colour drives in the live app.
+  hint?: string;
   value: string;
   onChange: (v: string) => void;
   onPick: () => void;
@@ -34,9 +37,16 @@ export function ColourField({
   const swatchFaded = !valid && !!placeholderHex;
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-        {label}
-      </Text>
+      <View>
+        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          {label}
+        </Text>
+        {hint ? (
+          <Text className="text-gray-400 dark:text-gray-500 text-xs mt-0.5">
+            {hint}
+          </Text>
+        ) : null}
+      </View>
       <View className="flex-row items-center gap-2">
         <View
           style={{

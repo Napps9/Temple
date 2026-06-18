@@ -33,8 +33,7 @@ export function BrandPreview({
           primaryColor={primaryColor}
         />
         <Text
-          className="flex-1 font-semibold"
-          style={{ color: textColor }}
+          className="flex-1 font-semibold text-gray-900 dark:text-gray-50"
           numberOfLines={1}>
           {gymName || 'Your gym name'}
         </Text>
@@ -68,10 +67,10 @@ export function BrandPreview({
         <View className="flex-row gap-2">
           <View
             className="px-3 py-1.5 rounded-full"
-            style={{ backgroundColor: primaryColor + '20' }}>
+            style={{ backgroundColor: secondaryColor + '20' }}>
             <Text
               className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: primaryColor }}>
+              style={{ color: secondaryColor }}>
               Leaderboard
             </Text>
           </View>
