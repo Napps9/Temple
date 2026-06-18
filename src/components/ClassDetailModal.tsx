@@ -84,6 +84,12 @@ function fmtTime(d: Date) {
     .padStart(2, '0')}`;
 }
 
+function fmtDateParam(d: Date) {
+  return `${d.getFullYear()}-${(d.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+}
+
 export function ClassDetailModal({
   visible,
   sessionId,
@@ -502,6 +508,18 @@ export function ClassDetailModal({
                   {detail.duration_minutes} min
                 </Text>
               </View>
+
+              <ChipButton
+                className="self-start"
+                label="See programming"
+                icon="barbell-outline"
+                tone="neutral"
+                onPress={() => {
+                  if (!start) return;
+                  close();
+                  router.push(`/programming?date=${fmtDateParam(start)}` as never);
+                }}
+              />
 
               <View className="gap-2">
                 <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">

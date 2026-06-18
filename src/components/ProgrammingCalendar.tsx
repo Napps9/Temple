@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -101,7 +102,18 @@ export function ProgrammingCalendar({
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
-  const [date, setDate] = useState(() => startOfDay(new Date()));
+  // A ?date=YYYY-MM-DD param deep-links the calendar to a specific day
+  // (e.g. "See programming" from a class). Read once on mount so it
+  // doesn't fight the user's own navigation afterwards.
+  const params = useLocalSearchParams<{ date?: string }>();
+  const [date, setDate] = useState(() => {
+    const p = typeof params.date === 'string' ? params.date : undefined;
+    if (p && /^\d{4}-\d{2}-\d{2}$/.test(p)) {
+      const [y, mo, d] = p.split('-').map(Number);
+      return startOfDay(new Date(y, mo - 1, d));
+    }
+    return startOfDay(new Date());
+  });
   const [openFor, setOpenFor] = useState<{
     classType: DayClassType;
     date: Date;
