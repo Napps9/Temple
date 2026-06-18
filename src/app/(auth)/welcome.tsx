@@ -1,10 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
-import { Screen } from '@/components/Screen';
+import { TempleLockup } from '@/components/TempleLockup';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   completePendingGym,
   completePendingJoin,
@@ -16,6 +19,12 @@ import {
   useSignOut,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { useThemeColors } from '@/lib/theme';
+
+// Temple steel blue (the company mark's middle card) — this screen is
+// brandless chrome (the user has no gym yet), so it wears Temple's own
+// colour, the same as the logged-out landing.
+const BLUE = '#3B6BA5';
 
 // Shown when a user is signed in but has no gym membership yet — either
 // they just confirmed an email from the create-gym or join flow (and we
@@ -26,6 +35,7 @@ export default function WelcomeScreen() {
   const session = useSession();
   const membership = useGymMembership();
   const queryClient = useQueryClient();
+  const colors = useThemeColors();
   const [resumeError, setResumeError] = useState<string | null>(null);
 
   // Recovered from the signup metadata — when present, the user finished
@@ -33,6 +43,7 @@ export default function WelcomeScreen() {
   // name/slug/colours for a create, or the slug for a join.
   const pendingGym = pendingGymFromSession(session ?? null);
   const pendingJoin = pendingJoinFromSession(session ?? null);
+  const resumable = pendingGym ?? pendingJoin;
 
   const resume = useMutation({
     mutationFn: async () => {
@@ -56,88 +67,134 @@ export default function WelcomeScreen() {
       setResumeError(errorMessage(e, 'Could not finish setting up your gym')),
   });
 
-  // Landing here with a session means the membership lookup returned
-  // nothing — which has two very different causes (RLS/empty vs a
-  // thrown query). Surface which one, plus the ids involved, so a
-  // screenshot of this screen is a complete diagnostic. Cheap, always
-  // on, and only visible on a page that already means "something's off".
-  const diagnostic = membership.isError
-    ? `Membership lookup FAILED: ${String(
-        (membership.error as Error)?.message ?? membership.error,
-      )}`
-    : membership.isLoading
-      ? 'Membership lookup still loading…'
-      : `Membership lookup returned no active membership.`;
-
-  const resumable = pendingGym ?? pendingJoin;
+  const icon = pendingGym
+    ? 'business-outline'
+    : pendingJoin
+      ? 'people-outline'
+      : 'compass-outline';
+  const heading = pendingGym
+    ? `Finish setting up ${pendingGym.name}`
+    : pendingJoin
+      ? 'Finish joining your gym'
+      : "You're not in a gym yet";
+  const subcopy = pendingGym
+    ? "Email confirmed. Pick up where you left off — one tap and your gym is ready."
+    : pendingJoin
+      ? "Email confirmed. One tap to join and you're in."
+      : 'Create your own gym or join one with an invite code — you can switch later.';
 
   return (
-    <Screen>
-      <View className="flex-1 items-center justify-center gap-6 p-6">
-        <View className="gap-2 items-center">
-          <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
-            Welcome
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
-            {pendingGym
-              ? `You're signed in. Pick up where you left off — finish setting up ${pendingGym.name}.`
-              : pendingJoin
-                ? "You're signed in. Finish joining your gym."
-                : "You're signed in but not in a gym yet. Create one or join with an invite."}
-          </Text>
-        </View>
-        <View className="w-full max-w-xs gap-3">
-          {resumable ? (
-            <View className="gap-2">
-              <Button onPress={() => resume.mutate()} loading={resume.isPending}>
-                {pendingGym
-                  ? `Finish creating ${pendingGym.name}`
-                  : 'Finish joining'}
-              </Button>
-              {resumeError ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm text-center">
-                  {resumeError}
-                </Text>
-              ) : null}
-              {pendingGym ? (
-                <Pressable onPress={() => router.push('/create-gym' as never)}>
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm text-center pt-1">
-                    Edit the gym name or slug first
-                  </Text>
-                </Pressable>
-              ) : null}
+    <SafeAreaView
+      className="flex-1 bg-slate-100 dark:bg-gray-950"
+      edges={['top', 'bottom', 'left', 'right']}>
+      <View className="absolute top-3 right-3 z-10">
+        <ThemeToggle />
+      </View>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: 20,
+          paddingVertical: 32,
+        }}>
+        <View className="w-full max-w-sm mx-auto gap-8">
+          <View className="items-center">
+            <TempleLockup width={196} height={49} />
+          </View>
+
+          <View className="items-center gap-4">
+            <View
+              style={{ backgroundColor: BLUE + '1A', borderColor: BLUE + '40' }}
+              className="w-16 h-16 rounded-2xl border items-center justify-center">
+              <Ionicons name={icon} size={28} color={BLUE} />
             </View>
-          ) : (
-            <Link href="/create-gym" asChild>
-              <Pressable className="bg-primary rounded-lg p-3 items-center active:opacity-80">
-                <Text className="text-white font-semibold">Start a new gym</Text>
-              </Pressable>
-            </Link>
-          )}
-          <Link href="/accept-invite" asChild>
-            <Pressable className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 items-center active:opacity-80">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                Use an invite code
+            <View className="gap-2">
+              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold text-center">
+                {heading}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-center leading-5">
+                {subcopy}
+              </Text>
+            </View>
+          </View>
+
+          <View className="gap-3">
+            {resumable ? (
+              <>
+                <Button
+                  onPress={() => resume.mutate()}
+                  loading={resume.isPending}
+                  icon="arrow-forward">
+                  {pendingGym
+                    ? `Finish creating ${pendingGym.name}`
+                    : 'Finish joining'}
+                </Button>
+                {pendingGym ? (
+                  <Pressable
+                    onPress={() => router.push('/create-gym' as never)}
+                    hitSlop={6}
+                    className="items-center py-1">
+                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      Edit the gym name or slug first
+                    </Text>
+                  </Pressable>
+                ) : null}
+                <Link href="/accept-invite" asChild>
+                  <Pressable className="flex-row items-center justify-center gap-2 rounded-lg p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-80">
+                    <Ionicons name="ticket-outline" size={18} color={colors.iconPrimary} />
+                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                      Use an invite code instead
+                    </Text>
+                  </Pressable>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Button
+                  onPress={() => router.push('/create-gym' as never)}
+                  icon="business-outline">
+                  Start a new gym
+                </Button>
+                <Link href="/accept-invite" asChild>
+                  <Pressable className="flex-row items-center justify-center gap-2 rounded-lg p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-80">
+                    <Ionicons name="ticket-outline" size={18} color={colors.iconPrimary} />
+                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                      Use an invite code
+                    </Text>
+                  </Pressable>
+                </Link>
+              </>
+            )}
+
+            {resumeError ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm text-center">
+                {resumeError}
+              </Text>
+            ) : null}
+            {membership.isError ? (
+              <Text className="text-amber-600 dark:text-amber-400 text-sm text-center">
+                We couldn't load your gym just now. Check your connection and
+                try again.
+              </Text>
+            ) : null}
+          </View>
+
+          <View className="items-center gap-1 pt-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              Signed in as {session?.user.email ?? 'your account'}
+            </Text>
+            <Pressable
+              onPress={() => signOut.mutate()}
+              hitSlop={8}
+              className="py-1">
+              <Text className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                Sign out
               </Text>
             </Pressable>
-          </Link>
-          <Pressable
-            onPress={() => signOut.mutate()}
-            className="self-center pt-2">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              Sign out
-            </Text>
-          </Pressable>
+          </View>
         </View>
-        <View className="gap-1 items-center pt-6 px-4">
-          <Text className="text-gray-400 dark:text-gray-600 text-xs text-center font-mono">
-            {diagnostic}
-          </Text>
-          <Text className="text-gray-400 dark:text-gray-600 text-xs text-center font-mono">
-            user: {session?.user.id ?? 'none'} · {session?.user.email ?? ''}
-          </Text>
-        </View>
-      </View>
-    </Screen>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
