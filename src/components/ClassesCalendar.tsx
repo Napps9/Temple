@@ -525,6 +525,7 @@ export function ClassesCalendar({
               canCreate={canCreate}
               bookedSet={bookedSet}
               weekStartsOn={weekStartsOn}
+              dimPast={mode === 'book'}
             />
           ) : null}
           {view === 'month' ? (
@@ -593,14 +594,13 @@ function DayView({
 
   const scrollRef = useRef<ScrollView | null>(null);
   useEffect(() => {
-    if (mode !== 'manage') return;
     const now = new Date();
     const hourTarget = isSameDay(now, date) ? now.getHours() : HOURS[0];
     const y = scrollYForHour(hourTarget);
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y, animated: false });
     });
-  }, [date, mode]);
+  }, [date]);
 
   return (
     <View className="flex-1">
@@ -651,24 +651,11 @@ function DayView({
         className="flex-1"
         contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2">
-          {mode === 'book' ? (
-            <View className="gap-2">
-              {dayClasses.length > 0 ? (
-                dayClasses.map((c) => (
-                  <DayClassCard
-                    key={c.id}
-                    session={c}
-                    onPress={() => onSessionPress(c.id)}
-                    bookedByMe={bookedSet.has(c.id)}
-                  />
-                ))
-              ) : (
-                <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                    No classes scheduled today.
-                  </Text>
-                </View>
-              )}
+          {mode === 'book' && dayClasses.length === 0 ? (
+            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                No classes scheduled today.
+              </Text>
             </View>
           ) : (
             <DayGrid
@@ -678,6 +665,7 @@ function DayView({
               onCreateAt={onCreateAt}
               onSessionPress={onSessionPress}
               bookedSet={bookedSet}
+              dimPast={mode === 'book'}
             />
           )}
         </View>
@@ -699,6 +687,7 @@ function DayGrid({
   onCreateAt,
   onSessionPress,
   bookedSet,
+  dimPast,
 }: {
   date: Date;
   sessions: ClassSession[] | undefined;
@@ -706,6 +695,9 @@ function DayGrid({
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
   bookedSet: Set<string>;
+  // Book mode: render empty hours as bare grid lines (no "+ Add"
+  // placeholder) and dim finished classes so they read as unbookable.
+  dimPast?: boolean;
 }) {
   const positioned = layoutDay(sessions, date, HOURS[0], HOUR_HEIGHT, HOURS.length);
   const occupied = occupiedHourSet(positioned, HOURS[0], HOUR_HEIGHT);
@@ -736,7 +728,7 @@ function DayGrid({
                   style={{ height: HOUR_HEIGHT - 12 }}>
                   <Text className="text-gray-400 dark:text-gray-500 text-sm">+ Add a class</Text>
                 </Pressable>
-              ) : (
+              ) : dimPast ? null : (
                 <View
                   className="border border-dashed border-gray-200 dark:border-gray-700 rounded-xl px-4 justify-center"
                   style={{ height: HOUR_HEIGHT - 12 }}>
@@ -777,6 +769,7 @@ function DayGrid({
               heightPx={p.heightPx}
               onPress={() => onSessionPress(p.session.id)}
               bookedByMe={bookedSet.has(p.session.id)}
+              dimPast={dimPast}
             />
           </View>
         ))}
@@ -791,6 +784,7 @@ function DayClassCard({
   onPress,
   bookedByMe,
   heightPx,
+  dimPast,
 }: {
   session: ClassSession;
   onPress: () => void;
@@ -799,11 +793,15 @@ function DayClassCard({
   // duration-block layer and fills its parent (height/width 100%).
   // Without it (book-mode list view) the card sizes to content.
   heightPx?: number;
+  // Book mode only: a finished class (end time in the past) is dimmed
+  // and made unpressable — there is nothing left to book.
+  dimPast?: boolean;
 }) {
   const colors = useThemeColors();
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   const inGrid = heightPx != null;
+  const isPast = dimPast === true && end.getTime() <= Date.now();
   // The full layout (coach avatar + spot count) needs ~108px to render
   // without clipping. Below that we use the clean chip + time card, so a
   // standard 1-hour block (≈78px at the current hour height) reads big
@@ -811,16 +809,21 @@ function DayClassCard({
   const compact = inGrid && heightPx! < 110;
   return (
     <Pressable
-      onPress={() => {
-        haptic.tap();
-        onPress();
-      }}
+      onPress={
+        isPast
+          ? undefined
+          : () => {
+              haptic.tap();
+              onPress();
+            }
+      }
+      disabled={isPast}
       style={
         inGrid ? { height: '100%', width: '100%' } : undefined
       }
       className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800 overflow-hidden ${
         compact ? 'p-2' : 'p-4'
-      }`}>
+      } ${isPast ? 'opacity-50' : ''}`}>
       <View className={`flex-1 ${compact ? 'gap-0.5' : 'gap-1.5'}`}>
         <View className="flex-row items-center gap-2">
           <View
@@ -872,6 +875,7 @@ function WeekView({
   canCreate,
   bookedSet,
   weekStartsOn,
+  dimPast,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -882,6 +886,7 @@ function WeekView({
   canCreate: boolean;
   bookedSet: Set<string>;
   weekStartsOn: 'mon' | 'sun';
+  dimPast?: boolean;
 }) {
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -965,6 +970,7 @@ function WeekView({
             onCreateAt={onCreateAt}
             onSessionPress={onSessionPress}
             bookedSet={bookedSet}
+            dimPast={dimPast}
           />
         </View>
       </ScrollView>
@@ -979,6 +985,7 @@ function WeekGrid({
   onCreateAt,
   onSessionPress,
   bookedSet,
+  dimPast,
 }: {
   weekDays: Date[];
   sessions: ClassSession[] | undefined;
@@ -986,6 +993,7 @@ function WeekGrid({
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
   bookedSet: Set<string>;
+  dimPast?: boolean;
 }) {
   // Per-day layout + occupancy so empty cells keep their "+ Add a
   // class" hit target while occupied ones step out of the way for
@@ -1075,6 +1083,7 @@ function WeekGrid({
                   onPress={() => onSessionPress(p.session.id)}
                   bookedByMe={bookedSet.has(p.session.id)}
                   heightPx={p.heightPx}
+                  dimPast={dimPast}
                 />
               </View>
             ))}
@@ -1093,28 +1102,36 @@ function WeekTile({
   onPress,
   bookedByMe,
   heightPx,
+  dimPast,
 }: {
   session: ClassSession;
   onPress: () => void;
   bookedByMe?: boolean;
   heightPx: number;
+  dimPast?: boolean;
 }) {
   const colors = useThemeColors();
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   const compact = heightPx < 38;
+  const isPast = dimPast === true && end.getTime() <= Date.now();
   return (
     <Pressable
-      onPress={() => {
-        haptic.tap();
-        onPress();
-      }}
+      onPress={
+        isPast
+          ? undefined
+          : () => {
+              haptic.tap();
+              onPress();
+            }
+      }
+      disabled={isPast}
       style={{ height: '100%', width: '100%' }}
       className={`bg-white dark:bg-gray-900 rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : 'border-gray-200 dark:border-gray-700'
-      }`}>
+      } ${isPast ? 'opacity-50' : ''}`}>
       <View className="flex-row items-center gap-1">
         {bookedByMe ? (
           <Ionicons name="checkmark-circle" size={10} color="#10B981" />
