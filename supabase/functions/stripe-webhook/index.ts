@@ -178,10 +178,17 @@ Deno.serve(async (req: Request) => {
         plan.kind === 'unlimited' ? null : (plan.credit_count as number | null);
 
       // Recurring plans get their renewal date from the subscription.
+      // current_period_end moved off the Subscription onto its items in
+      // newer API versions (2025-03+ / dahlia), so read whichever is set —
+      // otherwise paid_period_end lands null and the member sees no renewal
+      // date until the first invoice.paid.
       let paidPeriodEnd: string | null = null;
       if (subId && account) {
         const sub = await stripeGet(`subscriptions/${subId}`, STRIPE_SECRET_KEY, account);
-        const cpe = sub?.current_period_end as number | undefined;
+        const items = (sub?.items as { data?: { current_period_end?: number }[] } | undefined)?.data;
+        const cpe =
+          (sub?.current_period_end as number | undefined) ??
+          items?.[0]?.current_period_end;
         if (cpe) paidPeriodEnd = new Date(cpe * 1000).toISOString();
       }
 
