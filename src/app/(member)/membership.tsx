@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -21,9 +22,11 @@ import {
   planPriceLabel,
   useGymPlans,
   useGymSelfCheckout,
+  useMyInvoices,
   useMySubscriptions,
   useStartCheckout,
   type GymPlan,
+  type MemberInvoice,
   type MySubscription,
 } from '@/lib/subscriptions';
 
@@ -279,6 +282,42 @@ function PendingMembershipCard({
   );
 }
 
+function money(cents: number, currency: string): string {
+  const amount = (cents / 100).toFixed(2);
+  const c = currency.toUpperCase();
+  const symbol = c === 'GBP' ? '£' : c === 'USD' ? '$' : c === 'EUR' ? '€' : '';
+  return symbol ? `${symbol}${amount}` : `${amount} ${c}`;
+}
+
+function InvoiceRow({ inv }: { inv: MemberInvoice }) {
+  const url = inv.invoice_url ?? inv.invoice_pdf;
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between gap-3 border border-gray-200 dark:border-gray-800">
+      <View className="flex-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          {money(inv.amount_cents, inv.currency)}
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          {fmtDate(inv.occurred_at)}
+          {inv.invoice_number ? ` · ${inv.invoice_number}` : ''}
+        </Text>
+      </View>
+      {url ? (
+        <ChipButton
+          label="View invoice"
+          icon="open-outline"
+          tone="neutral"
+          onPress={() => Linking.openURL(url)}
+        />
+      ) : (
+        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          Paid
+        </Text>
+      )}
+    </View>
+  );
+}
+
 export default function MembershipScreen() {
   const { data: membership } = useGymMembership();
   const session = useSession();
@@ -298,6 +337,7 @@ export default function MembershipScreen() {
   const canSelfCheckout = selfCheckout.data ?? true;
 
   const checkout = useStartCheckout(gymId);
+  const invoices = useMyInvoices(gymId, session?.user.id);
 
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
@@ -476,6 +516,17 @@ export default function MembershipScreen() {
             </View>
           ) : null}
         </View>
+
+        {(invoices.data?.length ?? 0) > 0 ? (
+          <View className="gap-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Payment history
+            </Text>
+            {(invoices.data ?? []).map((inv) => (
+              <InvoiceRow key={inv.provider_event_id} inv={inv} />
+            ))}
+          </View>
+        ) : null}
       </ScrollView>
     </Screen>
   );

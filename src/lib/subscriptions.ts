@@ -139,6 +139,73 @@ export function useMySubscriptions(
   });
 }
 
+export type MemberInvoice = {
+  provider_event_id: string;
+  kind: string;
+  amount_cents: number;
+  currency: string;
+  occurred_at: string;
+  plan_subscription_id: string | null;
+  invoice_url: string | null;
+  invoice_pdf: string | null;
+  invoice_number: string | null;
+};
+
+// The caller's own billing history at this gym (billing_events
+// self-select RLS), newest first, with the Stripe-hosted invoice + PDF
+// links pulled out of the payload. Stripe records both a setup event and
+// an invoice for the first subscription payment, so collapse rows that
+// represent the same charge, keeping the one that carries the invoice.
+export function useMyInvoices(
+  gymId: string | undefined,
+  profileId: string | undefined,
+) {
+  return useQuery({
+    queryKey: ['my-invoices', gymId, profileId],
+    enabled: !!gymId && !!profileId,
+    queryFn: async (): Promise<MemberInvoice[]> => {
+      const { data, error } = await supabase
+        .from('billing_events')
+        .select(
+          'provider_event_id, kind, amount_cents, currency, occurred_at, plan_subscription_id, payload',
+        )
+        .eq('gym_id', gymId!)
+        .eq('member_id', profileId!)
+        .order('occurred_at', { ascending: false });
+      if (error) throw error;
+      const str = (v: unknown): string | null =>
+        typeof v === 'string' ? v : null;
+      const rows: MemberInvoice[] = (data ?? []).map((r) => {
+        const p = (r.payload ?? {}) as Record<string, unknown>;
+        return {
+          provider_event_id: r.provider_event_id,
+          kind: r.kind,
+          amount_cents: r.amount_cents,
+          currency: r.currency,
+          occurred_at: r.occurred_at,
+          plan_subscription_id: r.plan_subscription_id,
+          invoice_url: str(p.hosted_invoice_url),
+          invoice_pdf: str(p.invoice_pdf),
+          invoice_number: str(p.number),
+        };
+      });
+      // Collapse the checkout + invoice pair Stripe emits for the first
+      // subscription payment, keeping whichever row carries the invoice.
+      const byCharge = new Map<string, MemberInvoice>();
+      for (const row of rows) {
+        const key = `${row.plan_subscription_id ?? row.provider_event_id}|${row.occurred_at.slice(0, 10)}|${row.amount_cents}`;
+        const existing = byCharge.get(key);
+        if (!existing || (!existing.invoice_url && row.invoice_url)) {
+          byCharge.set(key, row);
+        }
+      }
+      return [...byCharge.values()].sort((a, b) =>
+        b.occurred_at.localeCompare(a.occurred_at),
+      );
+    },
+  });
+}
+
 // gyms.members_can_self_checkout — whether to surface self-serve
 // "Subscribe" buttons or point members at the front desk.
 export function useGymSelfCheckout(gymId: string | undefined) {

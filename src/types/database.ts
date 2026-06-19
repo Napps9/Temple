@@ -1943,6 +1943,48 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      billing_events: {
+        Row: {
+          provider: string;
+          provider_event_id: string;
+          provider_account_id: string | null;
+          gym_id: string | null;
+          plan_subscription_id: string | null;
+          member_id: string;
+          kind: string;
+          amount_cents: number;
+          currency: string;
+          occurred_at: string;
+          payload: Json;
+        };
+        Insert: {
+          provider?: string;
+          provider_event_id: string;
+          provider_account_id?: string | null;
+          gym_id?: string | null;
+          plan_subscription_id?: string | null;
+          member_id: string;
+          kind: string;
+          amount_cents: number;
+          currency: string;
+          occurred_at: string;
+          payload: Json;
+        };
+        Update: Partial<{
+          provider: string;
+          provider_event_id: string;
+          provider_account_id: string | null;
+          gym_id: string | null;
+          plan_subscription_id: string | null;
+          member_id: string;
+          kind: string;
+          amount_cents: number;
+          currency: string;
+          occurred_at: string;
+          payload: Json;
+        }>;
+        Relationships: [];
+      };
       email_audiences: {
         Row: {
           id: string;
