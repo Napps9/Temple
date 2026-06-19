@@ -299,6 +299,21 @@ function parseView(v: string | undefined): ViewMode {
   return VIEWS.includes(v as ViewMode) ? (v as ViewMode) : 'day';
 }
 
+function TodayButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Jump to today"
+      className="rounded-full border border-gray-200 dark:border-gray-700 px-4 h-9 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+      <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+        Today
+      </Text>
+    </Pressable>
+  );
+}
+
 export function ClassesCalendar({
   mode,
   topSlot,
@@ -481,6 +496,12 @@ export function ClassesCalendar({
             className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
           </Pressable>
+          <TodayButton
+            onPress={() => {
+              haptic.selection();
+              setDate(startOfDay(new Date()));
+            }}
+          />
           {canCreate ? (
             <View className="absolute right-0 top-6">
               <Pressable

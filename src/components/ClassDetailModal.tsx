@@ -479,13 +479,16 @@ export function ClassDetailModal({
           onPress={() => {}}
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5">
           {/* Close X — discoverable affordance on mobile where the
-              tap-outside isn't obvious. */}
+              tap-outside isn't obvious. Needs an explicit z-index: on
+              web every sibling defaults to zIndex 0 and paints in DOM
+              order, so without this the header block (a later sibling)
+              renders over the corner and swallows the tap. */}
           <Pressable
             onPress={close}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="Close"
-            className="absolute right-3 top-3 w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+            className="absolute right-3 top-3 z-10 w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
             <Ionicons name="close" size={20} color="#6B7280" />
           </Pressable>
           {sessionQuery.isLoading || !detail ? (
