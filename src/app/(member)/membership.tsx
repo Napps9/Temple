@@ -56,33 +56,94 @@ function StatusChip({ status }: { status: MySubscription['status'] }) {
   );
 }
 
-function CurrentSubCard({ sub }: { sub: MySubscription }) {
-  const isCredit = sub.membership_plans?.kind !== 'unlimited';
+function DetailRow({
+  label,
+  value,
+  tone = 'default',
+}: {
+  label: string;
+  value: string;
+  tone?: 'default' | 'warn';
+}) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 border border-gray-200 dark:border-gray-800">
-      <View className="flex-row items-center justify-between gap-3">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
-          {sub.membership_plans?.name ?? 'Plan'}
-        </Text>
+    <View className="flex-row items-center justify-between gap-3">
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">{label}</Text>
+      <Text
+        className={`text-sm font-medium ${
+          tone === 'warn'
+            ? 'text-amber-600 dark:text-amber-400'
+            : 'text-gray-900 dark:text-gray-50'
+        }`}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function CurrentSubCard({ sub }: { sub: MySubscription }) {
+  const plan = sub.membership_plans;
+  const kind = plan?.kind ?? 'unlimited';
+  const isCredit = kind !== 'unlimited';
+  const cancelling = sub.status === 'cancelled_at_period_end';
+  // The snapshotted price the member actually pays (grandfathered), falling
+  // back to the plan's current price if it predates the snapshot column.
+  const priceCents = sub.price_cents ?? plan?.monthly_price_cents ?? null;
+  const notice = plan?.notice_period_days ?? 0;
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {plan?.name ?? 'Plan'}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            {planKindLabel({ kind, credit_count: plan?.credit_count ?? null })}
+          </Text>
+        </View>
         <StatusChip status={sub.status} />
       </View>
-      {isCredit && sub.credit_balance != null ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          {sub.credit_balance} credit{sub.credit_balance === 1 ? '' : 's'} left
-          {sub.period_resets_at
-            ? ` · resets ${fmtDate(sub.period_resets_at)}`
-            : ''}
-        </Text>
-      ) : null}
-      {sub.status === 'cancelled_at_period_end' && sub.paid_period_end ? (
-        <Text className="text-amber-600 dark:text-amber-400 text-sm">
-          Access until {fmtDate(sub.paid_period_end)}.
-        </Text>
-      ) : sub.paid_period_end ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          Renews {fmtDate(sub.paid_period_end)}.
-        </Text>
-      ) : null}
+
+      <View className="border-t border-gray-100 dark:border-gray-800" />
+
+      <View className="gap-1.5">
+        {priceCents != null ? (
+          <DetailRow
+            label="Price"
+            value={planPriceLabel({ kind, monthly_price_cents: priceCents })}
+          />
+        ) : null}
+
+        {isCredit && sub.credit_balance != null ? (
+          <DetailRow
+            label="Credits left"
+            value={`${sub.credit_balance}${
+              sub.period_resets_at
+                ? ` · resets ${fmtDate(sub.period_resets_at)}`
+                : ''
+            }`}
+          />
+        ) : null}
+
+        {cancelling && sub.paid_period_end ? (
+          <DetailRow
+            label="Access until"
+            value={fmtDate(sub.paid_period_end)}
+            tone="warn"
+          />
+        ) : sub.paid_period_end ? (
+          <DetailRow label="Renews" value={fmtDate(sub.paid_period_end)} />
+        ) : null}
+
+        {notice > 0 ? (
+          <DetailRow
+            label="Cancellation notice"
+            value={`${notice} day${notice === 1 ? '' : 's'}`}
+          />
+        ) : null}
+
+        <DetailRow label="Started" value={fmtDate(sub.created_at)} />
+      </View>
     </View>
   );
 }

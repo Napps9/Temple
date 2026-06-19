@@ -71,7 +71,15 @@ export type MySubscription = {
   paid_period_end: string | null;
   period_resets_at: string | null;
   cancelled_at: string | null;
-  membership_plans: { name: string; kind: MembershipPlanKind } | null;
+  created_at: string;
+  price_cents: number | null;
+  membership_plans: {
+    name: string;
+    kind: MembershipPlanKind;
+    credit_count: number | null;
+    monthly_price_cents: number | null;
+    notice_period_days: number | null;
+  } | null;
 };
 
 // The gym's live plan catalogue, member-readable (membership_plans
@@ -120,7 +128,7 @@ export function useMySubscriptions(
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, membership_plans(name, kind)',
+          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
         )
         .eq('gym_id', gymId!)
         .eq('profile_id', profileId!)
