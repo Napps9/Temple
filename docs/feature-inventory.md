@@ -267,14 +267,17 @@ The Manage page presents a tab strip:
   (Copy / Share, with archived state when public signup is off),
   searchable + filterable member list with PAR-Q badge, Injury badge,
   cohort badges (Intro / Active / Paying / Expiring / Expired), plan
-  chips, tag chips; **Export members CSV**; **Tag rules** editor.
+  chips, tag chips; **Export members CSV**; **Tag rules** editor. The
+  Members screen (`/management/members`) also hosts **member invites**
+  [`can_invite`] — email a member, generate a code + QR, or use the
+  front-desk walk-in QR (same card UI as staff invites on Team).
 - **Team** [`can_manage_staff`] — staff roster with inline open-task
   + open-cover-request counts; per-coach earnings + class-type
   qualifications; SOPs card; Invite codes card (one-time codes to
-  add owner / admin / coach / staff / member). Walk-in QR card
-  encodes the public signup URL for the front desk; every issued
-  invite code has a scannable QR pointing at `/accept-invite?code=…`
-  so staff invites can be sent as a single image. Invites can also be
+  add owner / admin / coach / staff — member invites live on the
+  Members screen). Every issued invite code has a scannable QR
+  pointing at `/accept-invite?code=…` so staff invites can be sent as
+  a single image. Invites can also be
   **emailed directly**: enter an address and the `send-invite` edge
   function mints the code via `create_invite` (caller's role gate
   applies) and sends the accept link through Resend — from the gym's

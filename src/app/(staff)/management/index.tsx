@@ -161,7 +161,7 @@ export default function ManagementHome() {
     {
       category: 'team',
       title: 'Team',
-      description: 'Invite owners, coaches, staff and members.',
+      description: 'Invite owners, coaches and staff.',
       href: '/management/team',
       visible: !!canManageStaff,
     },
@@ -232,7 +232,7 @@ export default function ManagementHome() {
     {
       category: 'members',
       title: 'Members',
-      description: 'View members by cohort, see and edit their tags.',
+      description: 'Invite members, view them by cohort, see and edit their tags.',
       href: '/management/members',
       visible: !!canManageTags,
     },
@@ -559,7 +559,7 @@ function TeamTab() {
         {canManageStaff ? (
           <ManagementCard
             title="Invite codes"
-            description="Generate a code to add a new owner, admin, coach, staff or member."
+            description="Generate a code to add a new owner, admin, coach or staff."
             href="/management/team"
           />
         ) : null}
