@@ -80,6 +80,71 @@ function DetailRow({
   );
 }
 
+// Forward-looking notice-period timeline. The bar is the notice window
+// starting today; the dot marks where the next renewal (the member's last
+// payment if they cancel now) falls within it. Assumes "cancel → keep
+// access for the notice period, your last charge is the renewal in that
+// window" — informational only; there's no enforced cancel flow yet.
+function NoticePeriodBar({
+  noticeDays,
+  renewalDate,
+  priceLabel,
+}: {
+  noticeDays: number;
+  renewalDate: string | null;
+  priceLabel: string | null;
+}) {
+  if (noticeDays <= 0) return null;
+  const spanMs = noticeDays * 24 * 60 * 60 * 1000;
+  const accessEnds = new Date(Date.now() + spanMs).toISOString();
+  const renewalPct =
+    renewalDate != null
+      ? Math.min(
+          1,
+          Math.max(0, (new Date(renewalDate).getTime() - Date.now()) / spanMs),
+        )
+      : null;
+
+  return (
+    <View className="gap-2 pt-1">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          If you cancel today
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {noticeDays}-day notice
+        </Text>
+      </View>
+
+      <View className="relative h-2.5 rounded-full bg-primary/15">
+        {renewalPct != null ? (
+          <View
+            className="absolute w-3 h-3 rounded-full bg-primary border-2 border-white dark:border-gray-900"
+            style={{ left: `${renewalPct * 100}%`, top: -1, marginLeft: -6 }}
+          />
+        ) : null}
+      </View>
+
+      <View className="flex-row items-center justify-between">
+        <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+          Today
+        </Text>
+        <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+          Access ends {fmtDate(accessEnds)}
+        </Text>
+      </View>
+
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        {renewalDate != null
+          ? `Your last payment would be ${
+              priceLabel ? `${priceLabel} ` : ''
+            }on ${fmtDate(renewalDate)}.`
+          : `Your membership would stay active for ${noticeDays} more days.`}
+      </Text>
+    </View>
+  );
+}
+
 function CurrentSubCard({ sub }: { sub: MySubscription }) {
   const plan = sub.membership_plans;
   const kind = plan?.kind ?? 'unlimited';
@@ -88,6 +153,10 @@ function CurrentSubCard({ sub }: { sub: MySubscription }) {
   // The snapshotted price the member actually pays (grandfathered), falling
   // back to the plan's current price if it predates the snapshot column.
   const priceCents = sub.price_cents ?? plan?.monthly_price_cents ?? null;
+  const priceLabel =
+    priceCents != null
+      ? planPriceLabel({ kind, monthly_price_cents: priceCents })
+      : null;
   const notice = plan?.notice_period_days ?? 0;
 
   return (
@@ -107,11 +176,8 @@ function CurrentSubCard({ sub }: { sub: MySubscription }) {
       <View className="border-t border-gray-100 dark:border-gray-800" />
 
       <View className="gap-1.5">
-        {priceCents != null ? (
-          <DetailRow
-            label="Price"
-            value={planPriceLabel({ kind, monthly_price_cents: priceCents })}
-          />
+        {priceLabel != null ? (
+          <DetailRow label="Price" value={priceLabel} />
         ) : null}
 
         {isCredit && sub.credit_balance != null ? (
@@ -135,15 +201,19 @@ function CurrentSubCard({ sub }: { sub: MySubscription }) {
           <DetailRow label="Renews" value={fmtDate(sub.paid_period_end)} />
         ) : null}
 
-        {notice > 0 ? (
-          <DetailRow
-            label="Cancellation notice"
-            value={`${notice} day${notice === 1 ? '' : 's'}`}
-          />
-        ) : null}
-
         <DetailRow label="Started" value={fmtDate(sub.created_at)} />
       </View>
+
+      {!cancelling && notice > 0 ? (
+        <>
+          <View className="border-t border-gray-100 dark:border-gray-800" />
+          <NoticePeriodBar
+            noticeDays={notice}
+            renewalDate={sub.paid_period_end}
+            priceLabel={priceLabel}
+          />
+        </>
+      ) : null}
     </View>
   );
 }
