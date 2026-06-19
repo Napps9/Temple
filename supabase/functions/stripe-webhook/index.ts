@@ -99,6 +99,7 @@ Deno.serve(async (req: Request) => {
   const type: string = event.type;
   // deno-lint-ignore no-explicit-any
   const obj: any = event.data?.object ?? {};
+  console.log('stripe-webhook received', { type, account, eventId: event.id });
 
   async function recordBilling(args: {
     gymId: string;
@@ -132,7 +133,15 @@ Deno.serve(async (req: Request) => {
       const gymId: string | undefined = meta.gym_id;
       const planId: string | undefined = meta.plan_id;
       const profileId: string | undefined = meta.profile_id;
-      if (!gymId || !planId || !profileId) return ok();
+      if (!gymId || !planId || !profileId) {
+        console.warn('stripe-webhook checkout.session.completed: missing metadata', {
+          gymId,
+          planId,
+          profileId,
+          sessionId: obj.id,
+        });
+        return ok();
+      }
 
       const { data: membership } = await service
         .from('gym_memberships')
@@ -141,14 +150,25 @@ Deno.serve(async (req: Request) => {
         .eq('profile_id', profileId)
         .is('left_at', null)
         .maybeSingle();
-      if (!membership) return ok();
+      if (!membership) {
+        console.warn(
+          'stripe-webhook checkout.session.completed: no active gym_membership',
+          { gymId, profileId },
+        );
+        return ok();
+      }
 
       const { data: plan } = await service
         .from('membership_plans')
         .select('plan_id, kind, credit_count')
         .eq('plan_id', planId)
         .maybeSingle();
-      if (!plan) return ok();
+      if (!plan) {
+        console.warn('stripe-webhook checkout.session.completed: plan not found', {
+          planId,
+        });
+        return ok();
+      }
 
       const customerId: string | null = obj.customer ?? null;
       const subId: string | null = obj.subscription ?? null;
@@ -216,6 +236,14 @@ Deno.serve(async (req: Request) => {
         planSubId = ins?.id ?? null;
       }
 
+      console.log('stripe-webhook recorded subscription', {
+        planSubId,
+        gymId,
+        profileId,
+        planId,
+        status: row.status,
+      });
+
       await recordBilling({
         gymId,
         memberId: profileId,
@@ -233,7 +261,12 @@ Deno.serve(async (req: Request) => {
         .eq('stripe_subscription_id', subId)
         .maybeSingle();
       // If the checkout event hasn't created the sub yet, skip — it will.
-      if (!ps) return ok();
+      if (!ps) {
+        console.warn('stripe-webhook invoice.paid: no plan_subscription for sub', {
+          subId,
+        });
+        return ok();
+      }
 
       const line = obj.lines?.data?.[0];
       const periodEnd = line?.period?.end as number | undefined;
