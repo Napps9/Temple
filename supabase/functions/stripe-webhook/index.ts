@@ -179,6 +179,10 @@ Deno.serve(async (req: Request) => {
 
       // One row per Stripe subscription; credit packs (no sub) insert fresh
       // so repeat purchases stack as separate credit pools.
+      // supabase-js does not throw on a failed write, so every insert /
+      // update result is checked: a swallowed error here is a paid member
+      // whose subscription silently never lands. Throwing reaches the
+      // outer catch → 500 → Stripe retries (billing_events is idempotent).
       let planSubId: string | null = null;
       if (subId) {
         const { data: existing } = await service
@@ -187,22 +191,28 @@ Deno.serve(async (req: Request) => {
           .eq('stripe_subscription_id', subId)
           .maybeSingle();
         if (existing) {
-          await service.from('plan_subscriptions').update(row).eq('id', existing.id);
+          const { error: upErr } = await service
+            .from('plan_subscriptions')
+            .update(row)
+            .eq('id', existing.id);
+          if (upErr) throw upErr;
           planSubId = existing.id;
         } else {
-          const { data: ins } = await service
+          const { data: ins, error: insErr } = await service
             .from('plan_subscriptions')
             .insert(row)
             .select('id')
             .single();
+          if (insErr) throw insErr;
           planSubId = ins?.id ?? null;
         }
       } else {
-        const { data: ins } = await service
+        const { data: ins, error: insErr } = await service
           .from('plan_subscriptions')
           .insert(row)
           .select('id')
           .single();
+        if (insErr) throw insErr;
         planSubId = ins?.id ?? null;
       }
 
@@ -237,7 +247,11 @@ Deno.serve(async (req: Request) => {
       const update: any = { status: 'active' };
       if (periodEnd) update.paid_period_end = new Date(periodEnd * 1000).toISOString();
       if (plan?.kind === 'credit_period') update.credit_balance = plan.credit_count;
-      await service.from('plan_subscriptions').update(update).eq('id', ps.id);
+      const { error: upErr } = await service
+        .from('plan_subscriptions')
+        .update(update)
+        .eq('id', ps.id);
+      if (upErr) throw upErr;
 
       await recordBilling({
         gymId: ps.gym_id,
@@ -249,10 +263,11 @@ Deno.serve(async (req: Request) => {
       });
     } else if (type === 'customer.subscription.deleted') {
       const subId: string = obj.id;
-      await service
+      const { error: delErr } = await service
         .from('plan_subscriptions')
         .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
         .eq('stripe_subscription_id', subId);
+      if (delErr) throw delErr;
     }
   } catch (e) {
     // 500 → Stripe retries; the idempotent billing_events insert makes

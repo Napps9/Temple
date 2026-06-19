@@ -69,7 +69,12 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Stripe is not configured yet' }, 503);
   }
 
-  let body: { gym_id?: string; plan_id?: string; origin?: string };
+  let body: {
+    gym_id?: string;
+    plan_id?: string;
+    origin?: string;
+    success_path?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -78,6 +83,15 @@ Deno.serve(async (req: Request) => {
   const gymId = body.gym_id;
   const planId = body.plan_id;
   const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
+  // Optional client return path. Must be relative (leading slash, no
+  // scheme) so it can't be turned into an open redirect; defaults to the
+  // membership landing the app root already handles.
+  const successPath =
+    typeof body.success_path === 'string' &&
+    body.success_path.startsWith('/') &&
+    !body.success_path.startsWith('//')
+      ? body.success_path
+      : '/?checkout=success';
   if (!gymId || !planId) {
     return json({ error: 'gym_id and plan_id are required' }, 400);
   }
@@ -184,7 +198,7 @@ Deno.serve(async (req: Request) => {
       customer: customerId,
       'line_items[0][price]': priceId,
       'line_items[0][quantity]': '1',
-      success_url: `${origin}/?checkout=success`,
+      success_url: `${origin}${successPath}`,
       cancel_url: `${origin}/?checkout=cancelled`,
       'metadata[gym_id]': gymId,
       'metadata[plan_id]': planId,
