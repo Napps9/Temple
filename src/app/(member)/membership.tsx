@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
@@ -87,30 +87,62 @@ function CurrentSubCard({ sub }: { sub: MySubscription }) {
   );
 }
 
-function PendingMembershipCard() {
+// How long to wait for the webhook to record the subscription before we
+// stop claiming "any second now" and tell the member it's delayed. The
+// happy path lands in a few seconds; this is the genuinely-stuck cutoff.
+const STUCK_AFTER_MS = 90_000;
+
+function PendingMembershipCard({
+  stuck,
+  gymName,
+  onRetry,
+}: {
+  stuck: boolean;
+  gymName: string;
+  onRetry: () => void;
+}) {
   return (
     <View className="gap-2">
       <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
         Your membership
       </Text>
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 border border-gray-200 dark:border-gray-800">
+      <View
+        className={`bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border ${
+          stuck
+            ? 'border-amber-300 dark:border-amber-700'
+            : 'border-gray-200 dark:border-gray-800'
+        }`}>
         <View className="flex-row items-center justify-between gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
-            Setting up your membership…
+            {stuck ? 'Membership not showing yet' : 'Setting up your membership…'}
           </Text>
           <View className="rounded-full border px-2.5 py-0.5 bg-amber-500/10 border-amber-500/40">
             <Text className="text-[10px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400">
-              Pending
+              {stuck ? 'Delayed' : 'Pending'}
             </Text>
           </View>
         </View>
-        <View className="flex-row items-center gap-2">
-          <ActivityIndicator size="small" />
-          <Text className="text-gray-500 dark:text-gray-400 text-sm flex-1">
-            We're confirming your payment with the gym. This page updates
-            automatically.
-          </Text>
-        </View>
+        {stuck ? (
+          <>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Your payment went through, but we haven't been able to confirm
+              your membership{gymName ? ` with ${gymName}` : ''} yet. Try again
+              in a moment — if it's still not here, contact your gym and they'll
+              sort it out.
+            </Text>
+            <Button variant="secondary" icon="refresh" onPress={onRetry}>
+              Check again
+            </Button>
+          </>
+        ) : (
+          <View className="flex-row items-center gap-2">
+            <ActivityIndicator size="small" />
+            <Text className="text-gray-500 dark:text-gray-400 text-sm flex-1">
+              We're confirming your payment with the gym. This page updates
+              automatically.
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -141,6 +173,24 @@ export default function MembershipScreen() {
   );
   const currentPlanIds = new Set(currentSubs.map((s) => s.plan_id));
   const awaitingActivation = awaitingPossible && currentSubs.length === 0;
+
+  // Once we've been waiting past the cutoff with nothing recorded, switch
+  // the copy from "any second now" to an honest "delayed" state. Polling
+  // keeps running underneath, so it still self-heals if the gym resends
+  // the event or puts the member on the plan. The 4s poll re-renders this
+  // component, which is what trips the timer over.
+  const pollStartRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (awaitingActivation) {
+      if (pollStartRef.current === null) pollStartRef.current = Date.now();
+    } else {
+      pollStartRef.current = null;
+    }
+  }, [awaitingActivation]);
+  const stuck =
+    awaitingActivation &&
+    pollStartRef.current !== null &&
+    Date.now() - pollStartRef.current > STUCK_AFTER_MS;
 
   // Carry the "just checked out" intent across a refresh / nav to Account
   // via a short-lived marker, and retire it once the subscription lands.
@@ -198,7 +248,14 @@ export default function MembershipScreen() {
             ) : null}
           </View>
         ) : awaitingActivation ? (
-          <PendingMembershipCard />
+          <PendingMembershipCard
+            stuck={stuck}
+            gymName={membership?.gymName ?? ''}
+            onRetry={() => {
+              pollStartRef.current = Date.now();
+              subs.refetch();
+            }}
+          />
         ) : null}
 
         {checkout.error ? (
