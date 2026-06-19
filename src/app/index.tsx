@@ -55,7 +55,7 @@ export default function Index() {
   const { data: membership, isLoading } = useGymMembership();
   const canAccessStaff = useCan('can_access_staff_area');
   const role = useRole();
-  const params = useLocalSearchParams<{ checkout?: string }>();
+  const params = useLocalSearchParams<{ checkout?: string; book?: string }>();
 
   // Owner-only setup gate. Returning owners with complete setup short-
   // circuit cheaply; new ones get sent to the dedicated /onboarding
@@ -158,7 +158,10 @@ export default function Index() {
   // Returning from Stripe Checkout: land on the membership page so the
   // result (and any pending state) is visible while the webhook settles.
   if (params.checkout) {
-    return <Redirect href={`/membership?checkout=${params.checkout}`} />;
+    const bookQ = params.book ? `&book=${params.book}` : '';
+    return (
+      <Redirect href={`/membership?checkout=${params.checkout}${bookQ}`} />
+    );
   }
   // The booking surface stays open to everyone; the membership gate (if
   // the gym requires one) is applied at the point of booking, in

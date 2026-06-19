@@ -13,12 +13,20 @@ function checkoutOrigin(): string {
 // Starts a Stripe Checkout for a plan via the stripe-checkout edge
 // function and sends the browser to the returned URL. Shared by the
 // Membership page and the in-booking purchase prompt. mutate(planId).
-export function useStartCheckout(gymId: string | undefined) {
+export function useStartCheckout(
+  gymId: string | undefined,
+  opts?: { successPath?: string },
+) {
   return useMutation({
     mutationFn: async (planId: string) => {
       if (!gymId) throw new Error('No gym');
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: { gym_id: gymId, plan_id: planId, origin: checkoutOrigin() },
+        body: {
+          gym_id: gymId,
+          plan_id: planId,
+          origin: checkoutOrigin(),
+          success_path: opts?.successPath,
+        },
       });
       if (error) {
         // FunctionsHttpError carries the raw Response in .context — our
@@ -92,10 +100,22 @@ export function useGymPlans(gymId: string | undefined) {
 export function useMySubscriptions(
   gymId: string | undefined,
   profileId: string | undefined,
+  opts?: { pollUntilCurrent?: boolean },
 ) {
   return useQuery({
     queryKey: ['my-subscriptions', gymId, profileId],
     enabled: !!gymId && !!profileId,
+    // After checkout the webhook records the subscription a few seconds
+    // later. Poll so the member sees it activate without a manual reload,
+    // and stop the moment a current subscription is present.
+    refetchInterval: opts?.pollUntilCurrent
+      ? (query) => {
+          const data = query.state.data as MySubscription[] | undefined;
+          const hasCurrent =
+            !!data && data.some((s) => CURRENT_SUB_STATUSES.has(s.status));
+          return hasCurrent ? false : 4000;
+        }
+      : false,
     queryFn: async (): Promise<MySubscription[]> => {
       const { data, error } = await supabase
         .from('plan_subscriptions')

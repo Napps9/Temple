@@ -321,7 +321,7 @@ export function ClassesCalendar({
   mode: 'manage' | 'book';
   topSlot?: React.ReactNode;
 }) {
-  const params = useLocalSearchParams<{ view?: string }>();
+  const params = useLocalSearchParams<{ view?: string; session?: string }>();
   const view = parseView(params.view);
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
@@ -435,6 +435,12 @@ export function ClassesCalendar({
   function openSession(id: string) {
     setOpenSessionId(id);
   }
+
+  // Deep link from the membership "Continue booking" CTA — reopen the
+  // class the member returned to finish booking now they have a plan.
+  useEffect(() => {
+    if (params.session) setOpenSessionId(params.session);
+  }, [params.session]);
 
   // Swipe → step the visible date. Step size matches the current
   // view (day = 1d, week = 7d, month = 1mo). Pan thresholds keep

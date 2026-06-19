@@ -246,7 +246,13 @@ export function ClassDetailModal({
   const purchaseGymId = mode === 'book' ? sessionQuery.data?.gym_id : undefined;
   const plansQuery = useGymPlans(purchaseGymId);
   const selfCheckoutQuery = useGymSelfCheckout(purchaseGymId);
-  const checkout = useStartCheckout(purchaseGymId);
+  // After checkout, return the member to this class (via the membership
+  // page, which holds them while the webhook settles) so they can finish
+  // booking the class that sent them to buy a plan.
+  const checkout = useStartCheckout(
+    purchaseGymId,
+    sessionId ? { successPath: `/?checkout=success&book=${sessionId}` } : undefined,
+  );
 
   const book = useMutation({
     mutationFn: async (

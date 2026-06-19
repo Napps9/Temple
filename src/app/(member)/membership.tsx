@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
@@ -8,6 +9,11 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import {
+  clearPendingCheckout,
+  hasPendingCheckout,
+  markPendingCheckout,
+} from '@/lib/pending-checkout';
 import {
   CURRENT_SUB_STATUSES,
   SUB_STATUS_META,
@@ -81,22 +87,69 @@ function CurrentSubCard({ sub }: { sub: MySubscription }) {
   );
 }
 
+function PendingMembershipCard() {
+  return (
+    <View className="gap-2">
+      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        Your membership
+      </Text>
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 border border-gray-200 dark:border-gray-800">
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+            Setting up your membership…
+          </Text>
+          <View className="rounded-full border px-2.5 py-0.5 bg-amber-500/10 border-amber-500/40">
+            <Text className="text-[10px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+              Pending
+            </Text>
+          </View>
+        </View>
+        <View className="flex-row items-center gap-2">
+          <ActivityIndicator size="small" />
+          <Text className="text-gray-500 dark:text-gray-400 text-sm flex-1">
+            We're confirming your payment with the gym. This page updates
+            automatically.
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function MembershipScreen() {
   const { data: membership } = useGymMembership();
   const session = useSession();
-  const params = useLocalSearchParams<{ checkout?: string }>();
+  const params = useLocalSearchParams<{ checkout?: string; book?: string }>();
+  const gymId = membership?.gymId;
 
-  const plans = useGymPlans(membership?.gymId);
-  const subs = useMySubscriptions(membership?.gymId, session?.user.id);
-  const selfCheckout = useGymSelfCheckout(membership?.gymId);
+  const justCheckedOut = params.checkout === 'success';
+  // Poll while the webhook settles — either we just returned from Stripe,
+  // or a marker from a prior return (across a refresh / nav) is still live.
+  const awaitingPossible = justCheckedOut || hasPendingCheckout(gymId);
+
+  const plans = useGymPlans(gymId);
+  const subs = useMySubscriptions(gymId, session?.user.id, {
+    pollUntilCurrent: awaitingPossible,
+  });
+  const selfCheckout = useGymSelfCheckout(gymId);
   const canSelfCheckout = selfCheckout.data ?? true;
 
-  const checkout = useStartCheckout(membership?.gymId);
+  const checkout = useStartCheckout(gymId);
 
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
   );
   const currentPlanIds = new Set(currentSubs.map((s) => s.plan_id));
+  const awaitingActivation = awaitingPossible && currentSubs.length === 0;
+
+  // Carry the "just checked out" intent across a refresh / nav to Account
+  // via a short-lived marker, and retire it once the subscription lands.
+  useEffect(() => {
+    if (justCheckedOut && gymId) markPendingCheckout(gymId);
+  }, [justCheckedOut, gymId]);
+  useEffect(() => {
+    if (currentSubs.length > 0 && gymId) clearPendingCheckout(gymId);
+  }, [currentSubs.length, gymId]);
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -136,7 +189,16 @@ export default function MembershipScreen() {
             {currentSubs.map((s) => (
               <CurrentSubCard key={s.id} sub={s} />
             ))}
+            {params.book ? (
+              <Button
+                icon="arrow-forward"
+                onPress={() => router.push(`/book?session=${params.book}`)}>
+                Continue booking your class
+              </Button>
+            ) : null}
           </View>
+        ) : awaitingActivation ? (
+          <PendingMembershipCard />
         ) : null}
 
         {checkout.error ? (
@@ -200,6 +262,10 @@ export default function MembershipScreen() {
                         Current plan
                       </Text>
                     </View>
+                  ) : awaitingActivation ? (
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                      Setting up your membership…
+                    </Text>
                   ) : canSelfCheckout ? (
                     <Button
                       onPress={() => checkout.mutate(plan.plan_id)}
