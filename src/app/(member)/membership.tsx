@@ -290,30 +290,45 @@ function money(cents: number, currency: string): string {
 }
 
 function InvoiceRow({ inv }: { inv: MemberInvoice }) {
-  const url = inv.invoice_url ?? inv.invoice_pdf;
+  const hasDoc = !!(inv.invoice_url || inv.invoice_pdf);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between gap-3 border border-gray-200 dark:border-gray-800">
-      <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
-          {money(inv.amount_cents, inv.currency)}
-        </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          {fmtDate(inv.occurred_at)}
-          {inv.invoice_number ? ` · ${inv.invoice_number}` : ''}
-        </Text>
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800">
+      <View className="flex-row items-center justify-between gap-3">
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            {money(inv.amount_cents, inv.currency)}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            {fmtDate(inv.occurred_at)}
+            {inv.invoice_number ? ` · ${inv.invoice_number}` : ''}
+          </Text>
+        </View>
+        {hasDoc ? null : (
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Paid
+          </Text>
+        )}
       </View>
-      {url ? (
-        <ChipButton
-          label="View invoice"
-          icon="open-outline"
-          tone="neutral"
-          onPress={() => Linking.openURL(url)}
-        />
-      ) : (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-          Paid
-        </Text>
-      )}
+      {hasDoc ? (
+        <View className="flex-row flex-wrap gap-2">
+          {inv.invoice_pdf ? (
+            <ChipButton
+              label="Download PDF"
+              icon="download-outline"
+              tone="neutral"
+              onPress={() => Linking.openURL(inv.invoice_pdf!)}
+            />
+          ) : null}
+          {inv.invoice_url ? (
+            <ChipButton
+              label="View invoice"
+              icon="open-outline"
+              tone="neutral"
+              onPress={() => Linking.openURL(inv.invoice_url!)}
+            />
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
