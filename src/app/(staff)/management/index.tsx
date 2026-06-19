@@ -19,6 +19,7 @@ import {
 } from '@/components/DateRangeCta';
 import { GymSetupChecklist } from '@/components/GymSetupChecklist';
 import { Input } from '@/components/Input';
+import { InviteSection } from '@/components/InviteSection';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
@@ -1475,6 +1476,7 @@ function MembersTab() {
   const canExport = useCan('can_export_members') ?? false;
   const canManageTags = useCan('can_manage_tags') ?? false;
   const canManageStaff = useCan('can_manage_staff') ?? false;
+  const canInvite = useCan('can_invite') ?? false;
   const exportMembers = useExportMembersCsv();
 
   const [preset, setPreset] = useState<Preset>('month');
@@ -1594,6 +1596,18 @@ function MembersTab() {
             </Text>
           ) : null}
         </View>
+      ) : null}
+
+      {canInvite ? (
+        <InviteSection
+          title="Invite a member"
+          subtitle="Email an invite, or generate a code & QR to hand over."
+          roles={['member']}
+          initialRole="member"
+          filterRole={(r) => r === 'member'}
+          canDelete={membership?.role === 'owner'}
+          showList={false}
+        />
       ) : null}
 
       <MemberSignupLinkCard />

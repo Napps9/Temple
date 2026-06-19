@@ -34,6 +34,7 @@ type InviteSectionProps = {
   canDelete: boolean;
   showWalkIn?: boolean;
   listTitle?: string;
+  showList?: boolean;
 };
 
 export function InviteSection({
@@ -45,6 +46,7 @@ export function InviteSection({
   canDelete,
   showWalkIn = false,
   listTitle = 'All invites',
+  showList = true,
 }: InviteSectionProps) {
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
@@ -60,7 +62,7 @@ export function InviteSection({
 
   const codes = useQuery({
     queryKey: ['invite-codes', membership?.gymId],
-    enabled: !!membership?.gymId,
+    enabled: !!membership?.gymId && showList,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invite_codes')
@@ -252,27 +254,29 @@ export function InviteSection({
         ) : null}
       </View>
 
-      <View className="gap-3 mt-4">
-        <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
-          {listTitle}
-        </Text>
-        {codes.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
-        ) : null}
-        {!codes.isLoading && visibleCodes.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400">No invites yet.</Text>
-        ) : null}
-        {visibleCodes.map((c) => (
-          <InviteCodeRow
-            key={c.id}
-            id={c.id}
-            code={c.code}
-            role={c.role}
-            usedAt={c.used_at}
-            canDelete={canDelete}
-          />
-        ))}
-      </View>
+      {showList ? (
+        <View className="gap-3 mt-4">
+          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            {listTitle}
+          </Text>
+          {codes.isLoading ? (
+            <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          ) : null}
+          {!codes.isLoading && visibleCodes.length === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400">No invites yet.</Text>
+          ) : null}
+          {visibleCodes.map((c) => (
+            <InviteCodeRow
+              key={c.id}
+              id={c.id}
+              code={c.code}
+              role={c.role}
+              usedAt={c.used_at}
+              canDelete={canDelete}
+            />
+          ))}
+        </View>
+      ) : null}
     </>
   );
 }
