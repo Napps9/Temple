@@ -260,8 +260,21 @@ Deno.serve(async (req: Request) => {
         currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
       });
     } else if (type === 'invoice.paid') {
-      const subId: string | null = obj.subscription ?? null;
-      if (!subId) return ok();
+      // invoice.subscription was moved onto invoice.parent in newer API
+      // versions (2025+/dahlia); read whichever carries it, or every
+      // subscription invoice silently stops recording (no member invoice,
+      // no renewal-date update).
+      const subId: string | null =
+        (obj.subscription as string | null | undefined) ??
+        (obj.parent?.subscription_details?.subscription as string | undefined) ??
+        (obj.subscription_details?.subscription as string | undefined) ??
+        null;
+      if (!subId) {
+        console.warn('stripe-webhook invoice.paid: no subscription on invoice', {
+          invoiceId: obj.id,
+        });
+        return ok();
+      }
       const { data: ps } = await service
         .from('plan_subscriptions')
         .select('id, gym_id, profile_id, plan_id')
