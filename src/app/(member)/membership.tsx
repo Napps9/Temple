@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
@@ -29,6 +29,15 @@ import {
   type MemberInvoice,
   type MySubscription,
 } from '@/lib/subscriptions';
+import {
+  useFileChangeRequest,
+  useMembershipPolicies,
+  useModifySubscription,
+  useMyChangeRequests,
+  useWithdrawChangeRequest,
+  type MembershipChangePolicy,
+  type MyChangeRequest,
+} from '@/lib/membership-changes';
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '';
@@ -333,6 +342,95 @@ function InvoiceRow({ inv }: { inv: MemberInvoice }) {
   );
 }
 
+// Cancel / request-cancel / withdraw for the member's recurring membership.
+// Switching to a different plan lives in the plan list below; this card is
+// the "leave or change my mind" surface for the active subscription.
+function MembershipActions({
+  sub,
+  cancelPolicy,
+  pending,
+  pendingTargetName,
+  modify,
+  file,
+  withdraw,
+}: {
+  sub: MySubscription;
+  cancelPolicy: MembershipChangePolicy;
+  pending: MyChangeRequest | undefined;
+  pendingTargetName: string | null;
+  modify: ReturnType<typeof useModifySubscription>;
+  file: ReturnType<typeof useFileChangeRequest>;
+  withdraw: ReturnType<typeof useWithdrawChangeRequest>;
+}) {
+  const [confirm, setConfirm] = useState(false);
+  // Already winding down — the card shows "Access until"; nothing to do.
+  if (sub.status === 'cancelled_at_period_end') return null;
+
+  if (pending) {
+    const label =
+      pending.kind === 'cancel'
+        ? 'Cancellation requested'
+        : `Plan change requested${pendingTargetName ? ` → ${pendingTargetName}` : ''}`;
+    return (
+      <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+        <Text className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+          {label}
+        </Text>
+        <Text className="text-amber-700/80 dark:text-amber-300/80 text-xs">
+          Waiting for your gym to approve. You can withdraw it if you change
+          your mind.
+        </Text>
+        <ChipButton
+          label="Withdraw request"
+          icon="close"
+          tone="neutral"
+          onPress={() => withdraw.mutate(pending.id)}
+        />
+      </View>
+    );
+  }
+
+  const cancelBusy = modify.isPending && modify.variables?.kind === 'cancel';
+  if (cancelPolicy === 'self_serve') {
+    return confirm ? (
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-red-300 dark:border-red-800">
+        <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          Cancel at the end of your paid period? You'll keep access until then.
+        </Text>
+        <View className="flex-row gap-2">
+          <Button
+            variant="destructive"
+            loading={cancelBusy}
+            onPress={() =>
+              modify.mutate({ planSubscriptionId: sub.id, kind: 'cancel' })
+            }>
+            Cancel membership
+          </Button>
+          <Button variant="ghost" onPress={() => setConfirm(false)}>
+            Keep it
+          </Button>
+        </View>
+      </View>
+    ) : (
+      <ChipButton
+        label="Cancel membership"
+        icon="close-circle-outline"
+        tone="red"
+        onPress={() => setConfirm(true)}
+      />
+    );
+  }
+
+  return (
+    <ChipButton
+      label="Request cancellation"
+      icon="exit-outline"
+      tone="neutral"
+      onPress={() => file.mutate({ planSubscriptionId: sub.id, kind: 'cancel' })}
+    />
+  );
+}
+
 export default function MembershipScreen() {
   const { data: membership } = useGymMembership();
   const session = useSession();
@@ -353,12 +451,34 @@ export default function MembershipScreen() {
 
   const checkout = useStartCheckout(gymId);
   const invoices = useMyInvoices(gymId, session?.user.id);
+  const policies = useMembershipPolicies(gymId);
+  const changeReqs = useMyChangeRequests(gymId, session?.user.id);
+  const modify = useModifySubscription(gymId, session?.user.id);
+  const fileReq = useFileChangeRequest(gymId, session?.user.id);
+  const withdrawReq = useWithdrawChangeRequest(gymId, session?.user.id);
 
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
   );
   const currentPlanIds = new Set(currentSubs.map((s) => s.plan_id));
   const awaitingActivation = awaitingPossible && currentSubs.length === 0;
+
+  // The recurring membership (if any) is what switch / cancel act on; credit
+  // packs are one-off pools and stay out of the change workflow. A pending
+  // request blocks new changes until it's decided or withdrawn.
+  const recurringSub = currentSubs.find(
+    (s) => (s.membership_plans?.kind ?? 'unlimited') !== 'credit_pack',
+  );
+  const pendingForSub = (changeReqs.data ?? []).find(
+    (r) => r.status === 'pending' && r.plan_subscription_id === recurringSub?.id,
+  );
+  const pendingTargetName =
+    pendingForSub?.target_plan_id != null
+      ? ((plans.data ?? []).find(
+          (p) => p.plan_id === pendingForSub.target_plan_id,
+        )?.name ?? null)
+      : null;
+  const changeError = modify.error ?? fileReq.error ?? withdrawReq.error;
 
   // Once we've been waiting past the cutoff with nothing recorded, switch
   // the copy from "any second now" to an honest "delayed" state. Polling
@@ -425,6 +545,22 @@ export default function MembershipScreen() {
             {currentSubs.map((s) => (
               <CurrentSubCard key={s.id} sub={s} />
             ))}
+            {recurringSub ? (
+              <MembershipActions
+                sub={recurringSub}
+                cancelPolicy={policies.data?.cancel ?? 'request'}
+                pending={pendingForSub}
+                pendingTargetName={pendingTargetName}
+                modify={modify}
+                file={fileReq}
+                withdraw={withdrawReq}
+              />
+            ) : null}
+            {changeError ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {errorMessage(changeError, 'Could not update your membership')}
+              </Text>
+            ) : null}
             {params.book ? (
               <Button
                 icon="arrow-forward"
@@ -494,29 +630,108 @@ export default function MembershipScreen() {
                       ) : null}
                     </View>
                   </View>
-                  {isCurrent ? (
-                    <View className="flex-row items-center gap-1.5 self-start rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1">
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={14}
-                        color="#10B981"
-                      />
-                      <Text className="text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-                        Current plan
-                      </Text>
-                    </View>
-                  ) : awaitingActivation ? (
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                      Setting up your membership…
-                    </Text>
-                  ) : canSelfCheckout ? (
-                    <Button
-                      onPress={() => checkout.mutate(plan.plan_id)}
-                      loading={busy}
-                      icon="card-outline">
-                      {plan.kind === 'credit_pack' ? 'Buy pack' : 'Subscribe'}
-                    </Button>
-                  ) : null}
+                  {(() => {
+                    if (isCurrent) {
+                      return (
+                        <View className="flex-row items-center gap-1.5 self-start rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1">
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={14}
+                            color="#10B981"
+                          />
+                          <Text className="text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                            Current plan
+                          </Text>
+                        </View>
+                      );
+                    }
+                    if (awaitingActivation) {
+                      return (
+                        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                          Setting up your membership…
+                        </Text>
+                      );
+                    }
+                    // Class packs are one-off — always a fresh purchase.
+                    if (plan.kind === 'credit_pack') {
+                      return canSelfCheckout ? (
+                        <Button
+                          onPress={() => checkout.mutate(plan.plan_id)}
+                          loading={busy}
+                          icon="card-outline">
+                          Buy pack
+                        </Button>
+                      ) : null;
+                    }
+                    // Recurring plan + an existing membership = switch in place
+                    // (no second subscription), governed by the gym's policy.
+                    if (recurringSub) {
+                      if (pendingForSub) {
+                        return (
+                          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                            Resolve your pending change first.
+                          </Text>
+                        );
+                      }
+                      const currentPrice =
+                        recurringSub.price_cents ??
+                        recurringSub.membership_plans?.monthly_price_cents ??
+                        0;
+                      const targetPrice = plan.monthly_price_cents ?? 0;
+                      const isUpgrade = targetPrice > currentPrice;
+                      const pol = isUpgrade
+                        ? (policies.data?.upgrade ?? 'request')
+                        : (policies.data?.downgrade ?? 'request');
+                      if (pol === 'self_serve') {
+                        const switching =
+                          modify.isPending &&
+                          modify.variables?.targetPlanId === plan.plan_id;
+                        return (
+                          <Button
+                            icon="swap-horizontal"
+                            loading={switching}
+                            onPress={() =>
+                              modify.mutate({
+                                planSubscriptionId: recurringSub.id,
+                                kind: 'switch_plan',
+                                targetPlanId: plan.plan_id,
+                              })
+                            }>
+                            {isUpgrade
+                              ? 'Upgrade to this plan'
+                              : 'Switch to this plan'}
+                          </Button>
+                        );
+                      }
+                      const requesting =
+                        fileReq.isPending &&
+                        fileReq.variables?.targetPlanId === plan.plan_id;
+                      return (
+                        <Button
+                          variant="secondary"
+                          icon="mail-outline"
+                          loading={requesting}
+                          onPress={() =>
+                            fileReq.mutate({
+                              planSubscriptionId: recurringSub.id,
+                              kind: 'switch_plan',
+                              targetPlanId: plan.plan_id,
+                            })
+                          }>
+                          Request this plan
+                        </Button>
+                      );
+                    }
+                    // No membership yet — start one.
+                    return canSelfCheckout ? (
+                      <Button
+                        onPress={() => checkout.mutate(plan.plan_id)}
+                        loading={busy}
+                        icon="card-outline">
+                        Subscribe
+                      </Button>
+                    ) : null;
+                  })()}
                 </View>
               );
             })

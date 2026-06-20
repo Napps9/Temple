@@ -73,6 +73,9 @@ export type Database = {
           cancel_cutoff_days_before: number;
           members_can_self_checkout: boolean;
           require_membership_to_book: boolean;
+          membership_upgrade_policy: 'self_serve' | 'request';
+          membership_downgrade_policy: 'self_serve' | 'request';
+          membership_cancel_policy: 'self_serve' | 'request';
         };
         Insert: {
           id?: string;
@@ -1982,6 +1985,51 @@ export type Database = {
           currency: string;
           occurred_at: string;
           payload: Json;
+        }>;
+        Relationships: [];
+      };
+      membership_change_requests: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          plan_subscription_id: string;
+          kind: 'cancel' | 'switch_plan';
+          target_plan_id: string | null;
+          status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+          member_note: string | null;
+          staff_note: string | null;
+          decided_by: string | null;
+          decided_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          plan_subscription_id: string;
+          kind: 'cancel' | 'switch_plan';
+          target_plan_id?: string | null;
+          status?: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+          member_note?: string | null;
+          staff_note?: string | null;
+          decided_by?: string | null;
+          decided_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          plan_subscription_id: string;
+          kind: 'cancel' | 'switch_plan';
+          target_plan_id: string | null;
+          status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+          member_note: string | null;
+          staff_note: string | null;
+          decided_by: string | null;
+          decided_at: string | null;
+          created_at: string;
         }>;
         Relationships: [];
       };

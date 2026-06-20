@@ -66,6 +66,11 @@ verify_jwt = false
 [functions.stripe-checkout]
 verify_jwt = true
 
+# Change or cancel a membership: member self-serve where the gym's policy
+# allows, or staff approving/rejecting a change request. Signed-in caller.
+[functions.stripe-modify-subscription]
+verify_jwt = true
+
 # Stripe webhook — Connect events from gyms' accounts. No JWT (Stripe
 # carries none); guarded by the signature against STRIPE_WEBHOOK_SECRET.
 [functions.stripe-webhook]
