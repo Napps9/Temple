@@ -2490,6 +2490,28 @@ export type Database = {
         Args: { invite_code: string };
         Returns: { gym_id: string; role: GymRole }[];
       };
+      set_membership_change_policies: {
+        Args: {
+          p_gym_id: string;
+          p_upgrade: 'self_serve' | 'request';
+          p_downgrade: 'self_serve' | 'request';
+          p_cancel: 'self_serve' | 'request';
+        };
+        Returns: null;
+      };
+      staff_membership_change_requests: {
+        Args: { p_gym_id: string };
+        Returns: {
+          id: string;
+          plan_subscription_id: string;
+          kind: 'cancel' | 'switch_plan';
+          member_note: string | null;
+          created_at: string;
+          member_name: string | null;
+          current_plan_name: string | null;
+          target_plan_name: string | null;
+        }[];
+      };
       submit_parq_response: {
         Args: {
           p_gym_id: string;

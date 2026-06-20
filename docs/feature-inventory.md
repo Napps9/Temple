@@ -296,6 +296,22 @@ The Manage page presents a tab strip:
   plans, their current subscription + credit balance, and a Subscribe
   button that opens Stripe Checkout via `stripe-checkout`. Gated by the
   gym's `members_can_self_checkout` toggle.
+- **Membership change / cancel workflow** [member + `can_assign_plan`] —
+  on `/membership`, switching to another recurring plan now changes the
+  Stripe subscription **in place** (price swap, `proration_behavior=none`,
+  same renewal date) instead of starting a second one; the member can
+  also cancel at period end. Each gym sets, per direction, whether the
+  change is self-serve or needs approval (`gyms.membership_upgrade_policy`
+  / `_downgrade_policy` / `_cancel_policy`; defaults: upgrade self-serve,
+  downgrade + cancel request). Owner edits them in the Manage → Plans tab
+  (RPC `set_membership_change_policies`). Where approval is needed the
+  member files a `membership_change_requests` row (RLS self
+  insert/withdraw); staff work the queue at
+  `/management/membership-requests`
+  (RPC `staff_membership_change_requests`) and approve/reject. The Stripe
+  change + row update run together in the `stripe-modify-subscription`
+  edge function under the service role. Credit packs and one-off class
+  buys are untouched.
 - **Require a membership to book** [owner] — Billing toggle
   (`gyms.require_membership_to_book`, RPC `set_require_membership_to_book`).
   When on, members need an active membership/credits to book; staff are

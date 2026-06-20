@@ -37,6 +37,12 @@ import {
 } from '@/lib/coach-earnings';
 import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
+import {
+  useMembershipPolicies,
+  useSetMembershipPolicies,
+  type MembershipChangePolicy,
+  type MembershipPolicies,
+} from '@/lib/membership-changes';
 import { supabase } from '@/lib/supabase';
 import type { GymRole } from '@/types/database';
 import { useCan } from '@/lib/useCan';
@@ -273,6 +279,13 @@ export default function ManagementHome() {
       visible: !!canAssignPlan,
     },
     {
+      category: 'members',
+      title: 'Membership requests',
+      description: 'Approve or reject member requests to switch or cancel a plan.',
+      href: '/management/membership-requests',
+      visible: !!canAssignPlan,
+    },
+    {
       category: 'plans',
       title: 'Plans',
       description: 'Define your membership plans, prices, and credit packs.',
@@ -352,6 +365,7 @@ export default function ManagementHome() {
               />
             ) : null}
             <PlansPanel />
+            {role === 'owner' ? <MembershipPoliciesPanel /> : null}
           </View>
         ) : activeCategory === 'settings' ? (
           <SettingsTab />
@@ -472,6 +486,120 @@ function SettingsSection({
           {children}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+// ============================================================================
+// Membership change policies — owner picks self-serve vs approval per
+// direction. Lives in the Plans tab alongside plans + billing.
+// ============================================================================
+
+function PolicyRow({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: MembershipChangePolicy;
+  onChange: (v: MembershipChangePolicy) => void;
+}) {
+  return (
+    <View className="gap-2">
+      <View>
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">{label}</Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {description}
+        </Text>
+      </View>
+      <View className="flex-row gap-2">
+        {(['self_serve', 'request'] as const).map((opt) => {
+          const selected = value === opt;
+          return (
+            <Pressable
+              key={opt}
+              onPress={() => onChange(opt)}
+              className={`flex-1 px-3 py-2 rounded-lg border items-center ${
+                selected
+                  ? 'bg-primary border-primary'
+                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+              }`}>
+              <Text
+                className={`text-sm font-medium ${
+                  selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                }`}>
+                {opt === 'self_serve' ? 'Self-serve' : 'Needs approval'}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function MembershipPoliciesPanel() {
+  const { data: membership } = useGymMembership();
+  const gymId = membership?.gymId;
+  const policiesQuery = useMembershipPolicies(gymId);
+  const save = useSetMembershipPolicies(gymId);
+  const [draft, setDraft] = useState<MembershipPolicies | null>(null);
+  const [saved, markSaved] = useSavedFlag();
+
+  useEffect(() => {
+    if (policiesQuery.data) setDraft(policiesQuery.data);
+  }, [policiesQuery.data]);
+
+  if (policiesQuery.isLoading || !draft) {
+    return (
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+      <View className="gap-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          Membership changes
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          Choose which changes members make themselves and which need your
+          approval. Credit packs and one-off class buys aren't affected.
+        </Text>
+      </View>
+      <PolicyRow
+        label="Upgrades"
+        description="Switching to a more expensive plan."
+        value={draft.upgrade}
+        onChange={(v) => setDraft({ ...draft, upgrade: v })}
+      />
+      <PolicyRow
+        label="Downgrades"
+        description="Switching to a cheaper plan."
+        value={draft.downgrade}
+        onChange={(v) => setDraft({ ...draft, downgrade: v })}
+      />
+      <PolicyRow
+        label="Cancellations"
+        description="Ending a membership."
+        value={draft.cancel}
+        onChange={(v) => setDraft({ ...draft, cancel: v })}
+      />
+      {save.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(save.error, 'Could not save policies')}
+        </Text>
+      ) : null}
+      <Button
+        onPress={() => save.mutate(draft, { onSuccess: markSaved })}
+        loading={save.isPending}
+        success={saved}>
+        Save policies
+      </Button>
     </View>
   );
 }

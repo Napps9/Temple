@@ -175,3 +175,98 @@ export function useModifySubscription(
     },
   });
 }
+
+// ============================================================================
+// Staff side — the approval queue + the owner policy editor.
+// ============================================================================
+
+export type StaffChangeRequest = {
+  id: string;
+  plan_subscription_id: string;
+  kind: ChangeRequestKind;
+  member_note: string | null;
+  created_at: string;
+  member_name: string | null;
+  current_plan_name: string | null;
+  target_plan_name: string | null;
+};
+
+// Pending requests for the gym, enriched with member + plan names. Gated
+// server-side by user_can_assign_plan inside the RPC.
+export function useChangeRequestQueue(gymId: string | undefined) {
+  return useQuery({
+    queryKey: ['change-request-queue', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<StaffChangeRequest[]> => {
+      const { data, error } = await supabase.rpc(
+        'staff_membership_change_requests',
+        { p_gym_id: gymId! },
+      );
+      if (error) throw error;
+      return (data ?? []) as StaffChangeRequest[];
+    },
+  });
+}
+
+// Approve or reject a pending request. Approve performs the Stripe change
+// inside the stripe-modify-subscription edge function under the service
+// role; reject just records the decision.
+export function useDecideChangeRequest(gymId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      requestId: string;
+      decision: 'approve' | 'reject';
+      staffNote?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke(
+        'stripe-modify-subscription',
+        {
+          body: {
+            action: 'decide',
+            request_id: args.requestId,
+            decision: args.decision,
+            staff_note: args.staffNote,
+          },
+        },
+      );
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const respBody = await ctx.json();
+            if (respBody?.error) msg = String(respBody.error);
+          } catch {
+            // not JSON — keep the generic message
+          }
+        }
+        throw new Error(msg);
+      }
+      return data as { ok?: boolean };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['change-request-queue', gymId] });
+    },
+  });
+}
+
+// Owner-only: set the three change policies at once (the RPC enforces it).
+export function useSetMembershipPolicies(gymId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: MembershipPolicies) => {
+      if (!gymId) throw new Error('No gym');
+      const { error } = await supabase.rpc('set_membership_change_policies', {
+        p_gym_id: gymId,
+        p_upgrade: p.upgrade,
+        p_downgrade: p.downgrade,
+        p_cancel: p.cancel,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['membership-policies', gymId] });
+    },
+  });
+}
