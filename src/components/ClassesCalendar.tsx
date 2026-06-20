@@ -333,6 +333,11 @@ export function ClassesCalendar({
   const canCreate = mode === 'manage' && canEditClasses;
   const queryClient = useQueryClient();
 
+  const goToToday = () => {
+    haptic.selection();
+    setDate(startOfDay(new Date()));
+  };
+
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
     .toString()
     .padStart(2, '0')}`;
@@ -478,8 +483,9 @@ export function ClassesCalendar({
               mirroring the Add-class CTA on the right. On small screens
               the absolute slot collides with the month title, so it
               renders as its own row below instead. */}
-          <View className="absolute left-0 top-6 hidden md:flex">
+          <View className="absolute left-0 top-6 hidden md:flex md:flex-row md:items-center gap-2">
             <ViewSwitcher view={view} />
+            <TodayButton onPress={goToToday} />
           </View>
           <Pressable
             onPress={() => {
@@ -502,12 +508,6 @@ export function ClassesCalendar({
             className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
           </Pressable>
-          <TodayButton
-            onPress={() => {
-              haptic.selection();
-              setDate(startOfDay(new Date()));
-            }}
-          />
           {canCreate ? (
             <View className="absolute right-0 top-6">
               <Pressable
@@ -521,8 +521,9 @@ export function ClassesCalendar({
             </View>
           ) : null}
         </View>
-        <View className="md:hidden items-center pb-4 -mt-1">
+        <View className="md:hidden flex-row items-center justify-center gap-2 pb-4 -mt-1">
           <ViewSwitcher view={view} />
+          <TodayButton onPress={goToToday} />
         </View>
       </View>
 
