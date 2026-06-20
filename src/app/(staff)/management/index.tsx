@@ -365,7 +365,14 @@ export default function ManagementHome() {
               />
             ) : null}
             <PlansPanel />
-            {role === 'owner' ? <MembershipPoliciesPanel /> : null}
+            {role === 'owner' ? (
+              <SettingsSection
+                title="Member Management Configuration"
+                description="Which membership changes are self-serve vs need your approval."
+                icon="swap-horizontal-outline">
+                <MembershipPoliciesPanel />
+              </SettingsSection>
+            ) : null}
           </View>
         ) : activeCategory === 'settings' ? (
           <SettingsTab />
@@ -554,23 +561,16 @@ function MembershipPoliciesPanel() {
 
   if (policiesQuery.isLoading || !draft) {
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
-      </View>
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
     );
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
-      <View className="gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-          Membership changes
-        </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          Choose which changes members make themselves and which need your
-          approval. Credit packs and one-off class buys aren't affected.
-        </Text>
-      </View>
+    <View className="gap-4">
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        Choose which changes members make themselves and which need your
+        approval. Credit packs and one-off class buys aren't affected.
+      </Text>
       <PolicyRow
         label="Upgrades"
         description="Switching to a more expensive plan."
