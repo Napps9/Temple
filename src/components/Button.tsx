@@ -24,12 +24,12 @@ type Props = {
 // previous near-invisible white-on-white version disappeared inside
 // modal footers and on light-mode pages.
 const containerStyles: Record<Variant, string> = {
-  primary: 'bg-primary active:bg-primary-dark',
+  primary: 'bg-primary active:bg-primary-dark shadow-card',
   secondary:
     'bg-secondary/10 border border-secondary/30 active:bg-secondary/20',
   ghost: 'bg-transparent',
   destructive:
-    'bg-white dark:bg-gray-900 border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20',
+    'bg-white dark:bg-gray-900 border border-red-300 dark:border-red-700 active:bg-red-50 dark:active:bg-red-900/20 shadow-card',
 };
 
 const textStyles: Record<Variant, string> = {

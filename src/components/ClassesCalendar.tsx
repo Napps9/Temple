@@ -170,6 +170,11 @@ function NowLine({ topPx }: { topPx: number }) {
           height: 8,
           borderRadius: 4,
           backgroundColor: colors.primary,
+          shadowColor: colors.primary,
+          shadowOpacity: 0.7,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 0 },
+          elevation: 4,
         }}
       />
       <View style={{ height: 2, backgroundColor: colors.primary }} />
@@ -279,7 +284,7 @@ function ViewSwitcher({ view }: { view: ViewMode }) {
             router.setParams({ view: v });
           }}
           className={`px-4 py-1.5 rounded-full ${
-            view === v ? 'bg-white dark:bg-gray-700' : ''
+            view === v ? 'bg-white dark:bg-gray-700 shadow-pill' : ''
           }`}>
           <Text
             className={`capitalize text-sm font-medium ${
@@ -512,7 +517,7 @@ export function ClassesCalendar({
             <View className="absolute right-0 top-6">
               <Pressable
                 onPress={() => setCreateAt({ date })}
-                className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 active:bg-primary-dark">
+                className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 active:bg-primary-dark shadow-pop">
                 <Ionicons name="add" size={16} color="#FFFFFF" />
                 <Text className="hidden md:flex text-white text-sm font-semibold">
                   Add class
@@ -654,7 +659,7 @@ function DayView({
                 </Text>
                 <View
                   className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-primary' : ''
+                    selected ? 'bg-primary shadow-pop' : ''
                   }`}>
                   <Text
                     className={`font-bold text-base ${
@@ -849,7 +854,7 @@ function DayClassCard({
       style={
         inGrid ? { height: '100%', width: '100%' } : undefined
       }
-      className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800 overflow-hidden ${
+      className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800 overflow-hidden shadow-card ${
         compact ? 'p-2' : 'p-4'
       } ${isPast ? 'opacity-50' : ''}`}>
       <View className={`flex-1 ${compact ? 'gap-0.5' : 'gap-1.5'}`}>
@@ -1155,7 +1160,7 @@ function WeekTile({
       }
       disabled={isPast}
       style={{ height: '100%', width: '100%' }}
-      className={`bg-white dark:bg-gray-900 rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 ${
+      className={`bg-white dark:bg-gray-900 rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 shadow-card ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : 'border-gray-200 dark:border-gray-700'

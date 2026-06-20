@@ -70,7 +70,7 @@ function ManagementCard({
   comingSoon?: boolean;
 }) {
   const body = (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 border border-gray-100 dark:border-gray-800 shadow-card">
       <View className="flex-row justify-between items-center">
         <Text className="text-gray-900 dark:text-gray-50 font-semibold">{title}</Text>
         {comingSoon ? (
@@ -467,7 +467,7 @@ function SettingsSection({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl">
+    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-3 p-4 active:opacity-70">

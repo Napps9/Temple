@@ -22,6 +22,15 @@ module.exports = {
       fontFamily: {
         display: ['SplineSans', 'Inter', 'system-ui', 'sans-serif'],
       },
+      boxShadow: {
+        // Selective elevation so a few raised surfaces read as layered
+        // against the flat slate ground — depth comes from contrast, not
+        // from shadowing everything. card = content containers + primary
+        // buttons; pop = hero / brand accents; pill = small active toggles.
+        card: '0 1px 2px rgb(15 23 42 / 0.04), 0 4px 14px rgb(15 23 42 / 0.08)',
+        pop: '0 6px 20px rgb(15 23 42 / 0.16)',
+        pill: '0 1px 3px rgb(15 23 42 / 0.12)',
+      },
     },
   },
   plugins: [],

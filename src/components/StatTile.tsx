@@ -82,7 +82,7 @@ export function StatTile({
     </>
   );
 
-  const className = 'bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 flex-1';
+  const className = 'bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 flex-1 shadow-card';
   const style = { minWidth };
 
   if (href) {

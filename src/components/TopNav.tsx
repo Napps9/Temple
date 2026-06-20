@@ -80,7 +80,7 @@ export function TopNav({
             }}
             hitSlop={4}
             className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
-              active ? 'bg-white dark:bg-gray-700' : ''
+              active ? 'bg-white dark:bg-gray-700 shadow-pill' : ''
             }`}>
             <Ionicons
               name={s.icon}
