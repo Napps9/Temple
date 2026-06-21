@@ -150,8 +150,18 @@ export function useMyStoreOrders(
     refetchInterval: opts?.pollForPaid
       ? (query) => {
           const data = query.state.data as MyStoreOrder[] | undefined;
-          const settled = !!data && data.some((o) => o.status !== 'pending');
-          return settled ? false : 3000;
+          // Poll while a just-placed order is still settling — a pending
+          // order created in the last few minutes. An older abandoned
+          // pending order (a back-out before paying) must not poll forever,
+          // and a prior settled order must not stop a new order's poll.
+          const settling =
+            !!data &&
+            data.some(
+              (o) =>
+                o.status === 'pending' &&
+                Date.now() - new Date(o.created_at).getTime() < 5 * 60 * 1000,
+            );
+          return settling ? 3000 : false;
         }
       : false,
     queryFn: async (): Promise<MyStoreOrder[]> => {
@@ -353,8 +363,17 @@ export function useMyStoreSubscriptions(
     refetchInterval: opts?.pollForActive
       ? (query) => {
           const data = query.state.data as MyStoreSubscription[] | undefined;
-          const hasActive = !!data && data.some((s) => s.status === 'active');
-          return hasActive ? false : 3000;
+          // Stop as soon as a freshly-created subscription appears (the one
+          // this checkout just made — works even when the member already
+          // had other active subs). Bounded by attempts as a safety net so
+          // a normal visit / abandoned checkout can't poll forever.
+          const justAppeared =
+            !!data &&
+            data.some(
+              (s) => Date.now() - new Date(s.created_at).getTime() < 60 * 1000,
+            );
+          if (justAppeared) return false;
+          return query.state.dataUpdateCount < 6 ? 3000 : false;
         }
       : false,
     queryFn: async (): Promise<MyStoreSubscription[]> => {

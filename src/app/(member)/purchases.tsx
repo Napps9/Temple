@@ -229,7 +229,11 @@ function ShippingSection({
     );
   }
 
-  const canSave = (addr.line1 ?? '').trim().length > 0;
+  // Enough to actually ship a box — a lone street line isn't.
+  const canSave =
+    (addr.line1 ?? '').trim().length > 0 &&
+    (addr.city ?? '').trim().length > 0 &&
+    (addr.postal_code ?? '').trim().length > 0;
   const save = () => {
     const cleaned: Record<string, string> = {};
     for (const [k, v] of Object.entries(addr)) {

@@ -33,9 +33,11 @@ export default function StoreScreen() {
   const shippingFee = config.data?.store_shipping_fee_cents ?? 0;
   const list = products.data ?? [];
   const hasPhysical = list.some((p) => p.kind === 'physical');
+  // A past_due subscription is still live (Stripe is retrying the card), so
+  // it counts as subscribed — otherwise the member could start a duplicate.
   const subscribedIds = new Set(
     (subs.data ?? [])
-      .filter((s) => s.status === 'active' && s.product_id)
+      .filter((s) => s.status !== 'cancelled' && s.product_id)
       .map((s) => s.product_id as string),
   );
 

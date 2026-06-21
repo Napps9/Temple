@@ -62,12 +62,8 @@ begin
     return;  -- unknown subscription: nothing to do
   end if;
 
-  update public.store_subscriptions
-    set status = 'active',
-        current_period_end = coalesce(p_period_end, current_period_end),
-        updated_at = now()
-    where id = v_sub.id;
-
+  -- Idempotency first: a replayed invoice (Stripe is at-least-once) must be
+  -- a complete no-op — it must NOT re-advance status/period below.
   select id into v_existing
     from public.store_orders
     where stripe_invoice_id = p_stripe_invoice_id;
@@ -80,6 +76,17 @@ begin
     return next;
     return;
   end if;
+
+  -- Advance the subscription: don't resurrect a cancelled one, and never
+  -- move the renewal date backwards on an out-of-order / replayed event.
+  update public.store_subscriptions
+    set status = case when status = 'cancelled' then status else 'active' end,
+        current_period_end = greatest(
+          current_period_end,
+          coalesce(p_period_end, current_period_end)
+        ),
+        updated_at = now()
+    where id = v_sub.id;
 
   v_physical := v_sub.kind_snapshot = 'physical';
 

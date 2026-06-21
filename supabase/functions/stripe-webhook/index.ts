@@ -263,16 +263,25 @@ async function ensureStoreSubscription(
 
   const { data: existing } = await service
     .from('store_subscriptions')
-    .select('id, gym_id, profile_id, currency')
+    .select('id, gym_id, profile_id, currency, status, current_period_end')
     .eq('stripe_subscription_id', subId)
     .maybeSingle();
   if (existing) {
+    // 'cancelled' is terminal — a stale/out-of-order subscription.updated
+    // event must not resurrect it to active.
+    if (existing.status === 'cancelled') return existing;
     const upd: Record<string, unknown> = {
       status,
       cancel_at_period_end: cancelAtEnd,
       updated_at: new Date().toISOString(),
     };
-    if (periodEnd) upd.current_period_end = periodEnd;
+    // Never move the renewal date backwards on a replayed/reordered event.
+    if (
+      periodEnd &&
+      (!existing.current_period_end || periodEnd > existing.current_period_end)
+    ) {
+      upd.current_period_end = periodEnd;
+    }
     await service.from('store_subscriptions').update(upd).eq('id', existing.id);
     return existing;
   }
@@ -442,12 +451,32 @@ Deno.serve(async (req: Request) => {
             obj.shipping_details ??
             obj.collected_information?.shipping_details ??
             null;
-          if (sub && shipping?.address) {
+          let shipName: string | null =
+            shipping?.name ?? obj.customer_details?.name ?? null;
+          let shipAddr = shipping?.address ?? null;
+          // Subscription-mode Checkout often attaches the collected shipping
+          // to the Customer rather than the Session — fall back to that so a
+          // box never lands with no delivery address.
+          if (sub && !shipAddr && obj.customer && account) {
+            const cust = await stripeGet(
+              `customers/${obj.customer}`,
+              STRIPE_SECRET_KEY,
+              account,
+            );
+            const cs = cust?.shipping as
+              | { name?: string; address?: Record<string, unknown> }
+              | undefined;
+            if (cs?.address) {
+              shipName = cs.name ?? shipName;
+              shipAddr = cs.address;
+            }
+          }
+          if (sub && shipAddr) {
             await service
               .from('store_subscriptions')
               .update({
-                shipping_name: shipping.name ?? obj.customer_details?.name ?? null,
-                shipping_address: shipping.address,
+                shipping_name: shipName,
+                shipping_address: shipAddr,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', sub.id);
