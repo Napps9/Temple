@@ -433,7 +433,25 @@ Deno.serve(async (req: Request) => {
             STRIPE_SECRET_KEY,
             account,
           );
-          if (subObj) await ensureStoreSubscription(service, subObj);
+          const sub = subObj
+            ? await ensureStoreSubscription(service, subObj)
+            : null;
+          // A box subscription collected a delivery address — seed it onto
+          // the subscription so each cycle's order ships to the right place.
+          const shipping =
+            obj.shipping_details ??
+            obj.collected_information?.shipping_details ??
+            null;
+          if (sub && shipping?.address) {
+            await service
+              .from('store_subscriptions')
+              .update({
+                shipping_name: shipping.name ?? obj.customer_details?.name ?? null,
+                shipping_address: shipping.address,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', sub.id);
+          }
         }
         return ok();
       }
@@ -604,6 +622,21 @@ Deno.serve(async (req: Request) => {
         }
       }
       if (storeSub) {
+        // Backfill a box's delivery address from the invoice when we don't
+        // have one yet (covers the race where the first invoice beats the
+        // checkout event). Guarded in SQL so it only fills a null physical.
+        if (obj.customer_shipping?.address) {
+          await service
+            .from('store_subscriptions')
+            .update({
+              shipping_name: obj.customer_shipping.name ?? null,
+              shipping_address: obj.customer_shipping.address,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('stripe_subscription_id', subId)
+            .eq('kind_snapshot', 'physical')
+            .is('shipping_address', null);
+        }
         const sLine = obj.lines?.data?.[0];
         const sPeriodEnd = sLine?.period?.end as number | undefined;
         const { data: cycle, error: cycErr } = await service.rpc(

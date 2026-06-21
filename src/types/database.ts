@@ -2684,6 +2684,8 @@ export type Database = {
           currency: string;
           interval: string;
           digital_asset_path: string | null;
+          shipping_name: string | null;
+          shipping_address: Json | null;
           status: StoreSubscriptionStatus;
           cancel_at_period_end: boolean;
           current_period_end: string | null;
@@ -2704,6 +2706,8 @@ export type Database = {
           currency: string;
           interval: string;
           digital_asset_path?: string | null;
+          shipping_name?: string | null;
+          shipping_address?: Json | null;
           status?: StoreSubscriptionStatus;
           cancel_at_period_end?: boolean;
           current_period_end?: string | null;
@@ -2717,6 +2721,8 @@ export type Database = {
           status: StoreSubscriptionStatus;
           cancel_at_period_end: boolean;
           current_period_end: string | null;
+          shipping_name: string | null;
+          shipping_address: Json | null;
           updated_at: string;
           cancelled_at: string | null;
         }>;
@@ -3454,6 +3460,10 @@ export type Database = {
           current_period_end: string | null;
           created_at: string;
         }[];
+      };
+      update_store_subscription_shipping: {
+        Args: { p_sub_id: string; p_name: string; p_address: Json };
+        Returns: void;
       };
     };
     Enums: {

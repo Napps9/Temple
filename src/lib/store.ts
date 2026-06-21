@@ -328,12 +328,15 @@ export type MyStoreSubscription = {
   id: string;
   product_id: string | null;
   name_snapshot: string;
+  kind_snapshot: StoreProductKind;
   unit_price_cents: number;
   currency: string;
   interval: string;
   status: StoreSubscriptionStatus;
   cancel_at_period_end: boolean;
   current_period_end: string | null;
+  shipping_name: string | null;
+  shipping_address: Record<string, string> | null;
   created_at: string;
 };
 
@@ -358,13 +361,13 @@ export function useMyStoreSubscriptions(
       const { data, error } = await supabase
         .from('store_subscriptions')
         .select(
-          'id, product_id, name_snapshot, unit_price_cents, currency, interval, status, cancel_at_period_end, current_period_end, created_at',
+          'id, product_id, name_snapshot, kind_snapshot, unit_price_cents, currency, interval, status, cancel_at_period_end, current_period_end, shipping_name, shipping_address, created_at',
         )
         .eq('gym_id', gymId!)
         .eq('profile_id', profileId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as MyStoreSubscription[];
+      return (data ?? []) as unknown as MyStoreSubscription[];
     },
   });
 }
@@ -391,6 +394,32 @@ export function useCancelStoreSubscription(gymId: string | undefined) {
         }
         throw new Error(msg);
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['my-store-subscriptions', gymId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['staff-store-subscriptions', gymId] });
+    },
+  });
+}
+
+// Update the delivery address on a box subscription (member self or staff);
+// takes effect from the next cycle's order.
+export function useUpdateStoreSubscriptionShipping(gymId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: {
+      subscriptionId: string;
+      name: string;
+      address: Record<string, string>;
+    }) => {
+      const { error } = await supabase.rpc('update_store_subscription_shipping', {
+        p_sub_id: vars.subscriptionId,
+        p_name: vars.name,
+        p_address: vars.address,
+      });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

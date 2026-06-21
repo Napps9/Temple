@@ -166,7 +166,9 @@ function ProductCard({
       )}`
     : formatMoney(product.price_cents, currency);
   const subtitle = product.recurring
-    ? 'Subscription'
+    ? product.kind === 'physical'
+      ? 'Monthly box'
+      : 'Subscription'
     : product.kind === 'digital'
       ? 'Digital download'
       : 'Ships to you';

@@ -315,9 +315,10 @@ function ProductEditor({
       const priceCents = parsePriceToCents(d.price);
       if (priceCents == null) throw new Error('Enter a valid price');
 
-      // Recurring products are non-physical and untracked in this phase.
+      // Recurring products are untracked (no per-purchase stock); a recurring
+      // physical good is a subscription box shipped each cycle.
       const recurring = d.recurring;
-      const kind = recurring ? 'digital' : d.kind;
+      const kind = d.kind;
       const tracks = recurring ? false : d.track_inventory;
       let stock: number | null = null;
       if (tracks) {
@@ -420,8 +421,8 @@ function ProductEditor({
               Recurring (monthly)
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              A monthly subscription — programming, a locker rental, an
-              add-on. Members are billed each month until they cancel.
+              A monthly subscription — programming, a locker rental, or a
+              shipped box. Members are billed each month until they cancel.
             </Text>
           </View>
           <Switch
@@ -429,53 +430,54 @@ function ProductEditor({
             onValueChange={(v) =>
               set(
                 v
-                  ? { recurring: true, kind: 'digital', track_inventory: false }
+                  ? { recurring: true, track_inventory: false }
                   : { recurring: false },
               )
             }
           />
         </View>
 
-        {!d.recurring ? (
-          <View className="gap-2">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-              Type
-            </Text>
-            <View className="flex-row gap-2">
-              {(['physical', 'digital'] as const).map((k) => {
-                const selected = d.kind === k;
-                return (
-                  <Pressable
-                    key={k}
-                    onPress={() =>
-                      set({
-                        kind: k,
-                        // A new digital good defaults to unlimited stock.
-                        track_inventory: k === 'physical',
-                      })
-                    }
-                    className={`flex-1 px-3 py-2 rounded-lg border items-center ${
-                      selected
-                        ? 'bg-primary border-primary'
-                        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+        <View className="gap-2">
+          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            Type
+          </Text>
+          <View className="flex-row gap-2">
+            {(['physical', 'digital'] as const).map((k) => {
+              const selected = d.kind === k;
+              return (
+                <Pressable
+                  key={k}
+                  onPress={() =>
+                    set({
+                      kind: k,
+                      // Recurring is always untracked; a new one-off digital
+                      // good defaults to unlimited stock.
+                      track_inventory: d.recurring ? false : k === 'physical',
+                    })
+                  }
+                  className={`flex-1 px-3 py-2 rounded-lg border items-center ${
+                    selected
+                      ? 'bg-primary border-primary'
+                      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+                  }`}>
+                  <Text
+                    className={`text-sm font-medium ${
+                      selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
                     }`}>
-                    <Text
-                      className={`text-sm font-medium ${
-                        selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
-                      }`}>
-                      {k === 'physical' ? 'Physical' : 'Digital'}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
-              {d.kind === 'physical'
-                ? 'Shipped to the member — Stripe collects their address at checkout.'
-                : 'Delivered as a file the member downloads in the app and by email.'}
-            </Text>
+                    {k === 'physical' ? 'Physical' : 'Digital'}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-        ) : null}
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            {d.kind === 'physical'
+              ? d.recurring
+                ? 'A box shipped every month — Stripe collects the address; price it to include shipping.'
+                : 'Shipped to the member — Stripe collects their address at checkout.'
+              : 'Delivered as a file the member downloads in the app and by email.'}
+          </Text>
+        </View>
 
         <Input
           label={d.recurring ? `Price (${currency}) / month` : `Price (${currency})`}

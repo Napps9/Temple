@@ -3,7 +3,7 @@
 -- inclusion, the staff subscriber list authorisation, and subscription RLS.
 
 begin;
-select plan(13);
+select plan(12);
 
 \ir _helpers.psql
 
@@ -50,7 +50,8 @@ begin
   perform set_config('test.sub',    v_sub::text,    true);
 end $$;
 
--- 1-2. Recurring-product CHECK constraints.
+-- 1. A recurring product needs a billing interval. (Recurring physical is
+-- allowed as of Phase 3 — see store_recurring_physical.sql.)
 select throws_ok(
   format($$ insert into public.store_products
     (gym_id, name, kind, price_cents, track_inventory, recurring)
@@ -58,14 +59,6 @@ select throws_ok(
     current_setting('test.gym')),
   '23514', null,
   'a recurring product without an interval is rejected');
-
-select throws_ok(
-  format($$ insert into public.store_products
-    (gym_id, name, kind, price_cents, track_inventory, recurring, recurring_interval)
-    values (%L::uuid, 'Box', 'physical', 1000, false, true, 'month') $$,
-    current_setting('test.gym')),
-  '23514', null,
-  'a recurring physical product is rejected (Phase 3)');
 
 -- 3-5. First cycle: a paid order + a re-delivered file.
 select is(

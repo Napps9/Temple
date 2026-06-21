@@ -285,6 +285,12 @@ Deno.serve(async (req: Request) => {
         'subscription_data[metadata][gym_id]': gymId,
         'subscription_data[metadata][profile_id]': user.id,
       };
+      // A subscription box ships every cycle — collect a delivery address.
+      if (product.kind === 'physical') {
+        SHIP_TO.forEach((c, i) => {
+          subParams[`shipping_address_collection[allowed_countries][${i}]`] = c;
+        });
+      }
       const session = await stripe(
         'checkout/sessions',
         subParams,

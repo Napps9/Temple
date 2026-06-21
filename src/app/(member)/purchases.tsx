@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
@@ -13,6 +16,7 @@ import {
   useMyStoreOrders,
   useMyStoreSubscriptions,
   useStoreDownload,
+  useUpdateStoreSubscriptionShipping,
   type MyStoreOrder,
   type MyStoreSubscription,
 } from '@/lib/store';
@@ -139,6 +143,10 @@ function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
         </Text>
       ) : null}
 
+      {sub.kind_snapshot === 'physical' ? (
+        <ShippingSection sub={sub} disabled={ended} />
+      ) : null}
+
       {!ended && !sub.cancel_at_period_end ? (
         <ChipButton
           tone="red"
@@ -154,6 +162,113 @@ function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
           {errorMessage(cancel.error, 'Could not cancel')}
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+const ADDRESS_FIELDS: { key: string; label: string; placeholder: string }[] = [
+  { key: 'line1', label: 'Address line 1', placeholder: '1 High Street' },
+  { key: 'line2', label: 'Address line 2 (optional)', placeholder: 'Flat 2' },
+  { key: 'city', label: 'City', placeholder: 'London' },
+  { key: 'postal_code', label: 'Postcode', placeholder: 'SW1A 1AA' },
+  { key: 'country', label: 'Country', placeholder: 'GB' },
+];
+
+function formatAddress(
+  name: string | null,
+  addr: Record<string, string> | null,
+): string {
+  const parts = [
+    name,
+    addr?.line1,
+    addr?.line2,
+    addr?.city,
+    addr?.postal_code,
+    addr?.country,
+  ].filter(Boolean);
+  return parts.length ? parts.join(', ') : 'No delivery address yet';
+}
+
+// The delivery address for a box subscription — shown read-only, editable
+// inline. A saved change applies from the next cycle's order.
+function ShippingSection({
+  sub,
+  disabled,
+}: {
+  sub: MyStoreSubscription;
+  disabled: boolean;
+}) {
+  const { data: membership } = useGymMembership();
+  const update = useUpdateStoreSubscriptionShipping(membership?.gymId);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(sub.shipping_name ?? '');
+  const [addr, setAddr] = useState<Record<string, string>>(
+    sub.shipping_address ?? {},
+  );
+
+  if (!editing) {
+    return (
+      <View className="border-t border-gray-100 dark:border-gray-800 pt-2 mt-1 gap-1.5">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Ships to: {formatAddress(sub.shipping_name, sub.shipping_address)}
+        </Text>
+        {!disabled ? (
+          <ChipButton
+            tone="neutral"
+            className="self-start"
+            label="Edit delivery address"
+            icon="location-outline"
+            onPress={() => {
+              setName(sub.shipping_name ?? '');
+              setAddr(sub.shipping_address ?? {});
+              setEditing(true);
+            }}
+          />
+        ) : null}
+      </View>
+    );
+  }
+
+  const canSave = (addr.line1 ?? '').trim().length > 0;
+  const save = () => {
+    const cleaned: Record<string, string> = {};
+    for (const [k, v] of Object.entries(addr)) {
+      const t = (v ?? '').trim();
+      if (t) cleaned[k] = t;
+    }
+    update.mutate(
+      { subscriptionId: sub.id, name, address: cleaned },
+      { onSuccess: () => setEditing(false) },
+    );
+  };
+
+  return (
+    <View className="border-t border-gray-100 dark:border-gray-800 pt-3 mt-1 gap-3">
+      <Input label="Name" value={name} onChangeText={setName} placeholder="Full name" />
+      {ADDRESS_FIELDS.map((f) => (
+        <Input
+          key={f.key}
+          label={f.label}
+          value={addr[f.key] ?? ''}
+          onChangeText={(v) => setAddr((cur) => ({ ...cur, [f.key]: v }))}
+          placeholder={f.placeholder}
+        />
+      ))}
+      {update.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-xs">
+          {errorMessage(update.error, 'Could not save the address')}
+        </Text>
+      ) : null}
+      <View className="flex-row gap-2">
+        <View className="flex-1">
+          <Button onPress={save} loading={update.isPending} disabled={!canSave}>
+            Save address
+          </Button>
+        </View>
+        <Button variant="ghost" onPress={() => setEditing(false)}>
+          Cancel
+        </Button>
+      </View>
     </View>
   );
 }
