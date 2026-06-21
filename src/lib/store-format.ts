@@ -24,3 +24,9 @@ export function productSoldOut(p: {
 }): boolean {
   return p.track_inventory && (p.stock_quantity ?? 0) <= 0;
 }
+
+// Short billing-interval suffix for a recurring price ("£10.00" + "/mo").
+// Monthly is the default; weekly/yearly are supported for later.
+export function intervalSuffix(interval: string): string {
+  return interval === 'week' ? '/wk' : interval === 'year' ? '/yr' : '/mo';
+}

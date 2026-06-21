@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatPriceInput,
+  intervalSuffix,
   parsePriceToCents,
   productSoldOut,
 } from './store-format';
@@ -50,5 +51,14 @@ describe('productSoldOut', () => {
 
   it('is never sold out when inventory is untracked', () => {
     expect(productSoldOut({ track_inventory: false, stock_quantity: null })).toBe(false);
+  });
+});
+
+describe('intervalSuffix', () => {
+  it('maps intervals to short suffixes, defaulting to /mo', () => {
+    expect(intervalSuffix('month')).toBe('/mo');
+    expect(intervalSuffix('week')).toBe('/wk');
+    expect(intervalSuffix('year')).toBe('/yr');
+    expect(intervalSuffix('whatever')).toBe('/mo');
   });
 });

@@ -71,6 +71,9 @@ type ProductRow = {
   active: boolean;
   archived_at: string | null;
   digital_asset_path: string | null;
+  recurring: boolean;
+  recurring_interval: string | null;
+  stripe_price_id: string | null;
 };
 
 Deno.serve(async (req: Request) => {
@@ -163,7 +166,7 @@ Deno.serve(async (req: Request) => {
   const { data: products } = await service
     .from('store_products')
     .select(
-      'id, name, kind, price_cents, image_url, track_inventory, stock_quantity, active, archived_at, digital_asset_path',
+      'id, name, kind, price_cents, image_url, track_inventory, stock_quantity, active, archived_at, digital_asset_path, recurring, recurring_interval, stripe_price_id',
     )
     .eq('gym_id', gymId)
     .in('id', [...wanted.keys()]);
@@ -194,6 +197,104 @@ Deno.serve(async (req: Request) => {
     const lineTotal = product.price_cents * qty;
     subtotal += lineTotal;
     lines.push({ product, quantity: qty, lineTotal });
+  }
+
+  // Recurring products are a subscription, bought one at a time: open a
+  // subscription-mode session on a cached recurring Price. The webhook
+  // creates the store_subscription and records each paid cycle as an order.
+  const recurringLines = lines.filter((l) => l.product.recurring);
+  if (recurringLines.length > 0) {
+    if (lines.length !== 1) {
+      return json(
+        { error: 'Subscriptions must be bought on their own' },
+        400,
+      );
+    }
+    const product = recurringLines[0].product;
+    const interval = product.recurring_interval ?? 'month';
+    try {
+      let customerId: string;
+      const { data: existingCust } = await service
+        .from('gym_stripe_customers')
+        .select('stripe_customer_id')
+        .eq('gym_id', gymId)
+        .eq('profile_id', user.id)
+        .maybeSingle();
+      if (existingCust?.stripe_customer_id) {
+        customerId = existingCust.stripe_customer_id as string;
+      } else {
+        const cust = await stripe(
+          'customers',
+          {
+            email: user.email ?? '',
+            'metadata[gym_id]': gymId,
+            'metadata[profile_id]': user.id,
+          },
+          STRIPE_SECRET_KEY,
+          account,
+        );
+        customerId = cust.id as string;
+        await service.from('gym_stripe_customers').upsert({
+          gym_id: gymId,
+          profile_id: user.id,
+          stripe_customer_id: customerId,
+        });
+      }
+
+      // Recurring Price, created lazily and cached on the product. Cleared
+      // by staff edits so a price change takes effect for new subscribers.
+      let priceId = product.stripe_price_id;
+      if (!priceId) {
+        const prod = await stripe(
+          'products',
+          { name: product.name },
+          STRIPE_SECRET_KEY,
+          account,
+        );
+        const price = await stripe(
+          'prices',
+          {
+            product: prod.id as string,
+            currency,
+            unit_amount: String(product.price_cents),
+            'recurring[interval]': interval,
+          },
+          STRIPE_SECRET_KEY,
+          account,
+        );
+        priceId = price.id as string;
+        await service
+          .from('store_products')
+          .update({ stripe_price_id: priceId })
+          .eq('id', product.id);
+      }
+
+      const subParams: Record<string, string> = {
+        mode: 'subscription',
+        customer: customerId,
+        'line_items[0][price]': priceId,
+        'line_items[0][quantity]': '1',
+        success_url: `${origin}${successPath}`,
+        cancel_url: `${origin}/store?checkout=cancelled`,
+        'metadata[kind]': 'store_sub',
+        'metadata[product_id]': product.id,
+        'metadata[gym_id]': gymId,
+        'metadata[profile_id]': user.id,
+        'subscription_data[metadata][kind]': 'store_sub',
+        'subscription_data[metadata][product_id]': product.id,
+        'subscription_data[metadata][gym_id]': gymId,
+        'subscription_data[metadata][profile_id]': user.id,
+      };
+      const session = await stripe(
+        'checkout/sessions',
+        subParams,
+        STRIPE_SECRET_KEY,
+        account,
+      );
+      return json({ url: session.url });
+    } catch (e) {
+      return json({ error: String((e as Error)?.message ?? e) }, 502);
+    }
   }
 
   const shipping = hasPhysical ? (gym.store_shipping_fee_cents ?? 0) : 0;

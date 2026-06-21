@@ -39,6 +39,8 @@ export type StoreOrderStatus =
   | 'cancelled'
   | 'refunded';
 
+export type StoreSubscriptionStatus = 'active' | 'past_due' | 'cancelled';
+
 export type Database = {
   public: {
     Tables: {
@@ -2509,6 +2511,9 @@ export type Database = {
           digital_asset_path: string | null;
           active: boolean;
           archived_at: string | null;
+          recurring: boolean;
+          recurring_interval: string | null;
+          stripe_price_id: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -2526,6 +2531,9 @@ export type Database = {
           digital_asset_path?: string | null;
           active?: boolean;
           archived_at?: string | null;
+          recurring?: boolean;
+          recurring_interval?: string | null;
+          stripe_price_id?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -2541,6 +2549,9 @@ export type Database = {
           digital_asset_path: string | null;
           active: boolean;
           archived_at: string | null;
+          recurring: boolean;
+          recurring_interval: string | null;
+          stripe_price_id: string | null;
           updated_at: string;
         }>;
         Relationships: [];
@@ -2559,8 +2570,10 @@ export type Database = {
           shipping_name: string | null;
           shipping_address: Json | null;
           tracking_note: string | null;
+          subscription_id: string | null;
           stripe_checkout_session_id: string | null;
           stripe_payment_intent_id: string | null;
+          stripe_invoice_id: string | null;
           paid_at: string | null;
           fulfilled_at: string | null;
           fulfilled_by: string | null;
@@ -2579,8 +2592,10 @@ export type Database = {
           shipping_name?: string | null;
           shipping_address?: Json | null;
           tracking_note?: string | null;
+          subscription_id?: string | null;
           stripe_checkout_session_id?: string | null;
           stripe_payment_intent_id?: string | null;
+          stripe_invoice_id?: string | null;
           paid_at?: string | null;
           fulfilled_at?: string | null;
           fulfilled_by?: string | null;
@@ -2591,6 +2606,7 @@ export type Database = {
           tracking_note: string | null;
           stripe_checkout_session_id: string | null;
           stripe_payment_intent_id: string | null;
+          stripe_invoice_id: string | null;
           paid_at: string | null;
           fulfilled_at: string | null;
           fulfilled_by: string | null;
@@ -2653,6 +2669,56 @@ export type Database = {
         };
         Update: Partial<{
           last_downloaded_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      store_subscriptions: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          product_id: string | null;
+          name_snapshot: string;
+          kind_snapshot: StoreProductKind;
+          unit_price_cents: number;
+          currency: string;
+          interval: string;
+          digital_asset_path: string | null;
+          status: StoreSubscriptionStatus;
+          cancel_at_period_end: boolean;
+          current_period_end: string | null;
+          stripe_subscription_id: string | null;
+          stripe_customer_id: string | null;
+          created_at: string;
+          updated_at: string;
+          cancelled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          product_id?: string | null;
+          name_snapshot: string;
+          kind_snapshot: StoreProductKind;
+          unit_price_cents: number;
+          currency: string;
+          interval: string;
+          digital_asset_path?: string | null;
+          status?: StoreSubscriptionStatus;
+          cancel_at_period_end?: boolean;
+          current_period_end?: string | null;
+          stripe_subscription_id?: string | null;
+          stripe_customer_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          cancelled_at?: string | null;
+        };
+        Update: Partial<{
+          status: StoreSubscriptionStatus;
+          cancel_at_period_end: boolean;
+          current_period_end: string | null;
+          updated_at: string;
+          cancelled_at: string | null;
         }>;
         Relationships: [];
       };
@@ -3325,6 +3391,8 @@ export type Database = {
           track_inventory: boolean;
           stock_quantity: number | null;
           sold_out: boolean;
+          recurring: boolean;
+          recurring_interval: string | null;
         }[];
       };
       set_store_settings: {
@@ -3370,6 +3438,21 @@ export type Database = {
           currency: string;
           gross_cents: number;
           order_count: number;
+        }[];
+      };
+      staff_store_subscriptions: {
+        Args: { p_gym_id: string };
+        Returns: {
+          id: string;
+          product_name: string | null;
+          buyer_name: string | null;
+          unit_price_cents: number;
+          currency: string;
+          interval: string;
+          status: StoreSubscriptionStatus;
+          cancel_at_period_end: boolean;
+          current_period_end: string | null;
+          created_at: string;
         }[];
       };
     };

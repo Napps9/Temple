@@ -1,13 +1,18 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Linking, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
-import type { StoreOrderStatus, StoreProductKind } from '@/types/database';
+import type {
+  StoreOrderStatus,
+  StoreProductKind,
+  StoreSubscriptionStatus,
+} from '@/types/database';
 
 // Pure helpers live in their own RN-free module so they unit-test in node;
 // re-exported here so '@/lib/store' stays the one import for store code.
 export {
   formatPriceInput,
+  intervalSuffix,
   parsePriceToCents,
   productSoldOut,
 } from '@/lib/store-format';
@@ -52,6 +57,8 @@ export type StoreProduct = {
   track_inventory: boolean;
   stock_quantity: number | null;
   sold_out: boolean;
+  recurring: boolean;
+  recurring_interval: string | null;
 };
 
 // The member catalogue, via the security-definer RPC (hides the asset
@@ -232,6 +239,8 @@ export type AdminProduct = {
   digital_asset_path: string | null;
   active: boolean;
   archived_at: string | null;
+  recurring: boolean;
+  recurring_interval: string | null;
 };
 
 export function useAdminStoreProducts(gymId: string | undefined) {
@@ -242,7 +251,7 @@ export function useAdminStoreProducts(gymId: string | undefined) {
       const { data, error } = await supabase
         .from('store_products')
         .select(
-          'id, name, description, kind, price_cents, image_url, track_inventory, stock_quantity, digital_asset_path, active, archived_at',
+          'id, name, description, kind, price_cents, image_url, track_inventory, stock_quantity, digital_asset_path, active, archived_at, recurring, recurring_interval',
         )
         .eq('gym_id', gymId!)
         .is('archived_at', null)
@@ -309,6 +318,112 @@ export function useStoreRevenue(
       });
       if (error) throw error;
       return (data ?? []) as StoreRevenueRow[];
+    },
+  });
+}
+
+// ── Recurring subscriptions ─────────────────────────────────────────────
+
+export type MyStoreSubscription = {
+  id: string;
+  product_id: string | null;
+  name_snapshot: string;
+  unit_price_cents: number;
+  currency: string;
+  interval: string;
+  status: StoreSubscriptionStatus;
+  cancel_at_period_end: boolean;
+  current_period_end: string | null;
+  created_at: string;
+};
+
+// The member's own store subscriptions (self-select RLS), newest first.
+// Polls briefly so a just-started subscription appears after checkout.
+export function useMyStoreSubscriptions(
+  gymId: string | undefined,
+  profileId: string | undefined,
+  opts?: { pollForActive?: boolean },
+) {
+  return useQuery({
+    queryKey: ['my-store-subscriptions', gymId, profileId],
+    enabled: !!gymId && !!profileId,
+    refetchInterval: opts?.pollForActive
+      ? (query) => {
+          const data = query.state.data as MyStoreSubscription[] | undefined;
+          const hasActive = !!data && data.some((s) => s.status === 'active');
+          return hasActive ? false : 3000;
+        }
+      : false,
+    queryFn: async (): Promise<MyStoreSubscription[]> => {
+      const { data, error } = await supabase
+        .from('store_subscriptions')
+        .select(
+          'id, product_id, name_snapshot, unit_price_cents, currency, interval, status, cancel_at_period_end, current_period_end, created_at',
+        )
+        .eq('gym_id', gymId!)
+        .eq('profile_id', profileId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as MyStoreSubscription[];
+    },
+  });
+}
+
+// Cancel a store subscription at period end via the edge function.
+export function useCancelStoreSubscription(gymId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (subscriptionId: string) => {
+      const { error } = await supabase.functions.invoke(
+        'store-cancel-subscription',
+        { body: { subscription_id: subscriptionId } },
+      );
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const b = await ctx.json();
+            if (b?.error) msg = String(b.error);
+          } catch {
+            // keep generic message
+          }
+        }
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['my-store-subscriptions', gymId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['staff-store-subscriptions', gymId] });
+    },
+  });
+}
+
+export type StaffSubscription = {
+  id: string;
+  product_name: string | null;
+  buyer_name: string | null;
+  unit_price_cents: number;
+  currency: string;
+  interval: string;
+  status: StoreSubscriptionStatus;
+  cancel_at_period_end: boolean;
+  current_period_end: string | null;
+  created_at: string;
+};
+
+export function useStaffStoreSubscriptions(gymId: string | undefined) {
+  return useQuery({
+    queryKey: ['staff-store-subscriptions', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<StaffSubscription[]> => {
+      const { data, error } = await supabase.rpc('staff_store_subscriptions', {
+        p_gym_id: gymId!,
+      });
+      if (error) throw error;
+      return (data ?? []) as StaffSubscription[];
     },
   });
 }

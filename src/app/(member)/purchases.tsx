@@ -8,9 +8,13 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import {
+  intervalSuffix,
+  useCancelStoreSubscription,
   useMyStoreOrders,
+  useMyStoreSubscriptions,
   useStoreDownload,
   type MyStoreOrder,
+  type MyStoreSubscription,
 } from '@/lib/store';
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
@@ -39,8 +43,12 @@ export default function PurchasesScreen() {
   const orders = useMyStoreOrders(membership?.gymId, session?.user.id, {
     pollForPaid: true,
   });
+  const subs = useMyStoreSubscriptions(membership?.gymId, session?.user.id, {
+    pollForActive: true,
+  });
 
   const rows = orders.data ?? [];
+  const subRows = subs.data ?? [];
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -51,21 +59,102 @@ export default function PurchasesScreen() {
             Purchases
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Your orders and downloads.
+            Your subscriptions, orders and downloads.
           </Text>
         </View>
+
+        {subRows.length > 0 ? (
+          <View className="gap-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Subscriptions
+            </Text>
+            {subRows.map((s) => (
+              <SubscriptionCard key={s.id} sub={s} />
+            ))}
+          </View>
+        ) : null}
 
         {orders.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
         ) : rows.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400">
-            You haven't bought anything yet.
-          </Text>
+          subRows.length === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400">
+              You haven't bought anything yet.
+            </Text>
+          ) : null
         ) : (
-          rows.map((o) => <OrderCard key={o.id} order={o} />)
+          <View className="gap-2">
+            {subRows.length > 0 ? (
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                Orders
+              </Text>
+            ) : null}
+            {rows.map((o) => (
+              <OrderCard key={o.id} order={o} />
+            ))}
+          </View>
         )}
       </ScrollView>
     </Screen>
+  );
+}
+
+function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
+  const { data: membership } = useGymMembership();
+  const cancel = useCancelStoreSubscription(membership?.gymId);
+  const priceLabel = `${formatMoney(sub.unit_price_cents, sub.currency)}${intervalSuffix(
+    sub.interval,
+  )}`;
+  const ended = sub.status === 'cancelled';
+  const renews = sub.current_period_end ? formatDate(sub.current_period_end) : null;
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {sub.name_snapshot}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+            {priceLabel}
+          </Text>
+        </View>
+        <Text
+          className={`text-xs font-semibold ${
+            ended
+              ? 'text-gray-500 dark:text-gray-400'
+              : sub.cancel_at_period_end
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-green-600 dark:text-green-400'
+          }`}>
+          {ended ? 'Ended' : sub.cancel_at_period_end ? 'Cancelling' : 'Active'}
+        </Text>
+      </View>
+
+      {renews && !ended ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {sub.cancel_at_period_end
+            ? `Access until ${renews}`
+            : `Renews ${renews}`}
+        </Text>
+      ) : null}
+
+      {!ended && !sub.cancel_at_period_end ? (
+        <ChipButton
+          tone="red"
+          className="self-start mt-1"
+          label={cancel.isPending ? 'Cancelling…' : 'Cancel subscription'}
+          icon="close-circle-outline"
+          onPress={() => cancel.mutate(sub.id)}
+          disabled={cancel.isPending}
+        />
+      ) : null}
+      {cancel.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-xs">
+          {errorMessage(cancel.error, 'Could not cancel')}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 

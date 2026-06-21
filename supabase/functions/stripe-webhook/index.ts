@@ -232,6 +232,90 @@ const ok = () =>
     headers: { 'content-type': 'application/json' },
   });
 
+// Upsert a store_subscriptions row from a Stripe subscription object (one
+// carrying metadata.kind === 'store_sub'). Creating it from the product
+// snapshot also covers the race where invoice.paid lands before
+// checkout.session.completed. Returns the row's key fields, or null when
+// the subscription isn't a store one.
+// deno-lint-ignore no-explicit-any
+async function ensureStoreSubscription(
+  // deno-lint-ignore no-explicit-any
+  service: any,
+  // deno-lint-ignore no-explicit-any
+  subObj: any,
+): Promise<{ id: string; gym_id: string; profile_id: string; currency: string } | null> {
+  const meta = subObj?.metadata ?? {};
+  if (meta.kind !== 'store_sub') return null;
+  const subId: string = subObj.id;
+
+  const items = subObj.items?.data as { current_period_end?: number }[] | undefined;
+  const cpe =
+    (subObj.current_period_end as number | undefined) ?? items?.[0]?.current_period_end;
+  const periodEnd = cpe ? new Date(cpe * 1000).toISOString() : null;
+  const cancelAtEnd = !!subObj.cancel_at_period_end;
+  const sStatus: string = subObj.status ?? 'active';
+  const status =
+    sStatus === 'past_due' || sStatus === 'unpaid'
+      ? 'past_due'
+      : sStatus === 'canceled'
+        ? 'cancelled'
+        : 'active';
+
+  const { data: existing } = await service
+    .from('store_subscriptions')
+    .select('id, gym_id, profile_id, currency')
+    .eq('stripe_subscription_id', subId)
+    .maybeSingle();
+  if (existing) {
+    const upd: Record<string, unknown> = {
+      status,
+      cancel_at_period_end: cancelAtEnd,
+      updated_at: new Date().toISOString(),
+    };
+    if (periodEnd) upd.current_period_end = periodEnd;
+    await service.from('store_subscriptions').update(upd).eq('id', existing.id);
+    return existing;
+  }
+
+  const productId: string | undefined = meta.product_id;
+  const gymId: string | undefined = meta.gym_id;
+  const profileId: string | undefined = meta.profile_id;
+  if (!productId || !gymId || !profileId) return null;
+
+  const [{ data: product }, { data: gym }] = await Promise.all([
+    service
+      .from('store_products')
+      .select('name, kind, price_cents, recurring_interval, digital_asset_path')
+      .eq('id', productId)
+      .maybeSingle(),
+    service.from('gyms').select('currency').eq('id', gymId).maybeSingle(),
+  ]);
+  if (!product) return null;
+
+  const { data: ins } = await service
+    .from('store_subscriptions')
+    .insert({
+      gym_id: gymId,
+      profile_id: profileId,
+      product_id: productId,
+      name_snapshot: product.name,
+      kind_snapshot: product.kind,
+      unit_price_cents: product.price_cents,
+      currency: ((gym?.currency as string) ?? 'gbp').toUpperCase(),
+      interval: product.recurring_interval ?? 'month',
+      digital_asset_path:
+        product.kind === 'digital' ? product.digital_asset_path : null,
+      status,
+      cancel_at_period_end: cancelAtEnd,
+      current_period_end: periodEnd,
+      stripe_subscription_id: subId,
+      stripe_customer_id: subObj.customer ?? null,
+    })
+    .select('id, gym_id, profile_id, currency')
+    .single();
+  return ins ?? null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
@@ -335,6 +419,21 @@ Deno.serve(async (req: Request) => {
             { orderId: row.order_id, gymId: row.gym_id, profileId: row.profile_id },
             { resendKey: RESEND_API_KEY, resendFrom: RESEND_FROM },
           );
+        }
+        return ok();
+      }
+
+      // Recurring store products: ensure the store_subscription exists.
+      // The first paid cycle (order + receipt) is recorded by invoice.paid.
+      if (meta.kind === 'store_sub') {
+        const subId: string | null = obj.subscription ?? null;
+        if (subId && account) {
+          const subObj = await stripeGet(
+            `subscriptions/${subId}`,
+            STRIPE_SECRET_KEY,
+            account,
+          );
+          if (subObj) await ensureStoreSubscription(service, subObj);
         }
         return ok();
       }
@@ -484,6 +583,60 @@ Deno.serve(async (req: Request) => {
         });
         return ok();
       }
+
+      // Store subscription? Record this cycle as a paid order (+ a fresh
+      // digital delivery) and email the receipt. Idempotent on the invoice.
+      let storeSub = (
+        await service
+          .from('store_subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', subId)
+          .maybeSingle()
+      ).data;
+      if (!storeSub && account) {
+        const subObj = await stripeGet(
+          `subscriptions/${subId}`,
+          STRIPE_SECRET_KEY,
+          account,
+        );
+        if (subObj?.metadata?.kind === 'store_sub') {
+          storeSub = await ensureStoreSubscription(service, subObj);
+        }
+      }
+      if (storeSub) {
+        const sLine = obj.lines?.data?.[0];
+        const sPeriodEnd = sLine?.period?.end as number | undefined;
+        const { data: cycle, error: cycErr } = await service.rpc(
+          '_record_store_subscription_cycle',
+          {
+            p_stripe_subscription_id: subId,
+            p_stripe_invoice_id: obj.id,
+            p_amount_total: (obj.amount_paid as number) ?? 0,
+            p_period_end: sPeriodEnd
+              ? new Date(sPeriodEnd * 1000).toISOString()
+              : null,
+          },
+        );
+        if (cycErr) throw cycErr;
+        const crow = Array.isArray(cycle) ? cycle[0] : cycle;
+        if (crow?.newly_created) {
+          await recordBilling({
+            gymId: crow.gym_id,
+            memberId: crow.profile_id,
+            planSubId: null,
+            kind: 'store_subscription',
+            amountCents: (obj.amount_paid as number) ?? 0,
+            currency: ((obj.currency as string) ?? crow.currency ?? 'gbp').toUpperCase(),
+          });
+          await sendStoreReceipt(
+            service,
+            { orderId: crow.order_id, gymId: crow.gym_id, profileId: crow.profile_id },
+            { resendKey: RESEND_API_KEY, resendFrom: RESEND_FROM },
+          );
+        }
+        return ok();
+      }
+
       const { data: ps } = await service
         .from('plan_subscriptions')
         .select('id, gym_id, profile_id, plan_id')
@@ -523,6 +676,13 @@ Deno.serve(async (req: Request) => {
         amountCents: (obj.amount_paid as number) ?? 0,
         currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
       });
+    } else if (type === 'customer.subscription.updated') {
+      // Keep store subscriptions in sync — cancel-at-period-end toggles,
+      // renewal date, past_due. Membership subs carry no store metadata,
+      // so this is a no-op for them.
+      if (obj.metadata?.kind === 'store_sub') {
+        await ensureStoreSubscription(service, obj);
+      }
     } else if (type === 'customer.subscription.deleted') {
       const subId: string = obj.id;
       const { error: delErr } = await service
@@ -530,6 +690,16 @@ Deno.serve(async (req: Request) => {
         .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
         .eq('stripe_subscription_id', subId);
       if (delErr) throw delErr;
+      const { error: storeDelErr } = await service
+        .from('store_subscriptions')
+        .update({
+          status: 'cancelled',
+          cancel_at_period_end: false,
+          cancelled_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_subscription_id', subId);
+      if (storeDelErr) throw storeDelErr;
     }
   } catch (e) {
     // 500 → Stripe retries; the idempotent billing_events insert makes

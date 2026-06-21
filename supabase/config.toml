@@ -71,6 +71,11 @@ verify_jwt = true
 [functions.store-checkout]
 verify_jwt = true
 
+# Cancel a recurring store subscription at period end. Signed-in caller;
+# re-checks ownership / can_manage_store through RLS.
+[functions.store-cancel-subscription]
+verify_jwt = true
+
 # Change or cancel a membership: member self-serve where the gym's policy
 # allows, or staff approving/rejecting a change request. Signed-in caller.
 [functions.stripe-modify-subscription]

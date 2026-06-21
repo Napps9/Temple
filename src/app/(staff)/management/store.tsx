@@ -16,19 +16,23 @@ import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import {
   formatPriceInput,
+  intervalSuffix,
   parsePriceToCents,
   productSoldOut,
   useAdminStoreProducts,
+  useCancelStoreSubscription,
   useGymStoreConfig,
   useStaffStoreOrders,
+  useStaffStoreSubscriptions,
   useStoreRevenue,
   type AdminProduct,
   type StaffOrder,
+  type StaffSubscription,
 } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
-type Tab = 'products' | 'orders' | 'settings';
+type Tab = 'products' | 'orders' | 'subscriptions' | 'settings';
 
 const randomSuffix = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -53,7 +57,7 @@ export default function StoreManageScreen() {
         </View>
 
         <View className="flex-row gap-2">
-          {(['products', 'orders', 'settings'] as Tab[]).map((t) => {
+          {(['products', 'orders', 'subscriptions', 'settings'] as Tab[]).map((t) => {
             const selected = t === tab;
             return (
               <Pressable
@@ -77,6 +81,8 @@ export default function StoreManageScreen() {
           <ProductsTab />
         ) : tab === 'orders' ? (
           <OrdersTab />
+        ) : tab === 'subscriptions' ? (
+          <SubscriptionsTab />
         ) : (
           <SettingsTab />
         )}
@@ -99,6 +105,7 @@ type Draft = {
   digital_asset_path: string | null;
   digital_asset_name: string | null;
   active: boolean;
+  recurring: boolean;
 };
 
 function blankDraft(): Draft {
@@ -113,6 +120,7 @@ function blankDraft(): Draft {
     digital_asset_path: null,
     digital_asset_name: null,
     active: true,
+    recurring: false,
   };
 }
 
@@ -131,6 +139,7 @@ function draftFrom(p: AdminProduct): Draft {
       ? p.digital_asset_path.split('/').pop() ?? 'file'
       : null,
     active: p.active,
+    recurring: p.recurring,
   };
 }
 
@@ -198,9 +207,14 @@ function ProductsTab() {
                 {p.name}
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                {formatMoney(p.price_cents, currency)} ·{' '}
-                {p.kind === 'digital' ? 'Digital' : 'Physical'}
-                {p.track_inventory
+                {formatMoney(p.price_cents, currency)}
+                {p.recurring ? '/mo' : ''} ·{' '}
+                {p.recurring
+                  ? 'Subscription'
+                  : p.kind === 'digital'
+                    ? 'Digital'
+                    : 'Physical'}
+                {!p.recurring && p.track_inventory
                   ? ` · ${p.stock_quantity ?? 0} in stock`
                   : ''}
                 {!p.active ? ' · Hidden' : ''}
@@ -300,7 +314,11 @@ function ProductEditor({
       if (!name) throw new Error('Give the product a name');
       const priceCents = parsePriceToCents(d.price);
       if (priceCents == null) throw new Error('Enter a valid price');
-      const tracks = d.track_inventory;
+
+      // Recurring products are non-physical and untracked in this phase.
+      const recurring = d.recurring;
+      const kind = recurring ? 'digital' : d.kind;
+      const tracks = recurring ? false : d.track_inventory;
       let stock: number | null = null;
       if (tracks) {
         const n = Number.parseInt(d.stock, 10);
@@ -309,26 +327,37 @@ function ProductEditor({
         }
         stock = n;
       }
-      if (d.kind === 'digital' && !d.digital_asset_path) {
+      // A one-off digital good must carry its file; a recurring one may be a
+      // service with no download (e.g. a locker rental).
+      if (kind === 'digital' && !recurring && !d.digital_asset_path) {
         throw new Error('Upload the file members will download');
       }
 
       const fields = {
         name,
         description: d.description.trim() || null,
-        kind: d.kind,
+        kind,
         price_cents: priceCents,
         image_url: d.image_url,
         track_inventory: tracks,
         stock_quantity: stock,
-        digital_asset_path: d.kind === 'digital' ? d.digital_asset_path : null,
+        digital_asset_path: kind === 'digital' ? d.digital_asset_path : null,
         active: d.active,
+        recurring,
+        recurring_interval: recurring ? 'month' : null,
       };
 
       if (d.id) {
         const { error } = await supabase
           .from('store_products')
-          .update({ ...fields, updated_at: new Date().toISOString() })
+          .update({
+            ...fields,
+            // Drop the cached Stripe price so a price edit takes effect for
+            // new subscribers (Stripe prices are immutable; existing
+            // subscribers stay on the price they signed up at).
+            ...(recurring ? { stripe_price_id: null } : {}),
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', d.id);
         if (error) throw error;
       } else {
@@ -385,78 +414,106 @@ function ProductEditor({
           multiline
         />
 
-        <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-            Type
-          </Text>
-          <View className="flex-row gap-2">
-            {(['physical', 'digital'] as const).map((k) => {
-              const selected = d.kind === k;
-              return (
-                <Pressable
-                  key={k}
-                  onPress={() =>
-                    set({
-                      kind: k,
-                      // A new digital good defaults to unlimited stock.
-                      track_inventory: k === 'physical',
-                    })
-                  }
-                  className={`flex-1 px-3 py-2 rounded-lg border items-center ${
-                    selected
-                      ? 'bg-primary border-primary'
-                      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
-                  }`}>
-                  <Text
-                    className={`text-sm font-medium ${
-                      selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
-                    }`}>
-                    {k === 'physical' ? 'Physical' : 'Digital'}
-                  </Text>
-                </Pressable>
-              );
-            })}
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 pr-3">
+            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+              Recurring (monthly)
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              A monthly subscription — programming, a locker rental, an
+              add-on. Members are billed each month until they cancel.
+            </Text>
           </View>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
-            {d.kind === 'physical'
-              ? 'Shipped to the member — Stripe collects their address at checkout.'
-              : 'Delivered as a file the member downloads in the app and by email.'}
-          </Text>
+          <Switch
+            value={d.recurring}
+            onValueChange={(v) =>
+              set(
+                v
+                  ? { recurring: true, kind: 'digital', track_inventory: false }
+                  : { recurring: false },
+              )
+            }
+          />
         </View>
 
+        {!d.recurring ? (
+          <View className="gap-2">
+            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              Type
+            </Text>
+            <View className="flex-row gap-2">
+              {(['physical', 'digital'] as const).map((k) => {
+                const selected = d.kind === k;
+                return (
+                  <Pressable
+                    key={k}
+                    onPress={() =>
+                      set({
+                        kind: k,
+                        // A new digital good defaults to unlimited stock.
+                        track_inventory: k === 'physical',
+                      })
+                    }
+                    className={`flex-1 px-3 py-2 rounded-lg border items-center ${
+                      selected
+                        ? 'bg-primary border-primary'
+                        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+                    }`}>
+                    <Text
+                      className={`text-sm font-medium ${
+                        selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                      }`}>
+                      {k === 'physical' ? 'Physical' : 'Digital'}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              {d.kind === 'physical'
+                ? 'Shipped to the member — Stripe collects their address at checkout.'
+                : 'Delivered as a file the member downloads in the app and by email.'}
+            </Text>
+          </View>
+        ) : null}
+
         <Input
-          label={`Price (${currency})`}
+          label={d.recurring ? `Price (${currency}) / month` : `Price (${currency})`}
           value={d.price}
           onChangeText={(v) => set({ price: v })}
           keyboardType="decimal-pad"
           placeholder="20"
         />
 
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1 pr-3">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
-              Track inventory
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              {d.kind === 'digital'
-                ? 'On for limited tickets; off for an unlimited download.'
-                : 'Sells out automatically when stock hits zero.'}
-            </Text>
-          </View>
-          <Switch
-            value={d.track_inventory}
-            onValueChange={(v) => set({ track_inventory: v })}
-          />
-        </View>
+        {!d.recurring ? (
+          <>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 pr-3">
+                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  Track inventory
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {d.kind === 'digital'
+                    ? 'On for limited tickets; off for an unlimited download.'
+                    : 'Sells out automatically when stock hits zero.'}
+                </Text>
+              </View>
+              <Switch
+                value={d.track_inventory}
+                onValueChange={(v) => set({ track_inventory: v })}
+              />
+            </View>
 
-        {d.track_inventory ? (
-          <Input
-            label="Stock"
-            value={d.stock}
-            onChangeText={(v) => set({ stock: v })}
-            keyboardType="number-pad"
-            placeholder="50"
-          />
+            {d.track_inventory ? (
+              <Input
+                label="Stock"
+                value={d.stock}
+                onChangeText={(v) => set({ stock: v })}
+                keyboardType="number-pad"
+                placeholder="50"
+              />
+            ) : null}
+          </>
         ) : null}
 
         <View className="gap-2">
@@ -493,7 +550,7 @@ function ProductEditor({
         {d.kind === 'digital' ? (
           <View className="gap-2">
             <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-              Download file
+              {d.recurring ? 'Download file (optional)' : 'Download file'}
             </Text>
             <View className="flex-row items-center gap-3">
               <Ionicons
@@ -575,6 +632,103 @@ function OrdersTab() {
       {rows.map((o) => (
         <OrderCard key={o.id} order={o} />
       ))}
+    </View>
+  );
+}
+
+// ── Subscriptions ─────────────────────────────────────────────────────────
+
+function formatShortDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+function SubscriptionsTab() {
+  const { data: membership } = useGymMembership();
+  const subs = useStaffStoreSubscriptions(membership?.gymId);
+
+  if (subs.isLoading) {
+    return <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>;
+  }
+  const rows = subs.data ?? [];
+  if (rows.length === 0) {
+    return (
+      <Text className="text-gray-500 dark:text-gray-400">
+        No subscribers yet. Mark a product as recurring to start selling
+        subscriptions.
+      </Text>
+    );
+  }
+  return (
+    <View className="gap-3">
+      {rows.map((s) => (
+        <SubscriberCard key={s.id} sub={s} />
+      ))}
+    </View>
+  );
+}
+
+function SubscriberCard({ sub }: { sub: StaffSubscription }) {
+  const { data: membership } = useGymMembership();
+  const cancel = useCancelStoreSubscription(membership?.gymId);
+  const priceLabel = `${formatMoney(sub.unit_price_cents, sub.currency)}${intervalSuffix(
+    sub.interval,
+  )}`;
+  const ended = sub.status === 'cancelled';
+  const renews = sub.current_period_end
+    ? formatShortDate(sub.current_period_end)
+    : null;
+  const stateLabel = ended
+    ? 'Ended'
+    : sub.cancel_at_period_end
+      ? 'Cancelling'
+      : sub.status === 'past_due'
+        ? 'Past due'
+        : 'Active';
+  const stateTone = ended
+    ? 'text-gray-500 dark:text-gray-400'
+    : sub.cancel_at_period_end || sub.status === 'past_due'
+      ? 'text-amber-600 dark:text-amber-400'
+      : 'text-green-600 dark:text-green-400';
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          {sub.buyer_name ?? 'Member'}
+        </Text>
+        <Text className={`text-xs font-semibold ${stateTone}`}>{stateLabel}</Text>
+      </View>
+      <Text className="text-gray-600 dark:text-gray-300 text-sm">
+        {sub.product_name ?? 'Subscription'} · {priceLabel}
+      </Text>
+      {renews && !ended ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {sub.cancel_at_period_end ? `Ends ${renews}` : `Renews ${renews}`}
+        </Text>
+      ) : null}
+      {!ended && !sub.cancel_at_period_end ? (
+        <ChipButton
+          tone="red"
+          className="self-start mt-1"
+          label={cancel.isPending ? 'Cancelling…' : 'Cancel'}
+          icon="close-circle-outline"
+          onPress={() => cancel.mutate(sub.id)}
+          disabled={cancel.isPending}
+        />
+      ) : null}
+      {cancel.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-xs">
+          {errorMessage(cancel.error, 'Could not cancel')}
+        </Text>
+      ) : null}
     </View>
   );
 }

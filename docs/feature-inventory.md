@@ -106,12 +106,14 @@ dead-end). It carries:
 ### Store
 
 [`can_manage_store`, `can_see_store_revenue`] A gym-branded storefront
-(logo + brand colours) where members buy one-off goods: **physical** items
-(water bottles, tees — shipped, so Stripe Checkout collects the address and
-a flat per-order shipping fee is added) and **digital** goods (programmes,
-event tickets — delivered as a private Storage file the buyer downloads
-in-app and via a 7-day signed link in the receipt email). Recurring
-products are a later phase.
+(logo + brand colours) where members buy **one-off** goods — **physical**
+items (water bottles, tees — shipped, so Stripe Checkout collects the
+address and a flat per-order shipping fee is added) and **digital** goods
+(programmes, event tickets — delivered as a private Storage file the buyer
+downloads in-app and via a 7-day signed link in the receipt email) — and
+**recurring** monthly products (a programming subscription, a locker
+rental). Recurring physical subscription boxes (shipped each cycle) are a
+later phase.
 
 - **Member side** (`/store`, linked from Account when the store is on) —
   branded product grid with photo, price, stock ("3 left") and a **Sold
@@ -119,23 +121,33 @@ products are a later phase.
   the gym's connected account (direct charge, no platform fee — the same
   rails as memberships). `/purchases` lists past orders with their lines,
   totals, shipping status and re-downloadable digital goods.
+- **Subscriptions** — a product can be marked **recurring (monthly)**;
+  members **Subscribe** via a Stripe subscription on the gym's connected
+  account and manage/cancel it (at period end) under `/purchases`. Each
+  paid cycle is recorded as an ordinary paid order — a recurring digital
+  good re-delivers its file every month — so cycles flow through receipts,
+  purchases and revenue. Staff see active subscribers, and can cancel, on a
+  **Subscriptions** tab.
 - **Staff side** (Manage → Store) [`can_manage_store`] — add / price /
-  hide / remove products, upload a photo and (for digital) the download
-  file, set stock; an orders queue with the buyer, items, shipping address
-  and a **Mark shipped / done** action; a **Sales this month** tile
-  [`can_see_store_revenue`].
+  hide / remove products, mark one recurring, upload a photo and (for
+  digital) the download file, set stock; an orders queue with the buyer,
+  items, shipping address and a **Mark shipped / done** action; a **Sales
+  this month** tile [`can_see_store_revenue`].
 - **Owner settings** — switch the store on and set the shipping fee
   (`gyms.store_enabled` / `store_shipping_fee_cents`, RPC
   `set_store_settings`). Owners pick who manages the store and who sees
   revenue from the Team → role-permissions editor.
-- **Under the hood (0085)** — `store_products` / `store_orders` /
-  `store_order_items` / `store_digital_deliveries`, all `gym_id`-RLS; the
-  member catalogue reads through `list_store_products` (which hides the
-  asset path so the deliverable can't leak). `store-checkout` builds the
-  session, validating price + stock server-side; `stripe-webhook` settles
-  via `_mark_store_order_paid` (decrements stock, grants deliveries,
-  idempotent on Stripe retries) and emails the receipt via Resend.
-  Inventory decrements at payment; selling out is automatic.
+- **Under the hood (0085 + 0086)** — `store_products` / `store_orders` /
+  `store_order_items` / `store_digital_deliveries` / `store_subscriptions`,
+  all `gym_id`-RLS; the member catalogue reads through `list_store_products`
+  (which hides the asset path so the deliverable can't leak).
+  `store-checkout` builds the session (one-off payment, or subscription mode
+  on a cached recurring Price), validating price + stock server-side;
+  `stripe-webhook` settles one-off orders via `_mark_store_order_paid` and
+  each subscription invoice via `_record_store_subscription_cycle` (both
+  idempotent on Stripe retries), emailing the receipt via Resend.
+  `store-cancel-subscription` flips cancel-at-period-end. Inventory
+  decrements at payment; selling out is automatic.
 
 ### Tracking & training
 

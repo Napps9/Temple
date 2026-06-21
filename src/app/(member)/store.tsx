@@ -6,11 +6,13 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import {
+  intervalSuffix,
   useGymStoreConfig,
+  useMyStoreSubscriptions,
   useStartStoreCheckout,
   useStoreProducts,
   type StoreProduct,
@@ -19,9 +21,11 @@ import { useGymBrand } from '@/lib/useGymBrand';
 
 export default function StoreScreen() {
   const { data: membership } = useGymMembership();
+  const session = useSession();
   const brand = useGymBrand();
   const config = useGymStoreConfig(membership?.gymId);
   const products = useStoreProducts(membership?.gymId);
+  const subs = useMyStoreSubscriptions(membership?.gymId, session?.user.id);
   const checkout = useStartStoreCheckout(membership?.gymId);
   const params = useLocalSearchParams<{ checkout?: string }>();
 
@@ -29,6 +33,11 @@ export default function StoreScreen() {
   const shippingFee = config.data?.store_shipping_fee_cents ?? 0;
   const list = products.data ?? [];
   const hasPhysical = list.some((p) => p.kind === 'physical');
+  const subscribedIds = new Set(
+    (subs.data ?? [])
+      .filter((s) => s.status === 'active' && s.product_id)
+      .map((s) => s.product_id as string),
+  );
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -113,6 +122,7 @@ export default function StoreScreen() {
                   product={p}
                   currency={currency}
                   pending={checkout.isPending}
+                  alreadySubscribed={subscribedIds.has(p.id)}
                   onBuy={(quantity) =>
                     checkout.mutate([{ product_id: p.id, quantity }])
                   }
@@ -138,16 +148,28 @@ function ProductCard({
   product,
   currency,
   pending,
+  alreadySubscribed,
   onBuy,
 }: {
   product: StoreProduct;
   currency: string;
   pending: boolean;
+  alreadySubscribed: boolean;
   onBuy: (quantity: number) => void;
 }) {
   const max = maxQuantityFor(product);
   const [qty, setQty] = useState(1);
   const clamped = Math.min(qty, Math.max(1, max));
+  const priceLabel = product.recurring
+    ? `${formatMoney(product.price_cents, currency)}${intervalSuffix(
+        product.recurring_interval ?? 'month',
+      )}`
+    : formatMoney(product.price_cents, currency);
+  const subtitle = product.recurring
+    ? 'Subscription'
+    : product.kind === 'digital'
+      ? 'Digital download'
+      : 'Ships to you';
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-card">
@@ -165,14 +187,14 @@ function ProductCard({
               {product.name}
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
-              {product.kind === 'digital' ? 'Digital download' : 'Ships to you'}
-              {product.track_inventory && !product.sold_out
+              {subtitle}
+              {!product.recurring && product.track_inventory && !product.sold_out
                 ? ` · ${product.stock_quantity} left`
                 : ''}
             </Text>
           </View>
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            {formatMoney(product.price_cents, currency)}
+            {priceLabel}
           </Text>
         </View>
 
@@ -182,7 +204,24 @@ function ProductCard({
           </Text>
         ) : null}
 
-        {product.sold_out ? (
+        {product.recurring ? (
+          alreadySubscribed ? (
+            <View className="self-start px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-950/50 mt-1">
+              <Text className="text-green-700 dark:text-green-300 text-sm font-medium">
+                Subscribed
+              </Text>
+            </View>
+          ) : (
+            <View className="mt-1">
+              <Button
+                onPress={() => onBuy(1)}
+                loading={pending}
+                icon="repeat-outline">
+                Subscribe
+              </Button>
+            </View>
+          )
+        ) : product.sold_out ? (
           <View className="self-start px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 mt-1">
             <Text className="text-gray-500 dark:text-gray-400 text-sm font-medium">
               Sold out
