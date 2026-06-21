@@ -103,6 +103,40 @@ dead-end). It carries:
 - **Gym share / invite link** — share button + Web Share API for the
   member-facing join URL.
 
+### Store
+
+[`can_manage_store`, `can_see_store_revenue`] A gym-branded storefront
+(logo + brand colours) where members buy one-off goods: **physical** items
+(water bottles, tees — shipped, so Stripe Checkout collects the address and
+a flat per-order shipping fee is added) and **digital** goods (programmes,
+event tickets — delivered as a private Storage file the buyer downloads
+in-app and via a 7-day signed link in the receipt email). Recurring
+products are a later phase.
+
+- **Member side** (`/store`, linked from Account when the store is on) —
+  branded product grid with photo, price, stock ("3 left") and a **Sold
+  out** state once a tracked item hits zero. Buy opens Stripe Checkout on
+  the gym's connected account (direct charge, no platform fee — the same
+  rails as memberships). `/purchases` lists past orders with their lines,
+  totals, shipping status and re-downloadable digital goods.
+- **Staff side** (Manage → Store) [`can_manage_store`] — add / price /
+  hide / remove products, upload a photo and (for digital) the download
+  file, set stock; an orders queue with the buyer, items, shipping address
+  and a **Mark shipped / done** action; a **Sales this month** tile
+  [`can_see_store_revenue`].
+- **Owner settings** — switch the store on and set the shipping fee
+  (`gyms.store_enabled` / `store_shipping_fee_cents`, RPC
+  `set_store_settings`). Owners pick who manages the store and who sees
+  revenue from the Team → role-permissions editor.
+- **Under the hood (0085)** — `store_products` / `store_orders` /
+  `store_order_items` / `store_digital_deliveries`, all `gym_id`-RLS; the
+  member catalogue reads through `list_store_products` (which hides the
+  asset path so the deliverable can't leak). `store-checkout` builds the
+  session, validating price + stock server-side; `stripe-webhook` settles
+  via `_mark_store_order_paid` (decrements stock, grants deliveries,
+  idempotent on Stripe retries) and emails the receipt via Resend.
+  Inventory decrements at payment; selling out is automatic.
+
 ### Tracking & training
 
 - **PR badges** — on the movement detail page, every journal row
@@ -331,6 +365,8 @@ The Manage page presents a tab strip:
   protection.
 - **Communications** [`can_manage_comms`] — the email campaign suite
   (detailed below under *Communications Suite*).
+- **Store** [`can_manage_store`] — the gym storefront: products, stock,
+  orders and fulfilment (detailed above under *Store*).
 - **Settings** — collapsible cards:
   - **Gym settings** [`can_manage_staff`] — week start, default
     class capacity / duration / materialisation horizon, plan-resolution

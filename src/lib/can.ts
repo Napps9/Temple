@@ -36,7 +36,9 @@ export type Capability =
   | 'can_broadcast_to_class'
   | 'can_manage_parq'
   | 'can_acknowledge_alerts'
-  | 'can_manage_comms';
+  | 'can_manage_comms'
+  | 'can_manage_store'
+  | 'can_see_store_revenue';
 
 const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_access_staff_area: { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
@@ -75,6 +77,8 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_manage_parq:        { owner: true, admin: true,  coach: false, staff: false, member: false },
   can_acknowledge_alerts: { owner: true, admin: true,  coach: true,  staff: false, member: false },
   can_manage_comms:       { owner: true, admin: true,  coach: false, staff: false, member: false },
+  can_manage_store:       { owner: true, admin: true,  coach: false, staff: false, member: false },
+  can_see_store_revenue:  { owner: true, admin: true,  coach: false, staff: false, member: false },
 };
 
 export const RoleOrder: GymRole[] = ['owner', 'admin', 'coach', 'staff', 'member'];

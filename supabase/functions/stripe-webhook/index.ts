@@ -63,6 +63,169 @@ async function stripeGet(
   return (await res.json()) as Record<string, unknown>;
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    c === '&' ? '&amp;'
+      : c === '<' ? '&lt;'
+        : c === '>' ? '&gt;'
+          : c === '"' ? '&quot;' : '&#39;',
+  );
+}
+
+function money(cents: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    }).format(cents / 100);
+  } catch {
+    return `${(cents / 100).toFixed(2)} ${currency.toUpperCase()}`;
+  }
+}
+
+// Email the buyer their receipt the moment the order settles — line items,
+// totals, the shipping address Stripe captured, and a 7-day signed link
+// per digital good (they can always re-download in the app). Best-effort:
+// a missing key or a Resend hiccup never blocks settlement.
+// deno-lint-ignore no-explicit-any
+async function sendStoreReceipt(
+  service: any,
+  args: { orderId: string; gymId: string; profileId: string },
+  env: { resendKey?: string; resendFrom?: string },
+): Promise<void> {
+  if (!env.resendKey) return;
+
+  const { data: userRes } = await service.auth.admin.getUserById(args.profileId);
+  const email: string | undefined = userRes?.user?.email;
+  if (!email) return;
+
+  const [{ data: order }, { data: items }, { data: gym }, { data: settings }, { data: domain }] =
+    await Promise.all([
+      service
+        .from('store_orders')
+        .select('subtotal_cents, shipping_cents, total_cents, currency, has_physical, shipping_name, shipping_address')
+        .eq('id', args.orderId)
+        .single(),
+      service
+        .from('store_order_items')
+        .select('id, name_snapshot, kind_snapshot, quantity, line_total_cents')
+        .eq('order_id', args.orderId),
+      service.from('gyms').select('name').eq('id', args.gymId).single(),
+      service
+        .from('gym_comms_settings')
+        .select('from_name, reply_to')
+        .eq('gym_id', args.gymId)
+        .maybeSingle(),
+      service
+        .from('gym_sending_domains')
+        .select('domain, from_local, status')
+        .eq('gym_id', args.gymId)
+        .maybeSingle(),
+    ]);
+  if (!order) return;
+
+  const fromAddress =
+    domain?.status === 'verified' && domain.domain
+      ? `${domain.from_local}@${domain.domain}`
+      : env.resendFrom;
+  if (!fromAddress) return;
+  const gymName = gym?.name ?? 'your gym';
+  const fromName = settings?.from_name || gymName;
+  const cur = order.currency as string;
+
+  const itemRows = (items ?? []) as {
+    id: string;
+    name_snapshot: string;
+    kind_snapshot: string;
+    quantity: number;
+    line_total_cents: number;
+  }[];
+
+  const { data: deliveries } = await service
+    .from('store_digital_deliveries')
+    .select('name_snapshot, asset_path')
+    .in('order_item_id', itemRows.map((i) => i.id).length ? itemRows.map((i) => i.id) : ['']);
+
+  const links: { name: string; url: string }[] = [];
+  for (const d of (deliveries ?? []) as { name_snapshot: string; asset_path: string }[]) {
+    const { data: signed } = await service.storage
+      .from('store-digital-assets')
+      .createSignedUrl(d.asset_path, 7 * 24 * 3600);
+    if (signed?.signedUrl) links.push({ name: d.name_snapshot, url: signed.signedUrl });
+  }
+
+  const itemsHtml = itemRows
+    .map(
+      (i) =>
+        `<tr><td style="padding:6px 0;color:#334155;">${i.quantity}× ${escapeHtml(i.name_snapshot)}</td><td style="padding:6px 0;text-align:right;color:#334155;">${money(i.line_total_cents, cur)}</td></tr>`,
+    )
+    .join('');
+  const shippingRow =
+    order.shipping_cents > 0
+      ? `<tr><td style="padding:6px 0;color:#64748b;">Shipping</td><td style="padding:6px 0;text-align:right;color:#64748b;">${money(order.shipping_cents, cur)}</td></tr>`
+      : '';
+  const addr = (order.shipping_address ?? {}) as Record<string, string>;
+  const shippingBlock =
+    order.has_physical && (order.shipping_name || addr.line1)
+      ? `<p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#64748b;">Shipping to:<br>${escapeHtml(order.shipping_name ?? '')}<br>${[addr.line1, addr.line2, addr.city, addr.postal_code, addr.country].filter(Boolean).map(escapeHtml).join(', ')}</p>`
+      : '';
+  const downloadsBlock = links.length
+    ? `<div style="margin:20px 0 0;"><p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#0f172a;">Your downloads</p>${links
+        .map(
+          (l) =>
+            `<a href="${l.url}" style="display:inline-block;margin:4px 0;background:#3B6BA5;color:#fff;text-decoration:none;font-weight:600;padding:10px 16px;border-radius:8px;">Download ${escapeHtml(l.name)}</a><br>`,
+        )
+        .join('')}<p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">These links expire in 7 days — you can always re-download from the store in the app.</p></div>`
+    : '';
+
+  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
+    <div style="background:#fff;border-radius:16px;padding:28px;">
+      <h1 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Thanks for your order</h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#334155;">Here's your receipt from <strong>${escapeHtml(gymName)}</strong>.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">${itemsHtml}
+        <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;color:#64748b;">Subtotal</td><td style="padding:6px 0;border-top:1px solid #e2e8f0;text-align:right;color:#64748b;">${money(order.subtotal_cents, cur)}</td></tr>
+        ${shippingRow}
+        <tr><td style="padding:6px 0;font-weight:700;color:#0f172a;">Total</td><td style="padding:6px 0;text-align:right;font-weight:700;color:#0f172a;">${money(order.total_cents, cur)}</td></tr>
+      </table>
+      ${downloadsBlock}
+      ${shippingBlock}
+    </div>
+    <p style="text-align:center;font-size:12px;color:#94a3b8;margin:16px 0 0;">Sent by ${escapeHtml(gymName)} via Temple.</p>
+  </div></body></html>`;
+
+  const text =
+    `Thanks for your order from ${gymName}.\n\n` +
+    itemRows.map((i) => `${i.quantity}x ${i.name_snapshot} — ${money(i.line_total_cents, cur)}`).join('\n') +
+    `\n\nSubtotal: ${money(order.subtotal_cents, cur)}` +
+    (order.shipping_cents > 0 ? `\nShipping: ${money(order.shipping_cents, cur)}` : '') +
+    `\nTotal: ${money(order.total_cents, cur)}\n` +
+    (links.length
+      ? `\nDownloads (expire in 7 days, or re-download in the app):\n${links.map((l) => `${l.name}: ${l.url}`).join('\n')}\n`
+      : '');
+
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.resendKey}`,
+        'content-type': 'application/json',
+        'Idempotency-Key': `store-receipt:${args.orderId}`,
+      },
+      body: JSON.stringify({
+        from: `${fromName} <${fromAddress}>`,
+        to: [email],
+        subject: `Your order from ${gymName}`,
+        html,
+        text,
+        reply_to: settings?.reply_to || undefined,
+      }),
+    });
+  } catch (_e) {
+    // best-effort
+  }
+}
+
 const ok = () =>
   new Response(JSON.stringify({ received: true }), {
     status: 200,
@@ -76,6 +239,9 @@ Deno.serve(async (req: Request) => {
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
   const WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+  // Optional — store receipts simply don't send without them.
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+  const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL');
   if (!SUPABASE_URL || !SERVICE_KEY || !STRIPE_SECRET_KEY || !WEBHOOK_SECRET) {
     return new Response('Function is not configured', { status: 500 });
   }
@@ -130,6 +296,49 @@ Deno.serve(async (req: Request) => {
   try {
     if (type === 'checkout.session.completed') {
       const meta = obj.metadata ?? {};
+
+      // Store orders settle through their own path: the dedicated RPC
+      // marks paid, decrements stock and grants digital deliveries
+      // atomically, then we record the sale and email the receipt.
+      if (meta.kind === 'store_order') {
+        const orderId: string | undefined = meta.order_id;
+        if (!orderId) return ok();
+        const shipping =
+          obj.shipping_details ?? obj.collected_information?.shipping_details ?? null;
+        const shipName: string | null =
+          shipping?.name ?? obj.customer_details?.name ?? null;
+        const shipAddr = shipping?.address ?? null;
+        const { data: settled, error: settleErr } = await service.rpc(
+          '_mark_store_order_paid',
+          {
+            p_session_id: obj.id,
+            p_payment_intent:
+              typeof obj.payment_intent === 'string' ? obj.payment_intent : null,
+            p_amount_total: (obj.amount_total as number) ?? 0,
+            p_shipping_name: shipName,
+            p_shipping: shipAddr,
+          },
+        );
+        if (settleErr) throw settleErr;
+        const row = Array.isArray(settled) ? settled[0] : settled;
+        if (row?.newly_paid) {
+          await recordBilling({
+            gymId: row.gym_id,
+            memberId: row.profile_id,
+            planSubId: null,
+            kind: 'store_order',
+            amountCents: (obj.amount_total as number) ?? row.total_cents ?? 0,
+            currency: ((obj.currency as string) ?? row.currency ?? 'gbp').toUpperCase(),
+          });
+          await sendStoreReceipt(
+            service,
+            { orderId: row.order_id, gymId: row.gym_id, profileId: row.profile_id },
+            { resendKey: RESEND_API_KEY, resendFrom: RESEND_FROM },
+          );
+        }
+        return ok();
+      }
+
       const gymId: string | undefined = meta.gym_id;
       const planId: string | undefined = meta.plan_id;
       const profileId: string | undefined = meta.profile_id;

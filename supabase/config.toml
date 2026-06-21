@@ -66,6 +66,11 @@ verify_jwt = false
 [functions.stripe-checkout]
 verify_jwt = true
 
+# Store checkout — opens a Stripe Checkout session (direct charge) for a
+# basket of store items on the gym's connected account. Signed-in member.
+[functions.store-checkout]
+verify_jwt = true
+
 # Change or cancel a membership: member self-serve where the gym's policy
 # allows, or staff approving/rejecting a change request. Signed-in caller.
 [functions.stripe-modify-subscription]

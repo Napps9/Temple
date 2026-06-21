@@ -30,6 +30,15 @@ export type LeadStatus =
   | 'converted'
   | 'lost';
 
+export type StoreProductKind = 'physical' | 'digital';
+
+export type StoreOrderStatus =
+  | 'pending'
+  | 'paid'
+  | 'fulfilled'
+  | 'cancelled'
+  | 'refunded';
+
 export type Database = {
   public: {
     Tables: {
@@ -76,6 +85,8 @@ export type Database = {
           membership_upgrade_policy: 'self_serve' | 'request';
           membership_downgrade_policy: 'self_serve' | 'request';
           membership_cancel_policy: 'self_serve' | 'request';
+          store_enabled: boolean;
+          store_shipping_fee_cents: number;
         };
         Insert: {
           id?: string;
@@ -2484,6 +2495,167 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      store_products: {
+        Row: {
+          id: string;
+          gym_id: string;
+          name: string;
+          description: string | null;
+          kind: StoreProductKind;
+          price_cents: number;
+          image_url: string | null;
+          track_inventory: boolean;
+          stock_quantity: number | null;
+          digital_asset_path: string | null;
+          active: boolean;
+          archived_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          name: string;
+          description?: string | null;
+          kind: StoreProductKind;
+          price_cents: number;
+          image_url?: string | null;
+          track_inventory?: boolean;
+          stock_quantity?: number | null;
+          digital_asset_path?: string | null;
+          active?: boolean;
+          archived_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          name: string;
+          description: string | null;
+          kind: StoreProductKind;
+          price_cents: number;
+          image_url: string | null;
+          track_inventory: boolean;
+          stock_quantity: number | null;
+          digital_asset_path: string | null;
+          active: boolean;
+          archived_at: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      store_orders: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          status: StoreOrderStatus;
+          subtotal_cents: number;
+          shipping_cents: number;
+          total_cents: number;
+          currency: string;
+          has_physical: boolean;
+          shipping_name: string | null;
+          shipping_address: Json | null;
+          tracking_note: string | null;
+          stripe_checkout_session_id: string | null;
+          stripe_payment_intent_id: string | null;
+          paid_at: string | null;
+          fulfilled_at: string | null;
+          fulfilled_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          status?: StoreOrderStatus;
+          subtotal_cents?: number;
+          shipping_cents?: number;
+          total_cents?: number;
+          currency: string;
+          has_physical?: boolean;
+          shipping_name?: string | null;
+          shipping_address?: Json | null;
+          tracking_note?: string | null;
+          stripe_checkout_session_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          paid_at?: string | null;
+          fulfilled_at?: string | null;
+          fulfilled_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          status: StoreOrderStatus;
+          tracking_note: string | null;
+          stripe_checkout_session_id: string | null;
+          stripe_payment_intent_id: string | null;
+          paid_at: string | null;
+          fulfilled_at: string | null;
+          fulfilled_by: string | null;
+        }>;
+        Relationships: [];
+      };
+      store_order_items: {
+        Row: {
+          id: string;
+          order_id: string;
+          gym_id: string;
+          product_id: string | null;
+          name_snapshot: string;
+          kind_snapshot: StoreProductKind;
+          unit_price_cents: number;
+          quantity: number;
+          line_total_cents: number;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          gym_id: string;
+          product_id?: string | null;
+          name_snapshot: string;
+          kind_snapshot: StoreProductKind;
+          unit_price_cents: number;
+          quantity: number;
+          line_total_cents: number;
+        };
+        Update: Partial<{
+          product_id: string | null;
+          name_snapshot: string;
+          quantity: number;
+          line_total_cents: number;
+        }>;
+        Relationships: [];
+      };
+      store_digital_deliveries: {
+        Row: {
+          id: string;
+          order_item_id: string;
+          gym_id: string;
+          product_id: string | null;
+          profile_id: string;
+          name_snapshot: string;
+          asset_path: string;
+          created_at: string;
+          last_downloaded_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          order_item_id: string;
+          gym_id: string;
+          product_id?: string | null;
+          profile_id: string;
+          name_snapshot: string;
+          asset_path: string;
+          created_at?: string;
+          last_downloaded_at?: string | null;
+        };
+        Update: Partial<{
+          last_downloaded_at: string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Functions: {
       accept_invite: {
@@ -3139,6 +3311,65 @@ export type Database = {
           opened: number;
           clicked: number;
           unsubscribed: number;
+        }[];
+      };
+      list_store_products: {
+        Args: { p_gym_id: string };
+        Returns: {
+          id: string;
+          name: string;
+          description: string | null;
+          kind: StoreProductKind;
+          price_cents: number;
+          image_url: string | null;
+          track_inventory: boolean;
+          stock_quantity: number | null;
+          sold_out: boolean;
+        }[];
+      };
+      set_store_settings: {
+        Args: {
+          p_gym_id: string;
+          p_enabled: boolean;
+          p_shipping_fee_cents: number;
+        };
+        Returns: null;
+      };
+      staff_store_orders: {
+        Args: { p_gym_id: string };
+        Returns: {
+          id: string;
+          status: StoreOrderStatus;
+          subtotal_cents: number;
+          shipping_cents: number;
+          total_cents: number;
+          currency: string;
+          has_physical: boolean;
+          shipping_name: string | null;
+          shipping_address: Json | null;
+          tracking_note: string | null;
+          buyer_name: string | null;
+          item_count: number;
+          items_summary: string | null;
+          created_at: string;
+          paid_at: string | null;
+          fulfilled_at: string | null;
+        }[];
+      };
+      fulfil_store_order: {
+        Args: { p_order_id: string; p_note: string | null };
+        Returns: null;
+      };
+      store_revenue_summary: {
+        Args: {
+          p_gym_id: string;
+          p_period_start: string;
+          p_period_end: string;
+        };
+        Returns: {
+          currency: string;
+          gross_cents: number;
+          order_count: number;
         }[];
       };
     };

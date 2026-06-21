@@ -22,6 +22,7 @@ import {
   useSignOut,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { useGymStoreConfig } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
@@ -30,6 +31,7 @@ export function AccountScreen() {
   const role = useRole();
   const { data: membership } = useGymMembership();
   const { data: profile } = useMyProfile();
+  const storeConfig = useGymStoreConfig(membership?.gymId);
   const signOut = useSignOut();
   const queryClient = useQueryClient();
 
@@ -193,6 +195,27 @@ export function AccountScreen() {
         <GymShareCard />
 
         <LeaderboardPrivacyCard />
+
+        {membership && session && storeConfig.data?.store_enabled ? (
+          <View className="gap-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Store
+            </Text>
+            <Link href="/store" asChild>
+              <ChipButton
+                tone="neutral"
+                className="self-start"
+                label="Visit the store"
+                icon="bag-handle-outline"
+                iconSide="right"
+              />
+            </Link>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Buy merch, programmes and tickets from{' '}
+              {membership.gymName ?? 'your gym'}.
+            </Text>
+          </View>
+        ) : null}
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">

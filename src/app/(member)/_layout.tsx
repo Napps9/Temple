@@ -33,6 +33,8 @@ export default function MemberLayout() {
         <Tabs.Screen name="bookings" options={{ title: 'Bookings' }} />
         <Tabs.Screen name="track" options={{ title: 'Track' }} />
         <Tabs.Screen name="membership" options={{ title: 'Membership' }} />
+        <Tabs.Screen name="store" options={{ title: 'Store' }} />
+        <Tabs.Screen name="purchases" options={{ title: 'Purchases' }} />
         <Tabs.Screen name="inbox" options={{ title: 'Inbox' }} />
         <Tabs.Screen name="consent" options={{ title: 'Consent' }} />
         <Tabs.Screen name="parq" options={{ title: 'Health screening' }} />

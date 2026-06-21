@@ -95,6 +95,13 @@ const CAPABILITY_GROUPS: CapabilityGroup[] = [
       { value: 'can_manage_sops', label: 'Manage SOPs', description: 'Create and edit SOP documents.' },
     ],
   },
+  {
+    title: 'Store',
+    caps: [
+      { value: 'can_manage_store', label: 'Manage store', description: 'Add, price and remove products; fulfil orders.' },
+      { value: 'can_see_store_revenue', label: 'See store revenue', description: 'View store sales and revenue figures.' },
+    ],
+  },
 ];
 
 export default function TeamScreen() {

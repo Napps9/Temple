@@ -94,7 +94,7 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'members' | 'comms' | 'team' | 'plans' | 'settings';
+type Category = 'insights' | 'members' | 'comms' | 'store' | 'team' | 'plans' | 'settings';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -102,6 +102,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
   members: 'Members',
   comms: 'Comms',
+  store: 'Store',
   team: 'Team',
   plans: 'Plans',
   settings: 'Settings',
@@ -111,6 +112,7 @@ const CATEGORY_ICONS: Record<Category, IconName> = {
   insights: 'bar-chart-outline',
   members: 'people-outline',
   comms: 'mail-outline',
+  store: 'bag-handle-outline',
   team: 'briefcase-outline',
   plans: 'pricetags-outline',
   settings: 'settings-outline',
@@ -120,6 +122,7 @@ const CATEGORY_ORDER: Category[] = [
   'insights',
   'members',
   'comms',
+  'store',
   'team',
   'plans',
   'settings',
@@ -148,6 +151,7 @@ export default function ManagementHome() {
   const canSetCoachPay = useCan('can_set_coach_pay');
   const canConfigureLeaderboards = useCan('can_configure_leaderboards');
   const canManageComms = useCan('can_manage_comms');
+  const canManageStore = useCan('can_manage_store');
   const canAssignPlan = useCan('can_assign_plan');
 
   const cards: Card[] = [
@@ -249,6 +253,13 @@ export default function ManagementHome() {
       description: 'Design, send and analyse email campaigns to your members.',
       href: '/management/communications',
       visible: !!canManageComms,
+    },
+    {
+      category: 'store',
+      title: 'Store',
+      description: 'Sell merch, programmes and tickets; manage stock and orders.',
+      href: '/management/store',
+      visible: !!canManageStore,
     },
     {
       category: 'members',
