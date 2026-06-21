@@ -35,7 +35,7 @@ begin
 
   insert into public.store_subscriptions
     (gym_id, profile_id, product_id, name_snapshot, kind_snapshot,
-     unit_price_cents, currency, interval, digital_asset_path, status,
+     unit_price_cents, currency, "interval", digital_asset_path, status,
      stripe_subscription_id)
     values (v_gym, v_member, v_prod, 'Monthly programming', 'digital', 4000,
             'GBP', 'month', v_gym::text || '/digital/prog.pdf', 'active',

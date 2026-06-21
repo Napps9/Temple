@@ -244,7 +244,9 @@ returns table (
   buyer_name           text,
   unit_price_cents     integer,
   currency             text,
-  interval             text,
+  -- interval is a reserved word; quote it in the OUT-column list. The
+  -- result key is still "interval" (the table column + s.interval are fine).
+  "interval"           text,
   status               text,
   cancel_at_period_end boolean,
   current_period_end   timestamptz,
