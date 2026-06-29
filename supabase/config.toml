@@ -74,6 +74,12 @@ verify_jwt = true
 [functions.send-invite]
 verify_jwt = true
 
+# Reads the gym's connected Stripe account to preview existing
+# subscriptions for import. Signed-in owner caller (re-checks
+# user_is_owner_of); read-only — no Stripe writes.
+[functions.stripe-import]
+verify_jwt = true
+
 # Stripe Connect (Standard) OAuth. -start mints the authorize URL for a
 # signed-in owner; -callback is hit by Stripe's browser redirect (no JWT)
 # and is guarded by the single-use state token instead.
