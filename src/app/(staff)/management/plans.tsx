@@ -450,6 +450,16 @@ export function PlansPanel() {
           </View>
         ) : null}
 
+        {canCreate ? (
+          <ChipButton
+            className="self-start"
+            label="Import members from Stripe"
+            icon="cloud-download-outline"
+            tone="primary"
+            onPress={() => router.push('/management/members/import-stripe' as never)}
+          />
+        ) : null}
+
         {activeRows.length === 0 && stripeConnected !== false ? (
           <EmptyState
             icon="pricetags-outline"

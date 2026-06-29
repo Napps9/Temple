@@ -1153,6 +1153,7 @@ export type Database = {
           period_length: string | null;
           monthly_price_cents: number | null;
           notice_period_days: number | null;
+          stripe_price_id: string | null;
           archived_at: string | null;
           created_at: string;
         };
@@ -1165,6 +1166,7 @@ export type Database = {
           period_length?: string | null;
           monthly_price_cents?: number | null;
           notice_period_days?: number | null;
+          stripe_price_id?: string | null;
           archived_at?: string | null;
           created_at?: string;
         };
@@ -1177,6 +1179,7 @@ export type Database = {
           period_length: string | null;
           monthly_price_cents: number | null;
           notice_period_days: number | null;
+          stripe_price_id: string | null;
           archived_at: string | null;
           created_at: string;
         }>;

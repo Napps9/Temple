@@ -88,6 +88,8 @@ Deno.serve(async (req: Request) => {
   const members: {
     email: string;
     name: string | null;
+    subscription_id: string;
+    customer_id: string | null;
     price_id: string;
     label: string;
     amount_cents: number;
@@ -136,6 +138,13 @@ Deno.serve(async (req: Request) => {
       members.push({
         email,
         name: cust && typeof cust === 'object' ? (cust.name ?? null) : null,
+        subscription_id: String(sub.id),
+        customer_id:
+          cust && typeof cust === 'object'
+            ? String(cust.id)
+            : typeof cust === 'string'
+              ? cust
+              : null,
         price_id: String(price.id),
         label: priceLabel(price),
         amount_cents: typeof price.unit_amount === 'number' ? price.unit_amount : 0,

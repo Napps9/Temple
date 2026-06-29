@@ -561,6 +561,40 @@ double-counted. Lands in `/track` so PR pages and sparklines light
 up for the member as soon as they sign in. Endurance / time-based
 schemes (run times, row distances) are deliberately deferred.
 
+### Stripe member import (adopt live subscriptions)
+
+[owner] Reachable from Manage → Plans → "Import members from Stripe"
+(`/management/members/import-stripe`), shown once the gym has connected
+Stripe. **Plan creation itself is now gated on a connected Stripe
+account** — the Plans screen prompts you to connect first (members are
+charged on the gym's own connected account), keeping existing plans
+editable.
+
+The importer brings a gym's **existing Stripe subscribers** across and
+**adopts their live subscription** — same billing, no re-charge, and the
+member (and owner) manage it in-app afterwards. The `stripe-import` edge
+function (owner-gated, read-only) pages the connected account's
+subscriptions (active / trialing / past_due, email-keyed) and returns
+distinct prices + a row per subscriber. The review screen reuses the
+member-import AI brain (`runInference`) to suggest a Temple plan name /
+kind per Stripe price; the owner edits them and **ticks which prices and
+which members** to import. Commit creates one `membership_plan` per
+included price (caching `stripe_price_id`) and stages the chosen members
+through `import_pending_members`, carrying the live
+`imported_stripe_subscription_id` / `imported_stripe_customer_id` and the
+renewal date.
+
+When the member signs up with that email, the extended
+`apply_pending_member_data` trigger (0089) creates their working
+`plan_subscription` **carrying the live Stripe ids** (not null) and seeds
+`gym_stripe_customers`. Because `stripe-webhook` matches membership subs
+by the `stripe_subscription_id` column, renewals (`invoice.paid`) and
+cancels (`customer.subscription.deleted`) then sync automatically, and the
+in-app cancel / change-plan paths act on the real subscription. CSV
+imports (no Stripe ids) are unchanged — they still create a null-Stripe
+subscription. Customers with no email, and one-off (non-subscription)
+buyers, are skipped (the no-email count is surfaced in the preview).
+
 ### Campaign topic picker
 
 [`can_manage_comms`] Reachable from the campaign editor
