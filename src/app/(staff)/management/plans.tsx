@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -112,6 +112,25 @@ export function PlansPanel() {
   const canHardDelete = useCan('can_hard_delete') ?? false;
   const canExport = useCan('can_export_members') ?? false;
   const exportMemberships = useExportMembershipsCsv();
+
+  // Plans can only be sold once the gym has connected Stripe — members
+  // are charged on the gym's own connected account. Null while loading;
+  // we only gate creation once we know the answer is "not connected".
+  const stripeAccount = useQuery({
+    queryKey: ['gym-stripe-account', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase
+        .from('gym_stripe_accounts')
+        .select('stripe_account_id')
+        .eq('gym_id', membership!.gymId)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data?.stripe_account_id;
+    },
+  });
+  const stripeConnected = stripeAccount.data ?? null;
+  const canCreate = stripeConnected === true;
 
   const plans = useQuery({
     queryKey: ['membership-plans', membership?.gymId],
@@ -391,6 +410,28 @@ export function PlansPanel() {
 
   return (
     <View className="gap-4">
+        {stripeConnected === false ? (
+          <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-4 gap-3">
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="card-outline" size={18} color="#D97706" />
+              <Text className="flex-1 text-amber-800 dark:text-amber-200 font-semibold">
+                Connect Stripe to sell memberships
+              </Text>
+            </View>
+            <Text className="text-amber-700 dark:text-amber-300 text-sm">
+              Members are charged on your own Stripe account, so you need to
+              connect it before creating plans. You can still edit existing
+              plans below.
+            </Text>
+            <Button
+              variant="secondary"
+              icon="link-outline"
+              onPress={() => router.push('/management/billing' as never)}>
+              Connect Stripe
+            </Button>
+          </View>
+        ) : null}
+
         {canExport ? (
           <View className="gap-2">
             <ChipButton
@@ -409,7 +450,7 @@ export function PlansPanel() {
           </View>
         ) : null}
 
-        {activeRows.length === 0 ? (
+        {activeRows.length === 0 && stripeConnected !== false ? (
           <EmptyState
             icon="pricetags-outline"
             title="No plans yet"
@@ -607,7 +648,7 @@ export function PlansPanel() {
           })}
         </View>
 
-        {activeRows.length > 0 ? (
+        {activeRows.length > 0 && canCreate ? (
           <Button variant="secondary" icon="add" onPress={addRow}>
             Add plan
           </Button>
