@@ -283,7 +283,12 @@ The staff area shows up when `can_access_staff_area` is on.
   capacity, end-on or indefinite), per-type booking-window overrides
   (with the same min/hr/day/wk unit toggle as the gym defaults),
   archive / restore / hard-delete.  **Archiving cascades**: blocks new
-  bookings, new programming, future materialisation.
+  bookings, new programming, future materialisation. A class type can
+  hold **multiple schedules** — e.g. one row for weekdays at 06:00 and
+  a separate row for Saturday at 10:00 — each its own days/times/
+  duration/capacity; the editor groups every `class_recurrences` row
+  under its type and adds/removes them independently (materialisation
+  already expands each row, so no schema change was needed).
 - **Recurrence materialisation** — schedules turn into individual
   sessions on the calendar, extended to a horizon.
 - **Cover requests** [`can_request_cover` / `can_claim_cover`] — a

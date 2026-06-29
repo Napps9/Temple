@@ -35,14 +35,21 @@ import { useSavedFlag } from '@/lib/useSavedFlag';
 // SQL default in 0049.
 const HORIZON_WEEKS_FALLBACK = 12;
 
+// One recurring schedule row for a class type. A type can hold several
+// (e.g. Mon–Fri 06:00 as one, Sat 10:00 as another) — `id` is null until
+// the schedule has been saved.
+type ScheduleDraft = {
+  id: string | null;
+  form: RecurrenceForm;
+};
+
 type EditableType = {
   id: string | null;
   name: string;
   color: string;
   archivedAt: string | null;
   scheduleOpen: boolean;
-  recurrenceId: string | null;
-  recurrence: RecurrenceForm;
+  schedules: ScheduleDraft[];
   rulesOpen: boolean;
   // String-backed so an empty input maps cleanly to NULL = inherit
   // the gym default. The save path parses to integer.
@@ -125,32 +132,27 @@ export function ClassTypesPanel() {
 
   useEffect(() => {
     if (!types.data || !recurrences.data) return;
-    const recByTypeId = new Map<string, RecurrenceRow>();
+    // Group every recurrence under its class type — a type can have more
+    // than one (different days at different times).
+    const recsByTypeId = new Map<string, RecurrenceRow[]>();
     for (const r of recurrences.data) {
-      if (!recByTypeId.has(r.class_type_id)) recByTypeId.set(r.class_type_id, r);
+      const arr = recsByTypeId.get(r.class_type_id) ?? [];
+      arr.push(r);
+      recsByTypeId.set(r.class_type_id, arr);
     }
     setRows(
       types.data.map((t) => {
-        const rec = recByTypeId.get(t.id);
+        const recs = recsByTypeId.get(t.id) ?? [];
         return {
           id: t.id,
           name: t.name,
           color: t.color,
           archivedAt: t.archived_at,
           scheduleOpen: false,
-          recurrenceId: rec?.id ?? null,
-          recurrence: rec
-            ? recurrenceFromServer(rec)
-            : {
-                ...EMPTY_RECURRENCE,
-                durationMinutes: String(
-                  gymDefaults?.default_class_minutes ?? 60,
-                ),
-                capacity: String(
-                  gymDefaults?.default_class_capacity ?? 12,
-                ),
-                indefinite: true,
-              },
+          schedules: recs.map((rec) => ({
+            id: rec.id,
+            form: recurrenceFromServer(rec),
+          })),
           rulesOpen: false,
           bookingWindowHoursAhead:
             t.booking_window_hours_ahead === null
@@ -377,108 +379,123 @@ export function ClassTypesPanel() {
         if (error) throw error;
       }
 
+      async function deleteRecurrence(id: string) {
+        const { error: delErr } = await supabase
+          .from('class_recurrences')
+          .delete()
+          .eq('id', id);
+        if (delErr) throw delErr;
+      }
+
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         if (r.archivedAt) continue;
         const classTypeId = r.id ?? newIdByLocalIdx.get(i);
         if (!classTypeId) continue;
 
-        const wantsSchedule = r.recurrence.days.length > 0;
+        // Schedules removed in the editor are recurrences that exist on
+        // the server but are no longer in the draft list — delete them.
+        const keptIds = new Set(
+          r.schedules.map((s) => s.id).filter((id): id is string => !!id),
+        );
+        const serverRecIds = (recurrences.data ?? [])
+          .filter((rr) => rr.class_type_id === classTypeId)
+          .map((rr) => rr.id);
+        for (const sid of serverRecIds) {
+          if (!keptIds.has(sid)) await deleteRecurrence(sid);
+        }
 
-        if (!wantsSchedule) {
-          if (r.recurrenceId) {
-            const { error: delErr } = await supabase
-              .from('class_recurrences')
+        for (const sched of r.schedules) {
+          const form = sched.form;
+          if (form.days.length === 0) {
+            // An emptied existing schedule is a removal; a blank new one
+            // is simply skipped.
+            if (sched.id) await deleteRecurrence(sched.id);
+            continue;
+          }
+
+          const errMsg = validateRecurrence(form);
+          if (errMsg) throw new Error(`${r.name}: ${errMsg}`);
+
+          const validTimes = form.times.map((t) => t.trim()).filter(Boolean);
+          const dur = parseInt(form.durationMinutes, 10);
+          const cap = parseInt(form.capacity, 10);
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayStr = fmtDateLocal(today);
+
+          let endsOn: string | null = null;
+          if (!form.indefinite) {
+            const w = parseInt(form.weeks, 10);
+            const endDate = new Date(today);
+            endDate.setDate(endDate.getDate() + w * 7 - 1);
+            endsOn = fmtDateLocal(endDate);
+          }
+
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+          let recId: string;
+          if (sched.id) {
+            const nowIso = new Date().toISOString();
+            const { error: sessDelErr } = await supabase
+              .from('class_sessions')
               .delete()
-              .eq('id', r.recurrenceId);
-            if (delErr) throw delErr;
+              .eq('recurrence_id', sched.id)
+              .gte('starts_at', nowIso);
+            if (sessDelErr) throw sessDelErr;
+
+            const { error: updErr } = await supabase
+              .from('class_recurrences')
+              .update({
+                days_of_week: form.days,
+                times: validTimes,
+                duration_minutes: dur,
+                capacity: cap,
+                ends_on: endsOn,
+                tz,
+                materialized_until: todayStr,
+              })
+              .eq('id', sched.id);
+            if (updErr) throw updErr;
+            recId = sched.id;
+          } else {
+            const { data, error: insErr } = await supabase
+              .from('class_recurrences')
+              .insert({
+                gym_id: membership.gymId,
+                class_type_id: classTypeId,
+                days_of_week: form.days,
+                times: validTimes,
+                duration_minutes: dur,
+                capacity: cap,
+                notes: null,
+                starts_on: todayStr,
+                ends_on: endsOn,
+                tz,
+                created_by: userId,
+              })
+              .select('id')
+              .single();
+            if (insErr || !data) {
+              throw insErr ?? new Error('Could not save recurrence');
+            }
+            recId = data.id;
           }
-          continue;
+
+          const horizon = new Date();
+          const horizonWeeks =
+            gymDefaults?.materialisation_horizon_weeks ?? HORIZON_WEEKS_FALLBACK;
+          horizon.setDate(horizon.getDate() + horizonWeeks * 7);
+          const targetEnd =
+            endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
+
+          const { error: extErr } = await supabase.rpc('extend_recurrence', {
+            rec_id: recId,
+            until_date: targetEnd,
+          });
+          if (extErr) throw extErr;
         }
-
-        const errMsg = validateRecurrence(r.recurrence);
-        if (errMsg) throw new Error(`${r.name}: ${errMsg}`);
-
-        const validTimes = r.recurrence.times
-          .map((t) => t.trim())
-          .filter(Boolean);
-        const dur = parseInt(r.recurrence.durationMinutes, 10);
-        const cap = parseInt(r.recurrence.capacity, 10);
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = fmtDateLocal(today);
-
-        let endsOn: string | null = null;
-        if (!r.recurrence.indefinite) {
-          const w = parseInt(r.recurrence.weeks, 10);
-          const endDate = new Date(today);
-          endDate.setDate(endDate.getDate() + w * 7 - 1);
-          endsOn = fmtDateLocal(endDate);
-        }
-
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-
-        let recId: string;
-        if (r.recurrenceId) {
-          const nowIso = new Date().toISOString();
-          const { error: sessDelErr } = await supabase
-            .from('class_sessions')
-            .delete()
-            .eq('recurrence_id', r.recurrenceId)
-            .gte('starts_at', nowIso);
-          if (sessDelErr) throw sessDelErr;
-
-          const { error: updErr } = await supabase
-            .from('class_recurrences')
-            .update({
-              days_of_week: r.recurrence.days,
-              times: validTimes,
-              duration_minutes: dur,
-              capacity: cap,
-              ends_on: endsOn,
-              tz,
-              materialized_until: todayStr,
-            })
-            .eq('id', r.recurrenceId);
-          if (updErr) throw updErr;
-          recId = r.recurrenceId;
-        } else {
-          const { data, error: insErr } = await supabase
-            .from('class_recurrences')
-            .insert({
-              gym_id: membership.gymId,
-              class_type_id: classTypeId,
-              days_of_week: r.recurrence.days,
-              times: validTimes,
-              duration_minutes: dur,
-              capacity: cap,
-              notes: null,
-              starts_on: todayStr,
-              ends_on: endsOn,
-              tz,
-              created_by: userId,
-            })
-            .select('id')
-            .single();
-          if (insErr || !data) {
-            throw insErr ?? new Error('Could not save recurrence');
-          }
-          recId = data.id;
-        }
-
-        const horizon = new Date();
-        const horizonWeeks =
-          gymDefaults?.materialisation_horizon_weeks ?? HORIZON_WEEKS_FALLBACK;
-        horizon.setDate(horizon.getDate() + horizonWeeks * 7);
-        const targetEnd =
-          endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
-
-        const { error: extErr } = await supabase.rpc('extend_recurrence', {
-          rec_id: recId,
-          until_date: targetEnd,
-        });
-        if (extErr) throw extErr;
       }
     },
     onSuccess: () => {
@@ -493,6 +510,15 @@ export function ClassTypesPanel() {
     onError: (e) => setError(errorMessage(e, 'Save failed')),
   });
 
+  function makeDefaultForm(): RecurrenceForm {
+    return {
+      ...EMPTY_RECURRENCE,
+      durationMinutes: String(gymDefaults?.default_class_minutes ?? 60),
+      capacity: String(gymDefaults?.default_class_capacity ?? 12),
+      indefinite: true,
+    };
+  }
+
   function addRow() {
     const usedColors = new Set(rows.map((r) => r.color.toUpperCase()));
     const next =
@@ -505,13 +531,7 @@ export function ClassTypesPanel() {
         color: next.hex,
         archivedAt: null,
         scheduleOpen: true,
-        recurrenceId: null,
-        recurrence: {
-          ...EMPTY_RECURRENCE,
-          durationMinutes: String(gymDefaults?.default_class_minutes ?? 60),
-          capacity: String(gymDefaults?.default_class_capacity ?? 12),
-          indefinite: true,
-        },
+        schedules: [{ id: null, form: makeDefaultForm() }],
         rulesOpen: false,
         bookingWindowHoursAhead: '',
         bookingCutoffMinutesBefore: '',
@@ -525,6 +545,60 @@ export function ClassTypesPanel() {
 
   function updateRow(idx: number, patch: Partial<EditableType>) {
     setRows((curr) => curr.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  }
+
+  // Open the schedule editor for a type, seeding a first blank schedule
+  // if it has none yet so there's something to fill in.
+  function openSchedule(idx: number) {
+    setRows((curr) =>
+      curr.map((r, i) =>
+        i === idx
+          ? {
+              ...r,
+              scheduleOpen: !r.scheduleOpen,
+              schedules:
+                !r.scheduleOpen && r.schedules.length === 0
+                  ? [{ id: null, form: makeDefaultForm() }]
+                  : r.schedules,
+            }
+          : r,
+      ),
+    );
+  }
+
+  function updateSchedule(idx: number, sIdx: number, form: RecurrenceForm) {
+    setRows((curr) =>
+      curr.map((r, i) =>
+        i === idx
+          ? {
+              ...r,
+              schedules: r.schedules.map((s, j) =>
+                j === sIdx ? { ...s, form } : s,
+              ),
+            }
+          : r,
+      ),
+    );
+  }
+
+  function addSchedule(idx: number) {
+    setRows((curr) =>
+      curr.map((r, i) =>
+        i === idx
+          ? { ...r, schedules: [...r.schedules, { id: null, form: makeDefaultForm() }] }
+          : r,
+      ),
+    );
+  }
+
+  function removeSchedule(idx: number, sIdx: number) {
+    setRows((curr) =>
+      curr.map((r, i) =>
+        i === idx
+          ? { ...r, schedules: r.schedules.filter((_, j) => j !== sIdx) }
+          : r,
+      ),
+    );
   }
 
   const activeRows = useMemo(
@@ -555,7 +629,10 @@ export function ClassTypesPanel() {
 
         <View className="gap-2">
           {activeRows.map(({ row: r, idx }) => {
-            const hasSchedule = r.recurrence.days.length > 0;
+            const activeSchedules = r.schedules.filter(
+              (s) => s.form.days.length > 0,
+            );
+            const hasSchedule = activeSchedules.length > 0;
             const isSaved = r.id !== null;
             const deletable = isSaved && canHardDelete && !hasDeps(r.id);
             return (
@@ -605,9 +682,7 @@ export function ClassTypesPanel() {
                 ) : null}
 
                 <Pressable
-                  onPress={() =>
-                    updateRow(idx, { scheduleOpen: !r.scheduleOpen })
-                  }
+                  onPress={() => openSchedule(idx)}
                   className="flex-row items-center justify-between gap-3 px-1 py-1 active:opacity-70">
                   <Text
                     className={`flex-1 text-sm ${
@@ -615,9 +690,11 @@ export function ClassTypesPanel() {
                         ? 'text-gray-700 dark:text-gray-200'
                         : 'text-gray-400 dark:text-gray-500'
                     }`}
-                    numberOfLines={2}>
+                    numberOfLines={4}>
                     {hasSchedule
-                      ? summariseRecurrence(r.recurrence)
+                      ? activeSchedules
+                          .map((s) => summariseRecurrence(s.form))
+                          .join('\n')
                       : 'No recurring schedule yet.'}
                   </Text>
                   <ChipButton
@@ -629,25 +706,42 @@ export function ClassTypesPanel() {
                 </Pressable>
 
                 {r.scheduleOpen ? (
-                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-3">
-                    <RecurrenceEditor
-                      value={r.recurrence}
-                      onChange={(next) => updateRow(idx, { recurrence: next })}
-                    />
-                    {hasSchedule ? (
-                      <Pressable
-                        onPress={() =>
-                          updateRow(idx, {
-                            recurrence: { ...r.recurrence, days: [] },
-                          })
-                        }
-                        hitSlop={4}
-                        className="self-start">
-                        <Text className="text-red-500 dark:text-red-400 text-sm">
-                          Remove schedule
-                        </Text>
-                      </Pressable>
-                    ) : null}
+                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-4">
+                    {r.schedules.map((sched, sIdx) => (
+                      <View
+                        key={sIdx}
+                        className={
+                          sIdx > 0
+                            ? 'gap-3 pt-4 border-t border-gray-200 dark:border-gray-700'
+                            : 'gap-3'
+                        }>
+                        {r.schedules.length > 1 ? (
+                          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                            Schedule {sIdx + 1}
+                          </Text>
+                        ) : null}
+                        <RecurrenceEditor
+                          value={sched.form}
+                          onChange={(next) => updateSchedule(idx, sIdx, next)}
+                        />
+                        <Pressable
+                          onPress={() => removeSchedule(idx, sIdx)}
+                          hitSlop={4}
+                          className="self-start">
+                          <Text className="text-red-500 dark:text-red-400 text-sm">
+                            Remove schedule
+                          </Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                    <Pressable
+                      onPress={() => addSchedule(idx)}
+                      className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                      <Ionicons name="add" size={14} color="#6B7280" />
+                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                        Add another schedule
+                      </Text>
+                    </Pressable>
                   </View>
                 ) : null}
 
@@ -912,8 +1006,9 @@ export default function ClassTypesScreen() {
             Class types
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Name and colour the kinds of class you run, and set up a recurring
-            schedule so they appear on the calendar automatically.
+            Name and colour the kinds of class you run, and set up one or
+            more recurring schedules — e.g. weekdays at 6am plus a separate
+            Saturday 10am — so they appear on the calendar automatically.
           </Text>
         </View>
         <ClassTypesPanel />
