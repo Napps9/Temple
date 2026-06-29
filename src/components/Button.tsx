@@ -78,6 +78,7 @@ export const Button = forwardRef<View, Props>(function Button(
         onPress();
       }}
       disabled={isDisabled}
+      accessibilityRole="button"
       className={`rounded-lg px-5 py-3 items-center justify-center ${containerStyles[variant]} ${
         isDisabled ? 'opacity-50' : ''
       }`}>

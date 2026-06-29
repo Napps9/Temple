@@ -57,6 +57,7 @@ export function Input({
           autoCapitalize="none"
           autoCorrect={false}
           secureTextEntry={effectiveSecure}
+          accessibilityLabel={label}
           {...props}
         />
         {isPassword ? (

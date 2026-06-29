@@ -43,6 +43,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/react": "~19.2.2",
     "husky": "^9.1.7",
     "typescript": "~6.0.3",
@@ -58,6 +59,10 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:smoke": "playwright test smoke.spec.ts",
+    "e2e:journey": "E2E_JOURNEY=1 playwright test journey",
+    "e2e:typecheck": "tsc -p e2e/tsconfig.json",
     "prepare": "husky"
   }
 }
