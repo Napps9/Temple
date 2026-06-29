@@ -1,0 +1,44 @@
+# Email branding
+
+Every Temple-sent email wears the company brand: the three-card mark
+echo, the TEMPLE / TECHNOLOGY wordmark, the steel-blue (`#3B6BA5`)
+button, on a cream (`#F4F2ED`) background. Palette + assets:
+`docs/brand-assets.md`.
+
+## Transactional emails (code-controlled — auto-deploy)
+
+Sent from edge functions via Resend. They share one layout helper:
+
+- `supabase/functions/_shared/email-layout.ts` — `templeEmailHtml({ title,
+  bodyHtml, button?, footerNote?, preheader? })` + `escapeHtml`. The mark,
+  wordmark, card and footer live here; callers pass only their content.
+- **Staff invite** — `send-invite` (`inviteHtml`).
+- **Store receipt** — `stripe-webhook` (`sendStoreReceipt`); keeps the gym
+  name in the body + footer ("Sent by {gym} via Temple").
+
+These deploy with the normal CI edge-function deploy — nothing extra.
+
+> Campaign emails (the Communications Suite) stay **gym-branded** by
+> design — they're the gym's own newsletters, authored block-by-block in
+> `src/lib/email/render.ts`. They are deliberately not Temple-branded.
+
+## Supabase auth emails (config — needs a one-time hosted apply)
+
+The signup-confirm / password-reset / email-change / magic-link emails are
+sent by Supabase Auth, not our code. Branded HTML lives in
+`supabase/templates/*.html` and is wired in `supabase/config.toml` under
+`[auth.email.template.*]`.
+
+**Important:** the CI pipeline deploys migrations + edge functions, but it
+does **not** push auth config. So these templates apply:
+
+- **Locally** — automatically when `supabase start` reads `config.toml`.
+- **On the hosted project** — via a one-time
+  `supabase config push` (after `supabase link`), **or** by pasting each
+  `supabase/templates/*.html` into Dashboard → Authentication → Email
+  Templates and setting the matching subject. Re-do this only when a
+  template changes.
+
+Template variables are Supabase's own (`{{ .ConfirmationURL }}` etc.); the
+HTML otherwise mirrors the transactional layout so all Temple email looks
+consistent.

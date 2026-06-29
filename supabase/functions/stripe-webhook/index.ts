@@ -14,6 +14,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { templeEmailHtml } from '../_shared/email-layout.ts';
+
 // Verify the Stripe-Signature header (t=…,v1=…) with HMAC-SHA256 over
 // `${t}.${rawBody}`, within a 5-minute tolerance.
 async function verifySignature(
@@ -178,21 +180,19 @@ async function sendStoreReceipt(
         .join('')}<p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">These links expire in 7 days — you can always re-download from the store in the app.</p></div>`
     : '';
 
-  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
-    <div style="background:#fff;border-radius:16px;padding:28px;">
-      <h1 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Thanks for your order</h1>
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#334155;">Here's your receipt from <strong>${escapeHtml(gymName)}</strong>.</p>
+  const html = templeEmailHtml({
+    title: 'Thanks for your order',
+    preheader: `Your receipt from ${gymName}`,
+    bodyHtml: `<p style="margin:0 0 16px;">Here's your receipt from <strong>${escapeHtml(gymName)}</strong>.</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">${itemsHtml}
         <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;color:#64748b;">Subtotal</td><td style="padding:6px 0;border-top:1px solid #e2e8f0;text-align:right;color:#64748b;">${money(order.subtotal_cents, cur)}</td></tr>
         ${shippingRow}
-        <tr><td style="padding:6px 0;font-weight:700;color:#0f172a;">Total</td><td style="padding:6px 0;text-align:right;font-weight:700;color:#0f172a;">${money(order.total_cents, cur)}</td></tr>
+        <tr><td style="padding:6px 0;font-weight:700;color:#111111;">Total</td><td style="padding:6px 0;text-align:right;font-weight:700;color:#111111;">${money(order.total_cents, cur)}</td></tr>
       </table>
       ${downloadsBlock}
-      ${shippingBlock}
-    </div>
-    <p style="text-align:center;font-size:12px;color:#94a3b8;margin:16px 0 0;">Sent by ${escapeHtml(gymName)} via Temple.</p>
-  </div></body></html>`;
+      ${shippingBlock}`,
+    footerNote: `Sent by ${gymName} via Temple.`,
+  });
 
   const text =
     `Thanks for your order from ${gymName}.\n\n` +

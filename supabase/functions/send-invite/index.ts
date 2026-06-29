@@ -11,6 +11,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -25,41 +27,27 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    c === '&'
-      ? '&amp;'
-      : c === '<'
-        ? '&lt;'
-        : c === '>'
-          ? '&gt;'
-          : c === '"'
-            ? '&quot;'
-            : '&#39;',
-  );
-}
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Takes raw (unescaped) gymName/role — templeEmailHtml escapes the title
+// and preheader, and the body escapes its own interpolations.
 function inviteHtml(gymName: string, role: string, link: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
-    <div style="background:#ffffff;border-radius:16px;padding:28px;">
-      <h1 style="margin:0 0 8px;font-size:20px;color:#0f172a;">You're invited to ${gymName}</h1>
-      <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#334155;">
-        You've been invited to join <strong>${gymName}</strong> on Temple as a ${role}.
+  const g = escapeHtml(gymName);
+  const r = escapeHtml(role);
+  return templeEmailHtml({
+    title: `You're invited to ${gymName}`,
+    preheader: `Join ${gymName} on Temple as a ${role}.`,
+    bodyHtml: `<p style="margin:0 0 18px;">
+        You've been invited to join <strong>${g}</strong> on Temple as a ${r}.
         Tap below to set up your account — it only takes a minute.
       </p>
-      <a href="${link}" style="display:inline-block;background:#3B6BA5;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">Accept invite</a>
-      <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#64748b;">
+      <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#64748b;">
         Or paste this link into your browser:<br>
         <a href="${link}" style="color:#3B6BA5;word-break:break-all;">${link}</a>
-      </p>
-    </div>
-    <p style="text-align:center;font-size:12px;color:#94a3b8;margin:16px 0 0;">
-      If you weren't expecting this invite, you can safely ignore this email.
-    </p>
-  </div></body></html>`;
+      </p>`,
+    button: { label: 'Accept invite', url: link },
+    footerNote: "If you weren't expecting this invite, you can safely ignore this email.",
+  });
 }
 
 Deno.serve(async (req: Request) => {
@@ -141,7 +129,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const subject = `You're invited to join ${gymName} on Temple`;
-  const html = inviteHtml(escapeHtml(gymName), escapeHtml(role), link);
+  const html = inviteHtml(gymName, role, link);
   const text =
     `You've been invited to join ${gymName} on Temple as a ${role}.\n\n` +
     `Accept your invite: ${link}\n\n` +

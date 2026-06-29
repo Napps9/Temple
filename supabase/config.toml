@@ -32,6 +32,28 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
 
+# Temple-branded auth email templates (matching the transactional layout
+# in supabase/functions/_shared/email-layout.ts). NOTE: the hosted
+# project does NOT pick these up from the migration deploy — they apply
+# locally via `supabase start`, and on hosted via a one-time
+# `supabase config push` (or pasting the HTML into Dashboard -> Auth ->
+# Email Templates). See docs/email-branding.md.
+[auth.email.template.confirmation]
+subject = "Confirm your email — Temple"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Temple password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email — Temple"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.magic_link]
+subject = "Your Temple sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
 # Communications Suite delivery + tracking workers. send-campaign needs a
 # signed-in staff caller (it re-checks can_manage_comms); track is the
 # public open-pixel / click-redirect / unsubscribe endpoint, so JWT
