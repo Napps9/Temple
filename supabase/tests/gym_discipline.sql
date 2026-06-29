@@ -19,6 +19,12 @@ begin
   perform _test_mk_membership(v_gym, v_member, 'member');
 end $$;
 
+-- Resolve the profile ids up front, while the session is still the
+-- privileged setup role — auth.users is not readable once we switch to
+-- an 'authenticated' member below.
+select id from auth.users where email = 'owner@disc.test' \gset owner_
+select id from auth.users where email = 'member@disc.test' \gset member_
+
 -- 1. Defaults to crossfit.
 select is(
   (select discipline from public.gyms where slug = 'disc-gym'),
@@ -27,7 +33,7 @@ select is(
 );
 
 -- 2. A member cannot change it.
-do $$ begin perform _test_act_as((select id from auth.users where email = 'member@disc.test')); end $$;
+select _test_act_as(:'member_id'::uuid);
 select throws_ok(
   $$ select public.set_gym_discipline((select id from public.gyms where slug = 'disc-gym'), 'hyrox') $$,
   'Only an owner can change the gym discipline',
@@ -35,7 +41,7 @@ select throws_ok(
 );
 
 -- 3. The owner can switch to hyrox.
-do $$ begin perform _test_act_as((select id from auth.users where email = 'owner@disc.test')); end $$;
+select _test_act_as(:'owner_id'::uuid);
 select lives_ok(
   $$ select public.set_gym_discipline((select id from public.gyms where slug = 'disc-gym'), 'hyrox') $$,
   'the owner can switch the gym to hyrox'
