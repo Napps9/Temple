@@ -95,7 +95,7 @@ const STEPS: Step[] = [
   {
     key: 'team',
     label: 'Invite your team',
-    description: 'Generate an invite code. Skip if you run solo.',
+    description: 'Email your coaches an invite. Skip if you run solo.',
     href: '/management/team',
     icon: 'people-outline',
     optional: true,

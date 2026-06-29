@@ -8,14 +8,13 @@ import { InviteSection } from '@/components/InviteSection';
 import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
-import { useGymMembership, useRole } from '@/lib/auth';
+import { useGymMembership } from '@/lib/auth';
 import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
 export default function MembersScreen() {
   const { data: membership } = useGymMembership();
-  const callerRole = useRole();
   const canManageTags = useCan('can_manage_tags');
   const canInvite = useCan('can_invite') ?? false;
   const canExport = useCan('can_export_members') ?? false;
@@ -73,13 +72,9 @@ export default function MembersScreen() {
         {canInvite ? (
           <InviteSection
             title="Invite members"
-            subtitle="Email an invite, hand over a code/QR, or use the walk-in QR at the front desk."
+            subtitle="Email a member an invite to join your gym."
             roles={['member']}
             initialRole="member"
-            showWalkIn
-            filterRole={(r) => r === 'member'}
-            canDelete={callerRole === 'owner'}
-            listTitle="Member invites"
           />
         ) : null}
 

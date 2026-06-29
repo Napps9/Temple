@@ -698,8 +698,8 @@ function TeamTab() {
         ) : null}
         {canManageStaff ? (
           <ManagementCard
-            title="Invite codes"
-            description="Generate a code to add a new owner, admin, coach or staff."
+            title="Invites"
+            description="Email an invite to add a new owner, admin, coach or staff."
             href="/management/team"
           />
         ) : null}
@@ -1740,12 +1740,9 @@ function MembersTab() {
       {canInvite ? (
         <InviteSection
           title="Invite a member"
-          subtitle="Email an invite, or generate a code & QR to hand over."
+          subtitle="Email a member an invite to join your gym."
           roles={['member']}
           initialRole="member"
-          filterRole={(r) => r === 'member'}
-          canDelete={membership?.role === 'owner'}
-          showList={false}
         />
       ) : null}
 

@@ -41,7 +41,7 @@ const CAPABILITY_GROUPS: CapabilityGroup[] = [
   {
     title: 'People & invites',
     caps: [
-      { value: 'can_invite', label: 'Generate invite codes', description: 'Create invite codes for new members and staff.' },
+      { value: 'can_invite', label: 'Send invites', description: 'Email invites to new members and staff.' },
       { value: 'can_manage_staff', label: 'Manage staff', description: 'Invite owners/coaches/staff and configure the team.' },
       { value: 'can_archive_members', label: 'Archive members', description: 'Remove members from the gym (soft-delete).' },
       { value: 'can_hard_delete', label: 'Hard delete', description: 'Permanently delete records with no dependents.' },
@@ -114,11 +114,9 @@ export default function TeamScreen() {
         <BackLink label="Manage" fallbackHref="/management" />
         <InviteSection
           title="Invites"
-          subtitle="Email a teammate an invite, or hand over a code & QR."
+          subtitle="Email a teammate an invite to join your team."
           roles={roleOptions}
           initialRole="coach"
-          filterRole={(r) => r !== 'member'}
-          canDelete={callerRole === 'owner'}
         />
         {callerRole === 'owner' ? <RolePermissionsLauncher /> : null}
       </ScrollView>

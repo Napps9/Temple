@@ -1,5 +1,5 @@
 import { Link, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -11,30 +11,26 @@ import { acceptInvite } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 
 export default function AcceptInviteScreen() {
+  // Invites arrive only as an emailed link carrying the single-use code,
+  // so the code is read from the URL — there's no manual code entry.
   const params = useLocalSearchParams<{ code?: string }>();
-  const [code, setCode] = useState(params.code ?? '');
+  const code = (params.code ?? '').trim();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (params.code) setCode(params.code);
-  }, [params.code]);
-
   async function onSubmit() {
     setError(null);
-    const trimmedCode = code.trim();
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    if (!trimmedCode) return setError('Enter your invite code');
     if (!trimmedName) return setError('Enter your full name');
     if (!trimmedEmail) return setError('Enter your email');
     if (!password) return setError('Enter a password');
     setLoading(true);
     try {
-      await acceptInvite(trimmedCode, trimmedEmail, password, trimmedName);
+      await acceptInvite(code, trimmedEmail, password, trimmedName);
     } catch (e) {
       setError(errorMessage(e, 'Invite could not be accepted'));
     } finally {
@@ -55,53 +51,62 @@ export default function AcceptInviteScreen() {
             <View className="items-center">
               <TempleLockup width={160} height={40} />
             </View>
-            <View className="gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
-                Join your gym
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400">
-                Enter the invite code your gym gave you.
-              </Text>
-            </View>
-            <View className="gap-4">
-              <Input
-                label="Invite code"
-                value={code}
-                onChangeText={setCode}
-                autoCapitalize="characters"
-                placeholder="ABCD1234"
-              />
-              <Input
-                label="Full name"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                textContentType="name"
-                autoComplete="name"
-              />
-              <Input
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-                autoComplete="email"
-              />
-              <Input
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                textContentType="newPassword"
-                autoComplete="new-password"
-              />
-            </View>
-            {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-            ) : null}
-            <Button onPress={onSubmit} loading={loading}>
-              Create account
-            </Button>
+
+            {code ? (
+              <>
+                <View className="gap-2">
+                  <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+                    Join your gym
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400">
+                    Create your account to accept the invite.
+                  </Text>
+                </View>
+                <View className="gap-4">
+                  <Input
+                    label="Full name"
+                    value={name}
+                    onChangeText={setName}
+                    autoCapitalize="words"
+                    textContentType="name"
+                    autoComplete="name"
+                  />
+                  <Input
+                    label="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    textContentType="emailAddress"
+                    autoComplete="email"
+                  />
+                  <Input
+                    label="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    textContentType="newPassword"
+                    autoComplete="new-password"
+                  />
+                </View>
+                {error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                ) : null}
+                <Button onPress={onSubmit} loading={loading}>
+                  Create account
+                </Button>
+              </>
+            ) : (
+              <View className="gap-2">
+                <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+                  Open your invite link
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400">
+                  Invites are sent by email — open the link your gym emailed
+                  you to join. If you can't find it, ask them to resend it.
+                </Text>
+              </View>
+            )}
+
             <View className="items-center">
               <Link href="/sign-in" asChild>
                 <Pressable hitSlop={8}>

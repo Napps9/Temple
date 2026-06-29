@@ -165,13 +165,8 @@ export default function JoinGymScreen() {
             {info.name}
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-center">
-            Public signup is disabled. Ask your gym to send you an invite code.
+            Public signup is disabled. Ask your gym to email you an invite.
           </Text>
-          <Link href="/accept-invite" asChild>
-            <Pressable hitSlop={8}>
-              <Text className="text-primary">Use an invite code</Text>
-            </Pressable>
-          </Link>
         </View>
       </Screen>
     );

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +19,6 @@ import {
   useSignOut,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
-import { useThemeColors } from '@/lib/theme';
 
 // Temple steel blue (the company mark's middle card) — this screen is
 // brandless chrome (the user has no gym yet), so it wears Temple's own
@@ -35,7 +34,6 @@ export default function WelcomeScreen() {
   const session = useSession();
   const membership = useGymMembership();
   const queryClient = useQueryClient();
-  const colors = useThemeColors();
   const [resumeError, setResumeError] = useState<string | null>(null);
 
   // Recovered from the signup metadata — when present, the user finished
@@ -81,7 +79,7 @@ export default function WelcomeScreen() {
     ? "Email confirmed. Pick up where you left off — one tap and your gym is ready."
     : pendingJoin
       ? "Email confirmed. One tap to join and you're in."
-      : 'Create your own gym or join one with an invite code — you can switch later.';
+      : 'Create your own gym, or open the invite your gym emailed you to join theirs.';
 
   return (
     <SafeAreaView
@@ -140,31 +138,13 @@ export default function WelcomeScreen() {
                     </Text>
                   </Pressable>
                 ) : null}
-                <Link href="/accept-invite" asChild>
-                  <Pressable className="flex-row items-center justify-center gap-2 rounded-lg p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-80">
-                    <Ionicons name="ticket-outline" size={18} color={colors.iconPrimary} />
-                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                      Use an invite code instead
-                    </Text>
-                  </Pressable>
-                </Link>
               </>
             ) : (
-              <>
-                <Button
-                  onPress={() => router.push('/create-gym' as never)}
-                  icon="business-outline">
-                  Start a new gym
-                </Button>
-                <Link href="/accept-invite" asChild>
-                  <Pressable className="flex-row items-center justify-center gap-2 rounded-lg p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-80">
-                    <Ionicons name="ticket-outline" size={18} color={colors.iconPrimary} />
-                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                      Use an invite code
-                    </Text>
-                  </Pressable>
-                </Link>
-              </>
+              <Button
+                onPress={() => router.push('/create-gym' as never)}
+                icon="business-outline">
+                Start a new gym
+              </Button>
             )}
 
             {resumeError ? (
