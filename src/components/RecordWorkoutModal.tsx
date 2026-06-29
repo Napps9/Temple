@@ -9,7 +9,12 @@ import { Input } from './Input';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { detectMovementsInText } from '@/lib/movement-detection';
-import { findMovement, MOVEMENT_GROUPS } from '@/lib/movements';
+import {
+  catalogGroups,
+  findMovement,
+  type Discipline,
+  type MovementGroup,
+} from '@/lib/movements';
 import {
   categoryLabel,
   categoryToTitle,
@@ -148,12 +153,14 @@ export function RecordWorkoutModal({
   initialDate,
   initialClassSessionId,
   initialTitle,
+  discipline = 'crossfit',
 }: {
   visible: boolean;
   onClose: () => void;
   initialDate?: string;
   initialClassSessionId?: string | null;
   initialTitle?: string | null;
+  discipline?: Discipline;
 }) {
   const colors = useThemeColors();
   const session = useSession();
@@ -675,6 +682,7 @@ export function RecordWorkoutModal({
 
       <MovementTagPickerModal
         visible={movementPickerForIdx !== null}
+        groups={catalogGroups(discipline)}
         onPick={(tag) => {
           if (movementPickerForIdx !== null) addTag(movementPickerForIdx, tag);
           setMovementPickerForIdx(null);
@@ -1436,10 +1444,12 @@ function SchemeRow({
 
 function MovementTagPickerModal({
   visible,
+  groups,
   onPick,
   onClose,
 }: {
   visible: boolean;
+  groups: MovementGroup[];
   onPick: (tag: MovementTagDraft) => void;
   onClose: () => void;
 }) {
@@ -1473,7 +1483,7 @@ function MovementTagPickerModal({
             in your per-movement Journal.
           </Text>
           <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
-            {MOVEMENT_GROUPS.map((g) => (
+            {groups.map((g) => (
               <View key={g.key}>
                 <Pressable
                   onPress={() =>

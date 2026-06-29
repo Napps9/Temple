@@ -89,6 +89,7 @@ export type Database = {
           membership_cancel_policy: 'self_serve' | 'request';
           store_enabled: boolean;
           store_shipping_fee_cents: number;
+          discipline: 'crossfit' | 'hyrox';
         };
         Insert: {
           id?: string;
@@ -127,6 +128,7 @@ export type Database = {
           cancel_cutoff_mode?: 'relative' | 'day_before';
           cancel_cutoff_time?: string | null;
           cancel_cutoff_days_before?: number;
+          discipline?: 'crossfit' | 'hyrox';
         };
         Update: Partial<{
           id: string;
@@ -165,6 +167,7 @@ export type Database = {
           cancel_cutoff_mode: 'relative' | 'day_before';
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
+          discipline: 'crossfit' | 'hyrox';
         }>;
         Relationships: [];
       };
@@ -3216,6 +3219,10 @@ export type Database = {
       };
       set_require_membership_to_book: {
         Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: undefined;
+      };
+      set_gym_discipline: {
+        Args: { p_gym_id: string; p_discipline: string };
         Returns: undefined;
       };
       set_member_booking_requirement: {

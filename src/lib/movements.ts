@@ -7,7 +7,14 @@
 // tracked_movement_results — never rename them without a data
 // migration. Display labels can change freely.
 
+import { HYROX_GROUPS } from './hyrox';
+
 export type Metric = 'weight' | 'time' | 'reps' | 'calories' | 'distance';
+
+// A gym's Track flavour. Drives which catalog the member sees; the
+// underlying tracked_* tables are shared (keys are namespaced so the
+// two catalogs never collide).
+export type Discipline = 'crossfit' | 'hyrox';
 
 export type Scheme = {
   key: string;
@@ -586,14 +593,28 @@ export const MOVEMENT_GROUPS: MovementGroup[] = [
   },
 ];
 
+// Every group across every discipline. The finders below resolve over
+// this combined registry so a shared surface (movement detail, the
+// recorder, leaderboards) works for a key from either catalog without
+// having to know the gym's discipline — keys are namespaced, so the
+// union is unambiguous.
+const ALL_GROUPS: MovementGroup[] = [...MOVEMENT_GROUPS, ...HYROX_GROUPS];
+
+// The catalog a given discipline shows in its own Track surfaces (home
+// grid, recorder picker). CrossFit gyms see the movement groups; Hyrox
+// gyms see the stations + race.
+export function catalogGroups(discipline: Discipline): MovementGroup[] {
+  return discipline === 'hyrox' ? HYROX_GROUPS : MOVEMENT_GROUPS;
+}
+
 export function findGroup(groupKey: string): MovementGroup | undefined {
-  return MOVEMENT_GROUPS.find((g) => g.key === groupKey);
+  return ALL_GROUPS.find((g) => g.key === groupKey);
 }
 
 export function findMovement(
   movementKey: string,
 ): { group: MovementGroup; movement: Movement } | undefined {
-  for (const group of MOVEMENT_GROUPS) {
+  for (const group of ALL_GROUPS) {
     const movement = group.movements.find((m) => m.key === movementKey);
     if (movement) return { group, movement };
   }
@@ -625,9 +646,11 @@ export type SchemeOption = {
   better: 'higher' | 'lower';
 };
 
-export function allSchemeOptions(): SchemeOption[] {
+export function allSchemeOptions(
+  discipline: Discipline = 'crossfit',
+): SchemeOption[] {
   const out: SchemeOption[] = [];
-  for (const group of MOVEMENT_GROUPS) {
+  for (const group of catalogGroups(discipline)) {
     for (const movement of group.movements) {
       for (const scheme of movement.schemes) {
         out.push({

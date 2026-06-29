@@ -11,6 +11,7 @@ import { errorMessage } from '@/lib/errors';
 import {
   allSchemeOptions,
   findScheme,
+  type Discipline,
   type Metric,
   type SchemeOption,
 } from '@/lib/movements';
@@ -56,6 +57,7 @@ export function RecordMovementResultModal({
   // are written with gym_id = null (the athlete-subscription RLS path),
   // so no membership is required.
   solo = false,
+  discipline = 'crossfit',
 }: {
   visible: boolean;
   onClose: () => void;
@@ -65,6 +67,7 @@ export function RecordMovementResultModal({
   initialMovementKey?: string;
   initialTrackKey?: string;
   solo?: boolean;
+  discipline?: Discipline;
 }) {
   const session = useSession();
   const { data: membership } = useGymMembership();
@@ -78,7 +81,10 @@ export function RecordMovementResultModal({
   const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
   const [saved, markSaved] = useSavedFlag();
 
-  const schemeOptions = useMemo(() => allSchemeOptions(), []);
+  const schemeOptions = useMemo(
+    () => allSchemeOptions(discipline),
+    [discipline],
+  );
 
   useEffect(() => {
     if (!visible) return;

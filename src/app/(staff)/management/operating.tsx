@@ -9,8 +9,10 @@ import { DurationField } from '@/components/DurationField';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import type { Discipline } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 type Defaults = {
@@ -41,6 +43,12 @@ export function OperatingDefaultsPanel() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [saved, markSaved] = useSavedFlag();
+
+  const currentDiscipline = useGymDiscipline();
+  const [discipline, setDiscipline] = useState<Discipline | null>(null);
+  useEffect(() => {
+    setDiscipline(currentDiscipline);
+  }, [currentDiscipline]);
 
   const cfg = useQuery({
     queryKey: ['gym-operating-defaults', membership?.gymId],
@@ -97,11 +105,19 @@ export function OperatingDefaultsPanel() {
         p_cancel_cutoff_days_before: draft.cancel_cutoff_days_before,
       });
       if (e) throw e;
+      if (discipline && discipline !== currentDiscipline) {
+        const { error: de } = await supabase.rpc('set_gym_discipline', {
+          p_gym_id: membership.gymId,
+          p_discipline: discipline,
+        });
+        if (de) throw de;
+      }
     },
     onSuccess: () => {
       setError(null);
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['gym-operating-defaults'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-discipline'] });
       // Saving stamps operating_defaults_reviewed_at, which flips the
       // 'settings' onboarding step done — refresh the checklist so it
       // ticks without a reload.
@@ -139,6 +155,24 @@ export function OperatingDefaultsPanel() {
         replaces a value that used to be the same for every gym; tune
         them to match how you run this gym.
       </Text>
+
+      <Section title="Training discipline">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Sets the flavour of the member Track section. CrossFit shows
+          the movement-group catalog (squats, olympic lifts, gymnastics…);
+          Hyrox shows the eight race stations, the 1 km run split and
+          full/half race simulations. Existing logs are kept either way.
+        </Text>
+        <Choice
+          label="Discipline"
+          options={[
+            { key: 'crossfit', label: 'CrossFit / functional' },
+            { key: 'hyrox', label: 'Hyrox' },
+          ]}
+          value={discipline ?? 'crossfit'}
+          onChange={(v) => setDiscipline(v as Discipline)}
+        />
+      </Section>
 
       <Section title="Week & locale">
         <Choice
@@ -473,8 +507,9 @@ export default function OperatingDefaultsPage() {
             Gym settings
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Per-gym dials — week start, class defaults, booking and
-            cancellation windows, PAR-Q expiry, plan resolution, retention.
+            Per-gym dials — training discipline, week start, class
+            defaults, booking and cancellation windows, PAR-Q expiry,
+            plan resolution, retention.
           </Text>
         </View>
         <OperatingDefaultsPanel />

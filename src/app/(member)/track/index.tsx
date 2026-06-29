@@ -10,10 +10,12 @@ import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
+import { HYROX_SIM, HYROX_STATIONS, type HyroxStation } from '@/lib/hyrox';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { useLogNudge } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
+import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
@@ -37,6 +39,8 @@ function chunkPairs<T>(items: T[]): T[][] {
 export default function TrackHome() {
   const colors = useThemeColors();
   const session = useSession();
+  const discipline = useGymDiscipline();
+  const isHyrox = discipline === 'hyrox';
   const queryClient = useQueryClient();
   const [recording, setRecording] = useState(false);
   const [recordPrefill, setRecordPrefill] = useState<{
@@ -164,7 +168,9 @@ export default function TrackHome() {
               Track
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              Log workouts and PRs across movements.
+              {isHyrox
+                ? 'Log your stations, run splits and race times.'
+                : 'Log workouts and PRs across movements.'}
             </Text>
           </View>
           <Pressable
@@ -255,68 +261,74 @@ export default function TrackHome() {
           </View>
         </View>
 
-        {/* Movements + injury tracker share a home: both are about how
-            the body is moving. */}
-        <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
-          <View className="flex-row items-center gap-3">
-            <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-              <Ionicons name="barbell-outline" size={22} color={colors.primary} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                Movements
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                PRs and history per movement.
-              </Text>
-            </View>
-          </View>
-
-          {/* Explicit row pairs (rather than flex-wrap) so the two tiles
-              in each row stretch to the taller item's height — flex-wrap
-              alone wouldn't equalise them, and "Bodyweight Movements"
-              (two-line title) was making the injury tile look squashed. */}
-          <View className="gap-2">
-            {chunkPairs([
-              ...MOVEMENT_GROUPS.map((g) => ({
-                kind: 'group' as const,
-                key: g.key,
-                group: g,
-              })),
-              { kind: 'injury' as const, key: 'injury' },
-            ]).map((pair, i) => (
-              <View key={i} className="flex-row items-stretch gap-2">
-                {pair.map((tile) =>
-                  tile.kind === 'group' ? (
-                    <View key={tile.key} className="flex-1">
-                      <GroupTile
-                        name={tile.group.name}
-                        count={tile.group.movements.length}
-                        icon={tile.group.icon as IoniconName}
-                        accent={tile.group.accent}
-                        recentCount={recentByGroup[tile.group.key] ?? 0}
-                        onPress={() =>
-                          router.push(
-                            `/track/group/${tile.group.key}` as never,
-                          )
-                        }
-                      />
-                    </View>
-                  ) : (
-                    <View key={tile.key} className="flex-1">
-                      <InjuryTile />
-                    </View>
-                  ),
-                )}
-                {pair.length === 1 ? <View className="flex-1" /> : null}
+        {/* Movements / stations + injury tracker share a home: both are
+            about how the body is moving. The grid swaps to the Hyrox
+            stations when the gym runs that discipline. */}
+        {isHyrox ? (
+          <HyroxStationsCard />
+        ) : (
+          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+            <View className="flex-row items-center gap-3">
+              <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+                <Ionicons name="barbell-outline" size={22} color={colors.primary} />
               </View>
-            ))}
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Movements
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  PRs and history per movement.
+                </Text>
+              </View>
+            </View>
+
+            {/* Explicit row pairs (rather than flex-wrap) so the two tiles
+                in each row stretch to the taller item's height — flex-wrap
+                alone wouldn't equalise them, and "Bodyweight Movements"
+                (two-line title) was making the injury tile look squashed. */}
+            <View className="gap-2">
+              {chunkPairs([
+                ...MOVEMENT_GROUPS.map((g) => ({
+                  kind: 'group' as const,
+                  key: g.key,
+                  group: g,
+                })),
+                { kind: 'injury' as const, key: 'injury' },
+              ]).map((pair, i) => (
+                <View key={i} className="flex-row items-stretch gap-2">
+                  {pair.map((tile) =>
+                    tile.kind === 'group' ? (
+                      <View key={tile.key} className="flex-1">
+                        <GroupTile
+                          name={tile.group.name}
+                          count={tile.group.movements.length}
+                          icon={tile.group.icon as IoniconName}
+                          accent={tile.group.accent}
+                          recentCount={recentByGroup[tile.group.key] ?? 0}
+                          onPress={() =>
+                            router.push(
+                              `/track/group/${tile.group.key}` as never,
+                            )
+                          }
+                        />
+                      </View>
+                    ) : (
+                      <View key={tile.key} className="flex-1">
+                        <InjuryTile />
+                      </View>
+                    ),
+                  )}
+                  {pair.length === 1 ? <View className="flex-1" /> : null}
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
 
       <RecordWorkoutModal
         visible={recording}
+        discipline={discipline}
         initialDate={recordPrefill?.date}
         initialTitle={recordPrefill?.title}
         onClose={() => {
@@ -459,6 +471,112 @@ function InjuryTile() {
             ? 'Log a niggle'
             : `${open.length} open ${open.length === 1 ? 'injury' : 'injuries'}`}
         </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+// The Hyrox Track grid — the eight stations + 1 km run split, the race
+// simulation, and the injury tracker, each tile deep-linking straight
+// to that station's PB / trend / journal detail.
+function HyroxStationsCard() {
+  const colors = useThemeColors();
+  const tiles: ({ kind: 'station'; station: HyroxStation } | { kind: 'sim' } | {
+    kind: 'injury';
+  })[] = [
+    ...HYROX_STATIONS.map((station) => ({ kind: 'station' as const, station })),
+    { kind: 'sim' as const },
+    { kind: 'injury' as const },
+  ];
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+      <View className="flex-row items-center gap-3">
+        <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+          <Ionicons name="flame-outline" size={22} color={colors.primary} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            Hyrox stations
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Best times per station, run split and race.
+          </Text>
+        </View>
+      </View>
+
+      <View className="gap-2">
+        {chunkPairs(tiles).map((pair, i) => (
+          <View key={i} className="flex-row items-stretch gap-2">
+            {pair.map((tile, j) => (
+              <View key={j} className="flex-1">
+                {tile.kind === 'station' ? (
+                  <StationTile
+                    name={tile.station.name}
+                    spec={tile.station.spec}
+                    icon={tile.station.icon as IoniconName}
+                    accent={tile.station.accent}
+                    onPress={() =>
+                      router.push(
+                        `/track/movement/${tile.station.key}` as never,
+                      )
+                    }
+                  />
+                ) : tile.kind === 'sim' ? (
+                  <StationTile
+                    name={HYROX_SIM.name}
+                    spec={HYROX_SIM.spec}
+                    icon={HYROX_SIM.icon as IoniconName}
+                    accent={HYROX_SIM.accent}
+                    onPress={() =>
+                      router.push(`/track/movement/${HYROX_SIM.key}` as never)
+                    }
+                  />
+                ) : (
+                  <InjuryTile />
+                )}
+              </View>
+            ))}
+            {pair.length === 1 ? <View className="flex-1" /> : null}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function StationTile({
+  name,
+  spec,
+  icon,
+  accent,
+  onPress,
+}: {
+  name: string;
+  spec: string;
+  icon: IoniconName;
+  accent: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name={icon} size={22} color={accent} />
+      </View>
+      <View className="flex-1 justify-end">
+        <Text
+          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          numberOfLines={2}>
+          {name}
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">{spec}</Text>
       </View>
     </Pressable>
   );

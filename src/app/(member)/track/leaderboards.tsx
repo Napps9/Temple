@@ -6,11 +6,14 @@ import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
 import { useGymMembership } from '@/lib/auth';
-import { MOVEMENT_GROUPS, type Movement, type Scheme } from '@/lib/movements';
+import { HYROX_BENCHMARKS } from '@/lib/hyrox';
+import { findMovement, type Movement, type Scheme } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
+import { useGymDiscipline } from '@/lib/useGymDiscipline';
 
-// A curated set of common benchmarks. Tap any movement to see the
-// full per-scheme leaderboard for it.
+// A curated set of common CrossFit benchmarks. Tap any movement to see
+// the full per-scheme leaderboard for it. (Hyrox gyms swap this for the
+// station times in HYROX_BENCHMARKS.)
 const HEADLINE_BENCHMARKS: { movementKey: string; schemeKey: string }[] = [
   { movementKey: 'back_squat', schemeKey: '1rm' },
   { movementKey: 'front_squat', schemeKey: '1rm' },
@@ -23,16 +26,9 @@ const HEADLINE_BENCHMARKS: { movementKey: string; schemeKey: string }[] = [
   { movementKey: 'rowing', schemeKey: '2000m' },
 ];
 
-function findMovementByKey(key: string): Movement | undefined {
-  for (const g of MOVEMENT_GROUPS) {
-    const m = g.movements.find((m) => m.key === key);
-    if (m) return m;
-  }
-  return undefined;
-}
-
 export default function LeaderboardsIndex() {
   const { data: membership } = useGymMembership();
+  const discipline = useGymDiscipline();
   const enabled = useQuery({
     queryKey: ['gym-leaderboard-flags', membership?.gymId],
     enabled: !!membership?.gymId,
@@ -66,15 +62,23 @@ export default function LeaderboardsIndex() {
     );
   }
 
-  const benchmarks = HEADLINE_BENCHMARKS.map((b) => {
-    const movement = findMovementByKey(b.movementKey);
-    const scheme = movement?.schemes.find((s) => s.key === b.schemeKey);
-    return movement && scheme ? { movement, scheme } : null;
-  }).filter((x): x is { movement: Movement; scheme: Scheme } => x !== null);
+  const source =
+    discipline === 'hyrox' ? HYROX_BENCHMARKS : HEADLINE_BENCHMARKS;
+  const benchmarks = source
+    .map((b) => {
+      const movement = findMovement(b.movementKey)?.movement;
+      const scheme = movement?.schemes.find((s) => s.key === b.schemeKey);
+      return movement && scheme ? { movement, scheme } : null;
+    })
+    .filter((x): x is { movement: Movement; scheme: Scheme } => x !== null);
 
-  const active = benchmarks.find(
-    (b) => `${b.movement.key}|${b.scheme.key}` === activeKey,
-  );
+  // Fall back to the first benchmark of the active catalog so a Hyrox
+  // gym (whose default activeKey points at a CrossFit benchmark) still
+  // renders a board on first paint.
+  const active =
+    benchmarks.find((b) => `${b.movement.key}|${b.scheme.key}` === activeKey) ??
+    benchmarks[0];
+  const activeId = active ? `${active.movement.key}|${active.scheme.key}` : '';
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -97,7 +101,7 @@ export default function LeaderboardsIndex() {
           contentContainerClassName="gap-2 px-0.5">
           {benchmarks.map((b) => {
             const key = `${b.movement.key}|${b.scheme.key}`;
-            const selected = key === activeKey;
+            const selected = key === activeId;
             return (
               <Pressable
                 key={key}

@@ -155,6 +155,25 @@ rental, or a **physical subscription box** shipped every cycle.
 
 ### Tracking & training
 
+- **Per-gym discipline (CrossFit vs Hyrox)** — a gym runs Track in its
+  training flavour, set by the owner in Manage → Settings → Gym settings
+  (`gyms.discipline`, default `crossfit`; owner-gated `set_gym_discipline`
+  RPC). A **Hyrox** gym's Track home replaces the CrossFit movement-group
+  grid with the eight race stations (SkiErg, Sled Push, Sled Pull, Burpee
+  Broad Jumps, Row, Farmers Carry, Sandbag Lunges, Wall Balls), the 1 km
+  run split, and a full/half **Race Simulation** tile — each station
+  logging a single best **time** (lower is better). The station catalog
+  lives in `src/lib/hyrox.ts`; keys are namespaced `hyrox_*` and share the
+  same `tracked_*` tables, so the existing per-movement detail (best-of,
+  PR badges, trend sparklines, journal), the recorder, and the
+  strength-style leaderboards all work unchanged via the discipline-aware
+  finders in `src/lib/movements.ts` (`catalogGroups`, `allSchemeOptions`)
+  and the `useGymDiscipline` hook. Journal, streaks/heatmap and the injury
+  tracker are shared across both disciplines. (Phase 1 = station + run
+  PBs and a single race finish time; the split-by-split simulation builder
+  — 8 run splits + 8 station splits + roxzone, by division — is scaffolded
+  as the next phase.)
+
 - **PR badges** — on the movement detail page, every journal row
   shows a trophy PR chip when the result was a strict improvement
   (per track-key, per scheme direction) over every earlier entry at

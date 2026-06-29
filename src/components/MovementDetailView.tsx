@@ -21,6 +21,7 @@ import {
   type TagInputRow,
 } from '@/lib/movement-journal';
 import { normaliseForPlot, trendPoints } from '@/lib/movement-trend';
+import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import {
   categoryLabel,
   type SectionCategoryKey,
@@ -74,6 +75,7 @@ export function MovementDetailView({
   const isMember = mode === 'member';
   const session = useSession();
   const colors = useThemeColors();
+  const discipline = useGymDiscipline();
   const meta = movementKey ? findMovement(movementKey) : undefined;
   const [recording, setRecording] = useState<{ trackKey?: string } | null>(
     null,
@@ -176,6 +178,9 @@ export function MovementDetailView({
   }
 
   const { group, movement } = meta;
+  // Hyrox stations log a single best time rather than a ladder of rep
+  // maxes — relabel the bests section so it reads right for both.
+  const isStation = group.key.startsWith('hyrox');
   const backHref = isMember ? `/track/group/${group.key}` : '/athlete';
 
   return (
@@ -208,7 +213,7 @@ export function MovementDetailView({
 
         <View className="gap-3">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            Rep maxes
+            {isStation ? 'Personal bests' : 'Rep maxes'}
           </Text>
           <View className="gap-2">
             {movement.schemes.map((scheme) => {
@@ -313,6 +318,7 @@ export function MovementDetailView({
       {isMember ? (
         <RecordMovementResultModal
           visible={recording !== null}
+          discipline={discipline}
           onClose={() => setRecording(null)}
           initialMovementKey={movement.key}
           initialTrackKey={recording?.trackKey}
