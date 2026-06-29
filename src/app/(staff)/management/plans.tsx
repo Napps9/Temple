@@ -17,6 +17,7 @@ import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 
 type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 
@@ -104,6 +105,7 @@ export function PlansPanel() {
   const [showArchived, setShowArchived] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, markSaved] = useSavedFlag();
 
   const canEdit = useCan('can_manage_plans');
   const canArchive = useCan('can_archive_plans') ?? false;
@@ -329,6 +331,7 @@ export function PlansPanel() {
     },
     onSuccess: () => {
       setSaveError(null);
+      markSaved();
       queryClient.invalidateQueries({ queryKey: ['membership-plans'] });
       queryClient.invalidateQueries({ queryKey: ['plan-coverage'] });
     },
@@ -618,7 +621,10 @@ export function PlansPanel() {
         ) : null}
 
         {activeRows.length > 0 ? (
-          <Button onPress={() => save.mutate()} loading={save.isPending}>
+          <Button
+            onPress={() => save.mutate()}
+            loading={save.isPending}
+            success={saved}>
             Save changes
           </Button>
         ) : null}

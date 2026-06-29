@@ -31,6 +31,7 @@ import {
 } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 
 type Tab = 'products' | 'orders' | 'subscriptions' | 'settings';
 
@@ -879,6 +880,7 @@ function StoreSettingsPanel() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [fee, setFee] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saved, markSaved] = useSavedFlag();
 
   const currency = config.data?.currency ?? 'GBP';
   const enabledValue = enabled ?? config.data?.store_enabled ?? false;
@@ -900,6 +902,7 @@ function StoreSettingsPanel() {
     },
     onSuccess: () => {
       setError(null);
+      markSaved();
       queryClient.invalidateQueries({ queryKey: ['store-config', membership?.gymId] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not save settings')),
@@ -936,7 +939,10 @@ function StoreSettingsPanel() {
       {error ? (
         <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
-      <Button onPress={() => save.mutate()} loading={save.isPending}>
+      <Button
+        onPress={() => save.mutate()}
+        loading={save.isPending}
+        success={saved}>
         Save settings
       </Button>
     </View>

@@ -25,6 +25,7 @@ import { deriveDarkColour } from '@/lib/brand-derivation';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
 
 type GymRow = {
@@ -90,6 +91,7 @@ export function BrandingPanel() {
   const [leadCapture, setLeadCapture] = useState(false);
   const [slugWarn, setSlugWarn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, markSaved] = useSavedFlag();
   const [advancedOpen, setAdvancedOpen] = useState(false);
   // Which field's inline picker is expanded (one at a time keeps the
   // card height sane).
@@ -230,6 +232,7 @@ export function BrandingPanel() {
     },
     onSuccess: () => {
       setError(null);
+      markSaved();
       queryClient.invalidateQueries({ queryKey: ['gym-row'] });
       queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
       queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
@@ -463,7 +466,10 @@ export function BrandingPanel() {
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
-        <Button onPress={() => save.mutate()} loading={save.isPending}>
+        <Button
+          onPress={() => save.mutate()}
+          loading={save.isPending}
+          success={saved}>
           Save changes
         </Button>
     </View>
