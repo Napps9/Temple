@@ -7,6 +7,12 @@
 > `store_subscriptions`. There is already a `billing_events` table with a
 > `provider` column — a clean seam to generalise behind.
 
+**Per-provider API references** (read from the live docs, mapped to our
+four integration seams — onboard / create-subscription / webhook-settle /
+cancel): [`docs/payments/gocardless.md`](payments/gocardless.md) ·
+[`docs/payments/square.md`](payments/square.md) ·
+[`docs/payments/paypal.md`](payments/paypal.md).
+
 UK, 2025–2026 pricing from official pages where possible. Stripe baseline:
 **1.5% + 20p** standard UK cards online, **+0.5%** recurring via Billing;
 Connect Standard means the **gym pays Stripe directly and the platform
