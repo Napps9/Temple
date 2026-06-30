@@ -8,6 +8,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
+import { TileGrid } from '@/components/TileGrid';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
 import { HYROX_TILE_META } from '@/lib/hyrox';
@@ -34,14 +35,6 @@ import {
 } from '@/lib/workout-streak';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-function chunkPairs<T>(items: T[]): T[][] {
-  const pairs: T[][] = [];
-  for (let i = 0; i < items.length; i += 2) {
-    pairs.push(items.slice(i, i + 2));
-  }
-  return pairs;
-}
 
 export default function TrackHome() {
   const colors = useThemeColors();
@@ -168,7 +161,7 @@ export default function TrackHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-3">
           <View className="flex-1 gap-0.5">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
@@ -221,57 +214,65 @@ export default function TrackHome() {
           </View>
         ) : null}
 
-        {(recentWorkouts.data?.size ?? 0) > 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
-            <View className="flex-row gap-2">
-              <Stat
-                icon="flame"
-                tint="#F59E0B"
-                value={streak}
-                label={streak === 1 ? 'day in a row' : 'days in a row'}
-              />
-              <Stat
-                icon="calendar"
-                tint={colors.primary}
-                value={weeks}
-                label={weeks === 1 ? 'week in a row' : 'weeks in a row'}
-              />
-              <Stat
-                icon="barbell"
-                tint="#10B981"
-                value={monthSessions}
-                label="this month"
-              />
-            </View>
-            <View className="gap-2">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                Last 12 weeks
-              </Text>
-              <WorkoutHeatmap
-                loggedDays={recentWorkouts.data ?? new Set()}
-                anchor={new Date()}
-                primaryColor={colors.primary}
-              />
-            </View>
-          </View>
-        ) : null}
+        {/* Desktop dashboard: a summary rail (consistency + journal +
+            leaderboards) beside the wide movements grid. On mobile the
+            same blocks stack in order — the rail width and column flip only
+            engage at lg, so phones are unchanged. */}
+        <View className="gap-4 lg:flex-row lg:items-start">
+          <View className="gap-4 lg:w-80">
+            {(recentWorkouts.data?.size ?? 0) > 0 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+                <View className="flex-row gap-2">
+                  <Stat
+                    icon="flame"
+                    tint="#F59E0B"
+                    value={streak}
+                    label={streak === 1 ? 'day in a row' : 'days in a row'}
+                  />
+                  <Stat
+                    icon="calendar"
+                    tint={colors.primary}
+                    value={weeks}
+                    label={weeks === 1 ? 'week in a row' : 'weeks in a row'}
+                  />
+                  <Stat
+                    icon="barbell"
+                    tint="#10B981"
+                    value={monthSessions}
+                    label="this month"
+                  />
+                </View>
+                <View className="gap-2">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    Last 12 weeks
+                  </Text>
+                  <WorkoutHeatmap
+                    loggedDays={recentWorkouts.data ?? new Set()}
+                    anchor={new Date()}
+                    primaryColor={colors.primary}
+                  />
+                </View>
+              </View>
+            ) : null}
 
-        {/* Journal + Leaderboards live as a 2-up tile row above the
-            Movements grid — same tile shape as a movement group so they
-            read as siblings instead of a stack of full-width cards. */}
-        <View className="flex-row items-stretch gap-2">
-          <View className="flex-1">
-            <JournalEntryTile workoutCount={journalCount.data ?? 0} />
+            {/* 2-up on mobile, stacked in the rail on desktop. */}
+            <View className="flex-row items-stretch gap-2 lg:flex-col">
+              <View className="flex-1 lg:flex-none">
+                <JournalEntryTile workoutCount={journalCount.data ?? 0} />
+              </View>
+              <View className="flex-1 lg:flex-none">
+                <LeaderboardsTile />
+              </View>
+            </View>
           </View>
-          <View className="flex-1">
-            <LeaderboardsTile />
+
+          <View className="lg:flex-1">
+            <MyMovementsCard
+              discipline={discipline}
+              recentByGroup={recentByGroup}
+            />
           </View>
         </View>
-
-        {/* The member's pinned movements & groups (starred, defaulting to
-            the gym's discipline). Both disciplines render from the same
-            favourites model; injury + library are fixed tiles. */}
-        <MyMovementsCard discipline={discipline} recentByGroup={recentByGroup} />
       </ScrollView>
 
       <RecordWorkoutModal
@@ -571,40 +572,33 @@ function MyMovementsCard({
         </Text>
       ) : null}
 
-      <View className="gap-2">
-        {chunkPairs(tiles).map((pair, i) => (
-          <View key={i} className="flex-row items-stretch gap-2">
-            {pair.map((item) => (
-              <View key={item.key} className="flex-1">
-                {item.kind === 'library' ? (
-                  <LibraryTile />
-                ) : item.kind === 'injury' ? (
-                  <InjuryTile />
-                ) : item.tile.kind === 'group' ? (
-                  <GroupTile
-                    name={item.tile.group.name}
-                    count={item.tile.count}
-                    icon={item.tile.group.icon as IoniconName}
-                    accent={item.tile.group.accent}
-                    recentCount={recentByGroup[item.tile.group.key] ?? 0}
-                    onPress={() =>
-                      router.push(
-                        `/track/group/${item.tile.group.key}` as never,
-                      )
-                    }
-                  />
-                ) : (
-                  <FavMovementTile
-                    group={item.tile.group}
-                    movement={item.tile.movement}
-                  />
-                )}
-              </View>
-            ))}
-            {pair.length === 1 ? <View className="flex-1" /> : null}
-          </View>
-        ))}
-      </View>
+      <TileGrid>
+        {tiles.map((item) =>
+          item.kind === 'library' ? (
+            <LibraryTile key={item.key} />
+          ) : item.kind === 'injury' ? (
+            <InjuryTile key={item.key} />
+          ) : item.tile.kind === 'group' ? (
+            <GroupTile
+              key={item.key}
+              name={item.tile.group.name}
+              count={item.tile.count}
+              icon={item.tile.group.icon as IoniconName}
+              accent={item.tile.group.accent}
+              recentCount={recentByGroup[item.tile.group.key] ?? 0}
+              onPress={() =>
+                router.push(`/track/group/${item.tile.group.key}` as never)
+              }
+            />
+          ) : (
+            <FavMovementTile
+              key={item.key}
+              group={item.tile.group}
+              movement={item.tile.movement}
+            />
+          ),
+        )}
+      </TileGrid>
     </View>
   );
 }
