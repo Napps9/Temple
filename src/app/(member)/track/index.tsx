@@ -487,8 +487,8 @@ function HyroxStationsCard() {
     | { kind: 'time' }
     | { kind: 'injury' }
   )[] = [
-    ...HYROX_STATIONS.map((station) => ({ kind: 'station' as const, station })),
     { kind: 'time' as const },
+    ...HYROX_STATIONS.map((station) => ({ kind: 'station' as const, station })),
     { kind: 'sim' as const },
     { kind: 'injury' as const },
   ];

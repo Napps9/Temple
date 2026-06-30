@@ -134,38 +134,67 @@ issues" — they shouldn't have to pay again to keep training.
 
 ---
 
-## 5. Track: search / browse the full movement catalog (cross-discipline)
+## 5. Track: search / browse the full movement catalog (cross-discipline), incl. tagging
 
 The Track home only shows the gym's discipline catalog — a Hyrox gym
 sees the 8 stations + race tiles, a CrossFit gym sees the movement
 groups. But the underlying `tracked_*` tables and `findMovement` already
 span both catalogs (`ALL_GROUPS = MOVEMENT_GROUPS + HYROX_GROUPS` in
-`src/lib/movements.ts`). So an athlete can hold a PB on any movement key;
-they just have no way to *reach* a movement outside their gym's catalog.
+`src/lib/movements.ts`). So an athlete can hold history on any movement
+key; they just have no way to *reach* a movement outside their gym's
+catalog — neither to view it nor to log against it.
 
-**Goal:** let a tracking user search or browse every available movement
-(e.g. a Hyrox athlete logging a back-squat 1RM), without cluttering the
-focused discipline home.
+**A movement enters tracking two ways, and both are discipline-gated today:**
+1. **Results** — explicit PB rows in `tracked_movement_results`
+   (movement + scheme + value), logged via the Record flow.
+2. **Tags** — `tracked_section_movement_tags`: after logging a workout
+   *section*, the member tags it with one or more movements (optionally a
+   rep scheme) so it feeds the per-movement Journal and best-of. The tag
+   picker (`MovementTagPickerModal` in `RecordWorkoutModal`) is fed
+   `catalogGroups(discipline)` — **same discipline limit as the home
+   grid**, so a Hyrox athlete can't tag a back squat onto a section.
+
+`MovementDetailView` already reads **both** tables per movement key and
+merges them, so any movement's detail/history/PR view works
+cross-discipline today — the gaps are purely *discoverability* (home) and
+*the tag picker's catalog* (recorder).
+
+**Goal:** let a tracking user search or browse every available movement —
+to view it, to record a result against it, **and to tag a workout section
+with it** — without cluttering the focused discipline home.
 
 **Proposed shape (approval pending before build):**
-- Add a **search field** at the top of `/track` (and/or a new
-  `/track/movements` "All movements" browse screen) that filters across
-  the **combined** catalog regardless of `useGymDiscipline()` — reuse the
-  movement-name index the `RecordWorkoutModal` picker already searches
-  rather than building a second search brain.
-- Results deep-link to the existing `/track/movement/[key]` detail
-  (best-of, PRs, trend, journal) — no new detail surface needed since
-  `findMovement` already resolves any key.
-- Browse view groups by category (CrossFit groups + the Hyrox group),
-  with the gym's own discipline pinned to the top so the default
-  experience stays focused; everything else sits under an "All
-  movements" / "More" affordance.
-- Keep the home grid as-is; this is an additive entry point, not a
-  replacement.
+- **One shared search index.** A single `searchMovements(query)` over the
+  combined catalog (name + aliases, the same `aliases` the auto-detector
+  in `movement-detection.ts` already uses), discipline-agnostic. Both
+  surfaces below consume it so there's one search brain, not two.
+- **Browse / search on `/track`** — a search field at the top (and/or a
+  new `/track/movements` "All movements" screen) filtering the combined
+  catalog. Results deep-link to the existing `/track/movement/[key]`
+  detail — no new detail surface needed since `findMovement` resolves any
+  key.
+- **Tag picker encompassed** — give `MovementTagPickerModal` the same
+  search field and widen it beyond `catalogGroups(discipline)`: the gym's
+  own discipline stays pinned/expanded at the top, with the rest of the
+  catalog reachable under an "All movements" section or surfaced directly
+  by search. This is the change that lets a section be tagged with any
+  movement. The detection auto-tagging stays discipline-scoped (it only
+  pre-fills from the *programmed* body); manual search is what unlocks the
+  rest.
+- **Browse view** groups by category (CrossFit groups + the Hyrox group),
+  gym discipline pinned first so the default stays focused; everything
+  else under "All movements" / "More".
+- Keep the home grid as-is; this is an additive entry point + a wider tag
+  picker, not a replacement.
 
 **Open questions:**
 - Do we want gym owners to be able to curate/hide movements outside
-  their discipline, or is the full catalog always searchable?
-- Should a logged cross-discipline PB surface on the home grid (e.g. a
-  "recently logged" row), or only via search/journal?
+  their discipline (for both browse *and* the tag picker), or is the full
+  catalog always searchable?
+- Should a logged cross-discipline PB / tag surface on the home grid
+  (e.g. a "recently logged" row), or only via search/journal?
+- When tagging a cross-discipline movement, do we record it against the
+  member's current `gym_id` as normal (it already does), and should staff
+  of a discipline-mismatched gym see it in their members' logs? (Default:
+  yes — it's the member's history, RLS already allows self + staff.)
 - Naming: "All movements" vs "Movement library" vs a plain search icon.
