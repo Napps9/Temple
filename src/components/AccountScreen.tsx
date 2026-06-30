@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { AvatarUploader } from './AvatarUploader';
 import { BackLink } from './BackLink';
@@ -47,6 +48,7 @@ export function AccountScreen() {
   const [detailsSaved, markDetailsSaved] = useSavedFlag();
   const [passwordSaved, markPasswordSaved] = useSavedFlag();
   const [showLeave, setShowLeave] = useState(false);
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<string | null>(null);
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
@@ -288,9 +290,23 @@ export function AccountScreen() {
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Password
-          </Text>
+          <Pressable
+            onPress={() => setShowPasswordFields((v) => !v)}
+            className="flex-row items-center gap-2 hover:opacity-80 active:opacity-70">
+            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              Password
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              {showPasswordFields ? 'Cancel' : 'Change'}
+            </Text>
+            <Ionicons
+              name={showPasswordFields ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color="#9CA3AF"
+            />
+          </Pressable>
+          {showPasswordFields ? (
+            <>
           <Input
             label="New password"
             value={password}
@@ -323,6 +339,8 @@ export function AccountScreen() {
             success={passwordSaved}>
             Update password
           </Button>
+            </>
+          ) : null}
         </View>
 
         {membership && session ? (
