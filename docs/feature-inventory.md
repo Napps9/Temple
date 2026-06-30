@@ -365,6 +365,14 @@ The Manage page presents a tab strip:
   subscription-recording webhook are built (`stripe-checkout` /
   `stripe-webhook`). Needs `STRIPE_SECRET_KEY`
   + `STRIPE_CONNECT_CLIENT_ID` secrets — see `docs/stripe-setup.md`.
+  **Currency follows the connected account**: `stripe-connect-callback`
+  reads the Stripe account's `default_currency` and stores it on
+  `gyms.currency`, so every price / revenue / payout figure renders in
+  the gym's real billing currency (a GBP account shows £). Until Stripe
+  is connected the gym keeps its currency (default `GBP`), settable by
+  hand in Gym settings (owner-gated `set_gym_currency` RPC). The Insights
+  revenue tile reads this currency for its empty state rather than
+  assuming USD.
 - **Membership (self-serve)** [member] — members pick and pay for a plan
   themselves at `/membership` (linked from Account): the gym's live
   plans, their current subscription + credit balance, and a Subscribe
@@ -408,7 +416,8 @@ The Manage page presents a tab strip:
 - **Store** [`can_manage_store`] — the gym storefront: products, stock,
   orders and fulfilment (detailed above under *Store*).
 - **Settings** — collapsible cards:
-  - **Gym settings** [`can_manage_staff`] — week start, default
+  - **Gym settings** [`can_manage_staff`] — training discipline
+    (CrossFit / Hyrox), billing currency, week start, default
     class capacity / duration / materialisation horizon, plan-resolution
     order, "expiring soon" window, booking windows (open / close / free-
     cancel cutoff, each with a min/hr/day/wk unit toggle so "2 weeks" or

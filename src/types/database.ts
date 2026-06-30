@@ -3228,6 +3228,10 @@ export type Database = {
         Args: { p_gym_id: string; p_discipline: string };
         Returns: undefined;
       };
+      set_gym_currency: {
+        Args: { p_gym_id: string; p_currency: string };
+        Returns: undefined;
+      };
       set_member_booking_requirement: {
         Args: { p_gym_id: string; p_profile_id: string; p_value: boolean | null };
         Returns: undefined;

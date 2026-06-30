@@ -44,6 +44,7 @@ import {
   type MembershipPolicies,
 } from '@/lib/membership-changes';
 import { supabase } from '@/lib/supabase';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import type { GymRole } from '@/types/database';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -1055,12 +1056,18 @@ function dayBefore(iso: string): string {
   return isoDate(new Date(d.getTime() - 86400000));
 }
 
-// Pick the dominant currency by charge_count, otherwise USD. Multi-
+// Pick the dominant currency by charge_count. With no charges yet, fall
+// back to the gym's configured currency (which follows its connected
+// Stripe account) so the empty tile reads "£0.00" not "US$0.00". Multi-
 // currency gyms are rare enough that one tile per gym is the right
 // trade — if a gym needs more, the Plans / Reports screens still show
 // per-currency detail.
-function pickPrimaryCurrency(rows: RevenueRow[]): RevenueRow {
-  if (rows.length === 0) return { currency: 'USD', gross_cents: 0, charge_count: 0 };
+function pickPrimaryCurrency(
+  rows: RevenueRow[],
+  fallbackCurrency: string,
+): RevenueRow {
+  if (rows.length === 0)
+    return { currency: fallbackCurrency, gross_cents: 0, charge_count: 0 };
   return [...rows].sort((a, b) => b.charge_count - a.charge_count)[0]!;
 }
 
@@ -1128,6 +1135,7 @@ const TARGET_PERIODS: TargetPeriod[] = ['month', 'quarter'];
 
 function InsightsTab() {
   const { data: membership } = useGymMembership();
+  const gymCurrency = useGymCurrency();
   const canSeeInsights = useCan('can_see_insights') ?? false;
   const canSetTargets = useCan('can_set_targets') ?? false;
   const showRevenue = useCan('can_see_money') ?? false;
@@ -1274,8 +1282,8 @@ function InsightsTab() {
     attendeesPrev.error ??
     summary.error;
 
-  const revenueNow = pickPrimaryCurrency(revenueCurrent.data ?? []);
-  const revenueThen = pickPrimaryCurrency(revenuePrev.data ?? []);
+  const revenueNow = pickPrimaryCurrency(revenueCurrent.data ?? [], gymCurrency);
+  const revenueThen = pickPrimaryCurrency(revenuePrev.data ?? [], gymCurrency);
   const revenueLoading = revenueCurrent.isLoading || revenuePrev.isLoading;
   const revenueDelta = revenueLoading
     ? undefined
