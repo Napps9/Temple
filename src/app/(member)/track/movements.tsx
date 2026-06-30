@@ -151,10 +151,17 @@ function GroupSection({
 }) {
   const anyStarred = starredCount > 0;
   return (
-    <View className="gap-2">
+    <View
+      className={
+        open ? 'gap-2 rounded-2xl bg-primary/5 dark:bg-primary/10 p-2' : 'gap-2'
+      }>
       <Pressable
         onPress={onToggleOpen}
-        className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-gray-300 dark:hover:border-gray-700 active:opacity-70">
+        className={`flex-row items-center gap-3 bg-white dark:bg-gray-900 border rounded-xl px-4 py-3 active:opacity-70 ${
+          open
+            ? 'border-primary/50'
+            : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
+        }`}>
         <View
           style={{ backgroundColor: `${group.accent}26` }}
           className="w-9 h-9 rounded-full items-center justify-center">
