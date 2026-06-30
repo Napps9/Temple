@@ -84,6 +84,23 @@ export const HYROX_SIM = {
   ] as Scheme[],
 };
 
+// Your official competition result — the finish time you posted at a
+// real Hyrox race. Kept separate from the training Race Simulation so
+// PBs and leaderboards reflect actual races, not practice runs. Same
+// full / half formats; scheme keys are scoped to this movement key, so
+// they don't collide with HYROX_SIM's identically-named schemes.
+export const HYROX_TIME = {
+  key: 'hyrox_time',
+  name: 'Hyrox Time',
+  spec: 'Official race result',
+  icon: 'stopwatch-outline',
+  accent: '#DC2626',
+  schemes: [
+    STATION_TIME('full', 'Full Hyrox'),
+    STATION_TIME('half', 'Half Hyrox'),
+  ] as Scheme[],
+};
+
 const asMovement = (s: HyroxStation): Movement => ({
   key: s.key,
   name: s.name,
@@ -105,11 +122,12 @@ export const HYROX_GROUPS: MovementGroup[] = [
   {
     key: 'hyrox_race',
     name: 'Race',
-    blurb: 'Full and half race simulations.',
+    blurb: 'Race simulations and official times.',
     icon: 'flag-outline',
     accent: '#7C3AED',
     movements: [
       { key: HYROX_SIM.key, name: HYROX_SIM.name, schemes: HYROX_SIM.schemes },
+      { key: HYROX_TIME.key, name: HYROX_TIME.name, schemes: HYROX_TIME.schemes },
     ],
   },
 ];
@@ -119,4 +137,5 @@ export const HYROX_GROUPS: MovementGroup[] = [
 export const HYROX_BENCHMARKS: { movementKey: string; schemeKey: string }[] = [
   ...HYROX_STATIONS.map((s) => ({ movementKey: s.key, schemeKey: s.schemeKey })),
   { movementKey: HYROX_SIM.key, schemeKey: 'full' },
+  { movementKey: HYROX_TIME.key, schemeKey: 'full' },
 ];

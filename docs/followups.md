@@ -131,3 +131,41 @@ issues" — they shouldn't have to pay again to keep training.
   present, otherwise unlimited until manually consumed.
 - Mapping UI: chip-per-unique-plan with a Picker, or a small table?
   Chip-per-plan is faster for the common 1-3 plan case.
+
+---
+
+## 5. Track: search / browse the full movement catalog (cross-discipline)
+
+The Track home only shows the gym's discipline catalog — a Hyrox gym
+sees the 8 stations + race tiles, a CrossFit gym sees the movement
+groups. But the underlying `tracked_*` tables and `findMovement` already
+span both catalogs (`ALL_GROUPS = MOVEMENT_GROUPS + HYROX_GROUPS` in
+`src/lib/movements.ts`). So an athlete can hold a PB on any movement key;
+they just have no way to *reach* a movement outside their gym's catalog.
+
+**Goal:** let a tracking user search or browse every available movement
+(e.g. a Hyrox athlete logging a back-squat 1RM), without cluttering the
+focused discipline home.
+
+**Proposed shape (approval pending before build):**
+- Add a **search field** at the top of `/track` (and/or a new
+  `/track/movements` "All movements" browse screen) that filters across
+  the **combined** catalog regardless of `useGymDiscipline()` — reuse the
+  movement-name index the `RecordWorkoutModal` picker already searches
+  rather than building a second search brain.
+- Results deep-link to the existing `/track/movement/[key]` detail
+  (best-of, PRs, trend, journal) — no new detail surface needed since
+  `findMovement` already resolves any key.
+- Browse view groups by category (CrossFit groups + the Hyrox group),
+  with the gym's own discipline pinned to the top so the default
+  experience stays focused; everything else sits under an "All
+  movements" / "More" affordance.
+- Keep the home grid as-is; this is an additive entry point, not a
+  replacement.
+
+**Open questions:**
+- Do we want gym owners to be able to curate/hide movements outside
+  their discipline, or is the full catalog always searchable?
+- Should a logged cross-discipline PB surface on the home grid (e.g. a
+  "recently logged" row), or only via search/journal?
+- Naming: "All movements" vs "Movement library" vs a plain search icon.

@@ -10,7 +10,7 @@ import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
-import { HYROX_SIM, HYROX_STATIONS, type HyroxStation } from '@/lib/hyrox';
+import { HYROX_SIM, HYROX_STATIONS, HYROX_TIME, type HyroxStation } from '@/lib/hyrox';
 import { MOVEMENT_GROUPS } from '@/lib/movements';
 import { useLogNudge } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
@@ -178,7 +178,7 @@ export default function TrackHome() {
               setRecordPrefill(null);
               setRecording(true);
             }}
-            className="bg-primary active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
+            className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
             <Ionicons name="add" size={16} color="#FFFFFF" />
             <Text className="text-white text-sm font-semibold">Record</Text>
           </Pressable>
@@ -382,7 +382,7 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -409,7 +409,7 @@ function LeaderboardsTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -443,7 +443,7 @@ function InjuryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -481,10 +481,14 @@ function InjuryTile() {
 // to that station's PB / trend / journal detail.
 function HyroxStationsCard() {
   const colors = useThemeColors();
-  const tiles: ({ kind: 'station'; station: HyroxStation } | { kind: 'sim' } | {
-    kind: 'injury';
-  })[] = [
+  const tiles: (
+    | { kind: 'station'; station: HyroxStation }
+    | { kind: 'sim' }
+    | { kind: 'time' }
+    | { kind: 'injury' }
+  )[] = [
     ...HYROX_STATIONS.map((station) => ({ kind: 'station' as const, station })),
+    { kind: 'time' as const },
     { kind: 'sim' as const },
     { kind: 'injury' as const },
   ];
@@ -531,6 +535,16 @@ function HyroxStationsCard() {
                       router.push(`/track/movement/${HYROX_SIM.key}` as never)
                     }
                   />
+                ) : tile.kind === 'time' ? (
+                  <StationTile
+                    name={HYROX_TIME.name}
+                    spec={HYROX_TIME.spec}
+                    icon={HYROX_TIME.icon as IoniconName}
+                    accent={HYROX_TIME.accent}
+                    onPress={() =>
+                      router.push(`/track/movement/${HYROX_TIME.key}` as never)
+                    }
+                  />
                 ) : (
                   <InjuryTile />
                 )}
@@ -560,7 +574,7 @@ function StationTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -600,7 +614,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"

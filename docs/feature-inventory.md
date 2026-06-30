@@ -161,7 +161,9 @@ rental, or a **physical subscription box** shipped every cycle.
   RPC). A **Hyrox** gym's Track home replaces the CrossFit movement-group
   grid with the eight race stations (SkiErg, Sled Push, Sled Pull, Burpee
   Broad Jumps, Row, Farmers Carry, Sandbag Lunges, Wall Balls), the 1 km
-  run split, and a full/half **Race Simulation** tile — each station
+  run split, a full/half **Race Simulation** tile, and a **Hyrox Time**
+  tile for your official competition finish time (full/half, logged
+  separately from the training simulation) — each station
   logging a single best **time** (lower is better). The station catalog
   lives in `src/lib/hyrox.ts`; keys are namespaced `hyrox_*` and share the
   same `tracked_*` tables, so the existing per-movement detail (best-of,
