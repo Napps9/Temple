@@ -400,7 +400,7 @@ function InjuryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -441,7 +441,7 @@ function LibraryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/movements' as never)}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -544,7 +544,7 @@ function MyMovementsCard({
   );
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+    <View className="gap-3">
       <View className="flex-row items-center gap-3">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
           <Ionicons name="barbell-outline" size={22} color={colors.primary} />
@@ -609,7 +609,7 @@ function StationTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -649,7 +649,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
