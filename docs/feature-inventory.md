@@ -434,7 +434,12 @@ The Manage page presents a tab strip:
   classes); Archive / Restore / Hard delete with dependent-row
   protection.
 - **Communications** [`can_manage_comms`] — the email campaign suite
-  (detailed below under *Communications Suite*).
+  (detailed below under *Communications Suite*). The campaign screen
+  (`/management/communications/<id>`) splits into a **Setup** view (name,
+  subject, topic, audience, send) and a full-screen **Design** builder —
+  a 3-pane `EmailEditor` (block rail · canvas · inspector, `variant="builder"`)
+  reached from the "Design your email" card. Same component owns the email
+  document, so autosave is unchanged.
 - **Store** [`can_manage_store`] — the gym storefront: products, stock,
   orders and fulfilment (detailed above under *Store*).
 - **Settings** — collapsible cards:

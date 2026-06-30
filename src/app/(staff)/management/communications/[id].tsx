@@ -63,29 +63,44 @@ export default function CampaignDetailScreen() {
   const canManageComms = useCan('can_manage_comms');
   const campaign = useCampaign(id);
 
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl lg:max-w-6xl md:mx-auto md:w-full">
-        <BackLink label="Communications" />
-        {canManageComms === false ? (
+  if (canManageComms === false) {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+          <BackLink label="Communications" />
           <Text className="text-gray-500 dark:text-gray-400">
             You don't have permission to manage communications.
           </Text>
-        ) : campaign.isLoading ? (
-          <View className="items-center py-12">
-            <ActivityIndicator />
-          </View>
-        ) : campaign.isError || !campaign.data ? (
+        </ScrollView>
+      </Screen>
+    );
+  }
+  if (campaign.isLoading) {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator />
+        </View>
+      </Screen>
+    );
+  }
+  if (campaign.isError || !campaign.data) {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+          <BackLink label="Communications" />
           <Text className="text-red-500 dark:text-red-400">
             {errorMessage(campaign.error, 'Could not load this campaign')}
           </Text>
-        ) : campaign.data.status === 'draft' || campaign.data.status === 'scheduled' ? (
-          <EditorView campaign={campaign.data} />
-        ) : (
-          <ReportView campaign={campaign.data} />
-        )}
-      </ScrollView>
-    </Screen>
+        </ScrollView>
+      </Screen>
+    );
+  }
+  return campaign.data.status === 'draft' ||
+    campaign.data.status === 'scheduled' ? (
+    <EditorView campaign={campaign.data} />
+  ) : (
+    <ReportView campaign={campaign.data} />
   );
 }
 
@@ -124,6 +139,10 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   const [confirming, setConfirming] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 'setup' = the campaign form (name, audience, send); 'design' = the
+  // full-screen email builder. Same component owns the document so there's
+  // no cross-route state to sync.
+  const [mode, setMode] = useState<'setup' | 'design'>('setup');
 
   const initialized = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -216,170 +235,204 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     }
   }
 
-  return (
-    <View className="gap-5">
-      <View className="gap-1">
-        <View className="flex-row items-center gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
-            Edit campaign
-          </Text>
-          <SaveIndicator state={saveState} />
-        </View>
-        <Text className="text-gray-500 dark:text-gray-400">
-          Build your email, choose who gets it, then send.
-        </Text>
-      </View>
-
-      {/* On desktop: settings (details/topic/audience) in a left column,
-          the email canvas in a wide right column. Send + warnings sit
-          full-width below both, so mobile keeps compose-before-send. */}
-      <View className="lg:flex-row lg:items-start gap-5">
-      <View className="gap-5 lg:w-[360px] lg:shrink-0">
-      {/* Details */}
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-        <Input
-          label="Campaign name (internal)"
-          value={title}
-          onChangeText={setTitle}
-          autoCapitalize="sentences"
-          placeholder="June newsletter"
-        />
-        <Input
-          label="Subject line"
-          value={subject}
-          onChangeText={setSubject}
-          autoCapitalize="sentences"
-          placeholder="What members see in their inbox"
-        />
-        <Input
-          label="Preview text (optional)"
-          value={preheader}
-          onChangeText={setPreheader}
-          autoCapitalize="sentences"
-          placeholder="The snippet shown after the subject"
-        />
-        <Input
-          label="From name (optional)"
-          value={fromName}
-          onChangeText={setFromName}
-          autoCapitalize="words"
-          placeholder={brand.gymName}
-        />
-      </View>
-
-      {/* Topic */}
-      <View className="gap-2">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-          Topic
-        </Text>
-        <TopicPicker
-          gymId={membership?.gymId ?? null}
-          value={topicId}
-          onChange={setTopicId}
-        />
-      </View>
-
-      {/* Audience */}
-      <View className="gap-2">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-          Audience
-        </Text>
-        <AudienceBuilder value={audience} onChange={setAudience} />
-      </View>
-      </View>
-
-      <View className="lg:flex-1">
-      {/* Content */}
-      <View className="gap-2">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            Content
-          </Text>
-          {Platform.OS === 'web' ? (
+  if (mode === 'design') {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <View className="flex-1 gap-3 py-4">
+          <View className="flex-row items-center gap-3">
             <Pressable
-              onPress={() => setShowPreview((v) => !v)}
+              onPress={() => setMode('setup')}
               hitSlop={6}
-              className="flex-row items-center gap-1.5 active:opacity-70">
-              <Ionicons
-                name={showPreview ? 'create-outline' : 'eye-outline'}
-                size={15}
-                color="#6B7280"
-              />
+              className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
+              <Ionicons name="chevron-back" size={18} color="#6B7280" />
               <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
-                {showPreview ? 'Back to editor' : 'Preview email'}
+                Setup
               </Text>
             </Pressable>
-          ) : null}
-        </View>
-        {showPreview && Platform.OS === 'web' ? (
-          <HtmlPreview html={previewHtml} />
-        ) : (
-          <EmailEditor
-            document={document}
-            onChange={setDocument}
-            brand={brandSeed}
-            gymId={membership?.gymId ?? ''}
-          />
-        )}
-      </View>
-      </View>
-      </View>
-
-      {/* Warnings */}
-      {warnings.length > 0 ? (
-        <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 gap-1">
-          {warnings.map((w) => (
-            <Text key={w} className="text-amber-700 dark:text-amber-400 text-xs">
-              • {w}
+            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              Design email
             </Text>
-          ))}
+            <SaveIndicator state={saveState} />
+            {Platform.OS === 'web' ? (
+              <Pressable
+                onPress={() => setShowPreview((v) => !v)}
+                hitSlop={6}
+                className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
+                <Ionicons
+                  name={showPreview ? 'create-outline' : 'eye-outline'}
+                  size={15}
+                  color="#6B7280"
+                />
+                <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+                  {showPreview ? 'Back to editor' : 'Preview'}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {showPreview && Platform.OS === 'web' ? (
+            <ScrollView className="flex-1" contentContainerClassName="pb-4">
+              <HtmlPreview html={previewHtml} />
+            </ScrollView>
+          ) : (
+            <EmailEditor
+              document={document}
+              onChange={setDocument}
+              brand={brandSeed}
+              gymId={membership?.gymId ?? ''}
+              variant="builder"
+            />
+          )}
         </View>
-      ) : null}
+      </Screen>
+    );
+  }
 
-      {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-      ) : null}
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Communications" />
+        <View className="gap-1">
+          <View className="flex-row items-center gap-2">
+            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
+              Edit campaign
+            </Text>
+            <SaveIndicator state={saveState} />
+          </View>
+          <Text className="text-gray-500 dark:text-gray-400">
+            Build your email, choose who gets it, then send.
+          </Text>
+        </View>
 
-      {/* Send / confirm */}
-      {confirming ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Send to {count} {count === 1 ? 'member' : 'members'}?
+        {/* Details */}
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <Input
+            label="Campaign name (internal)"
+            value={title}
+            onChangeText={setTitle}
+            autoCapitalize="sentences"
+            placeholder="June newsletter"
+          />
+          <Input
+            label="Subject line"
+            value={subject}
+            onChangeText={setSubject}
+            autoCapitalize="sentences"
+            placeholder="What members see in their inbox"
+          />
+          <Input
+            label="Preview text (optional)"
+            value={preheader}
+            onChangeText={setPreheader}
+            autoCapitalize="sentences"
+            placeholder="The snippet shown after the subject"
+          />
+          <Input
+            label="From name (optional)"
+            value={fromName}
+            onChangeText={setFromName}
+            autoCapitalize="words"
+            placeholder={brand.gymName}
+          />
+        </View>
+
+        {/* Design entry — opens the full-screen builder */}
+        <Pressable
+          onPress={() => setMode('design')}
+          className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 border border-primary/30 hover:border-primary/60 active:opacity-80">
+          <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+            <Ionicons name="brush-outline" size={22} color={brand.primaryColor} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Design your email
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              {document.blocks.length === 0
+                ? 'Empty — open the builder to add content.'
+                : `${document.blocks.length} block${
+                    document.blocks.length === 1 ? '' : 's'
+                  } · open the builder`}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </Pressable>
+
+        {/* Topic */}
+        <View className="gap-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Topic
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            {describeAudience(audience)}. This can't be undone.
+          <TopicPicker
+            gymId={membership?.gymId ?? null}
+            value={topicId}
+            onChange={setTopicId}
+          />
+        </View>
+
+        {/* Audience */}
+        <View className="gap-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Audience
           </Text>
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={() => setConfirming(false)}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button onPress={doSend} loading={send.isPending}>
-                Send now
-              </Button>
+          <AudienceBuilder value={audience} onChange={setAudience} />
+        </View>
+
+        {/* Warnings */}
+        {warnings.length > 0 ? (
+          <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 gap-1">
+            {warnings.map((w) => (
+              <Text key={w} className="text-amber-700 dark:text-amber-400 text-xs">
+                • {w}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        {error ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
+
+        {/* Send / confirm */}
+        {confirming ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Send to {count} {count === 1 ? 'member' : 'members'}?
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              {describeAudience(audience)}. This can't be undone.
+            </Text>
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Button variant="secondary" onPress={() => setConfirming(false)}>
+                  Cancel
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button onPress={doSend} loading={send.isPending}>
+                  Send now
+                </Button>
+              </View>
             </View>
           </View>
-        </View>
-      ) : (
-        <View className="gap-3">
-          <Button onPress={() => setConfirming(true)} disabled={!canSend}>
-            Send campaign
-          </Button>
-          {noSubject ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
-              Add a subject line to enable sending.
-            </Text>
-          ) : audienceEmpty || count === 0 ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
-              Choose an audience with at least one reachable member.
-            </Text>
-          ) : null}
-          <DeleteCampaignButton campaignId={campaign.id} />
-        </View>
-      )}
-    </View>
+        ) : (
+          <View className="gap-3">
+            <Button onPress={() => setConfirming(true)} disabled={!canSend}>
+              Send campaign
+            </Button>
+            {noSubject ? (
+              <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+                Add a subject line to enable sending.
+              </Text>
+            ) : audienceEmpty || count === 0 ? (
+              <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+                Choose an audience with at least one reachable member.
+              </Text>
+            ) : null}
+            <DeleteCampaignButton campaignId={campaign.id} />
+          </View>
+        )}
+      </ScrollView>
+    </Screen>
   );
 }
 
@@ -496,7 +549,9 @@ function ReportView({ campaign }: { campaign: Campaign }) {
   }, [campaign.design, campaign.preheader, brand, settings.data]);
 
   return (
-    <View className="gap-5">
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
+        <BackLink label="Communications" />
       <View className="gap-1">
         <View className="flex-row items-center gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
@@ -580,7 +635,8 @@ function ReportView({ campaign }: { campaign: Campaign }) {
         </Text>
         <HtmlPreview html={previewHtml} height={420} />
       </View>
-    </View>
+      </ScrollView>
+    </Screen>
   );
 }
 

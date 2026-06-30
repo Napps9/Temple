@@ -496,11 +496,16 @@ export function EmailEditor({
   onChange,
   brand,
   gymId,
+  variant = 'stacked',
 }: {
   document: EmailDocument;
   onChange: (doc: EmailDocument) => void;
   brand: BrandSeed;
   gymId: string;
+  // 'stacked' = palette / canvas / inspector top-to-bottom (mobile + the
+  // old inline layout). 'builder' = a 3-pane desktop builder: block rail
+  // left, canvas centre, inspector right.
+  variant?: 'stacked' | 'builder';
 }) {
   const session = useSession();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -564,30 +569,40 @@ export function EmailEditor({
     }
   }
 
-  return (
-    <View className="gap-3">
-      {/* Add-block toolbar */}
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
-          Add a block
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
-          {ADDABLE.map((type) => (
-            <Pressable
-              key={type}
-              onPress={() => addBlock(type)}
-              className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 active:opacity-70">
-              <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color="#6B7280" />
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-                {BLOCK_LABELS[type]}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+  const blockButtons = ADDABLE.map((type) => (
+    <Pressable
+      key={type}
+      onPress={() => addBlock(type)}
+      className={`flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70 ${
+        variant === 'builder' ? 'w-full' : ''
+      }`}>
+      <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color="#6B7280" />
+      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        {BLOCK_LABELS[type]}
+      </Text>
+    </Pressable>
+  ));
 
-      {/* Canvas */}
-      <View style={{ backgroundColor: document.settings.backgroundColor }} className="rounded-xl p-3">
+  const palette = (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
+      <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+        Add a block
+      </Text>
+      {variant === 'builder' ? (
+        <View className="gap-2">{blockButtons}</View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-2">
+          {blockButtons}
+        </ScrollView>
+      )}
+    </View>
+  );
+
+  const canvas = (
+    <View style={{ backgroundColor: document.settings.backgroundColor }} className="rounded-xl p-3">
         <View
           style={{
             backgroundColor: document.settings.contentBackgroundColor,
@@ -654,8 +669,9 @@ export function EmailEditor({
           )}
         </View>
       </View>
+  );
 
-      {/* Inspector */}
+  const inspector = (
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
         <View className="flex-row items-center justify-between">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -683,6 +699,21 @@ export function EmailEditor({
           <SettingsInspector document={document} onChange={onChange} />
         )}
       </View>
+  );
+
+  return variant === 'builder' ? (
+    <View className="flex-1 lg:flex-row gap-3">
+      <View className="lg:w-44 lg:shrink-0">{palette}</View>
+      <ScrollView className="flex-1" contentContainerClassName="pb-4">
+        {canvas}
+      </ScrollView>
+      <View className="lg:w-80 lg:shrink-0">{inspector}</View>
+    </View>
+  ) : (
+    <View className="gap-3">
+      {palette}
+      {canvas}
+      {inspector}
     </View>
   );
 }
