@@ -255,13 +255,21 @@ export default function TrackHome() {
               </View>
             ) : null}
 
-            {/* 2-up on mobile, stacked in the rail on desktop. */}
-            <View className="flex-row items-stretch gap-2 lg:flex-col">
-              <View className="flex-1 lg:flex-none">
+            {/* Utility tiles (Journal, Leaderboards, Movement Library,
+                Injury): a 2-up grid on mobile, stacked in the rail on
+                desktop. */}
+            <View className="flex-row flex-wrap -m-1 lg:flex-col lg:m-0 lg:gap-2">
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
                 <JournalEntryTile workoutCount={journalCount.data ?? 0} />
               </View>
-              <View className="flex-1 lg:flex-none">
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
                 <LeaderboardsTile />
+              </View>
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
+                <LibraryTile />
+              </View>
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
+                <InjuryTile />
               </View>
             </View>
           </View>
@@ -535,20 +543,6 @@ function MyMovementsCard({
     [fav.groups, fav.movements, discipline],
   );
 
-  const tiles: (
-    | { kind: 'fav'; tile: FavTile; key: string }
-    | { kind: 'library'; key: string }
-    | { kind: 'injury'; key: string }
-  )[] = [
-    ...favTiles.map((t) => ({
-      kind: 'fav' as const,
-      tile: t,
-      key: t.kind === 'group' ? `g:${t.group.key}` : `m:${t.movement.key}`,
-    })),
-    { kind: 'library' as const, key: 'library' },
-    { kind: 'injury' as const, key: 'injury' },
-  ];
-
   return (
     <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
       <View className="flex-row items-center gap-3">
@@ -570,35 +564,31 @@ function MyMovementsCard({
           Nothing pinned yet. Star movements or groups in the Library to pin
           them here.
         </Text>
-      ) : null}
-
-      <TileGrid>
-        {tiles.map((item) =>
-          item.kind === 'library' ? (
-            <LibraryTile key={item.key} />
-          ) : item.kind === 'injury' ? (
-            <InjuryTile key={item.key} />
-          ) : item.tile.kind === 'group' ? (
-            <GroupTile
-              key={item.key}
-              name={item.tile.group.name}
-              count={item.tile.count}
-              icon={item.tile.group.icon as IoniconName}
-              accent={item.tile.group.accent}
-              recentCount={recentByGroup[item.tile.group.key] ?? 0}
-              onPress={() =>
-                router.push(`/track/group/${item.tile.group.key}` as never)
-              }
-            />
-          ) : (
-            <FavMovementTile
-              key={item.key}
-              group={item.tile.group}
-              movement={item.tile.movement}
-            />
-          ),
-        )}
-      </TileGrid>
+      ) : (
+        <TileGrid>
+          {favTiles.map((t) =>
+            t.kind === 'group' ? (
+              <GroupTile
+                key={`g:${t.group.key}`}
+                name={t.group.name}
+                count={t.count}
+                icon={t.group.icon as IoniconName}
+                accent={t.group.accent}
+                recentCount={recentByGroup[t.group.key] ?? 0}
+                onPress={() =>
+                  router.push(`/track/group/${t.group.key}` as never)
+                }
+              />
+            ) : (
+              <FavMovementTile
+                key={`m:${t.movement.key}`}
+                group={t.group}
+                movement={t.movement}
+              />
+            ),
+          )}
+        </TileGrid>
+      )}
     </View>
   );
 }
