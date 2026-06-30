@@ -8,29 +8,24 @@ import { Screen } from '@/components/Screen';
 import {
   allGroupsDisciplineFirst,
   catalogGroups,
-  findMovement,
   searchMovements,
   type Movement,
   type MovementGroup,
 } from '@/lib/movements';
 import { useThemeColors } from '@/lib/theme';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
-import {
-  useFavouriteMovements,
-  useToggleFavouriteMovement,
-} from '@/lib/useFavouriteMovements';
+import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
 // Movement Library — search and browse the full cross-discipline catalog
-// (not just the gym's flavour), star the movements you care about, and
-// jump into any movement's detail / history. The home grid stays focused
-// on the gym's discipline; this is the "everything" surface.
+// (not just the gym's flavour), star movements or whole groups, and jump
+// into any movement's detail / history. What's starred here drives the
+// Track home grid.
 export default function MovementLibrary() {
   const colors = useThemeColors();
   const discipline = useGymDiscipline();
-  const favourites = useFavouriteMovements();
-  const toggleFavourite = useToggleFavouriteMovement();
+  const fav = useMovementFavourites(discipline);
   const [query, setQuery] = useState('');
 
   const groups = useMemo(
@@ -46,18 +41,8 @@ export default function MovementLibrary() {
   const hits = useMemo(() => searchMovements(query), [query]);
   const searching = query.trim().length > 0;
 
-  const starred = favourites.data ?? new Set<string>();
-  const starredList = useMemo(
-    () =>
-      [...starred]
-        .map((key) => findMovement(key))
-        .filter((m): m is NonNullable<typeof m> => !!m),
-    [starred],
-  );
-
-  const isStarred = (key: string) => starred.has(key);
-  const onToggle = (key: string) =>
-    toggleFavourite.mutate({ movementKey: key, on: !isStarred(key) });
+  const isStarred = (key: string) => fav.movements.has(key);
+  const onToggle = (key: string) => fav.toggleMovement(key, !isStarred(key));
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -110,23 +95,6 @@ export default function MovementLibrary() {
           )
         ) : (
           <>
-            {starredList.length > 0 ? (
-              <View className="gap-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                  Starred
-                </Text>
-                {starredList.map(({ group, movement }) => (
-                  <MovementRow
-                    key={movement.key}
-                    movement={movement}
-                    group={group}
-                    starred
-                    onToggle={() => onToggle(movement.key)}
-                  />
-                ))}
-              </View>
-            ) : null}
-
             {groups.map((g) => (
               <GroupSection
                 key={g.key}
@@ -139,6 +107,10 @@ export default function MovementLibrary() {
                     else next.add(g.key);
                     return next;
                   })
+                }
+                groupStarred={fav.groups.has(g.key)}
+                onToggleGroup={() =>
+                  fav.toggleGroup(g.key, !fav.groups.has(g.key))
                 }
                 isStarred={isStarred}
                 onToggleStar={onToggle}
@@ -155,12 +127,16 @@ function GroupSection({
   group,
   open,
   onToggleOpen,
+  groupStarred,
+  onToggleGroup,
   isStarred,
   onToggleStar,
 }: {
   group: MovementGroup;
   open: boolean;
   onToggleOpen: () => void;
+  groupStarred: boolean;
+  onToggleGroup: () => void;
   isStarred: (key: string) => boolean;
   onToggleStar: (key: string) => void;
 }) {
@@ -187,6 +163,19 @@ function GroupSection({
             {group.movements.length === 1 ? 'movement' : 'movements'}
           </Text>
         </View>
+        <Pressable
+          onPress={onToggleGroup}
+          hitSlop={10}
+          accessibilityLabel={
+            groupStarred ? 'Unstar whole group' : 'Star whole group'
+          }
+          className="hover:opacity-80 active:opacity-60">
+          <Ionicons
+            name={groupStarred ? 'star' : 'star-outline'}
+            size={20}
+            color={groupStarred ? '#F59E0B' : '#9CA3AF'}
+          />
+        </Pressable>
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}

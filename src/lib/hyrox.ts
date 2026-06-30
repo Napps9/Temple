@@ -134,6 +134,28 @@ export const HYROX_GROUPS: MovementGroup[] = [
 
 // Headline benchmarks for the Hyrox leaderboards index — every station
 // plus the full sim, each on its single PB scheme.
+// Per-movement tile chrome (icon / accent / spec) for the Hyrox catalog,
+// keyed by movement key. Lets the Track home render a starred Hyrox
+// movement with its own station colour + work spec ("1 km", "50 m") rather
+// than falling back to the generic group icon.
+export const HYROX_TILE_META: Record<
+  string,
+  { icon: string; accent: string; spec: string }
+> = {
+  ...Object.fromEntries(
+    HYROX_STATIONS.map((s) => [
+      s.key,
+      { icon: s.icon, accent: s.accent, spec: s.spec },
+    ]),
+  ),
+  [HYROX_SIM.key]: { icon: HYROX_SIM.icon, accent: HYROX_SIM.accent, spec: HYROX_SIM.spec },
+  [HYROX_TIME.key]: {
+    icon: HYROX_TIME.icon,
+    accent: HYROX_TIME.accent,
+    spec: HYROX_TIME.spec,
+  },
+};
+
 export const HYROX_BENCHMARKS: { movementKey: string; schemeKey: string }[] = [
   ...HYROX_STATIONS.map((s) => ({ movementKey: s.key, schemeKey: s.schemeKey })),
   { movementKey: HYROX_SIM.key, schemeKey: 'full' },

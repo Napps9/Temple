@@ -213,18 +213,26 @@ rental, or a **physical subscription box** shipped every cycle.
   direct PRs with section-tagged results, "session" badge.
 - **Per-group page** — best-of per movement in a group (Squats,
   Pushing, Pulling, Cleans, Snatch, Aerobic, Bodyweight).
-- **Movement Library** (`/track/movements`, "Movement Library" tile on
-  the Track home) — search and browse the **full cross-discipline**
-  catalog (CrossFit + Hyrox) regardless of the gym's own discipline, so a
-  member can reach any movement to view it or log against it. Name+alias
-  search via `searchMovements`; browse groups the gym's discipline first
-  (`allGroupsDisciplineFirst`). Members **star** movements
-  (`tracked_movement_favourites`, self-only RLS, no gym_id — favourites
-  travel with the profile) from the library rows or the detail-page star;
-  starred movements pin to the top of the library. The Record flow's
-  movement **tag picker** uses the same widened catalog + search, so a
-  workout section can be tagged with any movement, not just the gym's
-  discipline.
+- **Movement Library + starred home** (`/track/movements`, "Movement
+  Library" tile on the Track home) — search and browse the **full
+  cross-discipline** catalog (CrossFit + Hyrox) regardless of the gym's
+  own discipline. Name+alias search via `searchMovements`; browse groups
+  the gym's discipline first (`allGroupsDisciplineFirst`). Members
+  **star at two levels** — an individual movement
+  (`tracked_movement_favourites`) or a whole **group**
+  (`tracked_group_favourites`); both tables are self-only RLS with no
+  gym_id, so favourites travel with the profile. The **Track home grid is
+  rendered from these stars** (`useMovementFavourites` →
+  `deriveTiles`): a starred group is a group tile while ≥2 of its
+  movements remain selected, collapses to a single movement tile at one,
+  and disappears at zero; individually-starred movements always render as
+  their own tiles (Hyrox keeps its per-station colour + work spec via
+  `HYROX_TILE_META`). **Defaults mirror the old home** and aren't
+  persisted until the first edit (CrossFit → its groups starred; Hyrox →
+  its movements starred individually), materialised on first change so
+  they're editable. The Record flow's movement **tag picker** uses the
+  same widened catalog + search, so a workout section can be tagged with
+  any movement, not just the gym's discipline.
 - **Leaderboards** — class-session leaderboards (for-time + AMRAP)
   and strength-movement leaderboards (rep-max per scheme), honouring
   the gym's appear-in-leaderboards opt-in.

@@ -22,10 +22,7 @@ import {
 } from '@/lib/movement-journal';
 import { normaliseForPlot, trendPoints } from '@/lib/movement-trend';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
-import {
-  useFavouriteMovements,
-  useToggleFavouriteMovement,
-} from '@/lib/useFavouriteMovements';
+import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 import {
   categoryLabel,
   type SectionCategoryKey,
@@ -81,9 +78,8 @@ export function MovementDetailView({
   const colors = useThemeColors();
   const discipline = useGymDiscipline();
   const meta = movementKey ? findMovement(movementKey) : undefined;
-  const favourites = useFavouriteMovements();
-  const toggleFavourite = useToggleFavouriteMovement();
-  const starred = favourites.data?.has(movementKey) ?? false;
+  const fav = useMovementFavourites(discipline);
+  const starred = fav.movements.has(movementKey);
   const [recording, setRecording] = useState<{ trackKey?: string } | null>(
     null,
   );
@@ -208,9 +204,7 @@ export function MovementDetailView({
             </Text>
           </View>
           <Pressable
-            onPress={() =>
-              toggleFavourite.mutate({ movementKey, on: !starred })
-            }
+            onPress={() => fav.toggleMovement(movementKey, !starred)}
             hitSlop={8}
             accessibilityLabel={starred ? 'Unstar movement' : 'Star movement'}
             className="w-9 h-9 rounded-full items-center justify-center hover:opacity-80 active:opacity-60">
