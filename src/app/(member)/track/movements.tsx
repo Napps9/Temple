@@ -7,7 +7,6 @@ import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import {
   allGroupsDisciplineFirst,
-  catalogGroups,
   searchMovements,
   type Movement,
   type MovementGroup,
@@ -32,11 +31,9 @@ export default function MovementLibrary() {
     () => allGroupsDisciplineFirst(discipline),
     [discipline],
   );
-  // The gym's own discipline groups start expanded; everything else is
-  // collapsed so the browse view opens focused.
-  const [expanded, setExpanded] = useState<Set<string>>(
-    () => new Set(catalogGroups(discipline).map((g) => g.key)),
-  );
+  // All groups start collapsed so the library opens as a scannable list of
+  // groups; the member expands the ones they want.
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
   const hits = useMemo(() => searchMovements(query), [query]);
   const searching = query.trim().length > 0;
