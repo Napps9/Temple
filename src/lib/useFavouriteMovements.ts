@@ -169,11 +169,27 @@ export function useMovementFavourites(discipline: Discipline) {
     commit(next);
   }
 
+  // Switch only the display mode for a group — grouped (one tile) vs
+  // separate (a tile per starred movement) — without changing which
+  // movements are starred.
+  function setGrouped(groupKey: string, grouped: boolean) {
+    if (!raw) return;
+    const eff = effectiveNow();
+    const next = {
+      groups: new Set(eff.groups),
+      movements: new Set(eff.movements),
+    };
+    if (grouped) next.groups.add(groupKey);
+    else next.groups.delete(groupKey);
+    commit(next);
+  }
+
   return {
     loading: query.isLoading,
     groups: effective?.groups ?? new Set<string>(),
     movements: effective?.movements ?? new Set<string>(),
     toggleMovement,
     toggleGroup,
+    setGrouped,
   };
 }

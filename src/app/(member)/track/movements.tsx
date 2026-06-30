@@ -95,27 +95,32 @@ export default function MovementLibrary() {
           )
         ) : (
           <>
-            {groups.map((g) => (
-              <GroupSection
-                key={g.key}
-                group={g}
-                open={expanded.has(g.key)}
-                onToggleOpen={() =>
-                  setExpanded((cur) => {
-                    const next = new Set(cur);
-                    if (next.has(g.key)) next.delete(g.key);
-                    else next.add(g.key);
-                    return next;
-                  })
-                }
-                groupStarred={fav.groups.has(g.key)}
-                onToggleGroup={() =>
-                  fav.toggleGroup(g.key, !fav.groups.has(g.key))
-                }
-                isStarred={isStarred}
-                onToggleStar={onToggle}
-              />
-            ))}
+            {groups.map((g) => {
+              const starredCount = g.movements.filter((m) =>
+                fav.movements.has(m.key),
+              ).length;
+              return (
+                <GroupSection
+                  key={g.key}
+                  group={g}
+                  open={expanded.has(g.key)}
+                  onToggleOpen={() =>
+                    setExpanded((cur) => {
+                      const next = new Set(cur);
+                      if (next.has(g.key)) next.delete(g.key);
+                      else next.add(g.key);
+                      return next;
+                    })
+                  }
+                  grouped={fav.groups.has(g.key)}
+                  starredCount={starredCount}
+                  onToggleAll={() => fav.toggleGroup(g.key, starredCount === 0)}
+                  onSetGrouped={(val) => fav.setGrouped(g.key, val)}
+                  isStarred={isStarred}
+                  onToggleStar={onToggle}
+                />
+              );
+            })}
           </>
         )}
       </ScrollView>
@@ -127,19 +132,24 @@ function GroupSection({
   group,
   open,
   onToggleOpen,
-  groupStarred,
-  onToggleGroup,
+  grouped,
+  starredCount,
+  onToggleAll,
+  onSetGrouped,
   isStarred,
   onToggleStar,
 }: {
   group: MovementGroup;
   open: boolean;
   onToggleOpen: () => void;
-  groupStarred: boolean;
-  onToggleGroup: () => void;
+  grouped: boolean;
+  starredCount: number;
+  onToggleAll: () => void;
+  onSetGrouped: (grouped: boolean) => void;
   isStarred: (key: string) => boolean;
   onToggleStar: (key: string) => void;
 }) {
+  const anyStarred = starredCount > 0;
   return (
     <View className="gap-2">
       <Pressable
@@ -159,21 +169,26 @@ function GroupSection({
             {group.name}
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            {group.movements.length}{' '}
-            {group.movements.length === 1 ? 'movement' : 'movements'}
+            {anyStarred
+              ? `${starredCount} of ${group.movements.length} starred${
+                  starredCount >= 2 ? (grouped ? ' · grouped' : ' · separate') : ''
+                }`
+              : `${group.movements.length} ${
+                  group.movements.length === 1 ? 'movement' : 'movements'
+                }`}
           </Text>
         </View>
         <Pressable
-          onPress={onToggleGroup}
+          onPress={onToggleAll}
           hitSlop={10}
           accessibilityLabel={
-            groupStarred ? 'Unstar whole group' : 'Star whole group'
+            anyStarred ? 'Unstar whole group' : 'Star whole group'
           }
           className="hover:opacity-80 active:opacity-60">
           <Ionicons
-            name={groupStarred ? 'star' : 'star-outline'}
+            name={anyStarred ? 'star' : 'star-outline'}
             size={20}
-            color={groupStarred ? '#F59E0B' : '#9CA3AF'}
+            color={anyStarred ? '#F59E0B' : '#9CA3AF'}
           />
         </Pressable>
         <Ionicons
@@ -184,6 +199,35 @@ function GroupSection({
       </Pressable>
       {open ? (
         <View className="gap-2">
+          {starredCount >= 2 ? (
+            <View className="flex-row items-center gap-2 px-1">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                Show as
+              </Text>
+              {(['grouped', 'separate'] as const).map((mode) => {
+                const active = mode === (grouped ? 'grouped' : 'separate');
+                return (
+                  <Pressable
+                    key={mode}
+                    onPress={() => onSetGrouped(mode === 'grouped')}
+                    className={`px-3 py-1 rounded-full border ${
+                      active
+                        ? 'border-primary bg-primary/10'
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                    }`}>
+                    <Text
+                      className={`text-xs font-medium ${
+                        active
+                          ? 'text-primary'
+                          : 'text-gray-500 dark:text-gray-400'
+                      }`}>
+                      {mode === 'grouped' ? 'One group tile' : 'Separate tiles'}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
           {group.movements.map((m) => (
             <MovementRow
               key={m.key}
