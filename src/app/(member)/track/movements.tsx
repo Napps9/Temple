@@ -101,7 +101,7 @@ export default function MovementLibrary() {
                 <MovementRow
                   key={movement.key}
                   movement={movement}
-                  groupName={group.name}
+                  group={group}
                   starred={isStarred(movement.key)}
                   onToggle={() => onToggle(movement.key)}
                 />
@@ -119,7 +119,7 @@ export default function MovementLibrary() {
                   <MovementRow
                     key={movement.key}
                     movement={movement}
-                    groupName={group.name}
+                    group={group}
                     starred
                     onToggle={() => onToggle(movement.key)}
                   />
@@ -168,7 +168,7 @@ function GroupSection({
     <View className="gap-2">
       <Pressable
         onPress={onToggleOpen}
-        className="flex-row items-center gap-3 bg-slate-100 dark:bg-gray-800 rounded-xl px-4 py-3 hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
+        className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-gray-300 dark:hover:border-gray-700 active:opacity-70">
         <View
           style={{ backgroundColor: `${group.accent}26` }}
           className="w-9 h-9 rounded-full items-center justify-center">
@@ -199,7 +199,7 @@ function GroupSection({
             <MovementRow
               key={m.key}
               movement={m}
-              groupName={group.name}
+              group={group}
               starred={isStarred(m.key)}
               onToggle={() => onToggleStar(m.key)}
             />
@@ -212,19 +212,36 @@ function GroupSection({
 
 function MovementRow({
   movement,
-  groupName,
+  group,
   starred,
   onToggle,
 }: {
   movement: Movement;
-  groupName: string;
+  group: MovementGroup;
   starred: boolean;
   onToggle: () => void;
 }) {
   return (
     <Pressable
       onPress={() => router.push(`/track/movement/${movement.key}` as never)}
-      className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-gray-300 dark:hover:border-gray-700 active:opacity-70">
+      <View
+        style={{ backgroundColor: `${group.accent}26` }}
+        className="w-9 h-9 rounded-full items-center justify-center">
+        <Ionicons
+          name={group.icon as IoniconName}
+          size={18}
+          color={group.accent}
+        />
+      </View>
+      <View className="flex-1">
+        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          {movement.name}
+        </Text>
+        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          {group.name}
+        </Text>
+      </View>
       <Pressable
         onPress={onToggle}
         hitSlop={10}
@@ -236,12 +253,6 @@ function MovementRow({
           color={starred ? '#F59E0B' : '#9CA3AF'}
         />
       </Pressable>
-      <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
-          {movement.name}
-        </Text>
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">{groupName}</Text>
-      </View>
       <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
     </Pressable>
   );
