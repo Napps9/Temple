@@ -119,6 +119,55 @@ const CATEGORY_ICONS: Record<Category, IconName> = {
   settings: 'settings-outline',
 };
 
+// Section nav, shared by the desktop sidebar menu (vertical, transparent
+// rows in a bordered panel) and the mobile pill row (horizontal white
+// cards on the page). Same items, two layouts.
+function ManageNav({
+  categories,
+  active,
+  onSelect,
+  vertical,
+}: {
+  categories: Category[];
+  active: Category;
+  onSelect: (c: Category) => void;
+  vertical: boolean;
+}) {
+  return (
+    <View className={vertical ? 'gap-1' : 'flex-row flex-wrap gap-2'}>
+      {categories.map((c) => {
+        const selected = c === active;
+        return (
+          <Pressable
+            key={c}
+            onPress={() => onSelect(c)}
+            className={`flex-row items-center gap-2.5 rounded-lg px-3 py-2.5 active:opacity-80 ${
+              vertical ? 'w-full' : ''
+            } ${
+              selected
+                ? 'bg-primary shadow-card'
+                : vertical
+                  ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
+                  : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
+            }`}>
+            <Ionicons
+              name={CATEGORY_ICONS[c]}
+              size={17}
+              color={selected ? '#FFFFFF' : '#6B7280'}
+            />
+            <Text
+              className={`text-sm font-medium ${
+                selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+              }`}>
+              {CATEGORY_LABELS[c]}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 const CATEGORY_ORDER: Category[] = [
   'insights',
   'members',
@@ -320,48 +369,37 @@ export default function ManagementHome() {
   );
 
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-6xl md:mx-auto md:w-full">
-        {/* Tabs become a left nav rail on desktop with the active tab's
-            content (and the owner setup nudge) beside them; on mobile the
-            pills wrap above the content. */}
-        <View className="gap-4 lg:flex-row lg:items-start">
+    <Screen edges={['bottom', 'left', 'right']} className="px-0">
+      <View className="flex-1 lg:flex-row">
+        {/* Desktop: a full-height left sidebar menu. Mobile: hidden — the
+            pills render inside the scroll area instead. */}
         {availableCategories.length > 1 ? (
-          <View className="flex-row flex-wrap gap-2 lg:flex-col lg:flex-nowrap lg:w-52 lg:shrink-0">
-            {availableCategories.map((c) => {
-              const selected = c === activeCategory;
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => setActive(c)}
-                  className={`px-3 py-2.5 rounded-lg flex-row items-center gap-2.5 lg:w-full active:opacity-80 ${
-                    selected
-                      ? 'bg-primary shadow-card'
-                      : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
-                  }`}>
-                  <Ionicons
-                    name={CATEGORY_ICONS[c]}
-                    size={17}
-                    color={selected ? '#FFFFFF' : '#6B7280'}
-                  />
-                  <Text
-                    className={`text-sm font-medium ${
-                      selected
-                        ? 'text-white'
-                        : 'text-gray-700 dark:text-gray-200'
-                    }`}>
-                    {CATEGORY_LABELS[c]}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-gray-200 dark:border-gray-800 px-4 py-6">
+            <ManageNav
+              categories={availableCategories}
+              active={activeCategory}
+              onSelect={setActive}
+              vertical
+            />
           </View>
         ) : null}
-        <View className="lg:flex-1 gap-4">
-        {/* Owner-only setup nudge. Self-hides once all five steps are done
-            so the card never nags a finished gym. */}
-        <GymSetupChecklist />
-        {activeCategory === 'insights' ? (
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
+          {availableCategories.length > 1 ? (
+            <View className="lg:hidden">
+              <ManageNav
+                categories={availableCategories}
+                active={activeCategory}
+                onSelect={setActive}
+                vertical={false}
+              />
+            </View>
+          ) : null}
+          {/* Owner-only setup nudge. Self-hides once all five steps are done
+              so the card never nags a finished gym. */}
+          <GymSetupChecklist />
+          {activeCategory === 'insights' ? (
           <InsightsTab />
         ) : activeCategory === 'members' ? (
           <MembersTab />
@@ -400,9 +438,8 @@ export default function ManagementHome() {
             />
           ))
         )}
-        </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Screen>
   );
 }
