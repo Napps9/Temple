@@ -334,12 +334,14 @@ export default function ManagementHome() {
                 <Pressable
                   key={c}
                   onPress={() => setActive(c)}
-                  className={`px-4 py-2 rounded-full flex-row items-center gap-1.5 lg:w-full hover:opacity-90 active:opacity-80 ${
-                    selected ? 'bg-primary' : 'bg-slate-200 dark:bg-gray-800'
+                  className={`px-3 py-2.5 rounded-lg flex-row items-center gap-2.5 lg:w-full active:opacity-80 ${
+                    selected
+                      ? 'bg-primary shadow-card'
+                      : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
                   }`}>
                   <Ionicons
                     name={CATEGORY_ICONS[c]}
-                    size={16}
+                    size={17}
                     color={selected ? '#FFFFFF' : '#6B7280'}
                   />
                   <Text

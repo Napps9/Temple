@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { StatusDisk } from '@/components/StatusDisk';
@@ -120,6 +120,10 @@ export function GymSetupChecklist() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const role = useRole();
+  // Collapsed by default so the nudge sits quietly at the top of every
+  // Manage tab — the header + progress bar still show how far along the
+  // gym is; the owner expands to work through the steps.
+  const [open, setOpen] = useState(false);
 
   const progress = useQuery({
     queryKey: ['gym-setup-progress', membership?.gymId],
@@ -155,7 +159,9 @@ export function GymSetupChecklist() {
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
-      <View className="flex-row items-center gap-3">
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="flex-row items-center gap-3 active:opacity-70">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
           <Ionicons name="rocket-outline" size={22} color={colors.primary} />
         </View>
@@ -167,7 +173,12 @@ export function GymSetupChecklist() {
             {requiredDone} of {requiredSteps.length} done
           </Text>
         </View>
-      </View>
+        <Ionicons
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color="#9CA3AF"
+        />
+      </Pressable>
 
       {/* Progress bar tracks the required steps so the bar fills 100%
           even if the optional team step is still untouched. */}
@@ -178,6 +189,7 @@ export function GymSetupChecklist() {
         />
       </View>
 
+      {open ? (
       <View className="gap-1.5">
         {status.map((step) => (
           <Pressable
@@ -229,6 +241,7 @@ export function GymSetupChecklist() {
           </Pressable>
         ))}
       </View>
+      ) : null}
     </View>
   );
 }
