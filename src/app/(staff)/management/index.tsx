@@ -321,13 +321,10 @@ export default function ManagementHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
-        {/* Owner-only setup nudge. Self-hides once all five steps are
-            done so the card never nags a finished gym. */}
-        <GymSetupChecklist />
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-6xl md:mx-auto md:w-full">
         {/* Tabs become a left nav rail on desktop with the active tab's
-            content beside them; on mobile the pills wrap above the
-            content. */}
+            content (and the owner setup nudge) beside them; on mobile the
+            pills wrap above the content. */}
         <View className="gap-4 lg:flex-row lg:items-start">
         {availableCategories.length > 1 ? (
           <View className="flex-row flex-wrap gap-2 lg:flex-col lg:flex-nowrap lg:w-52 lg:shrink-0">
@@ -359,6 +356,9 @@ export default function ManagementHome() {
           </View>
         ) : null}
         <View className="lg:flex-1 gap-4">
+        {/* Owner-only setup nudge. Self-hides once all five steps are done
+            so the card never nags a finished gym. */}
+        <GymSetupChecklist />
         {activeCategory === 'insights' ? (
           <InsightsTab />
         ) : activeCategory === 'members' ? (
@@ -1336,58 +1336,73 @@ function InsightsTab() {
 
       {/* One continuous grid so tiles pair up two-per-row on mobile
           instead of each group stranding a full-width odd one out. */}
-      <View className="flex-row gap-3 flex-wrap">
+      {/* KPI grid — 2-up on mobile, 3-up on desktop, via padding-gutter
+          cells so the tiles stay a comfortable size instead of stranding
+          six tiny columns across a wide dashboard. */}
+      <View className="flex-row flex-wrap -m-1.5">
         {showRevenue ? (
-          <StatTile
-            title="Revenue"
-            value={
-              revenueLoading
-                ? '—'
-                : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
-            }
-            subtitle="vs previous period"
-            delta={revenueDelta}
-            href="/management/plans"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Revenue"
+              value={
+                revenueLoading
+                  ? '—'
+                  : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
+              }
+              subtitle="vs previous period"
+              delta={revenueDelta}
+              href="/management/plans"
+            />
+          </View>
         ) : null}
         {showMembers ? (
-          <StatTile
-            title="Members"
-            value={membersLoading ? '—' : membersNow}
-            subtitle="vs previous period"
-            delta={membersDelta}
-            href="/management/members"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Members"
+              value={membersLoading ? '—' : membersNow}
+              subtitle="vs previous period"
+              delta={membersDelta}
+              href="/management/members"
+            />
+          </View>
         ) : null}
         {showMembers ? (
-          <StatTile
-            title="Attendance"
-            value={attendanceLoading ? '—' : `${ratePctNow.toFixed(0)}%`}
-            subtitle="of members checked in"
-            delta={attendanceDelta}
-            href="/management/attendance"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Attendance"
+              value={attendanceLoading ? '—' : `${ratePctNow.toFixed(0)}%`}
+              subtitle="of members checked in"
+              delta={attendanceDelta}
+              href="/management/attendance"
+            />
+          </View>
         ) : null}
         {canSeeInsights ? (
-          <StatTile
-            title="Intros"
-            value={summary.data?.intros_new ?? '—'}
-            subtitle="new this period"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Intros"
+              value={summary.data?.intros_new ?? '—'}
+              subtitle="new this period"
+            />
+          </View>
         ) : null}
         {canSeeInsights ? (
-          <StatTile
-            title="Expiring soon"
-            value={summary.data?.expiring_soon ?? '—'}
-            subtitle="≤ 7 days"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Expiring soon"
+              value={summary.data?.expiring_soon ?? '—'}
+              subtitle="≤ 7 days"
+            />
+          </View>
         ) : null}
         {canSeeInsights ? (
-          <StatTile
-            title="Expired"
-            value={summary.data?.expired ?? '—'}
-            subtitle="no live access"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Expired"
+              value={summary.data?.expired ?? '—'}
+              subtitle="no live access"
+            />
+          </View>
         ) : null}
       </View>
 
