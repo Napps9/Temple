@@ -159,7 +159,7 @@ export function AccountScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl lg:max-w-5xl md:mx-auto md:w-full">
         <BackLink />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
@@ -169,6 +169,12 @@ export function AccountScreen() {
             Manage your name, email, and password.
           </Text>
         </View>
+
+        {/* Two-column dashboard on desktop; the two groups stack in the
+            same order on mobile. Left = identity + gym; right = account
+            details, security and data controls. */}
+        <View className="gap-6 lg:flex-row lg:items-start">
+        <View className="gap-6 lg:flex-1">
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <AvatarUploader
@@ -216,6 +222,9 @@ export function AccountScreen() {
             </Text>
           </View>
         ) : null}
+
+        </View>
+        <View className="gap-6 lg:flex-1">
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -382,6 +391,9 @@ export function AccountScreen() {
             </Text>
           </View>
         ) : null}
+
+        </View>
+        </View>
 
         <View className="mt-4">
           <Button variant="ghost" onPress={() => signOut.mutate()}>
