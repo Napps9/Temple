@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Button } from './Button';
 import { DatePicker } from './DatePicker';
@@ -10,9 +18,10 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { detectMovementsInText } from '@/lib/movement-detection';
 import {
-  catalogGroups,
+  allGroupsDisciplineFirst,
   findMovement,
   type Discipline,
+  type Movement,
   type MovementGroup,
 } from '@/lib/movements';
 import {
@@ -682,7 +691,7 @@ export function RecordWorkoutModal({
 
       <MovementTagPickerModal
         visible={movementPickerForIdx !== null}
-        groups={catalogGroups(discipline)}
+        groups={allGroupsDisciplineFirst(discipline)}
         onPick={(tag) => {
           if (movementPickerForIdx !== null) addTag(movementPickerForIdx, tag);
           setMovementPickerForIdx(null);
@@ -1455,13 +1464,73 @@ function MovementTagPickerModal({
 }) {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [expandedMovement, setExpandedMovement] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!visible) {
       setExpandedGroup(null);
       setExpandedMovement(null);
+      setSearch('');
     }
   }, [visible]);
+
+  const q = search.trim().toLowerCase();
+  // Search spans the full catalog passed in (name + aliases), so a member
+  // can tag any movement — including ones outside their gym's discipline.
+  const matches = useMemo(() => {
+    if (!q) return [] as Movement[];
+    const out: Movement[] = [];
+    for (const g of groups) {
+      for (const m of g.movements) {
+        const hay = [m.name, ...(m.aliases ?? [])].join(' ').toLowerCase();
+        if (hay.includes(q)) out.push(m);
+      }
+    }
+    return out;
+  }, [groups, q]);
+
+  // One movement row, shared by the browse accordion and the search
+  // results: tap the name to tag with no scheme, or expand to pick one.
+  const renderMovement = (m: Movement) => (
+    <View key={m.key}>
+      <View className="flex-row items-center gap-2">
+        <Pressable
+          onPress={() => onPick({ movement_key: m.key, track_key: null })}
+          className="flex-1 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
+          <Text className="text-gray-900 dark:text-gray-50 text-sm">{m.name}</Text>
+          <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+            No rep scheme
+          </Text>
+        </Pressable>
+        {m.schemes.length > 0 ? (
+          <Pressable
+            onPress={() =>
+              setExpandedMovement((cur) => (cur === m.key ? null : m.key))
+            }
+            hitSlop={4}
+            className="w-8 h-8 rounded items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-800">
+            <Ionicons
+              name={expandedMovement === m.key ? 'chevron-up' : 'chevron-down'}
+              size={14}
+              color="#9CA3AF"
+            />
+          </Pressable>
+        ) : null}
+      </View>
+      {expandedMovement === m.key ? (
+        <View className="pl-3 gap-1">
+          {m.schemes.map((s) => (
+            <Pressable
+              key={s.key}
+              onPress={() => onPick({ movement_key: m.key, track_key: s.key })}
+              className="rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
+              <Text className="text-primary text-xs">{s.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
 
   return (
     <Modal
@@ -1482,86 +1551,56 @@ function MovementTagPickerModal({
             Tag the movement (optionally with a rep scheme) so it lands
             in your per-movement Journal.
           </Text>
+          <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+            <Ionicons name="search" size={16} color="#9CA3AF" />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search all movements"
+              placeholderTextColor="#9CA3AF"
+              autoCorrect={false}
+              className="flex-1 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
+            />
+            {q ? (
+              <Pressable onPress={() => setSearch('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              </Pressable>
+            ) : null}
+          </View>
           <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
-            {groups.map((g) => (
-              <View key={g.key}>
-                <Pressable
-                  onPress={() =>
-                    setExpandedGroup((cur) => (cur === g.key ? null : g.key))
-                  }
-                  className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
-                  <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
-                    {g.name}
-                  </Text>
-                  <Ionicons
-                    name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#9CA3AF"
-                  />
-                </Pressable>
-                {expandedGroup === g.key ? (
-                  <View className="pt-2 pl-3 gap-2">
-                    {g.movements.map((m) => (
-                      <View key={m.key}>
-                        <View className="flex-row items-center gap-2">
-                          <Pressable
-                            onPress={() =>
-                              onPick({ movement_key: m.key, track_key: null })
-                            }
-                            className="flex-1 rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
-                            <Text className="text-gray-900 dark:text-gray-50 text-sm">
-                              {m.name}
-                            </Text>
-                            <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
-                              No rep scheme
-                            </Text>
-                          </Pressable>
-                          {m.schemes.length > 0 ? (
-                            <Pressable
-                              onPress={() =>
-                                setExpandedMovement((cur) =>
-                                  cur === m.key ? null : m.key,
-                                )
-                              }
-                              hitSlop={4}
-                              className="w-8 h-8 rounded items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                              <Ionicons
-                                name={
-                                  expandedMovement === m.key
-                                    ? 'chevron-up'
-                                    : 'chevron-down'
-                                }
-                                size={14}
-                                color="#9CA3AF"
-                              />
-                            </Pressable>
-                          ) : null}
-                        </View>
-                        {expandedMovement === m.key ? (
-                          <View className="pl-3 gap-1">
-                            {m.schemes.map((s) => (
-                              <Pressable
-                                key={s.key}
-                                onPress={() =>
-                                  onPick({
-                                    movement_key: m.key,
-                                    track_key: s.key,
-                                  })
-                                }
-                                className="rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
-                                <Text className="text-primary text-xs">
-                                  {s.label}
-                                </Text>
-                              </Pressable>
-                            ))}
-                          </View>
-                        ) : null}
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-              </View>
-            ))}
+            {q ? (
+              matches.length === 0 ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-sm py-2">
+                  No movements match “{search.trim()}”.
+                </Text>
+              ) : (
+                matches.map((m) => renderMovement(m))
+              )
+            ) : (
+              groups.map((g) => (
+                <View key={g.key}>
+                  <Pressable
+                    onPress={() =>
+                      setExpandedGroup((cur) => (cur === g.key ? null : g.key))
+                    }
+                    className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:opacity-70">
+                    <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                      {g.name}
+                    </Text>
+                    <Ionicons
+                      name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color="#9CA3AF"
+                    />
+                  </Pressable>
+                  {expandedGroup === g.key ? (
+                    <View className="pt-2 pl-3 gap-2">
+                      {g.movements.map((m) => renderMovement(m))}
+                    </View>
+                  ) : null}
+                </View>
+              ))
+            )}
           </ScrollView>
           <Button variant="secondary" onPress={onClose}>
             Cancel

@@ -23,6 +23,10 @@ import {
 import { normaliseForPlot, trendPoints } from '@/lib/movement-trend';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import {
+  useFavouriteMovements,
+  useToggleFavouriteMovement,
+} from '@/lib/useFavouriteMovements';
+import {
   categoryLabel,
   type SectionCategoryKey,
   type SectionFormatKey,
@@ -77,6 +81,9 @@ export function MovementDetailView({
   const colors = useThemeColors();
   const discipline = useGymDiscipline();
   const meta = movementKey ? findMovement(movementKey) : undefined;
+  const favourites = useFavouriteMovements();
+  const toggleFavourite = useToggleFavouriteMovement();
+  const starred = favourites.data?.has(movementKey) ?? false;
   const [recording, setRecording] = useState<{ trackKey?: string } | null>(
     null,
   );
@@ -200,11 +207,24 @@ export function MovementDetailView({
               {movement.name}
             </Text>
           </View>
+          <Pressable
+            onPress={() =>
+              toggleFavourite.mutate({ movementKey, on: !starred })
+            }
+            hitSlop={8}
+            accessibilityLabel={starred ? 'Unstar movement' : 'Star movement'}
+            className="w-9 h-9 rounded-full items-center justify-center hover:opacity-80 active:opacity-60">
+            <Ionicons
+              name={starred ? 'star' : 'star-outline'}
+              size={20}
+              color={starred ? '#F59E0B' : colors.iconSecondary}
+            />
+          </Pressable>
           {isMember ? (
             <Pressable
               onPress={() => setRecording({})}
               hitSlop={6}
-              className="bg-primary active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
+              className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
               <Ionicons name="add" size={14} color="#FFFFFF" />
               <Text className="text-white text-xs font-semibold">Record</Text>
             </Pressable>

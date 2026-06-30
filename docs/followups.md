@@ -134,7 +134,15 @@ issues" — they shouldn't have to pay again to keep training.
 
 ---
 
-## 5. Track: search / browse the full movement catalog (cross-discipline), incl. tagging
+## ~~5. Track: search / browse the full movement catalog (cross-discipline), incl. tagging~~ (shipped)
+
+> Shipped: Movement Library (`/track/movements`) with name+alias search,
+> discipline-first browse, per-member starred favourites
+> (`tracked_movement_favourites`, migration 0091), and a widened +
+> searchable tag picker. Decisions taken: full catalog always searchable
+> (no owner curation); reach via Journal / Search / Starred (no
+> recently-logged home row); named "Movement Library". Original plan
+> retained below for context.
 
 The Track home only shows the gym's discipline catalog — a Hyrox gym
 sees the 8 stations + race tiles, a CrossFit gym sees the movement

@@ -1914,6 +1914,24 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      tracked_movement_favourites: {
+        Row: {
+          profile_id: string;
+          movement_key: string;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          movement_key: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          profile_id: string;
+          movement_key: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       gym_comms_settings: {
         Row: {
           gym_id: string;

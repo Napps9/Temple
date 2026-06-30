@@ -213,6 +213,18 @@ rental, or a **physical subscription box** shipped every cycle.
   direct PRs with section-tagged results, "session" badge.
 - **Per-group page** — best-of per movement in a group (Squats,
   Pushing, Pulling, Cleans, Snatch, Aerobic, Bodyweight).
+- **Movement Library** (`/track/movements`, "Movement Library" tile on
+  the Track home) — search and browse the **full cross-discipline**
+  catalog (CrossFit + Hyrox) regardless of the gym's own discipline, so a
+  member can reach any movement to view it or log against it. Name+alias
+  search via `searchMovements`; browse groups the gym's discipline first
+  (`allGroupsDisciplineFirst`). Members **star** movements
+  (`tracked_movement_favourites`, self-only RLS, no gym_id — favourites
+  travel with the profile) from the library rows or the detail-page star;
+  starred movements pin to the top of the library. The Record flow's
+  movement **tag picker** uses the same widened catalog + search, so a
+  workout section can be tagged with any movement, not just the gym's
+  discipline.
 - **Leaderboards** — class-session leaderboards (for-time + AMRAP)
   and strength-movement leaderboards (rep-max per scheme), honouring
   the gym's appear-in-leaderboards opt-in.

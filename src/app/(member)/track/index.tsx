@@ -293,6 +293,7 @@ export default function TrackHome() {
                   key: g.key,
                   group: g,
                 })),
+                { kind: 'library' as const, key: 'library' },
                 { kind: 'injury' as const, key: 'injury' },
               ]).map((pair, i) => (
                 <View key={i} className="flex-row items-stretch gap-2">
@@ -311,6 +312,10 @@ export default function TrackHome() {
                             )
                           }
                         />
+                      </View>
+                    ) : tile.kind === 'library' ? (
+                      <View key={tile.key} className="flex-1">
+                        <LibraryTile />
                       </View>
                     ) : (
                       <View key={tile.key} className="flex-1">
@@ -476,6 +481,38 @@ function InjuryTile() {
   );
 }
 
+// Entry point to the cross-discipline Movement Library (search + browse
+// the full catalog + starred favourites). Shares the grid tile shape so
+// it reads as a sibling of the movement groups / stations.
+function LibraryTile() {
+  const accent = '#6366F1';
+  return (
+    <Pressable
+      onPress={() => router.push('/track/movements' as never)}
+      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:bg-slate-200 dark:hover:bg-gray-700 active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name="library-outline" size={22} color={accent} />
+      </View>
+      <View className="flex-1 justify-end">
+        <Text
+          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          numberOfLines={2}>
+          Movement Library
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Search & star all movements
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 // The Hyrox Track grid — the eight stations + 1 km run split, the race
 // simulation, and the injury tracker, each tile deep-linking straight
 // to that station's PB / trend / journal detail.
@@ -485,11 +522,13 @@ function HyroxStationsCard() {
     | { kind: 'station'; station: HyroxStation }
     | { kind: 'sim' }
     | { kind: 'time' }
+    | { kind: 'library' }
     | { kind: 'injury' }
   )[] = [
     { kind: 'time' as const },
     ...HYROX_STATIONS.map((station) => ({ kind: 'station' as const, station })),
     { kind: 'sim' as const },
+    { kind: 'library' as const },
     { kind: 'injury' as const },
   ];
   return (
@@ -545,6 +584,8 @@ function HyroxStationsCard() {
                       router.push(`/track/movement/${HYROX_TIME.key}` as never)
                     }
                   />
+                ) : tile.kind === 'library' ? (
+                  <LibraryTile />
                 ) : (
                   <InjuryTile />
                 )}
