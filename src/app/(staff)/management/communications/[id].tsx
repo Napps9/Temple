@@ -65,7 +65,7 @@ export default function CampaignDetailScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl lg:max-w-6xl md:mx-auto md:w-full">
         <BackLink label="Communications" />
         {canManageComms === false ? (
           <Text className="text-gray-500 dark:text-gray-400">
@@ -230,6 +230,11 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         </Text>
       </View>
 
+      {/* On desktop: settings (details/topic/audience) in a left column,
+          the email canvas in a wide right column. Send + warnings sit
+          full-width below both, so mobile keeps compose-before-send. */}
+      <View className="lg:flex-row lg:items-start gap-5">
+      <View className="gap-5 lg:w-[360px] lg:shrink-0">
       {/* Details */}
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
         <Input
@@ -281,7 +286,9 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         </Text>
         <AudienceBuilder value={audience} onChange={setAudience} />
       </View>
+      </View>
 
+      <View className="lg:flex-1">
       {/* Content */}
       <View className="gap-2">
         <View className="flex-row items-center justify-between">
@@ -314,6 +321,8 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             gymId={membership?.gymId ?? ''}
           />
         )}
+      </View>
+      </View>
       </View>
 
       {/* Warnings */}
