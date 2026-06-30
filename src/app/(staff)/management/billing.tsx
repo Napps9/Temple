@@ -6,6 +6,7 @@ import { Platform, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { PaymentProviderCard } from '@/components/PaymentProviderCard';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -142,9 +143,9 @@ export default function BillingScreen() {
             Billing & payments
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Connect your gym's Stripe account to charge members for
-            memberships and credit packs. You keep 100% — Temple takes no
-            cut of your payments.
+            Connect a payment provider to charge members for memberships and
+            credit packs. Members are charged on your own connected account —
+            you keep 100%, Temple takes no cut.
           </Text>
         </View>
 
@@ -207,6 +208,13 @@ export default function BillingScreen() {
             </>
           )}
         </View>
+
+        <PaymentProviderCard
+          name="GoCardless"
+          blurb="Bank Direct Debit — lower fees and less card-expiry churn for UK gyms."
+          icon="business-outline"
+          status="coming_soon"
+        />
 
         <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
           <View className="flex-row items-center gap-3">

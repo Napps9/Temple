@@ -10,6 +10,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { DurationField } from '@/components/DurationField';
 import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
+import { PaymentProviderCard } from '@/components/PaymentProviderCard';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
@@ -410,25 +411,38 @@ export function PlansPanel() {
 
   return (
     <View className="gap-4">
-        {stripeConnected === false ? (
-          <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-4 gap-3">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="card-outline" size={18} color="#D97706" />
-              <Text className="flex-1 text-amber-800 dark:text-amber-200 font-semibold">
-                Connect Stripe to sell memberships
+        {stripeConnected !== null ? (
+          <View className="gap-3">
+            <View className="gap-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Payment providers
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Members are charged on your own connected account — Temple takes
+                no cut. Connect a provider before creating plans; you can still
+                edit existing plans below.
               </Text>
             </View>
-            <Text className="text-amber-700 dark:text-amber-300 text-sm">
-              Members are charged on your own Stripe account, so you need to
-              connect it before creating plans. You can still edit existing
-              plans below.
-            </Text>
-            <Button
-              variant="secondary"
-              icon="link-outline"
-              onPress={() => router.push('/management/billing' as never)}>
-              Connect Stripe
-            </Button>
+            <PaymentProviderCard
+              name="Stripe"
+              blurb="Cards & wallets"
+              icon="card-outline"
+              status={stripeConnected ? 'connected' : 'available'}>
+              {!stripeConnected ? (
+                <Button
+                  variant="secondary"
+                  icon="link-outline"
+                  onPress={() => router.push('/management/billing' as never)}>
+                  Connect Stripe
+                </Button>
+              ) : null}
+            </PaymentProviderCard>
+            <PaymentProviderCard
+              name="GoCardless"
+              blurb="Bank Direct Debit — lower fees, less card churn (UK)"
+              icon="business-outline"
+              status="coming_soon"
+            />
           </View>
         ) : null}
 

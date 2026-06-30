@@ -365,6 +365,10 @@ The Manage page presents a tab strip:
   subscription-recording webhook are built (`stripe-checkout` /
   `stripe-webhook`). Needs `STRIPE_SECRET_KEY`
   + `STRIPE_CONNECT_CLIENT_ID` secrets — see `docs/stripe-setup.md`.
+  Both Billing and the Plans page render a multi-provider list
+  (`<PaymentProviderCard>`): Stripe (connect/connected) plus GoCardless
+  shown as **Coming soon** (UI scaffolding only — no GoCardless backend
+  yet; see `docs/payment-providers.md`).
 - **Membership (self-serve)** [member] — members pick and pay for a plan
   themselves at `/membership` (linked from Account): the gym's live
   plans, their current subscription + credit balance, and a Subscribe
