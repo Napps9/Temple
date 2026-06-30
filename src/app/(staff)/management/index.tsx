@@ -321,24 +321,23 @@ export default function ManagementHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
         {/* Owner-only setup nudge. Self-hides once all five steps are
             done so the card never nags a finished gym. */}
         <GymSetupChecklist />
-        {/* Tabs lead the page; the headline KPI tiles live inside the
-            Insights tab where the rest of the metrics are. */}
+        {/* Tabs become a left nav rail on desktop with the active tab's
+            content beside them; on mobile the pills wrap above the
+            content. */}
+        <View className="gap-4 lg:flex-row lg:items-start">
         {availableCategories.length > 1 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerClassName="gap-2">
+          <View className="flex-row flex-wrap gap-2 lg:flex-col lg:flex-nowrap lg:w-52 lg:shrink-0">
             {availableCategories.map((c) => {
               const selected = c === activeCategory;
               return (
                 <Pressable
                   key={c}
                   onPress={() => setActive(c)}
-                  className={`px-4 py-2 rounded-full flex-row items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-full flex-row items-center gap-1.5 lg:w-full hover:opacity-90 active:opacity-80 ${
                     selected ? 'bg-primary' : 'bg-slate-200 dark:bg-gray-800'
                   }`}>
                   <Ionicons
@@ -357,8 +356,9 @@ export default function ManagementHome() {
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
         ) : null}
+        <View className="lg:flex-1 gap-4">
         {activeCategory === 'insights' ? (
           <InsightsTab />
         ) : activeCategory === 'members' ? (
@@ -398,6 +398,8 @@ export default function ManagementHome() {
             />
           ))
         )}
+        </View>
+        </View>
       </ScrollView>
     </Screen>
   );
