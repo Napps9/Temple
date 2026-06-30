@@ -1,4 +1,4 @@
--- 0089_set_gym_currency.sql
+-- 0090_set_gym_currency.sql
 --
 -- Owner-gated setter for the gym's billing currency (gyms.currency,
 -- added in 0027, default 'GBP'). Currency normally follows the
