@@ -80,7 +80,9 @@ export function TopNav({
             }}
             hitSlop={4}
             className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
-              active ? 'bg-white dark:bg-gray-700 shadow-pill' : ''
+              active
+                ? 'bg-white dark:bg-gray-700 shadow-pill'
+                : 'hover:bg-white/50 dark:hover:bg-gray-700/40'
             }`}>
             <Ionicons
               name={s.icon}
@@ -118,7 +120,7 @@ export function TopNav({
               router.replace(homeHref as never);
             }}
             hitSlop={6}
-            className="flex-row items-center gap-3 active:opacity-70">
+            className="flex-row items-center gap-3 hover:opacity-80 active:opacity-70">
             <GymLogo
               size={36}
               logoUrl={brand.logoUrl}
@@ -144,7 +146,7 @@ export function TopNav({
             }}
             hitSlop={4}
             accessibilityLabel={crossLabel}
-            className={`h-9 px-3 rounded-full border flex-row items-center gap-1.5 active:opacity-70 ${crossClasses}`}>
+            className={`h-9 px-3 rounded-full border flex-row items-center gap-1.5 hover:opacity-80 active:opacity-70 ${crossClasses}`}>
             <Ionicons name="swap-horizontal-outline" size={16} color={crossTint} />
             <Text className={`text-xs font-semibold hidden md:flex ${crossTextClass}`}>
               {crossLabel}
@@ -160,7 +162,7 @@ export function TopNav({
           hitSlop={4}
           accessibilityLabel="Account"
           style={onAccount ? { borderColor: brand.primaryColor } : undefined}
-          className={`w-9 h-9 rounded-full items-center justify-center border-2 active:opacity-70 ${
+          className={`w-9 h-9 rounded-full items-center justify-center border-2 hover:opacity-80 active:opacity-70 ${
             onAccount ? '' : 'border-transparent'
           }`}>
           <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={30} />
@@ -175,7 +177,7 @@ export function TopNav({
           accessibilityLabel={
             notifCount > 0 ? `Inbox, ${notifCount} need your attention` : 'Inbox'
           }
-          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">
+          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 active:opacity-70">
           <Ionicons
             name="chatbubble-ellipses-outline"
             size={19}
@@ -197,7 +199,7 @@ export function TopNav({
           }}
           hitSlop={4}
           accessibilityLabel="Toggle theme"
-          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">
+          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 active:opacity-70">
           <Ionicons
             name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
             size={19}

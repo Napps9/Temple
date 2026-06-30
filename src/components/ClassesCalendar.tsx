@@ -284,7 +284,9 @@ function ViewSwitcher({ view }: { view: ViewMode }) {
             router.setParams({ view: v });
           }}
           className={`px-4 py-1.5 rounded-full ${
-            view === v ? 'bg-white dark:bg-gray-700 shadow-pill' : ''
+            view === v
+              ? 'bg-white dark:bg-gray-700 shadow-pill'
+              : 'hover:bg-white/50 dark:hover:bg-gray-700/40'
           }`}>
           <Text
             className={`capitalize text-sm font-medium ${
@@ -311,7 +313,7 @@ function TodayButton({ onPress }: { onPress: () => void }) {
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel="Jump to today"
-      className="rounded-full border border-gray-200 dark:border-gray-700 px-4 h-9 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+      className="rounded-full border border-gray-200 dark:border-gray-700 px-4 h-9 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
       <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
         Today
       </Text>
@@ -498,7 +500,7 @@ export function ClassesCalendar({
               setDate(startOfDay(addMonths(date, -1)));
             }}
             hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
           </Pressable>
           <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
@@ -510,14 +512,14 @@ export function ClassesCalendar({
               setDate(startOfDay(addMonths(date, 1)));
             }}
             hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
             <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
           </Pressable>
           {canCreate ? (
             <View className="absolute right-0 top-6">
               <Pressable
                 onPress={() => setCreateAt({ date })}
-                className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 active:bg-primary-dark shadow-pop">
+                className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-pop">
                 <Ionicons name="add" size={16} color="#FFFFFF" />
                 <Text className="hidden md:flex text-white text-sm font-semibold">
                   Add class
@@ -757,7 +759,7 @@ function DayGrid({
               {isOccupied ? null : canCreate ? (
                 <Pressable
                   onPress={() => onCreateAt(date, hour)}
-                  className="border border-dashed border-gray-300 dark:border-gray-600 rounded-xl px-4 justify-center active:bg-gray-50 dark:active:bg-gray-800"
+                  className="border border-dashed border-gray-300 dark:border-gray-600 rounded-xl px-4 justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 hover:border-gray-400 dark:hover:border-gray-500 active:bg-gray-50 dark:active:bg-gray-800"
                   style={{ height: HOUR_HEIGHT - 12 }}>
                   <Text className="text-gray-400 dark:text-gray-500 text-sm">+ Add a class</Text>
                 </Pressable>
@@ -856,7 +858,11 @@ function DayClassCard({
       }
       className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800 overflow-hidden shadow-card ${
         compact ? 'p-2' : 'p-4'
-      } ${isPast ? 'opacity-50' : ''}`}>
+      } ${
+        isPast
+          ? 'opacity-50'
+          : 'hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-pop'
+      }`}>
       <View className={`flex-1 ${compact ? 'gap-0.5' : 'gap-1.5'}`}>
         <View className="flex-row items-center gap-2">
           <View

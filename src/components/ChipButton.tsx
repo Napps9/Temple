@@ -20,29 +20,32 @@ type Tone = 'primary' | 'neutral' | 'amber' | 'red' | 'filled' | 'inverse';
 // language: a tinted pill, an icon, and a pressed state.
 const TONE_STYLES: Record<Tone, { container: string; text: string }> = {
   primary: {
-    container: 'bg-secondary/10 border border-secondary/30 active:bg-secondary/20',
+    container:
+      'bg-secondary/10 border border-secondary/30 hover:bg-secondary/15 active:bg-secondary/20',
     text: 'text-secondary',
   },
   neutral: {
     container:
-      'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 active:bg-gray-100 dark:active:bg-gray-700',
+      'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/60 active:bg-gray-100 dark:active:bg-gray-700',
     text: 'text-gray-700 dark:text-gray-200',
   },
   amber: {
-    container: 'bg-amber-500/10 border border-amber-500/40 active:bg-amber-500/20',
+    container:
+      'bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/15 active:bg-amber-500/20',
     text: 'text-amber-600 dark:text-amber-400',
   },
   red: {
-    container: 'bg-red-500/10 border border-red-500/40 active:bg-red-500/20',
+    container:
+      'bg-red-500/10 border border-red-500/40 hover:bg-red-500/15 active:bg-red-500/20',
     text: 'text-red-600 dark:text-red-400',
   },
   filled: {
-    container: 'bg-primary border border-primary active:bg-primary-dark',
+    container: 'bg-primary border border-primary hover:opacity-90 active:bg-primary-dark',
     text: 'text-white',
   },
   inverse: {
     container:
-      'bg-gray-900 dark:bg-gray-50 border border-gray-900 dark:border-gray-50 active:bg-gray-700 dark:active:bg-gray-200',
+      'bg-gray-900 dark:bg-gray-50 border border-gray-900 dark:border-gray-50 hover:opacity-90 active:bg-gray-700 dark:active:bg-gray-200',
     text: 'text-white dark:text-gray-900',
   },
 };
