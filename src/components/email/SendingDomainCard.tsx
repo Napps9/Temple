@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { useThemeColors } from '@/lib/theme';
-import { useSendingDomain, useSendingDomainAction } from '@/lib/comms';
+import { formatDateTime, useSendingDomain, useSendingDomainAction } from '@/lib/comms';
 import {
+  domainStatusDescription,
   domainStatusMeta,
   fromAddress,
   validateLocalPart,
@@ -35,6 +37,19 @@ function StatusBadge({ status }: { status: DomainStatus }) {
   return (
     <View className={`px-2 py-0.5 rounded-full ${tone.bg}`}>
       <Text className={`text-[11px] font-semibold ${tone.text}`}>{meta.label}</Text>
+    </View>
+  );
+}
+
+// Plain-language "here's what's happening / what to do" for the current
+// status, colour-matched to the badge.
+function StatusExplainer({ status }: { status: DomainStatus }) {
+  const tone = TONE[domainStatusMeta(status).tone];
+  return (
+    <View className={`rounded-lg p-3 ${tone.bg}`}>
+      <Text className={`text-xs leading-5 ${tone.text}`}>
+        {domainStatusDescription(status)}
+      </Text>
     </View>
   );
 }
@@ -95,6 +110,9 @@ export function SendingDomainCard() {
   const [formError, setFormError] = useState<string | null>(null);
   const [editingLocal, setEditingLocal] = useState(false);
   const [localDraft, setLocalDraft] = useState('');
+  const [verifyNote, setVerifyNote] = useState<
+    { tone: 'amber' | 'red'; text: string } | null
+  >(null);
 
   const domain = query.data;
   const records = (domain?.records as unknown as DnsRecord[] | null) ?? [];
@@ -107,6 +125,32 @@ export function SendingDomainCard() {
     const l = validateLocalPart(fromLocal);
     if (!l.ok) return setFormError(l.error);
     action.mutate({ action: 'connect', domain: d.domain, from_local: l.local });
+  }
+
+  // Verify runs a check against Resend and reads back the fresh status.
+  // A plain success is silent (the card flips to Verified); anything else
+  // tells the gym why it's not done yet, so a click never feels like a no-op.
+  function verify() {
+    setVerifyNote(null);
+    action.mutate(
+      { action: 'verify' },
+      {
+        onSuccess: (data) => {
+          if (data.status === 'verified') return;
+          if (data.status === 'failed') {
+            setVerifyNote({
+              tone: 'red',
+              text: 'Still not verified — the records don’t match yet. Double-check each value against your DNS, then verify again.',
+            });
+          } else {
+            setVerifyNote({
+              tone: 'amber',
+              text: 'Not verified yet — your DNS changes haven’t reached our email provider. This can take a few minutes (up to 48h). Leave the records in place and check again shortly.',
+            });
+          }
+        },
+      },
+    );
   }
 
   function saveLocal() {
@@ -127,11 +171,15 @@ export function SendingDomainCard() {
         </Text>
         {domain ? <StatusBadge status={domain.status} /> : null}
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        Authenticate a domain you own to send from your own address — best
-        deliverability, no “via” label. A subdomain like mail.yourgym.com is
-        ideal.
-      </Text>
+      {domain ? (
+        <StatusExplainer status={domain.status} />
+      ) : (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Authenticate a domain you own to send from your own address — best
+          deliverability, no “via” label. A subdomain like mail.yourgym.com is
+          ideal.
+        </Text>
+      )}
 
       {query.isLoading ? (
         <ActivityIndicator />
@@ -220,31 +268,25 @@ export function SendingDomainCard() {
             </View>
           )}
 
-          <Pressable
-            onPress={() => action.mutate({ action: 'disconnect' })}
-            disabled={action.isPending}
-            hitSlop={6}
-            className="self-start active:opacity-70">
-            <Text className="text-red-600 dark:text-red-400 text-sm">Disconnect domain</Text>
-          </Pressable>
+          <View className="self-start">
+            <ChipButton
+              tone="red"
+              label="Disconnect domain"
+              icon="close-circle-outline"
+              onPress={() => action.mutate({ action: 'disconnect' })}
+              disabled={action.isPending}
+            />
+          </View>
         </View>
       ) : (
         // ---- Pending / failed: show records + verify ---------------------
         <View className="gap-3">
           <Text className="text-gray-700 dark:text-gray-200 text-sm">
             Add these records to the DNS for{' '}
-            <Text className="font-mono">{domain.domain}</Text>, then verify. DNS
-            changes can take up to 48 hours to propagate.
+            <Text className="font-mono">{domain.domain}</Text>. The two{' '}
+            <Text className="font-mono">send</Text> records share a host — add
+            both.
           </Text>
-
-          {domain.status === 'failed' ? (
-            <View className="bg-red-500/10 rounded-lg p-3">
-              <Text className="text-red-600 dark:text-red-400 text-xs">
-                Verification failed. Double-check the records below match your DNS
-                exactly, then verify again.
-              </Text>
-            </View>
-          ) : null}
 
           {records.length === 0 ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -258,16 +300,39 @@ export function SendingDomainCard() {
             </View>
           )}
 
-          <Button onPress={() => action.mutate({ action: 'verify' })} loading={action.isPending}>
+          {verifyNote ? (
+            <View
+              className={`rounded-lg p-3 ${
+                verifyNote.tone === 'red' ? 'bg-red-500/10' : 'bg-amber-500/10'
+              }`}>
+              <Text
+                className={`text-xs ${
+                  verifyNote.tone === 'red'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-amber-600 dark:text-amber-400'
+                }`}>
+                {verifyNote.text}
+              </Text>
+            </View>
+          ) : null}
+
+          <Button onPress={verify} loading={action.isPending}>
             I’ve added the records — verify
           </Button>
-          <Pressable
-            onPress={() => action.mutate({ action: 'disconnect' })}
-            disabled={action.isPending}
-            hitSlop={6}
-            className="self-start active:opacity-70">
-            <Text className="text-red-600 dark:text-red-400 text-sm">Disconnect domain</Text>
-          </Pressable>
+          {domain.last_checked_at ? (
+            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+              Last checked {formatDateTime(domain.last_checked_at)}
+            </Text>
+          ) : null}
+          <View className="self-start">
+            <ChipButton
+              tone="red"
+              label="Disconnect domain"
+              icon="close-circle-outline"
+              onPress={() => action.mutate({ action: 'disconnect' })}
+              disabled={action.isPending}
+            />
+          </View>
         </View>
       )}
 

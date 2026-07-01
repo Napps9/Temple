@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  domainStatusDescription,
   domainStatusMeta,
   fromAddress,
   isApexDomain,
@@ -80,6 +81,15 @@ describe('domainStatusMeta', () => {
     expect(domainStatusMeta('verified')).toEqual({ label: 'Verified', tone: 'green' });
     expect(domainStatusMeta('pending').tone).toBe('amber');
     expect(domainStatusMeta('failed').tone).toBe('red');
+  });
+});
+
+describe('domainStatusDescription', () => {
+  it('gives a distinct, non-empty explanation for every status', () => {
+    const statuses = ['pending', 'verified', 'failed', 'temporary_failure'] as const;
+    const texts = statuses.map(domainStatusDescription);
+    for (const t of texts) expect(t.length).toBeGreaterThan(0);
+    expect(new Set(texts).size).toBe(statuses.length);
   });
 });
 

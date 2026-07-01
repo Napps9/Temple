@@ -260,17 +260,24 @@ async function functionErrorMessage(error: unknown): Promise<string> {
   return error instanceof Error ? error.message : 'Something went wrong';
 }
 
+type SendingDomainActionResult = {
+  ok?: boolean;
+  status?: SendingDomainRow['status'];
+  from_local?: string;
+  records?: SendingDomainRow['records'];
+};
+
 export function useSendingDomainAction() {
   const queryClient = useQueryClient();
   const { data: membership } = useGymMembership();
-  return useMutation<{ ok?: boolean }, Error, DomainAction>({
+  return useMutation<SendingDomainActionResult, Error, DomainAction>({
     mutationFn: async (input) => {
       if (!membership?.gymId) throw new Error('No gym selected');
       const { data, error } = await supabase.functions.invoke('sending-domain', {
         body: { ...input, gym_id: membership.gymId },
       });
       if (error) throw new Error(await functionErrorMessage(error));
-      return (data as { ok?: boolean }) ?? {};
+      return (data as SendingDomainActionResult) ?? {};
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comms-sending-domain'] });

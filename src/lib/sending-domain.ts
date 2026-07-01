@@ -148,6 +148,22 @@ export function domainStatusMeta(status: DomainStatus): {
   }
 }
 
+// Plain-language explanation of what each status means and what the gym
+// should do next — the badge alone doesn't tell them whether to wait, act,
+// or that they're done.
+export function domainStatusDescription(status: DomainStatus): string {
+  switch (status) {
+    case 'pending':
+      return 'Your domain is registered with our email provider. Add the DNS records below at your DNS host to prove you own it, then hit Verify. Until it’s verified, emails still send as a simulation.';
+    case 'verified':
+      return 'Your domain is authenticated — campaigns and invites now send from your own address.';
+    case 'temporary_failure':
+      return 'We’re re-checking your DNS with our email provider. This usually clears on its own — check back in a few minutes and verify again.';
+    case 'failed':
+      return 'We couldn’t confirm your DNS records. Double-check they match the values below exactly, give DNS time to propagate, then verify again.';
+  }
+}
+
 // Map Resend's domain status strings onto our enum (Resend uses
 // not_started / pending / verified / failed / temporary_failure).
 export function mapResendStatus(raw: unknown): DomainStatus {
