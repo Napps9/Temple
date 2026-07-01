@@ -25,6 +25,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const RESEND_BASE = 'https://api.resend.com/domains';
 
+// Create gym sending domains in the EU (Ireland) — matches the platform
+// domain and keeps email infra/logs in-region for a UK/EU business.
+// Resend otherwise defaults new domains to us-east-1.
+const SENDING_REGION = 'eu-west-1';
+
 // Defence in depth — mirrors src/lib/sending-domain.ts. The client
 // validates for UX; this is the authoritative gate.
 const FREE_EMAIL_DOMAINS = new Set([
@@ -233,7 +238,10 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!record) {
-      const created = await resend('POST', '', RESEND_API_KEY, { name: domain });
+      const created = await resend('POST', '', RESEND_API_KEY, {
+        name: domain,
+        region: SENDING_REGION,
+      });
       if (!created.ok) {
         return json(
           { error: created.errorText || 'Resend rejected the domain.' },
