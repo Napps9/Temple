@@ -93,9 +93,9 @@ export function templeEmailHtml(opts: {
         <tr><td style="background:#ffffff;border:1px solid #ECE8DF;border-radius:16px;overflow:hidden;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td height="4" style="height:4px;background:#E8B620;font-size:0;line-height:0;">&nbsp;</td>
-              <td height="4" style="height:4px;background:#3B6BA5;font-size:0;line-height:0;">&nbsp;</td>
               <td height="4" style="height:4px;background:#111111;font-size:0;line-height:0;">&nbsp;</td>
+              <td height="4" style="height:4px;background:#3B6BA5;font-size:0;line-height:0;">&nbsp;</td>
+              <td height="4" style="height:4px;background:#E8B620;font-size:0;line-height:0;">&nbsp;</td>
             </tr>
           </table>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">

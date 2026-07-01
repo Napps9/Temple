@@ -1,23 +1,43 @@
-<!-- Supabase Auth → Email Templates → "Reauthentication"
+<!-- Supabase Auth → Authentication → Emails → Templates → "Reauthentication"
      Subject: Your Temple verification code
-     This one sends a 6-digit code ({{ .Token }}), not a link. -->
+     Sends a code ({{ .Token }}), not a link. -->
 <!doctype html>
 <html>
-  <body style="margin:0;background:#F4F2ED;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your Temple verification code.</div>
-    <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
-      <div style="text-align:center;padding:4px 0 28px;">
-        <img src="https://app.jointemple.io/email/temple-lockup.png" alt="Temple" width="188" style="display:inline-block;width:188px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;" />
-      </div>
-      <div style="background:#ffffff;border-radius:16px;padding:28px;border:1px solid #ECE8DF;">
-        <h1 style="margin:0 0 14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:20px;color:#111111;">Your verification code</h1>
-        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#334155;">
-          <p style="margin:0 0 14px;">Enter this code to confirm it's you:</p>
-        </div>
-        <div style="text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:30px;font-weight:800;letter-spacing:8px;color:#111111;background:#F4F2ED;border-radius:10px;padding:16px;margin:6px 0;">{{ .Token }}</div>
-      </div>
-      <p style="text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#94a3b8;margin:18px 0 4px;">If you didn't request this, you can safely ignore this email.</p>
-      <p style="text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:#B8B3AA;margin:6px 0 0;letter-spacing:1px;">TEMPLE TECHNOLOGY</p>
-    </div>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light only">
+</head>
+<body style="margin:0;padding:0;background:#F4F2ED;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">Your Temple verification code.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F4F2ED;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;">
+        <tr><td align="center" style="padding:6px 0 26px;">
+          <img src="https://app.jointemple.io/email/temple-lockup.png" alt="Temple" width="196" style="display:block;width:196px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;">
+        </td></tr>
+        <tr><td style="background:#ffffff;border:1px solid #ECE8DF;border-radius:16px;overflow:hidden;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td height="4" style="height:4px;background:#111111;font-size:0;line-height:0;">&nbsp;</td>
+            <td height="4" style="height:4px;background:#3B6BA5;font-size:0;line-height:0;">&nbsp;</td>
+            <td height="4" style="height:4px;background:#E8B620;font-size:0;line-height:0;">&nbsp;</td>
+          </tr></table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:32px;">
+            <h1 style="margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:23px;line-height:1.3;font-weight:700;color:#111111;">Your verification code</h1>
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3f4650;">
+              <p style="margin:0 0 14px;">Enter this code to confirm it's you:</p>
+            </div>
+            <div style="text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:30px;font-weight:800;letter-spacing:8px;color:#111111;background:#F4F2ED;border-radius:10px;padding:16px;margin:8px 0 2px;">{{ .Token }}</div>
+          </td></tr></table>
+        </td></tr>
+        <tr><td align="center" style="padding:24px 12px 2px;">
+          <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:#94a3b8;">If you didn't request this, you can safely ignore this email.</span>
+        </td></tr>
+        <tr><td align="center" style="padding:6px 12px 0;">
+          <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#B8B3AA;">TEMPLE&nbsp;&middot;&nbsp;TECHNOLOGY</span>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
 </html>
