@@ -113,6 +113,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   const brand = useGymBrand();
   const settings = useCommsSettings();
   const send = useSendCampaign();
+  const queryClient = useQueryClient();
 
   const brandSeed: BrandSeed = useMemo(
     () => ({
@@ -182,14 +183,30 @@ function EditorView({ campaign }: { campaign: Campaign }) {
           setError(errorMessage(upErr, 'Could not save'));
         } else {
           setSaveState('saved');
+          // Keep the campaign list fresh so a saved draft shows up without
+          // a hard refresh, even when the list stayed mounted underneath.
+          void queryClient.invalidateQueries({ queryKey: ['comms-campaigns'] });
         }
       },
-    [title, subject, preheader, fromName, document, audience, topicId, campaign.id],
+    [title, subject, preheader, fromName, document, audience, topicId, campaign.id, queryClient],
   );
 
-  // Debounced autosave on any edit.
+  // Save immediately (used by the explicit Save buttons), cancelling any
+  // pending debounced write so we don't double-save.
+  const saveNow = useMemo(
+    () =>
+      function saveNow() {
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        void persist();
+      },
+    [persist],
+  );
+
+  // Debounced autosave on any edit. Marking 'idle' first makes the Save
+  // button reflect that there are unsaved changes until the write lands.
   useEffect(() => {
     if (!initialized.current) return;
+    setSaveState('idle');
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       void persist();
@@ -252,7 +269,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
               Design email
             </Text>
-            <SaveIndicator state={saveState} />
+            <SaveButton state={saveState} onPress={saveNow} />
             {Platform.OS === 'web' ? (
               <Pressable
                 onPress={() => setShowPreview((v) => !v)}
@@ -296,7 +313,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
               Edit campaign
             </Text>
-            <SaveIndicator state={saveState} />
+            <SaveButton state={saveState} onPress={saveNow} />
           </View>
           <Text className="text-gray-500 dark:text-gray-400">
             Build your email, choose who gets it, then send.
@@ -436,24 +453,43 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   );
 }
 
-function SaveIndicator({ state }: { state: 'idle' | 'saving' | 'saved' }) {
-  if (state === 'saving') {
-    return (
-      <View className="flex-row items-center gap-1">
-        <ActivityIndicator size="small" />
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">Saving…</Text>
-      </View>
-    );
-  }
-  if (state === 'saved') {
-    return (
-      <View className="flex-row items-center gap-1">
-        <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">Saved</Text>
-      </View>
-    );
-  }
-  return null;
+// Explicit Save control: autosave still runs, but a visible button plus a
+// "Saved" confirmation removes the guesswork about whether edits landed.
+function SaveButton({
+  state,
+  onPress,
+}: {
+  state: 'idle' | 'saving' | 'saved';
+  onPress: () => void;
+}) {
+  const saved = state === 'saved';
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={state === 'saving'}
+      hitSlop={6}
+      className={`flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:opacity-80 hover:opacity-90 ${
+        saved
+          ? 'bg-green-500/10'
+          : 'bg-primary disabled:opacity-70'
+      }`}>
+      {state === 'saving' ? (
+        <ActivityIndicator size="small" color={saved ? '#16A34A' : '#FFFFFF'} />
+      ) : (
+        <Ionicons
+          name={saved ? 'checkmark-circle' : 'save-outline'}
+          size={15}
+          color={saved ? '#16A34A' : '#FFFFFF'}
+        />
+      )}
+      <Text
+        className={`text-sm font-semibold ${
+          saved ? 'text-green-700 dark:text-green-400' : 'text-white'
+        }`}>
+        {state === 'saving' ? 'Saving…' : saved ? 'Saved' : 'Save'}
+      </Text>
+    </Pressable>
+  );
 }
 
 function DeleteCampaignButton({ campaignId }: { campaignId: string }) {

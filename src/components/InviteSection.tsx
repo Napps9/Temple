@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -39,9 +40,23 @@ export function InviteSection({
   const [emailNotice, setEmailNotice] = useState<
     { tone: 'ok' | 'warn'; text: string } | null
   >(null);
+  // Set when the code was minted but the email couldn't be sent (no
+  // sending domain / from-address configured) — the owner can still
+  // share this link manually rather than being stuck.
+  const [manualLink, setManualLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const showRolePicker = roles.length > 1;
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail.trim());
+
+  function copyLink() {
+    if (!manualLink) return;
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+      navigator.clipboard?.writeText(manualLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  }
 
   const emailInvite = useMutation({
     mutationFn: async () => {
@@ -55,21 +70,35 @@ export function InviteSection({
         },
       });
       if (error) throw error;
-      return data as { ok: boolean; sent: boolean; error?: string };
+      return data as { ok: boolean; sent: boolean; code?: string; error?: string };
     },
     onSuccess: (data) => {
+      setCopied(false);
       if (data.sent) {
+        setManualLink(null);
         setEmailNotice({ tone: 'ok', text: `Invite sent to ${inviteEmail.trim()}.` });
         setInviteEmail('');
-      } else {
-        const reason = data.error ? ` (${data.error})` : '';
+      } else if (data.code) {
+        // Email delivery isn't set up, but the invite itself is valid.
+        // Hand over the link so the owner can send it themselves.
+        setManualLink(`${origin}/accept-invite?code=${encodeURIComponent(data.code)}`);
         setEmailNotice({
           tone: 'warn',
-          text: `Couldn't send the invite${reason}. Check the address and try again.`,
+          text: 'Email delivery isn’t set up yet, so we couldn’t send this automatically. The invite is ready — copy the link below and share it directly.',
+        });
+      } else {
+        const reason = data.error ? ` (${data.error})` : '';
+        setManualLink(null);
+        setEmailNotice({
+          tone: 'warn',
+          text: `Couldn't create the invite${reason}. Please try again.`,
         });
       }
     },
-    onError: () => setEmailNotice(null),
+    onError: () => {
+      setManualLink(null);
+      setEmailNotice(null);
+    },
   });
 
   return (
@@ -136,6 +165,20 @@ export function InviteSection({
             }`}>
             {emailNotice.text}
           </Text>
+        ) : null}
+        {manualLink ? (
+          <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+            <Text
+              className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono"
+              numberOfLines={1}>
+              {manualLink}
+            </Text>
+            <ChipButton
+              label={copied ? 'Copied' : 'Copy'}
+              icon={copied ? 'checkmark' : 'copy-outline'}
+              onPress={copyLink}
+            />
+          </View>
         ) : null}
         {emailInvite.error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">
