@@ -70,10 +70,12 @@ function mapResendStatus(raw: unknown): string {
     case 'verified':
       return 'verified';
     case 'failed':
+    case 'failure':
       return 'failed';
     case 'temporary_failure':
       return 'temporary_failure';
     default:
+      // not_started / pending / verifying
       return 'pending';
   }
 }
@@ -211,14 +213,35 @@ Deno.serve(async (req: Request) => {
     }
     const fromLocal = normalizeLocalPart(fromLocalInput) || 'news';
 
-    const created = await resend('POST', '', RESEND_API_KEY, { name: domain });
-    if (!created.ok) {
-      return json(
-        { error: created.errorText || 'Resend rejected the domain.' },
-        created.status === 422 || created.status === 400 ? 400 : 502,
-      );
+    // Reuse an existing Resend domain with this name instead of creating a
+    // duplicate. Resend allows multiple same-name domains (e.g. one per
+    // region); a second one silently splits DNS ownership of
+    // resend._domainkey so neither can verify cleanly. Prefer an
+    // already-verified match, then any match, else create fresh.
+    let record: any = null;
+    const list = await resend('GET', '', RESEND_API_KEY);
+    const listed: any[] = Array.isArray(list.data?.data)
+      ? list.data.data
+      : Array.isArray(list.data)
+        ? list.data
+        : [];
+    const matches = listed.filter((d) => normalizeDomain(d?.name ?? '') === domain);
+    const match = matches.find((d) => d?.status === 'verified') ?? matches[0] ?? null;
+    if (match?.id) {
+      const got = await resend('GET', `/${match.id}`, RESEND_API_KEY);
+      record = got.ok ? got.data : match;
     }
-    const record = created.data ?? {};
+
+    if (!record) {
+      const created = await resend('POST', '', RESEND_API_KEY, { name: domain });
+      if (!created.ok) {
+        return json(
+          { error: created.errorText || 'Resend rejected the domain.' },
+          created.status === 422 || created.status === 400 ? 400 : 502,
+        );
+      }
+      record = created.data ?? {};
+    }
     const { error: upErr } = await service.from('gym_sending_domains').upsert(
       {
         gym_id: gymId,

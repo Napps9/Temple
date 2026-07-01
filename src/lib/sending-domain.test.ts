@@ -99,6 +99,8 @@ describe('mapResendStatus', () => {
     expect(mapResendStatus('not_started')).toBe('pending');
     expect(mapResendStatus('pending')).toBe('pending');
     expect(mapResendStatus('failed')).toBe('failed');
+    expect(mapResendStatus('failure')).toBe('failed');
+    expect(mapResendStatus('verifying')).toBe('pending');
     expect(mapResendStatus('temporary_failure')).toBe('temporary_failure');
     expect(mapResendStatus(undefined)).toBe('pending');
     expect(mapResendStatus('weird-new-value')).toBe('pending');

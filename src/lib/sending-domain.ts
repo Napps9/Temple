@@ -171,11 +171,13 @@ export function mapResendStatus(raw: unknown): DomainStatus {
     case 'verified':
       return 'verified';
     case 'failed':
+    case 'failure':
       return 'failed';
     case 'temporary_failure':
       return 'temporary_failure';
     case 'pending':
     case 'not_started':
+    case 'verifying':
     default:
       return 'pending';
   }
