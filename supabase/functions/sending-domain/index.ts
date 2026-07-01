@@ -279,12 +279,21 @@ Deno.serve(async (req: Request) => {
     if (!existing?.resend_domain_id) {
       return json({ error: 'Connect a domain first' }, 400);
     }
-    // Trigger a verification attempt, then read the fresh state. The verify
-    // call can 4xx if it's mid-check; we still GET the latest either way.
-    await resend('POST', `/${existing.resend_domain_id}/verify`, RESEND_API_KEY);
-    const got = await resend('GET', `/${existing.resend_domain_id}`, RESEND_API_KEY);
+    // Read the current state first. Resend auto-verifies in the background,
+    // and calling POST /verify on an already-verified domain flips it to a
+    // transient 'verifying' state — a same-request GET would then catch that
+    // instead of 'verified', leaving the app stuck 'pending' while Resend
+    // shows verified. So only trigger a verify when it isn't verified yet.
+    let got = await resend('GET', `/${existing.resend_domain_id}`, RESEND_API_KEY);
     if (!got.ok) {
       return json({ error: got.errorText || 'Could not read domain status.' }, 502);
+    }
+    if (mapResendStatus((got.data ?? {}).status) !== 'verified') {
+      await resend('POST', `/${existing.resend_domain_id}/verify`, RESEND_API_KEY);
+      got = await resend('GET', `/${existing.resend_domain_id}`, RESEND_API_KEY);
+      if (!got.ok) {
+        return json({ error: got.errorText || 'Could not read domain status.' }, 502);
+      }
     }
     const record = got.data ?? {};
     const status = mapResendStatus(record.status);
