@@ -58,9 +58,9 @@ export function templeEmailHtml(opts: {
       )}</div>`
     : '';
   const buttonHtml = button
-    ? `<a href="${button.url}" style="display:inline-block;background:#3B6BA5;color:#ffffff;text-decoration:none;font-family:${FONT};font-weight:600;font-size:15px;padding:13px 22px;border-radius:8px;margin:4px 0 4px;">${escapeHtml(
+    ? `<div style="text-align:center;margin:22px 0 4px;"><a href="${button.url}" style="display:inline-block;background:#3B6BA5;color:#ffffff;text-decoration:none;font-family:${FONT};font-weight:600;font-size:15px;padding:13px 26px;border-radius:8px;">${escapeHtml(
         button.label,
-      )}</a>`
+      )}</a></div>`
     : '';
   const footerHtml = footerNote
     ? `<p style="text-align:center;font-family:${FONT};font-size:12px;color:#94a3b8;margin:18px 0 4px;">${escapeHtml(

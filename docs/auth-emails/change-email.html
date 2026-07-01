@@ -13,7 +13,7 @@
         <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#334155;">
           <p style="margin:0 0 18px;">You asked to change the email on your Temple account to <strong>{{ .NewEmail }}</strong>. Confirm below to make the switch.</p>
         </div>
-        <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#3B6BA5;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:600;font-size:15px;padding:13px 22px;border-radius:8px;margin:4px 0 4px;">Confirm new email</a>
+        <div style="text-align:center;margin:22px 0 4px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#3B6BA5;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:600;font-size:15px;padding:13px 26px;border-radius:8px;">Confirm new email</a></div>
         <p style="margin:18px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#64748b;">
           Or paste this link into your browser:<br>
           <a href="{{ .ConfirmationURL }}" style="color:#3B6BA5;word-break:break-all;">{{ .ConfirmationURL }}</a>
