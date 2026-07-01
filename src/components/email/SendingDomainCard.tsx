@@ -55,6 +55,12 @@ function StatusExplainer({ status }: { status: DomainStatus }) {
 }
 
 function CopyableValue({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  function onCopy() {
+    copy(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
   return (
     <View className="gap-1">
       <Text className="text-gray-400 dark:text-gray-500 text-[11px] uppercase tracking-wide">
@@ -67,8 +73,12 @@ function CopyableValue({ label, value }: { label: string; value: string }) {
           style={Platform.OS === 'web' ? ({ wordBreak: 'break-all' } as object) : undefined}>
           {value}
         </Text>
-        <Pressable onPress={() => copy(value)} hitSlop={6} className="active:opacity-70">
-          <Ionicons name="copy-outline" size={15} color="#9CA3AF" />
+        <Pressable onPress={onCopy} hitSlop={6} className="active:opacity-70">
+          <Ionicons
+            name={copied ? 'checkmark' : 'copy-outline'}
+            size={15}
+            color={copied ? '#16A34A' : '#9CA3AF'}
+          />
         </Pressable>
       </View>
     </View>
