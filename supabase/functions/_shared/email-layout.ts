@@ -25,18 +25,16 @@ export function escapeHtml(s: string): string {
 const FONT =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
-// The three-card mark echoed as overlapping rounded squares, above the
-// "TEMPLE / TECHNOLOGY" wordmark — image-free so it renders in every
-// client (Gmail strips background images and SVGs).
+// The real Temple lockup (mark + wordmark, set in Outfit) served as a
+// foreground PNG from the web app's static root. Gmail strips background
+// images and SVGs but renders foreground <img>, so this shows the actual
+// brand artwork instead of a CSS approximation. alt="Temple" degrades
+// gracefully if a client blocks images.
+const LOGO_URL = 'https://app.jointemple.io/email/temple-lockup.png';
+
 function header(): string {
-  const dot = (bg: string, ml: string) =>
-    `<span style="display:inline-block;width:15px;height:15px;border-radius:4px;background:${bg};${ml}"></span>`;
-  return `<div style="text-align:center;padding:4px 0 26px;">
-    <div style="margin:0 0 10px;">
-      ${dot('#E8B620', '')}${dot('#3B6BA5', 'margin-left:-5px;')}${dot('#111111', 'margin-left:-5px;')}
-    </div>
-    <div style="font-family:${FONT};font-weight:800;font-size:22px;letter-spacing:6px;color:#111111;">TEMPLE</div>
-    <div style="font-family:${FONT};font-weight:500;font-size:9px;letter-spacing:4px;color:#5A5550;margin-top:2px;">TECHNOLOGY</div>
+  return `<div style="text-align:center;padding:4px 0 28px;">
+    <img src="${LOGO_URL}" alt="Temple" width="188" style="display:inline-block;width:188px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;" />
   </div>`;
 }
 
