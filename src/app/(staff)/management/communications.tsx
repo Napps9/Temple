@@ -77,7 +77,7 @@ export default function CommunicationsScreen() {
         <BackLink label="Manage" fallbackHref="/management" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Communications
+            Email campaigns
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
             Design, send and analyse email campaigns to your members.

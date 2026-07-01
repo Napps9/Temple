@@ -102,7 +102,7 @@ type IconName = ComponentProps<typeof Ionicons>['name'];
 const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
   members: 'Members',
-  comms: 'Comms',
+  comms: 'Email campaigns',
   store: 'Store',
   team: 'Team',
   plans: 'Plans',
@@ -299,7 +299,7 @@ export default function ManagementHome() {
     },
     {
       category: 'comms',
-      title: 'Communications',
+      title: 'Email campaigns',
       description: 'Design, send and analyse email campaigns to your members.',
       href: '/management/communications',
       visible: !!canManageComms,
