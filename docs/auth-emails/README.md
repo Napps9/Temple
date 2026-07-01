@@ -18,8 +18,9 @@ By default Supabase sends auth email from its own shared address with
 poor deliverability. Point it at Resend so it comes from your verified
 `jointemple.io`.
 
-Supabase Dashboard → **Project Settings → Authentication → SMTP Settings**
-(or Authentication → Emails → SMTP):
+Supabase Dashboard → **Authentication** (left icon rail) → **Emails** →
+**SMTP Settings** tab (this lives under Authentication, *not* Project
+Settings):
 
 - Enable custom SMTP: **on**
 - Host: `smtp.resend.com`
@@ -39,8 +40,9 @@ Save, then use **Send test email** to confirm it arrives from
 
 ## Step 2 — Paste the templates
 
-Supabase Dashboard → **Authentication → Email Templates**. For each type,
-set the Subject and paste the matching file into **Message body (HTML)**:
+Supabase Dashboard → **Authentication → Emails → Templates** tab. For each
+type, set the Subject and paste the matching file into **Message body
+(HTML)**:
 
 | Template | File | Suggested subject |
 |----------|------|-------------------|
@@ -55,7 +57,7 @@ placeholders are Supabase's own variables — leave them exactly as written.
 
 ## Step 3 — Check redirect URLs
 
-Supabase → **Authentication → URL Configuration**: make sure **Site URL**
+Supabase → **Authentication → URL Configuration** (same section): make sure **Site URL**
 and **Redirect URLs** include `https://app.jointemple.io` so the
 `{{ .ConfirmationURL }}` links resolve to the app.
 
