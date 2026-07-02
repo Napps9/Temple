@@ -91,8 +91,13 @@ export function TopNav({
               size={17}
               color={active ? brand.primaryColor : colors.iconSecondary}
             />
+            {/* Inline with the logo on the phone means space is tight, so
+                only the active pill keeps its label there; wide screens
+                show them all. */}
             <Text
               className={`text-sm font-medium ${
+                active ? 'flex' : 'hidden md:flex'
+              } ${
                 active
                   ? 'text-gray-900 dark:text-gray-50'
                   : 'text-gray-500 dark:text-gray-400'
@@ -112,9 +117,9 @@ export function TopNav({
       <View className="flex-row items-center gap-2 md:gap-3">
         {/* Three equal zones (flex-1 left/right) keep the pills on the
             bar's true centre regardless of how wide the side clusters
-            are. On small screens the centre zone hides and the pills
-            render as their own full-width row below — overlapping
-            icons beat no icons, but a second row beats both. */}
+            are. The pills sit inline on every size now that the right
+            cluster is a single avatar — on the phone the inactive pills
+            drop to icons so all three fit next to the logo. */}
         <View className="flex-1 flex-row items-center">
           <Pressable
             onPress={() => {
@@ -137,9 +142,9 @@ export function TopNav({
           </Pressable>
         </View>
 
-        <View className="hidden md:flex items-center">{pills}</View>
+        <View className="items-center">{pills}</View>
 
-        <View className="flex-row items-center justify-end gap-1.5 md:gap-2 md:flex-1">
+        <View className="flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
         {showCrossLink ? (
           <Pressable
             onPress={() => {
@@ -238,8 +243,6 @@ export function TopNav({
           />
         </View>
       </Modal>
-
-      <View className="md:hidden items-center">{pills}</View>
     </View>
   );
 }
