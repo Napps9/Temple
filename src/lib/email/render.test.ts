@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { BRAND_THEMES } from '../brand-themes';
 import {
   appendBlock,
+  applyTheme,
   createBlock,
   emptyDocument,
   type ButtonBlock,
+  type HeadingBlock,
   type ImageBlock,
   type TextBlock,
 } from './blocks';
@@ -91,6 +94,32 @@ describe('renderEmailHtml', () => {
     });
     expect(html).toContain('Iron Temple');
     expect(html).toContain('1 Gym St');
+  });
+
+  it('defaults a heading to font-weight:700 with no transform/spacing, unmodified from before themes existed', () => {
+    let doc = emptyDocument(brand);
+    const h = createBlock('heading', brand) as HeadingBlock;
+    h.text = 'Plain heading';
+    doc = appendBlock(doc, h);
+    const html = renderEmailHtml(doc);
+    expect(html).toContain('font-weight:700');
+    expect(html).toContain('text-transform:none');
+    expect(html).toContain('letter-spacing:0px');
+  });
+
+  it('threads a theme’s heading weight/transform/letter-spacing into the compiled HTML', () => {
+    let doc = emptyDocument(brand);
+    const h = createBlock('heading', brand) as HeadingBlock;
+    h.text = 'Themed heading';
+    doc = appendBlock(doc, h);
+    doc = applyTheme(doc, BRAND_THEMES.ringside);
+    const html = renderEmailHtml(doc);
+    expect(html).toContain(`font-weight:${BRAND_THEMES.ringside.typography.headingWeight}`);
+    expect(html).toContain('text-transform:uppercase');
+    expect(html).toContain(
+      `letter-spacing:${BRAND_THEMES.ringside.typography.headingLetterSpacing}px`,
+    );
+    expect(html).toContain(BRAND_THEMES.ringside.palette.background);
   });
 });
 

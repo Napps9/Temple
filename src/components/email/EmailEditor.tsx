@@ -8,16 +8,19 @@ import {
   Text,
   TextInput,
   View,
+  type TextStyle,
 } from 'react-native';
 
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
 import {
   BLOCK_ICONS,
   BLOCK_LABELS,
   appendBlock,
+  applyTheme,
   createBlock,
   duplicateBlock,
   moveBlock,
@@ -31,6 +34,7 @@ import {
   type EmailBlock,
   type EmailBlockType,
   type EmailDocument,
+  type EmailSettings,
   type HeadingBlock,
   type ImageBlock,
   type SpacerBlock,
@@ -54,28 +58,46 @@ function alignItemsFor(align: BlockAlign): 'flex-start' | 'center' | 'flex-end' 
   return align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
 }
 
+// RN's TextStyle only accepts specific weight-string literals — round a
+// theme's arbitrary numeric weight to the nearest valid one rather than
+// asserting an unchecked cast.
+function toFontWeight(n: number): TextStyle['fontWeight'] {
+  const step = Math.min(900, Math.max(100, Math.round(n / 100) * 100));
+  return String(step) as TextStyle['fontWeight'];
+}
+
 // ---------------------------------------------------------------------------
 // WYSIWYG block rendering — a React Native echo of what the HTML renderer
 // emits, so the canvas previews the email as it's built.
 // ---------------------------------------------------------------------------
 
-function BlockView({ block }: { block: EmailBlock }) {
+function BlockView({ block, settings }: { block: EmailBlock; settings: EmailSettings }) {
   switch (block.type) {
     case 'heading':
       return (
         <Text
           style={{
             fontSize: block.level === 1 ? 28 : block.level === 2 ? 22 : 18,
-            fontWeight: '700',
+            fontWeight: toFontWeight(settings.headingWeight),
             color: block.color,
             textAlign: block.align,
+            textTransform: settings.headingTransform,
+            letterSpacing: settings.headingLetterSpacing,
+            fontFamily: settings.fontFamily,
           }}>
           {block.text || 'Heading'}
         </Text>
       );
     case 'text':
       return (
-        <Text style={{ fontSize: 16, lineHeight: 24, color: block.color, textAlign: block.align }}>
+        <Text
+          style={{
+            fontSize: 16,
+            lineHeight: 24,
+            color: block.color,
+            textAlign: block.align,
+            fontFamily: settings.fontFamily,
+          }}>
           {block.text || 'Text'}
         </Text>
       );
@@ -449,13 +471,42 @@ function BlockInspector({
 function SettingsInspector({
   document,
   onChange,
+  brand,
 }: {
   document: EmailDocument;
   onChange: (doc: EmailDocument) => void;
+  brand: BrandSeed;
 }) {
   const s = document.settings;
   return (
     <View className="gap-3">
+      <View className="gap-1.5">
+        <FieldLabel>Theme</FieldLabel>
+        <View className="flex-row flex-wrap gap-2">
+          {BRAND_THEME_LIST.map((theme) => {
+            const composed = composeThemeWithBrand(theme, brand.primaryColor);
+            const selected = s.themeId === theme.id;
+            return (
+              <Pressable
+                key={theme.id}
+                onPress={() => onChange(applyTheme(document, composed))}
+                className={`w-20 gap-1 items-center rounded-xl p-2 border-2 ${
+                  selected ? 'border-primary' : 'border-transparent'
+                }`}>
+                <View
+                  className="flex-row w-full h-8 rounded-lg overflow-hidden"
+                  style={{ borderWidth: 1, borderColor: '#00000014' }}>
+                  <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
+                  <View className="flex-1" style={{ backgroundColor: composed.palette.accent }} />
+                </View>
+                <Text className="text-gray-600 dark:text-gray-300 text-[11px]">
+                  {theme.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
       <ColorField
         label="Page background"
         value={s.backgroundColor}
@@ -515,7 +566,17 @@ export function EmailEditor({
   const selected = document.blocks.find((b) => b.id === selectedId) ?? null;
 
   function addBlock(type: EmailBlockType) {
-    const block = createBlock(type, brand);
+    // Seed from the document's live settings, not the raw gym-brand
+    // prop — otherwise a block added after a manual colour edit (or a
+    // theme apply) silently reverts to the gym's original brand colour
+    // instead of matching what's actually on the canvas.
+    const seed: BrandSeed = {
+      primaryColor: document.settings.linkColor,
+      secondaryColor: brand.secondaryColor,
+      textColor: document.settings.textColor,
+    };
+    const block = createBlock(type, seed);
+    if (block.type === 'button') block.radius = document.settings.buttonRadius;
     onChange(appendBlock(document, block));
     setSelectedId(block.id);
   }
@@ -635,7 +696,7 @@ export function EmailEditor({
                         ? 'border-2 border-primary'
                         : 'border-2 border-transparent'
                     }>
-                    <BlockView block={block} />
+                    <BlockView block={block} settings={document.settings} />
                   </Pressable>
                   {isSelected ? (
                     <View className="flex-row items-center justify-end gap-1.5 px-3 pb-2">
@@ -696,7 +757,7 @@ export function EmailEditor({
             ) : null}
           </>
         ) : (
-          <SettingsInspector document={document} onChange={onChange} />
+          <SettingsInspector document={document} onChange={onChange} brand={brand} />
         )}
       </View>
   );
