@@ -91,6 +91,9 @@ export function MemberGetStartedChecklist() {
   ) {
     return null;
   }
+  // Member tapped "Skip for now" — don't nag once they've dismissed it,
+  // even if steps are still outstanding.
+  if (flags.data?.getstarted_dismissed) return null;
 
   const hasPlans = (plans.data?.length ?? 0) > 0;
   const hasMembership = (subs.data ?? []).some((s) =>
@@ -168,6 +171,13 @@ export function MemberGetStartedChecklist() {
             {requiredDone} of {requiredSteps.length} done
           </Text>
         </View>
+        <Pressable
+          onPress={() => setFlag('getstarted_dismissed')}
+          hitSlop={8}
+          accessibilityLabel="Dismiss get-started tips"
+          className="w-7 h-7 items-center justify-center active:opacity-60">
+          <Ionicons name="close" size={18} color="#9CA3AF" />
+        </Pressable>
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
@@ -231,6 +241,15 @@ export function MemberGetStartedChecklist() {
               />
             </Pressable>
           ))}
+
+          <Pressable
+            onPress={() => setFlag('getstarted_dismissed')}
+            hitSlop={6}
+            className="items-center py-2 active:opacity-60">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs font-medium">
+              Skip for now
+            </Text>
+          </Pressable>
         </View>
       ) : null}
     </View>

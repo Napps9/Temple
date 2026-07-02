@@ -8,7 +8,10 @@ import { useCallback } from 'react';
 // report". Modelled as a React Query (like useGroupViewed) so the
 // checklist re-renders the instant a flag is set from another screen.
 
-export type OnboardingFlag = 'programming_peeked' | 'injury_answered';
+export type OnboardingFlag =
+  | 'programming_peeked'
+  | 'injury_answered'
+  | 'getstarted_dismissed';
 
 type FlagMap = Partial<Record<OnboardingFlag, boolean>>;
 
