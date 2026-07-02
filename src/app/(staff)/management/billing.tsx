@@ -6,10 +6,18 @@ import { Platform, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
+import {
+  centsToRateInput,
+  formatMoney,
+  parseRateToCents,
+} from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
+import { estimateElsewhereMarkup } from '@/lib/payment-savings';
 import { supabase } from '@/lib/supabase';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 
 // Phase 1 of Stripe billing: connect the gym's own Stripe (Connect
 // Standard, via OAuth) so it can charge members directly. Charges,
@@ -21,6 +29,10 @@ export default function BillingScreen() {
   const params = useLocalSearchParams<{ stripe?: string }>();
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const currency = useGymCurrency();
+  const [volumeInput, setVolumeInput] = useState(() => centsToRateInput(500_000));
+  const volumeCents = parseRateToCents(volumeInput) ?? 0;
+  const elsewhere = estimateElsewhereMarkup(volumeCents);
 
   const account = useQuery({
     queryKey: ['gym-stripe-account', membership?.gymId],
@@ -148,6 +160,40 @@ export default function BillingScreen() {
           </Text>
         </View>
 
+        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            What that's worth
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            Card processing itself (roughly 2.9% + 30p, set by Stripe and
+            the card networks) is unavoidable anywhere you go — but many
+            gym platforms add their own margin on top of it, or take a
+            cut of member bookings. Temple adds nothing on top.
+          </Text>
+          <Input
+            label={`Roughly how much do members pay you a month (${currency})?`}
+            value={volumeInput}
+            onChangeText={setVolumeInput}
+            keyboardType="decimal-pad"
+            placeholder="5000"
+          />
+          <View className="bg-primary/5 rounded-xl p-3">
+            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+              At that volume, a platform charging an extra 1–3% on top of
+              processing would cost you roughly{' '}
+              <Text className="font-semibold">
+                {formatMoney(elsewhere.lowCents, currency)}–
+                {formatMoney(elsewhere.highCents, currency)}
+              </Text>{' '}
+              a month. On Temple, that stays with you.
+            </Text>
+          </View>
+          <Text className="text-gray-400 dark:text-gray-500 text-[11px]">
+            Illustrative only — platform fee structures vary and change
+            over time.
+          </Text>
+        </View>
+
         {params.stripe === 'connected' && connected ? (
           <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
             <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
@@ -178,9 +224,9 @@ export default function BillingScreen() {
                 </Text>
               </View>
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Member payments will run through your own Stripe account
-                (`{account.data?.stripe_account_id}`). Subscriptions and
-                checkout land in the next update.
+                Member payments run through your own Stripe account
+                (`{account.data?.stripe_account_id}`) — set up your plans
+                below and members can subscribe and check out immediately.
               </Text>
             </>
           ) : (
