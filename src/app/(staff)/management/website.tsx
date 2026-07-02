@@ -33,18 +33,20 @@ type SiteRow = {
   updated_at: string;
 };
 
-function useEntitlement(gymId: string | null | undefined) {
+type GymWebsiteSettings = { websiteBuilderEnabled: boolean; currency: string };
+
+function useGymWebsiteSettings(gymId: string | null | undefined) {
   return useQuery({
-    queryKey: ['website-builder-enabled', gymId],
+    queryKey: ['website-builder-settings', gymId],
     enabled: !!gymId,
-    queryFn: async (): Promise<boolean> => {
+    queryFn: async (): Promise<GymWebsiteSettings> => {
       const { data, error } = await supabase
         .from('gyms')
-        .select('website_builder_enabled')
+        .select('website_builder_enabled, currency')
         .eq('id', gymId!)
         .single();
       if (error) throw error;
-      return data.website_builder_enabled;
+      return { websiteBuilderEnabled: data.website_builder_enabled, currency: data.currency };
     },
   });
 }
@@ -143,7 +145,7 @@ function SaveIndicator({ state }: { state: 'idle' | 'saving' | 'saved' }) {
 export default function WebsiteManageScreen() {
   const canManageWebsite = useCan('can_manage_website');
   const brand = useGymBrand();
-  const entitlement = useEntitlement(brand.gymId);
+  const settings = useGymWebsiteSettings(brand.gymId);
   const site = useSite(brand.gymId);
   const queryClient = useQueryClient();
   const preview = useStaffPreviewData(brand.gymId);
@@ -198,7 +200,7 @@ export default function WebsiteManageScreen() {
 
   if (canManageWebsite === false) return <Redirect href="/management" />;
 
-  if (entitlement.isLoading || site.isLoading) {
+  if (settings.isLoading || site.isLoading) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="flex-1 items-center justify-center">
@@ -208,7 +210,7 @@ export default function WebsiteManageScreen() {
     );
   }
 
-  if (entitlement.data === false) {
+  if (settings.data?.websiteBuilderEnabled === false) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
@@ -293,7 +295,7 @@ export default function WebsiteManageScreen() {
     slug: brand.slug ?? '',
     gymName: brand.gymName,
     gymLogoUrl: brand.logoUrl,
-    gymCurrency: 'GBP',
+    gymCurrency: settings.data?.currency ?? 'GBP',
     theme: composedTheme,
     schedule: preview.schedule.data ?? [],
     plans: preview.plans.data ?? [],
