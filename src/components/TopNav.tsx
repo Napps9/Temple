@@ -1,13 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from './Avatar';
 import { GymLogo } from './GymLogo';
+import { MemberGetStartedChecklist } from './MemberGetStartedChecklist';
 import { useMyProfile, useSession } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
+import { useMemberOnboarding } from '@/lib/useMemberOnboarding';
 import { useNotificationCount } from '@/lib/notifications';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
@@ -44,6 +53,8 @@ export function TopNav({
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
   const notifCount = useNotificationCount();
+  const onboarding = useMemberOnboarding();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const gymName = brand.gymName;
@@ -180,8 +191,15 @@ export function TopNav({
             onAccount ? '' : 'border-transparent'
           }`}>
           <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={30} />
+          {/* Unread messages win the dot; otherwise a brand-tinted dot
+              hints the get-started checklist is waiting inside. */}
           {notifCount > 0 ? (
             <View className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-slate-100 dark:border-gray-950" />
+          ) : onboarding ? (
+            <View
+              style={{ backgroundColor: brand.primaryColor }}
+              className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-100 dark:border-gray-950"
+            />
           ) : null}
         </Pressable>
         </View>
@@ -198,49 +216,66 @@ export function TopNav({
           accessibilityLabel="Close menu"
         />
         <View
-          style={{ position: 'absolute', top: insets.top + 52, right: 12 }}
-          className="w-60 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-pop p-1.5">
-          <View className="px-3 py-2 flex-row items-center gap-2">
-            <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={28} />
-            <Text
-              className="flex-1 text-gray-900 dark:text-gray-50 font-semibold"
-              numberOfLines={1}>
-              {displayName}
-            </Text>
-          </View>
-          <View className="h-px bg-gray-100 dark:bg-gray-800 my-1" />
+          style={{
+            position: 'absolute',
+            top: insets.top + 52,
+            right: 12,
+            width: Math.min(320, windowWidth - 24),
+            maxHeight: windowHeight - insets.top - 80,
+          }}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-pop p-2">
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View className="px-3 py-2 flex-row items-center gap-3">
+              <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={34} />
+              <Text
+                className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base"
+                numberOfLines={1}>
+                {displayName}
+              </Text>
+            </View>
 
-          <MenuRow
-            icon="chatbubble-ellipses-outline"
-            label="Messages"
-            iconColor={colors.iconPrimary}
-            badge={notifCount}
-            onPress={() => {
-              haptic.tap();
-              setMenuOpen(false);
-              router.push('/inbox' as never);
-            }}
-          />
-          <MenuRow
-            icon={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
-            label={scheme === 'dark' ? 'Light mode' : 'Dark mode'}
-            iconColor={colors.iconPrimary}
-            onPress={() => {
-              haptic.selection();
-              set(scheme === 'dark' ? 'light' : 'dark');
-              setMenuOpen(false);
-            }}
-          />
-          <MenuRow
-            icon="person-circle-outline"
-            label="Account"
-            iconColor={colors.iconPrimary}
-            onPress={() => {
-              haptic.tap();
-              setMenuOpen(false);
-              router.push(accountHref as never);
-            }}
-          />
+            {onboarding ? (
+              <View className="pb-1 pt-0.5">
+                <MemberGetStartedChecklist
+                  onNavigate={() => setMenuOpen(false)}
+                />
+              </View>
+            ) : null}
+
+            <View className="h-px bg-gray-100 dark:bg-gray-800 my-1.5" />
+
+            <MenuRow
+              icon="chatbubble-ellipses-outline"
+              label="Messages"
+              iconColor={colors.iconPrimary}
+              badge={notifCount}
+              onPress={() => {
+                haptic.tap();
+                setMenuOpen(false);
+                router.push('/inbox' as never);
+              }}
+            />
+            <MenuRow
+              icon={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
+              label={scheme === 'dark' ? 'Light mode' : 'Dark mode'}
+              iconColor={colors.iconPrimary}
+              onPress={() => {
+                haptic.selection();
+                set(scheme === 'dark' ? 'light' : 'dark');
+                setMenuOpen(false);
+              }}
+            />
+            <MenuRow
+              icon="person-circle-outline"
+              label="Account"
+              iconColor={colors.iconPrimary}
+              onPress={() => {
+                haptic.tap();
+                setMenuOpen(false);
+                router.push(accountHref as never);
+              }}
+            />
+          </ScrollView>
         </View>
       </Modal>
     </View>
