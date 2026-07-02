@@ -756,6 +756,45 @@ export function ClassesCalendar({
   );
 }
 
+// Class-type filter chip for the agenda. Inactive shows the type's colour
+// as a dot; active fills with that colour. The "All" chip has no colour,
+// so it falls back to the brand accent.
+function FilterPill({
+  label,
+  color,
+  active,
+  accent,
+  onPress,
+}: {
+  label: string;
+  color?: string;
+  active: boolean;
+  accent: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={active ? { backgroundColor: color ?? accent } : undefined}
+      className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70 ${
+        active ? '' : 'bg-gray-100 dark:bg-gray-800'
+      }`}>
+      {color && !active ? (
+        <View
+          style={{ backgroundColor: color }}
+          className="w-2 h-2 rounded-full"
+        />
+      ) : null}
+      <Text
+        className={`text-xs font-semibold ${
+          active ? 'text-white' : 'text-gray-600 dark:text-gray-300'
+        }`}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 // Agenda list — the phone Book default. A day strip up top, then a card
 // per class for the selected day showing time, coach, spots-left and
 // booking state. Booking itself still runs through ClassDetailModal (all
@@ -783,6 +822,7 @@ function AgendaView({
   topSlot?: React.ReactNode;
 }) {
   const colors = useThemeColors();
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const dayClasses = classesOnDay(sessions, date).sort(
@@ -790,6 +830,28 @@ function AgendaView({
   );
   const dayIds = dayClasses.map((s) => s.id);
   const isoDay = fmtDateLocal(date);
+
+  // Filter pills reflect only the class types actually on this day, so the
+  // set changes as the member moves between days. A filter that no longer
+  // applies to the selected day falls back to "All" rather than emptying
+  // the list.
+  const dayTypes: { id: string; name: string; color: string }[] = [];
+  const seenTypes = new Set<string>();
+  for (const s of dayClasses) {
+    if (s.class_type_id && s.class_types && !seenTypes.has(s.class_type_id)) {
+      seenTypes.add(s.class_type_id);
+      dayTypes.push({
+        id: s.class_type_id,
+        name: s.class_types.name,
+        color: sessionColor(s, colors.primary),
+      });
+    }
+  }
+  const activeType =
+    typeFilter && seenTypes.has(typeFilter) ? typeFilter : null;
+  const shownClasses = activeType
+    ? dayClasses.filter((s) => s.class_type_id === activeType)
+    : dayClasses;
 
   // One round trip for the whole day's spot counts (RLS lets a member
   // read same-gym bookings — class_bookings_tenant_select), tallied into
@@ -852,6 +914,33 @@ function AgendaView({
             );
           })}
         </View>
+
+        {dayTypes.length > 1 ? (
+          <View className="flex-row flex-wrap gap-2 pb-3">
+            <FilterPill
+              label="All"
+              active={activeType === null}
+              accent={colors.primary}
+              onPress={() => {
+                haptic.selection();
+                setTypeFilter(null);
+              }}
+            />
+            {dayTypes.map((t) => (
+              <FilterPill
+                key={t.id}
+                label={t.name}
+                color={t.color}
+                active={activeType === t.id}
+                accent={colors.primary}
+                onPress={() => {
+                  haptic.selection();
+                  setTypeFilter(t.id);
+                }}
+              />
+            ))}
+          </View>
+        ) : null}
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
@@ -859,7 +948,7 @@ function AgendaView({
           <View className="w-full max-w-5xl mx-auto px-2 pt-1 pb-2">{topSlot}</View>
         ) : null}
         <View className="w-full max-w-5xl mx-auto px-2 gap-2.5">
-          {dayClasses.length === 0 ? (
+          {shownClasses.length === 0 ? (
             <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 items-center gap-2">
               <Ionicons
                 name="calendar-clear-outline"
@@ -871,7 +960,7 @@ function AgendaView({
               </Text>
             </View>
           ) : (
-            dayClasses.map((s) => (
+            shownClasses.map((s) => (
               <AgendaCard
                 key={s.id}
                 session={s}
