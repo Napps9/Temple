@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -40,6 +40,7 @@ import {
 } from '@/lib/import/infer';
 import { supabase } from '@/lib/supabase';
 import { useThemePreference } from '@/lib/theme';
+import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { webSelectStyle } from '@/lib/webSelect';
 import type { Json } from '@/types/database';
@@ -85,6 +86,7 @@ function sameMapping(
 
 export default function ImportMembersScreen() {
   const { data: membership } = useGymMembership();
+  const canManageStaff = useCan('can_manage_staff');
   const brand = useGymBrand();
   const queryClient = useQueryClient();
 
@@ -375,6 +377,8 @@ export default function ImportMembersScreen() {
     },
     onError: (e) => setError(errorMessage(e, 'Could not import the file')),
   });
+
+  if (canManageStaff === false) return <Redirect href="/management" />;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>

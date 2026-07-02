@@ -127,6 +127,15 @@ export function AudienceBuilder({
         </View>
       ) : null}
 
+      {value.kind === 'pending_members' ? (
+        <View className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            Set to the members you just imported. Pick a different audience
+            above to send to someone else instead.
+          </Text>
+        </View>
+      ) : null}
+
       {value.kind === 'tags' ? (
         <View className="gap-2">
           {tagLabels.isLoading ? (
