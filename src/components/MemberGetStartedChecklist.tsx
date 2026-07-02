@@ -9,6 +9,7 @@ import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { CURRENT_SUB_STATUSES, useGymPlans, useMySubscriptions } from '@/lib/subscriptions';
 import { useMyInjuries } from '@/lib/useInjuries';
+import { useOnboardingFlags, useSetOnboardingFlag } from '@/lib/useOnboardingFlags';
 import { useThemeColors } from '@/lib/theme';
 
 // New-member onboarding nudge, shown at the top of Book. Mirrors the
@@ -22,13 +23,16 @@ import { useThemeColors } from '@/lib/theme';
 // unfinished and keep the card alive forever.
 
 type Step = {
-  key: 'membership' | 'book' | 'log' | 'injury';
+  key: 'membership' | 'book' | 'programming' | 'log' | 'injury';
   label: string;
   description: string;
-  href: string;
   icon: keyof typeof Ionicons.glyphMap;
   done: boolean;
   optional?: boolean;
+  // What tapping the row does. Most steps deep-link elsewhere; the
+  // "book" step lives on this very screen, so it just collapses the card
+  // to reveal the schedule underneath instead of navigating nowhere.
+  onPress: () => void;
 };
 
 export function MemberGetStartedChecklist() {
@@ -44,6 +48,8 @@ export function MemberGetStartedChecklist() {
   const plans = useGymPlans(gymId);
   const subs = useMySubscriptions(gymId, userId);
   const injuries = useMyInjuries();
+  const flags = useOnboardingFlags();
+  const setFlag = useSetOnboardingFlag();
 
   const bookings = useQuery({
     queryKey: ['member-onboarding-bookings', userId],
@@ -80,7 +86,8 @@ export function MemberGetStartedChecklist() {
     subs.isLoading ||
     bookings.isLoading ||
     workouts.isLoading ||
-    injuries.isLoading
+    injuries.isLoading ||
+    flags.isLoading
   ) {
     return null;
   }
@@ -97,9 +104,9 @@ export function MemberGetStartedChecklist() {
             key: 'membership' as const,
             label: 'Get your membership',
             description: 'Pick a plan so you can book into classes.',
-            href: '/membership',
             icon: 'card-outline' as const,
             done: hasMembership,
+            onPress: () => router.push('/membership' as never),
           },
         ]
       : []),
@@ -107,26 +114,37 @@ export function MemberGetStartedChecklist() {
       key: 'book',
       label: 'Book your first class',
       description: 'Browse the schedule below and reserve your spot.',
-      href: '/book',
       icon: 'calendar-outline',
       done: (bookings.data ?? 0) > 0,
+      onPress: () => setOpen(false),
+    },
+    {
+      key: 'programming',
+      label: "Peek at this week's programming",
+      description: 'See what your coaches have planned so you know what to expect.',
+      icon: 'barbell-outline',
+      done: !!flags.data?.programming_peeked,
+      onPress: () => {
+        setFlag('programming_peeked');
+        router.push('/programming' as never);
+      },
     },
     {
       key: 'log',
       label: 'Log your first result',
       description: 'Record a workout or a past PR — your training history is yours.',
-      href: '/track',
       icon: 'stats-chart-outline',
       done: (workouts.data ?? 0) > 0,
+      onPress: () => router.push('/track' as never),
     },
     {
       key: 'injury',
       label: 'Note any injuries',
       description: 'Tell us what to work around so coaches can scale movements for you.',
-      href: '/track/injuries',
       icon: 'medkit-outline',
       optional: true,
-      done: (injuries.data?.length ?? 0) > 0,
+      done: (injuries.data?.length ?? 0) > 0 || !!flags.data?.injury_answered,
+      onPress: () => router.push('/injury-check' as never),
     },
   ];
 
@@ -169,7 +187,7 @@ export function MemberGetStartedChecklist() {
           {steps.map((step) => (
             <Pressable
               key={step.key}
-              onPress={() => router.push(step.href as never)}
+              onPress={step.onPress}
               className={`flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:opacity-70 ${
                 step.done
                   ? 'bg-gray-50 dark:bg-gray-800/40'

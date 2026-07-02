@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -481,9 +481,6 @@ export function ClassesCalendar({
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      {topSlot ? (
-        <View className="w-full max-w-5xl mx-auto px-2 pt-4">{topSlot}</View>
-      ) : null}
       <View className="w-full max-w-5xl mx-auto px-2">
         <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
           {/* View switcher sits left of the month header on md+,
@@ -547,6 +544,7 @@ export function ClassesCalendar({
               canCreate={canCreate}
               bookedSet={bookedSet}
               weekStartsOn={weekStartsOn}
+              topSlot={topSlot}
             />
           ) : null}
           {view === 'week' ? (
@@ -561,6 +559,7 @@ export function ClassesCalendar({
               bookedSet={bookedSet}
               weekStartsOn={weekStartsOn}
               dimPast={mode === 'book'}
+              topSlot={topSlot}
             />
           ) : null}
           {view === 'month' ? (
@@ -570,6 +569,7 @@ export function ClassesCalendar({
               gotoDay={() => router.setParams({ view: 'day' })}
               sessions={sessionsQuery.data}
               weekStartsOn={weekStartsOn}
+              topSlot={topSlot}
             />
           ) : null}
         </View>
@@ -607,6 +607,7 @@ function DayView({
   canCreate,
   bookedSet,
   weekStartsOn,
+  topSlot,
 }: {
   mode: 'manage' | 'book';
   date: Date;
@@ -617,6 +618,7 @@ function DayView({
   canCreate: boolean;
   bookedSet: Set<string>;
   weekStartsOn: 'mon' | 'sun';
+  topSlot?: React.ReactNode;
 }) {
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -628,14 +630,24 @@ function DayView({
   );
 
   const scrollRef = useRef<ScrollView | null>(null);
-  useEffect(() => {
+  // topSlot scrolls with the grid (so it can move off-screen on small
+  // phones); the jump-to-now offset has to skip past its measured
+  // height. Kept in a ref so expanding/collapsing the onboarding card
+  // never yanks a scrolled-down user back up.
+  const topSlotHeight = useRef(0);
+  const didInitialScroll = useRef(false);
+  const scrollToNow = useCallback(() => {
     const now = new Date();
     const hourTarget = isSameDay(now, date) ? now.getHours() : HOURS[0];
-    const y = scrollYForHour(hourTarget);
+    const y = scrollYForHour(hourTarget) + topSlotHeight.current;
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y, animated: false });
     });
   }, [date]);
+  useEffect(() => {
+    didInitialScroll.current = false;
+    scrollToNow();
+  }, [date, scrollToNow]);
 
   return (
     <View className="flex-1">
@@ -685,6 +697,22 @@ function DayView({
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="pb-10">
+        {topSlot ? (
+          <View
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (Math.abs(h - topSlotHeight.current) > 1) {
+                topSlotHeight.current = h;
+                if (!didInitialScroll.current) {
+                  didInitialScroll.current = true;
+                  scrollToNow();
+                }
+              }
+            }}
+            className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">
+            {topSlot}
+          </View>
+        ) : null}
         <View className="w-full max-w-5xl mx-auto px-2">
           {mode === 'book' && dayClasses.length === 0 ? (
             <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
@@ -915,6 +943,7 @@ function WeekView({
   bookedSet,
   weekStartsOn,
   dimPast,
+  topSlot,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -926,21 +955,29 @@ function WeekView({
   bookedSet: Set<string>;
   weekStartsOn: 'mon' | 'sun';
   dimPast?: boolean;
+  topSlot?: React.ReactNode;
 }) {
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const scrollRef = useRef<ScrollView | null>(null);
-  useEffect(() => {
+  const topSlotHeight = useRef(0);
+  const didInitialScroll = useRef(false);
+  const weekKey = weekStart.toISOString();
+  const scrollToNow = useCallback(() => {
     const now = new Date();
     const inWeek = weekDays.some((d) => isSameDay(d, now));
     const hourTarget = inWeek ? now.getHours() : HOURS[0];
-    const y = scrollYForHour(hourTarget);
+    const y = scrollYForHour(hourTarget) + topSlotHeight.current;
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y, animated: false });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekStart.toISOString()]);
+  }, [weekKey]);
+  useEffect(() => {
+    didInitialScroll.current = false;
+    scrollToNow();
+  }, [weekKey, scrollToNow]);
 
   return (
     <View className="flex-1">
@@ -1001,6 +1038,22 @@ function WeekView({
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="pb-10">
+        {topSlot ? (
+          <View
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (Math.abs(h - topSlotHeight.current) > 1) {
+                topSlotHeight.current = h;
+                if (!didInitialScroll.current) {
+                  didInitialScroll.current = true;
+                  scrollToNow();
+                }
+              }
+            }}
+            className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">
+            {topSlot}
+          </View>
+        ) : null}
         <View className="w-full max-w-5xl mx-auto px-2">
           <WeekGrid
             weekDays={weekDays}
@@ -1199,12 +1252,14 @@ function MonthView({
   gotoDay,
   sessions,
   weekStartsOn,
+  topSlot,
 }: {
   date: Date;
   setDate: (d: Date) => void;
   gotoDay: () => void;
   sessions: ClassSession[] | undefined;
   weekStartsOn: 'mon' | 'sun';
+  topSlot?: React.ReactNode;
 }) {
   const grid = monthGrid(date, weekStartsOn);
   const weekLetters =
@@ -1225,6 +1280,9 @@ function MonthView({
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
+        {topSlot ? (
+          <View className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">{topSlot}</View>
+        ) : null}
         <View className="w-full max-w-5xl mx-auto px-2">
           {Array.from({ length: 6 }, (_, w) => (
             <View key={w} className="flex-row">
