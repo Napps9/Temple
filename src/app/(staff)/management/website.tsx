@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { SiteEditor } from '@/components/website/SiteEditor';
 import { SiteHtmlPreview } from '@/components/website/SiteHtmlPreview';
 import { BRAND_THEMES, composeThemeWithBrand, isThemeId } from '@/lib/brand-themes';
+import { useCustomDomain } from '@/lib/custom-domain';
 import { errorMessage } from '@/lib/errors';
 import { renderSiteHtml, type PublicPlan, type ScheduleSession } from '@/lib/site-render';
 import {
@@ -147,6 +148,7 @@ export default function WebsiteManageScreen() {
   const brand = useGymBrand();
   const settings = useGymWebsiteSettings(brand.gymId);
   const site = useSite(brand.gymId);
+  const customDomain = useCustomDomain(brand.gymId);
   const queryClient = useQueryClient();
   const preview = useStaffPreviewData(brand.gymId);
 
@@ -324,6 +326,12 @@ export default function WebsiteManageScreen() {
               </Text>
             </Pressable>
           ) : null}
+          <Link href="/management/website/domain" asChild>
+            <Pressable hitSlop={6} className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
+              <Ionicons name="globe-outline" size={15} color="#6B7280" />
+              <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">Domain</Text>
+            </Pressable>
+          </Link>
           <Button
             variant={site.data.published ? 'secondary' : 'primary'}
             loading={publishState === 'working'}
@@ -334,7 +342,10 @@ export default function WebsiteManageScreen() {
 
         {site.data.published ? (
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Live at /site/{brand.slug}
+            Live at{' '}
+            {customDomain.data?.status === 'verified'
+              ? customDomain.data.domain
+              : `/site/${brand.slug}`}
           </Text>
         ) : null}
 

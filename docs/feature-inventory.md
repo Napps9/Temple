@@ -792,6 +792,25 @@ billing for it yet.
 - **Images** — hero/about/gallery uploads go to the `gym-website-assets`
   Storage bucket, gated the same way as the store's product-image
   bucket (`can_manage_website` + folder-scoped to the gym).
+- **Custom domains (Manage → Website → Domain)** — a gym can connect a
+  domain they own so the site serves from it directly instead of only
+  `/site/<slug>`. The `custom-domain` edge function registers the
+  domain on Temple's own Vercel project (no per-gym OAuth needed —
+  unlike Stripe Connect, this is one platform API token, not a separate
+  account per gym) and hands back DNS records to add; SSL is automatic
+  once DNS resolves. `gym_website_domains` has **no client write
+  policy** — every write happens under the service role, closing a real
+  gap where the table's Phase-A speculative columns on `gym_websites`
+  had no column-level RLS restriction. A new `middleware.ts` at the repo
+  root (Vercel Routing Middleware) resolves a verified domain's `Host`
+  header to a gym slug via `gym_slug_for_domain` and rewrites straight
+  into the existing `/api/site/<slug>` function — no rendering logic
+  duplicated. See `docs/vercel-domains-setup.md`.
+- **JSON design download** — a "Download design (JSON)" chip in the
+  editor exports the current `SiteDocument` as-is. A stopgap, not a
+  working-site export: real static-HTML/zip portability (rewritten
+  image URLs, an offline-capable contact form) is a larger future
+  phase, deliberately not built yet.
 
 ### Coach-specific
 

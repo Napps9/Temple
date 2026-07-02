@@ -179,8 +179,6 @@ export type Database = {
           theme: string;
           design: Json;
           published: boolean;
-          custom_domain: string | null;
-          domain_verified_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -190,8 +188,6 @@ export type Database = {
           theme?: string;
           design?: Json;
           published?: boolean;
-          custom_domain?: string | null;
-          domain_verified_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -201,8 +197,45 @@ export type Database = {
           theme: string;
           design: Json;
           published: boolean;
-          custom_domain: string | null;
-          domain_verified_at: string | null;
+          created_at: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      gym_website_domains: {
+        Row: {
+          gym_id: string;
+          domain: string;
+          status: 'pending' | 'verified' | 'error';
+          records: Json;
+          error_message: string | null;
+          last_checked_at: string | null;
+          verified_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          domain: string;
+          status?: 'pending' | 'verified' | 'error';
+          records?: Json;
+          error_message?: string | null;
+          last_checked_at?: string | null;
+          verified_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          domain: string;
+          status: 'pending' | 'verified' | 'error';
+          records: Json;
+          error_message: string | null;
+          last_checked_at: string | null;
+          verified_at: string | null;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         }>;
@@ -3239,6 +3272,10 @@ export type Database = {
           credit_count: number | null;
           monthly_price_cents: number | null;
         }[];
+      };
+      gym_slug_for_domain: {
+        Args: { p_host: string };
+        Returns: string | null;
       };
       invite_code_gym: {
         Args: { p_code: string };

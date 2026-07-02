@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useState, type ComponentProps } from 'react';
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
+import { ChipButton } from '@/components/ChipButton';
 import { useSession } from '@/lib/auth';
 import { BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
 import { errorMessage } from '@/lib/errors';
@@ -598,6 +599,19 @@ function ThemePicker({
 // Editor
 // ---------------------------------------------------------------------------
 
+// Module-scope on purpose — SiteEditor's own `document` prop is a
+// SiteDocument, not the DOM, so a helper defined inside the component
+// would shadow window.document right when it's needed.
+function downloadJson(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = window.document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function SiteEditor({
   document,
   onChange,
@@ -715,8 +729,24 @@ export function SiteEditor({
         )}
       </View>
 
-      <View className="lg:w-64 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-4">
+      <View className="lg:w-64 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
         <ThemePicker document={document} onChange={onChange} brandPrimaryColor={brandPrimaryColor} />
+        {Platform.OS === 'web' ? (
+          <View className="gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+              Ownership
+            </Text>
+            <ChipButton
+              label="Download design (JSON)"
+              icon="download-outline"
+              tone="neutral"
+              onPress={() => downloadJson('site-design.json', document)}
+            />
+            <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+              A snapshot of your page content — not a working website file.
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
