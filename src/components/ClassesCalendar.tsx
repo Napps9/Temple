@@ -281,7 +281,7 @@ function occupiedHourSet(
   return out;
 }
 
-function ViewSwitcher({ view }: { view: ViewMode }) {
+function ViewSwitcher({ view }: { view: string }) {
   return (
     <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-1">
       {VIEWS.map((v) => (
@@ -314,13 +314,14 @@ function parseView(v: string | undefined): ViewMode {
   return VIEWS.includes(v as ViewMode) ? (v as ViewMode) : 'day';
 }
 
-// Compact Day/Week toggle for the phone Book calendar — Month is dropped
-// there, so this only ever offers the two.
-function ViewIconToggle({ view }: { view: ViewMode }) {
+// Compact List/Grid toggle for the phone Book calendar. The agenda list
+// is the default; the 2-day grid stays available for a time-of-day
+// overview. Month is dropped on the phone entirely.
+function ViewIconToggle({ view }: { view: string }) {
   const colors = useThemeColors();
-  const options: { key: ViewMode; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-    { key: 'day', icon: 'today-outline', label: 'Day view' },
-    { key: 'week', icon: 'grid-outline', label: 'Week view' },
+  const options: { key: string; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+    { key: 'list', icon: 'list-outline', label: 'List view' },
+    { key: 'week', icon: 'grid-outline', label: 'Grid view' },
   ];
   return (
     <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-1">
@@ -380,7 +381,13 @@ export function ClassesCalendar({
   const compactBook = mode === 'book' && width < 768;
   const weekVisibleDays = compactBook ? 2 : 7;
   const rawView = parseView(params.view);
-  const view = compactBook && rawView === 'month' ? 'day' : rawView;
+  // Phone Book lands on an agenda list (a card per class) and keeps the
+  // 2-day grid behind a toggle. Wide screens / staff keep day/week/month.
+  const view: 'day' | 'week' | 'month' | 'list' = compactBook
+    ? params.view === 'week'
+      ? 'week'
+      : 'list'
+    : rawView;
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
@@ -652,6 +659,19 @@ export function ClassesCalendar({
 
       <GestureDetector gesture={swipe}>
         <View className="flex-1">
+          {view === 'list' ? (
+            <AgendaView
+              date={date}
+              setDate={setDate}
+              sessions={sessionsQuery.data}
+              weekStartsOn={weekStartsOn}
+              bookedSet={bookedSet}
+              gymId={membership?.gymId}
+              onSessionPress={openSession}
+              dimPast={mode === 'book'}
+              topSlot={topSlot}
+            />
+          ) : null}
           {view === 'day' ? (
             <DayView
               mode={mode}
@@ -728,6 +748,244 @@ export function ClassesCalendar({
         onClose={() => setPickerOpen(false)}
       />
     </Screen>
+  );
+}
+
+// Agenda list — the phone Book default. A day strip up top, then a card
+// per class for the selected day showing time, coach, spots-left and
+// booking state. Booking itself still runs through ClassDetailModal (all
+// the entitlement / waitlist / purchase logic lives there), so a card tap
+// just opens it.
+function AgendaView({
+  date,
+  setDate,
+  sessions,
+  weekStartsOn,
+  bookedSet,
+  gymId,
+  onSessionPress,
+  dimPast,
+  topSlot,
+}: {
+  date: Date;
+  setDate: (d: Date) => void;
+  sessions: ClassSession[] | undefined;
+  weekStartsOn: 'mon' | 'sun';
+  bookedSet: Set<string>;
+  gymId: string | undefined;
+  onSessionPress: (id: string) => void;
+  dimPast?: boolean;
+  topSlot?: React.ReactNode;
+}) {
+  const colors = useThemeColors();
+  const weekStart = startOfWeek(date, weekStartsOn);
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const dayClasses = classesOnDay(sessions, date).sort(
+    (a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
+  );
+  const dayIds = dayClasses.map((s) => s.id);
+  const isoDay = fmtDateLocal(date);
+
+  // One round trip for the whole day's spot counts (RLS lets a member
+  // read same-gym bookings — class_bookings_tenant_select), tallied into
+  // a per-session map. Confirmed rows only; waitlist sits in its own table.
+  const counts = useQuery({
+    queryKey: ['agenda-booking-counts', gymId, isoDay, dayIds.join(',')],
+    enabled: dayIds.length > 0,
+    queryFn: async (): Promise<Map<string, number>> => {
+      const { data, error } = await supabase
+        .from('class_bookings')
+        .select('class_session_id')
+        .in('class_session_id', dayIds);
+      if (error) throw error;
+      const m = new Map<string, number>();
+      for (const r of (data ?? []) as { class_session_id: string }[]) {
+        m.set(r.class_session_id, (m.get(r.class_session_id) ?? 0) + 1);
+      }
+      return m;
+    },
+  });
+
+  return (
+    <View className="flex-1">
+      <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="flex-row gap-2 pt-1 pb-4">
+          {weekDays.map((d) => {
+            const selected = isSameDay(d, date);
+            const today = isSameDay(d, new Date());
+            return (
+              <Pressable
+                key={d.toISOString()}
+                onPress={() => {
+                  haptic.selection();
+                  setDate(startOfDay(d));
+                }}
+                hitSlop={6}
+                className="flex-1 items-center gap-1.5">
+                <Text
+                  className={`text-xs font-semibold uppercase ${
+                    today ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
+                  }`}>
+                  {DAY_LETTERS[d.getDay()]}
+                </Text>
+                <View
+                  className={`w-9 h-9 rounded-full items-center justify-center ${
+                    selected ? 'bg-primary shadow-pop' : ''
+                  }`}>
+                  <Text
+                    className={`font-bold text-base ${
+                      selected
+                        ? 'text-white'
+                        : today
+                          ? 'text-primary'
+                          : 'text-gray-900 dark:text-gray-50'
+                    }`}>
+                    {d.getDate()}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+        {topSlot ? (
+          <View className="w-full max-w-5xl mx-auto px-2 pt-1 pb-2">{topSlot}</View>
+        ) : null}
+        <View className="w-full max-w-5xl mx-auto px-2 gap-2.5">
+          {dayClasses.length === 0 ? (
+            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 items-center gap-2">
+              <Ionicons
+                name="calendar-clear-outline"
+                size={24}
+                color={colors.iconTertiary}
+              />
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                No classes on this day.
+              </Text>
+            </View>
+          ) : (
+            dayClasses.map((s) => (
+              <AgendaCard
+                key={s.id}
+                session={s}
+                count={counts.data?.get(s.id) ?? 0}
+                bookedByMe={bookedSet.has(s.id)}
+                onPress={() => onSessionPress(s.id)}
+                dimPast={dimPast}
+              />
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+function AgendaCard({
+  session,
+  count,
+  bookedByMe,
+  onPress,
+  dimPast,
+}: {
+  session: ClassSession;
+  count: number;
+  bookedByMe: boolean;
+  onPress: () => void;
+  dimPast?: boolean;
+}) {
+  const colors = useThemeColors();
+  const start = new Date(session.starts_at);
+  const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
+  const isPast = dimPast === true && end.getTime() <= Date.now();
+  const spotsLeft = Math.max(0, session.capacity - count);
+  const full = spotsLeft <= 0;
+  const color = sessionColor(session, colors.primary);
+  const coachName = session.coach?.full_name?.trim() || null;
+
+  const statusText = bookedByMe
+    ? 'Booked in'
+    : full
+      ? 'Full'
+      : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`;
+  const statusClass = bookedByMe
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : full
+      ? 'text-gray-400 dark:text-gray-500'
+      : spotsLeft <= 3
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-emerald-600 dark:text-emerald-400';
+
+  return (
+    <Pressable
+      onPress={isPast ? undefined : onPress}
+      disabled={isPast}
+      className={`flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-2xl p-3.5 border shadow-card active:bg-gray-50 dark:active:bg-gray-800 ${
+        bookedByMe
+          ? 'border-emerald-400 dark:border-emerald-600'
+          : 'border-gray-200 dark:border-gray-700'
+      } ${isPast ? 'opacity-50' : ''}`}>
+      <View className="w-14">
+        <Text className="text-gray-900 dark:text-gray-50 text-[17px] font-extrabold">
+          {fmtTime(start)}
+        </Text>
+        <Text className="text-gray-400 dark:text-gray-500 text-[11px] mt-0.5">
+          {session.duration_minutes} min
+        </Text>
+      </View>
+
+      <View className="flex-1 min-w-0">
+        <View className="flex-row items-center gap-2">
+          <View
+            style={{ backgroundColor: color }}
+            className="w-2 h-2 rounded-full"
+          />
+          <Text
+            numberOfLines={1}
+            className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+            {sessionLabel(session)}
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-1.5 mt-1">
+          {coachName ? (
+            <>
+              <Text
+                className="text-gray-500 dark:text-gray-400 text-xs"
+                numberOfLines={1}>
+                with {coachName}
+              </Text>
+              <Text className="text-gray-300 dark:text-gray-600 text-xs">·</Text>
+            </>
+          ) : null}
+          <Text className={`text-xs font-semibold ${statusClass}`}>
+            {statusText}
+          </Text>
+        </View>
+      </View>
+
+      {bookedByMe ? (
+        <View className="flex-row items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-full px-3 py-1.5">
+          <Ionicons name="checkmark" size={14} color="#059669" />
+          <Text className="text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+            Booked
+          </Text>
+        </View>
+      ) : isPast ? null : (
+        <View
+          className={`rounded-full px-4 py-2 ${
+            full ? 'bg-gray-100 dark:bg-gray-800' : 'bg-primary'
+          }`}>
+          <Text
+            className={`text-xs font-bold ${
+              full ? 'text-gray-500 dark:text-gray-400' : 'text-white'
+            }`}>
+            {full ? 'Waitlist' : 'Book'}
+          </Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
