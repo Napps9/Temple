@@ -6,7 +6,7 @@
 -- incidentally anon-readable".
 
 begin;
-select plan(5);
+select plan(4);
 
 \ir _helpers.psql
 
