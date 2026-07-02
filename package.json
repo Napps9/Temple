@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "@vercel/node": "^5.8.22",
     "husky": "^9.1.7",
     "typescript": "~6.0.3",
     "vitest": "^4.1.8"
