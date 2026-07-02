@@ -31,6 +31,12 @@ describe('normalizeAudience', () => {
       normalizeAudience({ kind: 'manual', profile_ids: ['a', 1, 'b'] }),
     ).toEqual({ kind: 'manual', profile_ids: ['a', 'b'] });
   });
+
+  it('preserves pending_members instead of downgrading to all_members', () => {
+    expect(normalizeAudience({ kind: 'pending_members' })).toEqual({
+      kind: 'pending_members',
+    });
+  });
 });
 
 describe('isAudienceEmptyByConstruction', () => {
@@ -41,6 +47,7 @@ describe('isAudienceEmptyByConstruction', () => {
     expect(
       isAudienceEmptyByConstruction({ kind: 'manual', profile_ids: ['x'] }),
     ).toBe(false);
+    expect(isAudienceEmptyByConstruction({ kind: 'pending_members' })).toBe(false);
   });
 });
 
@@ -51,6 +58,7 @@ describe('describeAudience', () => {
     [{ kind: 'tags', tags: ['VIP'] }, 'Tagged "VIP"'],
     [{ kind: 'tags', tags: ['VIP', 'Risk'] }, 'Tagged with 2 tags'],
     [{ kind: 'manual', profile_ids: ['a', 'b', 'c'] }, '3 hand-picked members'],
+    [{ kind: 'pending_members' }, 'Newly imported members'],
   ];
   it.each(cases)('describes %o', (def, expected) => {
     expect(describeAudience(def)).toBe(expected);

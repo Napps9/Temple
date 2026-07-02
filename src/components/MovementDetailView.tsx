@@ -5,11 +5,13 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { RecordHyroxRaceModal } from '@/components/RecordHyroxRaceModal';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { Sparkline } from '@/components/Sparkline';
 import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { HYROX_SIM } from '@/lib/hyrox';
 import { findMovement, type Metric } from '@/lib/movements';
 import {
   bestOfMerged,
@@ -83,6 +85,7 @@ export function MovementDetailView({
   const [recording, setRecording] = useState<{ trackKey?: string } | null>(
     null,
   );
+  const [recordingRace, setRecordingRace] = useState(false);
 
   const direct = useQuery({
     queryKey: ['tracked-results-by-movement', session?.user.id, movementKey],
@@ -226,9 +229,22 @@ export function MovementDetailView({
         </View>
 
         <View className="gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            {isStation ? 'Personal bests' : 'Rep maxes'}
-          </Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+              {isStation ? 'Personal bests' : 'Rep maxes'}
+            </Text>
+            {isMember && movement.key === HYROX_SIM.key ? (
+              <Pressable
+                onPress={() => setRecordingRace(true)}
+                hitSlop={6}
+                className="flex-row items-center gap-1 active:opacity-70">
+                <Ionicons name="flag-outline" size={13} color={colors.primary} />
+                <Text className="text-primary text-xs font-semibold">
+                  Log full splits
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
           <View className="gap-2">
             {movement.schemes.map((scheme) => {
               const best = bestOfMerged(merged, scheme.key, scheme);
@@ -336,6 +352,13 @@ export function MovementDetailView({
           onClose={() => setRecording(null)}
           initialMovementKey={movement.key}
           initialTrackKey={recording?.trackKey}
+        />
+      ) : null}
+
+      {isMember && movement.key === HYROX_SIM.key ? (
+        <RecordHyroxRaceModal
+          visible={recordingRace}
+          onClose={() => setRecordingRace(false)}
         />
       ) : null}
     </Screen>

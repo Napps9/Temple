@@ -209,7 +209,7 @@ export default function ManagementHome() {
       category: 'insights',
       title: 'Insights',
       description: 'Intros, expiring members, conversion vs targets.',
-      href: '/management/insights',
+      href: '/management/attendance',
       visible: !!canSeeInsights,
     },
     {
@@ -1140,6 +1140,7 @@ type InsightsSummary = {
   intros_target: number;
   conversions: number;
   conversions_target: number;
+  lead_conversions: number;
   expiring_soon: number;
   expired: number;
   paying_now: number;
@@ -1296,6 +1297,7 @@ function InsightsTab() {
           intros_target: 0,
           conversions: 0,
           conversions_target: 0,
+          lead_conversions: 0,
           expiring_soon: 0,
           expired: 0,
           paying_now: 0,
@@ -1303,6 +1305,47 @@ function InsightsTab() {
         };
       }
       return rows[0];
+    },
+  });
+
+  // Per-source breakdown of converted leads in the period — surfaced
+  // alongside the lead_conversions tile so owners can tell which
+  // acquisition channels are paying off.
+  const leadBySource = useQuery({
+    queryKey: ['insights-leads-by-source', gymId, start, end],
+    enabled: !!gymId && canSeeInsights && rangeValid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('source_id, source:lead_sources!source_id(label, color)')
+        .eq('gym_id', gymId!)
+        .gte('converted_at', start)
+        .lte('converted_at', `${end}T23:59:59`);
+      if (error) throw error;
+      const tally = new Map<string, { label: string; color: string; n: number }>();
+      let untagged = 0;
+      for (const row of data ?? []) {
+        const r = row as unknown as {
+          source_id: string | null;
+          source: { label: string; color: string } | null;
+        };
+        if (!r.source_id || !r.source) {
+          untagged += 1;
+          continue;
+        }
+        const existing = tally.get(r.source_id);
+        if (existing) existing.n += 1;
+        else
+          tally.set(r.source_id, {
+            label: r.source.label,
+            color: r.source.color,
+            n: 1,
+          });
+      }
+      return {
+        untagged,
+        sources: [...tally.values()].sort((a, b) => b.n - a.n),
+      };
     },
   });
 
@@ -1428,6 +1471,15 @@ function InsightsTab() {
         {canSeeInsights ? (
           <View className="w-1/2 lg:w-1/3 p-1.5">
             <StatTile
+              title="Leads converted"
+              value={summary.data?.lead_conversions ?? '—'}
+              subtitle="in this period"
+            />
+          </View>
+        ) : null}
+        {canSeeInsights ? (
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
               title="Expiring soon"
               value={summary.data?.expiring_soon ?? '—'}
               subtitle="≤ 7 days"
@@ -1444,6 +1496,45 @@ function InsightsTab() {
           </View>
         ) : null}
       </View>
+
+      {canSeeInsights &&
+      ((leadBySource.data?.sources.length ?? 0) > 0 ||
+        (leadBySource.data?.untagged ?? 0) > 0) ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Conversions by source
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {leadBySource.data!.sources.map((s) => (
+              <View
+                key={s.label}
+                style={{ backgroundColor: s.color + '22' }}
+                className="rounded-full px-3 py-1 flex-row items-center gap-1.5">
+                <View
+                  style={{ backgroundColor: s.color }}
+                  className="w-2 h-2 rounded-full"
+                />
+                <Text style={{ color: s.color }} className="text-xs font-semibold">
+                  {s.label}
+                </Text>
+                <Text style={{ color: s.color }} className="text-xs">
+                  · {s.n}
+                </Text>
+              </View>
+            ))}
+            {leadBySource.data!.untagged > 0 ? (
+              <View className="rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 flex-row items-center gap-1.5">
+                <Text className="text-gray-600 dark:text-gray-300 text-xs font-semibold">
+                  No source
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  · {leadBySource.data!.untagged}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
 
       {canSeeInsights && summary.data ? (
         <View className="gap-3">
@@ -1680,6 +1771,7 @@ function MembersTab() {
   const canManageTags = useCan('can_manage_tags') ?? false;
   const canManageStaff = useCan('can_manage_staff') ?? false;
   const canInvite = useCan('can_invite') ?? false;
+  const canAssignPlan = useCan('can_assign_plan') ?? false;
   const exportMembers = useExportMembersCsv();
 
   const [preset, setPreset] = useState<Preset>('month');
@@ -1811,6 +1903,24 @@ function MembersTab() {
       ) : null}
 
       <MemberSignupLinkCard />
+
+      {canAssignPlan ? (
+        <View className="gap-3">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Pipeline
+          </Text>
+          <ManagementCard
+            title="Leads"
+            description="Track prospects from first contact through conversion."
+            href="/management/leads"
+          />
+          <ManagementCard
+            title="Membership requests"
+            description="Approve or reject member requests to switch or cancel a plan."
+            href="/management/membership-requests"
+          />
+        </View>
+      ) : null}
 
       {canManageStaff ? (
         <View className="gap-3">

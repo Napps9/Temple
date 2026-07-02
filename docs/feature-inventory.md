@@ -171,10 +171,18 @@ rental, or a **physical subscription box** shipped every cycle.
   strength-style leaderboards all work unchanged via the discipline-aware
   finders in `src/lib/movements.ts` (`catalogGroups`, `allSchemeOptions`)
   and the `useGymDiscipline` hook. Journal, streaks/heatmap and the injury
-  tracker are shared across both disciplines. (Phase 1 = station + run
-  PBs and a single race finish time; the split-by-split simulation builder
-  — 8 run splits + 8 station splits + roxzone, by division — is scaffolded
-  as the next phase.)
+  tracker are shared across both disciplines. Phase 1 = station + run PBs
+  and a single race finish time. Phase 2 adds a **split-by-split race
+  simulation builder** (`RecordHyroxRaceModal`, "Log full splits" on the
+  Race Simulation detail page): 8 laps of run → roxzone → station timed
+  individually, by race type (singles/doubles/relay), division
+  (open/pro), gender category and optional age group, stored in
+  `tracked_hyrox_races` + `tracked_hyrox_splits` (RLS matching the
+  `tracked_workout_sections`/`tracked_section_entries` pattern). The
+  aggregate total is written alongside as an ordinary `hyrox_sim` PB
+  result, so the existing leaderboard/PR-badge/sparkline surfaces keep
+  reading one number per race without change — the split tables are a
+  detail view underneath it, not a replacement.
 
 - **PR badges** — on the movement detail page, every journal row
   shows a trophy PR chip when the result was a strict improvement
@@ -529,8 +537,11 @@ newsletter tool, and an opt-in "Send the welcome email from Temple"
 button that creates a campaign with
 `audience.kind = 'pending_members'` and lands the owner in the editor
 to preview before send. A live linking-progress counter ticks up
-while members sign up. Plan-name → membership_plan mapping is
-deliberately deferred to a follow-up flow.
+while members sign up. Plan-name → membership_plan mapping happens in
+the Review step below — a CSV plan name that case-insensitively
+matches a plan the gym already has is pre-selected to "Map to
+existing" (flagged "Matched by name") rather than defaulting to
+create a duplicate.
 
 ### Member-import Review step (AI-assisted plan + tag inference)
 
