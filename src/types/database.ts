@@ -90,6 +90,7 @@ export type Database = {
           store_enabled: boolean;
           store_shipping_fee_cents: number;
           discipline: 'crossfit' | 'hyrox';
+          website_builder_enabled: boolean;
         };
         Insert: {
           id?: string;
@@ -168,6 +169,42 @@ export type Database = {
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
           discipline: 'crossfit' | 'hyrox';
+        }>;
+        Relationships: [];
+      };
+      gym_websites: {
+        Row: {
+          id: string;
+          gym_id: string;
+          theme: string;
+          design: Json;
+          published: boolean;
+          custom_domain: string | null;
+          domain_verified_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          theme?: string;
+          design?: Json;
+          published?: boolean;
+          custom_domain?: string | null;
+          domain_verified_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          theme: string;
+          design: Json;
+          published: boolean;
+          custom_domain: string | null;
+          domain_verified_at: string | null;
+          created_at: string;
+          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -3168,6 +3205,17 @@ export type Database = {
           secondary_color_dark: string | null;
           text_color_dark: string | null;
           public_lead_capture_enabled: boolean;
+        }[];
+      };
+      gym_website_by_slug: {
+        Args: { p_slug: string };
+        Returns: {
+          gym_id: string;
+          gym_name: string;
+          gym_logo_url: string | null;
+          gym_primary_color: string;
+          theme: string;
+          design: Json;
         }[];
       };
       invite_code_gym: {
