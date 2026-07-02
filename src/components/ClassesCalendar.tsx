@@ -526,46 +526,19 @@ export function ClassesCalendar({
     <Screen edges={['bottom', 'left', 'right']}>
       {compactBook ? (
         <View className="w-full max-w-5xl mx-auto px-2">
-          {/* Three equal zones (flex-1 sides) keep the month header on the
-              screen's true centre, so the week mover below lines up with
-              it. */}
-          <View className="flex-row items-center pt-5 pb-4">
-            <View className="flex-1 flex-row justify-start">
-              <Pressable
-                onPress={goToToday}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Jump to today"
-                className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                <Ionicons name="locate-outline" size={18} color="#6B7280" />
-              </Pressable>
-            </View>
-            <View className="flex-row items-center justify-center gap-1">
-              <Pressable
-                onPress={() => {
-                  haptic.selection();
-                  setDate(startOfDay(addMonths(date, -1)));
-                }}
-                hitSlop={8}
-                className="w-8 h-8 items-center justify-center">
-                <Text className="text-gray-400 dark:text-gray-500 text-lg">‹</Text>
-              </Pressable>
-              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-                {fmtMonthYear(date)}
-              </Text>
-              <Pressable
-                onPress={() => {
-                  haptic.selection();
-                  setDate(startOfDay(addMonths(date, 1)));
-                }}
-                hitSlop={8}
-                className="w-8 h-8 items-center justify-center">
-                <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
-              </Pressable>
-            </View>
-            <View className="flex-1 flex-row justify-end">
-              <ViewIconToggle view={view} />
-            </View>
+          {/* Phone Book drops the month header entirely — the week mover /
+              day strip below already carry the date, and members book by
+              the week, not the month. */}
+          <View className="flex-row items-center justify-between pt-5 pb-2">
+            <Pressable
+              onPress={goToToday}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Jump to today"
+              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+              <Ionicons name="locate-outline" size={18} color="#6B7280" />
+            </Pressable>
+            <ViewIconToggle view={view} />
           </View>
         </View>
       ) : (
