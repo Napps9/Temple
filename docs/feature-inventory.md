@@ -529,8 +529,11 @@ newsletter tool, and an opt-in "Send the welcome email from Temple"
 button that creates a campaign with
 `audience.kind = 'pending_members'` and lands the owner in the editor
 to preview before send. A live linking-progress counter ticks up
-while members sign up. Plan-name → membership_plan mapping is
-deliberately deferred to a follow-up flow.
+while members sign up. Plan-name → membership_plan mapping happens in
+the Review step below — a CSV plan name that case-insensitively
+matches a plan the gym already has is pre-selected to "Map to
+existing" (flagged "Matched by name") rather than defaulting to
+create a duplicate.
 
 ### Member-import Review step (AI-assisted plan + tag inference)
 
