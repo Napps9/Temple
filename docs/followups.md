@@ -206,3 +206,58 @@ with it** — without cluttering the focused discipline home.
   of a discipline-mismatched gym see it in their members' logs? (Default:
   yes — it's the member's history, RLS already allows self + staff.)
 - Naming: "All movements" vs "Movement library" vs a plain search icon.
+
+---
+
+## 6. Full native white-labeling (per-gym App Store apps) — assessed, holding off
+
+Competitive gap: Glofox pitches "your logo on the App Store"; PushPress,
+Zen Planner and Wodify sell it as a $39-97/mo add-on. Temple's native
+iOS/Android binary stays Temple-branded for every gym today — only the
+web/PWA install is per-gym (runtime manifest/icon swap from
+`useGymBrand()`, see `docs/feature-inventory.md`). Assessed feasibility
+2 July 2026; decision is to hold off, not build.
+
+**It's technically buildable.** Expo/EAS supports exactly this pattern:
+build profiles keyed on a per-tenant variable, each producing its own
+bundle ID / icon / name / splash screen, with `eas build --auto-submit`
+handling the store upload once a listing exists. Proven at 100+-app
+scale by other teams on the same stack Temple uses.
+
+**The real blocker is Apple policy, and it got harder in 2026, not
+easier.** App Store Review Guideline 4.2.6: "Apps built from templates
+must be submitted by the content owner." Apple's automated review
+specifically flags one developer account publishing many near-identical
+template apps as reseller spam, and Apple tightened enforcement on this
+exact pattern on 8 June 2026. Two operating models, both with real cost:
+
+- **Each gym enrolls its own Apple Developer account** ($99/yr, gym
+  owner submits as "content owner") — the compliant path at scale, but
+  adds real friction (developer enrollment + their own app review wait)
+  to the exact experience meant to feel effortless.
+- **Temple submits every gym under one developer account** — cheapest
+  and most centralized, but is now the specific pattern Apple's 2026
+  policy update targets; likely fine at a handful of gyms, real rejection
+  risk at 50+.
+
+**Structural constraint, not just a policy one:** a native app's OS-level
+icon is 1:1 with its installed bundle. Someone active at more than one
+differently-branded gym (an owner who's also a member elsewhere, a coach
+working two locations) would need one native install per gym — there's
+no way for a single installed binary to show Gym A's icon in one context
+and Gym B's in another. The existing PWA reskin doesn't have this problem
+(same install, re-skins live per active gym), which is why it's the
+lower-risk near-term answer to the same competitive pressure.
+
+**Resolved on the "two apps" worry:** confirmed the concern was staff
+needing a separate generic Temple app alongside their own gym's branded
+app for admin work — not a blocker, since white-labeling would rebuild
+the *same* codebase (same role-gated UI serving both staff and member
+views from one binary) under a different bundle ID/icon, exactly like
+today. The multi-gym-person edge case above is a known, unresolved
+constraint worth remembering if this gets picked up later, not something
+that's been designed around yet.
+
+**Revisit when:** a real sales conversation surfaces this as a blocker
+(per Plan Three's original discovery-spike recommendation), and the
+business has picked one of the two Apple operating models above.
