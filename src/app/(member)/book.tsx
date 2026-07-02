@@ -286,11 +286,11 @@ export default function Book() {
   return (
     <ClassesCalendar
       mode="book"
+      headerSlot={<NextClassCard />}
       topSlot={
         <View className="gap-2">
           <PostClassLogPrompt />
           <RecommendedClassCard />
-          <NextClassCard />
         </View>
       }
     />

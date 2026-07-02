@@ -369,9 +369,11 @@ function TodayButton({ onPress }: { onPress: () => void }) {
 export function ClassesCalendar({
   mode,
   topSlot,
+  headerSlot,
 }: {
   mode: 'manage' | 'book';
   topSlot?: React.ReactNode;
+  headerSlot?: React.ReactNode;
 }) {
   const params = useLocalSearchParams<{ view?: string; session?: string }>();
   const { width } = useWindowDimensions();
@@ -557,6 +559,9 @@ export function ClassesCalendar({
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
+      {headerSlot ? (
+        <View className="w-full max-w-5xl mx-auto px-2 pt-3">{headerSlot}</View>
+      ) : null}
       {compactBook ? (
         <View className="w-full max-w-5xl mx-auto px-2">
           {/* Phone Book: the date sits where the month used to — arrows
