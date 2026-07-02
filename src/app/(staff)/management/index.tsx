@@ -203,6 +203,7 @@ export default function ManagementHome() {
   const canManageComms = useCan('can_manage_comms');
   const canManageStore = useCan('can_manage_store');
   const canAssignPlan = useCan('can_assign_plan');
+  const canManageWebsite = useCan('can_manage_website');
 
   const cards: Card[] = [
     {
@@ -303,6 +304,13 @@ export default function ManagementHome() {
       description: 'Design, send and analyse email campaigns to your members.',
       href: '/management/communications',
       visible: !!canManageComms,
+    },
+    {
+      category: 'comms',
+      title: 'Website',
+      description: 'A public site built from your own schedule, pricing and brand.',
+      href: '/management/website',
+      visible: !!canManageWebsite,
     },
     {
       category: 'store',
