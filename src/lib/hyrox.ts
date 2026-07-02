@@ -69,9 +69,51 @@ export const HYROX_STATIONS: HyroxStation[] = [
   station('hyrox_wall_balls', 'Wall Balls', '100 reps', '100reps', 'ellipse-outline', '#14B8A6'),
 ];
 
+// Race category options for the split-by-split simulation builder
+// (below). Kept as plain label/value lists rather than a DB enum —
+// see 0096's migration comment — so a new division doesn't need a
+// schema change, only an entry here.
+export const HYROX_RACE_TYPES = [
+  { value: 'singles', label: 'Singles' },
+  { value: 'doubles', label: 'Doubles' },
+  { value: 'relay', label: 'Relay' },
+] as const;
+export type HyroxRaceType = (typeof HYROX_RACE_TYPES)[number]['value'];
+
+export const HYROX_RACE_DIVISIONS = [
+  { value: 'open', label: 'Open' },
+  { value: 'pro', label: 'Pro' },
+] as const;
+export type HyroxRaceDivision = (typeof HYROX_RACE_DIVISIONS)[number]['value'];
+
+export const HYROX_GENDER_CATEGORIES = [
+  { value: 'mens', label: "Men's" },
+  { value: 'womens', label: "Women's" },
+  { value: 'mixed', label: 'Mixed' },
+] as const;
+export type HyroxGenderCategory = (typeof HYROX_GENDER_CATEGORIES)[number]['value'];
+
+// Standard Hyrox age-group bands. age_group is nullable in the schema —
+// "not specified" is always a valid choice alongside these.
+export const HYROX_AGE_GROUPS = [
+  '16-24',
+  '25-29',
+  '30-34',
+  '35-39',
+  '40-44',
+  '45-49',
+  '50-54',
+  '55-59',
+  '60-64',
+  '65-69',
+  '70+',
+] as const;
+export type HyroxAgeGroup = (typeof HYROX_AGE_GROUPS)[number];
+
 // The full-race simulation tile. Phase 1 logs a single finish time per
-// format (full / half); the split-by-split simulation builder is the
-// scaffolded next phase.
+// format (full / half); the split-by-split simulation builder adds a
+// detailed 8-run/8-station/8-roxzone breakdown underneath the same
+// full/half total — see RecordHyroxRaceModal.
 export const HYROX_SIM = {
   key: 'hyrox_sim',
   name: 'Race Simulation',

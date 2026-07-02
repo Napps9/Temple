@@ -1878,6 +1878,96 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      tracked_hyrox_races: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          race_length: 'full' | 'half';
+          race_type: string;
+          division: string;
+          gender_category: string;
+          age_group: string | null;
+          run_total_seconds: number;
+          station_total_seconds: number;
+          roxzone_total_seconds: number;
+          total_seconds: number;
+          performed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          race_length: 'full' | 'half';
+          race_type?: string;
+          division?: string;
+          gender_category: string;
+          age_group?: string | null;
+          run_total_seconds: number;
+          station_total_seconds: number;
+          roxzone_total_seconds: number;
+          total_seconds: number;
+          performed_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          race_length: 'full' | 'half';
+          race_type: string;
+          division: string;
+          gender_category: string;
+          age_group: string | null;
+          run_total_seconds: number;
+          station_total_seconds: number;
+          roxzone_total_seconds: number;
+          total_seconds: number;
+          performed_at: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      tracked_hyrox_splits: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          race_id: string;
+          segment_type: 'run' | 'station' | 'roxzone';
+          segment_index: number;
+          station_key: string | null;
+          time_seconds: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          race_id: string;
+          segment_type: 'run' | 'station' | 'roxzone';
+          segment_index: number;
+          station_key?: string | null;
+          time_seconds: number;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          race_id: string;
+          segment_type: 'run' | 'station' | 'roxzone';
+          segment_index: number;
+          station_key: string | null;
+          time_seconds: number;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       tracked_section_movement_tags: {
         Row: {
           id: string;
