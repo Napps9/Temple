@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
@@ -306,6 +306,42 @@ function parseView(v: string | undefined): ViewMode {
   return VIEWS.includes(v as ViewMode) ? (v as ViewMode) : 'day';
 }
 
+// Compact Day/Week toggle for the phone Book calendar — Month is dropped
+// there, so this only ever offers the two.
+function ViewIconToggle({ view }: { view: ViewMode }) {
+  const colors = useThemeColors();
+  const options: { key: ViewMode; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+    { key: 'day', icon: 'today-outline', label: 'Day view' },
+    { key: 'week', icon: 'grid-outline', label: 'Week view' },
+  ];
+  return (
+    <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-1">
+      {options.map((o) => {
+        const active = view === o.key;
+        return (
+          <Pressable
+            key={o.key}
+            onPress={() => {
+              haptic.selection();
+              router.setParams({ view: o.key });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={o.label}
+            className={`w-9 h-8 rounded-full items-center justify-center ${
+              active ? 'bg-white dark:bg-gray-700 shadow-pill' : ''
+            }`}>
+            <Ionicons
+              name={o.icon}
+              size={16}
+              color={active ? colors.iconPrimary : colors.iconSecondary}
+            />
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function TodayButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
@@ -329,7 +365,14 @@ export function ClassesCalendar({
   topSlot?: React.ReactNode;
 }) {
   const params = useLocalSearchParams<{ view?: string; session?: string }>();
-  const view = parseView(params.view);
+  const { width } = useWindowDimensions();
+  // On a phone the member Book calendar drops Month entirely and shows an
+  // Apple-style 2-day week instead of cramming seven columns in. Staff
+  // Manage and any wide screen keep the full Day/Week/Month calendar.
+  const compactBook = mode === 'book' && width < 768;
+  const weekVisibleDays = compactBook ? 2 : 7;
+  const rawView = parseView(params.view);
+  const view = compactBook && rawView === 'month' ? 'day' : rawView;
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
@@ -462,7 +505,7 @@ export function ClassesCalendar({
     if (view === 'month') {
       setDate(startOfDay(addMonths(date, direction)));
     } else if (view === 'week') {
-      setDate(addDays(date, 7 * direction));
+      setDate(addDays(date, weekVisibleDays * direction));
     } else {
       setDate(addDays(date, direction));
     }
@@ -481,55 +524,94 @@ export function ClassesCalendar({
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
-          {/* View switcher sits left of the month header on md+,
-              mirroring the Add-class CTA on the right. On small screens
-              the absolute slot collides with the month title, so it
-              renders as its own row below instead. */}
-          <View className="absolute left-0 top-6 hidden md:flex md:flex-row md:items-center gap-2">
+      {compactBook ? (
+        <View className="w-full max-w-5xl mx-auto px-2">
+          <View className="flex-row items-center gap-2 pt-5 pb-4">
+            <Pressable
+              onPress={goToToday}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Jump to today"
+              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+              <Ionicons name="locate-outline" size={18} color="#6B7280" />
+            </Pressable>
+            <View className="flex-1 flex-row items-center justify-center gap-1">
+              <Pressable
+                onPress={() => {
+                  haptic.selection();
+                  setDate(startOfDay(addMonths(date, -1)));
+                }}
+                hitSlop={8}
+                className="w-8 h-8 items-center justify-center">
+                <Text className="text-gray-400 dark:text-gray-500 text-lg">‹</Text>
+              </Pressable>
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                {fmtMonthYear(date)}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  haptic.selection();
+                  setDate(startOfDay(addMonths(date, 1)));
+                }}
+                hitSlop={8}
+                className="w-8 h-8 items-center justify-center">
+                <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
+              </Pressable>
+            </View>
+            <ViewIconToggle view={view} />
+          </View>
+        </View>
+      ) : (
+        <View className="w-full max-w-5xl mx-auto px-2">
+          <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
+            {/* View switcher sits left of the month header on md+,
+                mirroring the Add-class CTA on the right. On small screens
+                the absolute slot collides with the month title, so it
+                renders as its own row below instead. */}
+            <View className="absolute left-0 top-6 hidden md:flex md:flex-row md:items-center gap-2">
+              <ViewSwitcher view={view} />
+              <TodayButton onPress={goToToday} />
+            </View>
+            <Pressable
+              onPress={() => {
+                haptic.selection();
+                setDate(startOfDay(addMonths(date, -1)));
+              }}
+              hitSlop={8}
+              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
+              <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
+            </Pressable>
+            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+              {fmtMonthYear(date)}
+            </Text>
+            <Pressable
+              onPress={() => {
+                haptic.selection();
+                setDate(startOfDay(addMonths(date, 1)));
+              }}
+              hitSlop={8}
+              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
+              <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
+            </Pressable>
+            {canCreate ? (
+              <View className="absolute right-0 top-6">
+                <Pressable
+                  onPress={() => setCreateAt({ date })}
+                  className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-pop">
+                  <Ionicons name="add" size={16} color="#FFFFFF" />
+                  <Text className="hidden md:flex text-white text-sm font-semibold">
+                    Add class
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
+          <View className="md:hidden flex-row items-center justify-center gap-2 pb-4 -mt-1">
             <ViewSwitcher view={view} />
             <TodayButton onPress={goToToday} />
           </View>
-          <Pressable
-            onPress={() => {
-              haptic.selection();
-              setDate(startOfDay(addMonths(date, -1)));
-            }}
-            hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
-            <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
-          </Pressable>
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
-            {fmtMonthYear(date)}
-          </Text>
-          <Pressable
-            onPress={() => {
-              haptic.selection();
-              setDate(startOfDay(addMonths(date, 1)));
-            }}
-            hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
-            <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
-          </Pressable>
-          {canCreate ? (
-            <View className="absolute right-0 top-6">
-              <Pressable
-                onPress={() => setCreateAt({ date })}
-                className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-pop">
-                <Ionicons name="add" size={16} color="#FFFFFF" />
-                <Text className="hidden md:flex text-white text-sm font-semibold">
-                  Add class
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
         </View>
-        <View className="md:hidden flex-row items-center justify-center gap-2 pb-4 -mt-1">
-          <ViewSwitcher view={view} />
-          <TodayButton onPress={goToToday} />
-        </View>
-      </View>
+      )}
 
       <GestureDetector gesture={swipe}>
         <View className="flex-1">
@@ -560,6 +642,7 @@ export function ClassesCalendar({
               weekStartsOn={weekStartsOn}
               dimPast={mode === 'book'}
               topSlot={topSlot}
+              visibleDays={weekVisibleDays}
             />
           ) : null}
           {view === 'month' ? (
@@ -944,6 +1027,7 @@ function WeekView({
   weekStartsOn,
   dimPast,
   topSlot,
+  visibleDays = 7,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -956,9 +1040,16 @@ function WeekView({
   weekStartsOn: 'mon' | 'sun';
   dimPast?: boolean;
   topSlot?: React.ReactNode;
+  visibleDays?: number;
 }) {
-  const weekStart = startOfWeek(date, weekStartsOn);
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  // A true week anchors on the gym's week-start; the phone Book calendar
+  // shows a rolling N-day window (Apple-style) anchored on the selected
+  // day instead.
+  const rolling = visibleDays !== 7;
+  const weekStart = rolling ? startOfDay(date) : startOfWeek(date, weekStartsOn);
+  const weekDays = Array.from({ length: visibleDays }, (_, i) =>
+    addDays(weekStart, i),
+  );
 
   const scrollRef = useRef<ScrollView | null>(null);
   const topSlotHeight = useRef(0);
@@ -984,16 +1075,16 @@ function WeekView({
       <View className="w-full max-w-5xl mx-auto px-2">
         <View className="flex-row items-center justify-center gap-4 pb-4">
           <Pressable
-            onPress={() => setDate(addDays(date, -7))}
+            onPress={() => setDate(addDays(date, -visibleDays))}
             hitSlop={8}
             className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400">‹</Text>
           </Pressable>
           <Text className="text-gray-700 dark:text-gray-200 font-medium">
-            {fmtWeekRange(weekDays[0], weekDays[6])}
+            {fmtWeekRange(weekDays[0], weekDays[weekDays.length - 1])}
           </Text>
           <Pressable
-            onPress={() => setDate(addDays(date, 7))}
+            onPress={() => setDate(addDays(date, visibleDays))}
             hitSlop={8}
             className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
             <Text className="text-gray-500 dark:text-gray-400">›</Text>
