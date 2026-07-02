@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
+import { MemberGetStartedChecklist } from '@/components/MemberGetStartedChecklist';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
@@ -287,6 +288,7 @@ export default function Book() {
       mode="book"
       topSlot={
         <View className="gap-2">
+          <MemberGetStartedChecklist />
           <RecommendedClassCard />
           <NextClassCard />
         </View>
