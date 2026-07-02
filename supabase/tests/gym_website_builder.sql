@@ -77,14 +77,20 @@ select is(
   'gym_website_by_slug returns nothing for a draft (unpublished) site'
 );
 
--- 7. A coach without can_manage_website cannot update it.
+-- 7. A coach without can_manage_website cannot update it. RLS's USING
+-- clause silently excludes the row from the update (0 rows affected) —
+-- unlike INSERT's WITH CHECK, a blocked UPDATE does not throw, so this
+-- asserts the row is unaffected rather than expecting an exception.
 do $$ begin perform _test_act_as(current_setting('test.coach')::uuid); end $$;
-select throws_ok(
-  format($$ update public.gym_websites set published = true where gym_id = %L::uuid $$,
-    current_setting('test.gym')),
-  null,
-  null,
-  'a coach cannot update the site row'
+do $$ begin
+  update public.gym_websites set published = true
+    where gym_id = current_setting('test.gym')::uuid;
+end $$;
+do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
+select is(
+  (select published from public.gym_websites where gym_id = current_setting('test.gym')::uuid),
+  false,
+  'a coach''s update attempt has no effect — the site is still unpublished'
 );
 
 -- 8. An admin can update it (publish it).
