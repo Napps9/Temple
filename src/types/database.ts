@@ -3080,6 +3080,20 @@ export type Database = {
           public_lead_capture_enabled: boolean;
         }[];
       };
+      invite_code_gym: {
+        Args: { p_code: string };
+        Returns: {
+          gym_id: string;
+          name: string;
+          logo_url: string | null;
+          primary_color: string;
+          secondary_color: string;
+          text_color: string;
+          logo_url_dark: string | null;
+          primary_color_dark: string | null;
+          role: GymRole;
+        }[];
+      };
       set_gym_public_lead_capture: {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;

@@ -10,8 +10,10 @@ import { TempleLockup } from '@/components/TempleLockup';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   completePendingGym,
+  completePendingInvite,
   completePendingJoin,
   pendingGymFromSession,
+  pendingInviteFromSession,
   pendingJoinFromSession,
   refreshMembership,
   useGymMembership,
@@ -41,7 +43,8 @@ export default function WelcomeScreen() {
   // name/slug/colours for a create, or the slug for a join.
   const pendingGym = pendingGymFromSession(session ?? null);
   const pendingJoin = pendingJoinFromSession(session ?? null);
-  const resumable = pendingGym ?? pendingJoin;
+  const pendingInvite = pendingInviteFromSession(session ?? null);
+  const resumable = pendingGym ?? pendingJoin ?? pendingInvite;
 
   const resume = useMutation({
     mutationFn: async () => {
@@ -51,6 +54,10 @@ export default function WelcomeScreen() {
       }
       if (pendingJoin) {
         await completePendingJoin(pendingJoin);
+        return;
+      }
+      if (pendingInvite) {
+        await completePendingInvite(pendingInvite);
         return;
       }
       throw new Error('Nothing to resume');
@@ -65,19 +72,20 @@ export default function WelcomeScreen() {
       setResumeError(errorMessage(e, 'Could not finish setting up your gym')),
   });
 
+  const joining = pendingJoin || pendingInvite;
   const icon = pendingGym
     ? 'business-outline'
-    : pendingJoin
+    : joining
       ? 'people-outline'
       : 'compass-outline';
   const heading = pendingGym
     ? `Finish setting up ${pendingGym.name}`
-    : pendingJoin
+    : joining
       ? 'Finish joining your gym'
       : "You're not in a gym yet";
   const subcopy = pendingGym
     ? "Email confirmed. Pick up where you left off — one tap and your gym is ready."
-    : pendingJoin
+    : joining
       ? "Email confirmed. One tap to join and you're in."
       : 'Create your own gym, or open the invite your gym emailed you to join theirs.';
 
