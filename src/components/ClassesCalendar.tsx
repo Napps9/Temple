@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
@@ -122,6 +122,14 @@ function fmtTime(d: Date) {
 
 function fmtMonthYear(d: Date) {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
+function fmtDayShort(d: Date) {
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 }
 
 function fmtWeekRange(start: Date, end: Date) {
@@ -376,6 +384,11 @@ export function ClassesCalendar({
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
+  // The phone header's date label opens a month grid to jump around;
+  // pickerMonth is which month that grid is showing (independent of the
+  // selected date until they tap a day).
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(() => startOfMonth(new Date()));
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
@@ -386,6 +399,19 @@ export function ClassesCalendar({
   const goToToday = () => {
     haptic.selection();
     setDate(startOfDay(new Date()));
+  };
+
+  // Header date label for the phone calendar: the 2-day range in week
+  // view, the single day in day view. Tapping it opens the month grid.
+  const headerLabel =
+    view === 'week'
+      ? fmtWeekRange(startOfDay(date), addDays(date, weekVisibleDays - 1))
+      : fmtDayShort(date);
+
+  const openPicker = () => {
+    haptic.selection();
+    setPickerMonth(startOfMonth(date));
+    setPickerOpen(true);
   };
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
@@ -526,19 +552,50 @@ export function ClassesCalendar({
     <Screen edges={['bottom', 'left', 'right']}>
       {compactBook ? (
         <View className="w-full max-w-5xl mx-auto px-2">
-          {/* Phone Book drops the month header entirely — the week mover /
-              day strip below already carry the date, and members book by
-              the week, not the month. */}
-          <View className="flex-row items-center justify-between pt-5 pb-2">
-            <Pressable
-              onPress={goToToday}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Jump to today"
-              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="locate-outline" size={18} color="#6B7280" />
-            </Pressable>
-            <ViewIconToggle view={view} />
+          {/* Phone Book: the date sits where the month used to — arrows
+              step the current view (a day, or the 2-day week), and tapping
+              the label opens a month grid to jump further. Equal side
+              zones keep it centred. */}
+          <View className="flex-row items-center pt-5 pb-3">
+            <View className="flex-1 flex-row justify-start">
+              <Pressable
+                onPress={goToToday}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Jump to today"
+                className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+                <Ionicons name="locate-outline" size={18} color="#6B7280" />
+              </Pressable>
+            </View>
+            <View className="flex-row items-center gap-0.5">
+              <Pressable
+                onPress={() => shiftDate(-1)}
+                hitSlop={8}
+                accessibilityLabel="Previous"
+                className="w-8 h-8 items-center justify-center">
+                <Text className="text-gray-400 dark:text-gray-500 text-lg">‹</Text>
+              </Pressable>
+              <Pressable
+                onPress={openPicker}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Pick a date"
+                className="px-1.5 py-1 items-center justify-center active:opacity-70">
+                <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+                  {headerLabel}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => shiftDate(1)}
+                hitSlop={8}
+                accessibilityLabel="Next"
+                className="w-8 h-8 items-center justify-center">
+                <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
+              </Pressable>
+            </View>
+            <View className="flex-1 flex-row justify-end">
+              <ViewIconToggle view={view} />
+            </View>
           </View>
         </View>
       ) : (
@@ -656,7 +713,130 @@ export function ClassesCalendar({
         mode={mode}
         onClose={() => setOpenSessionId(null)}
       />
+
+      <MonthPickerModal
+        visible={pickerOpen}
+        month={pickerMonth}
+        selected={date}
+        weekStartsOn={weekStartsOn}
+        onChangeMonth={(dir) => setPickerMonth((m) => startOfMonth(addMonths(m, dir)))}
+        onSelectDay={(day) => {
+          haptic.selection();
+          setDate(startOfDay(day));
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </Screen>
+  );
+}
+
+// Month grid the phone header opens to jump to any date. Kept deliberately
+// simple — pick a day and the calendar anchors there (the 2-day week
+// window starts on it); no class dots, since the loaded session window
+// only covers the visible month.
+function MonthPickerModal({
+  visible,
+  month,
+  selected,
+  weekStartsOn,
+  onChangeMonth,
+  onSelectDay,
+  onClose,
+}: {
+  visible: boolean;
+  month: Date;
+  selected: Date;
+  weekStartsOn: 'mon' | 'sun';
+  onChangeMonth: (dir: -1 | 1) => void;
+  onSelectDay: (day: Date) => void;
+  onClose: () => void;
+}) {
+  const colors = useThemeColors();
+  const grid = monthGrid(month, weekStartsOn);
+  const weekLetters =
+    weekStartsOn === 'sun' ? WEEK_LETTERS_SUN : WEEK_LETTERS_MON;
+  const today = new Date();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}>
+      <Pressable
+        className="flex-1 bg-black/30 items-center justify-center px-8"
+        onPress={onClose}>
+        <Pressable
+          onPress={() => {}}
+          className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl p-4 gap-3 shadow-pop">
+          <View className="flex-row items-center justify-between">
+            <Pressable
+              onPress={() => onChangeMonth(-1)}
+              hitSlop={8}
+              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+              <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
+            </Pressable>
+            <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+              {fmtMonthYear(month)}
+            </Text>
+            <Pressable
+              onPress={() => onChangeMonth(1)}
+              hitSlop={8}
+              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+              <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
+            </Pressable>
+          </View>
+
+          <View className="flex-row">
+            {weekLetters.map((l, i) => (
+              <View key={i} className="flex-1 items-center pb-1">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs font-medium uppercase">
+                  {l}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {Array.from({ length: 6 }, (_, w) => (
+            <View key={w} className="flex-row">
+              {grid.slice(w * 7, (w + 1) * 7).map((d) => {
+                const inMonth = d.getMonth() === month.getMonth();
+                const isToday = isSameDay(d, today);
+                const isSelected = isSameDay(d, selected);
+                return (
+                  <Pressable
+                    key={d.toISOString()}
+                    onPress={() => onSelectDay(d)}
+                    className="flex-1 items-center py-1">
+                    <View
+                      style={isSelected ? { backgroundColor: colors.primary } : undefined}
+                      className={`w-9 h-9 rounded-full items-center justify-center ${
+                        !isSelected && isToday
+                          ? 'border border-primary'
+                          : ''
+                      }`}>
+                      <Text
+                        className={`text-sm ${
+                          isSelected
+                            ? 'text-white font-bold'
+                            : isToday
+                              ? 'text-primary font-bold'
+                              : inMonth
+                                ? 'text-gray-900 dark:text-gray-50'
+                                : 'text-gray-300 dark:text-gray-600'
+                        }`}>
+                        {d.getDate()}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -1053,23 +1233,28 @@ function WeekView({
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="flex-row items-center justify-center gap-4 pb-4">
-          <Pressable
-            onPress={() => setDate(addDays(date, -visibleDays))}
-            hitSlop={8}
-            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
-            <Text className="text-gray-500 dark:text-gray-400">‹</Text>
-          </Pressable>
-          <Text className="text-gray-700 dark:text-gray-200 font-medium">
-            {fmtWeekRange(weekDays[0], weekDays[weekDays.length - 1])}
-          </Text>
-          <Pressable
-            onPress={() => setDate(addDays(date, visibleDays))}
-            hitSlop={8}
-            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
-            <Text className="text-gray-500 dark:text-gray-400">›</Text>
-          </Pressable>
-        </View>
+        {/* On the phone (rolling window) the calendar header already
+            carries the date + arrows, so this internal mover only shows
+            on the wide 7-day week. */}
+        {rolling ? null : (
+          <View className="flex-row items-center justify-center gap-4 pb-4">
+            <Pressable
+              onPress={() => setDate(addDays(date, -visibleDays))}
+              hitSlop={8}
+              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+              <Text className="text-gray-500 dark:text-gray-400">‹</Text>
+            </Pressable>
+            <Text className="text-gray-700 dark:text-gray-200 font-medium">
+              {fmtWeekRange(weekDays[0], weekDays[weekDays.length - 1])}
+            </Text>
+            <Pressable
+              onPress={() => setDate(addDays(date, visibleDays))}
+              hitSlop={8}
+              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
+              <Text className="text-gray-500 dark:text-gray-400">›</Text>
+            </Pressable>
+          </View>
+        )}
 
         <View className="flex-row pb-2 border-b border-gray-200 dark:border-gray-700">
           <View className="w-10 md:w-14" />
