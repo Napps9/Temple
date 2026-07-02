@@ -746,6 +746,53 @@ surface, reachable from the **Comms** tab on Manage or
   `can_manage_comms`-gated security-definer RPCs, never handed to the
   client raw.
 
+### Website
+
+[`can_manage_website`, owner + admin by default] A public marketing
+page per gym, reachable from Manage → Website
+(`/management/website`). A paid add-on: `gyms.website_builder_enabled`
+gates every surface below and has **no owner-facing setter** — Temple
+staff flip it directly after an external invoice, there's no self-serve
+billing for it yet.
+
+- **Block-based editor** — the same interaction model as the email
+  builder (add from a palette, tap a block to edit its fields, up/down
+  reorder, duplicate, delete), for 8 block types: Hero, About, Class
+  schedule, Pricing, Testimonials, Photo gallery, Hours & location,
+  Contact. Schedule and Pricing are read-only content-wise — they
+  render the gym's real class sessions and membership plans at view
+  time (Pricing can hide specific plans) rather than storing a copy, so
+  neither can drift stale.
+- **Starter themes** — 4 named presets (Forged / Ringside / Daybreak /
+  Baseline, `src/lib/brand-themes.ts`) shared with the email builder's
+  own theme picker, so a gym's site and its marketing emails can use
+  the same look. A theme composes with the gym's own saved brand
+  colour rather than overriding it — two gyms on the same theme don't
+  end up with identically-coloured pages regardless of their actual
+  brand — and isn't baked into the stored page: a later brand-colour
+  change is picked up automatically, no "reapplying" needed.
+  `gym_websites.design` stores only the theme id.
+- **Publish flow** — a draft is fully editable and previewable before
+  going live; Publish/Unpublish is a separate explicit action from
+  autosave. The staff-side preview reads the gym's real schedule/plans
+  under the signed-in member's own RLS so a draft still previews with
+  real content; the public route only ever serves a *published* site.
+- **Public rendering (`/site/<slug>`)** — a standalone Vercel
+  Serverless Function (`api/site/[slug].ts`), not an Expo Router
+  screen: this project's web build is static-export only and can't mix
+  in per-route server rendering, so a normal app route would ship an
+  empty HTML shell to crawlers. The function renders real HTML
+  server-side per request via the same `renderSiteHtml` the in-app
+  preview uses, reading `gym_website_by_slug` /
+  `gym_public_schedule` / `gym_public_plans` — three new anon-grantable
+  RPCs, each re-checking `published = true` itself since
+  `security definer` bypasses the base tables' RLS. The contact block
+  submits straight to the existing `capture_public_lead` RPC via a
+  small inline script — a real working form, not a link-out.
+- **Images** — hero/about/gallery uploads go to the `gym-website-assets`
+  Storage bucket, gated the same way as the store's product-image
+  bucket (`can_manage_website` + folder-scoped to the gym).
+
 ### Coach-specific
 
 - **Coach Earnings summary** [`can_set_coach_pay` for the owner] —
