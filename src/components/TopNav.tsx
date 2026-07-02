@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from './Avatar';
@@ -43,6 +44,7 @@ export function TopNav({
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
   const notifCount = useNotificationCount();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const gymName = brand.gymName;
 
@@ -154,62 +156,122 @@ export function TopNav({
           </Pressable>
         ) : null}
 
+        {/* Messages + theme fold into the account button — tap the avatar
+            to expand them. A dot on the avatar surfaces unread messages
+            while the menu is closed. */}
         <Pressable
           onPress={() => {
             haptic.tap();
-            router.push(accountHref as never);
+            setMenuOpen(true);
           }}
           hitSlop={4}
-          accessibilityLabel="Account"
+          accessibilityLabel={
+            notifCount > 0
+              ? `Account, ${notifCount} unread`
+              : 'Account and settings'
+          }
           style={onAccount ? { borderColor: brand.primaryColor } : undefined}
           className={`w-9 h-9 rounded-full items-center justify-center border-2 hover:opacity-80 active:opacity-70 ${
             onAccount ? '' : 'border-transparent'
           }`}>
           <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={30} />
-        </Pressable>
-
-        <Pressable
-          onPress={() => {
-            haptic.tap();
-            router.push('/inbox' as never);
-          }}
-          hitSlop={4}
-          accessibilityLabel={
-            notifCount > 0 ? `Inbox, ${notifCount} need your attention` : 'Inbox'
-          }
-          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 active:opacity-70">
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={19}
-            color={colors.iconPrimary}
-          />
           {notifCount > 0 ? (
-            <View className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 items-center justify-center border-2 border-slate-100 dark:border-gray-950">
-              <Text className="text-white text-[10px] font-bold">
-                {notifCount > 9 ? '9+' : notifCount}
-              </Text>
-            </View>
+            <View className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-slate-100 dark:border-gray-950" />
           ) : null}
-        </Pressable>
-
-        <Pressable
-          onPress={() => {
-            haptic.selection();
-            set(scheme === 'dark' ? 'light' : 'dark');
-          }}
-          hitSlop={4}
-          accessibilityLabel="Toggle theme"
-          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 active:opacity-70">
-          <Ionicons
-            name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
-            size={19}
-            color={colors.iconPrimary}
-          />
         </Pressable>
         </View>
       </View>
 
+      <Modal
+        visible={menuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuOpen(false)}>
+        <Pressable
+          className="flex-1"
+          onPress={() => setMenuOpen(false)}
+          accessibilityLabel="Close menu"
+        />
+        <View
+          style={{ position: 'absolute', top: insets.top + 52, right: 12 }}
+          className="w-60 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-pop p-1.5">
+          <View className="px-3 py-2 flex-row items-center gap-2">
+            <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={28} />
+            <Text
+              className="flex-1 text-gray-900 dark:text-gray-50 font-semibold"
+              numberOfLines={1}>
+              {displayName}
+            </Text>
+          </View>
+          <View className="h-px bg-gray-100 dark:bg-gray-800 my-1" />
+
+          <MenuRow
+            icon="chatbubble-ellipses-outline"
+            label="Messages"
+            iconColor={colors.iconPrimary}
+            badge={notifCount}
+            onPress={() => {
+              haptic.tap();
+              setMenuOpen(false);
+              router.push('/inbox' as never);
+            }}
+          />
+          <MenuRow
+            icon={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
+            label={scheme === 'dark' ? 'Light mode' : 'Dark mode'}
+            iconColor={colors.iconPrimary}
+            onPress={() => {
+              haptic.selection();
+              set(scheme === 'dark' ? 'light' : 'dark');
+              setMenuOpen(false);
+            }}
+          />
+          <MenuRow
+            icon="person-circle-outline"
+            label="Account"
+            iconColor={colors.iconPrimary}
+            onPress={() => {
+              haptic.tap();
+              setMenuOpen(false);
+              router.push(accountHref as never);
+            }}
+          />
+        </View>
+      </Modal>
+
       <View className="md:hidden items-center">{pills}</View>
     </View>
+  );
+}
+
+function MenuRow({
+  icon,
+  label,
+  iconColor,
+  badge,
+  onPress,
+}: {
+  icon: IoniconName;
+  label: string;
+  iconColor: string;
+  badge?: number;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-800">
+      <Ionicons name={icon} size={20} color={iconColor} />
+      <Text className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] font-medium">
+        {label}
+      </Text>
+      {badge && badge > 0 ? (
+        <View className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 items-center justify-center">
+          <Text className="text-white text-[11px] font-bold">
+            {badge > 9 ? '9+' : badge}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
   );
 }

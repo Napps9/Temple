@@ -526,16 +526,21 @@ export function ClassesCalendar({
     <Screen edges={['bottom', 'left', 'right']}>
       {compactBook ? (
         <View className="w-full max-w-5xl mx-auto px-2">
-          <View className="flex-row items-center gap-2 pt-5 pb-4">
-            <Pressable
-              onPress={goToToday}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Jump to today"
-              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="locate-outline" size={18} color="#6B7280" />
-            </Pressable>
-            <View className="flex-1 flex-row items-center justify-center gap-1">
+          {/* Three equal zones (flex-1 sides) keep the month header on the
+              screen's true centre, so the week mover below lines up with
+              it. */}
+          <View className="flex-row items-center pt-5 pb-4">
+            <View className="flex-1 flex-row justify-start">
+              <Pressable
+                onPress={goToToday}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Jump to today"
+                className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+                <Ionicons name="locate-outline" size={18} color="#6B7280" />
+              </Pressable>
+            </View>
+            <View className="flex-row items-center justify-center gap-1">
               <Pressable
                 onPress={() => {
                   haptic.selection();
@@ -558,7 +563,9 @@ export function ClassesCalendar({
                 <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
               </Pressable>
             </View>
-            <ViewIconToggle view={view} />
+            <View className="flex-1 flex-row justify-end">
+              <ViewIconToggle view={view} />
+            </View>
           </View>
         </View>
       ) : (
@@ -1093,7 +1100,7 @@ function WeekView({
 
         <View className="flex-row pb-2 border-b border-gray-200 dark:border-gray-700">
           <View className="w-10 md:w-14" />
-          {weekDays.map((d) => {
+          {weekDays.map((d, i) => {
             const today = isSameDay(d, new Date());
             return (
               <Pressable
@@ -1104,7 +1111,9 @@ function WeekView({
                   gotoDay();
                 }}
                 hitSlop={4}
-                className="flex-1 items-center pb-2">
+                className={`flex-1 items-center pb-2 border-gray-200 dark:border-gray-800 ${
+                  i > 0 ? 'border-l' : ''
+                }`}>
                 <Text
                   className={`text-xs uppercase tracking-wide ${
                     today
@@ -1211,7 +1220,11 @@ function WeekGrid({
             {weekDays.map((d, i) => {
               const isOccupied = occupiedByDayIdx[i].has(hour);
               return (
-                <View key={d.toISOString()} className="flex-1 px-0.5 py-0.5">
+                <View
+                  key={d.toISOString()}
+                  className={`flex-1 px-0.5 py-0.5 border-gray-200 dark:border-gray-800 ${
+                    i > 0 ? 'border-l' : ''
+                  }`}>
                   {isOccupied ? (
                     <View className="flex-1 rounded-md" />
                   ) : canCreate ? (
