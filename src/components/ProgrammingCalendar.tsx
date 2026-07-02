@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
+import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { ProgrammingModal } from '@/components/ProgrammingModal';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
@@ -86,8 +87,12 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-function fmtMonthYear(d: Date) {
-  return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+function fmtDayShort(d: Date) {
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 }
 
 export function ProgrammingCalendar({
@@ -119,6 +124,13 @@ export function ProgrammingCalendar({
     date: Date;
   } | null>(null);
   const [recordingDate, setRecordingDate] = useState<Date | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(() => startOfMonth(new Date()));
+
+  const openPicker = () => {
+    setPickerMonth(startOfMonth(date));
+    setPickerOpen(true);
+  };
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
     .toString()
@@ -201,33 +213,49 @@ export function ProgrammingCalendar({
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="w-full max-w-5xl mx-auto px-2">
-        <View className="flex-row items-center justify-center gap-4 pt-2 pb-4">
-          <Pressable
-            onPress={() => setDate(startOfDay(addMonths(date, -1)))}
-            hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
-            <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
-          </Pressable>
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
-            {fmtMonthYear(date)}
-          </Text>
-          <Pressable
-            onPress={() => setDate(startOfDay(addMonths(date, 1)))}
-            hitSlop={8}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
-            <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
-          </Pressable>
-          {headerAction ? (
-            <View className="absolute right-0 top-2 hidden md:flex">
-              {headerAction}
-            </View>
-          ) : null}
-        </View>
-        {headerAction ? (
-          <View className="md:hidden items-center pb-4 -mt-1">
-            {headerAction}
+        {/* Same date header as the Book calendar: Today jump, the selected
+            day with day-stepping arrows, and a tap-to-open month grid. */}
+        <View className="flex-row items-center pt-3 pb-4">
+          <View className="flex-1 flex-row justify-start">
+            <Pressable
+              onPress={() => setDate(startOfDay(new Date()))}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Jump to today"
+              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+              <Ionicons name="locate-outline" size={18} color="#6B7280" />
+            </Pressable>
           </View>
-        ) : null}
+          <View className="flex-row items-center gap-0.5">
+            <Pressable
+              onPress={() => setDate(addDays(date, -1))}
+              hitSlop={8}
+              accessibilityLabel="Previous day"
+              className="w-8 h-8 items-center justify-center">
+              <Text className="text-gray-400 dark:text-gray-500 text-lg">‹</Text>
+            </Pressable>
+            <Pressable
+              onPress={openPicker}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Pick a date"
+              className="px-1.5 py-1 items-center justify-center active:opacity-70">
+              <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+                {fmtDayShort(date)}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setDate(addDays(date, 1))}
+              hitSlop={8}
+              accessibilityLabel="Next day"
+              className="w-8 h-8 items-center justify-center">
+              <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
+            </Pressable>
+          </View>
+          <View className="flex-1 flex-row justify-end">
+            {headerAction ?? null}
+          </View>
+        </View>
 
         <View className="flex-row gap-2 md:gap-3 md:justify-center pb-4">
           {weekDays.map((d) => {
@@ -320,6 +348,21 @@ export function ProgrammingCalendar({
         visible={recordingDate !== null}
         onClose={() => setRecordingDate(null)}
         initialDate={recordingDate ? fmtDateLocal(recordingDate) : undefined}
+      />
+
+      <MonthPickerModal
+        visible={pickerOpen}
+        month={pickerMonth}
+        selected={date}
+        weekStartsOn={weekStartsOn}
+        onChangeMonth={(dir) =>
+          setPickerMonth((m) => startOfMonth(addMonths(m, dir)))
+        }
+        onSelectDay={(day) => {
+          setDate(startOfDay(day));
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
       />
     </Screen>
   );
