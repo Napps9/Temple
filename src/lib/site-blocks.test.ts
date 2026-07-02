@@ -101,7 +101,7 @@ describe('coerceDocument', () => {
       version: 1,
       settings: {},
       blocks: [
-        { id: 'x', type: 'hero', headline: 'Hi', layout: 'nonsense' },
+        { id: 'x', type: 'hero', headline: 'Hi', layout: 'nonsense', ctaTarget: 'nonsense' },
         { id: 'y', type: 'mystery' },
         { type: 'schedule', heading: 'Custom heading' },
       ],
@@ -110,8 +110,14 @@ describe('coerceDocument', () => {
     expect(doc.blocks).toHaveLength(2);
     expect(doc.blocks[0].type).toBe('hero');
     expect((doc.blocks[0] as HeroBlock).layout).toBe('background'); // invalid layout falls back
+    expect((doc.blocks[0] as HeroBlock).ctaTarget).toBe('join'); // invalid ctaTarget falls back
     expect(doc.blocks[1].type).toBe('schedule');
     expect(doc.blocks[1].id).toBeTruthy();
+  });
+
+  it('accepts a valid hero ctaTarget of contact', () => {
+    const doc = coerceDocument({ blocks: [{ id: 'h', type: 'hero', ctaTarget: 'contact' }] });
+    expect((doc.blocks[0] as HeroBlock).ctaTarget).toBe('contact');
   });
 
   it('defaults an invalid or missing themeId rather than crashing', () => {

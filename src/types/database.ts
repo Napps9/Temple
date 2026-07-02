@@ -3214,8 +3214,30 @@ export type Database = {
           gym_name: string;
           gym_logo_url: string | null;
           gym_primary_color: string;
+          gym_currency: string;
           theme: string;
           design: Json;
+        }[];
+      };
+      gym_public_schedule: {
+        Args: { p_slug: string };
+        Returns: {
+          session_id: string;
+          starts_at: string;
+          duration_minutes: number;
+          class_type_name: string | null;
+          class_type_color: string | null;
+          coach_name: string | null;
+        }[];
+      };
+      gym_public_plans: {
+        Args: { p_slug: string };
+        Returns: {
+          plan_id: string;
+          name: string;
+          kind: string;
+          credit_count: number | null;
+          monthly_price_cents: number | null;
         }[];
       };
       invite_code_gym: {

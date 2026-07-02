@@ -24,6 +24,10 @@ export type HeroBlock = {
   headline: string;
   subheadline: string;
   ctaLabel: string;
+  // 'join' links to the existing public /join/<slug> signup flow;
+  // 'contact' scrolls to the page's contact block (if present) instead
+  // of sending a visitor away from the page they're already reading.
+  ctaTarget: 'join' | 'contact';
   imageUrl: string;
   layout: 'background' | 'side';
 };
@@ -153,6 +157,7 @@ export function createBlock(type: SiteBlockType, id: string = genId()): SiteBloc
         headline: "Your gym's name",
         subheadline: 'A one-line pitch that tells a visitor exactly what you offer.',
         ctaLabel: 'Book a free class',
+        ctaTarget: 'join',
         imageUrl: '',
         layout: 'background',
       };
@@ -291,6 +296,9 @@ function asStringArray(v: unknown): string[] {
 function asHeroLayout(v: unknown): HeroBlock['layout'] {
   return v === 'side' ? v : 'background';
 }
+function asHeroCtaTarget(v: unknown): HeroBlock['ctaTarget'] {
+  return v === 'contact' ? v : 'join';
+}
 function asAboutLayout(v: unknown): AboutBlock['layout'] {
   return v === 'image-right' || v === 'none' ? v : 'image-left';
 }
@@ -307,6 +315,7 @@ function coerceBlock(raw: unknown): SiteBlock | null {
         headline: asString(r.headline, ''),
         subheadline: asString(r.subheadline, ''),
         ctaLabel: asString(r.ctaLabel, 'Book a free class'),
+        ctaTarget: asHeroCtaTarget(r.ctaTarget),
         imageUrl: asString(r.imageUrl, ''),
         layout: asHeroLayout(r.layout),
       };
