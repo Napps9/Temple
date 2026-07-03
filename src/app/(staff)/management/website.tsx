@@ -524,6 +524,7 @@ export default function WebsiteManageScreen() {
                   document={document}
                   onChange={handlePanelChange}
                   gymId={brand.gymId ?? ''}
+                  gymName={brand.gymName}
                   brandPrimaryColor={brand.primaryColor}
                   compact
                   selectedId={selectedId}
@@ -560,6 +561,7 @@ export default function WebsiteManageScreen() {
               document={document}
               onChange={handlePanelChange}
               gymId={brand.gymId ?? ''}
+              gymName={brand.gymName}
               brandPrimaryColor={brand.primaryColor}
               selectedId={selectedId}
               onSelectBlock={setSelectedId}

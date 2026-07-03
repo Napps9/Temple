@@ -7,8 +7,9 @@ import { Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } 
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useSession } from '@/lib/auth';
-import { BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
+import { BRAND_THEMES, BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
 import { errorMessage } from '@/lib/errors';
+import { SITE_TEMPLATE_LIST, type SiteTemplate } from '@/lib/site-templates';
 import {
   SITE_BLOCK_ICONS,
   SITE_BLOCK_LABELS,
@@ -748,6 +749,54 @@ function AddBlockModal({
   );
 }
 
+function TemplatePickerModal({
+  visible,
+  onClose,
+  onPick,
+  brandPrimaryColor,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onPick: (template: SiteTemplate) => void;
+  brandPrimaryColor: string;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
+          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            Apply a template
+          </Text>
+          <View className="gap-2">
+            {SITE_TEMPLATE_LIST.map((t) => {
+              const composed = composeThemeWithBrand(BRAND_THEMES[t.themeId], brandPrimaryColor);
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => onPick(t)}
+                  className="flex-row items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+                  <View
+                    className="w-12 h-9 rounded-md overflow-hidden flex-row"
+                    style={{ borderWidth: 1, borderColor: '#00000014' }}>
+                    <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
+                    <View className="w-3" style={{ backgroundColor: composed.palette.accent }} />
+                  </View>
+                  <View className="flex-1 gap-0.5">
+                    <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">{t.name}</Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">{t.description}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Editor
 // ---------------------------------------------------------------------------
@@ -773,6 +822,7 @@ export function SiteEditor({
   document,
   onChange,
   gymId,
+  gymName,
   brandPrimaryColor,
   compact = false,
   selectedId,
@@ -781,6 +831,8 @@ export function SiteEditor({
   document: SiteDocument;
   onChange: (doc: SiteDocument) => void;
   gymId: string;
+  // Seeds a template's hero headline when one is applied here.
+  gymName: string;
   brandPrimaryColor: string;
   // Narrows the palette/theme columns to a trigger + modal and a
   // collapsed section, leaving room for a canvas alongside the rail.
@@ -794,12 +846,25 @@ export function SiteEditor({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const blockPendingDelete = document.blocks.find((b) => b.id === confirmDeleteId) ?? null;
   const [addBlockModalOpen, setAddBlockModalOpen] = useState(false);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<SiteTemplate | null>(null);
 
   function confirmDelete() {
     if (!confirmDeleteId) return;
     onChange(removeBlock(document, confirmDeleteId));
     onSelectBlock(null);
     setConfirmDeleteId(null);
+  }
+
+  function applyTemplate() {
+    if (!pendingTemplate) return;
+    // Flows through website.tsx's handlePanelChange: structural bump →
+    // canvas reload; autosave persists both design and the theme
+    // column (persist() writes theme from settings.themeId).
+    onChange(pendingTemplate.build(gymName));
+    // The old selection points at block ids that no longer exist.
+    onSelectBlock(null);
+    setPendingTemplate(null);
   }
 
   function addBlock(type: SiteBlockType) {
@@ -824,6 +889,20 @@ export function SiteEditor({
   const themeAndOwnership = (
     <>
       <ThemePicker document={document} onChange={onChange} brandPrimaryColor={brandPrimaryColor} />
+      <View className="gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+          Templates
+        </Text>
+        <ChipButton
+          label="Apply a template"
+          icon="color-wand-outline"
+          tone="neutral"
+          onPress={() => setTemplateModalOpen(true)}
+        />
+        <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+          Replaces everything on the page with a fresh starting point.
+        </Text>
+      </View>
       {Platform.OS === 'web' ? (
         <View className="gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
           <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
@@ -952,6 +1031,16 @@ export function SiteEditor({
         onPick={addBlock}
       />
 
+      <TemplatePickerModal
+        visible={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        onPick={(t) => {
+          setTemplateModalOpen(false);
+          setPendingTemplate(t);
+        }}
+        brandPrimaryColor={brandPrimaryColor}
+      />
+
       <ConfirmDialog
         visible={blockPendingDelete != null}
         title={
@@ -963,6 +1052,21 @@ export function SiteEditor({
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      <ConfirmDialog
+        visible={pendingTemplate != null}
+        title={
+          pendingTemplate ? `Apply the ${pendingTemplate.name} template?` : 'Apply this template?'
+        }
+        body={
+          pendingTemplate
+            ? `This replaces every block and all written copy on this page with the template's starting content, and switches the theme to ${BRAND_THEMES[pendingTemplate.themeId].name}. Your schedule, pricing and team blocks will still show your real data. There's no undo — and if your site is live, the new content goes live once it saves.`
+            : ''
+        }
+        confirmLabel="Apply template"
+        onConfirm={applyTemplate}
+        onCancel={() => setPendingTemplate(null)}
       />
     </View>
   );
