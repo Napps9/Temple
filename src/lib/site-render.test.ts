@@ -26,6 +26,7 @@ const baseCtx: SiteRenderContext = {
   platformOrigin: 'https://app.example.com',
   supabaseUrl: 'https://example.supabase.co',
   supabaseAnonKey: 'anon-key-123',
+  editable: false,
 };
 
 describe('renderSiteHtml', () => {
@@ -152,5 +153,38 @@ describe('renderSiteHtml', () => {
     expect(html).toContain(JSON.stringify('https://example.supabase.co'));
     expect(html).toContain(JSON.stringify('anon-key-123'));
     expect(html).toContain('capture_public_lead');
+  });
+
+  it('marks fields as canvas-editable and suppresses the lead-capture script when editable', () => {
+    const hero = createBlock('hero') as HeroBlock;
+    const contact = createBlock('contact') as ContactBlock;
+    let doc = appendBlock(emptyDocument(), { ...hero, headline: 'Iron Gym' });
+    doc = appendBlock(doc, contact);
+    const html = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    expect(html).toContain(`data-field="${hero.id}:headline"`);
+    expect(html).toContain('contenteditable="true"');
+    expect(html).toContain('temple-site-canvas');
+    expect(html).not.toContain('capture_public_lead');
+  });
+
+  it('keeps testimonials/gallery headings editable even with zero items when editable', () => {
+    let doc = emptyDocument();
+    const testimonials = createBlock('testimonials') as TestimonialsBlock;
+    doc = appendBlock(doc, { ...testimonials, heading: 'What members say' });
+    const html = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    expect(html).toContain('<section');
+    expect(html).toContain(`data-field="${testimonials.id}:heading"`);
+  });
+
+  it('produces zero editable markers or bridge script on the public (non-editable) path', () => {
+    const hero = createBlock('hero') as HeroBlock;
+    const testimonials = createBlock('testimonials') as TestimonialsBlock;
+    let doc = appendBlock(emptyDocument(), hero);
+    doc = appendBlock(doc, testimonials);
+    // Same baseCtx shape api/site/[slug].ts actually passes (editable: false).
+    const html = renderSiteHtml(doc, baseCtx);
+    expect(html).not.toContain('data-field');
+    expect(html).not.toContain('contenteditable');
+    expect(html).not.toContain('temple-site-canvas');
   });
 });

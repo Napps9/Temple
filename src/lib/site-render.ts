@@ -60,6 +60,13 @@ export type SiteRenderContext = {
   // same way every client build already does.
   supabaseUrl: string;
   supabaseAnonKey: string;
+  // Required, not optional: forces every call site (the public route
+  // and the staff editor) to make an explicit, compiler-checked call
+  // rather than silently defaulting to safe. When true, editable text
+  // fields get data-field/contenteditable markers, a canvas-sync
+  // bridge script, and the contact block's live lead-capture script is
+  // suppressed (see renderContact) — never true on the public path.
+  editable: boolean;
 };
 
 function escapeHtml(input: string): string {
@@ -81,14 +88,34 @@ function safeHref(href: string): string {
   return '';
 }
 
+// Marks an element as an on-canvas-editable field, addressed by
+// `<blockId>:<field>` (or `<blockId>:quotes:<itemId>:<field>` for
+// testimonial quotes) — see site-canvas-sync.ts for the matching
+// parser/whitelist on the receiving end. A no-op when not editable, so
+// every call site is byte-identical on the public path by construction.
+function fieldAttrs(ctx: SiteRenderContext, path: string, opts?: { multiline?: boolean }): string {
+  if (!ctx.editable) return '';
+  return ` data-field="${escapeAttr(path)}" contenteditable="true"${
+    opts?.multiline ? ' data-multiline="true"' : ''
+  }`;
+}
+
 const RADIUS_PX: Record<BrandTheme['shape']['buttonRadius'], number> = {
   square: 0,
   rounded: 10,
   pill: 999,
 };
 
-function themeStyleBlock(theme: BrandTheme): string {
+function themeStyleBlock(theme: BrandTheme, editable: boolean): string {
   const t = theme.typography;
+  const editableCss = editable
+    ? `
+[contenteditable]{outline:none;border-radius:4px;transition:box-shadow .1s;}
+[contenteditable]:hover{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);}
+[contenteditable]:focus{box-shadow:0 0 0 2px var(--accent);}
+[contenteditable]:empty::before{content:attr(data-placeholder);color:var(--muted);}
+.tp-selected{box-shadow:0 0 0 2px var(--accent);}`
+    : '';
   return `:root{
   --bg:${theme.palette.background};
   --surface:${theme.palette.surface};
@@ -133,7 +160,7 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .plan-price{font-size:32px;font-weight:800;}
 .quote-mark{font-size:32px;color:var(--accent);line-height:.4;display:block;margin-bottom:6px;}
 .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
-.gallery-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:calc(var(--radius) / 2);}`;
+.gallery-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:calc(var(--radius) / 2);}${editableCss}`;
 }
 
 function renderHero(b: HeroBlock, ctx: SiteRenderContext): string {
@@ -141,10 +168,16 @@ function renderHero(b: HeroBlock, ctx: SiteRenderContext): string {
     b.ctaTarget === 'contact'
       ? '#contact'
       : `${ctx.platformOrigin}/join/${encodeURIComponent(ctx.slug)}`;
-  const cta = `<a class="btn" href="${escapeAttr(ctaHref)}">${escapeHtml(b.ctaLabel)}</a>`;
+  const cta = `<a class="btn" href="${escapeAttr(ctaHref)}"${fieldAttrs(ctx, `${b.id}:ctaLabel`)}>${escapeHtml(b.ctaLabel)}</a>`;
   const eyebrow = `<div class="eyebrow">${escapeHtml(ctx.gymName)}</div>`;
-  const headline = `<h1 style="font-size:clamp(32px,6vw,56px);">${escapeHtml(b.headline)}</h1>`;
-  const subheadline = b.subheadline ? `<p>${escapeHtml(b.subheadline)}</p>` : '';
+  const headline = `<h1 style="font-size:clamp(32px,6vw,56px);"${fieldAttrs(ctx, `${b.id}:headline`)}>${escapeHtml(b.headline)}</h1>`;
+  // Editable mode always emits the <p>, even empty, so there's a node
+  // to click into — the public path keeps the "omit when empty" today.
+  const subheadline = ctx.editable
+    ? `<p data-placeholder="Subheadline"${fieldAttrs(ctx, `${b.id}:subheadline`)}>${escapeHtml(b.subheadline)}</p>`
+    : b.subheadline
+      ? `<p>${escapeHtml(b.subheadline)}</p>`
+      : '';
 
   if (b.layout === 'side') {
     const text = `<div class="hero-side-text">${eyebrow}${headline}${subheadline}${cta}</div>`;
@@ -160,8 +193,8 @@ function renderHero(b: HeroBlock, ctx: SiteRenderContext): string {
   return `<section class="hero-bg${b.imageUrl ? ' has-img' : ''}" style="${bgStyle}"><div class="wrap hero-inner">${eyebrow}${headline}${subheadline}${cta}</div></section>`;
 }
 
-function renderAbout(b: AboutBlock): string {
-  const text = `<div><h2>${escapeHtml(b.heading)}</h2><p style="white-space:pre-line;">${escapeHtml(b.body)}</p></div>`;
+function renderAbout(b: AboutBlock, ctx: SiteRenderContext): string {
+  const text = `<div><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="white-space:pre-line;"${fieldAttrs(ctx, `${b.id}:body`, { multiline: true })}>${escapeHtml(b.body)}</p></div>`;
   const img = b.imageUrl
     ? `<img src="${escapeAttr(b.imageUrl)}" alt="${escapeAttr(b.heading)}" />`
     : '';
@@ -181,7 +214,7 @@ function fmtSessionTime(iso: string): string {
 
 function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
   if (ctx.schedule.length === 0) {
-    return `<section class="sec"><div class="wrap"><h2>${escapeHtml(b.heading)}</h2><p style="color:var(--muted);">Check back soon for the full schedule.</p></div></section>`;
+    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted);">Check back soon for the full schedule.</p></div></section>`;
   }
   const byDay = new Map<string, ScheduleSession[]>();
   for (const s of ctx.schedule) {
@@ -205,7 +238,7 @@ function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
           .join(''),
     )
     .join('');
-  return `<section class="sec"><div class="wrap"><h2>${escapeHtml(b.heading)}</h2>${days}</div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>${days}</div></section>`;
 }
 
 function fmtPlanPrice(p: PublicPlan, currency: string): string {
@@ -220,7 +253,7 @@ function renderPricing(b: PricingBlock, ctx: SiteRenderContext): string {
   const hidden = new Set(b.hiddenPlanIds);
   const visible = ctx.plans.filter((p) => !hidden.has(p.planId));
   if (visible.length === 0) {
-    return `<section class="sec"><div class="wrap"><h2>${escapeHtml(b.heading)}</h2><p style="color:var(--muted);">Get in touch for membership options.</p></div></section>`;
+    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted);">Get in touch for membership options.</p></div></section>`;
   }
   const cards = visible
     .map(
@@ -230,36 +263,49 @@ function renderPricing(b: PricingBlock, ctx: SiteRenderContext): string {
         )}</div><div class="plan-price">${fmtPlanPrice(p, ctx.gymCurrency)}</div></div>`,
     )
     .join('');
-  return `<section class="sec"><div class="wrap"><h2>${escapeHtml(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
 }
 
-function renderTestimonials(b: TestimonialsBlock): string {
-  if (b.quotes.length === 0) return '';
+function renderTestimonials(b: TestimonialsBlock, ctx: SiteRenderContext): string {
+  // Editable mode keeps the section (and its editable heading) even
+  // with zero quotes, rather than hiding the whole section — that
+  // would leave no canvas node to click before the first quote exists.
+  if (b.quotes.length === 0 && !ctx.editable) return '';
   const cards = b.quotes
     .map(
       (q) =>
-        `<div class="card"><span class="quote-mark">&ldquo;</span><p>${escapeHtml(
+        `<div class="card"><span class="quote-mark">&ldquo;</span><p${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:quote`, { multiline: true })}>${escapeHtml(
           q.quote,
-        )}</p><div style="font-weight:700;font-size:13px;color:var(--muted);">${escapeHtml(
+        )}</p><div style="font-weight:700;font-size:13px;color:var(--muted);"${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:name`)}>${escapeHtml(
           q.name,
         )}</div></div>`,
     )
     .join('');
-  return `<section class="sec"><div class="wrap"><h2>${escapeHtml(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
 }
 
-function renderGallery(b: GalleryBlock): string {
-  if (b.images.length === 0) return '';
+function renderGallery(b: GalleryBlock, ctx: SiteRenderContext): string {
+  if (b.images.length === 0 && !ctx.editable) return '';
   const imgs = b.images
     .map((img) => `<img src="${escapeAttr(img.url)}" alt="${escapeAttr(img.alt)}" loading="lazy" />`)
     .join('');
-  return `<section class="sec"><div class="wrap"><h2>${escapeHtml(b.heading)}</h2><div class="gallery-grid">${imgs}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="gallery-grid">${imgs}</div></div></section>`;
 }
 
-function renderLocation(b: LocationBlock): string {
-  return `<section class="sec"><div class="wrap"><h2>${escapeHtml(b.heading)}</h2>
-${b.address ? `<p>${escapeHtml(b.address)}</p>` : ''}
-${b.hours ? `<p style="color:var(--muted);white-space:pre-line;">${escapeHtml(b.hours)}</p>` : ''}
+function renderLocation(b: LocationBlock, ctx: SiteRenderContext): string {
+  const address = ctx.editable
+    ? `<p data-placeholder="Address"${fieldAttrs(ctx, `${b.id}:address`)}>${escapeHtml(b.address)}</p>`
+    : b.address
+      ? `<p>${escapeHtml(b.address)}</p>`
+      : '';
+  const hours = ctx.editable
+    ? `<p style="color:var(--muted);white-space:pre-line;" data-placeholder="Hours"${fieldAttrs(ctx, `${b.id}:hours`, { multiline: true })}>${escapeHtml(b.hours)}</p>`
+    : b.hours
+      ? `<p style="color:var(--muted);white-space:pre-line;">${escapeHtml(b.hours)}</p>`
+      : '';
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>
+${address}
+${hours}
 </div></section>`;
 }
 
@@ -267,7 +313,12 @@ function renderContact(b: ContactBlock, ctx: SiteRenderContext): string {
   // Vanilla-JS submit straight to the existing capture_public_lead RPC
   // over Supabase's PostgREST endpoint — the anon key is a public,
   // RLS-enforced credential, the same one every client build embeds.
-  const script = `
+  // Suppressed entirely in editable mode: with allow-scripts on, this
+  // would otherwise fire real network calls from inside a staff
+  // member's editing session the moment they click "Send enquiry".
+  const script = ctx.editable
+    ? ''
+    : `
 <script>
 (function(){
   var f = document.getElementById('temple-contact-form');
@@ -300,9 +351,14 @@ function renderContact(b: ContactBlock, ctx: SiteRenderContext): string {
   });
 })();
 </script>`;
+  const subheading = ctx.editable
+    ? `<p style="color:var(--muted);" data-placeholder="Subheading"${fieldAttrs(ctx, `${b.id}:subheading`, { multiline: true })}>${escapeHtml(b.subheading)}</p>`
+    : b.subheading
+      ? `<p style="color:var(--muted);">${escapeHtml(b.subheading)}</p>`
+      : '';
   return `<section class="sec" id="contact"><div class="wrap" style="text-align:center;max-width:520px;">
-<h2>${escapeHtml(b.heading)}</h2>
-${b.subheading ? `<p style="color:var(--muted);">${escapeHtml(b.subheading)}</p>` : ''}
+<h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>
+${subheading}
 <form id="temple-contact-form" style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-top:20px;">
   <input name="name" placeholder="Name" required />
   <input name="email" type="email" placeholder="Email" required />
@@ -318,21 +374,92 @@ function renderBlock(block: SiteBlock, ctx: SiteRenderContext): string {
     case 'hero':
       return renderHero(block, ctx);
     case 'about':
-      return renderAbout(block);
+      return renderAbout(block, ctx);
     case 'schedule':
       return renderSchedule(block, ctx);
     case 'pricing':
       return renderPricing(block, ctx);
     case 'testimonials':
-      return renderTestimonials(block);
+      return renderTestimonials(block, ctx);
     case 'gallery':
-      return renderGallery(block);
+      return renderGallery(block, ctx);
     case 'location':
-      return renderLocation(block);
+      return renderLocation(block, ctx);
     case 'contact':
       return renderContact(block, ctx);
   }
 }
+
+// Runs inside the editable staff-preview iframe only (sandbox
+// allow-scripts). Listens for keystrokes on [data-field] elements and
+// reports them to the parent via postMessage; the parent is the only
+// place field values are validated against the editable-field
+// whitelist before being written into document state (site-canvas-sync.ts) —
+// this script's job is purely to observe the DOM and forward it, not
+// to decide what's writable.
+const CANVAS_BRIDGE_SCRIPT = `
+<script>
+(function(){
+  var SRC = 'temple-site-canvas';
+  function post(msg){ window.parent.postMessage(Object.assign({ source: SRC }, msg), '*'); }
+
+  document.addEventListener('input', function(e){
+    var el = e.target.closest && e.target.closest('[data-field]');
+    if (!el) return;
+    post({ type: 'field-input', path: el.getAttribute('data-field'), value: el.innerText });
+  });
+
+  document.addEventListener('focusin', function(e){
+    var el = e.target.closest && e.target.closest('[data-field]');
+    if (!el) return;
+    post({ type: 'field-focus', path: el.getAttribute('data-field') });
+  });
+
+  document.addEventListener('blur', function(e){
+    var el = e.target.closest && e.target.closest('[data-field]');
+    if (!el) return;
+    el.innerText = el.innerText;
+  }, true);
+
+  document.addEventListener('keydown', function(e){
+    var el = e.target.closest && e.target.closest('[data-field]');
+    if (!el || e.key !== 'Enter') return;
+    if (el.getAttribute('data-multiline') !== 'true') {
+      e.preventDefault();
+      el.blur();
+    }
+  });
+
+  document.addEventListener('paste', function(e){
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  });
+
+  // A real page navigation (join CTA, contact "Send enquiry") would
+  // otherwise carry the editing iframe away from the editable canvas.
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a');
+    if (a) e.preventDefault();
+  });
+  document.addEventListener('submit', function(e){ e.preventDefault(); });
+
+  window.addEventListener('message', function(e){
+    if (e.source !== window.parent) return;
+    var msg = e.data;
+    if (!msg || msg.type !== 'select-block') return;
+    var prev = document.querySelector('.tp-selected');
+    if (prev) prev.classList.remove('tp-selected');
+    if (msg.blockId) {
+      var next = document.querySelector('[data-field^="' + msg.blockId + ':"]');
+      if (next) {
+        var section = next.closest('section');
+        (section || next).classList.add('tp-selected');
+      }
+    }
+  });
+})();
+</script>`;
 
 export function renderSiteHtml(doc: SiteDocument, ctx: SiteRenderContext): string {
   const body = doc.blocks.map((b) => renderBlock(b, ctx)).join('');
@@ -348,6 +475,6 @@ export function renderSiteHtml(doc: SiteDocument, ctx: SiteRenderContext): strin
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
 ${ctx.gymLogoUrl ? `<meta property="og:image" content="${escapeAttr(ctx.gymLogoUrl)}">` : ''}
-<style>${themeStyleBlock(ctx.theme)}</style>
-</head><body>${body}</body></html>`;
+<style>${themeStyleBlock(ctx.theme, ctx.editable)}</style>
+</head><body>${body}${ctx.editable ? CANVAS_BRIDGE_SCRIPT : ''}</body></html>`;
 }

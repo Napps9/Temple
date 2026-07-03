@@ -315,6 +315,7 @@ export default function WebsiteManageScreen() {
     platformOrigin: 'https://app.jointemple.io',
     supabaseUrl: '',
     supabaseAnonKey: '',
+    editable: true,
   });
   const warnings = documentWarnings(document);
   // Only blocks the *publish* direction — an already-live site must

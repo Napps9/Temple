@@ -96,6 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       platformOrigin: 'https://app.jointemple.io',
       supabaseUrl,
       supabaseAnonKey,
+      editable: false,
     });
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
