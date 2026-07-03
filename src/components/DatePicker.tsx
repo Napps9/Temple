@@ -67,6 +67,9 @@ export function DatePicker({
           max,
           onChange: (e: { target: { value: string } }) => onChange(e.target.value),
           placeholder,
+          // The visible label above is an unassociated sibling — name
+          // the raw HTML input directly.
+          'aria-label': label,
           style: scheme === 'dark' ? webInputStyleDark : webInputStyleLight,
           className: 'date-picker-input',
         })
@@ -74,6 +77,7 @@ export function DatePicker({
         <TextInput
           className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-50 text-base"
           placeholderTextColor="#9CA3AF"
+          accessibilityLabel={label}
           value={value}
           onChangeText={onChange}
           placeholder={placeholder ?? 'YYYY-MM-DD'}
@@ -86,7 +90,11 @@ export function DatePicker({
         {display ? display : 'DD/MM/YYYY'}
       </Text>
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+        <Text
+          accessibilityLiveRegion="polite"
+          className="text-red-500 dark:text-red-400 text-xs">
+          {error}
+        </Text>
       ) : null}
     </View>
   );

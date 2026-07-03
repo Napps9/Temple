@@ -57,6 +57,11 @@ export function Input({
           autoCapitalize="none"
           autoCorrect={false}
           secureTextEntry={effectiveSecure}
+          // The visible label above is a sibling Text with no
+          // programmatic link, so screen readers need the name here.
+          // Before the spread so callers can override.
+          accessibilityLabel={label}
+          aria-invalid={!!error}
           {...props}
         />
         {isPassword ? (
@@ -74,7 +79,11 @@ export function Input({
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text className={`text-xs ${errorCls}`}>{error}</Text> : null}
+      {error ? (
+        <Text accessibilityLiveRegion="polite" className={`text-xs ${errorCls}`}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }

@@ -108,6 +108,8 @@ export function ChipButton({
       }}
       disabled={disabled}
       hitSlop={6}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
       className={containerClass}>
       {content}
     </Pressable>
