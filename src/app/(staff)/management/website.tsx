@@ -22,7 +22,12 @@ import { BRAND_THEMES, composeThemeWithBrand, isThemeId } from '@/lib/brand-them
 import { useCustomDomain } from '@/lib/custom-domain';
 import { errorMessage } from '@/lib/errors';
 import { isFieldEditable, parseFieldPath } from '@/lib/site-canvas-sync';
-import { renderSiteHtml, type PublicPlan, type ScheduleSession } from '@/lib/site-render';
+import {
+  renderSiteHtml,
+  type PublicPlan,
+  type ScheduleSession,
+  type TeamMember,
+} from '@/lib/site-render';
 import {
   coerceDocument,
   documentWarnings,
@@ -68,6 +73,12 @@ type StaffScheduleRow = {
   duration_minutes: number;
   class_types: { name: string; color: string } | null;
   profiles: { full_name: string | null } | null;
+};
+
+type StaffTeamRow = {
+  profile_id: string;
+  role: string;
+  profiles: { full_name: string | null; avatar_url: string | null } | null;
 };
 
 function useStaffPreviewData(gymId: string | null | undefined) {
@@ -119,7 +130,37 @@ function useStaffPreviewData(gymId: string | null | undefined) {
     },
   });
 
-  return { schedule, plans };
+  const team = useQuery({
+    queryKey: ['website-preview-team', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<TeamMember[]> => {
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select('profile_id, role, profiles!profile_id(full_name, avatar_url)')
+        .eq('gym_id', gymId!)
+        .in('role', ['owner', 'admin', 'coach', 'staff'])
+        .is('left_at', null);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as StaffTeamRow[];
+      // Mirrors gym_public_team's own ordering (0100) so the preview
+      // matches what a visitor will actually see.
+      const rolePriority: Record<string, number> = { owner: 0, admin: 1, coach: 2, staff: 3 };
+      return rows
+        .map((r) => ({
+          profileId: r.profile_id,
+          role: r.role,
+          fullName: r.profiles?.full_name ?? 'Team member',
+          avatarUrl: r.profiles?.avatar_url ?? null,
+        }))
+        .sort((a, b) => {
+          const roleDiff = (rolePriority[a.role] ?? 9) - (rolePriority[b.role] ?? 9);
+          return roleDiff !== 0 ? roleDiff : a.fullName.localeCompare(b.fullName);
+        })
+        .map(({ profileId, fullName, avatarUrl }) => ({ profileId, fullName, avatarUrl }));
+    },
+  });
+
+  return { schedule, plans, team };
 }
 
 function SaveIndicator({ state }: { state: 'idle' | 'saving' | 'saved' }) {
@@ -364,6 +405,7 @@ export default function WebsiteManageScreen() {
     theme: composedTheme,
     schedule: preview.schedule.data ?? [],
     plans: preview.plans.data ?? [],
+    team: preview.team.data ?? [],
     platformOrigin: 'https://app.jointemple.io',
     supabaseUrl: '',
     supabaseAnonKey: '',

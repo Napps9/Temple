@@ -92,6 +92,16 @@ export type ContactBlock = {
   subheading: string;
 };
 
+// Reads the gym's real staff roster (owner/admin/coach/staff) at
+// render time, not stored content — same live-data-plus-hide-list
+// shape as PricingBlock's hiddenPlanIds.
+export type TeamBlock = {
+  id: string;
+  type: 'team';
+  heading: string;
+  hiddenMemberIds: string[];
+};
+
 export type SiteBlock =
   | HeroBlock
   | AboutBlock
@@ -100,7 +110,8 @@ export type SiteBlock =
   | TestimonialsBlock
   | GalleryBlock
   | LocationBlock
-  | ContactBlock;
+  | ContactBlock
+  | TeamBlock;
 
 export type SiteBlockType = SiteBlock['type'];
 
@@ -123,6 +134,7 @@ export const SITE_BLOCK_LABELS: Record<SiteBlockType, string> = {
   gallery: 'Photo gallery',
   location: 'Hours & location',
   contact: 'Contact',
+  team: 'Team',
 };
 
 export const SITE_BLOCK_ICONS: Record<SiteBlockType, string> = {
@@ -134,6 +146,7 @@ export const SITE_BLOCK_ICONS: Record<SiteBlockType, string> = {
   gallery: 'images-outline',
   location: 'location-outline',
   contact: 'mail-outline',
+  team: 'people-outline',
 };
 
 let counter = 0;
@@ -187,6 +200,8 @@ export function createBlock(type: SiteBlockType, id: string = genId()): SiteBloc
         heading: 'Get in touch',
         subheading: "Leave your details and we'll get back to you.",
       };
+    case 'team':
+      return { id, type: 'team', heading: 'Meet the team', hiddenMemberIds: [] };
   }
 }
 
@@ -377,6 +392,13 @@ function coerceBlock(raw: unknown): SiteBlock | null {
         type: 'contact',
         heading: asString(r.heading, ''),
         subheading: asString(r.subheading, ''),
+      };
+    case 'team':
+      return {
+        id,
+        type: 'team',
+        heading: asString(r.heading, 'Meet the team'),
+        hiddenMemberIds: asStringArray(r.hiddenMemberIds),
       };
     default:
       return null;

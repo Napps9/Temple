@@ -20,7 +20,12 @@ import { createClient } from '@supabase/supabase-js';
 
 import { composeThemeWithBrand, BRAND_THEMES, isThemeId } from '../../src/lib/brand-themes';
 import { coerceDocument } from '../../src/lib/site-blocks';
-import { renderSiteHtml, type PublicPlan, type ScheduleSession } from '../../src/lib/site-render';
+import {
+  renderSiteHtml,
+  type PublicPlan,
+  type ScheduleSession,
+  type TeamMember,
+} from '../../src/lib/site-render';
 import type { Database } from '../../src/types/database';
 
 function notFoundHtml(): string {
@@ -57,12 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const [scheduleResult, plansResult] = await Promise.all([
+    const [scheduleResult, plansResult, teamResult] = await Promise.all([
       supabase.rpc('gym_public_schedule', { p_slug: slug }),
       supabase.rpc('gym_public_plans', { p_slug: slug }),
+      supabase.rpc('gym_public_team', { p_slug: slug }),
     ]);
     if (scheduleResult.error) throw scheduleResult.error;
     if (plansResult.error) throw plansResult.error;
+    if (teamResult.error) throw teamResult.error;
 
     const schedule: ScheduleSession[] = (scheduleResult.data ?? []).map((s) => ({
       sessionId: s.session_id,
@@ -79,6 +86,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       creditCount: p.credit_count,
       monthlyPriceCents: p.monthly_price_cents,
     }));
+    const team: TeamMember[] = (teamResult.data ?? []).map((m) => ({
+      profileId: m.profile_id,
+      fullName: m.full_name ?? 'Team member',
+      avatarUrl: m.avatar_url,
+    }));
 
     const themeId = isThemeId(site.theme) ? site.theme : 'forged';
     const theme = composeThemeWithBrand(BRAND_THEMES[themeId], site.gym_primary_color);
@@ -92,6 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       theme,
       schedule,
       plans,
+      team,
       // Same hardcoded-fallback precedent as send-invite's origin.
       platformOrigin: 'https://app.jointemple.io',
       supabaseUrl,

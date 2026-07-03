@@ -3273,6 +3273,14 @@ export type Database = {
           monthly_price_cents: number | null;
         }[];
       };
+      gym_public_team: {
+        Args: { p_slug: string };
+        Returns: {
+          profile_id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+        }[];
+      };
       gym_slug_for_domain: {
         Args: { p_host: string };
         Returns: string | null;

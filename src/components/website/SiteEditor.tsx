@@ -28,6 +28,7 @@ import {
   type SiteBlock,
   type SiteBlockType,
   type SiteDocument,
+  type TeamBlock,
   type TestimonialsBlock,
 } from '@/lib/site-blocks';
 import { supabase } from '@/lib/supabase';
@@ -39,6 +40,7 @@ const ADDABLE: SiteBlockType[] = [
   'about',
   'schedule',
   'pricing',
+  'team',
   'testimonials',
   'gallery',
   'location',
@@ -385,6 +387,79 @@ function PricingInspector({
   );
 }
 
+function useTeamRoster(gymId: string) {
+  return useQuery({
+    queryKey: ['website-editor-team', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<{ profile_id: string; full_name: string | null }[]> => {
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select('profile_id, profiles!profile_id(full_name)')
+        .eq('gym_id', gymId)
+        .in('role', ['owner', 'admin', 'coach', 'staff'])
+        .is('left_at', null);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as {
+        profile_id: string;
+        profiles: { full_name: string | null } | null;
+      }[];
+      return rows.map((r) => ({ profile_id: r.profile_id, full_name: r.profiles?.full_name ?? null }));
+    },
+  });
+}
+
+function TeamInspector({
+  block,
+  onPatch,
+  gymId,
+}: {
+  block: TeamBlock;
+  onPatch: (patch: Partial<TeamBlock>) => void;
+  gymId: string;
+}) {
+  const roster = useTeamRoster(gymId);
+  const hidden = new Set(block.hiddenMemberIds);
+  return (
+    <View className="gap-3">
+      <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
+      <View className="gap-1.5">
+        <FieldLabel>Team members shown on the page</FieldLabel>
+        {roster.isLoading ? (
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">Loading your team…</Text>
+        ) : (roster.data ?? []).length === 0 ? (
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            No team members yet — invite staff under Manage → Team.
+          </Text>
+        ) : (
+          (roster.data ?? []).map((m) => {
+            const isHidden = hidden.has(m.profile_id);
+            return (
+              <Pressable
+                key={m.profile_id}
+                onPress={() => {
+                  const next = new Set(hidden);
+                  if (isHidden) next.delete(m.profile_id);
+                  else next.add(m.profile_id);
+                  onPatch({ hiddenMemberIds: Array.from(next) });
+                }}
+                className="flex-row items-center gap-2 py-1.5">
+                <Ionicons
+                  name={isHidden ? 'square-outline' : 'checkbox'}
+                  size={18}
+                  color={isHidden ? '#9CA3AF' : '#2563EB'}
+                />
+                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                  {m.full_name ?? 'Team member'}
+                </Text>
+              </Pressable>
+            );
+          })
+        )}
+      </View>
+    </View>
+  );
+}
+
 function TestimonialsInspector({
   block,
   onPatch,
@@ -543,6 +618,8 @@ function BlockInspector({
       return <ScheduleInspector block={block} onPatch={onPatch} />;
     case 'pricing':
       return <PricingInspector block={block} onPatch={onPatch} gymId={gymId} />;
+    case 'team':
+      return <TeamInspector block={block} onPatch={onPatch} gymId={gymId} />;
     case 'testimonials':
       return <TestimonialsInspector block={block} onPatch={onPatch} />;
     case 'gallery':

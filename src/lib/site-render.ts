@@ -21,6 +21,7 @@ import type {
   ScheduleBlock,
   SiteBlock,
   SiteDocument,
+  TeamBlock,
   TestimonialsBlock,
 } from './site-blocks';
 
@@ -41,6 +42,12 @@ export type PublicPlan = {
   monthlyPriceCents: number | null;
 };
 
+export type TeamMember = {
+  profileId: string;
+  fullName: string;
+  avatarUrl: string | null;
+};
+
 export type SiteRenderContext = {
   slug: string;
   gymName: string;
@@ -49,6 +56,7 @@ export type SiteRenderContext = {
   theme: BrandTheme; // already composed with the gym's brand colour
   schedule: ScheduleSession[];
   plans: PublicPlan[];
+  team: TeamMember[];
   // The join CTA links here rather than staying same-origin: on a
   // custom domain a relative /join/<slug> would land on the Expo app
   // shell at that origin, where Supabase auth confirmation emails
@@ -386,6 +394,30 @@ ${subheading}
 </div></section>${script}`;
 }
 
+function teamInitial(name: string): string {
+  const trimmed = name.trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() : '?';
+}
+
+function renderTeam(b: TeamBlock, ctx: SiteRenderContext): string {
+  const hidden = new Set(b.hiddenMemberIds);
+  const visible = ctx.team.filter((m) => !hidden.has(m.profileId));
+  // Same "omit in public mode, keep the editable heading" convention
+  // as testimonials/gallery — no client JS runs here, so the
+  // no-avatarUrl fallback is a static initials circle, not an
+  // onError-driven <img> the way Avatar.tsx's React fallback works.
+  if (visible.length === 0 && !ctx.editable) return '';
+  const cards = visible
+    .map((m) => {
+      const photo = m.avatarUrl
+        ? `<img class="team-avatar" src="${escapeAttr(m.avatarUrl)}" alt="${escapeAttr(m.fullName)}" />`
+        : `<div class="team-initials">${escapeHtml(teamInitial(m.fullName))}</div>`;
+      return `<div class="team-card">${photo}<div class="team-name">${escapeHtml(m.fullName)}</div></div>`;
+    })
+    .join('');
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="team-grid">${cards}</div></div></section>`;
+}
+
 function renderBlock(block: SiteBlock, ctx: SiteRenderContext): string {
   switch (block.type) {
     case 'hero':
@@ -404,6 +436,8 @@ function renderBlock(block: SiteBlock, ctx: SiteRenderContext): string {
       return renderLocation(block, ctx);
     case 'contact':
       return renderContact(block, ctx);
+    case 'team':
+      return renderTeam(block, ctx);
   }
 }
 

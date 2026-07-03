@@ -11,9 +11,16 @@ import {
   type LocationBlock,
   type PricingBlock,
   type ScheduleBlock,
+  type TeamBlock,
   type TestimonialsBlock,
 } from './site-blocks';
-import { renderSiteHtml, type PublicPlan, type ScheduleSession, type SiteRenderContext } from './site-render';
+import {
+  renderSiteHtml,
+  type PublicPlan,
+  type ScheduleSession,
+  type SiteRenderContext,
+  type TeamMember,
+} from './site-render';
 
 const baseCtx: SiteRenderContext = {
   slug: 'iron-gym',
@@ -23,6 +30,7 @@ const baseCtx: SiteRenderContext = {
   theme: BRAND_THEMES.forged,
   schedule: [],
   plans: [],
+  team: [],
   platformOrigin: 'https://app.example.com',
   supabaseUrl: 'https://example.supabase.co',
   supabaseAnonKey: 'anon-key-123',
@@ -179,6 +187,45 @@ describe('renderSiteHtml', () => {
     const html = renderSiteHtml(doc, baseCtx);
     expect(html).toContain('1 Gym St');
     expect(html).toContain('Mon-Fri 6am-8pm');
+  });
+
+  it('renders the visible team roster and hides members in hiddenMemberIds', () => {
+    const team = createBlock('team') as TeamBlock;
+    const doc = appendBlock(emptyDocument(), { ...team, hiddenMemberIds: ['m2'] });
+    const members: TeamMember[] = [
+      { profileId: 'm1', fullName: 'Priya Shah', avatarUrl: 'https://x.com/priya.png' },
+      { profileId: 'm2', fullName: 'Hidden Coach', avatarUrl: null },
+      { profileId: 'm3', fullName: 'Sam Lee', avatarUrl: null },
+    ];
+    const html = renderSiteHtml(doc, { ...baseCtx, team: members });
+    expect(html).toContain('Priya Shah');
+    expect(html).toContain('src="https://x.com/priya.png"');
+    expect(html).not.toContain('Hidden Coach');
+    expect(html).toContain('Sam Lee');
+    // No avatarUrl falls back to a static initials circle, not an <img>.
+    expect(html).toContain('<div class="team-initials">S</div>');
+  });
+
+  it('omits the team section in public mode with no visible members, but keeps it editable', () => {
+    const team = createBlock('team') as TeamBlock;
+    const doc = appendBlock(emptyDocument(), { ...team, heading: 'Meet the team' });
+    const publicHtml = renderSiteHtml(doc, baseCtx);
+    expect(publicHtml).not.toContain('<section');
+
+    const editableHtml = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    expect(editableHtml).toContain('<section');
+    expect(editableHtml).toContain(`data-field="${team.id}:heading"`);
+  });
+
+  it('escapes team member names', () => {
+    const team = createBlock('team') as TeamBlock;
+    const doc = appendBlock(emptyDocument(), team);
+    const members: TeamMember[] = [
+      { profileId: 'm1', fullName: '<script>alert(1)</script>', avatarUrl: null },
+    ];
+    const html = renderSiteHtml(doc, { ...baseCtx, team: members });
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
   });
 
   it('wires the contact form to the right slug, supabase url and anon key', () => {

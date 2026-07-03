@@ -19,6 +19,7 @@ import {
   type HeroBlock,
   type PricingBlock,
   type SiteDocument,
+  type TeamBlock,
   type TestimonialsBlock,
 } from './site-blocks';
 
@@ -32,6 +33,7 @@ describe('createBlock', () => {
     expect(createBlock('schedule', 's').type).toBe('schedule');
     expect(createBlock('location', 'l').type).toBe('location');
     expect(createBlock('contact', 'c').type).toBe('contact');
+    expect((createBlock('team', 'tm') as TeamBlock).hiddenMemberIds).toEqual([]);
   });
 });
 
@@ -161,6 +163,24 @@ describe('coerceDocument', () => {
     const doc = coerceDocument(raw);
     expect((doc.blocks[0] as GalleryBlock).images).toHaveLength(1);
     expect((doc.blocks[0] as GalleryBlock).images[0].url).toBe('https://x.com/a.png');
+  });
+
+  it('round-trips a team block including hiddenMemberIds', () => {
+    const raw = {
+      blocks: [
+        { id: 'tm', type: 'team', heading: 'Our coaches', hiddenMemberIds: ['m1', 'm2'] },
+      ],
+    };
+    const doc = coerceDocument(raw);
+    expect(doc.blocks[0].type).toBe('team');
+    expect((doc.blocks[0] as TeamBlock).heading).toBe('Our coaches');
+    expect((doc.blocks[0] as TeamBlock).hiddenMemberIds).toEqual(['m1', 'm2']);
+  });
+
+  it('defaults a team block with no heading or hiddenMemberIds', () => {
+    const doc = coerceDocument({ blocks: [{ id: 'tm', type: 'team' }] });
+    expect((doc.blocks[0] as TeamBlock).heading).toBe('Meet the team');
+    expect((doc.blocks[0] as TeamBlock).hiddenMemberIds).toEqual([]);
   });
 });
 
