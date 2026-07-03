@@ -119,3 +119,4 @@ jobs:
           deploy store-checkout
           deploy store-cancel-subscription
           deploy custom-domain
+          deploy stock-photos
