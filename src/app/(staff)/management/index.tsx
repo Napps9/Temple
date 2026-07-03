@@ -95,7 +95,7 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'members' | 'comms' | 'store' | 'team' | 'plans' | 'settings';
+type Category = 'insights' | 'members' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -103,6 +103,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
   members: 'Members',
   comms: 'Email campaigns',
+  website: 'Website',
   store: 'Store',
   team: 'Team',
   plans: 'Plans',
@@ -113,6 +114,7 @@ const CATEGORY_ICONS: Record<Category, IconName> = {
   insights: 'bar-chart-outline',
   members: 'people-outline',
   comms: 'mail-outline',
+  website: 'globe-outline',
   store: 'bag-handle-outline',
   team: 'briefcase-outline',
   plans: 'pricetags-outline',
@@ -172,6 +174,7 @@ const CATEGORY_ORDER: Category[] = [
   'insights',
   'members',
   'comms',
+  'website',
   'store',
   'team',
   'plans',
@@ -306,7 +309,7 @@ export default function ManagementHome() {
       visible: !!canManageComms,
     },
     {
-      category: 'comms',
+      category: 'website',
       title: 'Website',
       description: 'A public site built from your own schedule, pricing and brand.',
       href: '/management/website',
