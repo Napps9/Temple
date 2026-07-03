@@ -301,6 +301,7 @@ export default function WebsiteManageScreen() {
     theme: composedTheme,
     schedule: preview.schedule.data ?? [],
     plans: preview.plans.data ?? [],
+    platformOrigin: 'https://app.jointemple.io',
     supabaseUrl: '',
     supabaseAnonKey: '',
   });

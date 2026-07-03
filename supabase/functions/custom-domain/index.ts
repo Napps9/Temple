@@ -29,9 +29,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const VERCEL_BASE = 'https://api.vercel.com';
 
-// Domains this feature must never let a gym "connect" — the platform's
-// own app host and Vercel's own preview domain suffix.
-const PLATFORM_HOSTS = new Set(['app.jointemple.io', 'jointemple.io']);
+// The platform's own domain — a gym must never "connect" it or any of
+// its subdomains. Keep in sync with PLATFORM_HOSTS in middleware.ts,
+// which uses the same value to route platform traffic past the
+// custom-domain lookup.
+const PLATFORM_APEX = 'jointemple.io';
 
 const FQDN_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 
@@ -57,7 +59,7 @@ function normalizeDomain(input: string): string {
     .replace(/\.$/, '');
 }
 
-type DnsRecord = { type: string; name: string; value: string; priority?: number };
+type DnsRecord = { type: string; name: string; value: string; priority?: number; note?: string };
 
 type VercelResult = { ok: boolean; status: number; data: any; errorText: string };
 
@@ -85,11 +87,17 @@ async function vercel(
   } catch {
     data = null;
   }
+  const rawError = data?.error;
+  const errorText =
+    rawError?.message ??
+    (typeof rawError === 'string' ? rawError : rawError?.code) ??
+    text ??
+    '';
   return {
     ok: res.ok,
     status: res.status,
     data,
-    errorText: (data?.error?.message ?? data?.error ?? text ?? '').toString().slice(0, 500),
+    errorText: errorText.toString().slice(0, 500),
   };
 }
 
@@ -97,23 +105,45 @@ async function vercel(
 // needs them (e.g. it's already attached elsewhere), and routing records
 // (A / CNAME) from the separate domain-config endpoint. Combined here into
 // one flat list the UI renders as-is, same shape as gym_sending_domains.records.
-function buildRecords(addData: any, configData: any): DnsRecord[] {
+//
+// Both the A and the CNAME option are emitted, each named with the full
+// connected domain, rather than guessing apex-vs-subdomain to pick one:
+// label-count heuristics misclassify .co.uk apexes (mainstream for a
+// UK/EU product) into a silently wrong single instruction, and a proper
+// Public Suffix List is too heavy for an edge function. Offering both
+// degrades gracefully — Vercel's anycast A record works for subdomains
+// too, and registrars themselves reject a CNAME at an apex.
+function buildRecords(domainData: any, configData: any, domain: string): DnsRecord[] {
   const records: DnsRecord[] = [];
-  const verification = Array.isArray(addData?.verification) ? addData.verification : [];
+  const verification = Array.isArray(domainData?.verification) ? domainData.verification : [];
   for (const v of verification) {
     if (v?.domain && v?.value) {
       records.push({ type: v.type ?? 'TXT', name: v.domain, value: v.value });
     }
   }
-  const ipv4 = Array.isArray(configData?.recommendedIPv4) ? configData.recommendedIPv4 : [];
-  for (const rec of ipv4) {
-    for (const value of rec?.value ?? []) {
-      records.push({ type: 'A', name: '@', value });
-    }
+  // rank is a 1-based preference order — take the lowest-ranked entry of
+  // each recommendation array (defensively sorted, not tested for === 1).
+  const preferred = (arr: unknown): any => {
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    return arr.slice().sort((a, b) => (a?.rank ?? 99) - (b?.rank ?? 99))[0];
+  };
+  const ipv4 = preferred(configData?.recommendedIPv4);
+  for (const value of ipv4?.value ?? []) {
+    records.push({
+      type: 'A',
+      name: domain,
+      value,
+      note: `Use this if ${domain} is your root domain. Most registrars accept the full name or "@" as the host.`,
+    });
   }
-  const cname = Array.isArray(configData?.recommendedCNAME) ? configData.recommendedCNAME : [];
-  for (const rec of cname) {
-    if (rec?.value) records.push({ type: 'CNAME', name: rec.rank === 0 ? '@' : 'www', value: rec.value });
+  const cname = preferred(configData?.recommendedCNAME);
+  if (cname?.value) {
+    records.push({
+      type: 'CNAME',
+      name: domain,
+      value: cname.value,
+      note: `Use this instead if ${domain} is a subdomain (like www.…). Registrars won't accept a CNAME on a root domain — use the A record there.`,
+    });
   }
   return records;
 }
@@ -172,17 +202,25 @@ Deno.serve(async (req: Request) => {
     .eq('gym_id', gymId)
     .maybeSingle();
 
-  // --- disconnect: always clears the local row (so a gym can never be stuck
-  // with an un-removable domain), best-effort removing it on Vercel's side.
+  // --- disconnect ------------------------------------------------------------
   if (action === 'disconnect') {
     if (existing?.domain && VERCEL_API_TOKEN && VERCEL_PROJECT_ID) {
-      // 404 is fine — already gone on Vercel's side.
-      await vercel(
+      const removed = await vercel(
         'DELETE',
         `/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(existing.domain)}`,
         VERCEL_API_TOKEN,
         VERCEL_TEAM_ID,
       );
+      // 404 is fine — already gone on Vercel's side. Any other failure
+      // keeps the local row so the gym can retry: silently deleting the
+      // row while the domain stays attached to the Vercel project would
+      // orphan it permanently, with no app-driven path to remove it.
+      if (!removed.ok && removed.status !== 404) {
+        return json(
+          { error: 'Couldn’t remove the domain from our hosting provider — try again in a moment.' },
+          502,
+        );
+      }
     }
     const { error } = await service.from('gym_website_domains').delete().eq('gym_id', gymId);
     if (error) return json({ error: error.message }, 500);
@@ -200,7 +238,7 @@ Deno.serve(async (req: Request) => {
     if (!domain || !FQDN_RE.test(domain)) {
       return json({ error: 'That doesn’t look like a valid domain.' }, 400);
     }
-    if (PLATFORM_HOSTS.has(domain) || domain.endsWith('.vercel.app')) {
+    if (domain === PLATFORM_APEX || domain.endsWith(`.${PLATFORM_APEX}`) || domain.endsWith('.vercel.app')) {
       return json({ error: 'That domain is reserved.' }, 400);
     }
     if (existing) {
@@ -227,92 +265,156 @@ Deno.serve(async (req: Request) => {
       VERCEL_API_TOKEN,
       VERCEL_TEAM_ID,
     );
-    const records = buildRecords(added.data, config.ok ? config.data : null);
-    const verified = added.data?.verified === true;
+    const records = buildRecords(added.data, config.ok ? config.data : null, domain);
+    // Vercel's `verified` only means the ownership challenge passed (true
+    // immediately for any fresh domain) — "live" additionally requires the
+    // config endpoint to confirm DNS routing (misconfigured === false).
+    // A failed config read here just means 'pending', which is safe.
+    const ownershipVerified = added.data?.verified === true;
+    const live = ownershipVerified && config.ok && config.data?.misconfigured === false;
     const nowIso = new Date().toISOString();
 
     const { error: insErr } = await service.from('gym_website_domains').insert({
       gym_id: gymId,
       domain,
-      status: verified ? 'verified' : 'pending',
+      status: live ? 'verified' : 'pending',
       records,
       error_message: null,
       last_checked_at: nowIso,
-      verified_at: verified ? nowIso : null,
+      verified_at: live ? nowIso : null,
       created_by: (await caller.auth.getUser()).data.user?.id ?? null,
     });
     if (insErr) {
-      // Unique-violation: another gym already holds this domain (race, or
-      // this gym re-adding one someone else grabbed a moment earlier).
+      // Don't leave the domain attached to the Vercel project with no row
+      // to manage it by — best-effort compensating delete before erroring.
+      // Guarded on no OTHER row referencing this domain: if another gym
+      // holds it (the domain-key 23505 case), the Vercel attachment is
+      // theirs and deleting it would take their live site down.
+      const { data: holder } = await service
+        .from('gym_website_domains')
+        .select('gym_id')
+        .eq('domain', domain)
+        .maybeSingle();
+      if (!holder) {
+        await vercel(
+          'DELETE',
+          `/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(domain)}`,
+          VERCEL_API_TOKEN,
+          VERCEL_TEAM_ID,
+        );
+      }
       if ((insErr as { code?: string }).code === '23505') {
-        return json({ error: 'That domain is already connected to another site.' }, 409);
+        // Two constraints raise 23505: the domain unique index (another gym
+        // holds this domain) and the gym_id primary key (this gym
+        // double-connected concurrently) — tell them apart.
+        const detail = `${insErr.message ?? ''} ${(insErr as { details?: string }).details ?? ''}`;
+        return json(
+          detail.includes('gym_website_domains_domain_key')
+            ? { error: 'That domain is already connected to another site.' }
+            : { error: 'A domain is already connected. Disconnect it first.' },
+          409,
+        );
       }
       return json({ error: insErr.message }, 500);
     }
-    return json({ ok: true, domain, status: verified ? 'verified' : 'pending', records });
+    return json({
+      ok: true,
+      domain,
+      status: live ? 'verified' : 'pending',
+      records,
+      ownership_verified: ownershipVerified,
+      misconfigured: config.ok ? config.data?.misconfigured === true : null,
+    });
   }
 
   // --- verify ----------------------------------------------------------------
   if (action === 'verify') {
     if (!existing) return json({ error: 'Connect a domain first' }, 400);
 
-    // Read current state first. Calling POST /verify on an already-verified
-    // domain can flip it into a transient state — same reasoning
-    // sending-domain applies to Resend — so only trigger a verify when it
-    // isn't verified yet.
-    let status = await vercel(
-      'GET',
-      `/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(existing.domain)}`,
-      VERCEL_API_TOKEN,
-      VERCEL_TEAM_ID,
-    );
-    if (!status.ok) {
-      return json({ error: status.errorText || 'Could not read domain status.' }, 502);
-    }
-    if (status.data?.verified !== true) {
-      await vercel(
-        'POST',
-        `/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(existing.domain)}/verify`,
-        VERCEL_API_TOKEN,
-        VERCEL_TEAM_ID,
-      );
-      status = await vercel(
+    const domainPath = `/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(existing.domain)}`;
+    const [domainRes, config] = await Promise.all([
+      vercel('GET', domainPath, VERCEL_API_TOKEN, VERCEL_TEAM_ID),
+      vercel(
         'GET',
-        `/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(existing.domain)}`,
+        `/v6/domains/${encodeURIComponent(existing.domain)}/config`,
         VERCEL_API_TOKEN,
         VERCEL_TEAM_ID,
-      );
-      if (!status.ok) {
-        return json({ error: status.errorText || 'Could not read domain status.' }, 502);
-      }
+      ),
+    ]);
+
+    // The one genuinely hard failure: the domain is no longer attached to
+    // the Vercel project at all (removed externally). Recorded as 'error'
+    // and answered with HTTP 200 — the client mutation only refetches the
+    // row on success, so a 4xx here would leave the card showing stale
+    // pending/verified state.
+    if (domainRes.status === 404) {
+      const message =
+        'This domain is no longer attached to your site. Disconnect it below, then connect it again.';
+      const nowIso = new Date().toISOString();
+      const { error: upErr } = await service
+        .from('gym_website_domains')
+        .update({
+          status: 'error',
+          error_message: message,
+          last_checked_at: nowIso,
+          updated_at: nowIso,
+        })
+        .eq('gym_id', gymId);
+      if (upErr) return json({ error: upErr.message }, 500);
+      return json({ ok: true, status: 'error', error_message: message, records: existing.records });
     }
 
-    const config = await vercel(
-      'GET',
-      `/v6/domains/${encodeURIComponent(existing.domain)}/config`,
-      VERCEL_API_TOKEN,
-      VERCEL_TEAM_ID,
-    );
-    const records = buildRecords(status.data, config.ok ? config.data : null);
-    const verified = status.data?.verified === true;
+    // Never downgrade (or upgrade) on a non-authoritative read: a
+    // transient Vercel failure while someone happens to click Verify must
+    // not flip a live domain to pending and knock its routing out. State
+    // only changes on authoritative 200s or the specific 404 above.
+    if (!domainRes.ok) {
+      return json({ error: domainRes.errorText || 'Could not read domain status.' }, 502);
+    }
+    if (!config.ok) {
+      return json({ error: config.errorText || 'Could not read domain DNS configuration.' }, 502);
+    }
+
+    // Only trigger an ownership re-check when it hasn't passed — calling
+    // POST /verify on an already-verified domain can flip it into a
+    // transient state (same reasoning sending-domain applies to Resend).
+    // The POST returns the domain object, so no third GET is needed; the
+    // parallel config read stays valid since /verify only affects
+    // ownership, not DNS routing.
+    let domainData = domainRes.data;
+    if (domainData?.verified !== true) {
+      const verifyRes = await vercel('POST', `${domainPath}/verify`, VERCEL_API_TOKEN, VERCEL_TEAM_ID);
+      if (verifyRes.ok && verifyRes.data) domainData = verifyRes.data;
+    }
+
+    // Vercel's `verified` covers ownership only; live additionally needs
+    // DNS routing confirmed (misconfigured === false). A previously
+    // verified domain whose DNS broke legitimately downgrades to pending
+    // here; verified_at keeps its first-verified value as an audit trail.
+    const ownershipVerified = domainData?.verified === true;
+    const live = ownershipVerified && config.data?.misconfigured === false;
+    const records = buildRecords(domainData, config.data, existing.domain);
+    const finalRecords = records.length > 0 ? records : existing.records;
     const nowIso = new Date().toISOString();
 
     const { error: upErr } = await service
       .from('gym_website_domains')
       .update({
-        status: verified ? 'verified' : 'pending',
-        records: records.length > 0 ? records : existing.records,
+        status: live ? 'verified' : 'pending',
+        records: finalRecords,
         error_message: null,
         last_checked_at: nowIso,
-        verified_at: verified ? existing.verified_at ?? nowIso : existing.verified_at,
+        verified_at: live ? existing.verified_at ?? nowIso : existing.verified_at,
         updated_at: nowIso,
       })
       .eq('gym_id', gymId);
     if (upErr) return json({ error: upErr.message }, 500);
     return json({
       ok: true,
-      status: verified ? 'verified' : 'pending',
-      records: records.length > 0 ? records : existing.records,
+      status: live ? 'verified' : 'pending',
+      records: finalRecords,
+      ownership_verified: ownershipVerified,
+      misconfigured: config.data?.misconfigured === true,
     });
   }
 

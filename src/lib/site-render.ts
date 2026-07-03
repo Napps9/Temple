@@ -49,6 +49,12 @@ export type SiteRenderContext = {
   theme: BrandTheme; // already composed with the gym's brand colour
   schedule: ScheduleSession[];
   plans: PublicPlan[];
+  // The join CTA links here rather than staying same-origin: on a
+  // custom domain a relative /join/<slug> would land on the Expo app
+  // shell at that origin, where Supabase auth confirmation emails
+  // (emailRedirectTo = window.location.origin) silently fall back to
+  // the Site URL because arbitrary gym domains can't be allowlisted.
+  platformOrigin: string;
   // Needed only to render the contact block's working submit — the
   // anon key is a public, RLS-enforced credential, safe to embed the
   // same way every client build already does.
@@ -131,7 +137,10 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 }
 
 function renderHero(b: HeroBlock, ctx: SiteRenderContext): string {
-  const ctaHref = b.ctaTarget === 'contact' ? '#contact' : `/join/${encodeURIComponent(ctx.slug)}`;
+  const ctaHref =
+    b.ctaTarget === 'contact'
+      ? '#contact'
+      : `${ctx.platformOrigin}/join/${encodeURIComponent(ctx.slug)}`;
   const cta = `<a class="btn" href="${escapeAttr(ctaHref)}">${escapeHtml(b.ctaLabel)}</a>`;
   const eyebrow = `<div class="eyebrow">${escapeHtml(ctx.gymName)}</div>`;
   const headline = `<h1 style="font-size:clamp(32px,6vw,56px);">${escapeHtml(b.headline)}</h1>`;

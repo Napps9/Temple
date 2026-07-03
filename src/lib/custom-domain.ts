@@ -53,9 +53,13 @@ async function functionErrorMessage(error: unknown): Promise<string> {
 
 type CustomDomainActionResult = {
   ok?: boolean;
-  domain?: string;
   status?: CustomDomainStatus;
-  records?: CustomDomainRow['records'];
+  // Verify-time detail: ownership (TXT challenge) and DNS routing are
+  // separate Vercel signals — the card uses these to say precisely what
+  // the gym is still waiting on.
+  ownership_verified?: boolean;
+  misconfigured?: boolean;
+  error_message?: string;
 };
 
 export function useCustomDomainAction(gymId: string | null | undefined) {

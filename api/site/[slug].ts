@@ -92,6 +92,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       theme,
       schedule,
       plans,
+      // Same hardcoded-fallback precedent as send-invite's origin.
+      platformOrigin: 'https://app.jointemple.io',
       supabaseUrl,
       supabaseAnonKey,
     });

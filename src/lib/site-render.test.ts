@@ -23,6 +23,7 @@ const baseCtx: SiteRenderContext = {
   theme: BRAND_THEMES.forged,
   schedule: [],
   plans: [],
+  platformOrigin: 'https://app.example.com',
   supabaseUrl: 'https://example.supabase.co',
   supabaseAnonKey: 'anon-key-123',
 };
@@ -48,10 +49,14 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('&amp;');
   });
 
-  it('hero CTA links to the join flow by default, and to #contact when targeted at the page', () => {
+  it('hero CTA links to the join flow on the platform origin, and to #contact when targeted at the page', () => {
     const hero = createBlock('hero') as HeroBlock;
     const joinDoc = appendBlock(emptyDocument(), { ...hero, ctaTarget: 'join' });
-    expect(renderSiteHtml(joinDoc, baseCtx)).toContain('href="/join/iron-gym"');
+    // Absolute on purpose: on a custom domain a relative /join/<slug>
+    // would land on the app shell at an origin auth emails can't use.
+    expect(renderSiteHtml(joinDoc, baseCtx)).toContain(
+      'href="https://app.example.com/join/iron-gym"',
+    );
 
     const contactDoc = appendBlock(emptyDocument(), { ...hero, ctaTarget: 'contact' });
     expect(renderSiteHtml(contactDoc, baseCtx)).toContain('href="#contact"');

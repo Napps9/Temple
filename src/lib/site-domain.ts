@@ -7,7 +7,10 @@
 
 export type CustomDomainStatus = 'pending' | 'verified' | 'error';
 
-export type DnsRecord = { type: string; name: string; value: string; priority?: number };
+// `note` carries server-authored per-record guidance (e.g. "use the A
+// record for a root domain") inside the records jsonb, so the UI renders
+// it as-is without inferring record semantics client-side.
+export type DnsRecord = { type: string; name: string; value: string; priority?: number; note?: string };
 
 // A conservative but standards-shaped FQDN check: 1-63 char labels of
 // [a-z0-9-] (no leading/trailing hyphen), at least one dot, an alpha TLD.
@@ -57,7 +60,7 @@ export function domainStatusDescription(status: CustomDomainStatus): string {
     case 'pending':
       return 'Your domain is registered. Add the DNS records below at your domain registrar to prove you own it, then hit Verify. This can take a few minutes — occasionally up to 48 hours.';
     case 'verified':
-      return 'Your domain is connected — your site now serves directly from it, with SSL handled automatically.';
+      return 'Your domain is connected — your site now serves directly from it. SSL is handled automatically; https can take a minute or two on first connect.';
     case 'error':
       return 'We couldn’t confirm your DNS records. Double-check they match the values below exactly, give DNS time to propagate, then verify again.';
   }

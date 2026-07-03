@@ -38,11 +38,22 @@ function StatusBadge({ status }: { status: CustomDomainStatus }) {
   );
 }
 
-function StatusExplainer({ status }: { status: CustomDomainStatus }) {
+// Prefers the row's own error_message: the generic 'error' copy tells
+// the gym to re-check DNS, which would mislead when the real problem is
+// e.g. the domain no longer being attached at all.
+function StatusExplainer({
+  status,
+  errorMessage,
+}: {
+  status: CustomDomainStatus;
+  errorMessage?: string | null;
+}) {
   const tone = TONE[domainStatusMeta(status).tone];
   return (
     <View className={`rounded-lg p-3 ${tone.bg}`}>
-      <Text className={`text-xs leading-5 ${tone.text}`}>{domainStatusDescription(status)}</Text>
+      <Text className={`text-xs leading-5 ${tone.text}`}>
+        {errorMessage ?? domainStatusDescription(status)}
+      </Text>
     </View>
   );
 }
@@ -93,6 +104,11 @@ function RecordCard({ record }: { record: DnsRecord }) {
       </View>
       <CopyableValue label="Host / name" value={record.name} />
       <CopyableValue label="Value" value={record.value} />
+      {record.note ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+          {record.note}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -118,6 +134,9 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
     action.mutate({ action: 'connect', domain: d.domain });
   }
 
+  // A plain success is silent (the card flips to Verified); anything else
+  // says precisely what the gym is still waiting on, so a click never
+  // feels like a no-op.
   function verify() {
     setVerifyNote(null);
     action.mutate(
@@ -125,10 +144,24 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
       {
         onSuccess: (data) => {
           if (data.status === 'verified') return;
-          setVerifyNote({
-            tone: 'amber',
-            text: 'Not verified yet — your DNS changes haven’t propagated. This can take a few minutes (occasionally up to 48h). Leave the records in place and check again shortly.',
-          });
+          if (data.status === 'error') {
+            setVerifyNote({
+              tone: 'red',
+              text:
+                data.error_message ??
+                'Something is wrong with this domain — disconnect it and connect it again.',
+            });
+          } else if (data.ownership_verified === false) {
+            setVerifyNote({
+              tone: 'amber',
+              text: 'Not verified yet — we’re still waiting on the TXT ownership record. Add it exactly as shown, give DNS a few minutes, then check again.',
+            });
+          } else {
+            setVerifyNote({
+              tone: 'amber',
+              text: 'Not live yet — your DNS changes haven’t propagated. This can take a few minutes (occasionally up to 48h). Leave the records in place and check again shortly.',
+            });
+          }
         },
       },
     );
@@ -143,7 +176,7 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
         {domain ? <StatusBadge status={domain.status} /> : null}
       </View>
       {domain ? (
-        <StatusExplainer status={domain.status} />
+        <StatusExplainer status={domain.status} errorMessage={domain.error_message} />
       ) : (
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           Connect a domain you own so your site serves from it directly, instead of only
@@ -194,22 +227,28 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
         </View>
       ) : (
         <View className="gap-3">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
-            Add these records at the registrar for{' '}
-            <Text className="font-mono">{domain.domain}</Text>.
-          </Text>
+          {/* In the 'error' state the records are noise — the explainer
+              above already says the real fix (disconnect and reconnect). */}
+          {domain.status !== 'error' ? (
+            <>
+              <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                Add these records at the registrar for{' '}
+                <Text className="font-mono">{domain.domain}</Text>.
+              </Text>
 
-          {records.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              No records returned yet — try verifying.
-            </Text>
-          ) : (
-            <View className="gap-2">
-              {records.map((r, i) => (
-                <RecordCard key={`${r.type}-${r.name}-${i}`} record={r} />
-              ))}
-            </View>
-          )}
+              {records.length === 0 ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  No records returned yet — try verifying.
+                </Text>
+              ) : (
+                <View className="gap-2">
+                  {records.map((r, i) => (
+                    <RecordCard key={`${r.type}-${r.name}-${i}`} record={r} />
+                  ))}
+                </View>
+              )}
+            </>
+          ) : null}
 
           {verifyNote ? (
             <View
