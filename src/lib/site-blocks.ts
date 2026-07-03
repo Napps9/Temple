@@ -205,20 +205,10 @@ export function createBlock(type: SiteBlockType, id: string = genId()): SiteBloc
   }
 }
 
-// A reasonable starting page: the four blocks every gym site needs
-// (hero, schedule, pricing, contact) — the same "something to edit,
-// not a blank page" role starterDocument plays in the email builder.
-// About/testimonials/gallery/location/team stay addable from the palette.
-export function starterDocument(gymName?: string): SiteDocument {
-  const hero = createBlock('hero') as HeroBlock;
-  const trimmedName = gymName?.trim();
-  if (trimmedName) hero.headline = trimmedName;
-  return {
-    version: 1,
-    settings: defaultSettings(),
-    blocks: [hero, createBlock('schedule'), createBlock('pricing'), createBlock('contact')],
-  };
-}
+// Starting pages live in site-templates.ts (four fully written
+// archetypes), not here — a generic starter would be a second source
+// of truth for starter copy, and site-templates already imports this
+// module, so it can't live here without a circular import.
 
 export function emptyDocument(): SiteDocument {
   return { version: 1, settings: defaultSettings(), blocks: [] };

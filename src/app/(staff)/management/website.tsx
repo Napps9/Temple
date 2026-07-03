@@ -31,12 +31,13 @@ import {
 import {
   coerceDocument,
   documentWarnings,
-  starterDocument,
+  emptyDocument,
   updateBlock,
   type SiteBlock,
   type SiteDocument,
   type TestimonialsBlock,
 } from '@/lib/site-blocks';
+import { SITE_TEMPLATES, SITE_TEMPLATE_LIST, type SiteTemplateId } from '@/lib/site-templates';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
@@ -184,8 +185,11 @@ export default function WebsiteManageScreen() {
   const queryClient = useQueryClient();
   const preview = useStaffPreviewData(brand.gymId);
 
-  const [document, setDocument] = useState<SiteDocument>(() => starterDocument());
+  // Pre-load placeholder only — always overwritten by coerceDocument
+  // (site load) or createSite before the editor is ever shown.
+  const [document, setDocument] = useState<SiteDocument>(() => emptyDocument());
   const [showPreview, setShowPreview] = useState(false);
+  const [creatingId, setCreatingId] = useState<SiteTemplateId | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [publishState, setPublishState] = useState<'idle' | 'working'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -307,13 +311,24 @@ export default function WebsiteManageScreen() {
     );
   }
 
-  async function createSite() {
+  async function createSite(templateId: SiteTemplateId) {
     if (!brand.gymId) return;
+    setCreatingId(templateId);
+    const design = SITE_TEMPLATES[templateId].build(brand.gymName);
     const { data, error: insErr } = await supabase
       .from('gym_websites')
-      .insert({ gym_id: brand.gymId, design: starterDocument(brand.gymName) as unknown as Json })
+      .insert({
+        gym_id: brand.gymId,
+        // The column defaults to 'forged' and the public route reads
+        // the column, not design.settings — a light-theme site created
+        // and published untouched must not wait for the first autosave
+        // to correct it.
+        theme: design.settings.themeId,
+        design: design as unknown as Json,
+      })
       .select('*')
       .single();
+    setCreatingId(null);
     if (insErr) {
       setError(errorMessage(insErr, 'Could not create the site'));
       return;
@@ -333,11 +348,38 @@ export default function WebsiteManageScreen() {
               Website
             </Text>
             <Text className="text-gray-500 dark:text-gray-400">
-              Build a public page from your own schedule, pricing and brand.
+              Pick a starting point — every word, block and theme can be changed later.
             </Text>
           </View>
           {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
-          <Button onPress={createSite}>Start building</Button>
+          <View className="gap-3">
+            {SITE_TEMPLATE_LIST.map((t) => {
+              const composed = composeThemeWithBrand(BRAND_THEMES[t.themeId], brand.primaryColor);
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => void createSite(t.id)}
+                  disabled={creatingId != null}
+                  className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 active:opacity-70 hover:border-primary">
+                  <View
+                    className="w-16 h-12 rounded-lg overflow-hidden flex-row"
+                    style={{ borderWidth: 1, borderColor: '#00000014' }}>
+                    <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
+                    <View className="w-4" style={{ backgroundColor: composed.palette.accent }} />
+                  </View>
+                  <View className="flex-1 gap-0.5">
+                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">{t.name}</Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">{t.description}</Text>
+                  </View>
+                  {creatingId === t.id ? (
+                    <ActivityIndicator />
+                  ) : (
+                    <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
         </ScrollView>
       </Screen>
     );
