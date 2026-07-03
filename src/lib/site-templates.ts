@@ -236,3 +236,13 @@ export const SITE_TEMPLATE_LIST: SiteTemplate[] = Object.values(SITE_TEMPLATES);
 export function isSiteTemplateId(v: unknown): v is SiteTemplateId {
   return typeof v === 'string' && v in SITE_TEMPLATES;
 }
+
+// Pre-fills the stock-photo picker's search per archetype. Keyed by
+// theme (documents store only settings.themeId, and themes pair 1:1
+// with templates). "weightlifting" not "CrossFit" — trademarked.
+export const DEFAULT_STOCK_QUERIES: Record<ThemeId, string> = {
+  forged: 'weightlifting gym',
+  ringside: 'boxing training',
+  daybreak: 'yoga studio',
+  baseline: 'personal trainer',
+};

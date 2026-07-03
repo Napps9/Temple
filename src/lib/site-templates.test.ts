@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { BRAND_THEMES, isThemeId } from './brand-themes';
 import { coerceDocument, documentWarnings } from './site-blocks';
 import { renderSiteHtml, type SiteRenderContext } from './site-render';
-import { SITE_TEMPLATES, SITE_TEMPLATE_LIST, isSiteTemplateId } from './site-templates';
+import {
+  DEFAULT_STOCK_QUERIES,
+  SITE_TEMPLATES,
+  SITE_TEMPLATE_LIST,
+  isSiteTemplateId,
+} from './site-templates';
 
 const baseCtx: SiteRenderContext = {
   slug: 'iron-gym',
@@ -39,6 +44,24 @@ describe('SITE_TEMPLATES registry', () => {
     expect(isSiteTemplateId('coaching')).toBe(true);
     expect(isSiteTemplateId('nope')).toBe(false);
     expect(isSiteTemplateId(42)).toBe(false);
+  });
+});
+
+describe('DEFAULT_STOCK_QUERIES', () => {
+  it('covers every theme with a distinct, usable search query', () => {
+    expect(Object.keys(DEFAULT_STOCK_QUERIES).sort()).toEqual([
+      'baseline',
+      'daybreak',
+      'forged',
+      'ringside',
+    ]);
+    const queries = Object.values(DEFAULT_STOCK_QUERIES);
+    expect(new Set(queries).size).toBe(queries.length);
+    for (const q of queries) {
+      expect(q).toBe(q.trim());
+      expect(q.length).toBeGreaterThan(2);
+      expect(q.length).toBeLessThanOrEqual(100);
+    }
   });
 });
 
