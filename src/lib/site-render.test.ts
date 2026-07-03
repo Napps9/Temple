@@ -37,6 +37,18 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('<title>Iron Gym</title>');
   });
 
+  it('always renders a site header with the logo, unconditionally on every page', () => {
+    const html = renderSiteHtml(emptyDocument(), { ...baseCtx, gymLogoUrl: 'https://x.com/logo.png' });
+    expect(html).toContain('<header class="site-header">');
+    expect(html).toContain('src="https://x.com/logo.png"');
+  });
+
+  it('falls back to the gym name in the header when there is no logo', () => {
+    const html = renderSiteHtml(emptyDocument(), baseCtx);
+    expect(html).toContain('<header class="site-header">');
+    expect(html).toContain('<span>Iron Gym</span>');
+  });
+
   it('escapes author text so it cannot inject markup', () => {
     const hero = createBlock('hero') as HeroBlock;
     const doc = appendBlock(emptyDocument(), {
@@ -84,6 +96,31 @@ describe('renderSiteHtml', () => {
     const html = renderSiteHtml(doc, { ...baseCtx, schedule: sessions });
     expect(html).toContain('CrossFit');
     expect(html).toContain('Priya');
+  });
+
+  it('colour-codes schedule rows by class type, falling back to the theme accent', () => {
+    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
+    const sessions: ScheduleSession[] = [
+      {
+        sessionId: 's1',
+        startsAt: '2026-07-06T09:00:00Z',
+        durationMinutes: 60,
+        classTypeName: 'CrossFit',
+        classTypeColor: '#FF0000',
+        coachName: null,
+      },
+      {
+        sessionId: 's2',
+        startsAt: '2026-07-06T10:00:00Z',
+        durationMinutes: 60,
+        classTypeName: 'Open gym',
+        classTypeColor: null,
+        coachName: null,
+      },
+    ];
+    const html = renderSiteHtml(doc, { ...baseCtx, schedule: sessions });
+    expect(html).toContain('background:#FF0000;');
+    expect(html).toContain('background:var(--accent);');
   });
 
   it('formats plan pricing by kind and hides plans in hiddenPlanIds', () => {

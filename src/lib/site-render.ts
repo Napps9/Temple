@@ -154,13 +154,30 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .about-grid{display:grid;gap:32px;align-items:center;}
 @media(min-width:640px){.about-grid.side{grid-template-columns:1fr 1fr;}}
 .about-grid img{width:100%;border-radius:var(--radius);}
+.site-header{background:var(--surface);border-bottom:1px solid color-mix(in srgb, var(--muted) 40%, transparent);}
+.site-header .wrap{display:flex;align-items:center;gap:10px;padding-top:14px;padding-bottom:14px;}
+.site-header img{height:32px;width:auto;display:block;}
+.site-header span{font-weight:700;font-size:16px;letter-spacing:.01em;}
 .sched-day{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--accent);margin:20px 0 8px;}
 .sched-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid color-mix(in srgb, var(--muted) 40%, transparent);}
 .sched-row:first-of-type{border-top:none;}
+.sched-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;}
 .plan-price{font-size:32px;font-weight:800;}
 .quote-mark{font-size:32px;color:var(--accent);line-height:.4;display:block;margin-bottom:6px;}
 .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
-.gallery-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:calc(var(--radius) / 2);}${editableCss}`;
+.gallery-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:calc(var(--radius) / 2);}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:20px;}
+.team-card{text-align:center;}
+.team-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;margin:0 auto 10px;display:block;}
+.team-initials{width:96px;height:96px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;background:var(--accent);color:var(--accent-text);}
+.team-name{font-weight:700;font-size:14px;}${editableCss}`;
+}
+
+function renderSiteHeader(ctx: SiteRenderContext): string {
+  const brand = ctx.gymLogoUrl
+    ? `<img src="${escapeAttr(ctx.gymLogoUrl)}" alt="${escapeAttr(ctx.gymName)}" />`
+    : `<span>${escapeHtml(ctx.gymName)}</span>`;
+  return `<header class="site-header"><div class="wrap">${brand}</div></header>`;
 }
 
 function renderHero(b: HeroBlock, ctx: SiteRenderContext): string {
@@ -227,14 +244,14 @@ function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
       ([day, sessions]) =>
         `<div class="sched-day">${escapeHtml(day)}</div>` +
         sessions
-          .map(
-            (s) =>
-              `<div class="sched-row"><span>${fmtSessionTime(s.startsAt)} — ${escapeHtml(
-                s.classTypeName ?? 'Class',
-              )}</span><span style="color:var(--muted);">${
-                s.coachName ? escapeHtml(s.coachName) : ''
-              }</span></div>`,
-          )
+          .map((s) => {
+            const dotColor = s.classTypeColor ? escapeAttr(s.classTypeColor) : 'var(--accent)';
+            return `<div class="sched-row"><span><span class="sched-dot" style="background:${dotColor};"></span>${fmtSessionTime(
+              s.startsAt,
+            )} — ${escapeHtml(s.classTypeName ?? 'Class')}</span><span style="color:var(--muted);">${
+              s.coachName ? escapeHtml(s.coachName) : ''
+            }</span></div>`;
+          })
           .join(''),
     )
     .join('');
@@ -462,6 +479,7 @@ const CANVAS_BRIDGE_SCRIPT = `
 </script>`;
 
 export function renderSiteHtml(doc: SiteDocument, ctx: SiteRenderContext): string {
+  const header = renderSiteHeader(ctx);
   const body = doc.blocks.map((b) => renderBlock(b, ctx)).join('');
   const title = escapeHtml(ctx.gymName);
   const description = escapeAttr(
@@ -476,5 +494,5 @@ export function renderSiteHtml(doc: SiteDocument, ctx: SiteRenderContext): strin
 <meta property="og:description" content="${description}">
 ${ctx.gymLogoUrl ? `<meta property="og:image" content="${escapeAttr(ctx.gymLogoUrl)}">` : ''}
 <style>${themeStyleBlock(ctx.theme, ctx.editable)}</style>
-</head><body>${body}${ctx.editable ? CANVAS_BRIDGE_SCRIPT : ''}</body></html>`;
+</head><body>${header}${body}${ctx.editable ? CANVAS_BRIDGE_SCRIPT : ''}</body></html>`;
 }

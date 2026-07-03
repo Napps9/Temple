@@ -193,17 +193,15 @@ export function createBlock(type: SiteBlockType, id: string = genId()): SiteBloc
 // A reasonable starting page: the four blocks every gym site needs
 // (hero, schedule, pricing, contact) — the same "something to edit,
 // not a blank page" role starterDocument plays in the email builder.
-// About/testimonials/gallery/location stay addable from the palette.
-export function starterDocument(): SiteDocument {
+// About/testimonials/gallery/location/team stay addable from the palette.
+export function starterDocument(gymName?: string): SiteDocument {
+  const hero = createBlock('hero') as HeroBlock;
+  const trimmedName = gymName?.trim();
+  if (trimmedName) hero.headline = trimmedName;
   return {
     version: 1,
     settings: defaultSettings(),
-    blocks: [
-      createBlock('hero'),
-      createBlock('schedule'),
-      createBlock('pricing'),
-      createBlock('contact'),
-    ],
+    blocks: [hero, createBlock('schedule'), createBlock('pricing'), createBlock('contact')],
   };
 }
 

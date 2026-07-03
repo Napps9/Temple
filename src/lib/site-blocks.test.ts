@@ -41,6 +41,21 @@ describe('starterDocument', () => {
     expect(doc.blocks.map((b) => b.type)).toEqual(['hero', 'schedule', 'pricing', 'contact']);
     expect(doc.settings.themeId).toBe('forged');
   });
+
+  it('uses the generic placeholder headline when no gym name is given', () => {
+    const doc = starterDocument();
+    expect((doc.blocks[0] as HeroBlock).headline).toBe("Your gym's name");
+  });
+
+  it('seeds the hero headline with the real gym name when given one', () => {
+    const doc = starterDocument('Iron Gym');
+    expect((doc.blocks[0] as HeroBlock).headline).toBe('Iron Gym');
+  });
+
+  it('falls back to the placeholder for a blank or whitespace-only name', () => {
+    expect((starterDocument('').blocks[0] as HeroBlock).headline).toBe("Your gym's name");
+    expect((starterDocument('   ').blocks[0] as HeroBlock).headline).toBe("Your gym's name");
+  });
 });
 
 describe('document operations are immutable', () => {

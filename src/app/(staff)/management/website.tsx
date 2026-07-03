@@ -270,7 +270,7 @@ export default function WebsiteManageScreen() {
     if (!brand.gymId) return;
     const { data, error: insErr } = await supabase
       .from('gym_websites')
-      .insert({ gym_id: brand.gymId, design: starterDocument() as unknown as Json })
+      .insert({ gym_id: brand.gymId, design: starterDocument(brand.gymName) as unknown as Json })
       .select('*')
       .single();
     if (insErr) {
