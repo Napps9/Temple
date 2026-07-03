@@ -1,15 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { useState, type ComponentProps, type ReactNode } from 'react';
-import { Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useSession } from '@/lib/auth';
-import { BRAND_THEMES, BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
+import { BRAND_THEMES, BRAND_THEME_LIST, composeThemeWithBrand, isThemeId } from '@/lib/brand-themes';
 import { errorMessage } from '@/lib/errors';
-import { SITE_TEMPLATE_LIST, type SiteTemplate } from '@/lib/site-templates';
+import { DEFAULT_STOCK_QUERIES, SITE_TEMPLATE_LIST, type SiteTemplate } from '@/lib/site-templates';
+import { useStockPhotoSave, useStockPhotoSearch, type StockPhoto } from '@/lib/stock-photos';
 import {
   SITE_BLOCK_ICONS,
   SITE_BLOCK_LABELS,
@@ -187,37 +199,238 @@ function useImageUpload(gymId: string) {
   return { pickAndUpload, uploading, error };
 }
 
+// Same open-in-new-context shape as useStoreDownload — a bare
+// Linking.openURL replaces the editor tab on web.
+function openExternal(url: string) {
+  if (!url) return;
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener');
+  } else {
+    Linking.openURL(url).catch(() => {});
+  }
+}
+
+function StockPhotoPickerModal({
+  visible,
+  onClose,
+  gymId,
+  defaultQuery,
+  onPick,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  gymId: string;
+  defaultQuery: string;
+  onPick: (photo: { url: string; alt: string }) => void;
+}) {
+  const [query, setQuery] = useState(defaultQuery);
+  const [photos, setPhotos] = useState<StockPhoto[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [savingId, setSavingId] = useState<number | null>(null);
+  const search = useStockPhotoSearch(gymId);
+  const save = useStockPhotoSave(gymId);
+  // Load-more must page through the query that produced the current
+  // grid, not whatever is sitting in the input box unsubmitted.
+  const submittedQuery = useRef(defaultQuery);
+  const wasVisible = useRef(false);
+
+  function runSearch(q: string, nextPage: number) {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    if (nextPage === 1) submittedQuery.current = trimmed;
+    search.mutate(
+      { query: trimmed, page: nextPage },
+      {
+        onSuccess: (r) => {
+          setPhotos((prev) => (nextPage === 1 ? r.photos : [...prev, ...r.photos]));
+          setPage(r.page);
+          setHasMore(r.has_more);
+        },
+      },
+    );
+  }
+
+  const searchOnOpen = () => runSearch(defaultQuery, 1);
+  const searchOnOpenRef = useRef(searchOnOpen);
+  searchOnOpenRef.current = searchOnOpen;
+  useEffect(() => {
+    if (visible && !wasVisible.current) {
+      setQuery(defaultQuery);
+      setPhotos([]);
+      setSavingId(null);
+      searchOnOpenRef.current();
+    }
+    wasVisible.current = visible;
+  }, [visible, defaultQuery]);
+
+  function pick(p: StockPhoto) {
+    setSavingId(p.id);
+    save.mutate(
+      { photoId: p.id },
+      {
+        onSuccess: (r) => {
+          onPick({ url: r.url, alt: r.alt });
+          onClose();
+        },
+        onSettled: () => setSavingId(null),
+      },
+    );
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-3">
+          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">Stock photos</Text>
+          <View className="flex-row gap-2 items-center">
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search photos…"
+              placeholderTextColor="#9CA3AF"
+              returnKeyType="search"
+              onSubmitEditing={() => runSearch(query, 1)}
+              className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
+            />
+            <Pressable
+              onPress={() => runSearch(query, 1)}
+              disabled={search.isPending}
+              className="w-10 h-10 rounded-lg items-center justify-center bg-primary/10 border border-primary/30 active:opacity-70">
+              <Ionicons name="search" size={16} color="#2563EB" />
+            </Pressable>
+          </View>
+          {search.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-xs">{search.error.message}</Text>
+          ) : null}
+          {save.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-xs">{save.error.message}</Text>
+          ) : null}
+          <ScrollView style={{ maxHeight: 420 }}>
+            {search.isPending && photos.length === 0 ? (
+              <View className="py-10 items-center">
+                <ActivityIndicator />
+              </View>
+            ) : photos.length === 0 && search.isSuccess ? (
+              <Text className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">
+                No photos found — try a different search.
+              </Text>
+            ) : (
+              <View className="gap-2">
+                <View className="flex-row flex-wrap gap-2">
+                  {photos.map((p) => (
+                    <Pressable
+                      key={p.id}
+                      onPress={() => pick(p)}
+                      disabled={savingId != null}
+                      style={{ width: '31%' }}
+                      className="gap-1 active:opacity-70">
+                      <View
+                        className="rounded-lg overflow-hidden"
+                        style={{ backgroundColor: p.avg_color, height: 64 }}>
+                        <Image
+                          source={{ uri: p.thumb }}
+                          style={{ width: '100%', height: 64 }}
+                          resizeMode="cover"
+                          accessibilityLabel={p.alt}
+                        />
+                        {savingId === p.id ? (
+                          <View className="absolute inset-0 items-center justify-center bg-black/40">
+                            <ActivityIndicator color="#FFFFFF" />
+                          </View>
+                        ) : null}
+                      </View>
+                      <Pressable
+                        onPress={() => openExternal(p.photographer_url)}
+                        disabled={savingId != null}
+                        hitSlop={4}>
+                        <Text
+                          numberOfLines={1}
+                          className="text-gray-400 dark:text-gray-500 text-[10px]">
+                          by {p.photographer}
+                        </Text>
+                      </Pressable>
+                    </Pressable>
+                  ))}
+                </View>
+                {hasMore && photos.length > 0 ? (
+                  <Pressable
+                    onPress={() => runSearch(submittedQuery.current, page + 1)}
+                    disabled={search.isPending || savingId != null}
+                    className="flex-row items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg py-2.5 active:opacity-70">
+                    <Text className="text-gray-700 dark:text-gray-200 font-medium text-sm">
+                      {search.isPending ? 'Loading…' : 'Load more'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            )}
+          </ScrollView>
+          <Pressable
+            onPress={() => openExternal('https://www.pexels.com')}
+            hitSlop={4}
+            className="items-center pt-1">
+            <Text className="text-gray-500 dark:text-gray-400 text-xs underline">
+              Photos provided by Pexels
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 function ImagePickerField({
   label,
   value,
   onChange,
   gymId,
+  defaultStockQuery,
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
   gymId: string;
+  defaultStockQuery: string;
 }) {
   const { pickAndUpload, uploading, error } = useImageUpload(gymId);
+  const [stockOpen, setStockOpen] = useState(false);
   return (
     <View className="gap-1.5">
       <FieldLabel>{label}</FieldLabel>
       {value ? (
         <Image source={{ uri: value }} style={{ width: '100%', height: 120 }} className="rounded-lg" resizeMode="cover" />
       ) : null}
-      <Pressable
-        onPress={async () => {
-          const url = await pickAndUpload();
-          if (url) onChange(url);
-        }}
-        disabled={uploading}
-        className="flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
-        <Ionicons name="cloud-upload-outline" size={16} color="#2563EB" />
-        <Text className="text-primary font-semibold text-sm">
-          {uploading ? 'Uploading…' : value ? 'Replace image' : 'Upload image'}
-        </Text>
-      </Pressable>
+      <View className="flex-row gap-2">
+        <Pressable
+          onPress={async () => {
+            const url = await pickAndUpload();
+            if (url) onChange(url);
+          }}
+          disabled={uploading}
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          <Ionicons name="cloud-upload-outline" size={16} color="#2563EB" />
+          <Text className="text-primary font-semibold text-sm">
+            {uploading ? 'Uploading…' : value ? 'Replace image' : 'Upload image'}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setStockOpen(true)}
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          <Ionicons name="images-outline" size={16} color="#2563EB" />
+          <Text className="text-primary font-semibold text-sm">Stock photos</Text>
+        </Pressable>
+      </View>
       {error ? <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text> : null}
+      <StockPhotoPickerModal
+        visible={stockOpen}
+        onClose={() => setStockOpen(false)}
+        gymId={gymId}
+        defaultQuery={defaultStockQuery}
+        onPick={({ url }) => onChange(url)}
+      />
     </View>
   );
 }
@@ -230,10 +443,12 @@ function HeroInspector({
   block,
   onPatch,
   gymId,
+  defaultStockQuery,
 }: {
   block: HeroBlock;
   onPatch: (patch: Partial<HeroBlock>) => void;
   gymId: string;
+  defaultStockQuery: string;
 }) {
   return (
     <View className="gap-3">
@@ -267,7 +482,13 @@ function HeroInspector({
           ]}
         />
       </View>
-      <ImagePickerField label="Photo" value={block.imageUrl} onChange={(u) => onPatch({ imageUrl: u })} gymId={gymId} />
+      <ImagePickerField
+        label="Photo"
+        value={block.imageUrl}
+        onChange={(u) => onPatch({ imageUrl: u })}
+        gymId={gymId}
+        defaultStockQuery={defaultStockQuery}
+      />
     </View>
   );
 }
@@ -276,10 +497,12 @@ function AboutInspector({
   block,
   onPatch,
   gymId,
+  defaultStockQuery,
 }: {
   block: AboutBlock;
   onPatch: (patch: Partial<AboutBlock>) => void;
   gymId: string;
+  defaultStockQuery: string;
 }) {
   return (
     <View className="gap-3">
@@ -298,7 +521,13 @@ function AboutInspector({
         />
       </View>
       {block.layout !== 'none' ? (
-        <ImagePickerField label="Photo" value={block.imageUrl} onChange={(u) => onPatch({ imageUrl: u })} gymId={gymId} />
+        <ImagePickerField
+          label="Photo"
+          value={block.imageUrl}
+          onChange={(u) => onPatch({ imageUrl: u })}
+          gymId={gymId}
+          defaultStockQuery={defaultStockQuery}
+        />
       ) : null}
     </View>
   );
@@ -527,12 +756,15 @@ function GalleryInspector({
   block,
   onPatch,
   gymId,
+  defaultStockQuery,
 }: {
   block: GalleryBlock;
   onPatch: (patch: Partial<GalleryBlock>) => void;
   gymId: string;
+  defaultStockQuery: string;
 }) {
   const { pickAndUpload, uploading, error } = useImageUpload(gymId);
+  const [stockOpen, setStockOpen] = useState(false);
   return (
     <View className="gap-3">
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
@@ -548,21 +780,40 @@ function GalleryInspector({
           </View>
         ))}
       </View>
-      <Pressable
-        onPress={async () => {
-          const url = await pickAndUpload();
-          if (url) {
-            onPatch({
-              images: [...block.images, { id: `g_${Date.now().toString(36)}`, url, alt: '' }],
-            });
-          }
-        }}
-        disabled={uploading}
-        className="flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
-        <Ionicons name="cloud-upload-outline" size={16} color="#2563EB" />
-        <Text className="text-primary font-semibold text-sm">{uploading ? 'Uploading…' : 'Add a photo'}</Text>
-      </Pressable>
+      <View className="flex-row gap-2">
+        <Pressable
+          onPress={async () => {
+            const url = await pickAndUpload();
+            if (url) {
+              onPatch({
+                images: [...block.images, { id: `g_${Date.now().toString(36)}`, url, alt: '' }],
+              });
+            }
+          }}
+          disabled={uploading}
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          <Ionicons name="cloud-upload-outline" size={16} color="#2563EB" />
+          <Text className="text-primary font-semibold text-sm">{uploading ? 'Uploading…' : 'Add a photo'}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setStockOpen(true)}
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          <Ionicons name="images-outline" size={16} color="#2563EB" />
+          <Text className="text-primary font-semibold text-sm">Stock photos</Text>
+        </Pressable>
+      </View>
       {error ? <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text> : null}
+      <StockPhotoPickerModal
+        visible={stockOpen}
+        onClose={() => setStockOpen(false)}
+        gymId={gymId}
+        defaultQuery={defaultStockQuery}
+        onPick={({ url, alt }) =>
+          onPatch({
+            images: [...block.images, { id: `g_${Date.now().toString(36)}`, url, alt }],
+          })
+        }
+      />
     </View>
   );
 }
@@ -605,16 +856,32 @@ function BlockInspector({
   block,
   onPatch,
   gymId,
+  defaultStockQuery,
 }: {
   block: SiteBlock;
   onPatch: (patch: Partial<SiteBlock>) => void;
   gymId: string;
+  defaultStockQuery: string;
 }) {
   switch (block.type) {
     case 'hero':
-      return <HeroInspector block={block} onPatch={onPatch} gymId={gymId} />;
+      return (
+        <HeroInspector
+          block={block}
+          onPatch={onPatch}
+          gymId={gymId}
+          defaultStockQuery={defaultStockQuery}
+        />
+      );
     case 'about':
-      return <AboutInspector block={block} onPatch={onPatch} gymId={gymId} />;
+      return (
+        <AboutInspector
+          block={block}
+          onPatch={onPatch}
+          gymId={gymId}
+          defaultStockQuery={defaultStockQuery}
+        />
+      );
     case 'schedule':
       return <ScheduleInspector block={block} onPatch={onPatch} />;
     case 'pricing':
@@ -624,7 +891,14 @@ function BlockInspector({
     case 'testimonials':
       return <TestimonialsInspector block={block} onPatch={onPatch} />;
     case 'gallery':
-      return <GalleryInspector block={block} onPatch={onPatch} gymId={gymId} />;
+      return (
+        <GalleryInspector
+          block={block}
+          onPatch={onPatch}
+          gymId={gymId}
+          defaultStockQuery={defaultStockQuery}
+        />
+      );
     case 'location':
       return <LocationInspector block={block} onPatch={onPatch} />;
     case 'contact':
@@ -845,6 +1119,9 @@ export function SiteEditor({
 }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const blockPendingDelete = document.blocks.find((b) => b.id === confirmDeleteId) ?? null;
+  // Same themeId normalization website.tsx applies before persisting.
+  const defaultStockQuery =
+    DEFAULT_STOCK_QUERIES[isThemeId(document.settings.themeId) ? document.settings.themeId : 'forged'];
   const [addBlockModalOpen, setAddBlockModalOpen] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [pendingTemplate, setPendingTemplate] = useState<SiteTemplate | null>(null);
@@ -983,6 +1260,7 @@ export function SiteEditor({
                       block={block}
                       onPatch={(patch) => onChange(updateBlock(document, block.id, patch))}
                       gymId={gymId}
+                      defaultStockQuery={defaultStockQuery}
                     />
                     <View className="flex-row items-center justify-end gap-1.5">
                       <IconBtn

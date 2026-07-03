@@ -829,6 +829,16 @@ billing for it yet.
 - **Images** — hero/about/gallery uploads go to the `gym-website-assets`
   Storage bucket, gated the same way as the store's product-image
   bucket (`can_manage_website` + folder-scoped to the gym).
+- **Stock photos (Pexels)** — a "Stock photos" button beside every
+  image upload opens a search modal pre-filled per template archetype
+  (`DEFAULT_STOCK_QUERIES` in `site-templates.ts`). The `stock-photos`
+  edge function (`can_manage_website` + `website_builder_enabled`
+  gated) proxies the search and copies the picked photo into the gym's
+  `gym-website-assets` folder by numeric Pexels id only — the server
+  never fetches a client-supplied URL. The picker carries the
+  guideline-required Pexels/photographer credits; needs
+  `PEXELS_API_KEY` per `docs/pexels-photos-setup.md`, and degrades to
+  upload-only without it.
 - **Custom domains (Manage → Website → Domain)** — a gym can connect a
   domain they own so the site serves from it directly instead of only
   `/site/<slug>`. The `custom-domain` edge function registers the
