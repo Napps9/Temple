@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, Redirect } from 'expo-router';
+import { Link, Redirect, useNavigation } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Screen } from '@/components/Screen';
 import { SiteEditor } from '@/components/website/SiteEditor';
 import { SiteHtmlPreview } from '@/components/website/SiteHtmlPreview';
@@ -134,9 +135,15 @@ export default function WebsiteManageScreen() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [publishState, setPublishState] = useState<'idle' | 'working'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [pendingLeaveAction, setPendingLeaveAction] = useState<unknown>(null);
 
   const initialized = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // True whenever an edit hasn't finished round-tripping to the server —
+  // read by the nav-guard and beforeunload listeners below, not state,
+  // so an edit doesn't force those listener effects to re-run.
+  const unsavedRef = useRef(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (initialized.current || !site.data) return;
@@ -162,6 +169,7 @@ export default function WebsiteManageScreen() {
           setError(errorMessage(upErr, 'Could not save'));
         } else {
           setSaveState('saved');
+          unsavedRef.current = false;
         }
       },
     [document, site.data],
@@ -169,6 +177,7 @@ export default function WebsiteManageScreen() {
 
   useEffect(() => {
     if (!initialized.current) return;
+    unsavedRef.current = true;
     setSaveState('idle');
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void persist(), 1200);
@@ -176,6 +185,28 @@ export default function WebsiteManageScreen() {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, [persist]);
+
+  // In-app navigation (BackLink, the Domain link, tab/gesture back) goes
+  // through this listener; a real browser tab close/reload doesn't, so
+  // it's covered separately by beforeunload below.
+  useEffect(() => {
+    return navigation.addListener('beforeRemove', (e) => {
+      if (!unsavedRef.current) return;
+      e.preventDefault();
+      setPendingLeaveAction(e.data.action);
+    });
+  }, [navigation]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    function handler(e: BeforeUnloadEvent) {
+      if (!unsavedRef.current) return;
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
 
   if (canManageWebsite === false) return <Redirect href="/management" />;
 
@@ -251,8 +282,11 @@ export default function WebsiteManageScreen() {
 
   async function togglePublish() {
     if (!site.data) return;
-    setPublishState('working');
     const next = !site.data.published;
+    // Defense in depth — the Publish button's own `disabled` prop should
+    // already prevent reaching this, but never trust the client-only gate.
+    if (next && documentWarnings(document).length > 0) return;
+    setPublishState('working');
     const { error: pubErr } = await supabase
       .from('gym_websites')
       .update({ published: next, updated_at: new Date().toISOString() })
@@ -283,6 +317,10 @@ export default function WebsiteManageScreen() {
     supabaseAnonKey: '',
   });
   const warnings = documentWarnings(document);
+  // Only blocks the *publish* direction — an already-live site must
+  // always be unpublishable regardless of what the document looks like
+  // now. Mirrors the email builder's canSend: a hard gate, no override.
+  const blockedByWarnings = !site.data.published && warnings.length > 0;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -292,6 +330,9 @@ export default function WebsiteManageScreen() {
           <View className="flex-1 min-w-[160px]">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">Website</Text>
             <SaveIndicator state={saveState} />
+            {error ? (
+              <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+            ) : null}
           </View>
           {Platform.OS === 'web' ? (
             <Pressable
@@ -313,6 +354,7 @@ export default function WebsiteManageScreen() {
           <Button
             variant={site.data.published ? 'secondary' : 'primary'}
             loading={publishState === 'working'}
+            disabled={blockedByWarnings}
             onPress={togglePublish}>
             {site.data.published ? 'Unpublish' : 'Publish'}
           </Button>
@@ -336,7 +378,6 @@ export default function WebsiteManageScreen() {
             ))}
           </View>
         ) : null}
-        {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
 
         {showPreview && Platform.OS === 'web' ? (
           <ScrollView className="flex-1" contentContainerClassName="pb-4">
@@ -353,6 +394,21 @@ export default function WebsiteManageScreen() {
           </ScrollView>
         )}
       </View>
+
+      <ConfirmDialog
+        visible={pendingLeaveAction != null}
+        title="Leave without saving?"
+        body="Your latest changes haven't finished saving. If you leave now they'll be lost."
+        confirmLabel="Leave anyway"
+        cancelLabel="Stay"
+        onConfirm={() => {
+          unsavedRef.current = false;
+          const action = pendingLeaveAction;
+          setPendingLeaveAction(null);
+          if (action) navigation.dispatch(action as never);
+        }}
+        onCancel={() => setPendingLeaveAction(null)}
+      />
     </Screen>
   );
 }
