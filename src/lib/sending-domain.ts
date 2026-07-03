@@ -5,6 +5,10 @@
 // domain rules server-side (defence in depth — never trust the client),
 // so the blocklist intentionally lives in both places.
 
+import { FQDN_RE, type StatusTone } from './domain-utils';
+
+export type { StatusTone };
+
 export type DomainStatus = 'pending' | 'verified' | 'failed' | 'temporary_failure';
 
 // One DNS record Resend asks the gym to add. We render whatever fields
@@ -73,11 +77,6 @@ export function normalizeDomain(input: string): string {
     .replace(/\.$/, '');
 }
 
-// A conservative but standards-shaped FQDN check: 1-63 char labels of
-// [a-z0-9-] (no leading/trailing hyphen), at least one dot, an alpha TLD.
-const FQDN_RE =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
-
 export function isFreeEmailDomain(input: string): boolean {
   return FREE_EMAIL_DOMAINS.has(normalizeDomain(input));
 }
@@ -129,8 +128,6 @@ export function validateLocalPart(input: string): LocalPartValidation {
 export function fromAddress(d: Pick<SendingDomain, 'from_local' | 'domain'>): string {
   return `${d.from_local}@${d.domain}`;
 }
-
-export type StatusTone = 'gray' | 'amber' | 'green' | 'red';
 
 export function domainStatusMeta(status: DomainStatus): {
   label: string;

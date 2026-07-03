@@ -1,117 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
+import {
+  RecordCard,
+  StatusBadge,
+  StatusExplainer,
+  TONE,
+} from '@/components/domain/DomainCardParts';
 import { useCustomDomain, useCustomDomainAction } from '@/lib/custom-domain';
 import {
   domainStatusDescription,
   domainStatusMeta,
   validateCustomDomain,
   type DnsRecord,
-  type CustomDomainStatus,
-  type StatusTone,
 } from '@/lib/site-domain';
-
-const TONE: Record<StatusTone, { bg: string; text: string }> = {
-  gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-300' },
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
-  green: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400' },
-  red: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400' },
-};
-
-function copy(text: string) {
-  if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-    navigator.clipboard?.writeText(text);
-  }
-}
-
-function StatusBadge({ status }: { status: CustomDomainStatus }) {
-  const meta = domainStatusMeta(status);
-  const tone = TONE[meta.tone];
-  return (
-    <View className={`px-2 py-0.5 rounded-full ${tone.bg}`}>
-      <Text className={`text-[11px] font-semibold ${tone.text}`}>{meta.label}</Text>
-    </View>
-  );
-}
-
-// Prefers the row's own error_message: the generic 'error' copy tells
-// the gym to re-check DNS, which would mislead when the real problem is
-// e.g. the domain no longer being attached at all.
-function StatusExplainer({
-  status,
-  errorMessage,
-}: {
-  status: CustomDomainStatus;
-  errorMessage?: string | null;
-}) {
-  const tone = TONE[domainStatusMeta(status).tone];
-  return (
-    <View className={`rounded-lg p-3 ${tone.bg}`}>
-      <Text className={`text-xs leading-5 ${tone.text}`}>
-        {errorMessage ?? domainStatusDescription(status)}
-      </Text>
-    </View>
-  );
-}
-
-function CopyableValue({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-  function onCopy() {
-    copy(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-  return (
-    <View className="gap-1">
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] uppercase tracking-wide">
-        {label}
-      </Text>
-      <View className="flex-row items-center gap-2">
-        <Text
-          selectable
-          className="flex-1 text-gray-800 dark:text-gray-100 text-xs font-mono break-all"
-          style={Platform.OS === 'web' ? ({ wordBreak: 'break-all' } as object) : undefined}>
-          {value}
-        </Text>
-        <Pressable onPress={onCopy} hitSlop={6} className="active:opacity-70">
-          <Ionicons
-            name={copied ? 'checkmark' : 'copy-outline'}
-            size={15}
-            color={copied ? '#16A34A' : '#9CA3AF'}
-          />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function RecordCard({ record }: { record: DnsRecord }) {
-  return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
-      <View className="flex-row items-center gap-2">
-        <View className="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700">
-          <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-medium">
-            {record.type}
-          </Text>
-        </View>
-        {record.priority != null ? (
-          <Text className="text-gray-400 text-[10px]">priority {record.priority}</Text>
-        ) : null}
-      </View>
-      <CopyableValue label="Host / name" value={record.name} />
-      <CopyableValue label="Value" value={record.value} />
-      {record.note ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
-          {record.note}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
 
 export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }) {
   const query = useCustomDomain(gymId);
@@ -173,10 +79,16 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
         <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
           Custom domain
         </Text>
-        {domain ? <StatusBadge status={domain.status} /> : null}
+        {domain ? <StatusBadge meta={domainStatusMeta(domain.status)} /> : null}
       </View>
       {domain ? (
-        <StatusExplainer status={domain.status} errorMessage={domain.error_message} />
+        // Prefer the row's own error_message: the generic 'error' copy
+        // tells the gym to re-check DNS, which would mislead when the
+        // real problem is e.g. the domain no longer being attached.
+        <StatusExplainer
+          tone={domainStatusMeta(domain.status).tone}
+          text={domain.error_message ?? domainStatusDescription(domain.status)}
+        />
       ) : (
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           Connect a domain you own so your site serves from it directly, instead of only
@@ -251,18 +163,8 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
           ) : null}
 
           {verifyNote ? (
-            <View
-              className={`rounded-lg p-3 ${
-                verifyNote.tone === 'red' ? 'bg-red-500/10' : 'bg-amber-500/10'
-              }`}>
-              <Text
-                className={`text-xs ${
-                  verifyNote.tone === 'red'
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-amber-600 dark:text-amber-400'
-                }`}>
-                {verifyNote.text}
-              </Text>
+            <View className={`rounded-lg p-3 ${TONE[verifyNote.tone].bg}`}>
+              <Text className={`text-xs ${TONE[verifyNote.tone].text}`}>{verifyNote.text}</Text>
             </View>
           ) : null}
 

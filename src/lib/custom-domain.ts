@@ -8,6 +8,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { functionErrorMessage } from '@/lib/errors';
 import type { CustomDomainStatus } from '@/lib/site-domain';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
@@ -30,35 +31,17 @@ export function useCustomDomain(gymId: string | null | undefined) {
   });
 }
 
-export type CustomDomainAction =
+type CustomDomainAction =
   | { action: 'connect'; domain: string }
   | { action: 'verify' }
   | { action: 'disconnect' };
 
-// supabase.functions.invoke surfaces a non-2xx as a FunctionsHttpError whose
-// `.context` is the raw Response — our functions answer with { error } JSON,
-// so dig that friendly message out rather than showing "non-2xx status".
-async function functionErrorMessage(error: unknown): Promise<string> {
-  const ctx = (error as { context?: Response } | null)?.context;
-  if (ctx && typeof ctx.json === 'function') {
-    try {
-      const body = await ctx.json();
-      if (body?.error) return String(body.error);
-    } catch {
-      // not JSON — fall through
-    }
-  }
-  return error instanceof Error ? error.message : 'Something went wrong';
-}
-
 type CustomDomainActionResult = {
-  ok?: boolean;
   status?: CustomDomainStatus;
   // Verify-time detail: ownership (TXT challenge) and DNS routing are
   // separate Vercel signals — the card uses these to say precisely what
   // the gym is still waiting on.
   ownership_verified?: boolean;
-  misconfigured?: boolean;
   error_message?: string;
 };
 

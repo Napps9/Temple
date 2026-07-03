@@ -5,20 +5,21 @@
 // that file can't be unit-tested as-is because importing it pulls in
 // react-native-url-polyfill/AsyncStorage via @/lib/supabase.
 
+import { FQDN_RE, type DnsRecordDisplay, type StatusTone } from './domain-utils';
+
+export type { StatusTone };
+
 export type CustomDomainStatus = 'pending' | 'verified' | 'error';
 
 // `note` carries server-authored per-record guidance (e.g. "use the A
 // record for a root domain") inside the records jsonb, so the UI renders
 // it as-is without inferring record semantics client-side.
-export type DnsRecord = { type: string; name: string; value: string; priority?: number; note?: string };
+export type DnsRecord = DnsRecordDisplay;
 
-// A conservative but standards-shaped FQDN check: 1-63 char labels of
-// [a-z0-9-] (no leading/trailing hyphen), at least one dot, an alpha TLD.
-// Deliberately does NOT strip a leading "www." — unlike an email sending
-// domain (where www is just noise on the DNS host), "www.gym.com" and
-// "gym.com" are two different values a visitor's browser actually hits.
-const FQDN_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
-
+// normalizeDomain deliberately does NOT strip a leading "www." — unlike
+// an email sending domain (where www is just noise on the DNS host),
+// "www.gym.com" and "gym.com" are two different values a visitor's
+// browser actually hits.
 export function normalizeDomain(input: string): string {
   return input
     .trim()
@@ -38,8 +39,6 @@ export function validateCustomDomain(input: string): DomainValidation {
   }
   return { ok: true, domain };
 }
-
-export type StatusTone = 'gray' | 'amber' | 'green' | 'red';
 
 export function domainStatusMeta(status: CustomDomainStatus): { label: string; tone: StatusTone } {
   switch (status) {

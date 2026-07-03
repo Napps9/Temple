@@ -22,17 +22,8 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
+import { useGymWebsite } from '@/lib/use-gym-website';
 import type { Json } from '@/types/database';
-
-type SiteRow = {
-  id: string;
-  gym_id: string;
-  theme: string;
-  design: Json;
-  published: boolean;
-  created_at: string;
-  updated_at: string;
-};
 
 type GymWebsiteSettings = { websiteBuilderEnabled: boolean; currency: string };
 
@@ -48,22 +39,6 @@ function useGymWebsiteSettings(gymId: string | null | undefined) {
         .single();
       if (error) throw error;
       return { websiteBuilderEnabled: data.website_builder_enabled, currency: data.currency };
-    },
-  });
-}
-
-function useSite(gymId: string | null | undefined) {
-  return useQuery({
-    queryKey: ['gym-website', gymId],
-    enabled: !!gymId,
-    queryFn: async (): Promise<SiteRow | null> => {
-      const { data, error } = await supabase
-        .from('gym_websites')
-        .select('*')
-        .eq('gym_id', gymId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data as SiteRow | null;
     },
   });
 }
@@ -147,8 +122,10 @@ export default function WebsiteManageScreen() {
   const canManageWebsite = useCan('can_manage_website');
   const brand = useGymBrand();
   const settings = useGymWebsiteSettings(brand.gymId);
-  const site = useSite(brand.gymId);
-  const customDomain = useCustomDomain(brand.gymId);
+  const site = useGymWebsite(brand.gymId);
+  // Only relevant to the "Live at" label on a published site — skip the
+  // fetch entirely for drafts and not-yet-created sites.
+  const customDomain = useCustomDomain(site.data?.published ? brand.gymId : undefined);
   const queryClient = useQueryClient();
   const preview = useStaffPreviewData(brand.gymId);
 

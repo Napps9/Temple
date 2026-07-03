@@ -29,10 +29,16 @@ can't start.
 
 1. Owner/admin → Manage → Website → **Domain** → enters a domain.
 2. `custom-domain` (`can_manage_website`-gated) adds it via the Vercel
-   API and stores the DNS records it returns on `gym_website_domains`.
-3. Staff adds those records at their registrar, clicks **Verify**.
-4. Once Vercel confirms DNS, SSL is issued automatically — usually
-   within a few minutes of DNS propagating, occasionally longer.
+   API and stores the DNS records it returns on `gym_website_domains` —
+   both the A and the CNAME option, each named with the full domain,
+   plus a per-record note saying which to use (root domain → A,
+   subdomain → CNAME).
+3. Staff adds the right record at their registrar, clicks **Verify**.
+4. Verified means genuinely live: Vercel must confirm both domain
+   ownership (`verified`) and DNS routing (`misconfigured: false`) —
+   ownership alone is not enough, since Vercel reports it `true`
+   immediately for any fresh domain. SSL is issued automatically once
+   DNS resolves; https can take a minute or two on first connect.
 5. The domain now serves the gym's published site — a request on that
    domain is routed by `middleware.ts` (Vercel Routing Middleware),
    which resolves the `Host` header to a gym slug via

@@ -1,10 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
+import {
+  RecordCard,
+  StatusBadge,
+  StatusExplainer,
+  TONE,
+} from '@/components/domain/DomainCardParts';
 import { useThemeColors } from '@/lib/theme';
 import { formatDateTime, useSendingDomain, useSendingDomainAction } from '@/lib/comms';
 import {
@@ -14,101 +20,7 @@ import {
   validateLocalPart,
   validateSendingDomain,
   type DnsRecord,
-  type DomainStatus,
-  type StatusTone,
 } from '@/lib/sending-domain';
-
-const TONE: Record<StatusTone, { bg: string; text: string }> = {
-  gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-300' },
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
-  green: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400' },
-  red: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400' },
-};
-
-function copy(text: string) {
-  if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-    navigator.clipboard?.writeText(text);
-  }
-}
-
-function StatusBadge({ status }: { status: DomainStatus }) {
-  const meta = domainStatusMeta(status);
-  const tone = TONE[meta.tone];
-  return (
-    <View className={`px-2 py-0.5 rounded-full ${tone.bg}`}>
-      <Text className={`text-[11px] font-semibold ${tone.text}`}>{meta.label}</Text>
-    </View>
-  );
-}
-
-// Plain-language "here's what's happening / what to do" for the current
-// status, colour-matched to the badge.
-function StatusExplainer({ status }: { status: DomainStatus }) {
-  const tone = TONE[domainStatusMeta(status).tone];
-  return (
-    <View className={`rounded-lg p-3 ${tone.bg}`}>
-      <Text className={`text-xs leading-5 ${tone.text}`}>
-        {domainStatusDescription(status)}
-      </Text>
-    </View>
-  );
-}
-
-function CopyableValue({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-  function onCopy() {
-    copy(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-  return (
-    <View className="gap-1">
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] uppercase tracking-wide">
-        {label}
-      </Text>
-      <View className="flex-row items-center gap-2">
-        <Text
-          selectable
-          className="flex-1 text-gray-800 dark:text-gray-100 text-xs font-mono break-all"
-          style={Platform.OS === 'web' ? ({ wordBreak: 'break-all' } as object) : undefined}>
-          {value}
-        </Text>
-        <Pressable onPress={onCopy} hitSlop={6} className="active:opacity-70">
-          <Ionicons
-            name={copied ? 'checkmark' : 'copy-outline'}
-            size={15}
-            color={copied ? '#16A34A' : '#9CA3AF'}
-          />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function RecordCard({ record }: { record: DnsRecord }) {
-  const heading = record.record || record.type || 'DNS record';
-  return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
-      <View className="flex-row items-center gap-2">
-        <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
-          {heading}
-        </Text>
-        {record.type ? (
-          <View className="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700">
-            <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-medium">
-              {record.type}
-            </Text>
-          </View>
-        ) : null}
-        {record.priority != null ? (
-          <Text className="text-gray-400 text-[10px]">priority {record.priority}</Text>
-        ) : null}
-      </View>
-      {record.name ? <CopyableValue label="Host / name" value={record.name} /> : null}
-      {record.value ? <CopyableValue label="Value" value={record.value} /> : null}
-    </View>
-  );
-}
 
 export function SendingDomainCard() {
   const colors = useThemeColors();
@@ -179,10 +91,13 @@ export function SendingDomainCard() {
         <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
           Sending domain
         </Text>
-        {domain ? <StatusBadge status={domain.status} /> : null}
+        {domain ? <StatusBadge meta={domainStatusMeta(domain.status)} /> : null}
       </View>
       {domain ? (
-        <StatusExplainer status={domain.status} />
+        <StatusExplainer
+          tone={domainStatusMeta(domain.status).tone}
+          text={domainStatusDescription(domain.status)}
+        />
       ) : (
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           Authenticate a domain you own to send from your own address — best
@@ -311,18 +226,8 @@ export function SendingDomainCard() {
           )}
 
           {verifyNote ? (
-            <View
-              className={`rounded-lg p-3 ${
-                verifyNote.tone === 'red' ? 'bg-red-500/10' : 'bg-amber-500/10'
-              }`}>
-              <Text
-                className={`text-xs ${
-                  verifyNote.tone === 'red'
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-amber-600 dark:text-amber-400'
-                }`}>
-                {verifyNote.text}
-              </Text>
+            <View className={`rounded-lg p-3 ${TONE[verifyNote.tone].bg}`}>
+              <Text className={`text-xs ${TONE[verifyNote.tone].text}`}>{verifyNote.text}</Text>
             </View>
           ) : null}
 

@@ -608,8 +608,12 @@ function downloadJson(filename: string, data: unknown) {
   const anchor = window.document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
+  window.document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  // Deferred: a synchronous revoke races the browser's own fetch of the
+  // blob URL — the download can silently produce nothing on WebKit/Gecko.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 export function SiteEditor({
