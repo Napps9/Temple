@@ -135,38 +135,52 @@ function ManageNav({
   onSelect: (c: Category) => void;
   vertical: boolean;
 }) {
+  const pills = categories.map((c) => {
+    const selected = c === active;
+    return (
+      <Pressable
+        key={c}
+        onPress={() => onSelect(c)}
+        className={`flex-row items-center gap-2.5 rounded-lg px-3 py-2.5 active:opacity-80 ${
+          vertical ? 'w-full' : ''
+        } ${
+          selected
+            ? 'bg-primary shadow-card'
+            : vertical
+              ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
+              : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
+        }`}>
+        <Ionicons
+          name={CATEGORY_ICONS[c]}
+          size={17}
+          color={selected ? '#FFFFFF' : '#6B7280'}
+        />
+        <Text
+          className={`text-sm font-medium ${
+            selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+          }`}>
+          {CATEGORY_LABELS[c]}
+        </Text>
+      </Pressable>
+    );
+  });
+
+  if (vertical) {
+    return <View className="gap-1">{pills}</View>;
+  }
+
+  // Mobile: a single horizontal strip that bleeds to the screen edges
+  // (the parent content padding is px-4) rather than wrapping into
+  // ragged rows. The last pill peeking off the right edge is the scroll
+  // affordance.
   return (
-    <View className={vertical ? 'gap-1' : 'flex-row flex-wrap gap-2'}>
-      {categories.map((c) => {
-        const selected = c === active;
-        return (
-          <Pressable
-            key={c}
-            onPress={() => onSelect(c)}
-            className={`flex-row items-center gap-2.5 rounded-lg px-3 py-2.5 active:opacity-80 ${
-              vertical ? 'w-full' : ''
-            } ${
-              selected
-                ? 'bg-primary shadow-card'
-                : vertical
-                  ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
-                  : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
-            }`}>
-            <Ionicons
-              name={CATEGORY_ICONS[c]}
-              size={17}
-              color={selected ? '#FFFFFF' : '#6B7280'}
-            />
-            <Text
-              className={`text-sm font-medium ${
-                selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
-              }`}>
-              {CATEGORY_LABELS[c]}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      className="-mx-4"
+      contentContainerClassName="flex-row gap-2 px-4">
+      {pills}
+    </ScrollView>
   );
 }
 
