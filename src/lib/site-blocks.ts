@@ -432,13 +432,13 @@ export function documentWarnings(doc: SiteDocument): string[] {
       warnings.push('The hero block has no headline.');
     }
     if (b.type === 'testimonials' && b.quotes.length === 0) {
-      warnings.push('The testimonials block has no quotes yet.');
+      warnings.push('The testimonials block is empty — add real member quotes or delete the block.');
     }
     if (b.type === 'gallery' && b.images.length === 0) {
       warnings.push('The gallery block has no photos yet.');
     }
     if (b.type === 'location' && !b.address.trim()) {
-      warnings.push('The location block has no address.');
+      warnings.push('The location block needs your real address before you publish.');
     }
   }
   return warnings;
