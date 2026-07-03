@@ -767,7 +767,7 @@ export function SiteEditor({
   );
 
   return (
-    <View className="lg:flex-row gap-3">
+    <View className={compact ? 'gap-3' : 'lg:flex-row gap-3'}>
       {compact ? (
         <Pressable
           onPress={() => setAddBlockModalOpen(true)}
