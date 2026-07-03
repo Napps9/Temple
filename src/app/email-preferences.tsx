@@ -88,6 +88,7 @@ export default function EmailPreferencesScreen() {
               </Text>
             </View>
             <Switch
+              accessibilityLabel="Receive any emails from this gym"
               value={!blanketUnsub}
               onValueChange={(v) => setBlanket.mutate(!v)}
               disabled={setBlanket.isPending}
@@ -136,6 +137,7 @@ export default function EmailPreferencesScreen() {
                     ) : null}
                   </View>
                   <Switch
+                    accessibilityLabel={t.label}
                     value={t.subscribed && !blanketUnsub}
                     onValueChange={(v) =>
                       setTopic.mutate({

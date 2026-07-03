@@ -709,7 +709,9 @@ function TestimonialsInspector({
                 onPress={() =>
                   onPatch({ quotes: block.quotes.filter((x) => x.id !== q.id) })
                 }
-                hitSlop={6}>
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Delete quote">
                 <Ionicons name="trash-outline" size={15} color="#EF4444" />
               </Pressable>
             </View>

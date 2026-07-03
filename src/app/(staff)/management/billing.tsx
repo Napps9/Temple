@@ -267,6 +267,7 @@ export default function BillingScreen() {
               </Text>
             </View>
             <Switch
+              accessibilityLabel="Members can choose and pay"
               value={selfCheckout.data ?? true}
               onValueChange={(v) => setSelfCheckout.mutate(v)}
               disabled={selfCheckout.isLoading || setSelfCheckout.isPending}
@@ -292,6 +293,7 @@ export default function BillingScreen() {
               </Text>
             </View>
             <Switch
+              accessibilityLabel="Require a membership to book"
               value={requireMembership.data ?? false}
               onValueChange={(v) => setRequireMembership.mutate(v)}
               disabled={

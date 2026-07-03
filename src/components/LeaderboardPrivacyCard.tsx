@@ -63,6 +63,7 @@ export function LeaderboardPrivacyCard() {
           </Text>
         </View>
         <Switch
+          accessibilityLabel="Show me on leaderboards"
           value={value}
           onValueChange={(v) => flip.mutate(v)}
           disabled={state.isLoading || flip.isPending}

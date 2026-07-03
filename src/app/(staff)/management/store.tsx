@@ -427,6 +427,7 @@ function ProductEditor({
             </Text>
           </View>
           <Switch
+            accessibilityLabel="Recurring (monthly)"
             value={d.recurring}
             onValueChange={(v) =>
               set(
@@ -502,6 +503,7 @@ function ProductEditor({
                 </Text>
               </View>
               <Switch
+                accessibilityLabel="Track inventory"
                 value={d.track_inventory}
                 onValueChange={(v) => set({ track_inventory: v })}
               />
@@ -585,6 +587,7 @@ function ProductEditor({
             </Text>
           </View>
           <Switch
+            accessibilityLabel="Visible in store"
             value={d.active}
             onValueChange={(v) => set({ active: v })}
           />
@@ -923,7 +926,11 @@ function StoreSettingsPanel() {
             When on, members see the Store in their account.
           </Text>
         </View>
-        <Switch value={enabledValue} onValueChange={setEnabled} />
+        <Switch
+          accessibilityLabel="Store open"
+          value={enabledValue}
+          onValueChange={setEnabled}
+        />
       </View>
       <Input
         label={`Shipping fee (${currency})`}

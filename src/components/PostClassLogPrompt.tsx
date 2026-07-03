@@ -103,7 +103,12 @@ export function PostClassLogPrompt() {
             You trained {when} — log your result while it's fresh.
           </Text>
         </View>
-        <Pressable onPress={() => setDismissed(true)} hitSlop={8} className="active:opacity-70">
+        <Pressable
+          onPress={() => setDismissed(true)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss"
+          className="active:opacity-70">
           <Ionicons name="close" size={18} color="#9CA3AF" />
         </Pressable>
       </View>

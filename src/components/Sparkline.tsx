@@ -9,11 +9,15 @@ export function Sparkline({
   color,
   height = 36,
   width = 120,
+  label,
 }: {
   values: number[];
   color: string;
   height?: number;
   width?: number;
+  // Spoken summary for screen readers — the polyline itself is
+  // invisible to them. Omitting it leaves the chart decorative.
+  label?: string;
 }) {
   if (values.length < 2) return null;
 
@@ -59,7 +63,11 @@ export function Sparkline({
   const lastY = pad + (1 - values[values.length - 1]) * innerH;
 
   return (
-    <View style={{ width, height }}>
+    <View
+      style={{ width, height }}
+      accessibilityRole={label ? 'image' : 'none'}
+      accessibilityLabel={label}
+      importantForAccessibility={label ? 'yes' : 'no-hide-descendants'}>
       {segments}
       <View
         style={{

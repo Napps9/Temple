@@ -80,6 +80,8 @@ export function MonthPickerModal({
             <Pressable
               onPress={() => onChangeMonth(-1)}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Previous month"
               className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
               <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
             </Pressable>
@@ -89,6 +91,8 @@ export function MonthPickerModal({
             <Pressable
               onPress={() => onChangeMonth(1)}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Next month"
               className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
               <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
             </Pressable>

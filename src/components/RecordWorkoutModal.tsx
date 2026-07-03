@@ -558,9 +558,15 @@ export function RecordWorkoutModal({
       onRequestClose={close}>
       <Pressable
         onPress={close}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Record workout"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[92vh]">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
@@ -653,7 +659,11 @@ export function RecordWorkoutModal({
           </ScrollView>
 
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-sm">
+              {error}
+            </Text>
           ) : null}
 
           <View className="flex-row gap-3">
@@ -1044,7 +1054,9 @@ function EntriesTable({
             </Text>
             <Pressable
               onPress={() => onRemoveEntry(j)}
-              hitSlop={4}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Remove entry"
               className="w-7 h-7 rounded items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
               <Ionicons name="close" size={14} color="#9CA3AF" />
             </Pressable>
@@ -1144,7 +1156,9 @@ function QuickFillBar({
         </Text>
         <Pressable
           onPress={() => setExpanded(false)}
-          hitSlop={4}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Close quick fill"
           className="w-6 h-6 rounded items-center justify-center active:opacity-70">
           <Ionicons name="close" size={14} color="#9CA3AF" />
         </Pressable>
@@ -1357,9 +1371,15 @@ function TagEditModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Edit tag"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm gap-3">
           <View className="gap-1">
             <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
@@ -1507,7 +1527,10 @@ function MovementTagPickerModal({
             onPress={() =>
               setExpandedMovement((cur) => (cur === m.key ? null : m.key))
             }
-            hitSlop={4}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${m.name} rep schemes`}
+            accessibilityState={{ expanded: expandedMovement === m.key }}
             className="w-8 h-8 rounded items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-800">
             <Ionicons
               name={expandedMovement === m.key ? 'chevron-up' : 'chevron-down'}
@@ -1540,9 +1563,15 @@ function MovementTagPickerModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Tag a movement"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Tag a movement
@@ -1557,12 +1586,17 @@ function MovementTagPickerModal({
               value={search}
               onChangeText={setSearch}
               placeholder="Search all movements"
+              accessibilityLabel="Search all movements"
               placeholderTextColor="#9CA3AF"
               autoCorrect={false}
               className="flex-1 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
             />
             {q ? (
-              <Pressable onPress={() => setSearch('')} hitSlop={8}>
+              <Pressable
+                onPress={() => setSearch('')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search">
                 <Ionicons name="close-circle" size={16} color="#9CA3AF" />
               </Pressable>
             ) : null}
@@ -1583,6 +1617,8 @@ function MovementTagPickerModal({
                     onPress={() =>
                       setExpandedGroup((cur) => (cur === g.key ? null : g.key))
                     }
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: expandedGroup === g.key }}
                     className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:opacity-70">
                     <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
                       {g.name}
@@ -1632,9 +1668,15 @@ function PickerModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel={title}
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             {title}

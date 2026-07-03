@@ -141,6 +141,8 @@ function ManageNav({
       <Pressable
         key={c}
         onPress={() => onSelect(c)}
+        accessibilityRole="tab"
+        accessibilityState={{ selected }}
         className={`flex-row items-center gap-2.5 rounded-lg px-3 py-2.5 active:opacity-80 ${
           vertical ? 'w-full' : ''
         } ${
@@ -618,6 +620,8 @@ function PolicyRow({
             <Pressable
               key={opt}
               onPress={() => onChange(opt)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
               className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                 selected
                   ? 'bg-primary border-primary'
@@ -1031,6 +1035,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
                     </Text>
                   </View>
                   <Switch
+                    accessibilityLabel={ct.name}
                     value={qualified}
                     onValueChange={(v) =>
                       toggle.mutate({ classTypeId: ct.id, next: v })

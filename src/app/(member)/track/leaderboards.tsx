@@ -106,6 +106,8 @@ export default function LeaderboardsIndex() {
               <Pressable
                 key={key}
                 onPress={() => setActiveKey(key)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
                 className={`rounded-full px-3 py-1.5 border active:opacity-70 ${
                   selected
                     ? 'bg-primary border-primary'

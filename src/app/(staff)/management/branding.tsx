@@ -409,7 +409,11 @@ export function BrandingPanel() {
                 When on, anyone with your join link can sign up as a member.
               </Text>
             </View>
-            <Switch value={publicSignup} onValueChange={setPublicSignup} />
+            <Switch
+              accessibilityLabel="Public signup"
+              value={publicSignup}
+              onValueChange={setPublicSignup}
+            />
           </View>
           {publicSignup && cleanedSlug ? (
             <View className="gap-1">
@@ -442,7 +446,11 @@ export function BrandingPanel() {
                 details — they land in Manage → Leads as a cold lead.
               </Text>
             </View>
-            <Switch value={leadCapture} onValueChange={setLeadCapture} />
+            <Switch
+              accessibilityLabel="Lead capture form"
+              value={leadCapture}
+              onValueChange={setLeadCapture}
+            />
           </View>
           {leadCapture && cleanedSlug ? (
             <View className="gap-1">

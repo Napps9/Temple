@@ -275,7 +275,13 @@ export function MovementDetailView({
                     )}
                   </View>
                   {series.length >= 2 ? (
-                    <Sparkline values={series} color={colors.primary} width={88} height={32} />
+                    <Sparkline
+                      values={series}
+                      color={colors.primary}
+                      width={88}
+                      height={32}
+                      label={`${scheme.label} trend, ${series.length} results`}
+                    />
                   ) : null}
                   <Text
                     className={
@@ -404,6 +410,8 @@ function MovementLeaderboardSection({
           <Pressable
             key={s.key}
             onPress={() => setActiveScheme(s.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: s.key === scheme.key }}
             className={`rounded-full px-3 py-1 border active:opacity-70 ${
               s.key === scheme.key
                 ? 'bg-primary border-primary'

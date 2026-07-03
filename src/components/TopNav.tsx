@@ -92,6 +92,11 @@ export function TopNav({
               router.replace(s.href as never);
             }}
             hitSlop={4}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            // The label Text is display:none on phones for inactive
+            // pills, so the accessible name must not depend on it.
+            accessibilityLabel={s.label}
             className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
               active
                 ? 'bg-white dark:bg-gray-700 shadow-pill'

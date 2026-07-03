@@ -335,7 +335,8 @@ function ViewIconToggle({ view }: { view: string }) {
               haptic.selection();
               router.setParams({ view: o.key });
             }}
-            accessibilityRole="button"
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
             accessibilityLabel={o.label}
             className={`w-9 h-8 rounded-full items-center justify-center ${
               active ? 'bg-white dark:bg-gray-700 shadow-pill' : ''

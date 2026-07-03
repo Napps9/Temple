@@ -664,6 +664,8 @@ export function ClassTypesPanel() {
                         if (openPickerIdx === idx) setOpenPickerIdx(null);
                       }}
                       hitSlop={4}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove"
                       className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
                       <Ionicons name="close" size={18} color="#9CA3AF" />
                     </Pressable>
