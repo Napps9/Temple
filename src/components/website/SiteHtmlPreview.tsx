@@ -1,10 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View } from 'react-native';
+import { Text, View, type DimensionValue } from 'react-native';
 
-// Native fallback — the rendered-HTML preview needs an iframe, web-only.
-// On native, the block list in SiteEditor already shows the content and
-// order; this just points the owner at the web build for an exact render.
-export function SiteHtmlPreview({ height = 200 }: { html: string; height?: number }) {
+// Native fallback — the rendered-HTML preview (and on-canvas editing)
+// needs an iframe, web-only. On native, the block list in SiteEditor
+// already shows the content and order and stays fully editable there;
+// this just points the owner at the web build for an exact render.
+export function SiteHtmlPreview({
+  height = 200,
+}: {
+  html: string;
+  height?: DimensionValue;
+  editable?: boolean;
+  syncKey?: number;
+  onFieldChange?: (path: string, value: string) => void;
+  selectedBlockId?: string | null;
+  onCanvasSelect?: (blockId: string | null) => void;
+}) {
   return (
     <View
       style={{ height }}

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { useState, type ComponentProps } from 'react';
-import { Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useState, type ComponentProps, type ReactNode } from 'react';
+import { Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -597,6 +597,81 @@ function ThemePicker({
 }
 
 // ---------------------------------------------------------------------------
+// Compact-mode pieces — only rendered when SiteEditor's `compact` prop is
+// true (narrow web / split-view rail), replacing the static "Add a
+// block" column and the always-open Theme/Ownership column with a
+// trigger + modal and a collapsed-by-default section, to leave room
+// for the live canvas alongside the rail.
+// ---------------------------------------------------------------------------
+
+// Same collapsible shape as management/index.tsx's SettingsSection —
+// replicated locally, not shared, matching this editor's existing
+// convention of not sharing UI primitives across editors.
+function CollapsibleSection({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: IconName;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="flex-row items-center gap-2.5 active:opacity-70">
+        <Ionicons name={icon} size={16} color="#6B7280" />
+        <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+          {title}
+        </Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color="#9CA3AF" />
+      </Pressable>
+      {open ? <View className="gap-3 pt-3">{children}</View> : null}
+    </View>
+  );
+}
+
+// Same Modal/backdrop/rounded-panel shell as ConfirmDialog, not
+// ConfirmDialog itself — that component is shaped for a single
+// destructive confirm action, not a list of choices.
+function AddBlockModal({
+  visible,
+  onClose,
+  onPick,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onPick: (type: SiteBlockType) => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
+          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">Add a block</Text>
+          <View className="gap-2">
+            {ADDABLE.map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => onPick(type)}
+                className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+                <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color="#6B7280" />
+                <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                  {SITE_BLOCK_LABELS[type]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Editor
 // ---------------------------------------------------------------------------
 
@@ -622,28 +697,39 @@ export function SiteEditor({
   onChange,
   gymId,
   brandPrimaryColor,
+  compact = false,
+  selectedId,
+  onSelectBlock,
 }: {
   document: SiteDocument;
   onChange: (doc: SiteDocument) => void;
   gymId: string;
   brandPrimaryColor: string;
+  // Narrows the palette/theme columns to a trigger + modal and a
+  // collapsed section, leaving room for a canvas alongside the rail.
+  compact?: boolean;
+  // Owned by the parent (website.tsx), which is the only place that
+  // can see both this block list and the live canvas, so selection
+  // can sync both ways between them.
+  selectedId: string | null;
+  onSelectBlock: (id: string | null) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = document.blocks.find((b) => b.id === selectedId) ?? null;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const blockPendingDelete = document.blocks.find((b) => b.id === confirmDeleteId) ?? null;
+  const [addBlockModalOpen, setAddBlockModalOpen] = useState(false);
 
   function confirmDelete() {
     if (!confirmDeleteId) return;
     onChange(removeBlock(document, confirmDeleteId));
-    setSelectedId(null);
+    onSelectBlock(null);
     setConfirmDeleteId(null);
   }
 
   function addBlock(type: SiteBlockType) {
     const block = createBlock(type);
     onChange(appendBlock(document, block));
-    setSelectedId(block.id);
+    onSelectBlock(block.id);
+    setAddBlockModalOpen(false);
   }
 
   const blockButtons = ADDABLE.map((type) => (
@@ -658,14 +744,45 @@ export function SiteEditor({
     </Pressable>
   ));
 
+  const themeAndOwnership = (
+    <>
+      <ThemePicker document={document} onChange={onChange} brandPrimaryColor={brandPrimaryColor} />
+      {Platform.OS === 'web' ? (
+        <View className="gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+            Ownership
+          </Text>
+          <ChipButton
+            label="Download design (JSON)"
+            icon="download-outline"
+            tone="neutral"
+            onPress={() => downloadJson('site-design.json', document)}
+          />
+          <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+            A snapshot of your page content — not a working website file.
+          </Text>
+        </View>
+      ) : null}
+    </>
+  );
+
   return (
     <View className="lg:flex-row gap-3">
-      <View className="lg:w-48 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
-          Add a block
-        </Text>
-        <View className="gap-2">{blockButtons}</View>
-      </View>
+      {compact ? (
+        <Pressable
+          onPress={() => setAddBlockModalOpen(true)}
+          className="flex-row items-center justify-center gap-2 bg-white dark:bg-gray-900 rounded-xl p-3 active:opacity-70">
+          <Ionicons name="add-circle-outline" size={16} color="#6B7280" />
+          <Text className="text-gray-700 dark:text-gray-200 font-medium text-sm">Add block</Text>
+        </Pressable>
+      ) : (
+        <View className="lg:w-48 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
+          <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+            Add a block
+          </Text>
+          <View className="gap-2">{blockButtons}</View>
+        </View>
+      )}
 
       <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
         <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
@@ -684,7 +801,7 @@ export function SiteEditor({
             return (
               <View key={block.id}>
                 <Pressable
-                  onPress={() => setSelectedId(isSelected ? null : block.id)}
+                  onPress={() => onSelectBlock(isSelected ? null : block.id)}
                   className={`flex-row items-center gap-2 rounded-lg px-3 py-2.5 ${
                     isSelected
                       ? 'bg-primary/10 border border-primary'
@@ -740,25 +857,23 @@ export function SiteEditor({
         )}
       </View>
 
-      <View className="lg:w-64 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
-        <ThemePicker document={document} onChange={onChange} brandPrimaryColor={brandPrimaryColor} />
-        {Platform.OS === 'web' ? (
-          <View className="gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
-              Ownership
-            </Text>
-            <ChipButton
-              label="Download design (JSON)"
-              icon="download-outline"
-              tone="neutral"
-              onPress={() => downloadJson('site-design.json', document)}
-            />
-            <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
-              A snapshot of your page content — not a working website file.
-            </Text>
-          </View>
-        ) : null}
-      </View>
+      {compact ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+          <CollapsibleSection title="Theme & ownership" icon="color-palette-outline">
+            {themeAndOwnership}
+          </CollapsibleSection>
+        </View>
+      ) : (
+        <View className="lg:w-64 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+          {themeAndOwnership}
+        </View>
+      )}
+
+      <AddBlockModal
+        visible={addBlockModalOpen}
+        onClose={() => setAddBlockModalOpen(false)}
+        onPick={addBlock}
+      />
 
       <ConfirmDialog
         visible={blockPendingDelete != null}

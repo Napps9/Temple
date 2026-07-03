@@ -2,7 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Redirect, useNavigation } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
@@ -13,15 +21,20 @@ import { SiteHtmlPreview } from '@/components/website/SiteHtmlPreview';
 import { BRAND_THEMES, composeThemeWithBrand, isThemeId } from '@/lib/brand-themes';
 import { useCustomDomain } from '@/lib/custom-domain';
 import { errorMessage } from '@/lib/errors';
+import { isFieldEditable, parseFieldPath } from '@/lib/site-canvas-sync';
 import { renderSiteHtml, type PublicPlan, type ScheduleSession } from '@/lib/site-render';
 import {
   coerceDocument,
   documentWarnings,
   starterDocument,
+  updateBlock,
+  type SiteBlock,
   type SiteDocument,
+  type TestimonialsBlock,
 } from '@/lib/site-blocks';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useGymWebsite } from '@/lib/use-gym-website';
 import type { Json } from '@/types/database';
@@ -136,6 +149,15 @@ export default function WebsiteManageScreen() {
   const [publishState, setPublishState] = useState<'idle' | 'working'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [pendingLeaveAction, setPendingLeaveAction] = useState<unknown>(null);
+  // Bumped only by side-panel/structural edits (block add/remove/reorder,
+  // theme changes) — never by canvas keystrokes — so the debounced,
+  // syncKey-keyed effect in SiteHtmlPreview.web.tsx can never reload the
+  // iframe mid-keystroke. See handlePanelChange/handleCanvasFieldChange.
+  const [structuralVersion, setStructuralVersion] = useState(0);
+  const debouncedSyncKey = useDebouncedValue(structuralVersion, 350);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { width } = useWindowDimensions();
+  const isSplitView = Platform.OS === 'web' && width >= 1280;
 
   const initialized = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -302,6 +324,36 @@ export default function WebsiteManageScreen() {
     });
   }
 
+  // Side-panel/structural edits: always reload the canvas (debounced via
+  // structuralVersion → debouncedSyncKey), since these genuinely change
+  // the rendered DOM shape (a block was added/removed/reordered, the
+  // theme changed).
+  function handlePanelChange(next: SiteDocument) {
+    setDocument(next);
+    setStructuralVersion((v) => v + 1);
+  }
+
+  // Canvas keystrokes: write straight into document state without ever
+  // touching structuralVersion, so they can never trigger an iframe
+  // reload — see SiteHtmlPreview.web.tsx's syncKey-keyed effect.
+  function handleCanvasFieldChange(path: string, value: string) {
+    const parsed = parseFieldPath(path);
+    if (!parsed) return;
+    setDocument((prev) => {
+      const block = prev.blocks.find((b) => b.id === parsed.blockId);
+      if (!block || !isFieldEditable(block.type, parsed)) return prev;
+      if (parsed.kind === 'array-item') {
+        if (block.type !== 'testimonials') return prev;
+        const quotes = block.quotes.map((q) =>
+          q.id === parsed.itemId ? { ...q, [parsed.field]: value } : q,
+        );
+        return updateBlock<TestimonialsBlock>(prev, block.id, { quotes });
+      }
+      const patch: Record<string, string> = { [parsed.field]: value };
+      return updateBlock<SiteBlock>(prev, block.id, patch as Partial<SiteBlock>);
+    });
+  }
+
   const themeId = isThemeId(document.settings.themeId) ? document.settings.themeId : 'forged';
   const composedTheme = composeThemeWithBrand(BRAND_THEMES[themeId], brand.primaryColor);
   const previewHtml = renderSiteHtml(document, {
@@ -335,7 +387,7 @@ export default function WebsiteManageScreen() {
               <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
             ) : null}
           </View>
-          {Platform.OS === 'web' ? (
+          {Platform.OS === 'web' && !isSplitView ? (
             <Pressable
               onPress={() => setShowPreview((v) => !v)}
               hitSlop={6}
@@ -380,17 +432,53 @@ export default function WebsiteManageScreen() {
           </View>
         ) : null}
 
-        {showPreview && Platform.OS === 'web' ? (
+        {isSplitView ? (
+          <View className="flex-1 flex-row gap-4">
+            <View className="w-[460px] shrink-0">
+              <ScrollView className="flex-1" contentContainerClassName="pb-4">
+                <SiteEditor
+                  document={document}
+                  onChange={handlePanelChange}
+                  gymId={brand.gymId ?? ''}
+                  brandPrimaryColor={brand.primaryColor}
+                  compact
+                  selectedId={selectedId}
+                  onSelectBlock={setSelectedId}
+                />
+              </ScrollView>
+            </View>
+            <View className="flex-1">
+              <SiteHtmlPreview
+                html={previewHtml}
+                editable
+                syncKey={debouncedSyncKey}
+                onFieldChange={handleCanvasFieldChange}
+                selectedBlockId={selectedId}
+                onCanvasSelect={setSelectedId}
+                height="100%"
+              />
+            </View>
+          </View>
+        ) : showPreview && Platform.OS === 'web' ? (
           <ScrollView className="flex-1" contentContainerClassName="pb-4">
-            <SiteHtmlPreview html={previewHtml} />
+            <SiteHtmlPreview
+              html={previewHtml}
+              editable
+              syncKey={debouncedSyncKey}
+              onFieldChange={handleCanvasFieldChange}
+              selectedBlockId={selectedId}
+              onCanvasSelect={setSelectedId}
+            />
           </ScrollView>
         ) : (
           <ScrollView className="flex-1" contentContainerClassName="pb-4">
             <SiteEditor
               document={document}
-              onChange={setDocument}
+              onChange={handlePanelChange}
               gymId={brand.gymId ?? ''}
               brandPrimaryColor={brand.primaryColor}
+              selectedId={selectedId}
+              onSelectBlock={setSelectedId}
             />
           </ScrollView>
         )}
