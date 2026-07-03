@@ -4,6 +4,7 @@ import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Input } from '@/components/Input';
 import {
   RecordCard,
@@ -28,6 +29,7 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
   const [verifyNote, setVerifyNote] = useState<{ tone: 'amber' | 'red'; text: string } | null>(
     null,
   );
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
   const domain = query.data;
   const records = (domain?.records as unknown as DnsRecord[] | null) ?? [];
@@ -38,6 +40,10 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
     const d = validateCustomDomain(domainInput);
     if (!d.ok) return setFormError(d.error);
     action.mutate({ action: 'connect', domain: d.domain });
+  }
+
+  function disconnect() {
+    action.mutate({ action: 'disconnect' }, { onSettled: () => setConfirmDisconnect(false) });
   }
 
   // A plain success is silent (the card flips to Verified); anything else
@@ -132,7 +138,7 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
               tone="red"
               label="Disconnect domain"
               icon="close-circle-outline"
-              onPress={() => action.mutate({ action: 'disconnect' })}
+              onPress={() => setConfirmDisconnect(true)}
               disabled={action.isPending}
             />
           </View>
@@ -176,7 +182,7 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
               tone="red"
               label="Disconnect domain"
               icon="close-circle-outline"
-              onPress={() => action.mutate({ action: 'disconnect' })}
+              onPress={() => setConfirmDisconnect(true)}
               disabled={action.isPending}
             />
           </View>
@@ -186,6 +192,20 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
       {actionError ? (
         <Text className="text-red-500 dark:text-red-400 text-xs">{actionError}</Text>
       ) : null}
+
+      <ConfirmDialog
+        visible={confirmDisconnect}
+        title="Disconnect this domain?"
+        body={
+          domain?.status === 'verified'
+            ? `Your site is currently live at ${domain.domain}. Disconnecting takes it offline until you reconnect and re-verify.`
+            : "You'll need to reconnect and re-verify DNS if you want to use this domain again."
+        }
+        confirmLabel="Disconnect"
+        pending={action.isPending}
+        onConfirm={disconnect}
+        onCancel={() => setConfirmDisconnect(false)}
+      />
     </View>
   );
 }

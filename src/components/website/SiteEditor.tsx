@@ -5,6 +5,7 @@ import { useState, type ComponentProps } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useSession } from '@/lib/auth';
 import { BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
 import { errorMessage } from '@/lib/errors';
@@ -629,6 +630,15 @@ export function SiteEditor({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = document.blocks.find((b) => b.id === selectedId) ?? null;
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const blockPendingDelete = document.blocks.find((b) => b.id === confirmDeleteId) ?? null;
+
+  function confirmDelete() {
+    if (!confirmDeleteId) return;
+    onChange(removeBlock(document, confirmDeleteId));
+    setSelectedId(null);
+    setConfirmDeleteId(null);
+  }
 
   function addBlock(type: SiteBlockType) {
     const block = createBlock(type);
@@ -719,10 +729,7 @@ export function SiteEditor({
                       <IconBtn
                         icon="trash-outline"
                         danger
-                        onPress={() => {
-                          onChange(removeBlock(document, block.id));
-                          setSelectedId(null);
-                        }}
+                        onPress={() => setConfirmDeleteId(block.id)}
                       />
                     </View>
                   </View>
@@ -752,6 +759,19 @@ export function SiteEditor({
           </View>
         ) : null}
       </View>
+
+      <ConfirmDialog
+        visible={blockPendingDelete != null}
+        title={
+          blockPendingDelete
+            ? `Delete this ${SITE_BLOCK_LABELS[blockPendingDelete.type]} block?`
+            : 'Delete this block?'
+        }
+        body="This removes it from the page for good — there's no undo. Your other blocks are unaffected."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </View>
   );
 }
