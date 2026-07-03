@@ -43,6 +43,9 @@ describe('renderSiteHtml', () => {
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true);
     expect(html).toContain(`--accent:${BRAND_THEMES.forged.palette.accent};`);
     expect(html).toContain('<title>Iron Gym</title>');
+    // Photo-less background heroes get an accent glow instead of a
+    // flat colour slab — pin the rule so it can't silently vanish.
+    expect(html).toContain('.hero-bg:not(.has-img)');
   });
 
   it('always renders a site header with the logo, unconditionally on every page', () => {

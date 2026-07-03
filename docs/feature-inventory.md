@@ -764,8 +764,22 @@ billing for it yet.
   plans and staff roster at view time (Pricing/Team can each hide
   specific rows without touching the source) rather than storing a
   copy, so none of the three can drift stale. Schedule rows are
-  colour-coded by class type. A new site's Hero headline is seeded
-  with the gym's real name instead of a generic placeholder.
+  colour-coded by class type.
+- **Templates (`src/lib/site-templates.ts`)** — four fully written
+  starting points, paired 1:1 with the themes: Strength & Conditioning
+  (Forged), Fight & Combat (Ringside), Boutique Studio (Daybreak),
+  Coaching & PT (Baseline — the one consult-first funnel, its hero CTA
+  scrolls to the contact form). Each follows the researched gym-site
+  skeleton (hero → about → schedule → team → pricing → testimonials →
+  location → contact) with the hero headline seeded from the gym's
+  real name. Creating a site starts from a template picker; an
+  existing site can apply a template from the editor's Theme section
+  (confirm-gated — replaces all content, keeps publish state).
+  Deliberate gaps: testimonials ship empty and location without an
+  address so the publish-blocking warnings act as a launch checklist —
+  fabricated quotes or a missing address can never go live. Photo-less
+  background heroes render with a subtle accent glow instead of a flat
+  colour slab.
 - **Always-on site header** — every page shows the gym's logo (or name,
   if no logo is set) in a small header, rendered directly by
   `renderSiteHtml` rather than as a removable block — page furniture

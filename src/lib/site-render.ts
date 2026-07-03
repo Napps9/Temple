@@ -153,6 +153,7 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .hero-bg{position:relative;padding:96px 0;text-align:center;}
 .hero-bg.has-img{background-size:cover;background-position:center;}
 .hero-bg.has-img::before{content:"";position:absolute;inset:0;background:color-mix(in srgb, var(--bg) 55%, transparent);}
+.hero-bg:not(.has-img){background:radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--accent) 12%, var(--bg)), var(--bg) 60%);}
 .hero-inner{position:relative;max-width:640px;margin:0 auto;}
 .hero-inner p{max-width:52ch;margin:0 auto 26px;font-size:17px;}
 .hero-side-text p{margin:0 0 26px;font-size:17px;}
