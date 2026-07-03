@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
@@ -379,6 +379,18 @@ export default function ManagementHome() {
     (c) => c.visible && c.category === activeCategory,
   );
 
+  // The Website "category" is really just a doorway to the full-screen
+  // site builder — it has no inline panel, only a single card that
+  // links onward. So selecting it in the nav goes straight to the
+  // builder rather than parking the user on a one-card page.
+  function selectCategory(c: Category) {
+    if (c === 'website') {
+      router.push('/management/website');
+      return;
+    }
+    setActive(c);
+  }
+
   return (
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <View className="flex-1 lg:flex-row">
@@ -389,7 +401,7 @@ export default function ManagementHome() {
             <ManageNav
               categories={availableCategories}
               active={activeCategory}
-              onSelect={setActive}
+              onSelect={selectCategory}
               vertical
             />
           </View>
@@ -402,7 +414,7 @@ export default function ManagementHome() {
               <ManageNav
                 categories={availableCategories}
                 active={activeCategory}
-                onSelect={setActive}
+                onSelect={selectCategory}
                 vertical={false}
               />
             </View>
