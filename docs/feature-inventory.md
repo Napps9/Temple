@@ -763,6 +763,19 @@ billing for it yet.
   render the gym's real class sessions and membership plans at view
   time (Pricing can hide specific plans) rather than storing a copy, so
   neither can drift stale.
+- **Live on-canvas editing (web)** — free-text fields (Hero headline/
+  subheadline/CTA, About body, Testimonial quotes, Location address/
+  hours, Contact copy) are directly editable inside the live rendered
+  preview itself, not just the side-panel form — click the headline,
+  type right there. Images, plan selection and theme stay side-panel
+  only; the side panel remains fully functional for every field and is
+  the only editing path on native, which has no iframe/webview. Above
+  1280px wide the editor and canvas show side by side; narrower web
+  widths keep a toggle between the two. Canvas edits sync to the panel
+  (and vice versa) through a `postMessage` bridge validated against a
+  field whitelist (`src/lib/site-canvas-sync.ts`); the preview iframe
+  only ever reloads on side-panel/structural changes, never on a canvas
+  keystroke, so typing never loses cursor focus.
 - **Starter themes** — 4 named presets (Forged / Ringside / Daybreak /
   Baseline, `src/lib/brand-themes.ts`) shared with the email builder's
   own theme picker, so a gym's site and its marketing emails can use
