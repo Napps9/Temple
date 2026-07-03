@@ -275,3 +275,57 @@ describe('renderSiteHtml', () => {
     expect(html).not.toContain('temple-site-canvas');
   });
 });
+
+describe('accessibility structure', () => {
+  it('emits a skip link, a main landmark, and labelled contact fields', () => {
+    const doc = appendBlock(emptyDocument(), createBlock('contact') as ContactBlock);
+    const html = renderSiteHtml(doc, baseCtx);
+    expect(html).toContain('class="skip-link" href="#main"');
+    expect(html).toContain('<main id="main">');
+    expect(html).toContain('<label class="sr-only" for="temple-contact-name">');
+    expect(html).toContain('<label class="sr-only" for="temple-contact-email">');
+    expect(html).toContain('<label class="sr-only" for="temple-contact-message">');
+    expect(html).toContain('role="status" aria-live="polite"');
+  });
+
+  it('keeps exactly one h1: first hero is h1, a second hero demotes to h2', () => {
+    const heroA = { ...(createBlock('hero') as HeroBlock), id: 'hero_a' };
+    const heroB = { ...(createBlock('hero') as HeroBlock), id: 'hero_b' };
+    const html = renderSiteHtml(
+      appendBlock(appendBlock(emptyDocument(), heroA), heroB),
+      baseCtx,
+    );
+    expect(html.match(/<h1[\s>]/g)?.length).toBe(1);
+  });
+
+  it('adds a visually-hidden h1 when the page has no hero block', () => {
+    const doc = appendBlock(emptyDocument(), createBlock('about') as never);
+    const html = renderSiteHtml(doc, baseCtx);
+    expect(html).toContain('<h1 class="sr-only">Iron Gym</h1>');
+  });
+
+  it('renders secondary text with the readable muted-text token, keeping --muted for borders only', () => {
+    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
+    const html = renderSiteHtml(doc, baseCtx);
+    expect(html).toContain(`--muted-text:${BRAND_THEMES.forged.palette.mutedText};`);
+    expect(html).not.toContain('color:var(--muted);');
+  });
+
+  it('falls back to body text for accent-as-text when the accent misses 4.5:1', () => {
+    // Ringside's red accent is ~4.0:1 on its background — fine as a
+    // button fill, too low for link/eyebrow text.
+    const html = renderSiteHtml(emptyDocument(), {
+      ...baseCtx,
+      theme: BRAND_THEMES.ringside,
+    });
+    expect(html).toContain(`--accent-ink:${BRAND_THEMES.ringside.palette.text};`);
+    // Forged's orange clears 4.5:1 and keeps the accent as ink.
+    const forged = renderSiteHtml(emptyDocument(), baseCtx);
+    expect(forged).toContain(`--accent-ink:${BRAND_THEMES.forged.palette.accent};`);
+  });
+
+  it('keeps focus-visible outlines in the public CSS', () => {
+    const html = renderSiteHtml(emptyDocument(), baseCtx);
+    expect(html).toContain(':focus-visible{outline:2px solid var(--text)');
+  });
+});

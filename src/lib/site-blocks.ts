@@ -427,6 +427,12 @@ export function documentWarnings(doc: SiteDocument): string[] {
     if (b.type === 'gallery' && b.images.length === 0) {
       warnings.push('The gallery block has no photos yet.');
     }
+    if (b.type === 'gallery' && b.images.some((img) => !img.alt.trim())) {
+      const missing = b.images.filter((img) => !img.alt.trim()).length;
+      warnings.push(
+        `${missing} gallery ${missing === 1 ? 'photo needs' : 'photos need'} a short description — screen readers skip images without one.`,
+      );
+    }
     if (b.type === 'location' && !b.address.trim()) {
       warnings.push('The location block needs your real address before you publish.');
     }

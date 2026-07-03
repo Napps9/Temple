@@ -9,6 +9,7 @@
 // compatibility — colours/type come from CSS custom properties set once
 // from the theme, not repeated on every element.
 
+import { contrastRatio } from './brand-derivation';
 import type { BrandTheme } from './brand-themes';
 import { formatMoney } from './coach-earnings';
 import type {
@@ -121,15 +122,24 @@ function themeStyleBlock(theme: BrandTheme, editable: boolean): string {
 [contenteditable]{outline:none;border-radius:4px;transition:box-shadow .1s;}
 [contenteditable]:hover{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);}
 [contenteditable]:focus{box-shadow:0 0 0 2px var(--accent);}
-[contenteditable]:empty::before{content:attr(data-placeholder);color:var(--muted);}
+[contenteditable]:empty::before{content:attr(data-placeholder);color:var(--muted-text);}
 .tp-selected{box-shadow:0 0 0 2px var(--accent);}`
     : '';
+  // The accent doubles as link/eyebrow TEXT, which needs 4.5:1 — a
+  // colour that only clears the 3:1 fill floor falls back to body text
+  // for those roles (the fill keeps the accent).
+  const accentInk =
+    contrastRatio(theme.palette.accent, theme.palette.background) >= 4.5
+      ? theme.palette.accent
+      : theme.palette.text;
   return `:root{
   --bg:${theme.palette.background};
   --surface:${theme.palette.surface};
   --text:${theme.palette.text};
   --muted:${theme.palette.muted};
+  --muted-text:${theme.palette.mutedText};
   --accent:${theme.palette.accent};
+  --accent-ink:${accentInk};
   --accent-text:${theme.palette.accentText};
   --font:${t.fontFamily};
   --heading-weight:${t.headingWeight};
@@ -140,10 +150,14 @@ function themeStyleBlock(theme: BrandTheme, editable: boolean): string {
 *{box-sizing:border-box;}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.55;}
 h1,h2,h3{font-weight:var(--heading-weight);text-transform:var(--heading-transform);letter-spacing:var(--heading-spacing);margin:0 0 12px;}
-a{color:var(--accent);}
+a{color:var(--accent-ink);}
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,.btn:focus-visible{outline:2px solid var(--text);outline-offset:2px;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.skip-link{position:absolute;left:-9999px;top:0;z-index:10;background:var(--surface);color:var(--text);padding:10px 16px;border-radius:0 0 8px 0;}
+.skip-link:focus{left:0;}
 .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
 .sec{padding:56px 0;border-bottom:1px solid color-mix(in srgb, var(--muted) 40%, transparent);}
-.eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:8px;}
 .btn{display:inline-block;font-weight:700;padding:14px 26px;border-radius:var(--radius);text-decoration:none;background:var(--accent);color:var(--accent-text);border:none;font-size:15px;cursor:pointer;}
 .btn-ghost{display:inline-block;font-weight:700;padding:14px 26px;border-radius:var(--radius);text-decoration:none;background:transparent;color:var(--text);border:1px solid var(--muted);font-size:15px;}
 .card{background:var(--surface);border-radius:var(--radius);padding:22px;}
@@ -167,7 +181,7 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .site-header .wrap{display:flex;align-items:center;gap:10px;padding-top:14px;padding-bottom:14px;}
 .site-header img{height:32px;width:auto;display:block;}
 .site-header span{font-weight:700;font-size:16px;letter-spacing:.01em;}
-.sched-day{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--accent);margin:20px 0 8px;}
+.sched-day{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--accent-ink);margin:20px 0 8px;}
 .sched-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid color-mix(in srgb, var(--muted) 40%, transparent);}
 .sched-row:first-of-type{border-top:none;}
 .sched-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;}
@@ -189,14 +203,21 @@ function renderSiteHeader(ctx: SiteRenderContext): string {
   return `<header class="site-header"><div class="wrap">${brand}</div></header>`;
 }
 
-function renderHero(b: HeroBlock, ctx: SiteRenderContext): string {
+// `headlineTag`: only the FIRST hero on the page renders an <h1> —
+// a second hero demotes to a visually-identical <h2> so the document
+// keeps exactly one h1 (renderSiteHtml decides which is first).
+function renderHero(
+  b: HeroBlock,
+  ctx: SiteRenderContext,
+  headlineTag: 'h1' | 'h2' = 'h1',
+): string {
   const ctaHref =
     b.ctaTarget === 'contact'
       ? '#contact'
       : `${ctx.platformOrigin}/join/${encodeURIComponent(ctx.slug)}`;
   const cta = `<a class="btn" href="${escapeAttr(ctaHref)}"${fieldAttrs(ctx, `${b.id}:ctaLabel`)}>${escapeHtml(b.ctaLabel)}</a>`;
   const eyebrow = `<div class="eyebrow">${escapeHtml(ctx.gymName)}</div>`;
-  const headline = `<h1 style="font-size:clamp(32px,6vw,56px);"${fieldAttrs(ctx, `${b.id}:headline`)}>${escapeHtml(b.headline)}</h1>`;
+  const headline = `<${headlineTag} style="font-size:clamp(32px,6vw,56px);"${fieldAttrs(ctx, `${b.id}:headline`)}>${escapeHtml(b.headline)}</${headlineTag}>`;
   // Editable mode always emits the <p>, even empty, so there's a node
   // to click into — the public path keeps the "omit when empty" today.
   const subheadline = ctx.editable
@@ -240,7 +261,7 @@ function fmtSessionTime(iso: string): string {
 
 function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
   if (ctx.schedule.length === 0) {
-    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted);">Check back soon for the full schedule.</p></div></section>`;
+    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted-text);">Check back soon for the full schedule.</p></div></section>`;
   }
   const byDay = new Map<string, ScheduleSession[]>();
   for (const s of ctx.schedule) {
@@ -257,7 +278,7 @@ function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
             const dotColor = s.classTypeColor ? escapeAttr(s.classTypeColor) : 'var(--accent)';
             return `<div class="sched-row"><span><span class="sched-dot" style="background:${dotColor};"></span>${fmtSessionTime(
               s.startsAt,
-            )} — ${escapeHtml(s.classTypeName ?? 'Class')}</span><span style="color:var(--muted);">${
+            )} — ${escapeHtml(s.classTypeName ?? 'Class')}</span><span style="color:var(--muted-text);">${
               s.coachName ? escapeHtml(s.coachName) : ''
             }</span></div>`;
           })
@@ -270,16 +291,16 @@ function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
 function fmtPlanPrice(p: PublicPlan, currency: string): string {
   if (p.monthlyPriceCents == null) return 'Contact us';
   const price = formatMoney(p.monthlyPriceCents, currency);
-  if (p.kind === 'unlimited') return `${price}<span style="font-size:14px;font-weight:400;color:var(--muted);">/month</span>`;
+  if (p.kind === 'unlimited') return `${price}<span style="font-size:14px;font-weight:400;color:var(--muted-text);">/month</span>`;
   if (p.kind === 'credit_pack') return price;
-  return `${price}<span style="font-size:14px;font-weight:400;color:var(--muted);">/period</span>`;
+  return `${price}<span style="font-size:14px;font-weight:400;color:var(--muted-text);">/period</span>`;
 }
 
 function renderPricing(b: PricingBlock, ctx: SiteRenderContext): string {
   const hidden = new Set(b.hiddenPlanIds);
   const visible = ctx.plans.filter((p) => !hidden.has(p.planId));
   if (visible.length === 0) {
-    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted);">Get in touch for membership options.</p></div></section>`;
+    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted-text);">Get in touch for membership options.</p></div></section>`;
   }
   const cards = visible
     .map(
@@ -302,7 +323,7 @@ function renderTestimonials(b: TestimonialsBlock, ctx: SiteRenderContext): strin
       (q) =>
         `<div class="card"><span class="quote-mark">&ldquo;</span><p${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:quote`, { multiline: true })}>${escapeHtml(
           q.quote,
-        )}</p><div style="font-weight:700;font-size:13px;color:var(--muted);"${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:name`)}>${escapeHtml(
+        )}</p><div style="font-weight:700;font-size:13px;color:var(--muted-text);"${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:name`)}>${escapeHtml(
           q.name,
         )}</div></div>`,
     )
@@ -325,9 +346,9 @@ function renderLocation(b: LocationBlock, ctx: SiteRenderContext): string {
       ? `<p>${escapeHtml(b.address)}</p>`
       : '';
   const hours = ctx.editable
-    ? `<p style="color:var(--muted);white-space:pre-line;" data-placeholder="Hours"${fieldAttrs(ctx, `${b.id}:hours`, { multiline: true })}>${escapeHtml(b.hours)}</p>`
+    ? `<p style="color:var(--muted-text);white-space:pre-line;" data-placeholder="Hours"${fieldAttrs(ctx, `${b.id}:hours`, { multiline: true })}>${escapeHtml(b.hours)}</p>`
     : b.hours
-      ? `<p style="color:var(--muted);white-space:pre-line;">${escapeHtml(b.hours)}</p>`
+      ? `<p style="color:var(--muted-text);white-space:pre-line;">${escapeHtml(b.hours)}</p>`
       : '';
   return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>
 ${address}
@@ -378,19 +399,22 @@ function renderContact(b: ContactBlock, ctx: SiteRenderContext): string {
 })();
 </script>`;
   const subheading = ctx.editable
-    ? `<p style="color:var(--muted);" data-placeholder="Subheading"${fieldAttrs(ctx, `${b.id}:subheading`, { multiline: true })}>${escapeHtml(b.subheading)}</p>`
+    ? `<p style="color:var(--muted-text);" data-placeholder="Subheading"${fieldAttrs(ctx, `${b.id}:subheading`, { multiline: true })}>${escapeHtml(b.subheading)}</p>`
     : b.subheading
-      ? `<p style="color:var(--muted);">${escapeHtml(b.subheading)}</p>`
+      ? `<p style="color:var(--muted-text);">${escapeHtml(b.subheading)}</p>`
       : '';
   return `<section class="sec" id="contact"><div class="wrap" style="text-align:center;max-width:520px;">
 <h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>
 ${subheading}
 <form id="temple-contact-form" style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-top:20px;">
-  <input name="name" placeholder="Name" required />
-  <input name="email" type="email" placeholder="Email" required />
-  <textarea name="message" placeholder="What are you looking to achieve?" rows="3"></textarea>
+  <label class="sr-only" for="temple-contact-name">Name</label>
+  <input id="temple-contact-name" name="name" placeholder="Name" autocomplete="name" required />
+  <label class="sr-only" for="temple-contact-email">Email</label>
+  <input id="temple-contact-email" name="email" type="email" placeholder="Email" autocomplete="email" required />
+  <label class="sr-only" for="temple-contact-message">What are you looking to achieve?</label>
+  <textarea id="temple-contact-message" name="message" placeholder="What are you looking to achieve?" rows="3"></textarea>
   <button type="submit" class="btn">Send enquiry</button>
-  <p id="temple-contact-status" style="font-size:13px;color:var(--muted);min-height:18px;"></p>
+  <p id="temple-contact-status" role="status" aria-live="polite" style="font-size:13px;color:var(--muted-text);min-height:18px;"></p>
 </form>
 </div></section>${script}`;
 }
@@ -419,10 +443,14 @@ function renderTeam(b: TeamBlock, ctx: SiteRenderContext): string {
   return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="team-grid">${cards}</div></div></section>`;
 }
 
-function renderBlock(block: SiteBlock, ctx: SiteRenderContext): string {
+function renderBlock(
+  block: SiteBlock,
+  ctx: SiteRenderContext,
+  isFirstHero: boolean,
+): string {
   switch (block.type) {
     case 'hero':
-      return renderHero(block, ctx);
+      return renderHero(block, ctx, isFirstHero ? 'h1' : 'h2');
     case 'about':
       return renderAbout(block, ctx);
     case 'schedule':
@@ -515,7 +543,16 @@ const CANVAS_BRIDGE_SCRIPT = `
 
 export function renderSiteHtml(doc: SiteDocument, ctx: SiteRenderContext): string {
   const header = renderSiteHeader(ctx);
-  const body = doc.blocks.map((b) => renderBlock(b, ctx)).join('');
+  const firstHeroId = doc.blocks.find((b) => b.type === 'hero')?.id;
+  const blocksHtml = doc.blocks
+    .map((b) => renderBlock(b, ctx, b.id === firstHeroId))
+    .join('');
+  // A page with no hero would otherwise have no h1 at all — give it a
+  // visually-hidden one so the outline starts at the right level.
+  const fallbackH1 = firstHeroId
+    ? ''
+    : `<h1 class="sr-only">${escapeHtml(ctx.gymName)}</h1>`;
+  const body = `<a class="skip-link" href="#main">Skip to content</a>${header}<main id="main">${fallbackH1}${blocksHtml}</main>`;
   const title = escapeHtml(ctx.gymName);
   const description = escapeAttr(
     `${ctx.gymName} — book a class, see membership options and get in touch.`,
@@ -529,5 +566,5 @@ export function renderSiteHtml(doc: SiteDocument, ctx: SiteRenderContext): strin
 <meta property="og:description" content="${description}">
 ${ctx.gymLogoUrl ? `<meta property="og:image" content="${escapeAttr(ctx.gymLogoUrl)}">` : ''}
 <style>${themeStyleBlock(ctx.theme, ctx.editable)}</style>
-</head><body>${header}${body}${ctx.editable ? CANVAS_BRIDGE_SCRIPT : ''}</body></html>`;
+</head><body>${body}${ctx.editable ? CANVAS_BRIDGE_SCRIPT : ''}</body></html>`;
 }

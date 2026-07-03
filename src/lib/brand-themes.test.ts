@@ -82,3 +82,28 @@ describe('composeThemeWithBrand', () => {
     expect(JSON.stringify(BRAND_THEMES.ringside)).toBe(before);
   });
 });
+
+describe('accessibility floors', () => {
+  it('every theme mutedText clears WCAG AA (4.5:1) on both background and surface', () => {
+    for (const t of BRAND_THEME_LIST) {
+      expect(contrastRatio(t.palette.mutedText, t.palette.background)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(t.palette.mutedText, t.palette.surface)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('rejects a gym colour whose best button-label ink misses 4.5:1', () => {
+    // Mid-luminance red: legible against a light page background
+    // (clears the 3:1 fill floor) but neither white nor dark ink
+    // reaches 4.5:1 on top of it — must fall back to the stock accent.
+    const awkward = '#E05050';
+    const composed = composeThemeWithBrand(BRAND_THEMES.baseline, awkward);
+    expect(contrastRatio(awkward, BRAND_THEMES.baseline.palette.background)).toBeGreaterThanOrEqual(3);
+    expect(composed.palette.accent).toBe(BRAND_THEMES.baseline.palette.accent);
+  });
+
+  it('still adopts a gym colour when a readable label ink exists', () => {
+    const composed = composeThemeWithBrand(BRAND_THEMES.baseline, '#1D4ED8');
+    expect(composed.palette.accent).toBe('#1D4ED8');
+    expect(contrastRatio('#1D4ED8', composed.palette.accentText)).toBeGreaterThanOrEqual(4.5);
+  });
+});

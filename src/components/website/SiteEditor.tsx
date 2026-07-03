@@ -768,14 +768,30 @@ function GalleryInspector({
   return (
     <View className="gap-3">
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
-      <View className="flex-row flex-wrap gap-2">
+      <View className="gap-2">
         {block.images.map((img) => (
-          <View key={img.id} className="relative">
-            <Image source={{ uri: img.url }} style={{ width: 84, height: 84 }} className="rounded-lg" />
+          <View key={img.id} className="flex-row items-center gap-2">
+            <Image source={{ uri: img.url }} style={{ width: 56, height: 56 }} className="rounded-lg" />
+            <View className="flex-1">
+              <TextField
+                label="Description"
+                value={img.alt}
+                onChangeText={(t) =>
+                  onPatch({
+                    images: block.images.map((x) =>
+                      x.id === img.id ? { ...x, alt: t } : x,
+                    ),
+                  })
+                }
+              />
+            </View>
             <Pressable
               onPress={() => onPatch({ images: block.images.filter((x) => x.id !== img.id) })}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 items-center justify-center">
-              <Ionicons name="close" size={12} color="#FFFFFF" />
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Remove photo"
+              className="w-7 h-7 rounded-full bg-red-500 items-center justify-center active:opacity-70">
+              <Ionicons name="close" size={14} color="#FFFFFF" />
             </Pressable>
           </View>
         ))}

@@ -187,3 +187,26 @@ describe('documentWarnings', () => {
     expect(documentWarnings(doc)).toEqual([]);
   });
 });
+
+describe('gallery alt warnings', () => {
+  it('warns when gallery photos are missing a description, and clears once filled', () => {
+    const gallery = createBlock('gallery');
+    if (gallery.type !== 'gallery') throw new Error('expected gallery');
+    const withImages = {
+      ...gallery,
+      images: [
+        { id: 'a', url: 'https://x/a.jpg', alt: '' },
+        { id: 'b', url: 'https://x/b.jpg', alt: 'Members mid-workout' },
+      ],
+    };
+    const doc = appendBlock(emptyDocument(), withImages);
+    expect(documentWarnings(doc).some((w) => w.includes('needs a short description'))).toBe(true);
+
+    const filled = {
+      ...withImages,
+      images: withImages.images.map((i) => ({ ...i, alt: i.alt || 'Gym floor' })),
+    };
+    const okDoc = appendBlock(emptyDocument(), filled);
+    expect(documentWarnings(okDoc).some((w) => w.includes('description'))).toBe(false);
+  });
+});

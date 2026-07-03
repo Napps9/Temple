@@ -21,7 +21,8 @@ export type BrandTheme = {
     background: string; // page / outer background
     surface: string; // card / section background
     text: string; // primary body + heading text
-    muted: string; // dividers, secondary text, borders
+    muted: string; // dividers and borders only — NOT readable as text
+    mutedText: string; // secondary text; must clear WCAG AA (4.5:1) on background AND surface
     accent: string; // buttons, links, highlights
     accentText: string; // text colour that sits on top of `accent`
   };
@@ -51,6 +52,7 @@ const forged: BrandTheme = {
     surface: '#17171A',
     text: '#F5F5F0',
     muted: '#3A3A3D',
+    mutedText: '#A3A3A8',
     accent: '#FF5A1F',
     accentText: '#0B0B0C',
   },
@@ -72,6 +74,7 @@ const ringside: BrandTheme = {
     surface: '#1A0E0F',
     text: '#F5F1EF',
     muted: '#4A2A2C',
+    mutedText: '#B3A6A4',
     accent: '#E10600',
     accentText: '#FFFFFF',
   },
@@ -93,6 +96,7 @@ const daybreak: BrandTheme = {
     surface: '#FFFDF8',
     text: '#3A3229',
     muted: '#8A9A5B',
+    mutedText: '#6B604E',
     accent: '#A85A3A',
     accentText: '#FFFFFF',
   },
@@ -114,6 +118,7 @@ const baseline: BrandTheme = {
     surface: '#FFFFFF',
     text: '#1E293B',
     muted: '#94A3B8',
+    mutedText: '#5A6B7E',
     accent: '#0F766E',
     accentText: '#FFFFFF',
   },
@@ -157,12 +162,19 @@ export function composeThemeWithBrand(
   theme: BrandTheme,
   brandPrimaryHex: string,
 ): BrandTheme {
-  const usesGymColour =
-    contrastRatio(brandPrimaryHex, theme.palette.background) >= MIN_ACCENT_CONTRAST;
-  const accent = usesGymColour ? brandPrimaryHex : theme.palette.accent;
-  const accentText =
-    contrastRatio(accent, '#FFFFFF') >= contrastRatio(accent, theme.palette.text)
+  // Two bars before the gym's colour replaces the stock accent: it must
+  // read against the page background (3:1, UI floor), AND at least one
+  // of white / theme text must reach 4.5:1 on top of it — the accent is
+  // a button fill, and a fill whose best label misses WCAG AA would
+  // ship unreadable CTAs on the gym's public site and emails.
+  const labelOn = (fill: string): string =>
+    contrastRatio(fill, '#FFFFFF') >= contrastRatio(fill, theme.palette.text)
       ? '#FFFFFF'
       : theme.palette.text;
+  const usesGymColour =
+    contrastRatio(brandPrimaryHex, theme.palette.background) >= MIN_ACCENT_CONTRAST &&
+    contrastRatio(brandPrimaryHex, labelOn(brandPrimaryHex)) >= 4.5;
+  const accent = usesGymColour ? brandPrimaryHex : theme.palette.accent;
+  const accentText = labelOn(accent);
   return { ...theme, palette: { ...theme.palette, accent, accentText } };
 }
