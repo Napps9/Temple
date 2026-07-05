@@ -64,6 +64,8 @@ type SectionDraft = {
   total_time_seconds: string;
   total_rounds: string;
   total_extra_reps: string;
+  total_distance_m: string;
+  total_calories: string;
   did_not_finish: boolean;
   free_text_result: string;
   // Entries — for entries-only formats and optional expand on aggregate-first.
@@ -91,6 +93,8 @@ function emptyDraft(): SectionDraft {
     total_time_seconds: '',
     total_rounds: '',
     total_extra_reps: '',
+    total_distance_m: '',
+    total_calories: '',
     did_not_finish: false,
     free_text_result: '',
     entries: [],
@@ -127,6 +131,8 @@ function draftFromProgrammedSection(args: {
     total_time_seconds: '',
     total_rounds: '',
     total_extra_reps: '',
+    total_distance_m: '',
+    total_calories: '',
     did_not_finish: false,
     free_text_result: '',
     entries,
@@ -956,6 +962,26 @@ function AggregateInputs({
   if (shape.kind !== 'aggregate_first') return null;
   return (
     <View className="gap-3">
+      {shape.aggregateFields.includes('total_distance_m') ? (
+        <Input
+          label="Distance (m)"
+          value={draft.total_distance_m}
+          onChangeText={(v) => onUpdate({ total_distance_m: v })}
+          placeholder="5000"
+          keyboardType="numeric"
+          inputMode="decimal"
+        />
+      ) : null}
+      {shape.aggregateFields.includes('total_calories') ? (
+        <Input
+          label="Calories"
+          value={draft.total_calories}
+          onChangeText={(v) => onUpdate({ total_calories: v })}
+          placeholder="120"
+          keyboardType="numeric"
+          inputMode="numeric"
+        />
+      ) : null}
       {shape.aggregateFields.includes('total_time_seconds') ? (
         <Input
           label="Total time (MM:SS or HH:MM:SS)"
@@ -1732,6 +1758,8 @@ function buildSectionInsert(args: {
     total_time_seconds: null as number | null,
     total_rounds: null as number | null,
     total_extra_reps: null as number | null,
+    total_distance_m: null as number | null,
+    total_calories: null as number | null,
     did_not_finish: null as boolean | null,
     free_text_result: null as string | null,
   };
@@ -1747,6 +1775,16 @@ function buildSectionInsert(args: {
     if (shape.aggregateFields.includes('total_extra_reps')) {
       const n = parseInt(draft.total_extra_reps.trim(), 10);
       if (Number.isFinite(n)) base.total_extra_reps = n;
+    }
+    if (shape.aggregateFields.includes('total_distance_m')) {
+      const n = Number(draft.total_distance_m.trim());
+      if (draft.total_distance_m.trim() && Number.isFinite(n)) {
+        base.total_distance_m = n;
+      }
+    }
+    if (shape.aggregateFields.includes('total_calories')) {
+      const n = parseInt(draft.total_calories.trim(), 10);
+      if (Number.isFinite(n)) base.total_calories = n;
     }
     if (shape.aggregateFields.includes('did_not_finish')) {
       base.did_not_finish = draft.did_not_finish;

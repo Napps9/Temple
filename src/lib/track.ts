@@ -93,6 +93,33 @@ export function parseDuration(input: string): number | null {
   return h * 3600 + m * 60 + s;
 }
 
+// Average pace over a cardio effort, e.g. "1:52 /500m" or "4:45 /km".
+// Erg convention (rowing, ski, bike) is /500m; running is /km. Returns
+// null unless both inputs are positive — a pace over a zero distance
+// or missing time is meaningless.
+export function formatPace(
+  distanceMeters: number | null,
+  totalSeconds: number | null,
+  perMeters: 500 | 1000,
+): string | null {
+  if (
+    distanceMeters == null ||
+    totalSeconds == null ||
+    distanceMeters <= 0 ||
+    totalSeconds <= 0
+  ) {
+    return null;
+  }
+  const pace = (totalSeconds * perMeters) / distanceMeters;
+  return `${formatSeconds(pace)} ${perMeters === 1000 ? '/km' : '/500m'}`;
+}
+
+// Which pace interval a section's text implies: running reads in /km,
+// everything else (row, ski, bike erg) in /500m.
+export function paceIntervalForText(text: string): 500 | 1000 {
+  return /\b(run|runs|running|jog|jogging)\b/i.test(text) ? 1000 : 500;
+}
+
 // Pick the best of a series under the scheme's direction (higher /
 // lower better). For time-based schemes it compares value_seconds;
 // for everything else it compares value_numeric. Ignores nulls.

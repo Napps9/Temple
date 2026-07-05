@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   bestOfMerged,
+  deriveTagValue,
   mergeJournal,
   prRowIds,
   type DirectInputRow,
+  type SectionForDerivation,
   type TagInputRow,
 } from './movement-journal';
 
@@ -232,5 +234,51 @@ describe('prRowIds', () => {
     );
     const prs = prRowIds(merged, () => undefined);
     expect(prs.size).toBe(0);
+  });
+});
+
+describe('deriveTagValue', () => {
+  function section(
+    partial: Partial<SectionForDerivation>,
+  ): SectionForDerivation {
+    return {
+      section_format: 'max_distance',
+      total_time_seconds: null,
+      total_rounds: null,
+      total_distance_m: null,
+      total_calories: null,
+      entries: [],
+      ...partial,
+    };
+  }
+
+  it('falls back to the section total_distance_m for distance schemes', () => {
+    const v = deriveTagValue(
+      { metric: 'distance', better: 'higher' },
+      section({ total_distance_m: 7500 }),
+    );
+    expect(v).toEqual({ value_numeric: 7500, value_seconds: null });
+  });
+
+  it('prefers entry-level distance over the aggregate', () => {
+    const v = deriveTagValue(
+      { metric: 'distance', better: 'higher' },
+      section({
+        total_distance_m: 7500,
+        entries: [
+          { weight_numeric: null, reps: null, time_seconds: null, distance_numeric: 4000, calories: null },
+          { weight_numeric: null, reps: null, time_seconds: null, distance_numeric: 3600, calories: null },
+        ],
+      }),
+    );
+    expect(v.value_numeric).toBe(4000);
+  });
+
+  it('falls back to the section total_calories for calorie schemes', () => {
+    const v = deriveTagValue(
+      { metric: 'calories', better: 'higher' },
+      section({ section_format: 'max_calories', total_calories: 142 }),
+    );
+    expect(v).toEqual({ value_numeric: 142, value_seconds: null });
   });
 });

@@ -12,6 +12,7 @@
 // build constraints.
 
 import type { SectionFormatKey } from './programming';
+import { formatPace, formatSeconds, paceIntervalForText } from './track';
 
 export type EntryMetric =
   | 'weight'
@@ -36,6 +37,8 @@ export type AggregateField =
   | 'total_time_seconds'
   | 'total_rounds'
   | 'total_extra_reps'
+  | 'total_distance_m'
+  | 'total_calories'
   | 'did_not_finish';
 
 export const FORMAT_SHAPES: Record<SectionFormatKey, SectionFormatShape> = {
@@ -62,6 +65,20 @@ export const FORMAT_SHAPES: Record<SectionFormatKey, SectionFormatShape> = {
     entryLabel: 'Interval',
     entryMetrics: ['time', 'distance', 'calories', 'reps'],
     defaultEntries: 4,
+  },
+  max_distance: {
+    kind: 'aggregate_first',
+    // Distance is the score; time is the optional work window so the
+    // journal / leaderboard can derive /500m or /km pace.
+    aggregateFields: ['total_distance_m', 'total_time_seconds'],
+    entryLabel: 'Split',
+    entryMetrics: ['distance', 'time'],
+  },
+  max_calories: {
+    kind: 'aggregate_first',
+    aggregateFields: ['total_calories', 'total_time_seconds'],
+    entryLabel: 'Split',
+    entryMetrics: ['calories', 'time'],
   },
   strength_sets: {
     kind: 'entries_only',
@@ -135,6 +152,53 @@ export function emptyEntryDraft(): SectionEntryDraft {
     done: false,
     notes: '',
   };
+}
+
+// The headline result line for an aggregate-first section, shared by
+// the journal preview and the workout-detail card. Returns null when
+// nothing was recorded (or the format isn't aggregate-first).
+export type SectionAggregates = {
+  section_format: SectionFormatKey;
+  title: string | null;
+  body: string | null;
+  total_time_seconds: number | null;
+  total_rounds: number | null;
+  total_extra_reps: number | null;
+  total_distance_m: number | null;
+  total_calories: number | null;
+  did_not_finish: boolean | null;
+};
+
+export function aggregateHeadline(section: SectionAggregates): string | null {
+  if (FORMAT_SHAPES[section.section_format].kind !== 'aggregate_first') {
+    return null;
+  }
+  const parts: string[] = [];
+  if (section.total_time_seconds != null) {
+    parts.push(formatSeconds(section.total_time_seconds));
+  }
+  if (section.total_rounds != null) {
+    const r = `${section.total_rounds} round${section.total_rounds === 1 ? '' : 's'}`;
+    const e =
+      section.total_extra_reps && section.total_extra_reps > 0
+        ? ` + ${section.total_extra_reps} reps`
+        : '';
+    parts.push(r + e);
+  }
+  if (section.total_distance_m != null) {
+    parts.push(`${section.total_distance_m} m`);
+  }
+  if (section.total_calories != null) {
+    parts.push(`${section.total_calories} cal`);
+  }
+  const pace = formatPace(
+    section.total_distance_m,
+    section.total_time_seconds,
+    paceIntervalForText(`${section.title ?? ''} ${section.body ?? ''}`),
+  );
+  if (pace) parts.push(pace);
+  if (section.did_not_finish) parts.push('DNF');
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
 // True when the draft has any metric the format cares about.

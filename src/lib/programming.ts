@@ -27,6 +27,8 @@ export const SECTION_FORMATS = [
   { key: 'amrap', label: 'AMRAP' },
   { key: 'emom', label: 'EMOM' },
   { key: 'intervals', label: 'Intervals' },
+  { key: 'max_distance', label: 'Max distance' },
+  { key: 'max_calories', label: 'Max calories' },
   { key: 'strength_sets', label: 'Strength sets' },
   { key: 'max_load', label: 'Max load' },
   { key: 'no_score', label: 'No score' },

@@ -1842,6 +1842,8 @@ export type Database = {
           total_time_seconds: number | null;
           total_rounds: number | null;
           total_extra_reps: number | null;
+          total_distance_m: number | null;
+          total_calories: number | null;
           did_not_finish: boolean | null;
           free_text_result: string | null;
           created_at: string;
@@ -1862,6 +1864,8 @@ export type Database = {
           total_time_seconds?: number | null;
           total_rounds?: number | null;
           total_extra_reps?: number | null;
+          total_distance_m?: number | null;
+          total_calories?: number | null;
           did_not_finish?: boolean | null;
           free_text_result?: string | null;
           created_at?: string;
@@ -1882,6 +1886,8 @@ export type Database = {
           total_time_seconds: number | null;
           total_rounds: number | null;
           total_extra_reps: number | null;
+          total_distance_m: number | null;
+          total_calories: number | null;
           did_not_finish: boolean | null;
           free_text_result: string | null;
           created_at: string;
@@ -3396,6 +3402,8 @@ export type Database = {
           did_not_finish: boolean | null;
           heaviest_weight: number | null;
           weight_unit: string | null;
+          total_distance_m: number | null;
+          total_calories: number | null;
           section_format: string;
           performed_at: string;
           rank: number;

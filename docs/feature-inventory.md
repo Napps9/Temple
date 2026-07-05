@@ -213,7 +213,18 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Record workout modal** — pre-fill from today's programming for
   the class types the member is permitted to see, then a
   format-driven entry form per section (For time / AMRAP / EMOM /
-  Intervals / Strength sets / Max load / No score / Other).
+  Intervals / Max distance / Max calories / Strength sets / Max load /
+  No score / Other).
+- **Cardio scoring** — Max distance and Max calories formats for
+  erg/bike/run conditioning ("20 min max distance row", "12 min max
+  cals assault bike"): distance-in-metres or calories headline plus an
+  optional total time, with derived average pace shown in the journal
+  and workout detail (/500m erg convention, /km when the section text
+  reads as running — `formatPace` / `paceIntervalForText` in
+  `src/lib/track.ts`). Optional per-split entries; the class
+  leaderboard falls back to summed splits when no headline aggregate
+  was logged (migration `0088`, pgTAP
+  `class_leaderboard_cardio_scoring.sql`).
 - **Movement tagging** — at log time, tag a section with the
   movements it contained + a rep-max scheme so it counts on the
   movement / leaderboard.
@@ -241,8 +252,9 @@ rental, or a **physical subscription box** shipped every cycle.
   they're editable. The Record flow's movement **tag picker** uses the
   same widened catalog + search, so a workout section can be tagged with
   any movement, not just the gym's discipline.
-- **Leaderboards** — class-session leaderboards (for-time + AMRAP)
-  and strength-movement leaderboards (rep-max per scheme), honouring
+- **Leaderboards** — class-session leaderboards (for-time, AMRAP,
+  max distance, max calories, load-based formats) and
+  strength-movement leaderboards (rep-max per scheme), honouring
   the gym's appear-in-leaderboards opt-in.
 - **Movement-activity badges** — Track-home group tiles show "N new"
   when the member has fresh logs in that group; clears on visit.

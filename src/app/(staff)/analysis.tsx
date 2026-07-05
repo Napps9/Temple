@@ -158,7 +158,7 @@ export default function AnalysisScreen() {
       const { data, error } = await supabase
         .from('tracked_section_movement_tags')
         .select(
-          'profile_id, movement_key, track_key, performed_at, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+          'profile_id, movement_key, track_key, performed_at, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, total_distance_m, total_calories, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
         )
         .eq('gym_id', membership!.gymId)
         .gte('performed_at', sinceIso);

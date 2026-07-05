@@ -9,7 +9,7 @@ import {
   type SectionFormatKey,
 } from '@/lib/programming';
 import { formatSeconds } from '@/lib/track';
-import { FORMAT_SHAPES } from '@/lib/track-sections';
+import { aggregateHeadline, FORMAT_SHAPES } from '@/lib/track-sections';
 
 // Rich workout-section card: programmed body in a primary-tinted
 // left-accent block, headline result, per-entry breakdown, tagged
@@ -48,6 +48,8 @@ export type WorkoutSectionShape = {
   total_time_seconds: number | null;
   total_rounds: number | null;
   total_extra_reps: number | null;
+  total_distance_m: number | null;
+  total_calories: number | null;
   did_not_finish: boolean | null;
   free_text_result: string | null;
   entries: SectionEntryShape[];
@@ -151,23 +153,7 @@ function renderHeadline(section: WorkoutSectionShape): string | null {
   if (shape.kind === 'notes_only') {
     return section.free_text_result?.trim() || null;
   }
-  if (shape.kind === 'aggregate_first') {
-    const parts: string[] = [];
-    if (section.total_time_seconds != null) {
-      parts.push(formatSeconds(section.total_time_seconds));
-    }
-    if (section.total_rounds != null) {
-      const r = `${section.total_rounds} round${section.total_rounds === 1 ? '' : 's'}`;
-      const e =
-        section.total_extra_reps && section.total_extra_reps > 0
-          ? ` + ${section.total_extra_reps} reps`
-          : '';
-      parts.push(r + e);
-    }
-    if (section.did_not_finish) parts.push('DNF');
-    return parts.length > 0 ? parts.join(' · ') : null;
-  }
-  return null;
+  return aggregateHeadline(section);
 }
 
 function EntryLine({
