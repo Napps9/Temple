@@ -223,7 +223,7 @@ rental, or a **physical subscription box** shipped every cycle.
   reads as running — `formatPace` / `paceIntervalForText` in
   `src/lib/track.ts`). Optional per-split entries; the class
   leaderboard falls back to summed splits when no headline aggregate
-  was logged (migration `0088`, pgTAP
+  was logged (migration `0101`, pgTAP
   `class_leaderboard_cardio_scoring.sql`).
 - **Movement tagging** — at log time, tag a section with the
   movements it contained + a rep-max scheme so it counts on the
