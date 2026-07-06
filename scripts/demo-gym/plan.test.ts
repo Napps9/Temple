@@ -199,3 +199,65 @@ describe('buildDemoPlan', () => {
     expect(unread).toHaveLength(3);
   });
 });
+
+describe('buildDemoPlan — discipline: hyrox', () => {
+  const hyroxConfig: DemoConfig = { ...CONFIG, slug: 'demo-hyrox', gymName: 'Ironclad Hyrox Club', discipline: 'hyrox' };
+  const hyroxPlan = buildDemoPlan(hyroxConfig);
+
+  it('is deterministic and independent of the default (crossfit) plan', () => {
+    expect(buildDemoPlan(hyroxConfig)).toEqual(hyroxPlan);
+    expect(hyroxPlan).not.toEqual(plan);
+  });
+
+  it('sets the gym discipline column and swaps in Hyrox class types', () => {
+    expect(hyroxPlan.gym.discipline).toBe('hyrox');
+    expect(hyroxPlan.classTypes.map((t) => t.name).sort()).toEqual(
+      ['Compromised Running', 'Engine Builder', 'Hyrox Simulation', 'Open Gym', 'Strength for Hyrox'].sort(),
+    );
+  });
+
+  it('logs training history against Hyrox station keys, never a CrossFit lift', () => {
+    expect(hyroxPlan.movementResults.length).toBeGreaterThan(100);
+    for (const r of hyroxPlan.movementResults) {
+      expect(r.movement_key.startsWith('hyrox_')).toBe(true);
+      expect(r.value_seconds).not.toBeNull();
+      expect(r.value_numeric == null).toBe(true);
+    }
+  });
+
+  it('races a much larger share of the roster than the CrossFit demo, plus real official times', () => {
+    expect(hyroxPlan.hyroxRaces.length).toBe(6);
+    expect(hyroxPlan.hyroxRaces.length).toBeGreaterThan(plan.hyroxRaces.length);
+    for (const race of hyroxPlan.hyroxRaces) {
+      const splits = hyroxPlan.hyroxSplits.filter((s) => s.race_id === race.id);
+      expect(splits).toHaveLength(24);
+    }
+    const officialTimes = hyroxPlan.movementResults.filter((r) => r.movement_key === 'hyrox_time');
+    expect(officialTimes.length).toBe(3);
+    for (const r of officialTimes) expect(r.value_seconds).toBeGreaterThan(0);
+  });
+
+  it('hides one store product from the storefront as a work-in-progress draft', () => {
+    expect(hyroxPlan.storeProducts).toHaveLength(4);
+    const hidden = hyroxPlan.storeProducts.filter((p) => p.active === false);
+    expect(hidden).toHaveLength(1);
+    expect(hidden[0].name).toMatch(/coming soon/i);
+  });
+
+  it('seeds the website as an unpublished draft with real, visible publish-blocking warnings', () => {
+    const design = hyroxPlan.website.design as unknown as SiteDocument;
+    expect(coerceDocument(JSON.parse(JSON.stringify(design)))).toEqual(design);
+    expect(hyroxPlan.website.published).toBe(false);
+    const warnings = documentWarnings(design);
+    expect(warnings.some((w) => w.includes('testimonials'))).toBe(true);
+    expect(warnings.some((w) => w.includes('address'))).toBe(true);
+    expect(warnings.some((w) => w.includes('description'))).toBe(true);
+    const gallery = design.blocks.find((b) => b.type === 'gallery');
+    expect(gallery).toBeTruthy();
+  });
+
+  it('keeps the campaign in draft with Hyrox-flavoured copy', () => {
+    expect(hyroxPlan.campaign.status).toBe('draft');
+    expect(hyroxPlan.campaign.subject).toMatch(/race day/i);
+  });
+});

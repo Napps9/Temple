@@ -277,8 +277,13 @@ async function teardown(sb: Client, slug: string, emailDomain: string): Promise<
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
-      slug: { type: 'string', default: 'demo-ironworks' },
-      name: { type: 'string', default: 'Ironworks Strength Club' },
+      // slug/name have no static default — the default depends on
+      // --discipline (resolved below) — so a bare `npm run seed:demo`
+      // still gets the CrossFit gym, but `--discipline hyrox` gets its
+      // own name/slug without also having to pass --name/--slug.
+      slug: { type: 'string' },
+      name: { type: 'string' },
+      discipline: { type: 'string', default: 'crossfit' },
       members: { type: 'string', default: '40' },
       'weeks-back': { type: 'string', default: '4' },
       'weeks-forward': { type: 'string', default: '2' },
@@ -291,7 +296,12 @@ async function main(): Promise<void> {
     },
   });
 
-  const slug = values.slug!;
+  const discipline = values.discipline as string;
+  if (discipline !== 'crossfit' && discipline !== 'hyrox') {
+    fail(`--discipline must be "crossfit" or "hyrox" (got "${discipline}").`);
+  }
+  const slug = values.slug ?? (discipline === 'hyrox' ? 'demo-hyrox' : 'demo-ironworks');
+  const gymName = values.name ?? (discipline === 'hyrox' ? 'Ironclad Hyrox Club' : 'Ironworks Strength Club');
   if (!/^demo-[a-z0-9-]+$/.test(slug)) {
     fail(`slug must match demo-[a-z0-9-]+ (got "${slug}") — the demo- prefix is the safety rail for both seed and teardown.`);
   }
@@ -301,7 +311,8 @@ async function main(): Promise<void> {
     ? null
     : buildDemoPlan({
         slug,
-        gymName: values.name!,
+        gymName,
+        discipline,
         members: Number(values.members),
         weeksBack: Number(values['weeks-back']),
         weeksForward: Number(values['weeks-forward']),

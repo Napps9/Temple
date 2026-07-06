@@ -25,15 +25,20 @@ import {
 } from './roster';
 import {
   CLASS_TYPE_DEFS,
+  CLASS_TYPE_DEFS_HYROX,
   GYM_HOURS,
   RECURRENCE_DEFS,
+  RECURRENCE_DEFS_HYROX,
   expandOccurrences,
   isoDateOffset,
 } from './timetable';
 import {
   HYROX_SIM_MOVEMENT_KEY,
+  HYROX_TIME_MOVEMENT_KEY,
   buildRace,
   focusPool,
+  focusPoolHyrox,
+  officialRaceSeconds,
   progressionSeries,
   type FocusScheme,
 } from './training';
@@ -64,6 +69,11 @@ export type DemoConfig = {
   tz: string;
   seed: number;
   now: Date;
+  // Defaults to 'crossfit' — every existing call site (and the
+  // deterministic fixtures in plan.test.ts) is unaffected. 'hyrox'
+  // reshapes class types, training history, races, store copy and the
+  // website into the Hyrox flavour; see the isHyrox branches below.
+  discipline?: 'crossfit' | 'hyrox';
 };
 
 export type DemoUser = {
@@ -131,6 +141,8 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     throw new Error(`members must be 10..${MAX_MEMBERS}`);
   }
 
+  const discipline = config.discipline ?? 'crossfit';
+  const isHyrox = discipline === 'hyrox';
   const rng = mulberry32(config.seed);
   const emailDomain = `${config.slug}.temple.test`;
   const gymId = demoUuid(rng);
@@ -169,7 +181,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     currency: 'GBP',
     primary_color: '#DC2626',
     public_signup_enabled: true,
-    discipline: 'crossfit',
+    discipline,
   };
 
   // --- memberships + consents -------------------------------------------------
@@ -270,8 +282,10 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   // --- timetable -----------------------------------------------------------------
   const startISO = isoDateOffset(todayISO, -config.weeksBack * 7);
   const endISO = isoDateOffset(todayISO, config.weeksForward * 7);
+  const classTypeDefs = isHyrox ? CLASS_TYPE_DEFS_HYROX : CLASS_TYPE_DEFS;
+  const recurrenceDefs = isHyrox ? RECURRENCE_DEFS_HYROX : RECURRENCE_DEFS;
   const classTypeIdByName = new Map<string, string>();
-  const classTypes: T<'class_types'>[] = CLASS_TYPE_DEFS.map((def) => {
+  const classTypes: T<'class_types'>[] = classTypeDefs.map((def) => {
     const id = demoUuid(rng);
     classTypeIdByName.set(def.name, id);
     return { id, gym_id: gymId, name: def.name, color: def.color };
@@ -279,7 +293,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
 
   const recurrences: T<'class_recurrences'>[] = [];
   const sessions: T<'class_sessions'>[] = [];
-  RECURRENCE_DEFS.forEach((def, i) => {
+  recurrenceDefs.forEach((def, i) => {
     const recurrenceId = demoUuid(rng);
     recurrences.push({
       id: recurrenceId,
@@ -320,7 +334,8 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   const futureSessions = sessions
     .filter((s) => s.starts_at > nowISO)
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  const spotlight = futureSessions.find((s) => s.name === 'CrossFit') ?? futureSessions[0];
+  const spotlightName = isHyrox ? 'Hyrox Simulation' : 'CrossFit';
+  const spotlight = futureSessions.find((s) => s.name === spotlightName) ?? futureSessions[0];
 
   for (const session of sessions) {
     const isPast = session.starts_at <= nowISO;
@@ -375,7 +390,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   }
 
   // --- training history --------------------------------------------------------------
-  const pool = focusPool();
+  const pool = isHyrox ? focusPoolHyrox() : focusPool();
   const trainingMembers = activeMembers.slice(0, Math.min(15, activeMembers.length));
   const workouts: T<'tracked_workouts'>[] = [];
   const movementResults: T<'tracked_movement_results'>[] = [];
@@ -423,12 +438,25 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   }
 
   // --- Hyrox races ----------------------------------------------------------------------
+  // A Hyrox-discipline gym races far more of its roster than a
+  // CrossFit box that merely offers the odd sim — six racers across
+  // both formats and genders populate the station leaderboards for
+  // real, not just as a novelty.
   const hyroxRaces: T<'tracked_hyrox_races'>[] = [];
   const hyroxSplits: T<'tracked_hyrox_splits'>[] = [];
-  const raceSpecs = [
-    { member: trainingMembers[0], length: 'full' as const, gender: 'mens' as const, daysAgo: 12 },
-    { member: trainingMembers[1], length: 'half' as const, gender: 'womens' as const, daysAgo: 5 },
-  ];
+  const raceSpecs = isHyrox
+    ? [
+        { member: trainingMembers[0], length: 'full' as const, gender: 'mens' as const, daysAgo: 12 },
+        { member: trainingMembers[1], length: 'half' as const, gender: 'womens' as const, daysAgo: 5 },
+        { member: trainingMembers[2], length: 'full' as const, gender: 'womens' as const, daysAgo: 20 },
+        { member: trainingMembers[3], length: 'half' as const, gender: 'mens' as const, daysAgo: 8 },
+        { member: trainingMembers[4], length: 'full' as const, gender: 'mens' as const, daysAgo: 30 },
+        { member: trainingMembers[5], length: 'half' as const, gender: 'womens' as const, daysAgo: 3 },
+      ]
+    : [
+        { member: trainingMembers[0], length: 'full' as const, gender: 'mens' as const, daysAgo: 12 },
+        { member: trainingMembers[1], length: 'half' as const, gender: 'womens' as const, daysAgo: 5 },
+      ];
   for (const spec of raceSpecs) {
     if (!spec.member) continue;
     const race = buildRace(rng, spec.length, spec.gender);
@@ -480,6 +508,39 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     }
   }
 
+  // Official competition results (HYROX_TIME) — distinct from the
+  // training Race Simulation above: no split breakdown, just a real
+  // finish time, so that leaderboard bucket has genuine entries too.
+  if (isHyrox) {
+    const officialSpecs = [
+      { member: trainingMembers[0], length: 'full' as const, daysAgo: 45 },
+      { member: trainingMembers[2], length: 'full' as const, daysAgo: 60 },
+      { member: trainingMembers[1], length: 'half' as const, daysAgo: 50 },
+    ];
+    for (const spec of officialSpecs) {
+      if (!spec.member) continue;
+      const performedAt = daysFrom(config.now, -spec.daysAgo);
+      performedAt.setUTCHours(9, 0, 0, 0);
+      const workoutId = demoUuid(rng);
+      workouts.push({
+        id: workoutId,
+        gym_id: gymId,
+        profile_id: spec.member.id,
+        performed_at: iso(performedAt),
+        title: 'Hyrox race day',
+      });
+      movementResults.push({
+        gym_id: gymId,
+        profile_id: spec.member.id,
+        workout_id: workoutId,
+        movement_key: HYROX_TIME_MOVEMENT_KEY,
+        track_key: spec.length,
+        value_seconds: officialRaceSeconds(rng, spec.length),
+        performed_at: iso(performedAt),
+      });
+    }
+  }
+
   // --- health -------------------------------------------------------------------------------
   // Region keys from src/lib/injuries.ts BODY_REGIONS; movement keys
   // from the live catalog.
@@ -500,8 +561,8 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
       body_region: spec.region,
       side: spec.side,
       pain_level: spec.pain,
-      movements_hurt: ['overhead_squat'],
-      movements_ok: ['back_squat', 'air_squat'],
+      movements_hurt: isHyrox ? ['hyrox_sled_push'] : ['overhead_squat'],
+      movements_ok: isHyrox ? ['hyrox_run', 'hyrox_farmers_carry'] : ['back_squat', 'air_squat'],
       started_on: isoDateOffset(todayISO, -spec.daysAgo),
       status: spec.status,
       resolved_at: spec.status === 'resolved' ? iso(daysFrom(config.now, -7)) : null,
@@ -574,9 +635,16 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   const campaign: T<'email_campaigns'> = {
     gym_id: gymId,
     created_by: owner.id,
-    title: 'March programme preview',
-    subject: `Big week coming up at ${config.gymName}`,
-    preheader: 'New cycle, two new class slots, and a Hyrox sim on Saturday.',
+    title: isHyrox ? 'Race day countdown' : 'March programme preview',
+    subject: isHyrox
+      ? `Race day is close — get ready at ${config.gymName}`
+      : `Big week coming up at ${config.gymName}`,
+    preheader: isHyrox
+      ? 'Two new compromised-running slots, plus this Saturday’s full Hyrox simulation.'
+      : 'New cycle, two new class slots, and a Hyrox sim on Saturday.',
+    // Left as a draft on purpose — the campaign builder, its preview
+    // and its send-gate are meant to be explored from an unfinished
+    // state, not demoed as a fait accompli.
     status: 'draft',
     design: asJson(emailDesign),
     audience: asJson({ kind: 'all_members' }),
@@ -584,58 +652,159 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
 
   // --- store + website ----------------------------------------------------------------------------
   const digitalAssetPath = `${gymId}/12-week-engine-programme.pdf`;
-  const storeProducts: T<'store_products'>[] = [
-    {
-      gym_id: gymId,
-      name: 'Ironworks Tee',
-      description: 'Heavyweight cotton, gym logo front and back.',
-      kind: 'physical',
-      price_cents: 2200,
-      track_inventory: true,
-      stock_quantity: 25,
-      created_by: owner.id,
-    },
-    {
-      gym_id: gymId,
-      name: 'Shaker Bottle',
-      description: '700ml, leak-proof, dishwasher safe.',
-      kind: 'physical',
-      price_cents: 1200,
-      track_inventory: true,
-      stock_quantity: 40,
-      created_by: owner.id,
-    },
-    {
-      gym_id: gymId,
-      name: '12-Week Engine Programme',
-      description: 'A downloadable conditioning block written by our coaches.',
-      kind: 'digital',
-      price_cents: 3900,
-      track_inventory: false,
-      digital_asset_path: digitalAssetPath,
-      created_by: owner.id,
-    },
-  ];
+  const storeProducts: T<'store_products'>[] = isHyrox
+    ? [
+        {
+          gym_id: gymId,
+          name: 'Race Vest',
+          description: 'Compression vest built for Hyrox race day.',
+          kind: 'physical',
+          price_cents: 3600,
+          track_inventory: true,
+          stock_quantity: 20,
+          created_by: owner.id,
+        },
+        {
+          gym_id: gymId,
+          name: 'Sled Glide Gloves',
+          description: 'Grip and palm protection for sled pushes, pulls and farmers carries.',
+          kind: 'physical',
+          price_cents: 1800,
+          track_inventory: true,
+          stock_quantity: 35,
+          created_by: owner.id,
+        },
+        {
+          gym_id: gymId,
+          name: '12-Week Hyrox Prep Programme',
+          description: 'A downloadable race-prep block written by our coaches.',
+          kind: 'digital',
+          price_cents: 4200,
+          track_inventory: false,
+          digital_asset_path: digitalAssetPath,
+          created_by: owner.id,
+        },
+        // Deliberately hidden from the storefront — demos the
+        // active/inactive toggle staff use while a product is still
+        // being priced or photographed.
+        {
+          gym_id: gymId,
+          name: 'Finisher Tee — coming soon',
+          description: 'Limited-run race-day finisher tee. Not live yet — stock still being confirmed.',
+          kind: 'physical',
+          price_cents: 2500,
+          track_inventory: true,
+          stock_quantity: 0,
+          active: false,
+          created_by: owner.id,
+        },
+      ]
+    : [
+        {
+          gym_id: gymId,
+          name: 'Ironworks Tee',
+          description: 'Heavyweight cotton, gym logo front and back.',
+          kind: 'physical',
+          price_cents: 2200,
+          track_inventory: true,
+          stock_quantity: 25,
+          created_by: owner.id,
+        },
+        {
+          gym_id: gymId,
+          name: 'Shaker Bottle',
+          description: '700ml, leak-proof, dishwasher safe.',
+          kind: 'physical',
+          price_cents: 1200,
+          track_inventory: true,
+          stock_quantity: 40,
+          created_by: owner.id,
+        },
+        {
+          gym_id: gymId,
+          name: '12-Week Engine Programme',
+          description: 'A downloadable conditioning block written by our coaches.',
+          kind: 'digital',
+          price_cents: 3900,
+          track_inventory: false,
+          digital_asset_path: digitalAssetPath,
+          created_by: owner.id,
+        },
+      ];
 
+  // The strength/forged template + theme already covers "Strength,
+  // CrossFit, Hyrox" (see brand-themes.ts's tagline for 'forged'), so
+  // both disciplines reuse it — only the copy and publish state differ.
   const siteDoc = SITE_TEMPLATES.strength.build(config.gymName);
   const patchedBlocks = siteDoc.blocks.map((raw, i) => {
     const block = { ...raw, id: `sb_demo${i + 1}` };
+    if (block.type === 'hero' && isHyrox) {
+      return {
+        ...block,
+        subheadline:
+          'Race-day conditioning, coached compromised running and real Hyrox simulations — book a free session and feel what race pace costs.',
+      };
+    }
+    if (block.type === 'about' && isHyrox) {
+      return {
+        ...block,
+        heading: 'Built for race day',
+        body: 'We coach for one outcome: crossing the finish line faster than you thought possible. Every session blends strength, compromised running and the eight Hyrox stations, programmed by coaches who race themselves. Whether this is your first Hyrox or your tenth, we will build the engine and the technique to get you there.',
+      };
+    }
     if (block.type === 'testimonials') {
+      // A Hyrox-discipline site is seeded mid-setup on purpose — no
+      // quotes yet — so the Publish flow's own "add real quotes"
+      // warning is something to actually see, not just read about.
+      if (isHyrox) return block;
       return {
         ...block,
         quotes: TESTIMONIAL_QUOTES.map((q, i) => ({ id: `q_demo${i + 1}`, quote: q.quote, name: q.name })),
       };
     }
     if (block.type === 'location') {
+      // Same deliberate gap as testimonials above — no address yet.
+      if (isHyrox) return block;
       return { ...block, address: DEMO_ADDRESS, hours: DEMO_HOURS_TEXT };
     }
     return block;
   });
+  // A gallery with one photo missing its description — triggers the
+  // "add a description" publish warning alongside the empty
+  // testimonials/location blocks, so a Hyrox-discipline demo shows the
+  // site builder mid-draft rather than only ever finished and live.
+  const blocksWithGallery = isHyrox
+    ? (() => {
+        const gallery = {
+          id: 'sb_demo_gallery',
+          type: 'gallery' as const,
+          heading: 'Inside the box',
+          images: [
+            {
+              id: 'g_demo1',
+              url: 'https://picsum.photos/seed/hyrox-gym-1/900/600',
+              alt: 'Members mid-sled-push during a Saturday Hyrox simulation',
+            },
+            { id: 'g_demo2', url: 'https://picsum.photos/seed/hyrox-gym-2/900/600', alt: '' },
+          ],
+        };
+        const locationIdx = patchedBlocks.findIndex((b) => b.type === 'location');
+        return [
+          ...patchedBlocks.slice(0, locationIdx),
+          gallery,
+          ...patchedBlocks.slice(locationIdx),
+        ];
+      })()
+    : patchedBlocks;
   const website: T<'gym_websites'> = {
     gym_id: gymId,
     theme: SITE_TEMPLATES.strength.themeId,
-    design: asJson({ ...siteDoc, blocks: patchedBlocks }),
-    published: true,
+    design: asJson({ ...siteDoc, blocks: blocksWithGallery }),
+    // A CrossFit demo ships live so the public site is something to
+    // see immediately; the Hyrox demo stays unpublished so the site
+    // builder's draft state — warnings, the disabled-until-ready
+    // Publish button — is part of what gets demoed.
+    published: !isHyrox,
   };
 
   const gymHours: T<'gym_hours'>[] = GYM_HOURS.map(([day, opens, closes]) => ({

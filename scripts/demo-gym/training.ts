@@ -3,7 +3,7 @@
 // the Track surfaces without inventing a single key.
 
 import { MOVEMENT_GROUPS, type Metric } from '../../src/lib/movements';
-import { HYROX_SIM } from '../../src/lib/hyrox';
+import { HYROX_SIM, HYROX_STATIONS, HYROX_TIME } from '../../src/lib/hyrox';
 import { computeRaceTotals, emptyRaceSplits, type SplitDraft } from '../../src/lib/hyrox-race';
 import { rngInt, type Rng } from './roster';
 
@@ -32,6 +32,19 @@ export function focusPool(): FocusScheme[] {
     }
   }
   return pool;
+}
+
+// Hyrox counterpart to focusPool() above: the eight stations plus the
+// 1km run split, every one a lower-is-better time — so a Hyrox-
+// discipline member's "focus movements" are drawn from race stations
+// instead of barbell lifts.
+export function focusPoolHyrox(): FocusScheme[] {
+  return HYROX_STATIONS.map((s) => ({
+    movementKey: s.key,
+    trackKey: s.schemeKey,
+    metric: 'time' as const,
+    better: 'lower' as const,
+  }));
 }
 
 // A progressing series: weights trend up with plateaus and end on a
@@ -115,3 +128,14 @@ export function buildRace(
 // 0096's contract: PR badges and leaderboards read this row, the
 // splits table is the detail underneath it.
 export const HYROX_SIM_MOVEMENT_KEY = HYROX_SIM.key;
+
+// A real competition result, logged separately from the training
+// Race Simulation above (see hyrox.ts: HYROX_TIME vs HYROX_SIM) — no
+// split breakdown, just the finish time.
+export const HYROX_TIME_MOVEMENT_KEY = HYROX_TIME.key;
+
+// Plausible official finish times in seconds — wide enough to look
+// like real racers, not a rounded demo number.
+export function officialRaceSeconds(rng: Rng, raceLength: 'full' | 'half'): number {
+  return raceLength === 'full' ? rngInt(rng, 4800, 6600) : rngInt(rng, 2700, 3900);
+}

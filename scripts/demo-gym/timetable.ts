@@ -30,6 +30,26 @@ export const RECURRENCE_DEFS: RecurrenceDef[] = [
   { classType: 'Engine', daysOfWeek: [2, 4], times: ['07:15'], durationMinutes: 45, capacity: 16 },
 ];
 
+// Hyrox-discipline counterpart to CLASS_TYPE_DEFS/RECURRENCE_DEFS
+// above — same slot budget and shape, different programming: race
+// simulations, compromised running and strength built for the eight
+// stations rather than CrossFit's WOD/oly/gymnastics split.
+export const CLASS_TYPE_DEFS_HYROX: ClassTypeDef[] = [
+  { name: 'Hyrox Simulation', color: '#DC2626' },
+  { name: 'Compromised Running', color: '#2563EB' },
+  { name: 'Strength for Hyrox', color: '#F59E0B' },
+  { name: 'Open Gym', color: '#10B981' },
+  { name: 'Engine Builder', color: '#06B6D4' },
+];
+
+export const RECURRENCE_DEFS_HYROX: RecurrenceDef[] = [
+  { classType: 'Hyrox Simulation', daysOfWeek: [1, 3, 5], times: ['06:00', '17:30'], durationMinutes: 75, capacity: 14 },
+  { classType: 'Compromised Running', daysOfWeek: [2, 4], times: ['06:00'], durationMinutes: 45, capacity: 16 },
+  { classType: 'Strength for Hyrox', daysOfWeek: [2, 4], times: ['18:30'], durationMinutes: 60, capacity: 10 },
+  { classType: 'Open Gym', daysOfWeek: [1, 3, 5], times: ['12:00'], durationMinutes: 60, capacity: 20 },
+  { classType: 'Engine Builder', daysOfWeek: [6], times: ['09:00'], durationMinutes: 60, capacity: 16 },
+];
+
 // gym_hours rows: [day_of_week, opens_at, closes_at]. No Sunday row =
 // closed, which is how the app reads absence.
 export const GYM_HOURS: [number, string, string][] = [

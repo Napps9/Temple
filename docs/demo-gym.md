@@ -4,9 +4,9 @@ One command creates a believable, fully-populated gym with **real,
 signable-in accounts**, so every feature can be tested end to end —
 booking, attendance history, PRs and leaderboards, Hyrox races,
 injuries and staff alerts, DMs, leads, a draft campaign, the store,
-and a published website. One command removes it all again.
+and a website. One command removes it all again.
 
-## What you get (defaults)
+## What you get (defaults — `--discipline crossfit`)
 
 - **43 accounts**: 1 owner, 2 coaches, 40 members — all sharing the
   password `TempleDemo1!`, all on `@demo-ironworks.temple.test`
@@ -26,6 +26,36 @@ and a published website. One command removes it all again.
 - Everything is deterministic for a given `--seed` — two runs produce
   the same names, numbers, and history shapes.
 
+## `--discipline hyrox`
+
+`--discipline hyrox` (default slug `demo-hyrox`, default name
+"Ironclad Hyrox Club" — override either with `--slug`/`--name`) builds
+a gym styled for Hyrox instead of CrossFit, and deliberately shows off
+several features **mid-draft** rather than only ever finished:
+
+- `gyms.discipline = 'hyrox'` — the member Track section shows the
+  eight-station catalog + race simulation, not CrossFit movement
+  groups.
+- Class types become Hyrox Simulation / Compromised Running / Strength
+  for Hyrox / Open Gym / Engine Builder.
+- Training history is logged against the real Hyrox station keys
+  (SkiErg, sled push/pull, burpee broad jumps, row, farmers carry,
+  sandbag lunges, wall balls, the 1km run split) instead of barbell
+  lifts, so the station leaderboards are genuinely populated.
+- **6 Hyrox race simulations** (full + half, both genders) instead of
+  2, plus **3 official race results** (`hyrox_time`) logged separately
+  from training sims — both leaderboard buckets have real entries.
+- **4 store products**, one of them `active: false` — a "coming soon"
+  item hidden from the storefront, demoing that toggle.
+- The **website is left unpublished**, with testimonials and the
+  location address deliberately blank and a gallery photo missing its
+  description — the same three publish-blocking warnings an owner
+  mid-setup would see, so the site builder's draft state (and the
+  disabled-until-ready Publish button) is something to actually look
+  at, not just read about in this file.
+- The email campaign stays a draft either way, with Hyrox-flavoured
+  copy for this discipline.
+
 ## Cloud usage (GitHub Action — no local setup)
 
 One-time: add the `SUPABASE_SERVICE_ROLE_KEY` repo secret (GitHub →
@@ -34,8 +64,9 @@ Dashboard → Settings → API → `service_role`). The existing
 `SUPABASE_PROJECT_REF` secret supplies the URL.
 
 Then: GitHub → Actions → **Demo gym** → Run workflow → choose `seed`
-or `teardown`. Runs against the hosted project with the same safety
-rails; credentials are printed in the job log.
+or `teardown`, and for a seed, pick `discipline` (crossfit/hyrox) and
+optionally a `slug`/`name`/`members`. Runs against the hosted project
+with the same safety rails; credentials are printed in the job log.
 
 ## Local usage (zero config)
 
@@ -90,8 +121,9 @@ upsert; recovery from any failed state is teardown + re-seed.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `--slug` | `demo-ironworks` | Gym slug; must match `demo-[a-z0-9-]+` |
-| `--name` | `Ironworks Strength Club` | Display name |
+| `--discipline` | `crossfit` | `crossfit` or `hyrox` — picks slug/name defaults below and reshapes the gym; see "`--discipline hyrox`" above |
+| `--slug` | `demo-ironworks` (`demo-hyrox` if `--discipline hyrox`) | Gym slug; must match `demo-[a-z0-9-]+` |
+| `--name` | `Ironworks Strength Club` (`Ironclad Hyrox Club` if `--discipline hyrox`) | Display name |
 | `--members` | `40` | Member count (10–60) |
 | `--weeks-back` | `4` | Weeks of past sessions/bookings |
 | `--weeks-forward` | `2` | Weeks of future sessions |
