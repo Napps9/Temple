@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { MAX_MEMBERS, demoUuid, memberNames, mulberry32 } from './roster';
+import { MAX_MEMBERS, demoUuid, memberNames, mulberry32, seedFor } from './roster';
 
 describe('mulberry32', () => {
   it('is deterministic for a given seed and varies across seeds', () => {
@@ -28,6 +28,20 @@ describe('demoUuid', () => {
     expect(u2).not.toBe(u1);
     const rngAgain = mulberry32(1);
     expect(demoUuid(rngAgain)).toBe(u1);
+  });
+});
+
+describe('seedFor', () => {
+  it('is deterministic for a given (seed, slug) pair', () => {
+    expect(seedFor(42, 'demo-ironworks')).toBe(seedFor(42, 'demo-ironworks'));
+  });
+
+  it('spreads two slugs on the same numeric seed apart — the demo-ironworks/demo-hyrox collision this exists to prevent', () => {
+    expect(seedFor(42, 'demo-ironworks')).not.toBe(seedFor(42, 'demo-hyrox'));
+  });
+
+  it('still varies when only the numeric seed changes', () => {
+    expect(seedFor(42, 'demo-ironworks')).not.toBe(seedFor(7, 'demo-ironworks'));
   });
 });
 

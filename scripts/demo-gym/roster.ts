@@ -1,6 +1,6 @@
 // Fixed personas + deterministic randomness for the demo-gym seeder.
 // Everything the plan builder randomises flows through mulberry32, so
-// the same --seed always produces byte-identical output.
+// the same (slug, --seed) pair always produces byte-identical output.
 
 export type Rng = () => number;
 
@@ -13,6 +13,25 @@ export function mulberry32(seed: number): Rng {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+// Mixes the gym slug into the numeric --seed (FNV-1a-style) before it
+// reaches mulberry32. Every non-profile id in a plan (gym, membership,
+// class, session, workout…) is generated straight from this stream
+// with no per-slug remapping — only auth-user ids get remapped, to the
+// real id GoTrue mints on signup. Two demo gyms with different slugs
+// but the same default --seed (nobody changes it) would otherwise
+// compute byte-identical ids and collide the moment they coexist in
+// one database — this is what actually happened seeding demo-hyrox
+// alongside demo-ironworks, both on the default seed 42. Not a
+// cryptographic hash, just enough spread that two slugs never fold
+// back onto the same numeric seed in practice.
+export function seedFor(seed: number, slug: string): number {
+  let h = seed >>> 0;
+  for (let i = 0; i < slug.length; i++) {
+    h = Math.imul(h ^ slug.charCodeAt(i), 0x01000193) >>> 0;
+  }
+  return h;
 }
 
 // RFC-4122-shaped v4 uuid drawn from the seeded RNG, so every id in a

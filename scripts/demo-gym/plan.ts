@@ -21,6 +21,7 @@ import {
   memberNames,
   mulberry32,
   rngInt,
+  seedFor,
   type Rng,
 } from './roster';
 import {
@@ -143,7 +144,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
 
   const discipline = config.discipline ?? 'crossfit';
   const isHyrox = discipline === 'hyrox';
-  const rng = mulberry32(config.seed);
+  const rng = mulberry32(seedFor(config.seed, config.slug));
   const emailDomain = `${config.slug}.temple.test`;
   const gymId = demoUuid(rng);
   const nowISO = iso(config.now);

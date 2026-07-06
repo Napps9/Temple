@@ -260,4 +260,24 @@ describe('buildDemoPlan — discipline: hyrox', () => {
     expect(hyroxPlan.campaign.status).toBe('draft');
     expect(hyroxPlan.campaign.subject).toMatch(/race day/i);
   });
+
+  // Regression: the first hosted seed of demo-hyrox crashed with
+  // "duplicate key value violates unique constraint gyms_pkey" —
+  // every non-profile id (gymId first among them) was generated from
+  // a stream keyed only on --seed, so two default-seeded demo gyms
+  // collided the moment they coexisted in the same database. seedFor()
+  // mixes the slug in; this pins that both demo gyms can actually
+  // live side by side.
+  it('never collides with the default crossfit gym on the same default --seed', () => {
+    expect(hyroxPlan.gym.id).not.toBe(plan.gym.id);
+    const ids = (p: typeof plan) => [
+      p.gym.id,
+      ...p.memberships.map((m) => m.id),
+      ...p.classTypes.map((t) => t.id),
+      ...p.sessions.map((s) => s.id),
+      ...p.workouts.map((w) => w.id),
+    ];
+    const crossfitIds = new Set(ids(plan));
+    for (const id of ids(hyroxPlan)) expect(crossfitIds.has(id)).toBe(false);
+  });
 });
