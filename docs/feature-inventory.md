@@ -1044,6 +1044,11 @@ surround:
   `/track/movement/:movement`, `/track/group/:group`,
   `/track/workout/:id`, `/inbox/direct/:peer`,
   `/management/members/:profile`.
+- **Demo gym seeder** — `npm run seed:demo` creates a fully-populated
+  demo tenant with real signable-in accounts (timetable + attendance
+  history, progressing PRs, Hyrox races, injuries, leads, campaign
+  draft, store, published website), deterministic per `--seed`, with
+  a guarded `--teardown`. Runbook: `docs/demo-gym.md`.
 
 ---
 
