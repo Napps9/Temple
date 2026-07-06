@@ -80,8 +80,12 @@ async function insertAll<TRow>(
     const chunk = rows.slice(i, i + BATCH);
     // Table names are validated by the typed plan; the union of every
     // seeded table is unwieldy as a generic, so insert untyped here.
+    // defaultToNull: false — rows in one batch have differing key
+    // sets, and PostgREST otherwise fills the gaps with NULL instead
+    // of the column default (bit us on store_products.track_inventory).
     const { error } = await (sb.from as (t: string) => ReturnType<Client['from']>)(table).insert(
       chunk as never,
+      { defaultToNull: false },
     );
     if (error) {
       fail(`insert into ${table} failed: ${error.message}\nPartial seed left behind — run --teardown, then re-seed.`);

@@ -611,6 +611,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
       description: 'A downloadable conditioning block written by our coaches.',
       kind: 'digital',
       price_cents: 3900,
+      track_inventory: false,
       digital_asset_path: digitalAssetPath,
       created_by: owner.id,
     },
