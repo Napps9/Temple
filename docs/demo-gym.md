@@ -26,6 +26,17 @@ and a published website. One command removes it all again.
 - Everything is deterministic for a given `--seed` — two runs produce
   the same names, numbers, and history shapes.
 
+## Cloud usage (GitHub Action — no local setup)
+
+One-time: add the `SUPABASE_SERVICE_ROLE_KEY` repo secret (GitHub →
+Settings → Secrets and variables → Actions; the value is in Supabase
+Dashboard → Settings → API → `service_role`). The existing
+`SUPABASE_PROJECT_REF` secret supplies the URL.
+
+Then: GitHub → Actions → **Demo gym** → Run workflow → choose `seed`
+or `teardown`. Runs against the hosted project with the same safety
+rails; credentials are printed in the job log.
+
 ## Local usage (zero config)
 
 ```bash
