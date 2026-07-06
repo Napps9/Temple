@@ -198,6 +198,24 @@ describe('buildDemoPlan', () => {
     const unread = plan.directMessages.filter((m) => m.read_at == null);
     expect(unread).toHaveLength(3);
   });
+
+  it('programs every class type except Open Gym, one row per date it actually ran', () => {
+    expect(plan.programming.length).toBeGreaterThan(40);
+    const classTypeById = new Map(plan.classTypes.map((t) => [t.id!, t.name]));
+    const programmedNames = new Set(plan.programming.map((p) => classTypeById.get(p.class_type_id)));
+    expect(programmedNames.has('Open Gym')).toBe(false);
+    expect(programmedNames).toEqual(new Set(['CrossFit', 'Olympic Lifting', 'Gymnastics', 'Engine']));
+
+    const seen = new Set<string>();
+    for (const p of plan.programming) {
+      const key = `${p.class_type_id}:${p.date}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+      const sections = p.sections as unknown as { title: string }[];
+      expect(sections.length).toBeGreaterThan(0);
+      expect(p.author_id).toBe(plan.users.find((u) => u.role === 'owner')!.id);
+    }
+  });
 });
 
 describe('buildDemoPlan — discipline: hyrox', () => {
@@ -279,5 +297,15 @@ describe('buildDemoPlan — discipline: hyrox', () => {
     ];
     const crossfitIds = new Set(ids(plan));
     for (const id of ids(hyroxPlan)) expect(crossfitIds.has(id)).toBe(false);
+  });
+
+  it('programs the Hyrox class types except Open Gym', () => {
+    expect(hyroxPlan.programming.length).toBeGreaterThan(30);
+    const classTypeById = new Map(hyroxPlan.classTypes.map((t) => [t.id!, t.name]));
+    const programmedNames = new Set(hyroxPlan.programming.map((p) => classTypeById.get(p.class_type_id)));
+    expect(programmedNames.has('Open Gym')).toBe(false);
+    expect(programmedNames).toEqual(
+      new Set(['Hyrox Simulation', 'Compromised Running', 'Strength for Hyrox', 'Engine Builder']),
+    );
   });
 });

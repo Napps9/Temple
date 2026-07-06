@@ -2,9 +2,9 @@
 
 One command creates a believable, fully-populated gym with **real,
 signable-in accounts**, so every feature can be tested end to end —
-booking, attendance history, PRs and leaderboards, Hyrox races,
-injuries and staff alerts, DMs, leads, a draft campaign, the store,
-and a website. One command removes it all again.
+programming, booking, attendance history, PRs and leaderboards, Hyrox
+races, injuries and staff alerts, DMs, leads, a draft campaign, the
+store, and a website. One command removes it all again.
 
 ## What you get (defaults — `--discipline crossfit`)
 
@@ -14,6 +14,10 @@ and a website. One command removes it all again.
 - **6 weeks of timetable** (4 back, 2 forward) across 5 class types,
   with ~900 bookings carrying realistic attendance and no-show marks,
   plus one full future class with a 3-deep waitlist.
+- **A programmed WOD for every class-type/date it actually ran**
+  (Open Gym excepted — it's unstructured free-training) — a small
+  rotation of real strength + WOD content per class type, so the
+  Programming tab (the first nav item on both sides) isn't empty.
 - **10 weeks of workout history** for 15 members with progressing PRs
   drawn from the real movement catalog, and 2 Hyrox race simulations
   with full 24-split breakdowns.
@@ -37,7 +41,9 @@ several features **mid-draft** rather than only ever finished:
   eight-station catalog + race simulation, not CrossFit movement
   groups.
 - Class types become Hyrox Simulation / Compromised Running / Strength
-  for Hyrox / Open Gym / Engine Builder.
+  for Hyrox / Open Gym / Engine Builder, each with its own programmed
+  content (race simulations, running intervals, sled/carry strength
+  work, engine EMOMs).
 - Training history is logged against the real Hyrox station keys
   (SkiErg, sled push/pull, burpee broad jumps, row, farmers carry,
   sandbag lunges, wall balls, the 1km run split) instead of barbell

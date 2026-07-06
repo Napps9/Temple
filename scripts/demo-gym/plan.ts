@@ -6,6 +6,7 @@
 
 import { starterDocument, FALLBACK_BRAND_SEED } from '../../src/lib/email/blocks';
 import { SITE_TEMPLATES } from '../../src/lib/site-templates';
+import { CROSSFIT_WOD_TEMPLATES, HYROX_WOD_TEMPLATES, buildProgrammingRows } from './programming';
 import type { Database, GymRole } from '../../src/types/database';
 import {
   COACHES,
@@ -117,6 +118,7 @@ export type DemoPlan = {
   digitalAssetPath: string;
   website: T<'gym_websites'>;
   gymHours: T<'gym_hours'>[];
+  programming: T<'class_programming'>[];
   directMessages: T<'direct_messages'>[];
 };
 
@@ -815,6 +817,20 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     closes_at: closes,
   }));
 
+  // --- programming -----------------------------------------------------------------------------------
+  // The Programming tab (first nav item on both sides) was previously
+  // seeded empty. One row per class-type-per-date it actually ran,
+  // cycling through a small hand-authored rotation — "Open Gym" is
+  // deliberately excluded on both disciplines (free-training, not a
+  // programmed class).
+  const programming = buildProgrammingRows(
+    sessions,
+    classTypeIdByName,
+    gymId,
+    owner.id,
+    isHyrox ? HYROX_WOD_TEMPLATES : CROSSFIT_WOD_TEMPLATES,
+  );
+
   // --- DMs -----------------------------------------------------------------------------------------
   const directMessages: T<'direct_messages'>[] = [];
   DM_SCRIPTS.forEach((script, ti) => {
@@ -866,6 +882,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     digitalAssetPath,
     website,
     gymHours,
+    programming,
     directMessages,
   };
 }

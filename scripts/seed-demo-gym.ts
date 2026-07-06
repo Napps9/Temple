@@ -131,6 +131,7 @@ function printCounts(plan: DemoPlan): void {
     ['store_products', plan.storeProducts.length],
     ['gym_websites', 1],
     ['gym_hours', plan.gymHours.length],
+    ['class_programming', plan.programming.length],
     ['direct_messages', plan.directMessages.length],
   ];
   const width = Math.max(...rows.map(([n]) => n.length));
@@ -220,6 +221,7 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
   await insertAll(sb, 'store_products', p.storeProducts);
   await insertAll(sb, 'gym_websites', [p.website]);
   await insertAll(sb, 'gym_hours', p.gymHours);
+  await insertAll(sb, 'class_programming', p.programming);
   await insertAll(sb, 'direct_messages', p.directMessages);
 
   console.log('');
