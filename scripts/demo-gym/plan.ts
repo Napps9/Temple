@@ -1,0 +1,700 @@
+// Pure, deterministic plan builder for the demo-gym seeder: takes a
+// config and returns every row for every table, all ids pre-generated,
+// no I/O. The orchestrator inserts what this returns; --dry-run prints
+// it; the tests exercise it. Row shapes are the Database Insert types,
+// so a schema drift fails typecheck rather than at runtime.
+
+import { starterDocument, FALLBACK_BRAND_SEED } from '../../src/lib/email/blocks';
+import { SITE_TEMPLATES } from '../../src/lib/site-templates';
+import type { Database, GymRole } from '../../src/types/database';
+import {
+  COACHES,
+  DEMO_ADDRESS,
+  DEMO_HOURS_TEXT,
+  DM_SCRIPTS,
+  LEAD_NAMES,
+  MAX_MEMBERS,
+  OWNER,
+  PENDING_NAMES,
+  TESTIMONIAL_QUOTES,
+  demoUuid,
+  memberNames,
+  mulberry32,
+  rngInt,
+  type Rng,
+} from './roster';
+import {
+  CLASS_TYPE_DEFS,
+  GYM_HOURS,
+  RECURRENCE_DEFS,
+  expandOccurrences,
+  isoDateOffset,
+} from './timetable';
+import {
+  HYROX_SIM_MOVEMENT_KEY,
+  buildRace,
+  focusPool,
+  progressionSeries,
+  type FocusScheme,
+} from './training';
+
+// pending_members and the store tables live under Views in
+// database.ts, so index across both sections.
+type TablesAndViews = Database['public']['Tables'] & Database['public']['Views'];
+type T<Name extends keyof TablesAndViews> = TablesAndViews[Name] extends { Insert: infer I }
+  ? I
+  : never;
+
+// Kept in sync with CONSENT_POLICY_VERSION in src/lib/consent.ts —
+// not imported because consent.ts pulls in the app's supabase client,
+// which needs EXPO_PUBLIC_* env at module load.
+export const DEMO_CONSENT_POLICY_VERSION = '2026-01';
+
+export const DEMO_PASSWORD = 'TempleDemo1!';
+export const LEFT_MEMBER_COUNT = 4;
+export const PENDING_EMAIL_PREFIX = 'pending';
+
+export type DemoConfig = {
+  slug: string;
+  gymName: string;
+  members: number;
+  weeksBack: number;
+  weeksForward: number;
+  historyWeeks: number;
+  tz: string;
+  seed: number;
+  now: Date;
+};
+
+export type DemoUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: GymRole;
+};
+
+export type DemoPlan = {
+  config: DemoConfig;
+  password: string;
+  emailDomain: string;
+  users: DemoUser[];
+  gym: T<'gyms'>;
+  // Ops-only columns the hand-trimmed Insert type deliberately omits;
+  // applied by the orchestrator as a separate cast update.
+  gymFlags: { store_enabled: boolean; store_shipping_fee_cents: number; website_builder_enabled: boolean };
+  memberships: T<'gym_memberships'>[];
+  consents: T<'member_consents'>[];
+  plans: T<'membership_plans'>[];
+  subscriptions: T<'plan_subscriptions'>[];
+  classTypes: T<'class_types'>[];
+  recurrences: T<'class_recurrences'>[];
+  sessions: T<'class_sessions'>[];
+  bookings: T<'class_bookings'>[];
+  waitlist: T<'class_waitlist'>[];
+  workouts: T<'tracked_workouts'>[];
+  movementResults: T<'tracked_movement_results'>[];
+  hyroxRaces: T<'tracked_hyrox_races'>[];
+  hyroxSplits: T<'tracked_hyrox_splits'>[];
+  injuries: T<'member_injuries'>[];
+  staffAlerts: T<'staff_alerts'>[];
+  leadSources: T<'lead_sources'>[];
+  leads: T<'leads'>[];
+  pendingMembers: T<'pending_members'>[];
+  commsSettings: T<'gym_comms_settings'>;
+  campaign: T<'email_campaigns'>;
+  storeProducts: T<'store_products'>[];
+  digitalAssetPath: string;
+  website: T<'gym_websites'>;
+  gymHours: T<'gym_hours'>[];
+  directMessages: T<'direct_messages'>[];
+};
+
+function iso(d: Date): string {
+  return d.toISOString();
+}
+
+function daysFrom(now: Date, days: number): Date {
+  return new Date(now.getTime() + days * 86_400_000);
+}
+
+// Deep-clone through JSON so jsonb payloads carry no undefineds and no
+// class instances — exactly what PostgREST will receive.
+function asJson<TVal>(value: TVal): T<'gym_websites'>['design'] {
+  return JSON.parse(JSON.stringify(value));
+}
+
+export function buildDemoPlan(config: DemoConfig): DemoPlan {
+  if (!/^demo-[a-z0-9-]+$/.test(config.slug)) {
+    throw new Error(`slug must match demo-[a-z0-9-]+, got "${config.slug}"`);
+  }
+  if (config.members < 10 || config.members > MAX_MEMBERS) {
+    throw new Error(`members must be 10..${MAX_MEMBERS}`);
+  }
+
+  const rng = mulberry32(config.seed);
+  const emailDomain = `${config.slug}.temple.test`;
+  const gymId = demoUuid(rng);
+  const nowISO = iso(config.now);
+  const todayISO = nowISO.slice(0, 10);
+
+  // --- users ----------------------------------------------------------------
+  const owner: DemoUser = {
+    id: demoUuid(rng),
+    email: `owner@${emailDomain}`,
+    fullName: `${OWNER.first} ${OWNER.last}`,
+    role: 'owner',
+  };
+  const coaches: DemoUser[] = COACHES.map((c, i) => ({
+    id: demoUuid(rng),
+    email: `coach${i + 1}@${emailDomain}`,
+    fullName: `${c.first} ${c.last}`,
+    role: 'coach' as const,
+  }));
+  const members: DemoUser[] = memberNames(config.members).map((n, i) => ({
+    id: demoUuid(rng),
+    email: `member${String(i + 1).padStart(2, '0')}@${emailDomain}`,
+    fullName: `${n.first} ${n.last}`,
+    role: 'member' as const,
+  }));
+  const users = [owner, ...coaches, ...members];
+  const leftMembers = members.slice(-LEFT_MEMBER_COUNT);
+  const activeMembers = members.slice(0, members.length - LEFT_MEMBER_COUNT);
+
+  // --- gym ------------------------------------------------------------------
+  const gym: T<'gyms'> = {
+    id: gymId,
+    name: config.gymName,
+    slug: config.slug,
+    timezone: config.tz,
+    currency: 'GBP',
+    primary_color: '#DC2626',
+    public_signup_enabled: true,
+    discipline: 'crossfit',
+  };
+
+  // --- memberships + consents -------------------------------------------------
+  const membershipIdByProfile = new Map<string, string>();
+  const memberships: T<'gym_memberships'>[] = users.map((u) => {
+    const id = demoUuid(rng);
+    membershipIdByProfile.set(u.id, id);
+    const left = leftMembers.includes(u);
+    return {
+      id,
+      gym_id: gymId,
+      profile_id: u.id,
+      role: u.role,
+      created_at: iso(daysFrom(config.now, -rngInt(rng, 60, 300))),
+      left_at: left ? iso(daysFrom(config.now, -rngInt(rng, 14, 42))) : null,
+    };
+  });
+  const consents: T<'member_consents'>[] = [owner, ...coaches, ...activeMembers].map((u) => ({
+    gym_id: gymId,
+    profile_id: u.id,
+    policy_version: DEMO_CONSENT_POLICY_VERSION,
+  }));
+
+  // --- plans + subscriptions ---------------------------------------------------
+  const unlimitedPlanId = demoUuid(rng);
+  const creditPeriodPlanId = demoUuid(rng);
+  const creditPackPlanId = demoUuid(rng);
+  const plans: T<'membership_plans'>[] = [
+    {
+      plan_id: unlimitedPlanId,
+      gym_id: gymId,
+      name: 'Unlimited',
+      kind: 'unlimited',
+      monthly_price_cents: 7500,
+      notice_period_days: 30,
+    },
+    {
+      plan_id: creditPeriodPlanId,
+      gym_id: gymId,
+      name: '8 Classes / Month',
+      kind: 'credit_period',
+      credit_count: 8,
+      period_length: '1 month',
+      monthly_price_cents: 5500,
+    },
+    {
+      plan_id: creditPackPlanId,
+      gym_id: gymId,
+      name: '10-Class Pack',
+      kind: 'credit_pack',
+      credit_count: 10,
+      monthly_price_cents: 9000,
+    },
+  ];
+
+  const subscriptions: T<'plan_subscriptions'>[] = [];
+  activeMembers.forEach((m, i) => {
+    const base = {
+      gym_membership_id: membershipIdByProfile.get(m.id)!,
+      profile_id: m.id,
+      gym_id: gymId,
+    };
+    if (i < Math.ceil(activeMembers.length * 0.7)) {
+      subscriptions.push({
+        ...base,
+        plan_id: unlimitedPlanId,
+        status: 'active',
+        paid_period_end: iso(daysFrom(config.now, rngInt(rng, 5, 30))),
+      });
+    } else if (i % 2 === 0) {
+      subscriptions.push({
+        ...base,
+        plan_id: creditPackPlanId,
+        status: 'active',
+        credit_balance: rngInt(rng, 1, 10),
+      });
+    } else {
+      subscriptions.push({
+        ...base,
+        plan_id: creditPeriodPlanId,
+        status: 'active',
+        credit_balance: rngInt(rng, 0, 8),
+        period_resets_at: iso(daysFrom(config.now, rngInt(rng, 3, 28))),
+      });
+    }
+  });
+  for (const m of leftMembers) {
+    subscriptions.push({
+      gym_membership_id: membershipIdByProfile.get(m.id)!,
+      profile_id: m.id,
+      gym_id: gymId,
+      plan_id: unlimitedPlanId,
+      status: 'lapsed',
+      cancelled_at: memberships.find((row) => row.profile_id === m.id)?.left_at ?? nowISO,
+    });
+  }
+
+  // --- timetable -----------------------------------------------------------------
+  const startISO = isoDateOffset(todayISO, -config.weeksBack * 7);
+  const endISO = isoDateOffset(todayISO, config.weeksForward * 7);
+  const classTypeIdByName = new Map<string, string>();
+  const classTypes: T<'class_types'>[] = CLASS_TYPE_DEFS.map((def) => {
+    const id = demoUuid(rng);
+    classTypeIdByName.set(def.name, id);
+    return { id, gym_id: gymId, name: def.name, color: def.color };
+  });
+
+  const recurrences: T<'class_recurrences'>[] = [];
+  const sessions: T<'class_sessions'>[] = [];
+  RECURRENCE_DEFS.forEach((def, i) => {
+    const recurrenceId = demoUuid(rng);
+    recurrences.push({
+      id: recurrenceId,
+      gym_id: gymId,
+      class_type_id: classTypeIdByName.get(def.classType)!,
+      days_of_week: def.daysOfWeek,
+      times: def.times,
+      duration_minutes: def.durationMinutes,
+      capacity: def.capacity,
+      starts_on: startISO,
+      tz: config.tz,
+      materialized_until: endISO,
+      created_by: owner.id,
+    });
+    const coach = coaches[i % coaches.length];
+    for (const occ of expandOccurrences(def, startISO, endISO, config.tz)) {
+      sessions.push({
+        id: demoUuid(rng),
+        gym_id: gymId,
+        name: def.classType,
+        class_type_id: classTypeIdByName.get(def.classType)!,
+        recurrence_id: recurrenceId,
+        starts_at: occ.startsAtUtc,
+        duration_minutes: def.durationMinutes,
+        capacity: def.capacity,
+        coach_id: coach.id,
+        created_by: owner.id,
+      });
+    }
+  });
+
+  // --- bookings + attendance + waitlist -------------------------------------------
+  const propensity = new Map<string, number>();
+  for (const m of activeMembers) propensity.set(m.id, 0.25 + rng() * 0.6);
+
+  const bookings: T<'class_bookings'>[] = [];
+  const waitlist: T<'class_waitlist'>[] = [];
+  const futureSessions = sessions
+    .filter((s) => s.starts_at > nowISO)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const spotlight = futureSessions.find((s) => s.name === 'CrossFit') ?? futureSessions[0];
+
+  for (const session of sessions) {
+    const isPast = session.starts_at <= nowISO;
+    const capacity = session.capacity ?? 12;
+    const fillTarget =
+      session === spotlight
+        ? capacity
+        : Math.floor(capacity * (isPast ? 0.4 + rng() * 0.5 : 0.3 + rng() * 0.3));
+    const takers = activeMembers
+      .filter((m) => rng() < propensity.get(m.id)!)
+      .slice(0, fillTarget);
+    // Top the spotlight session up to exact capacity so the waitlist
+    // below is genuinely queued behind a full class.
+    if (session === spotlight) {
+      for (const m of activeMembers) {
+        if (takers.length >= capacity) break;
+        if (!takers.includes(m)) takers.push(m);
+      }
+    }
+    for (const m of takers) {
+      const bookedAt = new Date(new Date(session.starts_at).getTime() - rngInt(rng, 2, 96) * 3_600_000);
+      const roll = rng();
+      const attended = isPast && roll < 0.85;
+      const noShow = isPast && roll >= 0.92;
+      bookings.push({
+        id: demoUuid(rng),
+        gym_id: gymId,
+        class_session_id: session.id!,
+        profile_id: m.id,
+        created_at: iso(bookedAt),
+        attended_at: attended
+          ? iso(new Date(new Date(session.starts_at).getTime() + 4 * 60_000))
+          : null,
+        marked_by: attended || noShow ? coaches[0].id : null,
+        no_show: noShow,
+        no_show_marked_at: noShow
+          ? iso(new Date(new Date(session.starts_at).getTime() + 30 * 60_000))
+          : null,
+      });
+    }
+    if (session === spotlight) {
+      const queued = activeMembers.filter((m) => !takers.includes(m)).slice(0, 3);
+      queued.forEach((m, qi) => {
+        waitlist.push({
+          gym_id: gymId,
+          class_session_id: session.id!,
+          profile_id: m.id,
+          position: qi + 1,
+        });
+      });
+    }
+  }
+
+  // --- training history --------------------------------------------------------------
+  const pool = focusPool();
+  const trainingMembers = activeMembers.slice(0, Math.min(15, activeMembers.length));
+  const workouts: T<'tracked_workouts'>[] = [];
+  const movementResults: T<'tracked_movement_results'>[] = [];
+  const logDays = [1, 3, 5]; // Mon/Wed/Fri offsets within a week
+
+  for (const m of trainingMembers) {
+    const focusCount = rngInt(rng, 3, 4);
+    const start = rngInt(rng, 0, Math.max(0, pool.length - focusCount));
+    const focuses: FocusScheme[] = pool.slice(start, start + focusCount);
+    const perWeek = rngInt(rng, 2, 3);
+    const series = focuses.map((f) =>
+      progressionSeries(rng, f, config.historyWeeks * perWeek),
+    );
+    let sessionIndex = 0;
+    for (let week = config.historyWeeks - 1; week >= 0; week--) {
+      for (let d = 0; d < perWeek; d++) {
+        const focusIdx = sessionIndex % focuses.length;
+        const focus = focuses[focusIdx];
+        const performedAt = daysFrom(config.now, -(week * 7 + (6 - logDays[d % logDays.length])));
+        performedAt.setUTCHours(18, 45, 0, 0);
+        if (performedAt >= config.now) continue;
+        const workoutId = demoUuid(rng);
+        const value = series[focusIdx][Math.min(sessionIndex, series[focusIdx].length - 1)];
+        workouts.push({
+          id: workoutId,
+          gym_id: gymId,
+          profile_id: m.id,
+          performed_at: iso(performedAt),
+          title: focus.metric === 'weight' ? 'Strength session' : 'Engine work',
+        });
+        movementResults.push({
+          gym_id: gymId,
+          profile_id: m.id,
+          workout_id: workoutId,
+          movement_key: focus.movementKey,
+          track_key: focus.trackKey,
+          value_numeric: focus.metric === 'weight' ? value : null,
+          value_seconds: focus.metric === 'time' ? value : null,
+          value_unit: focus.metric === 'weight' ? 'kg' : null,
+          performed_at: iso(performedAt),
+        });
+        sessionIndex++;
+      }
+    }
+  }
+
+  // --- Hyrox races ----------------------------------------------------------------------
+  const hyroxRaces: T<'tracked_hyrox_races'>[] = [];
+  const hyroxSplits: T<'tracked_hyrox_splits'>[] = [];
+  const raceSpecs = [
+    { member: trainingMembers[0], length: 'full' as const, gender: 'mens' as const, daysAgo: 12 },
+    { member: trainingMembers[1], length: 'half' as const, gender: 'womens' as const, daysAgo: 5 },
+  ];
+  for (const spec of raceSpecs) {
+    if (!spec.member) continue;
+    const race = buildRace(rng, spec.length, spec.gender);
+    const performedAt = daysFrom(config.now, -spec.daysAgo);
+    performedAt.setUTCHours(9, 30, 0, 0);
+    const workoutId = demoUuid(rng);
+    const raceId = demoUuid(rng);
+    workouts.push({
+      id: workoutId,
+      gym_id: gymId,
+      profile_id: spec.member.id,
+      performed_at: iso(performedAt),
+      title: 'Hyrox race simulation',
+    });
+    movementResults.push({
+      gym_id: gymId,
+      profile_id: spec.member.id,
+      workout_id: workoutId,
+      movement_key: HYROX_SIM_MOVEMENT_KEY,
+      track_key: race.raceLength,
+      value_seconds: race.totalSeconds,
+      performed_at: iso(performedAt),
+    });
+    hyroxRaces.push({
+      id: raceId,
+      gym_id: gymId,
+      profile_id: spec.member.id,
+      workout_id: workoutId,
+      race_length: race.raceLength,
+      race_type: 'singles',
+      division: 'open',
+      gender_category: race.genderCategory,
+      run_total_seconds: race.runTotalSeconds,
+      station_total_seconds: race.stationTotalSeconds,
+      roxzone_total_seconds: race.roxzoneTotalSeconds,
+      total_seconds: race.totalSeconds,
+      performed_at: iso(performedAt),
+    });
+    for (const split of race.splits) {
+      hyroxSplits.push({
+        gym_id: gymId,
+        profile_id: spec.member.id,
+        race_id: raceId,
+        segment_type: split.segmentType,
+        segment_index: split.segmentIndex,
+        station_key: split.stationKey ?? null,
+        time_seconds: split.seconds ?? 0,
+      });
+    }
+  }
+
+  // --- health -------------------------------------------------------------------------------
+  // Region keys from src/lib/injuries.ts BODY_REGIONS; movement keys
+  // from the live catalog.
+  const injurySpecs = [
+    { member: activeMembers[2], region: 'shoulder', side: 'right' as const, pain: 4, status: 'improving' as const, daysAgo: 21, alert: true },
+    { member: activeMembers[3], region: 'knee', side: 'left' as const, pain: 6, status: 'active' as const, daysAgo: 9, alert: true },
+    { member: activeMembers[4], region: 'lower_back', side: 'na' as const, pain: 2, status: 'resolved' as const, daysAgo: 60, alert: false },
+  ];
+  const injuries: T<'member_injuries'>[] = [];
+  const staffAlerts: T<'staff_alerts'>[] = [];
+  for (const spec of injurySpecs) {
+    if (!spec.member) continue;
+    const id = demoUuid(rng);
+    injuries.push({
+      id,
+      gym_id: gymId,
+      profile_id: spec.member.id,
+      body_region: spec.region,
+      side: spec.side,
+      pain_level: spec.pain,
+      movements_hurt: ['overhead_squat'],
+      movements_ok: ['back_squat', 'air_squat'],
+      started_on: isoDateOffset(todayISO, -spec.daysAgo),
+      status: spec.status,
+      resolved_at: spec.status === 'resolved' ? iso(daysFrom(config.now, -7)) : null,
+    });
+    if (spec.alert) {
+      staffAlerts.push({
+        gym_id: gymId,
+        kind: 'injury_new',
+        subject_profile_id: spec.member.id,
+        related_id: id,
+        created_at: iso(daysFrom(config.now, -spec.daysAgo)),
+      });
+    }
+  }
+
+  // --- CRM ------------------------------------------------------------------------------------
+  const sourceDefs = [
+    { label: 'Instagram', color: '#E1306C' },
+    { label: 'Google', color: '#4285F4' },
+    { label: 'Referral', color: '#10B981' },
+    { label: 'Walk-in', color: '#F59E0B' },
+  ];
+  const leadSources: T<'lead_sources'>[] = sourceDefs.map((s) => ({
+    id: demoUuid(rng),
+    gym_id: gymId,
+    label: s.label,
+    color: s.color,
+  }));
+  const leadStatuses = [
+    'cold', 'cold', 'contacted', 'contacted', 'intro_booked',
+    'intro_booked', 'trial_attended', 'trial_attended', 'converted', 'lost',
+  ] as const;
+  const leads: T<'leads'>[] = LEAD_NAMES.map((name, i) => {
+    const status = leadStatuses[i];
+    const capturedAt = iso(daysFrom(config.now, -rngInt(rng, 2, 35)));
+    return {
+      gym_id: gymId,
+      full_name: name,
+      email: `lead${i + 1}@${emailDomain}`,
+      source_id: leadSources[i % leadSources.length].id!,
+      status,
+      captured_at: capturedAt,
+      captured_by: owner.id,
+      converted_at: status === 'converted' ? nowISO : null,
+      converted_profile_id: status === 'converted' ? activeMembers[5]?.id ?? null : null,
+    };
+  });
+  const pendingMembers: T<'pending_members'>[] = PENDING_NAMES.map((name, i) => ({
+    gym_id: gymId,
+    email: `${PENDING_EMAIL_PREFIX}${i + 1}@${emailDomain}`,
+    full_name: name,
+    plan_name: 'Unlimited',
+    tags: ['imported'],
+    status: 'pending',
+    created_by: owner.id,
+  }));
+
+  // --- comms ------------------------------------------------------------------------------------
+  const commsSettings: T<'gym_comms_settings'> = {
+    gym_id: gymId,
+    from_name: config.gymName,
+    footer_business_name: config.gymName,
+    footer_address: DEMO_ADDRESS.replace(/\n/g, ', '),
+    updated_by: owner.id,
+  };
+  // Template/starter builders mint time-based block ids; rewrite them
+  // so the same seed yields a byte-identical plan.
+  const emailDesign = starterDocument({ ...FALLBACK_BRAND_SEED, primaryColor: '#DC2626' });
+  emailDesign.blocks = emailDesign.blocks.map((b, i) => ({ ...b, id: `eb_demo${i + 1}` }));
+  const campaign: T<'email_campaigns'> = {
+    gym_id: gymId,
+    created_by: owner.id,
+    title: 'March programme preview',
+    subject: `Big week coming up at ${config.gymName}`,
+    preheader: 'New cycle, two new class slots, and a Hyrox sim on Saturday.',
+    status: 'draft',
+    design: asJson(emailDesign),
+    audience: asJson({ kind: 'all_members' }),
+  };
+
+  // --- store + website ----------------------------------------------------------------------------
+  const digitalAssetPath = `${gymId}/12-week-engine-programme.pdf`;
+  const storeProducts: T<'store_products'>[] = [
+    {
+      gym_id: gymId,
+      name: 'Ironworks Tee',
+      description: 'Heavyweight cotton, gym logo front and back.',
+      kind: 'physical',
+      price_cents: 2200,
+      track_inventory: true,
+      stock_quantity: 25,
+      created_by: owner.id,
+    },
+    {
+      gym_id: gymId,
+      name: 'Shaker Bottle',
+      description: '700ml, leak-proof, dishwasher safe.',
+      kind: 'physical',
+      price_cents: 1200,
+      track_inventory: true,
+      stock_quantity: 40,
+      created_by: owner.id,
+    },
+    {
+      gym_id: gymId,
+      name: '12-Week Engine Programme',
+      description: 'A downloadable conditioning block written by our coaches.',
+      kind: 'digital',
+      price_cents: 3900,
+      digital_asset_path: digitalAssetPath,
+      created_by: owner.id,
+    },
+  ];
+
+  const siteDoc = SITE_TEMPLATES.strength.build(config.gymName);
+  const patchedBlocks = siteDoc.blocks.map((raw, i) => {
+    const block = { ...raw, id: `sb_demo${i + 1}` };
+    if (block.type === 'testimonials') {
+      return {
+        ...block,
+        quotes: TESTIMONIAL_QUOTES.map((q, i) => ({ id: `q_demo${i + 1}`, quote: q.quote, name: q.name })),
+      };
+    }
+    if (block.type === 'location') {
+      return { ...block, address: DEMO_ADDRESS, hours: DEMO_HOURS_TEXT };
+    }
+    return block;
+  });
+  const website: T<'gym_websites'> = {
+    gym_id: gymId,
+    theme: SITE_TEMPLATES.strength.themeId,
+    design: asJson({ ...siteDoc, blocks: patchedBlocks }),
+    published: true,
+  };
+
+  const gymHours: T<'gym_hours'>[] = GYM_HOURS.map(([day, opens, closes]) => ({
+    gym_id: gymId,
+    day_of_week: day,
+    opens_at: opens,
+    closes_at: closes,
+  }));
+
+  // --- DMs -----------------------------------------------------------------------------------------
+  const directMessages: T<'direct_messages'>[] = [];
+  DM_SCRIPTS.forEach((script, ti) => {
+    const member = activeMembers[6 + ti];
+    if (!member) return;
+    const coach = coaches[script.coachIndex];
+    const threadStart = daysFrom(config.now, -(3 - ti)).getTime();
+    script.lines.forEach((line, li) => {
+      const isLast = li === script.lines.length - 1;
+      directMessages.push({
+        gym_id: gymId,
+        sender_id: line.dir === 'in' ? member.id : coach.id,
+        recipient_id: line.dir === 'in' ? coach.id : member.id,
+        body: line.body,
+        created_at: iso(new Date(threadStart + li * 9 * 60_000)),
+        read_at: isLast ? null : iso(new Date(threadStart + (li + 1) * 9 * 60_000)),
+      });
+    });
+  });
+
+  return {
+    config,
+    password: DEMO_PASSWORD,
+    emailDomain,
+    users,
+    gym,
+    gymFlags: { store_enabled: true, store_shipping_fee_cents: 500, website_builder_enabled: true },
+    memberships,
+    consents,
+    plans,
+    subscriptions,
+    classTypes,
+    recurrences,
+    sessions,
+    bookings,
+    waitlist,
+    workouts,
+    movementResults,
+    hyroxRaces,
+    hyroxSplits,
+    injuries,
+    staffAlerts,
+    leadSources,
+    leads,
+    pendingMembers,
+    commsSettings,
+    campaign,
+    storeProducts,
+    digitalAssetPath,
+    website,
+    gymHours,
+    directMessages,
+  };
+}
