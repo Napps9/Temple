@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -10,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
+import { getScrollPosition, setScrollPosition } from '@/lib/list-scroll-position';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
@@ -19,6 +21,21 @@ export default function MembersScreen() {
   const canInvite = useCan('can_invite') ?? false;
   const canExport = useCan('can_export_members') ?? false;
   const exportMembers = useExportMembersCsv();
+  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollKey = membership?.gymId ? `members-list:${membership.gymId}` : null;
+
+  // Coming back from a member's detail page replaces this screen rather
+  // than popping back to it (see BackLink's fallbackHref comment), so it
+  // remounts from scratch — restore where the user was scrolled to.
+  useEffect(() => {
+    if (!scrollKey) return;
+    const y = getScrollPosition(scrollKey);
+    if (y > 0) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ y, animated: false });
+      });
+    }
+  }, [scrollKey]);
 
   const totalQuery = useQuery({
     queryKey: ['members-total-count', membership?.gymId],
@@ -39,7 +56,13 @@ export default function MembersScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
+      <ScrollView
+        ref={scrollRef}
+        contentContainerClassName="gap-4 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full"
+        onScroll={(e) => {
+          if (scrollKey) setScrollPosition(scrollKey, e.nativeEvent.contentOffset.y);
+        }}
+        scrollEventThrottle={100}>
         <BackLink label="Manage" fallbackHref="/management" />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
