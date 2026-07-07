@@ -107,15 +107,18 @@ function safeHref(href: string): string {
 // testimonial quotes) — see site-canvas-sync.ts for the matching
 // parser/whitelist on the receiving end. A no-op when not editable, so
 // every call site is byte-identical on the public path by construction.
-function fieldAttrs(
-  ctx: SiteRenderContext,
-  path: string,
-  opts?: { multiline?: boolean; rich?: boolean },
-): string {
+//
+// Every editable field is rich-text-capable (data-rich="true") — the
+// canvas bridge script's floating bold/italic/underline toolbar reads
+// this attribute to know to capture innerHTML instead of innerText.
+// The content itself must be run through sanitizeRichText, not
+// escapeHtml, at every call site — this only controls the DOM
+// attribute, not what's actually safe to render.
+function fieldAttrs(ctx: SiteRenderContext, path: string, opts?: { multiline?: boolean }): string {
   if (!ctx.editable) return '';
-  return ` data-field="${escapeAttr(path)}" contenteditable="true"${
+  return ` data-field="${escapeAttr(path)}" contenteditable="true" data-rich="true"${
     opts?.multiline ? ' data-multiline="true"' : ''
-  }${opts?.rich ? ' data-rich="true"' : ''}`;
+  }`;
 }
 
 const RICH_TEXT_TAGS = ['b', 'i', 'u'];
@@ -268,15 +271,15 @@ function renderHero(
     b.ctaTarget === 'contact'
       ? '#contact'
       : `${ctx.platformOrigin}/join/${encodeURIComponent(ctx.slug)}`;
-  const cta = `<a class="btn" href="${escapeAttr(ctaHref)}"${fieldAttrs(ctx, `${b.id}:ctaLabel`)}>${escapeHtml(b.ctaLabel)}</a>`;
+  const cta = `<a class="btn" href="${escapeAttr(ctaHref)}"${fieldAttrs(ctx, `${b.id}:ctaLabel`)}>${sanitizeRichText(b.ctaLabel)}</a>`;
   const eyebrow = `<div class="eyebrow">${escapeHtml(ctx.gymName)}</div>`;
-  const headline = `<${headlineTag} style="font-size:clamp(32px,6vw,56px);"${fieldAttrs(ctx, `${b.id}:headline`)}>${escapeHtml(b.headline)}</${headlineTag}>`;
+  const headline = `<${headlineTag} style="font-size:clamp(32px,6vw,56px);"${fieldAttrs(ctx, `${b.id}:headline`)}>${sanitizeRichText(b.headline)}</${headlineTag}>`;
   // Editable mode always emits the <p>, even empty, so there's a node
   // to click into — the public path keeps the "omit when empty" today.
   const subheadline = ctx.editable
-    ? `<p data-placeholder="Subheadline"${fieldAttrs(ctx, `${b.id}:subheadline`)}>${escapeHtml(b.subheadline)}</p>`
+    ? `<p data-placeholder="Subheadline"${fieldAttrs(ctx, `${b.id}:subheadline`)}>${sanitizeRichText(b.subheadline)}</p>`
     : b.subheadline
-      ? `<p>${escapeHtml(b.subheadline)}</p>`
+      ? `<p>${sanitizeRichText(b.subheadline)}</p>`
       : '';
 
   if (b.layout === 'side') {
@@ -294,7 +297,7 @@ function renderHero(
 }
 
 function renderAbout(b: AboutBlock, ctx: SiteRenderContext): string {
-  const text = `<div><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="white-space:pre-line;"${fieldAttrs(ctx, `${b.id}:body`, { multiline: true, rich: true })}>${sanitizeRichText(b.body)}</p></div>`;
+  const text = `<div><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><p style="white-space:pre-line;"${fieldAttrs(ctx, `${b.id}:body`, { multiline: true })}>${sanitizeRichText(b.body)}</p></div>`;
   const img = b.imageUrl
     ? `<img src="${escapeAttr(b.imageUrl)}" alt="${escapeAttr(b.heading)}" />`
     : '';
@@ -400,7 +403,7 @@ function renderScheduleNextUp(
 
 function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
   if (ctx.schedule.length === 0) {
-    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted-text);">Check back soon for the full schedule.</p></div></section>`;
+    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><p style="color:var(--muted-text);">Check back soon for the full schedule.</p></div></section>`;
   }
   const format = ctx.theme.typography.timeFormat;
   const week = buildScheduleWeek(ctx.now, ctx.schedule);
@@ -426,7 +429,7 @@ function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
   const stat = `<span class="sched-stat"><b>${ctx.schedule.length}</b> ${classWord} · <b>${coachCount}</b> ${coachWord} this week</span>`;
   const nextUp = renderScheduleNextUp(ctx.schedule[0]!, week[0]!.date, format);
 
-  return `<section class="sec"><div class="wrap"><div class="sched-head-row"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>${stat}</div>${nextUp}<div class="sched-grid">${cols}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><div class="sched-head-row"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2>${stat}</div>${nextUp}<div class="sched-grid">${cols}</div></div></section>`;
 }
 
 function fmtPlanPrice(p: PublicPlan, currency: string): string {
@@ -441,7 +444,7 @@ function renderPricing(b: PricingBlock, ctx: SiteRenderContext): string {
   const hidden = new Set(b.hiddenPlanIds);
   const visible = ctx.plans.filter((p) => !hidden.has(p.planId));
   if (visible.length === 0) {
-    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted-text);">Get in touch for membership options.</p></div></section>`;
+    return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><p style="color:var(--muted-text);">Get in touch for membership options.</p></div></section>`;
   }
   const cards = visible
     .map(
@@ -451,7 +454,7 @@ function renderPricing(b: PricingBlock, ctx: SiteRenderContext): string {
         )}</div><div class="plan-price">${fmtPlanPrice(p, ctx.gymCurrency)}</div></div>`,
     )
     .join('');
-  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
 }
 
 function renderTestimonials(b: TestimonialsBlock, ctx: SiteRenderContext): string {
@@ -462,14 +465,14 @@ function renderTestimonials(b: TestimonialsBlock, ctx: SiteRenderContext): strin
   const cards = b.quotes
     .map(
       (q) =>
-        `<div class="card"><span class="quote-mark">&ldquo;</span><p${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:quote`, { multiline: true, rich: true })}>${sanitizeRichText(
+        `<div class="card"><span class="quote-mark">&ldquo;</span><p${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:quote`, { multiline: true })}>${sanitizeRichText(
           q.quote,
-        )}</p><div style="font-weight:700;font-size:13px;color:var(--muted-text);"${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:name`)}>${escapeHtml(
+        )}</p><div style="font-weight:700;font-size:13px;color:var(--muted-text);"${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:name`)}>${sanitizeRichText(
           q.name,
         )}</div></div>`,
     )
     .join('');
-  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><div class="grid grid-3">${cards}</div></div></section>`;
 }
 
 function renderGallery(b: GalleryBlock, ctx: SiteRenderContext): string {
@@ -477,21 +480,21 @@ function renderGallery(b: GalleryBlock, ctx: SiteRenderContext): string {
   const imgs = b.images
     .map((img) => `<img src="${escapeAttr(img.url)}" alt="${escapeAttr(img.alt)}" loading="lazy" />`)
     .join('');
-  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="gallery-grid">${imgs}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><div class="gallery-grid">${imgs}</div></div></section>`;
 }
 
 function renderLocation(b: LocationBlock, ctx: SiteRenderContext): string {
   const address = ctx.editable
-    ? `<p data-placeholder="Address"${fieldAttrs(ctx, `${b.id}:address`)}>${escapeHtml(b.address)}</p>`
+    ? `<p data-placeholder="Address"${fieldAttrs(ctx, `${b.id}:address`)}>${sanitizeRichText(b.address)}</p>`
     : b.address
-      ? `<p>${escapeHtml(b.address)}</p>`
+      ? `<p>${sanitizeRichText(b.address)}</p>`
       : '';
   const hours = ctx.editable
-    ? `<p style="color:var(--muted-text);white-space:pre-line;" data-placeholder="Hours"${fieldAttrs(ctx, `${b.id}:hours`, { multiline: true })}>${escapeHtml(b.hours)}</p>`
+    ? `<p style="color:var(--muted-text);white-space:pre-line;" data-placeholder="Hours"${fieldAttrs(ctx, `${b.id}:hours`, { multiline: true })}>${sanitizeRichText(b.hours)}</p>`
     : b.hours
-      ? `<p style="color:var(--muted-text);white-space:pre-line;">${escapeHtml(b.hours)}</p>`
+      ? `<p style="color:var(--muted-text);white-space:pre-line;">${sanitizeRichText(b.hours)}</p>`
       : '';
-  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2>
 ${address}
 ${hours}
 </div></section>`;
@@ -540,12 +543,12 @@ function renderContact(b: ContactBlock, ctx: SiteRenderContext): string {
 })();
 </script>`;
   const subheading = ctx.editable
-    ? `<p style="color:var(--muted-text);" data-placeholder="Subheading"${fieldAttrs(ctx, `${b.id}:subheading`, { multiline: true })}>${escapeHtml(b.subheading)}</p>`
+    ? `<p style="color:var(--muted-text);" data-placeholder="Subheading"${fieldAttrs(ctx, `${b.id}:subheading`, { multiline: true })}>${sanitizeRichText(b.subheading)}</p>`
     : b.subheading
-      ? `<p style="color:var(--muted-text);">${escapeHtml(b.subheading)}</p>`
+      ? `<p style="color:var(--muted-text);">${sanitizeRichText(b.subheading)}</p>`
       : '';
   return `<section class="sec" id="contact"><div class="wrap" style="text-align:center;max-width:520px;">
-<h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>
+<h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2>
 ${subheading}
 <form id="temple-contact-form" style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-top:20px;">
   <label class="sr-only" for="temple-contact-name">Name</label>
@@ -581,7 +584,7 @@ function renderTeam(b: TeamBlock, ctx: SiteRenderContext): string {
       return `<div class="team-card">${photo}<div class="team-name">${escapeHtml(m.fullName)}</div></div>`;
     })
     .join('');
-  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><div class="team-grid">${cards}</div></div></section>`;
+  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><div class="team-grid">${cards}</div></div></section>`;
 }
 
 function renderBlock(
@@ -623,12 +626,15 @@ const CANVAS_BRIDGE_SCRIPT = `
 (function(){
   var SRC = 'temple-site-canvas';
   function post(msg){ window.parent.postMessage(Object.assign({ source: SRC }, msg), '*'); }
-  function fieldValue(el){ return el.getAttribute('data-rich') === 'true' ? el.innerHTML : el.innerText; }
 
   document.addEventListener('input', function(e){
     var el = e.target.closest && e.target.closest('[data-field]');
     if (!el) return;
-    post({ type: 'field-input', path: el.getAttribute('data-field'), value: fieldValue(el) });
+    // Every field is rich-text-capable — innerHTML, not innerText, so
+    // any <b>/<i>/<u> the formatting toolbar applied round-trips.
+    // sanitizeRichText (site-render.ts) is what actually makes this
+    // safe to store and re-render, not this capture step.
+    post({ type: 'field-input', path: el.getAttribute('data-field'), value: el.innerHTML });
   });
 
   document.addEventListener('focusin', function(e){
@@ -636,15 +642,6 @@ const CANVAS_BRIDGE_SCRIPT = `
     if (!el) return;
     post({ type: 'field-focus', path: el.getAttribute('data-field') });
   });
-
-  document.addEventListener('blur', function(e){
-    var el = e.target.closest && e.target.closest('[data-field]');
-    // Rich fields keep their <b>/<i>/<u> markup on blur — only plain
-    // fields get this innerText round-trip to strip stray browser markup
-    // (e.g. a trailing <div><br></div> contentEditable likes to leave).
-    if (!el || el.getAttribute('data-rich') === 'true') return;
-    el.innerText = el.innerText;
-  }, true);
 
   document.addEventListener('keydown', function(e){
     var el = e.target.closest && e.target.closest('[data-field]');
