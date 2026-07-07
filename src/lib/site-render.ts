@@ -107,11 +107,35 @@ function safeHref(href: string): string {
 // testimonial quotes) — see site-canvas-sync.ts for the matching
 // parser/whitelist on the receiving end. A no-op when not editable, so
 // every call site is byte-identical on the public path by construction.
-function fieldAttrs(ctx: SiteRenderContext, path: string, opts?: { multiline?: boolean }): string {
+function fieldAttrs(
+  ctx: SiteRenderContext,
+  path: string,
+  opts?: { multiline?: boolean; rich?: boolean },
+): string {
   if (!ctx.editable) return '';
   return ` data-field="${escapeAttr(path)}" contenteditable="true"${
     opts?.multiline ? ' data-multiline="true"' : ''
-  }`;
+  }${opts?.rich ? ' data-rich="true"' : ''}`;
+}
+
+const RICH_TEXT_TAGS = ['b', 'i', 'u'];
+
+// Bold/italic/underline only, no attributes — escapes everything, then
+// re-opens exactly six literal tag strings. Anything else (a raw
+// <script>, an attribute-bearing <b style=...>, a <b> written straight
+// into the DB bypassing the client's own controlled formatting) stays
+// inert escaped text; there is no way for arbitrary markup to survive
+// this, since only an exact match on the fully-escaped literal is ever
+// un-escaped. No DOM/parser dependency, so it runs the same way in the
+// browser preview and the Vercel Node function that serves the public
+// route.
+function sanitizeRichText(raw: string): string {
+  let out = escapeHtml(raw);
+  for (const tag of RICH_TEXT_TAGS) {
+    out = out.replace(new RegExp(`&lt;${tag}&gt;`, 'gi'), `<${tag}>`);
+    out = out.replace(new RegExp(`&lt;/${tag}&gt;`, 'gi'), `</${tag}>`);
+  }
+  return out;
 }
 
 const RADIUS_PX: Record<BrandTheme['shape']['buttonRadius'], number> = {
@@ -128,7 +152,10 @@ function themeStyleBlock(theme: BrandTheme, editable: boolean): string {
 [contenteditable]:hover{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);}
 [contenteditable]:focus{box-shadow:0 0 0 2px var(--accent);}
 [contenteditable]:empty::before{content:attr(data-placeholder);color:var(--muted-text);}
-.tp-selected{box-shadow:0 0 0 2px var(--accent);}`
+.tp-selected{box-shadow:0 0 0 2px var(--accent);}
+.tp-rt-toolbar{position:absolute;display:none;gap:2px;background:#1F2937;border-radius:8px;padding:4px;box-shadow:0 6px 20px rgba(0,0,0,.35);z-index:1000;}
+.tp-rt-toolbar button{width:26px;height:26px;border:none;background:transparent;color:#E5E7EB;border-radius:5px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.tp-rt-toolbar button:hover{background:#374151;}`
     : '';
   // The accent doubles as link/eyebrow TEXT, which needs 4.5:1 — a
   // colour that only clears the 3:1 fill floor falls back to body text
@@ -267,7 +294,7 @@ function renderHero(
 }
 
 function renderAbout(b: AboutBlock, ctx: SiteRenderContext): string {
-  const text = `<div><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="white-space:pre-line;"${fieldAttrs(ctx, `${b.id}:body`, { multiline: true })}>${escapeHtml(b.body)}</p></div>`;
+  const text = `<div><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="white-space:pre-line;"${fieldAttrs(ctx, `${b.id}:body`, { multiline: true, rich: true })}>${sanitizeRichText(b.body)}</p></div>`;
   const img = b.imageUrl
     ? `<img src="${escapeAttr(b.imageUrl)}" alt="${escapeAttr(b.heading)}" />`
     : '';
@@ -435,7 +462,7 @@ function renderTestimonials(b: TestimonialsBlock, ctx: SiteRenderContext): strin
   const cards = b.quotes
     .map(
       (q) =>
-        `<div class="card"><span class="quote-mark">&ldquo;</span><p${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:quote`, { multiline: true })}>${escapeHtml(
+        `<div class="card"><span class="quote-mark">&ldquo;</span><p${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:quote`, { multiline: true, rich: true })}>${sanitizeRichText(
           q.quote,
         )}</p><div style="font-weight:700;font-size:13px;color:var(--muted-text);"${fieldAttrs(ctx, `${b.id}:quotes:${q.id}:name`)}>${escapeHtml(
           q.name,
@@ -596,11 +623,12 @@ const CANVAS_BRIDGE_SCRIPT = `
 (function(){
   var SRC = 'temple-site-canvas';
   function post(msg){ window.parent.postMessage(Object.assign({ source: SRC }, msg), '*'); }
+  function fieldValue(el){ return el.getAttribute('data-rich') === 'true' ? el.innerHTML : el.innerText; }
 
   document.addEventListener('input', function(e){
     var el = e.target.closest && e.target.closest('[data-field]');
     if (!el) return;
-    post({ type: 'field-input', path: el.getAttribute('data-field'), value: el.innerText });
+    post({ type: 'field-input', path: el.getAttribute('data-field'), value: fieldValue(el) });
   });
 
   document.addEventListener('focusin', function(e){
@@ -611,7 +639,10 @@ const CANVAS_BRIDGE_SCRIPT = `
 
   document.addEventListener('blur', function(e){
     var el = e.target.closest && e.target.closest('[data-field]');
-    if (!el) return;
+    // Rich fields keep their <b>/<i>/<u> markup on blur — only plain
+    // fields get this innerText round-trip to strip stray browser markup
+    // (e.g. a trailing <div><br></div> contentEditable likes to leave).
+    if (!el || el.getAttribute('data-rich') === 'true') return;
     el.innerText = el.innerText;
   }, true);
 
@@ -651,6 +682,52 @@ const CANVAS_BRIDGE_SCRIPT = `
         (section || next).classList.add('tp-selected');
       }
     }
+  });
+
+  // ---- rich-text formatting toolbar (bold/italic/underline only) ----
+  // execCommand is deprecated-in-spirit but universally supported and,
+  // with styleWithCSS forced off, reliably produces plain <b>/<i>/<u>
+  // tags rather than inline styles — exactly what sanitizeRichText
+  // (site-render.ts) allows through. Anything else it might produce in
+  // an edge case still renders safely, just as inert escaped text.
+  var toolbar = document.createElement('div');
+  toolbar.className = 'tp-rt-toolbar';
+  toolbar.innerHTML =
+    '<button type="button" data-cmd="bold"><b>B</b></button>' +
+    '<button type="button" data-cmd="italic"><i>I</i></button>' +
+    '<button type="button" data-cmd="underline"><u>U</u></button>';
+  document.body.appendChild(toolbar);
+  var activeRichField = null;
+
+  function hideToolbar(){ toolbar.style.display = 'none'; }
+
+  function richFieldFor(node){
+    var el = node && node.nodeType === 1 ? node : node && node.parentElement;
+    return el && el.closest ? el.closest('[data-rich="true"]') : null;
+  }
+
+  document.addEventListener('selectionchange', function(){
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { hideToolbar(); return; }
+    var field = richFieldFor(sel.anchorNode);
+    if (!field) { hideToolbar(); return; }
+    activeRichField = field;
+    var rect = sel.getRangeAt(0).getBoundingClientRect();
+    toolbar.style.display = 'flex';
+    toolbar.style.top = (window.scrollY + rect.top - 40) + 'px';
+    toolbar.style.left = (window.scrollX + rect.left + rect.width / 2 - toolbar.offsetWidth / 2) + 'px';
+  });
+
+  // Without this, the browser collapses the text selection before the
+  // click handler runs — there'd be nothing left for execCommand to format.
+  toolbar.addEventListener('mousedown', function(e){ e.preventDefault(); });
+
+  toolbar.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('button[data-cmd]');
+    if (!btn || !activeRichField) return;
+    document.execCommand('styleWithCSS', false, false);
+    document.execCommand(btn.getAttribute('data-cmd'));
+    post({ type: 'field-input', path: activeRichField.getAttribute('data-field'), value: activeRichField.innerHTML });
   });
 })();
 </script>`;

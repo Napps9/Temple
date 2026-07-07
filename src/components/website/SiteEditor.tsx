@@ -77,12 +77,17 @@ function TextField({
   onChangeText,
   placeholder,
   multiline,
+  note,
 }: {
   label: string;
   value: string;
   onChangeText: (t: string) => void;
   placeholder?: string;
   multiline?: boolean;
+  // Rendered below the input — used for fields where this plain-text
+  // view isn't the whole story (rich-text fields, whose bold/italic/
+  // underline formatting only applies on the canvas, not here).
+  note?: string;
 }) {
   return (
     <View className="gap-1.5">
@@ -96,6 +101,7 @@ function TextField({
         className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
         style={multiline ? { minHeight: 88, textAlignVertical: 'top' } : undefined}
       />
+      {note ? <Text className="text-gray-400 dark:text-gray-500 text-xs italic">{note}</Text> : null}
     </View>
   );
 }
@@ -507,7 +513,13 @@ function AboutInspector({
   return (
     <View className="gap-3">
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
-      <TextField label="Body" value={block.body} onChangeText={(t) => onPatch({ body: t })} multiline />
+      <TextField
+        label="Body"
+        value={block.body}
+        onChangeText={(t) => onPatch({ body: t })}
+        multiline
+        note="Formatting applies on the canvas — this field shows plain text."
+      />
       <View className="gap-1.5">
         <FieldLabel>Layout</FieldLabel>
         <Segmented
@@ -724,6 +736,7 @@ function TestimonialsInspector({
                 })
               }
               multiline
+              note="Formatting applies on the canvas — this field shows plain text."
             />
             <TextField
               label="Name"

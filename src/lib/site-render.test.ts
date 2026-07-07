@@ -5,6 +5,7 @@ import {
   appendBlock,
   createBlock,
   emptyDocument,
+  type AboutBlock,
   type ContactBlock,
   type GalleryBlock,
   type HeroBlock,
@@ -252,6 +253,59 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('Sam');
     expect(html).toContain('src="https://x.com/a.png"');
     expect(html).toContain('alt="Training"');
+  });
+
+  it('lets bold/italic/underline through on rich-text fields (About body, testimonial quotes)', () => {
+    const about = createBlock('about') as AboutBlock;
+    const doc = appendBlock(emptyDocument(), {
+      ...about,
+      body: 'Coached sessions, <b>smart programming</b> and a standard you <i>rise</i> to — <u>free</u> first class.',
+    });
+    const html = renderSiteHtml(doc, baseCtx);
+    expect(html).toContain('<b>smart programming</b>');
+    expect(html).toContain('a standard you <i>rise</i> to');
+    expect(html).toContain('<u>free</u> first class');
+
+    // The field is marked rich so the canvas bridge captures innerHTML,
+    // not innerText, for it specifically — only present on the editable path.
+    const editableHtml = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    expect(editableHtml).toContain('data-rich="true"');
+  });
+
+  it('strips everything except bold/italic/underline from rich-text fields, including tags written straight into stored content', () => {
+    const about = createBlock('about') as AboutBlock;
+    const hostile = appendBlock(emptyDocument(), {
+      ...about,
+      body: '<script>alert(1)</script><img src=x onerror="alert(1)"><b onclick="alert(1)">bold</b><a href="javascript:alert(1)">link</a>',
+    });
+    const html = renderSiteHtml(hostile, baseCtx);
+    // No real tag ever reaches the output for anything but b/i/u — the
+    // words "onerror"/"onclick"/"javascript:" can still appear as inert
+    // visible text (harmless letters on a page), but never as part of
+    // an actual <img>/<a> element a browser would parse and act on.
+    expect(html).not.toContain('<script>');
+    expect(html).not.toContain('<img ');
+    expect(html).not.toContain('<a href="javascript:');
+    // The escaped, inert text is still present — nothing silently
+    // vanishes, it just can't execute or carry attributes.
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;');
+    // An attribute-bearing opening <b> doesn't match the exact allowed
+    // literal, so it stays inert escaped text — no attribute (and no
+    // onclick) ever reaches real markup. Its bare, attribute-less
+    // </b> closing tag does match and becomes real markup, but an
+    // unmatched closing tag is inert too — browsers just ignore it.
+    expect(html).toContain('&lt;b onclick=&quot;alert(1)&quot;&gt;bold</b>');
+
+    const testimonials = createBlock('testimonials') as TestimonialsBlock;
+    const hostileQuote = appendBlock(emptyDocument(), {
+      ...testimonials,
+      quotes: [{ id: 'q1', quote: '<b>Great</b> gym <script>alert(2)</script>', name: 'Sam' }],
+    });
+    const quoteHtml = renderSiteHtml(hostileQuote, baseCtx);
+    expect(quoteHtml).toContain('<b>Great</b> gym');
+    expect(quoteHtml).not.toContain('<script>');
+    expect(quoteHtml).toContain('&lt;script&gt;');
   });
 
   it('renders the location address and hours', () => {
