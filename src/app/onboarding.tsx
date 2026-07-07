@@ -264,8 +264,8 @@ export default function OnboardingScreen() {
               onPress={() => dismiss.mutate()}>
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 {dismiss.isPending
-                  ? 'Skipping…'
-                  : "Skip for now — I'll set this up later"}
+                  ? 'Saving…'
+                  : "Don't show this again — I'll finish setup from Manage"}
               </Text>
             </Pressable>
           </View>
