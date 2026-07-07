@@ -31,6 +31,11 @@ export type BrandTheme = {
     headingWeight: number;
     headingTransform: 'none' | 'uppercase';
     headingLetterSpacing: number; // px, can be negative
+    // Schedule-block clock format — tight 24h ("06:00") reads tactical
+    // for the intense themes, 12h ("6:00am") reads calm/welcoming for
+    // the boutique/coaching ones. A deliberate per-theme choice, not
+    // the visitor's browser locale.
+    timeFormat: '12h' | '24h';
   };
   shape: {
     // A generic enum, not a px value — email and a future website
@@ -61,6 +66,7 @@ const forged: BrandTheme = {
     headingWeight: 800,
     headingTransform: 'uppercase',
     headingLetterSpacing: -0.2,
+    timeFormat: '24h',
   },
   shape: { buttonRadius: 'square' },
 };
@@ -83,6 +89,7 @@ const ringside: BrandTheme = {
     headingWeight: 700,
     headingTransform: 'uppercase',
     headingLetterSpacing: -0.1,
+    timeFormat: '24h',
   },
   shape: { buttonRadius: 'square' },
 };
@@ -105,6 +112,7 @@ const daybreak: BrandTheme = {
     headingWeight: 500,
     headingTransform: 'none',
     headingLetterSpacing: 0,
+    timeFormat: '12h',
   },
   shape: { buttonRadius: 'rounded' },
 };
@@ -127,6 +135,7 @@ const baseline: BrandTheme = {
     headingWeight: 600,
     headingTransform: 'none',
     headingLetterSpacing: 0,
+    timeFormat: '12h',
   },
   shape: { buttonRadius: 'pill' },
 };

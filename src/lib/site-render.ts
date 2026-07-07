@@ -255,8 +255,19 @@ function renderAbout(b: AboutBlock, ctx: SiteRenderContext): string {
 function fmtSessionDay(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { weekday: 'long' });
 }
-function fmtSessionTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+// A deliberate per-theme style choice, not the visitor's browser
+// locale — tight 24h reads tactical for the intense themes (Forged,
+// Ringside), 12h lowercase reads calm/welcoming for the boutique and
+// coaching ones (Daybreak, Baseline). See BrandTheme.typography.timeFormat.
+function fmtSessionTime(iso: string, format: BrandTheme['typography']['timeFormat']): string {
+  const d = new Date(iso);
+  const hours24 = d.getHours();
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  if (format === '24h') {
+    return `${hours24.toString().padStart(2, '0')}:${minutes}`;
+  }
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${hours12}:${minutes}${hours24 < 12 ? 'am' : 'pm'}`;
 }
 
 function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
@@ -278,6 +289,7 @@ function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
             const dotColor = s.classTypeColor ? escapeAttr(s.classTypeColor) : 'var(--accent)';
             return `<div class="sched-row"><span><span class="sched-dot" style="background:${dotColor};"></span>${fmtSessionTime(
               s.startsAt,
+              ctx.theme.typography.timeFormat,
             )} — ${escapeHtml(s.classTypeName ?? 'Class')}</span><span style="color:var(--muted-text);">${
               s.coachName ? escapeHtml(s.coachName) : ''
             }</span></div>`;

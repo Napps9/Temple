@@ -25,6 +25,12 @@ describe('BRAND_THEMES', () => {
     }
   });
 
+  it('every theme declares a valid schedule-block clock format', () => {
+    for (const theme of BRAND_THEME_LIST) {
+      expect(['12h', '24h']).toContain(theme.typography.timeFormat);
+    }
+  });
+
   it('every theme accent is readable against its own background out of the box', () => {
     for (const theme of BRAND_THEME_LIST) {
       expect(contrastRatio(theme.palette.accent, theme.palette.background)).toBeGreaterThanOrEqual(

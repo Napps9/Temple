@@ -134,6 +134,60 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('background:var(--accent);');
   });
 
+  it('formats schedule times per theme — tight 24h for the intense themes, lowercase 12h for the calm ones', () => {
+    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
+    const sessions: ScheduleSession[] = [
+      {
+        sessionId: 's1',
+        startsAt: '2026-07-06T09:00:00Z',
+        durationMinutes: 60,
+        classTypeName: 'CrossFit',
+        classTypeColor: '#FF0000',
+        coachName: null,
+      },
+      {
+        sessionId: 's2',
+        startsAt: '2026-07-06T14:30:00Z',
+        durationMinutes: 60,
+        classTypeName: 'Open gym',
+        classTypeColor: null,
+        coachName: null,
+      },
+      {
+        sessionId: 's3',
+        startsAt: '2026-07-06T00:00:00Z',
+        durationMinutes: 60,
+        classTypeName: 'Midnight open gym',
+        classTypeColor: null,
+        coachName: null,
+      },
+      {
+        sessionId: 's4',
+        startsAt: '2026-07-06T12:00:00Z',
+        durationMinutes: 60,
+        classTypeName: 'Noon session',
+        classTypeColor: null,
+        coachName: null,
+      },
+    ];
+
+    const forgedHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.forged, schedule: sessions });
+    expect(forgedHtml).toContain('09:00 — CrossFit');
+    expect(forgedHtml).toContain('14:30 — Open gym');
+
+    const ringsideHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.ringside, schedule: sessions });
+    expect(ringsideHtml).toContain('09:00 — CrossFit');
+
+    const baselineHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.baseline, schedule: sessions });
+    expect(baselineHtml).toContain('9:00am — CrossFit');
+    expect(baselineHtml).toContain('2:30pm — Open gym');
+    expect(baselineHtml).toContain('12:00am — Midnight open gym');
+    expect(baselineHtml).toContain('12:00pm — Noon session');
+
+    const daybreakHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.daybreak, schedule: sessions });
+    expect(daybreakHtml).toContain('9:00am — CrossFit');
+  });
+
   it('formats plan pricing by kind and hides plans in hiddenPlanIds', () => {
     const pricing = createBlock('pricing') as PricingBlock;
     const doc = appendBlock(emptyDocument(), { ...pricing, hiddenPlanIds: ['p2'] });
