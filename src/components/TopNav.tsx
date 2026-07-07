@@ -158,12 +158,21 @@ export function TopNav({
             router.push(accountHref as never);
           }}
           hitSlop={4}
-          accessibilityLabel="Account"
+          accessibilityLabel={
+            notifCount > 0 ? `Account, ${notifCount} need your attention` : 'Account'
+          }
           style={onAccount ? { borderColor: brand.primaryColor } : undefined}
           className={`w-9 h-9 rounded-full items-center justify-center border-2 active:opacity-70 ${
             onAccount ? '' : 'border-transparent'
           }`}>
           <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={30} />
+          {notifCount > 0 ? (
+            <View className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 items-center justify-center border-2 border-slate-100 dark:border-gray-950">
+              <Text className="text-white text-[10px] font-bold">
+                {notifCount > 9 ? '9+' : notifCount}
+              </Text>
+            </View>
+          ) : null}
         </Pressable>
 
         <Pressable

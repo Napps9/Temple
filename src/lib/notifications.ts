@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { localDayKey } from '@/lib/workout-streak';
 
@@ -107,17 +108,40 @@ export function useLogNudge() {
   });
 }
 
-// Total count behind the nav bell badge: unread messages + injury
-// check-ins due + classes waiting to be logged.
+// Open (unacknowledged) PAR-Q/injury alerts — the Alerts tab's own
+// count, surfaced here so it also contributes to the nav badges
+// instead of only being visible once you open the Inbox.
+export function useOpenStaffAlertsCount() {
+  const { data: membership } = useGymMembership();
+  const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
+  return useQuery({
+    queryKey: ['open-staff-alerts-count', membership?.gymId],
+    enabled: !!membership?.gymId && canSeeHealthFlag,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc('count_open_staff_alerts', {
+        p_gym_id: membership!.gymId,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+}
+
+// Total count behind the nav badges: unread messages + injury
+// check-ins due + classes waiting to be logged + open staff alerts.
 export function useNotificationCount(): number {
   const unread = useInboxUnread();
   const injuries = useMyInjuries();
   const logNudge = useLogNudge();
+  const openAlerts = useOpenStaffAlertsCount();
   const unreadTotal =
     (unread.data?.dm_unread ?? 0) +
     (unread.data?.announcement_unread ?? 0) +
     (unread.data?.class_broadcast_unread ?? 0);
   return (
-    unreadTotal + dueCheckIns(injuries.data).length + (logNudge.data?.length ?? 0)
+    unreadTotal +
+    dueCheckIns(injuries.data).length +
+    (logNudge.data?.length ?? 0) +
+    (openAlerts.data ?? 0)
   );
 }
