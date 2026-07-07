@@ -52,6 +52,7 @@ export function StaffBookingSheet({
   const [query, setQuery] = useState('');
   const [selectedMember, setSelectedMember] = useState<Candidate | null>(null);
   const [chosen, setChosen] = useState<Entitlement | null>(null);
+  const [noCharge, setNoCharge] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const targetProfileId =
@@ -119,6 +120,7 @@ export function StaffBookingSheet({
         p_member_profile_id: targetProfileId,
         p_entitlement_kind: chosen?.kind ?? null,
         p_entitlement_id: chosen?.id ?? null,
+        p_no_charge: noCharge,
       });
       if (e) throw e;
     },
@@ -162,6 +164,7 @@ export function StaffBookingSheet({
   function reset() {
     setSelectedMember(null);
     setChosen(null);
+    setNoCharge(false);
     setQuery('');
     setError(null);
   }
@@ -253,25 +256,35 @@ export function StaffBookingSheet({
                 <Text className="text-gray-500 dark:text-gray-400 text-sm">
                   Loading memberships…
                 </Text>
-              ) : (entitlements.data?.length ?? 0) === 0 ? (
+              ) : (entitlements.data?.length ?? 0) === 0 && mode === 'swap' ? (
                 <Text className="text-gray-500 dark:text-gray-400 text-sm">
                   This member has no eligible plans or comps for this class.
                 </Text>
               ) : (
                 <View className="gap-2">
-                  {entitlements.data!.map((e) => {
+                  {(entitlements.data?.length ?? 0) === 0 ? (
+                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      This member has no eligible plans or comps for this
+                      class — book them without charging instead.
+                    </Text>
+                  ) : null}
+                  {entitlements.data?.map((e) => {
                     const swapCurrent =
                       mode === 'swap' &&
                       swapTarget?.currentKind === e.kind &&
                       swapTarget?.currentId === e.id;
                     const sel =
-                      (chosen && chosen.kind === e.kind && chosen.id === e.id) ||
-                      (!chosen && mode === 'swap' && swapCurrent) ||
-                      (!chosen && mode === 'add' && e.is_default);
+                      !noCharge &&
+                      ((chosen && chosen.kind === e.kind && chosen.id === e.id) ||
+                        (!chosen && mode === 'swap' && swapCurrent) ||
+                        (!chosen && mode === 'add' && e.is_default));
                     return (
                       <Pressable
                         key={`${e.kind}:${e.id}`}
-                        onPress={() => setChosen(e)}
+                        onPress={() => {
+                          setChosen(e);
+                          setNoCharge(false);
+                        }}
                         className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
                           sel
                             ? 'border-primary bg-primary/10'
@@ -297,6 +310,30 @@ export function StaffBookingSheet({
                       </Pressable>
                     );
                   })}
+                  {mode === 'add' ? (
+                    <Pressable
+                      onPress={() => {
+                        setNoCharge(true);
+                        setChosen(null);
+                      }}
+                      className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
+                        noCharge
+                          ? 'border-primary bg-primary/10'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}>
+                      <Ionicons
+                        name={noCharge ? 'radio-button-on' : 'radio-button-off'}
+                        size={18}
+                        color={noCharge ? '#2563EB' : '#9CA3AF'}
+                      />
+                      <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
+                        No charge
+                      </Text>
+                      <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                        Free
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               )}
               {error ? (
@@ -312,6 +349,7 @@ export function StaffBookingSheet({
                       if (mode === 'add') {
                         setSelectedMember(null);
                         setChosen(null);
+                        setNoCharge(false);
                       } else {
                         close();
                       }
@@ -328,7 +366,9 @@ export function StaffBookingSheet({
                     loading={book.isPending || swap.isPending}
                     disabled={
                       entitlements.isLoading ||
-                      (entitlements.data?.length ?? 0) === 0
+                      (mode === 'add'
+                        ? !noCharge && (entitlements.data?.length ?? 0) === 0
+                        : (entitlements.data?.length ?? 0) === 0)
                     }>
                     {mode === 'add' ? 'Book' : 'Swap'}
                   </Button>
