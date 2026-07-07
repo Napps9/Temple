@@ -29,18 +29,30 @@ export function WorkoutHeatmap({
   origin.setDate(mondayOfThisWeek.getDate() - (WEEKS - 1) * 7);
 
   const columns: Date[][] = [];
+  let loggedCount = 0;
+  let pastCount = 0;
   for (let w = 0; w < WEEKS; w++) {
     const col: Date[] = [];
     for (let d = 0; d < 7; d++) {
       const cell = new Date(origin);
       cell.setDate(origin.getDate() + w * 7 + d);
+      if (cell.getTime() <= end.getTime()) {
+        pastCount++;
+        if (loggedDays.has(localDayKey(cell))) loggedCount++;
+      }
       col.push(cell);
     }
     columns.push(col);
   }
 
   return (
-    <View className="flex-row gap-2">
+    // Colour is the only visual signal per cell, so the grid exposes a
+    // single spoken summary instead of 84 unlabeled squares.
+    <View
+      className="flex-row gap-2"
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`Workout heatmap: logged on ${loggedCount} of the last ${pastCount} days`}>
       <View className="gap-1">
         {DAY_LETTERS.map((l, i) => (
           <View key={i} className="h-4 items-center justify-center">

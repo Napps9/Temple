@@ -4,6 +4,8 @@
 // data — the editor only ever swaps one immutable document for the
 // next via the pure helpers at the bottom.
 
+import { isThemeId, type BrandTheme, type ThemeId } from '../brand-themes';
+
 export type BlockAlign = 'left' | 'center' | 'right';
 
 export type HeadingBlock = {
@@ -74,6 +76,11 @@ export type EmailSettings = {
   linkColor: string;
   fontFamily: string;
   contentWidth: number; // px
+  headingWeight: number; // matches the font-weight renderHeading used to hardcode (700)
+  headingTransform: 'none' | 'uppercase';
+  headingLetterSpacing: number; // px, can be negative
+  buttonRadius: number; // px — new buttons seed from this, matching createBlock's prior hardcoded 8
+  themeId: ThemeId | null; // last-applied stock theme, for swatch highlight
 };
 
 export type EmailDocument = {
@@ -134,7 +141,63 @@ export function defaultSettings(brand: BrandSeed): EmailSettings {
     linkColor: brand.primaryColor || FALLBACK_BRAND_SEED.primaryColor,
     fontFamily: SYSTEM_FONT_STACK,
     contentWidth: 600,
+    headingWeight: 700,
+    headingTransform: 'none',
+    headingLetterSpacing: 0,
+    buttonRadius: 8,
+    themeId: null,
   };
+}
+
+// A theme's generic shape enum, mapped to the concrete px radius the
+// email renderer/canvas already use — matches the exact values the
+// button block's own "Corners" control offers (EmailEditor.tsx).
+const SHAPE_RADIUS_PX: Record<BrandTheme['shape']['buttonRadius'], number> = {
+  square: 0,
+  rounded: 8,
+  pill: 24,
+};
+
+// Bulk-reskins a whole document to a theme: the document-level settings
+// plus every existing block's own colour field(s). A "pick a theme"
+// action that only changed defaults for blocks added afterward would
+// leave everything already on the canvas looking untouched, which reads
+// as broken — so this rewrites what's there now, not just what's next.
+export function applyTheme(doc: EmailDocument, theme: BrandTheme): EmailDocument {
+  const radius = SHAPE_RADIUS_PX[theme.shape.buttonRadius];
+  const settings: EmailSettings = {
+    ...doc.settings,
+    backgroundColor: theme.palette.background,
+    contentBackgroundColor: theme.palette.surface,
+    textColor: theme.palette.text,
+    linkColor: theme.palette.accent,
+    fontFamily: theme.typography.fontFamily,
+    headingWeight: theme.typography.headingWeight,
+    headingTransform: theme.typography.headingTransform,
+    headingLetterSpacing: theme.typography.headingLetterSpacing,
+    buttonRadius: radius,
+    themeId: theme.id,
+  };
+  const blocks = doc.blocks.map((block): EmailBlock => {
+    switch (block.type) {
+      case 'heading':
+      case 'text':
+        return { ...block, color: theme.palette.text };
+      case 'button':
+        return {
+          ...block,
+          backgroundColor: theme.palette.accent,
+          textColor: theme.palette.accentText,
+          radius,
+        };
+      case 'divider':
+        return { ...block, color: theme.palette.muted };
+      case 'image':
+      case 'spacer':
+        return block;
+    }
+  });
+  return { ...doc, settings, blocks };
 }
 
 // A fresh block of the requested type, seeded from the gym's palette so
@@ -335,6 +398,12 @@ function asNumber(v: unknown, fallback: number): number {
 function asAlign(v: unknown): BlockAlign {
   return v === 'center' || v === 'right' ? v : 'left';
 }
+function asHeadingTransform(v: unknown): 'none' | 'uppercase' {
+  return v === 'uppercase' ? v : 'none';
+}
+function asThemeId(v: unknown): ThemeId | null {
+  return isThemeId(v) ? v : null;
+}
 
 function coerceBlock(raw: unknown): EmailBlock | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -411,6 +480,11 @@ export function coerceDocument(raw: unknown, brand: BrandSeed): EmailDocument {
     linkColor: asString(s.linkColor, defaults.linkColor),
     fontFamily: asString(s.fontFamily, defaults.fontFamily),
     contentWidth: Math.max(320, Math.min(800, asNumber(s.contentWidth, 600))),
+    headingWeight: asNumber(s.headingWeight, defaults.headingWeight),
+    headingTransform: asHeadingTransform(s.headingTransform),
+    headingLetterSpacing: asNumber(s.headingLetterSpacing, defaults.headingLetterSpacing),
+    buttonRadius: asNumber(s.buttonRadius, defaults.buttonRadius),
+    themeId: asThemeId(s.themeId),
   };
   const rawBlocks = Array.isArray(r.blocks) ? r.blocks : [];
   const blocks = rawBlocks

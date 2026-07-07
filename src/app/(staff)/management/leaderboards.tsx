@@ -81,6 +81,7 @@ export function LeaderboardsPanel() {
             </Text>
           </View>
           <Switch
+            accessibilityLabel="Class leaderboards"
             value={state.class_leaderboards_enabled}
             onValueChange={() => flip('class_leaderboards_enabled')}
             disabled={save.isPending}
@@ -100,6 +101,7 @@ export function LeaderboardsPanel() {
             </Text>
           </View>
           <Switch
+            accessibilityLabel="Strength leaderboards"
             value={state.strength_leaderboards_enabled}
             onValueChange={() => flip('strength_leaderboards_enabled')}
             disabled={save.isPending}

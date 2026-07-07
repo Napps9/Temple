@@ -1,89 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
-import { useThemeColors } from '@/lib/theme';
-import { useSendingDomain, useSendingDomainAction } from '@/lib/comms';
 import {
+  RecordCard,
+  StatusBadge,
+  StatusExplainer,
+  TONE,
+} from '@/components/domain/DomainCardParts';
+import { useThemeColors } from '@/lib/theme';
+import { formatDateTime, useSendingDomain, useSendingDomainAction } from '@/lib/comms';
+import {
+  domainStatusDescription,
   domainStatusMeta,
   fromAddress,
   validateLocalPart,
   validateSendingDomain,
   type DnsRecord,
-  type DomainStatus,
-  type StatusTone,
 } from '@/lib/sending-domain';
-
-const TONE: Record<StatusTone, { bg: string; text: string }> = {
-  gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-300' },
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
-  green: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400' },
-  red: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400' },
-};
-
-function copy(text: string) {
-  if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-    navigator.clipboard?.writeText(text);
-  }
-}
-
-function StatusBadge({ status }: { status: DomainStatus }) {
-  const meta = domainStatusMeta(status);
-  const tone = TONE[meta.tone];
-  return (
-    <View className={`px-2 py-0.5 rounded-full ${tone.bg}`}>
-      <Text className={`text-[11px] font-semibold ${tone.text}`}>{meta.label}</Text>
-    </View>
-  );
-}
-
-function CopyableValue({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="gap-1">
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] uppercase tracking-wide">
-        {label}
-      </Text>
-      <View className="flex-row items-center gap-2">
-        <Text
-          selectable
-          className="flex-1 text-gray-800 dark:text-gray-100 text-xs font-mono break-all"
-          style={Platform.OS === 'web' ? ({ wordBreak: 'break-all' } as object) : undefined}>
-          {value}
-        </Text>
-        <Pressable onPress={() => copy(value)} hitSlop={6} className="active:opacity-70">
-          <Ionicons name="copy-outline" size={15} color="#9CA3AF" />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function RecordCard({ record }: { record: DnsRecord }) {
-  const heading = record.record || record.type || 'DNS record';
-  return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
-      <View className="flex-row items-center gap-2">
-        <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
-          {heading}
-        </Text>
-        {record.type ? (
-          <View className="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700">
-            <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-medium">
-              {record.type}
-            </Text>
-          </View>
-        ) : null}
-        {record.priority != null ? (
-          <Text className="text-gray-400 text-[10px]">priority {record.priority}</Text>
-        ) : null}
-      </View>
-      {record.name ? <CopyableValue label="Host / name" value={record.name} /> : null}
-      {record.value ? <CopyableValue label="Value" value={record.value} /> : null}
-    </View>
-  );
-}
 
 export function SendingDomainCard() {
   const colors = useThemeColors();
@@ -95,6 +32,9 @@ export function SendingDomainCard() {
   const [formError, setFormError] = useState<string | null>(null);
   const [editingLocal, setEditingLocal] = useState(false);
   const [localDraft, setLocalDraft] = useState('');
+  const [verifyNote, setVerifyNote] = useState<
+    { tone: 'amber' | 'red'; text: string } | null
+  >(null);
 
   const domain = query.data;
   const records = (domain?.records as unknown as DnsRecord[] | null) ?? [];
@@ -107,6 +47,32 @@ export function SendingDomainCard() {
     const l = validateLocalPart(fromLocal);
     if (!l.ok) return setFormError(l.error);
     action.mutate({ action: 'connect', domain: d.domain, from_local: l.local });
+  }
+
+  // Verify runs a check against Resend and reads back the fresh status.
+  // A plain success is silent (the card flips to Verified); anything else
+  // tells the gym why it's not done yet, so a click never feels like a no-op.
+  function verify() {
+    setVerifyNote(null);
+    action.mutate(
+      { action: 'verify' },
+      {
+        onSuccess: (data) => {
+          if (data.status === 'verified') return;
+          if (data.status === 'failed') {
+            setVerifyNote({
+              tone: 'red',
+              text: 'Still not verified — the records don’t match yet. Double-check each value against your DNS, then verify again.',
+            });
+          } else {
+            setVerifyNote({
+              tone: 'amber',
+              text: 'Not verified yet — your DNS changes haven’t reached our email provider. This can take a few minutes (up to 48h). Leave the records in place and check again shortly.',
+            });
+          }
+        },
+      },
+    );
   }
 
   function saveLocal() {
@@ -125,13 +91,20 @@ export function SendingDomainCard() {
         <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
           Sending domain
         </Text>
-        {domain ? <StatusBadge status={domain.status} /> : null}
+        {domain ? <StatusBadge meta={domainStatusMeta(domain.status)} /> : null}
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        Authenticate a domain you own to send from your own address — best
-        deliverability, no “via” label. A subdomain like mail.yourgym.com is
-        ideal.
-      </Text>
+      {domain ? (
+        <StatusExplainer
+          tone={domainStatusMeta(domain.status).tone}
+          text={domainStatusDescription(domain.status)}
+        />
+      ) : (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Authenticate a domain you own to send from your own address — best
+          deliverability, no “via” label. A subdomain like mail.yourgym.com is
+          ideal.
+        </Text>
+      )}
 
       {query.isLoading ? (
         <ActivityIndicator />
@@ -220,31 +193,25 @@ export function SendingDomainCard() {
             </View>
           )}
 
-          <Pressable
-            onPress={() => action.mutate({ action: 'disconnect' })}
-            disabled={action.isPending}
-            hitSlop={6}
-            className="self-start active:opacity-70">
-            <Text className="text-red-600 dark:text-red-400 text-sm">Disconnect domain</Text>
-          </Pressable>
+          <View className="self-start">
+            <ChipButton
+              tone="red"
+              label="Disconnect domain"
+              icon="close-circle-outline"
+              onPress={() => action.mutate({ action: 'disconnect' })}
+              disabled={action.isPending}
+            />
+          </View>
         </View>
       ) : (
         // ---- Pending / failed: show records + verify ---------------------
         <View className="gap-3">
           <Text className="text-gray-700 dark:text-gray-200 text-sm">
             Add these records to the DNS for{' '}
-            <Text className="font-mono">{domain.domain}</Text>, then verify. DNS
-            changes can take up to 48 hours to propagate.
+            <Text className="font-mono">{domain.domain}</Text>. The two{' '}
+            <Text className="font-mono">send</Text> records share a host — add
+            both.
           </Text>
-
-          {domain.status === 'failed' ? (
-            <View className="bg-red-500/10 rounded-lg p-3">
-              <Text className="text-red-600 dark:text-red-400 text-xs">
-                Verification failed. Double-check the records below match your DNS
-                exactly, then verify again.
-              </Text>
-            </View>
-          ) : null}
 
           {records.length === 0 ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -258,16 +225,29 @@ export function SendingDomainCard() {
             </View>
           )}
 
-          <Button onPress={() => action.mutate({ action: 'verify' })} loading={action.isPending}>
+          {verifyNote ? (
+            <View className={`rounded-lg p-3 ${TONE[verifyNote.tone].bg}`}>
+              <Text className={`text-xs ${TONE[verifyNote.tone].text}`}>{verifyNote.text}</Text>
+            </View>
+          ) : null}
+
+          <Button onPress={verify} loading={action.isPending}>
             I’ve added the records — verify
           </Button>
-          <Pressable
-            onPress={() => action.mutate({ action: 'disconnect' })}
-            disabled={action.isPending}
-            hitSlop={6}
-            className="self-start active:opacity-70">
-            <Text className="text-red-600 dark:text-red-400 text-sm">Disconnect domain</Text>
-          </Pressable>
+          {domain.last_checked_at ? (
+            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+              Last checked {formatDateTime(domain.last_checked_at)}
+            </Text>
+          ) : null}
+          <View className="self-start">
+            <ChipButton
+              tone="red"
+              label="Disconnect domain"
+              icon="close-circle-outline"
+              onPress={() => action.mutate({ action: 'disconnect' })}
+              disabled={action.isPending}
+            />
+          </View>
         </View>
       )}
 

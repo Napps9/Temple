@@ -14,6 +14,7 @@ import type {
   DividerBlock,
   EmailBlock,
   EmailDocument,
+  EmailSettings,
   HeadingBlock,
   ImageBlock,
   SpacerBlock,
@@ -57,11 +58,11 @@ function alignToText(align: BlockAlign): string {
   return align;
 }
 
-function renderHeading(b: HeadingBlock): string {
+function renderHeading(b: HeadingBlock, s: EmailSettings): string {
   const size = b.level === 1 ? 28 : b.level === 2 ? 22 : 18;
-  return `<h${b.level} style="margin:0;font-weight:700;font-size:${size}px;line-height:1.3;color:${b.color};text-align:${alignToText(
+  return `<h${b.level} style="margin:0;font-weight:${s.headingWeight};font-size:${size}px;line-height:1.3;color:${b.color};text-align:${alignToText(
     b.align,
-  )};">${escapeMultiline(b.text)}</h${b.level}>`;
+  )};text-transform:${s.headingTransform};letter-spacing:${s.headingLetterSpacing}px;">${escapeMultiline(b.text)}</h${b.level}>`;
 }
 
 function renderText(b: TextBlock): string {
@@ -102,10 +103,10 @@ function renderSpacer(b: SpacerBlock): string {
   return `<div style="height:${b.height}px;line-height:${b.height}px;font-size:0;">&nbsp;</div>`;
 }
 
-function renderBlockInner(block: EmailBlock): string {
+function renderBlockInner(block: EmailBlock, s: EmailSettings): string {
   switch (block.type) {
     case 'heading':
-      return renderHeading(block);
+      return renderHeading(block, s);
     case 'text':
       return renderText(block);
     case 'button':
@@ -121,9 +122,9 @@ function renderBlockInner(block: EmailBlock): string {
 
 // Wrap a block's content in a table row. Spacers carry their own height,
 // so they get no vertical padding of their own.
-function renderRow(block: EmailBlock): string {
+function renderRow(block: EmailBlock, s: EmailSettings): string {
   const vPad = block.type === 'spacer' ? 0 : 12;
-  return `<tr><td style="padding:${vPad}px 24px;">${renderBlockInner(block)}</td></tr>`;
+  return `<tr><td style="padding:${vPad}px 24px;">${renderBlockInner(block, s)}</td></tr>`;
 }
 
 function renderFooter(ctx: RenderContext): string {
@@ -145,7 +146,7 @@ function renderFooter(ctx: RenderContext): string {
 
 export function renderEmailHtml(doc: EmailDocument, ctx: RenderContext = {}): string {
   const s = doc.settings;
-  const rows = doc.blocks.map(renderRow).join('');
+  const rows = doc.blocks.map((b) => renderRow(b, s)).join('');
   const footer = renderFooter(ctx);
   // Hidden preheader: the snippet inboxes show next to the subject.
   const preheader = ctx.preheader

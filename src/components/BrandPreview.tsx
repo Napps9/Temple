@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 
 import { GymLogo } from './GymLogo';
+import { contrastRatio } from '@/lib/brand-derivation';
 
 // Live preview the owner sees while editing the brand. Renders a
 // miniature version of the chrome a member experiences: the gym
@@ -21,6 +22,14 @@ export function BrandPreview({
   secondaryColor: string;
   textColor: string;
 }) {
+  // Mirror Button.tsx: label ink on the primary fill is whichever of
+  // white / near-black reads better, so the preview shows what members
+  // will actually get.
+  const onPrimary =
+    contrastRatio(primaryColor, '#FFFFFF') >=
+    contrastRatio(primaryColor, '#111827')
+      ? '#FFFFFF'
+      : '#111827';
   return (
     <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <View
@@ -45,11 +54,13 @@ export function BrandPreview({
           className="rounded-xl p-3 flex-row items-center gap-3"
           style={{ backgroundColor: primaryColor }}>
           <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
-            <Ionicons name="calendar" size={18} color="#FFFFFF" />
+            <Ionicons name="calendar" size={18} color={onPrimary} />
           </View>
           <View className="flex-1">
-            <Text className="text-white font-semibold text-sm">Book a class</Text>
-            <Text className="text-white/80 text-xs">
+            <Text className="font-semibold text-sm" style={{ color: onPrimary }}>
+              Book a class
+            </Text>
+            <Text className="text-xs" style={{ color: onPrimary, opacity: 0.8 }}>
               Tomorrow · 6:00 CrossFit
             </Text>
           </View>

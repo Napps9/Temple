@@ -40,7 +40,13 @@ dead-end). It carries:
 ### Bookings & classes
 - **Calendar (Day / Week / Month views)** — browse the gym's class
   schedule with class-type colour coding, coach avatars, capacity and
-  remaining spots.
+  remaining spots. On a phone, the member Book tab drops straight into
+  an agenda list (a card per class, filter pills scoped to that day's
+  class types) instead of the grid; on tablet/desktop, Book's Day view
+  is a compact stacked list rather than an hourly grid with empty
+  hours, with class-type filter chips above it. Staff's Manage
+  calendar always keeps the full hourly grid, since the gaps are where
+  a class gets scheduled.
 - **Quick-book recommendation** — surfaces the member's next eligible
   class of their most-attended class type; respects plan class-type
   allowlists, credit balance, paid period and active comp grants.
@@ -161,7 +167,9 @@ rental, or a **physical subscription box** shipped every cycle.
   RPC). A **Hyrox** gym's Track home replaces the CrossFit movement-group
   grid with the eight race stations (SkiErg, Sled Push, Sled Pull, Burpee
   Broad Jumps, Row, Farmers Carry, Sandbag Lunges, Wall Balls), the 1 km
-  run split, and a full/half **Race Simulation** tile — each station
+  run split, a full/half **Race Simulation** tile, and a **Hyrox Time**
+  tile for your official competition finish time (full/half, logged
+  separately from the training simulation) — each station
   logging a single best **time** (lower is better). The station catalog
   lives in `src/lib/hyrox.ts`; keys are namespaced `hyrox_*` and share the
   same `tracked_*` tables, so the existing per-movement detail (best-of,
@@ -169,10 +177,18 @@ rental, or a **physical subscription box** shipped every cycle.
   strength-style leaderboards all work unchanged via the discipline-aware
   finders in `src/lib/movements.ts` (`catalogGroups`, `allSchemeOptions`)
   and the `useGymDiscipline` hook. Journal, streaks/heatmap and the injury
-  tracker are shared across both disciplines. (Phase 1 = station + run
-  PBs and a single race finish time; the split-by-split simulation builder
-  — 8 run splits + 8 station splits + roxzone, by division — is scaffolded
-  as the next phase.)
+  tracker are shared across both disciplines. Phase 1 = station + run PBs
+  and a single race finish time. Phase 2 adds a **split-by-split race
+  simulation builder** (`RecordHyroxRaceModal`, "Log full splits" on the
+  Race Simulation detail page): 8 laps of run → roxzone → station timed
+  individually, by race type (singles/doubles/relay), division
+  (open/pro), gender category and optional age group, stored in
+  `tracked_hyrox_races` + `tracked_hyrox_splits` (RLS matching the
+  `tracked_workout_sections`/`tracked_section_entries` pattern). The
+  aggregate total is written alongside as an ordinary `hyrox_sim` PB
+  result, so the existing leaderboard/PR-badge/sparkline surfaces keep
+  reading one number per race without change — the split tables are a
+  detail view underneath it, not a replacement.
 
 - **PR badges** — on the movement detail page, every journal row
   shows a trophy PR chip when the result was a strict improvement
@@ -203,7 +219,18 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Record workout modal** — pre-fill from today's programming for
   the class types the member is permitted to see, then a
   format-driven entry form per section (For time / AMRAP / EMOM /
-  Intervals / Strength sets / Max load / No score / Other).
+  Intervals / Max distance / Max calories / Strength sets / Max load /
+  No score / Other).
+- **Cardio scoring** — Max distance and Max calories formats for
+  erg/bike/run conditioning ("20 min max distance row", "12 min max
+  cals assault bike"): distance-in-metres or calories headline plus an
+  optional total time, with derived average pace shown in the journal
+  and workout detail (/500m erg convention, /km when the section text
+  reads as running — `formatPace` / `paceIntervalForText` in
+  `src/lib/track.ts`). Optional per-split entries; the class
+  leaderboard falls back to summed splits when no headline aggregate
+  was logged (migration `0101`, pgTAP
+  `class_leaderboard_cardio_scoring.sql`).
 - **Movement tagging** — at log time, tag a section with the
   movements it contained + a rep-max scheme so it counts on the
   movement / leaderboard.
@@ -211,8 +238,29 @@ rental, or a **physical subscription box** shipped every cycle.
   direct PRs with section-tagged results, "session" badge.
 - **Per-group page** — best-of per movement in a group (Squats,
   Pushing, Pulling, Cleans, Snatch, Aerobic, Bodyweight).
-- **Leaderboards** — class-session leaderboards (for-time + AMRAP)
-  and strength-movement leaderboards (rep-max per scheme), honouring
+- **Movement Library + starred home** (`/track/movements`, "Movement
+  Library" tile on the Track home) — search and browse the **full
+  cross-discipline** catalog (CrossFit + Hyrox) regardless of the gym's
+  own discipline. Name+alias search via `searchMovements`; browse groups
+  the gym's discipline first (`allGroupsDisciplineFirst`). Members
+  **star at two levels** — an individual movement
+  (`tracked_movement_favourites`) or a whole **group**
+  (`tracked_group_favourites`); both tables are self-only RLS with no
+  gym_id, so favourites travel with the profile. The **Track home grid is
+  rendered from these stars** (`useMovementFavourites` →
+  `deriveTiles`): a starred group is a group tile while ≥2 of its
+  movements remain selected, collapses to a single movement tile at one,
+  and disappears at zero; individually-starred movements always render as
+  their own tiles (Hyrox keeps its per-station colour + work spec via
+  `HYROX_TILE_META`). **Defaults mirror the old home** and aren't
+  persisted until the first edit (CrossFit → its groups starred; Hyrox →
+  its movements starred individually), materialised on first change so
+  they're editable. The Record flow's movement **tag picker** uses the
+  same widened catalog + search, so a workout section can be tagged with
+  any movement, not just the gym's discipline.
+- **Leaderboards** — class-session leaderboards (for-time, AMRAP,
+  max distance, max calories, load-based formats) and
+  strength-movement leaderboards (rep-max per scheme), honouring
   the gym's appear-in-leaderboards opt-in.
 - **Movement-activity badges** — Track-home group tiles show "N new"
   when the member has fresh logs in that group; clears on visit.
@@ -306,7 +354,11 @@ The staff area shows up when `can_access_staff_area` is on.
   bookings/waitlist entries to receive it). **Add member**
   [`can_assign_plan`] — staff search the gym roster, pick which
   entitlement (plan or comp) to charge it against, and book; the
-  staff member is recorded as `booked_by_profile_id`.
+  staff member is recorded as `booked_by_profile_id`. A **No charge**
+  option books the member without resolving or debiting any
+  entitlement, even if they hold an eligible plan (`p_no_charge` on
+  `staff_book_member`) — for walk-ins, guests, and comps outside the
+  plan/credit system.
   **Switch plan** [`can_assign_plan`] — per-booking swap action lets
   a coach change which entitlement an existing booking is charged
   against (the cancel-refund path follows the pointer, so a swap
@@ -334,8 +386,12 @@ The Manage page presents a tab strip:
 
 - **Insights** [`can_see_insights`] — one date range driving every
   KPI: Revenue, Members, Attendance %, Intros new, Expiring soon,
-  Expired, Paying, Conversion vs target. Each tile delta vs previous
-  period.
+  Expired, Paying, Conversion vs target, Retention vs target. Each
+  tile delta vs previous period. **Targets** [`can_set_targets`] editor
+  sets one goal at a time per metric (New intros, Conversions,
+  Retention) via a value box + a Week/Month/Quarter/Year period
+  selector — Conversions and Retention can be a rate (%) instead of a
+  headcount; New intros is count-only.
 - **Members** [`can_manage_tags`] — Attendance summary (Attended /
   No-show / Unmarked) by class type, **shareable signup link** card
   (Copy / Share, with archived state when public signup is off),
@@ -365,6 +421,14 @@ The Manage page presents a tab strip:
   subscription-recording webhook are built (`stripe-checkout` /
   `stripe-webhook`). Needs `STRIPE_SECRET_KEY`
   + `STRIPE_CONNECT_CLIENT_ID` secrets — see `docs/stripe-setup.md`.
+  **Currency follows the connected account**: `stripe-connect-callback`
+  reads the Stripe account's `default_currency` and stores it on
+  `gyms.currency`, so every price / revenue / payout figure renders in
+  the gym's real billing currency (a GBP account shows £). Until Stripe
+  is connected the gym keeps its currency (default `GBP`), settable by
+  hand in Gym settings (owner-gated `set_gym_currency` RPC). The Insights
+  revenue tile reads this currency for its empty state rather than
+  assuming USD.
 - **Membership (self-serve)** [member] — members pick and pay for a plan
   themselves at `/membership` (linked from Account): the gym's live
   plans, their current subscription + credit balance, and a Subscribe
@@ -404,11 +468,17 @@ The Manage page presents a tab strip:
   classes); Archive / Restore / Hard delete with dependent-row
   protection.
 - **Communications** [`can_manage_comms`] — the email campaign suite
-  (detailed below under *Communications Suite*).
+  (detailed below under *Communications Suite*). The campaign screen
+  (`/management/communications/<id>`) splits into a **Setup** view (name,
+  subject, topic, audience, send) and a full-screen **Design** builder —
+  a 3-pane `EmailEditor` (block rail · canvas · inspector, `variant="builder"`)
+  reached from the "Design your email" card. Same component owns the email
+  document, so autosave is unchanged.
 - **Store** [`can_manage_store`] — the gym storefront: products, stock,
   orders and fulfilment (detailed above under *Store*).
 - **Settings** — collapsible cards:
-  - **Gym settings** [`can_manage_staff`] — week start, default
+  - **Gym settings** [`can_manage_staff`] — training discipline
+    (CrossFit / Hyrox), billing currency, week start, default
     class capacity / duration / materialisation horizon, plan-resolution
     order, "expiring soon" window, booking windows (open / close / free-
     cancel cutoff, each with a min/hr/day/wk unit toggle so "2 weeks" or
@@ -493,8 +563,11 @@ newsletter tool, and an opt-in "Send the welcome email from Temple"
 button that creates a campaign with
 `audience.kind = 'pending_members'` and lands the owner in the editor
 to preview before send. A live linking-progress counter ticks up
-while members sign up. Plan-name → membership_plan mapping is
-deliberately deferred to a follow-up flow.
+while members sign up. Plan-name → membership_plan mapping happens in
+the Review step below — a CSV plan name that case-insensitively
+matches a plan the gym already has is pre-selected to "Map to
+existing" (flagged "Matched by name") rather than defaulting to
+create a duplicate.
 
 ### Member-import Review step (AI-assisted plan + tag inference)
 
@@ -699,6 +772,119 @@ surface, reachable from the **Comms** tab on Manage or
   `can_manage_comms`-gated security-definer RPCs, never handed to the
   client raw.
 
+### Website
+
+[`can_manage_website`, owner + admin by default] A public marketing
+page per gym, reachable from Manage → Website
+(`/management/website`). A paid add-on: `gyms.website_builder_enabled`
+gates every surface below and has **no owner-facing setter** — Temple
+staff flip it directly after an external invoice, there's no self-serve
+billing for it yet.
+
+- **Block-based editor** — the same interaction model as the email
+  builder (add from a palette, tap a block to edit its fields, up/down
+  reorder, duplicate, delete), for 9 block types: Hero, About, Class
+  schedule, Pricing, Team, Testimonials, Photo gallery, Hours &
+  location, Contact. Schedule, Pricing and Team are read-only
+  content-wise — they render the gym's real class sessions, membership
+  plans and staff roster at view time (Pricing/Team can each hide
+  specific rows without touching the source) rather than storing a
+  copy, so none of the three can drift stale. Schedule rows are
+  colour-coded by class type.
+- **Templates (`src/lib/site-templates.ts`)** — four fully written
+  starting points, paired 1:1 with the themes: Strength & Conditioning
+  (Forged), Fight & Combat (Ringside), Boutique Studio (Daybreak),
+  Coaching & PT (Baseline — the one consult-first funnel, its hero CTA
+  scrolls to the contact form). Each follows the researched gym-site
+  skeleton (hero → about → schedule → team → pricing → testimonials →
+  location → contact) with the hero headline seeded from the gym's
+  real name. Creating a site starts from a template picker; an
+  existing site can apply a template from the editor's Theme section
+  (confirm-gated — replaces all content, keeps publish state).
+  Deliberate gaps: testimonials ship empty and location without an
+  address so the publish-blocking warnings act as a launch checklist —
+  fabricated quotes or a missing address can never go live. Photo-less
+  background heroes render with a subtle accent glow instead of a flat
+  colour slab.
+- **Always-on site header** — every page shows the gym's logo (or name,
+  if no logo is set) in a small header, rendered directly by
+  `renderSiteHtml` rather than as a removable block — page furniture
+  every gym site should always have, not something to add or delete.
+- **Live on-canvas editing (web)** — free-text fields (Hero headline/
+  subheadline/CTA, About body, Testimonial quotes, Location address/
+  hours, Contact copy) are directly editable inside the live rendered
+  preview itself, not just the side-panel form — click the headline,
+  type right there. Images, plan selection and theme stay side-panel
+  only; the side panel remains fully functional for every field and is
+  the only editing path on native, which has no iframe/webview. Above
+  1280px wide the editor and canvas show side by side; narrower web
+  widths keep a toggle between the two. Canvas edits sync to the panel
+  (and vice versa) through a `postMessage` bridge validated against a
+  field whitelist (`src/lib/site-canvas-sync.ts`); the preview iframe
+  only ever reloads on side-panel/structural changes, never on a canvas
+  keystroke, so typing never loses cursor focus.
+- **Starter themes** — 4 named presets (Forged / Ringside / Daybreak /
+  Baseline, `src/lib/brand-themes.ts`) shared with the email builder's
+  own theme picker, so a gym's site and its marketing emails can use
+  the same look. A theme composes with the gym's own saved brand
+  colour rather than overriding it — two gyms on the same theme don't
+  end up with identically-coloured pages regardless of their actual
+  brand — and isn't baked into the stored page: a later brand-colour
+  change is picked up automatically, no "reapplying" needed.
+  `gym_websites.design` stores only the theme id.
+- **Publish flow** — a draft is fully editable and previewable before
+  going live; Publish/Unpublish is a separate explicit action from
+  autosave. The staff-side preview reads the gym's real schedule/plans
+  under the signed-in member's own RLS so a draft still previews with
+  real content; the public route only ever serves a *published* site.
+- **Public rendering (`/site/<slug>`)** — a standalone Vercel
+  Serverless Function (`api/site/[slug].ts`), not an Expo Router
+  screen: this project's web build is static-export only and can't mix
+  in per-route server rendering, so a normal app route would ship an
+  empty HTML shell to crawlers. The function renders real HTML
+  server-side per request via the same `renderSiteHtml` the in-app
+  preview uses, reading `gym_website_by_slug` /
+  `gym_public_schedule` / `gym_public_plans` / `gym_public_team` — four
+  anon-grantable RPCs, each re-checking `published = true` itself since
+  `security definer` bypasses the base tables' RLS. `gym_public_team`
+  returns owner/admin/coach/staff who haven't left the gym (never plain
+  members), matching the roster query Manage → Team already uses. The
+  contact block
+  submits straight to the existing `capture_public_lead` RPC via a
+  small inline script — a real working form, not a link-out.
+- **Images** — hero/about/gallery uploads go to the `gym-website-assets`
+  Storage bucket, gated the same way as the store's product-image
+  bucket (`can_manage_website` + folder-scoped to the gym).
+- **Stock photos (Pexels)** — a "Stock photos" button beside every
+  image upload opens a search modal pre-filled per template archetype
+  (`DEFAULT_STOCK_QUERIES` in `site-templates.ts`). The `stock-photos`
+  edge function (`can_manage_website` + `website_builder_enabled`
+  gated) proxies the search and copies the picked photo into the gym's
+  `gym-website-assets` folder by numeric Pexels id only — the server
+  never fetches a client-supplied URL. The picker carries the
+  guideline-required Pexels/photographer credits; needs
+  `PEXELS_API_KEY` per `docs/pexels-photos-setup.md`, and degrades to
+  upload-only without it.
+- **Custom domains (Manage → Website → Domain)** — a gym can connect a
+  domain they own so the site serves from it directly instead of only
+  `/site/<slug>`. The `custom-domain` edge function registers the
+  domain on Temple's own Vercel project (no per-gym OAuth needed —
+  unlike Stripe Connect, this is one platform API token, not a separate
+  account per gym) and hands back DNS records to add; SSL is automatic
+  once DNS resolves. `gym_website_domains` has **no client write
+  policy** — every write happens under the service role, closing a real
+  gap where the table's Phase-A speculative columns on `gym_websites`
+  had no column-level RLS restriction. A new `middleware.ts` at the repo
+  root (Vercel Routing Middleware) resolves a verified domain's `Host`
+  header to a gym slug via `gym_slug_for_domain` and rewrites straight
+  into the existing `/api/site/<slug>` function — no rendering logic
+  duplicated. See `docs/vercel-domains-setup.md`.
+- **JSON design download** — a "Download design (JSON)" chip in the
+  editor exports the current `SiteDocument` as-is. A stopgap, not a
+  working-site export: real static-HTML/zip portability (rewritten
+  image URLs, an offline-capable contact form) is a larger future
+  phase, deliberately not built yet.
+
 ### Coach-specific
 
 - **Coach Earnings summary** [`can_set_coach_pay` for the owner] —
@@ -722,7 +908,9 @@ surface, reachable from the **Comms** tab on Manage or
   raise staff alerts.
 - **Staff Alerts inbox tab** [`can_acknowledge_alerts`] — kind-aware
   cards (PAR-Q flag / Injury new / Injury update) with Open profile
-  and Acknowledge actions.
+  and Acknowledge actions. Unacknowledged alerts also count toward the
+  nav's unread indicator (`count_open_staff_alerts`), so a staff member
+  sees there's something open without visiting the Inbox first.
 
 ### Messaging (coach side)
 
@@ -872,6 +1060,11 @@ surround:
   `/track/movement/:movement`, `/track/group/:group`,
   `/track/workout/:id`, `/inbox/direct/:peer`,
   `/management/members/:profile`.
+- **Demo gym seeder** — `npm run seed:demo` creates a fully-populated
+  demo tenant with real signable-in accounts (timetable + attendance
+  history, progressing PRs, Hyrox races, injuries, leads, campaign
+  draft, store, published website), deterministic per `--seed`, with
+  a guarded `--teardown`. Runbook: `docs/demo-gym.md`.
 
 ---
 

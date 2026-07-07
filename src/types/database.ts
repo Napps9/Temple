@@ -90,6 +90,7 @@ export type Database = {
           store_enabled: boolean;
           store_shipping_fee_cents: number;
           discipline: 'crossfit' | 'hyrox';
+          website_builder_enabled: boolean;
         };
         Insert: {
           id?: string;
@@ -168,6 +169,75 @@ export type Database = {
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
           discipline: 'crossfit' | 'hyrox';
+        }>;
+        Relationships: [];
+      };
+      gym_websites: {
+        Row: {
+          id: string;
+          gym_id: string;
+          theme: string;
+          design: Json;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          theme?: string;
+          design?: Json;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          theme: string;
+          design: Json;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      gym_website_domains: {
+        Row: {
+          gym_id: string;
+          domain: string;
+          status: 'pending' | 'verified' | 'error';
+          records: Json;
+          error_message: string | null;
+          last_checked_at: string | null;
+          verified_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          domain: string;
+          status?: 'pending' | 'verified' | 'error';
+          records?: Json;
+          error_message?: string | null;
+          last_checked_at?: string | null;
+          verified_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          domain: string;
+          status: 'pending' | 'verified' | 'error';
+          records: Json;
+          error_message: string | null;
+          last_checked_at: string | null;
+          verified_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -1775,6 +1845,8 @@ export type Database = {
           total_time_seconds: number | null;
           total_rounds: number | null;
           total_extra_reps: number | null;
+          total_distance_m: number | null;
+          total_calories: number | null;
           did_not_finish: boolean | null;
           free_text_result: string | null;
           created_at: string;
@@ -1795,6 +1867,8 @@ export type Database = {
           total_time_seconds?: number | null;
           total_rounds?: number | null;
           total_extra_reps?: number | null;
+          total_distance_m?: number | null;
+          total_calories?: number | null;
           did_not_finish?: boolean | null;
           free_text_result?: string | null;
           created_at?: string;
@@ -1815,6 +1889,8 @@ export type Database = {
           total_time_seconds: number | null;
           total_rounds: number | null;
           total_extra_reps: number | null;
+          total_distance_m: number | null;
+          total_calories: number | null;
           did_not_finish: boolean | null;
           free_text_result: string | null;
           created_at: string;
@@ -1881,6 +1957,96 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      tracked_hyrox_races: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          race_length: 'full' | 'half';
+          race_type: string;
+          division: string;
+          gender_category: string;
+          age_group: string | null;
+          run_total_seconds: number;
+          station_total_seconds: number;
+          roxzone_total_seconds: number;
+          total_seconds: number;
+          performed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          race_length: 'full' | 'half';
+          race_type?: string;
+          division?: string;
+          gender_category: string;
+          age_group?: string | null;
+          run_total_seconds: number;
+          station_total_seconds: number;
+          roxzone_total_seconds: number;
+          total_seconds: number;
+          performed_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          workout_id: string;
+          race_length: 'full' | 'half';
+          race_type: string;
+          division: string;
+          gender_category: string;
+          age_group: string | null;
+          run_total_seconds: number;
+          station_total_seconds: number;
+          roxzone_total_seconds: number;
+          total_seconds: number;
+          performed_at: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      tracked_hyrox_splits: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          race_id: string;
+          segment_type: 'run' | 'station' | 'roxzone';
+          segment_index: number;
+          station_key: string | null;
+          time_seconds: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          race_id: string;
+          segment_type: 'run' | 'station' | 'roxzone';
+          segment_index: number;
+          station_key?: string | null;
+          time_seconds: number;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          race_id: string;
+          segment_type: 'run' | 'station' | 'roxzone';
+          segment_index: number;
+          station_key: string | null;
+          time_seconds: number;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       tracked_section_movement_tags: {
         Row: {
           id: string;
@@ -1913,6 +2079,42 @@ export type Database = {
           track_key: string | null;
           performed_at: string;
           notes: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      tracked_movement_favourites: {
+        Row: {
+          profile_id: string;
+          movement_key: string;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          movement_key: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          profile_id: string;
+          movement_key: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      tracked_group_favourites: {
+        Row: {
+          profile_id: string;
+          group_key: string;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          group_key: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          profile_id: string;
+          group_key: string;
           created_at: string;
         }>;
         Relationships: [];
@@ -3053,6 +3255,65 @@ export type Database = {
           public_lead_capture_enabled: boolean;
         }[];
       };
+      gym_website_by_slug: {
+        Args: { p_slug: string };
+        Returns: {
+          gym_id: string;
+          gym_name: string;
+          gym_logo_url: string | null;
+          gym_primary_color: string;
+          gym_currency: string;
+          theme: string;
+          design: Json;
+        }[];
+      };
+      gym_public_schedule: {
+        Args: { p_slug: string };
+        Returns: {
+          session_id: string;
+          starts_at: string;
+          duration_minutes: number;
+          class_type_name: string | null;
+          class_type_color: string | null;
+          coach_name: string | null;
+        }[];
+      };
+      gym_public_plans: {
+        Args: { p_slug: string };
+        Returns: {
+          plan_id: string;
+          name: string;
+          kind: string;
+          credit_count: number | null;
+          monthly_price_cents: number | null;
+        }[];
+      };
+      gym_public_team: {
+        Args: { p_slug: string };
+        Returns: {
+          profile_id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+        }[];
+      };
+      gym_slug_for_domain: {
+        Args: { p_host: string };
+        Returns: string | null;
+      };
+      invite_code_gym: {
+        Args: { p_code: string };
+        Returns: {
+          gym_id: string;
+          name: string;
+          logo_url: string | null;
+          primary_color: string;
+          secondary_color: string;
+          text_color: string;
+          logo_url_dark: string | null;
+          primary_color_dark: string | null;
+          role: GymRole;
+        }[];
+      };
       set_gym_public_lead_capture: {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;
@@ -3150,6 +3411,8 @@ export type Database = {
           did_not_finish: boolean | null;
           heaviest_weight: number | null;
           weight_unit: string | null;
+          total_distance_m: number | null;
+          total_calories: number | null;
           section_format: string;
           performed_at: string;
           rank: number;
@@ -3239,6 +3502,10 @@ export type Database = {
       };
       set_gym_discipline: {
         Args: { p_gym_id: string; p_discipline: string };
+        Returns: undefined;
+      };
+      set_gym_currency: {
+        Args: { p_gym_id: string; p_currency: string };
         Returns: undefined;
       };
       set_member_booking_requirement: {

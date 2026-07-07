@@ -22,6 +22,8 @@ function classRow(
     did_not_finish: null,
     heaviest_weight: null,
     weight_unit: null,
+    total_distance_m: null,
+    total_calories: null,
     section_format: 'for_time',
     performed_at: '2026-06-01T12:00:00Z',
     rank: 1,
@@ -83,6 +85,26 @@ describe('formatClassScore', () => {
       ),
     ).toBe('100 kg');
   });
+  it('renders max_distance in metres', () => {
+    expect(
+      formatClassScore(
+        classRow({ section_format: 'max_distance', total_distance_m: 5100 }),
+      ),
+    ).toBe('5100 m');
+  });
+  it('renders max_calories in cal', () => {
+    expect(
+      formatClassScore(
+        classRow({ section_format: 'max_calories', total_calories: 155 }),
+      ),
+    ).toBe('155 cal');
+  });
+  it('renders em-dash for cardio rows with nothing logged', () => {
+    expect(formatClassScore(classRow({ section_format: 'max_distance' }))).toBe('—');
+    expect(
+      formatClassScore(classRow({ section_format: 'max_calories', total_calories: 0 })),
+    ).toBe('—');
+  });
   it('renders em-dash for no_score / other', () => {
     expect(formatClassScore(classRow({ section_format: 'no_score' }))).toBe('—');
     expect(formatClassScore(classRow({ section_format: 'other' }))).toBe('—');
@@ -116,6 +138,8 @@ describe('isRankable', () => {
     expect(isRankable('for_time')).toBe(true);
     expect(isRankable('amrap')).toBe(true);
     expect(isRankable('emom')).toBe(true);
+    expect(isRankable('max_distance')).toBe(true);
+    expect(isRankable('max_calories')).toBe(true);
     expect(isRankable('no_score')).toBe(false);
     expect(isRankable('other')).toBe(false);
   });

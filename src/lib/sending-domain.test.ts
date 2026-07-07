@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  domainStatusDescription,
   domainStatusMeta,
   fromAddress,
   isApexDomain,
@@ -83,12 +84,23 @@ describe('domainStatusMeta', () => {
   });
 });
 
+describe('domainStatusDescription', () => {
+  it('gives a distinct, non-empty explanation for every status', () => {
+    const statuses = ['pending', 'verified', 'failed', 'temporary_failure'] as const;
+    const texts = statuses.map(domainStatusDescription);
+    for (const t of texts) expect(t.length).toBeGreaterThan(0);
+    expect(new Set(texts).size).toBe(statuses.length);
+  });
+});
+
 describe('mapResendStatus', () => {
   it('normalises Resend statuses onto our enum', () => {
     expect(mapResendStatus('verified')).toBe('verified');
     expect(mapResendStatus('not_started')).toBe('pending');
     expect(mapResendStatus('pending')).toBe('pending');
     expect(mapResendStatus('failed')).toBe('failed');
+    expect(mapResendStatus('failure')).toBe('failed');
+    expect(mapResendStatus('verifying')).toBe('pending');
     expect(mapResendStatus('temporary_failure')).toBe('temporary_failure');
     expect(mapResendStatus(undefined)).toBe('pending');
     expect(mapResendStatus('weird-new-value')).toBe('pending');

@@ -89,14 +89,34 @@ jobs:
       # the email_* tables / effective_can). Deployed by name and after the
       # link above; each one's verify_jwt comes from supabase/config.toml.
       - name: Deploy edge functions
+        # Bundling fetches deps from esm.sh, which intermittently returns a
+        # Cloudflare 522 and fails an otherwise-fine deploy. Retry each
+        # function a few times with backoff so a transient CDN blip doesn't
+        # red the run.
         run: |
-          supabase functions deploy send-campaign
-          supabase functions deploy track
-          supabase functions deploy sending-domain
-          supabase functions deploy infer-import
-          supabase functions deploy send-invite
-          supabase functions deploy stripe-connect-start
-          supabase functions deploy stripe-connect-callback
-          supabase functions deploy stripe-checkout
-          supabase functions deploy stripe-modify-subscription
-          supabase functions deploy stripe-webhook
+          deploy() {
+            for attempt in 1 2 3; do
+              if supabase functions deploy "$1"; then
+                return 0
+              fi
+              echo "::warning::deploy $1 failed (attempt $attempt) — retrying"
+              sleep $((attempt * 10))
+            done
+            echo "::error::deploy $1 failed after 3 attempts"
+            return 1
+          }
+          deploy send-campaign
+          deploy track
+          deploy sending-domain
+          deploy infer-import
+          deploy send-invite
+          deploy stripe-connect-start
+          deploy stripe-connect-callback
+          deploy stripe-checkout
+          deploy stripe-import
+          deploy stripe-modify-subscription
+          deploy stripe-webhook
+          deploy store-checkout
+          deploy store-cancel-subscription
+          deploy custom-domain
+          deploy stock-photos

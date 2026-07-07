@@ -110,17 +110,25 @@ export default function SignInScreen() {
           </View>
 
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-sm">
               {error}
             </Text>
           ) : null}
           {resendNotice ? (
-            <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-emerald-600 dark:text-emerald-400 text-sm">
               {resendNotice}
             </Text>
           ) : null}
           {recoverable && !resendNotice ? (
-            <Pressable hitSlop={8} onPress={resend} disabled={resendLoading}>
+            <Pressable
+              hitSlop={8}
+              onPress={resend}
+              disabled={resendLoading}
+              accessibilityRole="button">
               <Text className="text-primary text-sm">
                 {resendLoading
                   ? 'Sending…'

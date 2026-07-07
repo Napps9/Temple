@@ -20,6 +20,20 @@ export default function NewDirectMessage() {
   const { data: membership } = useGymMembership();
   const [query, setQuery] = useState('');
 
+  const dmScope = useQuery({
+    queryKey: ['dm-scope', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<'full_gym' | 'member_coach_only'> => {
+      const { data, error } = await supabase
+        .from('gyms')
+        .select('dm_scope')
+        .eq('id', membership!.gymId)
+        .single();
+      if (error) throw error;
+      return data.dm_scope;
+    },
+  });
+
   const candidates = useQuery({
     queryKey: ['dm-candidates', membership?.gymId, session?.user.id],
     enabled: !!membership?.gymId && !!session?.user.id,
@@ -46,9 +60,24 @@ export default function NewDirectMessage() {
     },
   });
 
+  // Mirrors can_dm()'s server-side rule: under member_coach_only, a
+  // member sender can only reach owner/admin/coach recipients (staff
+  // itself isn't eligible) — filtering here means an ineligible pick
+  // never reaches the RLS-enforced send instead of failing there.
+  const eligible = useMemo(() => {
+    const all = candidates.data ?? [];
+    const scope = dmScope.data;
+    const senderRole = membership?.role;
+    if (!scope || scope === 'full_gym' || !senderRole) return all;
+    if (senderRole === 'owner' || senderRole === 'admin' || senderRole === 'coach') {
+      return all;
+    }
+    return all.filter((c) => c.role === 'owner' || c.role === 'admin' || c.role === 'coach');
+  }, [candidates.data, dmScope.data, membership?.role]);
+
   const filtered = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
-    const all = candidates.data ?? [];
+    const all = eligible;
     if (!trimmed) {
       // Default sort: coaches/admins/owner first, then members.
       const order: Record<GymRole, number> = {
@@ -73,7 +102,7 @@ export default function NewDirectMessage() {
       .sort((a, b) =>
         (a.full_name ?? '').localeCompare(b.full_name ?? ''),
       );
-  }, [candidates.data, query]);
+  }, [eligible, query]);
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -100,7 +129,7 @@ export default function NewDirectMessage() {
           className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-50 text-base"
         />
 
-        {candidates.isLoading ? (
+        {candidates.isLoading || dmScope.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
         ) : filtered.length === 0 ? (
           <Text className="text-gray-500 dark:text-gray-400 text-sm">

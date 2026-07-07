@@ -5,6 +5,10 @@
 // domain rules server-side (defence in depth — never trust the client),
 // so the blocklist intentionally lives in both places.
 
+import { FQDN_RE, type StatusTone } from './domain-utils';
+
+export type { StatusTone };
+
 export type DomainStatus = 'pending' | 'verified' | 'failed' | 'temporary_failure';
 
 // One DNS record Resend asks the gym to add. We render whatever fields
@@ -73,11 +77,6 @@ export function normalizeDomain(input: string): string {
     .replace(/\.$/, '');
 }
 
-// A conservative but standards-shaped FQDN check: 1-63 char labels of
-// [a-z0-9-] (no leading/trailing hyphen), at least one dot, an alpha TLD.
-const FQDN_RE =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
-
 export function isFreeEmailDomain(input: string): boolean {
   return FREE_EMAIL_DOMAINS.has(normalizeDomain(input));
 }
@@ -130,8 +129,6 @@ export function fromAddress(d: Pick<SendingDomain, 'from_local' | 'domain'>): st
   return `${d.from_local}@${d.domain}`;
 }
 
-export type StatusTone = 'gray' | 'amber' | 'green' | 'red';
-
 export function domainStatusMeta(status: DomainStatus): {
   label: string;
   tone: StatusTone;
@@ -148,6 +145,22 @@ export function domainStatusMeta(status: DomainStatus): {
   }
 }
 
+// Plain-language explanation of what each status means and what the gym
+// should do next — the badge alone doesn't tell them whether to wait, act,
+// or that they're done.
+export function domainStatusDescription(status: DomainStatus): string {
+  switch (status) {
+    case 'pending':
+      return 'Your domain is registered with our email provider. Add the DNS records below at your DNS host to prove you own it, then hit Verify. Until it’s verified, emails still send as a simulation.';
+    case 'verified':
+      return 'Your domain is authenticated — campaigns and invites now send from your own address.';
+    case 'temporary_failure':
+      return 'We’re re-checking your DNS with our email provider. This usually clears on its own — check back in a few minutes and verify again.';
+    case 'failed':
+      return 'We couldn’t confirm your DNS records. Double-check they match the values below exactly, give DNS time to propagate, then verify again.';
+  }
+}
+
 // Map Resend's domain status strings onto our enum (Resend uses
 // not_started / pending / verified / failed / temporary_failure).
 export function mapResendStatus(raw: unknown): DomainStatus {
@@ -155,11 +168,13 @@ export function mapResendStatus(raw: unknown): DomainStatus {
     case 'verified':
       return 'verified';
     case 'failed':
+    case 'failure':
       return 'failed';
     case 'temporary_failure':
       return 'temporary_failure';
     case 'pending':
     case 'not_started':
+    case 'verifying':
     default:
       return 'pending';
   }

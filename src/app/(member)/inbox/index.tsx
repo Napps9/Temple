@@ -425,7 +425,11 @@ function AnnouncementsTab({
             autoCapitalize="sentences"
           />
           <View className="flex-row items-center gap-2">
-            <Switch value={pinned} onValueChange={setPinned} />
+            <Switch
+              accessibilityLabel="Pin to top"
+              value={pinned}
+              onValueChange={setPinned}
+            />
             <Text className="text-gray-700 dark:text-gray-200 text-sm">
               Pin to top
             </Text>
@@ -711,7 +715,11 @@ function AlertsTab({ gymId }: { gymId: string }) {
   return (
     <View className="gap-3">
       <View className="flex-row items-center gap-2">
-        <Switch value={showAcked} onValueChange={setShowAcked} />
+        <Switch
+          accessibilityLabel="Show acknowledged"
+          value={showAcked}
+          onValueChange={setShowAcked}
+        />
         <Text className="text-gray-500 dark:text-gray-400 text-sm">
           Show acknowledged
         </Text>

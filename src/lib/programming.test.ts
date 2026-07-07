@@ -158,8 +158,10 @@ describe('catalog shape', () => {
   it('exposes 7 categories', () => {
     expect(SECTION_CATEGORIES).toHaveLength(7);
   });
-  it('exposes 8 formats including no_score', () => {
-    expect(SECTION_FORMATS).toHaveLength(8);
+  it('exposes 10 formats including no_score and the cardio pair', () => {
+    expect(SECTION_FORMATS).toHaveLength(10);
     expect(SECTION_FORMATS.find((f) => f.key === 'no_score')).toBeDefined();
+    expect(SECTION_FORMATS.find((f) => f.key === 'max_distance')).toBeDefined();
+    expect(SECTION_FORMATS.find((f) => f.key === 'max_calories')).toBeDefined();
   });
 });

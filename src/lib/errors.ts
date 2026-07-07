@@ -7,6 +7,22 @@ export function errorMessage(e: unknown, fallback = 'Something went wrong'): str
   return fallback;
 }
 
+// supabase.functions.invoke surfaces a non-2xx as a FunctionsHttpError whose
+// `.context` is the raw Response — our functions answer with { error } JSON,
+// so dig that friendly message out rather than showing "non-2xx status".
+export async function functionErrorMessage(error: unknown): Promise<string> {
+  const ctx = (error as { context?: Response } | null)?.context;
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = await ctx.json();
+      if (body?.error) return String(body.error);
+    } catch {
+      // not JSON — fall through
+    }
+  }
+  return error instanceof Error ? error.message : 'Something went wrong';
+}
+
 // The booking gate raises this prefix when the booker has no current
 // PAR-Q response (see 0038). Surfaces tied to book_class detect it and
 // route into /parq rather than displaying the raw RPC error.

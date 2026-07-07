@@ -8,6 +8,7 @@ import { useGymMembership } from './auth';
 import type { AudienceDefinition } from './email/audience';
 import type { EmailDocument } from './email/blocks';
 import { renderEmailHtml, renderEmailText } from './email/render';
+import { functionErrorMessage } from './errors';
 import { supabase } from './supabase';
 import type { Database, Json } from '@/types/database';
 
@@ -244,33 +245,24 @@ export type DomainAction =
   | { action: 'disconnect' }
   | { action: 'update_from_local'; from_local: string };
 
-// supabase.functions.invoke surfaces a non-2xx as a FunctionsHttpError whose
-// `.context` is the raw Response — our functions answer with { error } JSON,
-// so dig that friendly message out rather than showing "non-2xx status".
-async function functionErrorMessage(error: unknown): Promise<string> {
-  const ctx = (error as { context?: Response } | null)?.context;
-  if (ctx && typeof ctx.json === 'function') {
-    try {
-      const body = await ctx.json();
-      if (body?.error) return String(body.error);
-    } catch {
-      // not JSON — fall through
-    }
-  }
-  return error instanceof Error ? error.message : 'Something went wrong';
-}
+type SendingDomainActionResult = {
+  ok?: boolean;
+  status?: SendingDomainRow['status'];
+  from_local?: string;
+  records?: SendingDomainRow['records'];
+};
 
 export function useSendingDomainAction() {
   const queryClient = useQueryClient();
   const { data: membership } = useGymMembership();
-  return useMutation<{ ok?: boolean }, Error, DomainAction>({
+  return useMutation<SendingDomainActionResult, Error, DomainAction>({
     mutationFn: async (input) => {
       if (!membership?.gymId) throw new Error('No gym selected');
       const { data, error } = await supabase.functions.invoke('sending-domain', {
         body: { ...input, gym_id: membership.gymId },
       });
       if (error) throw new Error(await functionErrorMessage(error));
-      return (data as { ok?: boolean }) ?? {};
+      return (data as SendingDomainActionResult) ?? {};
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comms-sending-domain'] });

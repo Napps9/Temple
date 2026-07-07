@@ -12,8 +12,21 @@ import { errorMessage } from '@/lib/errors';
 import type { Discipline } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+
+// A short, common-case currency list for the manual override. Stripe can
+// set any ISO code on connect (the RPC accepts any three-letter code);
+// this list just covers the gyms picking by hand.
+const CURRENCY_OPTIONS: { key: string; label: string }[] = [
+  { key: 'GBP', label: 'British Pound (£)' },
+  { key: 'USD', label: 'US Dollar ($)' },
+  { key: 'EUR', label: 'Euro (€)' },
+  { key: 'AUD', label: 'Australian Dollar (A$)' },
+  { key: 'CAD', label: 'Canadian Dollar (C$)' },
+  { key: 'NZD', label: 'New Zealand Dollar (NZ$)' },
+];
 
 type Defaults = {
   week_starts_on: 'mon' | 'sun';
@@ -49,6 +62,12 @@ export function OperatingDefaultsPanel() {
   useEffect(() => {
     setDiscipline(currentDiscipline);
   }, [currentDiscipline]);
+
+  const currentCurrency = useGymCurrency();
+  const [currency, setCurrency] = useState<string | null>(null);
+  useEffect(() => {
+    setCurrency(currentCurrency);
+  }, [currentCurrency]);
 
   const cfg = useQuery({
     queryKey: ['gym-operating-defaults', membership?.gymId],
@@ -112,12 +131,20 @@ export function OperatingDefaultsPanel() {
         });
         if (de) throw de;
       }
+      if (currency && currency !== currentCurrency) {
+        const { error: ce } = await supabase.rpc('set_gym_currency', {
+          p_gym_id: membership.gymId,
+          p_currency: currency,
+        });
+        if (ce) throw ce;
+      }
     },
     onSuccess: () => {
       setError(null);
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['gym-operating-defaults'] });
       queryClient.invalidateQueries({ queryKey: ['gym-discipline'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-currency'] });
       // Saving stamps operating_defaults_reviewed_at, which flips the
       // 'settings' onboarding step done — refresh the checklist so it
       // ticks without a reload.
@@ -171,6 +198,25 @@ export function OperatingDefaultsPanel() {
           ]}
           value={discipline ?? 'crossfit'}
           onChange={(v) => setDiscipline(v as Discipline)}
+        />
+      </Section>
+
+      <Section title="Billing currency">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          The currency every price, revenue figure and payout is shown
+          in. Connecting Stripe sets this automatically from your Stripe
+          account; set it here if you don't use Stripe or want to
+          override.
+        </Text>
+        <Choice
+          label="Currency"
+          options={
+            currency && !CURRENCY_OPTIONS.some((o) => o.key === currency)
+              ? [{ key: currency, label: currency }, ...CURRENCY_OPTIONS]
+              : CURRENCY_OPTIONS
+          }
+          value={currency ?? 'GBP'}
+          onChange={(v) => setCurrency(v)}
         />
       </Section>
 

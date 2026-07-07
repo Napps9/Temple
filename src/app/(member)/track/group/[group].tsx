@@ -31,6 +31,8 @@ type RawTagRow = {
     section_format: SectionFormatKey;
     total_time_seconds: number | null;
     total_rounds: number | null;
+    total_distance_m: number | null;
+    total_calories: number | null;
     entries: {
       weight_numeric: number | null;
       reps: number | null;
@@ -93,7 +95,7 @@ export default function GroupPage() {
       const { data, error } = await supabase
         .from('tracked_section_movement_tags')
         .select(
-          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_format, total_time_seconds, total_rounds, total_distance_m, total_calories, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
         )
         .eq('profile_id', session!.user.id)
         .in('movement_key', movementKeys);

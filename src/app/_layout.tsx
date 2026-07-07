@@ -42,6 +42,31 @@ function setLinkTag(rel: string, href: string) {
   tag.setAttribute('href', href);
 }
 
+// Re-encode a logo into a square, upright PNG data URL for use as a
+// favicon / touch icon. Browsers honour EXIF orientation when rendering
+// an <img> (so the in-app logo looks right), but the favicon pipeline
+// does not — a phone-photo logo carrying an orientation tag shows up
+// rotated in the browser tab. Decoding with `imageOrientation:
+// 'from-image'` bakes the rotation in, and the canvas centre-crops to a
+// square (matching GymLogo's cover fit) so the icon isn't squashed.
+// Needs CORS on the logo host (Supabase Storage sends it); on any
+// failure the caller keeps the raw URL, so this only ever upgrades.
+async function squareIconDataUrl(url: string, size: number): Promise<string> {
+  const res = await fetch(url, { mode: 'cors' });
+  const blob = await res.blob();
+  const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('no 2d canvas context');
+  const scale = Math.max(size / bitmap.width, size / bitmap.height);
+  const w = bitmap.width * scale;
+  const h = bitmap.height * scale;
+  ctx.drawImage(bitmap, (size - w) / 2, (size - h) / 2, w, h);
+  return canvas.toDataURL('image/png');
+}
+
 // A crash anywhere in the tree used to render as a silent black screen
 // on the deployed app — no error, no route, nothing to report. Render
 // the message + stack instead so a screenshot of a failure is also the
@@ -192,6 +217,7 @@ function ThemedShell() {
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     const { logoUrl, gymName, primaryColor } = brand;
+    let cancelled = false;
 
     document.title = gymName;
     setMetaTag('apple-mobile-web-app-title', gymName);
@@ -202,35 +228,51 @@ function ThemedShell() {
       'black-translucent',
     );
 
-    if (logoUrl) {
-      setLinkTag('icon', logoUrl);
-      setLinkTag('shortcut icon', logoUrl);
-      setLinkTag('apple-touch-icon', logoUrl);
+    // Point the favicon, iOS touch icon, and PWA install manifest (inlined
+    // as a data URL to avoid a server route for a runtime-derived value) at
+    // the gym's logo. Called twice: synchronously with the raw URL so an
+    // icon is always present, then again with a normalised upright/square
+    // PNG once the canvas re-encode resolves.
+    function setIcons(iconHref: string | null, iconSizes: string) {
+      if (iconHref) {
+        setLinkTag('icon', iconHref);
+        setLinkTag('shortcut icon', iconHref);
+        setLinkTag('apple-touch-icon', iconHref);
+      }
+      const manifest = {
+        name: gymName,
+        short_name: gymName,
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: colors.screenBg,
+        theme_color: primaryColor,
+        icons: iconHref
+          ? [
+              { src: iconHref, sizes: iconSizes, type: 'image/png', purpose: 'any' },
+              { src: iconHref, sizes: 'any', type: 'image/png', purpose: 'maskable' },
+            ]
+          : [],
+      };
+      setLinkTag(
+        'manifest',
+        'data:application/manifest+json;charset=utf-8,' +
+          encodeURIComponent(JSON.stringify(manifest)),
+      );
     }
 
-    // Inline manifest as a data URL — avoids needing a server route for
-    // a value derived from runtime state. Chrome / Android use this to
-    // populate the "Install app" dialog with the gym's name + icon.
-    const manifest = {
-      name: gymName,
-      short_name: gymName,
-      start_url: '/',
-      scope: '/',
-      display: 'standalone',
-      background_color: colors.screenBg,
-      theme_color: primaryColor,
-      icons: logoUrl
-        ? [
-            { src: logoUrl, sizes: '192x192', type: 'image/png', purpose: 'any' },
-            { src: logoUrl, sizes: '512x512', type: 'image/png', purpose: 'any' },
-            { src: logoUrl, sizes: 'any', type: 'image/png', purpose: 'maskable' },
-          ]
-        : [],
+    setIcons(logoUrl, 'any');
+    if (logoUrl) {
+      squareIconDataUrl(logoUrl, 256)
+        .then((dataUrl) => {
+          if (!cancelled) setIcons(dataUrl, '256x256');
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
     };
-    const manifestDataUrl =
-      'data:application/manifest+json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify(manifest));
-    setLinkTag('manifest', manifestDataUrl);
   }, [brand, colors.screenBg]);
 
   return (

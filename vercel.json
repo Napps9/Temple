@@ -4,6 +4,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/site/:slug", "destination": "/api/site/:slug" },
     { "source": "/join/:slug", "destination": "/join/[slug]" },
     { "source": "/lead/:slug", "destination": "/lead/[slug]" },
     { "source": "/track/movement/:movement", "destination": "/track/movement/[movement]" },

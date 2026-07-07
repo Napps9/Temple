@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Redirect } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
@@ -17,6 +18,7 @@ import {
 } from '@/lib/import/workout-columns';
 import { supabase } from '@/lib/supabase';
 import { useThemePreference } from '@/lib/theme';
+import { useCan } from '@/lib/useCan';
 import { webSelectStyle } from '@/lib/webSelect';
 import type { Json } from '@/types/database';
 
@@ -39,6 +41,7 @@ const FIELD_OPTIONS: { key: WorkoutField | 'ignore'; label: string }[] = [
 
 export default function ImportWorkoutsScreen() {
   const { data: membership } = useGymMembership();
+  const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<Phase>('upload');
   const [csvText, setCsvText] = useState('');
@@ -100,6 +103,8 @@ export default function ImportWorkoutsScreen() {
     },
     onError: (e) => setError(errorMessage(e, 'Could not import workouts')),
   });
+
+  if (canManageStaff === false) return <Redirect href="/management" />;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>

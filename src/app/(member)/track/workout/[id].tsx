@@ -49,7 +49,7 @@ export default function WorkoutDetail() {
         .select(
           [
             'id, performed_at, title, notes, class_session_id',
-            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, did_not_finish, free_text_result, source_programming_id, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes), tags:tracked_section_movement_tags(movement_key, track_key))',
+            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, total_distance_m, total_calories, did_not_finish, free_text_result, source_programming_id, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes), tags:tracked_section_movement_tags(movement_key, track_key))',
             'legacy_results:tracked_movement_results(id, workout_id, movement_key, track_key, value_numeric, value_seconds, value_unit, notes, performed_at)',
           ].join(', '),
         )

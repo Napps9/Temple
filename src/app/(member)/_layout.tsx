@@ -38,6 +38,7 @@ export default function MemberLayout() {
         <Tabs.Screen name="inbox" options={{ title: 'Inbox' }} />
         <Tabs.Screen name="consent" options={{ title: 'Consent' }} />
         <Tabs.Screen name="parq" options={{ title: 'Health screening' }} />
+        <Tabs.Screen name="injury-check" options={{ title: 'Injuries' }} />
         <Tabs.Screen name="waiver" options={{ title: 'Waiver' }} />
         <Tabs.Screen name="account" options={{ title: 'Account' }} />
       </Tabs>

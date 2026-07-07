@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { AvatarUploader } from './AvatarUploader';
 import { BackLink } from './BackLink';
@@ -47,6 +48,8 @@ export function AccountScreen() {
   const [detailsSaved, markDetailsSaved] = useSavedFlag();
   const [passwordSaved, markPasswordSaved] = useSavedFlag();
   const [showLeave, setShowLeave] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<string | null>(null);
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
@@ -64,6 +67,7 @@ export function AccountScreen() {
       if (error) throw error;
     },
     onSuccess: () => {
+      setShowWithdraw(false);
       setWithdrawError(null);
       setWithdrawMessage(
         'Consent withdrawn and your health data erased. You will be asked ' +
@@ -159,7 +163,7 @@ export function AccountScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl lg:max-w-5xl md:mx-auto md:w-full">
         <BackLink />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
@@ -169,6 +173,12 @@ export function AccountScreen() {
             Manage your name, email, and password.
           </Text>
         </View>
+
+        {/* Two-column dashboard on desktop; the two groups stack in the
+            same order on mobile. Left = identity + gym; right = account
+            details, security and data controls. */}
+        <View className="gap-6 lg:flex-row lg:items-start">
+        <View className="gap-6 lg:flex-1">
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <AvatarUploader
@@ -216,6 +226,9 @@ export function AccountScreen() {
             </Text>
           </View>
         ) : null}
+
+        </View>
+        <View className="gap-6 lg:flex-1">
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -279,9 +292,23 @@ export function AccountScreen() {
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Password
-          </Text>
+          <Pressable
+            onPress={() => setShowPasswordFields((v) => !v)}
+            className="flex-row items-center gap-2 hover:opacity-80 active:opacity-70">
+            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              Password
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              {showPasswordFields ? 'Cancel' : 'Change'}
+            </Text>
+            <Ionicons
+              name={showPasswordFields ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color="#9CA3AF"
+            />
+          </Pressable>
+          {showPasswordFields ? (
+            <>
           <Input
             label="New password"
             value={password}
@@ -314,6 +341,8 @@ export function AccountScreen() {
             success={passwordSaved}>
             Update password
           </Button>
+            </>
+          ) : null}
         </View>
 
         {membership && session ? (
@@ -347,7 +376,7 @@ export function AccountScreen() {
               className="self-start"
               label="Withdraw consent & erase health data"
               icon="shield-outline"
-              onPress={() => withdrawConsent.mutate()}
+              onPress={() => setShowWithdraw(true)}
               disabled={withdrawConsent.isPending}
             />
             {withdrawMessage ? (
@@ -383,6 +412,9 @@ export function AccountScreen() {
           </View>
         ) : null}
 
+        </View>
+        </View>
+
         <View className="mt-4">
           <Button variant="ghost" onPress={() => signOut.mutate()}>
             Sign out
@@ -400,6 +432,46 @@ export function AccountScreen() {
           onRemoved={() => signOut.mutate()}
         />
       ) : null}
+
+      <Modal
+        visible={showWithdraw}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWithdraw(false)}>
+        <Pressable
+          onPress={() => setShowWithdraw(false)}
+          className="flex-1 bg-black/60 items-center justify-center px-6">
+          <Pressable
+            onPress={() => {}}
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
+            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+              Erase your health data?
+            </Text>
+            <Text className="text-gray-700 dark:text-gray-200">
+              This permanently deletes your PAR-Q answers and any injuries
+              you've logged, and withdraws your data-processing consent. This
+              can't be undone — you'll be asked to consent again before your
+              next training session.
+            </Text>
+            {withdrawError ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {withdrawError}
+              </Text>
+            ) : null}
+            <View className="flex-row gap-2 justify-end">
+              <Button variant="secondary" onPress={() => setShowWithdraw(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onPress={() => withdrawConsent.mutate()}
+                loading={withdrawConsent.isPending}>
+                Erase data
+              </Button>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }

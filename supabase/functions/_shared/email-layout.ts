@@ -3,6 +3,9 @@
 // chrome — the brand mark, palette and footer — so every system email
 // looks like Temple instead of bare black-on-white.
 //
+// Table-based (not div/max-width) so it renders consistently across
+// clients including Outlook's Word engine, with a "bulletproof" button.
+//
 // Brand palette (docs/brand-assets.md): gold #E8B620, steel blue
 // #3B6BA5, ink #111111, cream #F4F2ED, tagline grey #5A5550.
 //
@@ -25,20 +28,10 @@ export function escapeHtml(s: string): string {
 const FONT =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
-// The three-card mark echoed as overlapping rounded squares, above the
-// "TEMPLE / TECHNOLOGY" wordmark — image-free so it renders in every
-// client (Gmail strips background images and SVGs).
-function header(): string {
-  const dot = (bg: string, ml: string) =>
-    `<span style="display:inline-block;width:15px;height:15px;border-radius:4px;background:${bg};${ml}"></span>`;
-  return `<div style="text-align:center;padding:4px 0 26px;">
-    <div style="margin:0 0 10px;">
-      ${dot('#E8B620', '')}${dot('#3B6BA5', 'margin-left:-5px;')}${dot('#111111', 'margin-left:-5px;')}
-    </div>
-    <div style="font-family:${FONT};font-weight:800;font-size:22px;letter-spacing:6px;color:#111111;">TEMPLE</div>
-    <div style="font-family:${FONT};font-weight:500;font-size:9px;letter-spacing:4px;color:#5A5550;margin-top:2px;">TECHNOLOGY</div>
-  </div>`;
-}
+// The real Temple lockup, served as a foreground PNG from the web app's
+// static root. Gmail strips background images and SVGs but renders
+// foreground <img>; alt="Temple" degrades gracefully if images are off.
+const LOGO_URL = 'https://app.jointemple.io/email/temple-lockup.png';
 
 export function templeEmailHtml(opts: {
   // Card heading.
@@ -46,7 +39,7 @@ export function templeEmailHtml(opts: {
   // Raw HTML for the body (caller escapes any dynamic text). Typically a
   // paragraph or two; receipts pass a table here.
   bodyHtml: string;
-  // Primary call-to-action button (steel blue).
+  // Primary call-to-action button (steel blue, centered, bulletproof).
   button?: { label: string; url: string };
   // Small grey line under the card.
   footerNote?: string;
@@ -54,33 +47,76 @@ export function templeEmailHtml(opts: {
   preheader?: string;
 }): string {
   const { title, bodyHtml, button, footerNote, preheader } = opts;
+
   const preheaderHtml = preheader
-    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${escapeHtml(
         preheader,
       )}</div>`
     : '';
+
   const buttonHtml = button
-    ? `<a href="${button.url}" style="display:inline-block;background:#3B6BA5;color:#ffffff;text-decoration:none;font-family:${FONT};font-weight:600;font-size:15px;padding:13px 22px;border-radius:8px;margin:4px 0 4px;">${escapeHtml(
-        button.label,
-      )}</a>`
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto 6px;">
+         <tr><td align="center" bgcolor="#3B6BA5" style="border-radius:8px;">
+           <a href="${button.url}" style="display:inline-block;padding:14px 30px;font-family:${FONT};font-size:16px;font-weight:600;line-height:1;color:#ffffff;text-decoration:none;border-radius:8px;">${escapeHtml(
+             button.label,
+           )}</a>
+         </td></tr>
+       </table>`
     : '';
+
   const footerHtml = footerNote
-    ? `<p style="text-align:center;font-family:${FONT};font-size:12px;color:#94a3b8;margin:18px 0 4px;">${escapeHtml(
-        footerNote,
-      )}</p>`
+    ? `<tr><td align="center" style="padding:24px 12px 2px;">
+         <span style="font-family:${FONT};font-size:12px;line-height:1.5;color:#94a3b8;">${escapeHtml(
+           footerNote,
+         )}</span>
+       </td></tr>`
     : '';
-  return `<!doctype html><html><body style="margin:0;background:#F4F2ED;font-family:${FONT};">
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+</head>
+<body style="margin:0;padding:0;background:#F4F2ED;">
   ${preheaderHtml}
-  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
-    ${header()}
-    <div style="background:#ffffff;border-radius:16px;padding:28px;border:1px solid #ECE8DF;">
-      <h1 style="margin:0 0 14px;font-family:${FONT};font-size:20px;color:#111111;">${escapeHtml(
-        title,
-      )}</h1>
-      <div style="font-family:${FONT};font-size:15px;line-height:1.55;color:#334155;">${bodyHtml}</div>
-      ${buttonHtml}
-    </div>
-    ${footerHtml}
-    <p style="text-align:center;font-family:${FONT};font-size:11px;color:#B8B3AA;margin:6px 0 0;letter-spacing:1px;">TEMPLE TECHNOLOGY</p>
-  </div></body></html>`;
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F4F2ED;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;">
+
+        <tr><td align="center" style="padding:6px 0 26px;">
+          <img src="${LOGO_URL}" alt="Temple" width="196" style="display:block;width:196px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;">
+        </td></tr>
+
+        <tr><td style="background:#ffffff;border:1px solid #ECE8DF;border-radius:16px;overflow:hidden;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td height="4" style="height:4px;background:#111111;font-size:0;line-height:0;">&nbsp;</td>
+              <td height="4" style="height:4px;background:#3B6BA5;font-size:0;line-height:0;">&nbsp;</td>
+              <td height="4" style="height:4px;background:#E8B620;font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td style="padding:32px;">
+              <h1 style="margin:0 0 16px;font-family:${FONT};font-size:23px;line-height:1.3;font-weight:700;color:#111111;">${escapeHtml(
+                title,
+              )}</h1>
+              <div style="font-family:${FONT};font-size:16px;line-height:1.6;color:#3f4650;">${bodyHtml}</div>
+              ${buttonHtml}
+            </td></tr>
+          </table>
+        </td></tr>
+
+        ${footerHtml}
+        <tr><td align="center" style="padding:6px 12px 0;">
+          <span style="font-family:${FONT};font-size:11px;letter-spacing:2px;color:#B8B3AA;">TEMPLE&nbsp;&middot;&nbsp;TECHNOLOGY</span>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }

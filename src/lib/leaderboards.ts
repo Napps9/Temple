@@ -17,6 +17,8 @@ export type ClassLeaderboardRow = {
   did_not_finish: boolean | null;
   heaviest_weight: number | null;
   weight_unit: string | null;
+  total_distance_m: number | null;
+  total_calories: number | null;
   section_format: string;
   performed_at: string;
   rank: number;
@@ -37,6 +39,8 @@ export type StrengthLeaderboardRow = {
 //   amrap         → "N rounds + M reps"
 //   max_load      → heaviest_weight kg
 //   strength_sets → heaviest_weight kg
+//   max_distance  → total_distance_m as "N m"
+//   max_calories  → total_calories as "N cal"
 //   emom          → "X / N done" if we knew N; falls back to weight
 //   intervals     → falls back to weight
 //   no_score/other → "—"
@@ -53,6 +57,16 @@ export function formatClassScore(row: ClassLeaderboardRow): string {
     return extra > 0
       ? `${r} round${r === 1 ? '' : 's'} + ${extra} reps`
       : `${r} round${r === 1 ? '' : 's'}`;
+  }
+  if (f === 'max_distance') {
+    return row.total_distance_m != null && row.total_distance_m > 0
+      ? `${row.total_distance_m} m`
+      : '—';
+  }
+  if (f === 'max_calories') {
+    return row.total_calories != null && row.total_calories > 0
+      ? `${row.total_calories} cal`
+      : '—';
   }
   if (f === 'max_load' || f === 'strength_sets') {
     return row.heaviest_weight != null

@@ -71,12 +71,35 @@ Deno.serve(async (req: Request) => {
       return redirect(appOrigin, 'error');
     }
 
+    const accountId = data.stripe_user_id as string;
     await service.from('gym_stripe_accounts').upsert({
       gym_id: stateRow.gym_id,
-      stripe_account_id: data.stripe_user_id as string,
+      stripe_account_id: accountId,
       connected_by: stateRow.created_by,
       connected_at: new Date().toISOString(),
     });
+
+    // Adopt the connected account's currency so every money figure in
+    // the app renders in the gym's real billing currency (a GBP Stripe
+    // account shows £, a USD one shows $). Best-effort: a failure here
+    // must not break the connect flow — the gym keeps its existing /
+    // default currency and an owner can still set it in Gym settings.
+    try {
+      const acctRes = await fetch(
+        `https://api.stripe.com/v1/accounts/${accountId}`,
+        { headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` } },
+      );
+      const acct = await acctRes.json();
+      if (acctRes.ok && typeof acct.default_currency === 'string') {
+        await service
+          .from('gyms')
+          .update({ currency: (acct.default_currency as string).toUpperCase() })
+          .eq('id', stateRow.gym_id);
+      }
+    } catch {
+      // Swallow — currency stays as-is.
+    }
+
     await burnState();
     return redirect(appOrigin, 'connected');
   } catch {

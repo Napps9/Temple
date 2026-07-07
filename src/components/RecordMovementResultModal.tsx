@@ -216,9 +216,15 @@ export function RecordMovementResultModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Record workout"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[90vh]">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
@@ -277,7 +283,11 @@ export function RecordMovementResultModal({
           </ScrollView>
 
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-sm">
+              {error}
+            </Text>
           ) : null}
 
           <View className="flex-row gap-3">
@@ -446,9 +456,15 @@ function SchemePickerModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Pick a movement"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Pick a movement
@@ -460,6 +476,8 @@ function SchemePickerModal({
                   onPress={() =>
                     setExpandedGroup((cur) => (cur === g.key ? null : g.key))
                   }
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: expandedGroup === g.key }}
                   className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
                   <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
                     {g.name}
@@ -480,6 +498,8 @@ function SchemePickerModal({
                               cur === m.key ? null : m.key,
                             )
                           }
+                          accessibilityRole="button"
+                          accessibilityState={{ expanded: expandedMovement === m.key }}
                           className="rounded-lg px-3 py-2 flex-row items-center gap-2 active:opacity-70">
                           <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
                             {m.name}

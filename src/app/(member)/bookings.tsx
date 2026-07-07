@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
+import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { useSession } from '@/lib/auth';
@@ -61,6 +62,8 @@ export default function BookingsScreen() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('upcoming');
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
+  const [openSessionId, setOpenSessionId] = useState<string | null>(null);
 
   const bookings = useQuery({
     queryKey: ['my-bookings', session?.user.id],
@@ -125,6 +128,21 @@ export default function BookingsScreen() {
     onError: (e) => setCancelError(errorMessage(e, 'Could not cancel booking')),
   });
 
+  const leaveWaitlist = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const { error } = await supabase.rpc('leave_waitlist', {
+        p_session_id: sessionId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setWaitlistError(null);
+      queryClient.invalidateQueries({ queryKey: ['my-waitlist'] });
+    },
+    onError: (e) =>
+      setWaitlistError(errorMessage(e, 'Could not leave the waitlist')),
+  });
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
@@ -167,6 +185,9 @@ export default function BookingsScreen() {
         {cancelError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{cancelError}</Text>
         ) : null}
+        {waitlistError ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">{waitlistError}</Text>
+        ) : null}
 
         <View className="gap-2">
           {tab === 'upcoming' ? (
@@ -192,7 +213,16 @@ export default function BookingsScreen() {
               </Text>
             ) : (
               waitlist.data!.map((w) => (
-                <WaitlistCard key={w.id} row={w} />
+                <WaitlistCard
+                  key={w.id}
+                  row={w}
+                  onOpen={() => setOpenSessionId(w.class_session_id)}
+                  onLeave={() => leaveWaitlist.mutate(w.class_session_id)}
+                  leaving={
+                    leaveWaitlist.isPending &&
+                    leaveWaitlist.variables === w.class_session_id
+                  }
+                />
               ))
             )
           ) : past.length === 0 ? (
@@ -204,6 +234,13 @@ export default function BookingsScreen() {
           )}
         </View>
       </ScrollView>
+
+      <ClassDetailModal
+        visible={!!openSessionId}
+        sessionId={openSessionId}
+        mode="book"
+        onClose={() => setOpenSessionId(null)}
+      />
     </Screen>
   );
 }
@@ -293,14 +330,26 @@ function BookingCard({
   );
 }
 
-function WaitlistCard({ row }: { row: WaitlistRow }) {
+function WaitlistCard({
+  row,
+  onOpen,
+  onLeave,
+  leaving,
+}: {
+  row: WaitlistRow;
+  onOpen: () => void;
+  onLeave: () => void;
+  leaving?: boolean;
+}) {
   const colors = useThemeColors();
   const start = row.class_sessions ? new Date(row.class_sessions.starts_at) : null;
   const typeColor = row.class_sessions?.class_types?.color ?? colors.primary;
   const typeName = row.class_sessions?.class_types?.name ?? 'Class';
   if (!start) return null;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+    <Pressable
+      onPress={onOpen}
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: typeColor }}
@@ -312,11 +361,20 @@ function WaitlistCard({ row }: { row: WaitlistRow }) {
             {fmtDate(start)} · {fmtTime(start)}
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            On waitlist — open the class to see your position
+            {row.position === 1
+              ? "You're next in line"
+              : `#${row.position} on the waitlist`}
           </Text>
         </View>
+        <ChipButton
+          tone="red"
+          label={leaving ? 'Leaving…' : 'Leave'}
+          icon="close"
+          onPress={onLeave}
+          disabled={leaving}
+        />
       </View>
-    </View>
+    </Pressable>
   );
 }
 

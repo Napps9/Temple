@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -20,6 +21,7 @@ export default function NewCampaign() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const brand = useGymBrand();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const ran = useRef(false);
 
@@ -52,6 +54,7 @@ export default function NewCampaign() {
         ran.current = false;
         return;
       }
+      void queryClient.invalidateQueries({ queryKey: ['comms-campaigns'] });
       router.replace(`/management/communications/${data.id}`);
     })();
   }, [membership?.gymId, session?.user.id, brand]);
@@ -59,7 +62,7 @@ export default function NewCampaign() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="py-6 px-4 gap-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Communications" />
+        <BackLink label="Email campaigns" />
         {error ? (
           <Text className="text-red-500 dark:text-red-400">{error}</Text>
         ) : (

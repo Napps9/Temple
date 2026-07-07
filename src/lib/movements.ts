@@ -607,6 +607,36 @@ export function catalogGroups(discipline: Discipline): MovementGroup[] {
   return discipline === 'hyrox' ? HYROX_GROUPS : MOVEMENT_GROUPS;
 }
 
+// The full cross-discipline catalog with the gym's own discipline pinned
+// first, so the Movement Library and the tag picker stay focused on the
+// gym's flavour while still exposing everything else below it.
+export function allGroupsDisciplineFirst(discipline: Discipline): MovementGroup[] {
+  const own = catalogGroups(discipline);
+  const ownKeys = new Set(own.map((g) => g.key));
+  return [...own, ...ALL_GROUPS.filter((g) => !ownKeys.has(g.key))];
+}
+
+export type MovementSearchHit = { group: MovementGroup; movement: Movement };
+
+// Name + alias search across every movement in every discipline. An
+// empty query returns nothing (callers show the browse view instead).
+// Reuses the same `aliases` the programmed-body auto-detector keys off,
+// so "single under" finds Double Unders' sibling, etc.
+export function searchMovements(query: string): MovementSearchHit[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const hits: MovementSearchHit[] = [];
+  for (const group of ALL_GROUPS) {
+    for (const movement of group.movements) {
+      const haystack = [movement.name, ...(movement.aliases ?? [])]
+        .join(' ')
+        .toLowerCase();
+      if (haystack.includes(q)) hits.push({ group, movement });
+    }
+  }
+  return hits;
+}
+
 export function findGroup(groupKey: string): MovementGroup | undefined {
   return ALL_GROUPS.find((g) => g.key === groupKey);
 }

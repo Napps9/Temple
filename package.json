@@ -44,7 +44,9 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "@vercel/node": "^5.8.22",
     "husky": "^9.1.7",
+    "tsx": "^4.23.0",
     "typescript": "~6.0.3",
     "vitest": "^4.1.8"
   },
@@ -58,6 +60,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seed:demo": "tsx scripts/seed-demo-gym.ts"
   }
 }

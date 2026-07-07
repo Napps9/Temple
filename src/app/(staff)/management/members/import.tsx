@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -40,6 +40,7 @@ import {
 } from '@/lib/import/infer';
 import { supabase } from '@/lib/supabase';
 import { useThemePreference } from '@/lib/theme';
+import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { webSelectStyle } from '@/lib/webSelect';
 import type { Json } from '@/types/database';
@@ -85,6 +86,7 @@ function sameMapping(
 
 export default function ImportMembersScreen() {
   const { data: membership } = useGymMembership();
+  const canManageStaff = useCan('can_manage_staff');
   const brand = useGymBrand();
   const queryClient = useQueryClient();
 
@@ -213,16 +215,25 @@ export default function ImportMembersScreen() {
       });
       setInference(r);
       lastInferenceKey.current = key;
-      // Seed the editable per-plan state from the suggestions.
+      // Seed the editable per-plan state from the suggestions. A CSV plan
+      // name that exactly matches (case-insensitively) a plan the gym
+      // already has defaults to "Map to existing" instead of "Create
+      // new" — otherwise a re-import, or a CSV whose "Unlimited Monthly"
+      // already exists as a Temple plan, silently creates a duplicate
+      // unless the owner happens to notice and flips the toggle by hand.
+      const existingByName = new Map(
+        existingPlans.data?.map((ep) => [ep.name.trim().toLowerCase(), ep.plan_id]) ?? [],
+      );
       const seed = new Map<string, ReviewedPlan>();
       for (const p of r.plans) {
+        const match = existingByName.get(p.raw_name.trim().toLowerCase());
         seed.set(p.raw_name, {
           raw_name: p.raw_name,
           name: p.suggested_name,
           kind: p.suggested_kind,
           credit_count: p.suggested_credit_count,
           monthly_price: centsToPounds(p.suggested_monthly_price_cents),
-          existing_plan_id: null,
+          existing_plan_id: match ?? null,
           drop: false,
         });
       }
@@ -375,6 +386,8 @@ export default function ImportMembersScreen() {
     },
     onError: (e) => setError(errorMessage(e, 'Could not import the file')),
   });
+
+  if (canManageStaff === false) return <Redirect href="/management" />;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -832,6 +845,9 @@ function PlanReviewCard({
   onChange: (patch: Partial<ReviewedPlan>) => void;
 }) {
   const { scheme } = useThemePreference();
+  const nameMatch = existingPlans.find(
+    (ep) => ep.name.trim().toLowerCase() === suggestion.raw_name.trim().toLowerCase(),
+  );
   const confidence = suggestion.confidence;
   const confidenceColor =
     confidence === 'learned'
@@ -929,6 +945,11 @@ function PlanReviewCard({
             Members on "{suggestion.raw_name}" will be subscribed to this
             existing plan instead of creating a new one.
           </Text>
+          {nameMatch && nameMatch.plan_id === final.existing_plan_id ? (
+            <Text className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+              Matched by name — check this is the right plan.
+            </Text>
+          ) : null}
         </View>
       ) : null}
 

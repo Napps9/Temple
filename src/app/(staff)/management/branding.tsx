@@ -21,7 +21,7 @@ import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { DEFAULT_BRAND, joinUrl, leadUrl, normaliseHex, slugify } from '@/lib/brand';
-import { deriveDarkColour } from '@/lib/brand-derivation';
+import { contrastRatio, deriveDarkColour } from '@/lib/brand-derivation';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -277,6 +277,7 @@ export function BrandingPanel() {
               pickerOpen={pickerFor === 'primary'}
               onPick={() => setPickerFor(pickerFor === 'primary' ? null : 'primary')}
             />
+            <PrimaryContrastNote colour={primary} />
             <ColourField
               label="Secondary"
               hint="Accent chips and tints."
@@ -408,7 +409,11 @@ export function BrandingPanel() {
                 When on, anyone with your join link can sign up as a member.
               </Text>
             </View>
-            <Switch value={publicSignup} onValueChange={setPublicSignup} />
+            <Switch
+              accessibilityLabel="Public signup"
+              value={publicSignup}
+              onValueChange={setPublicSignup}
+            />
           </View>
           {publicSignup && cleanedSlug ? (
             <View className="gap-1">
@@ -441,7 +446,11 @@ export function BrandingPanel() {
                 details — they land in Manage → Leads as a cold lead.
               </Text>
             </View>
-            <Switch value={leadCapture} onValueChange={setLeadCapture} />
+            <Switch
+              accessibilityLabel="Lead capture form"
+              value={leadCapture}
+              onValueChange={setLeadCapture}
+            />
           </View>
           {leadCapture && cleanedSlug ? (
             <View className="gap-1">
@@ -699,4 +708,25 @@ function copyToClipboard(text: string) {
   if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
     navigator.clipboard?.writeText(text);
   }
+}
+
+// Buttons pick white or near-black ink for their label depending on
+// which reads better on the primary fill (Button.tsx). Warn when even
+// the better option misses WCAG AA (4.5:1) — a mid-luminance brand
+// colour leaves button labels hard to read for low-vision members.
+function PrimaryContrastNote({ colour }: { colour: string }) {
+  const hex = normaliseHex(colour);
+  if (!hex) return null;
+  const best = Math.max(contrastRatio(hex, '#FFFFFF'), contrastRatio(hex, '#111827'));
+  if (best >= 4.5) return null;
+  return (
+    <View className="flex-row items-start gap-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg px-3 py-2">
+      <Ionicons name="warning-outline" size={14} color="#D97706" />
+      <Text className="flex-1 text-amber-700 dark:text-amber-400 text-xs">
+        Button text on this colour reaches only {best.toFixed(1)}:1 contrast
+        (WCAG AA needs 4.5:1). A darker or lighter shade will be easier to
+        read.
+      </Text>
+    </View>
+  );
 }

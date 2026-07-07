@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
+import { PostClassLogPrompt } from '@/components/PostClassLogPrompt';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
@@ -285,10 +286,11 @@ export default function Book() {
   return (
     <ClassesCalendar
       mode="book"
+      headerSlot={<NextClassCard />}
       topSlot={
         <View className="gap-2">
+          <PostClassLogPrompt />
           <RecommendedClassCard />
-          <NextClassCard />
         </View>
       }
     />

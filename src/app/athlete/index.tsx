@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -12,13 +12,44 @@ import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { findMovement } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
-import { useThemeColors } from '@/lib/theme';
+import { useThemeColors, useThemePreference } from '@/lib/theme';
 
 type LoggedMovement = { key: string; name: string; group: string; last: string };
+
+// Company identity colours (the Temple mark), not the per-gym runtime
+// `primary` token — see docs/brand-assets.md. The three panels below echo
+// the mark's offset gold/steel/ink-or-cream stack.
+const BRAND_GOLD = '#E8B620';
+const BRAND_STEEL = '#3B6BA5';
+const BRAND_INK = '#111111';
+const BRAND_CREAM = '#F4F2ED';
+
+function AccentCard({
+  accent,
+  children,
+}: {
+  accent: string;
+  children: ReactNode;
+}) {
+  return (
+    <View className="relative">
+      <View
+        pointerEvents="none"
+        className="absolute rounded-2xl"
+        style={{ backgroundColor: accent, top: 5, left: 5, right: -5, bottom: -5 }}
+      />
+      <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
+        {children}
+      </View>
+    </View>
+  );
+}
 
 export default function AthleteHome() {
   const session = useSession();
   const colors = useThemeColors();
+  const { scheme } = useThemePreference();
+  const inkOrCream = scheme === 'dark' ? BRAND_CREAM : BRAND_INK;
   const queryClient = useQueryClient();
   const [recording, setRecording] = useState(false);
   const [activateError, setActivateError] = useState<string | null>(null);
@@ -132,10 +163,12 @@ export default function AthleteHome() {
 
         {/* Solo tracking — the paid athlete tier (free during beta). */}
         {athleteActive.data ? (
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
+          <AccentCard accent={BRAND_GOLD}>
             <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-full bg-primary/15 items-center justify-center">
-                <Ionicons name="barbell-outline" size={20} color={colors.primary} />
+              <View
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: BRAND_GOLD + '26' }}>
+                <Ionicons name="barbell-outline" size={20} color={BRAND_GOLD} />
               </View>
               <View className="flex-1">
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -147,17 +180,24 @@ export default function AthleteHome() {
               </View>
             </View>
             <Button onPress={() => setRecording(true)}>Log a result</Button>
-          </View>
+          </AccentCard>
         ) : (
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
-            <View className="flex-row items-center gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
-                Keep tracking on your own
-              </Text>
-              <View className="rounded-full bg-amber-500/15 px-2 py-0.5">
-                <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
-                  Free in beta
+          <AccentCard accent={BRAND_GOLD}>
+            <View className="flex-row items-center gap-3">
+              <View
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: BRAND_GOLD + '26' }}>
+                <Ionicons name="barbell-outline" size={20} color={BRAND_GOLD} />
+              </View>
+              <View className="flex-1 flex-row items-center gap-2">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                  Keep tracking on your own
                 </Text>
+                <View className="rounded-full bg-amber-500/15 px-2 py-0.5">
+                  <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
+                    Free in beta
+                  </Text>
+                </View>
               </View>
             </View>
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -165,21 +205,30 @@ export default function AthleteHome() {
               in a gym. It's free while we're in beta.
             </Text>
             {activateError ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text
+                accessibilityLiveRegion="polite"
+                className="text-red-500 dark:text-red-400 text-sm">
                 {activateError}
               </Text>
             ) : null}
             <Button onPress={() => activate.mutate()} loading={activate.isPending}>
               Start solo tracking
             </Button>
-          </View>
+          </AccentCard>
         )}
 
         {/* Join / start CTAs replace /welcome for gymless users. */}
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Train with a gym
-          </Text>
+        <AccentCard accent={BRAND_STEEL}>
+          <View className="flex-row items-center gap-3">
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{ backgroundColor: BRAND_STEEL + '26' }}>
+              <Ionicons name="people-outline" size={20} color={BRAND_STEEL} />
+            </View>
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+              Train with a gym
+            </Text>
+          </View>
           <View className="flex-row gap-2">
             <Link href="/accept-invite" asChild>
               <Pressable className="flex-1 bg-primary active:bg-primary-dark rounded-xl px-4 py-3 items-center">
@@ -194,24 +243,31 @@ export default function AthleteHome() {
               </Pressable>
             </Link>
           </View>
-        </View>
+        </AccentCard>
 
-        <View className="gap-2">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-              Movements you've logged
-            </Text>
-            {workoutCount.data ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                {workoutCount.data} workout{workoutCount.data === 1 ? '' : 's'}
+        <AccentCard accent={inkOrCream}>
+          <View className="flex-row items-center gap-3">
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{ backgroundColor: inkOrCream + '26' }}>
+              <Ionicons name="time-outline" size={20} color={inkOrCream} />
+            </View>
+            <View className="flex-1 flex-row items-center justify-between">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                Movements you've logged
               </Text>
-            ) : null}
+              {workoutCount.data ? (
+                <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                  {workoutCount.data} workout{workoutCount.data === 1 ? '' : 's'}
+                </Text>
+              ) : null}
+            </View>
           </View>
 
           {movements.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
           ) : logged.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 items-center gap-2">
+            <View className="items-center gap-2 py-2">
               <Ionicons name="barbell-outline" size={28} color={colors.iconTertiary} />
               <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
                 No logged movements yet. Start solo tracking above, or join a
@@ -238,7 +294,7 @@ export default function AthleteHome() {
               ))}
             </View>
           )}
-        </View>
+        </AccentCard>
       </ScrollView>
 
       <RecordMovementResultModal

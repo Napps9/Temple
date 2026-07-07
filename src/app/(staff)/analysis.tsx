@@ -18,6 +18,7 @@ import {
   presetRange,
   type Preset,
 } from '@/components/DateRangeCta';
+import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import {
   computeMovementTrends,
@@ -157,7 +158,7 @@ export default function AnalysisScreen() {
       const { data, error } = await supabase
         .from('tracked_section_movement_tags')
         .select(
-          'profile_id, movement_key, track_key, performed_at, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+          'profile_id, movement_key, track_key, performed_at, section:tracked_workout_sections(section_format, total_time_seconds, total_rounds, total_distance_m, total_calories, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
         )
         .eq('gym_id', membership!.gymId)
         .gte('performed_at', sinceIso);
@@ -252,6 +253,7 @@ export default function AnalysisScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <BackLink label="Programming" fallbackHref="/programming" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Programming analysis

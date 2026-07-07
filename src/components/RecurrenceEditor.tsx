@@ -102,6 +102,8 @@ export function RecurrenceEditor({
               <Pressable
                 onPress={() => removeTime(idx)}
                 disabled={value.times.length === 1}
+                accessibilityRole="button"
+                accessibilityLabel="Remove"
                 className={`w-11 h-11 rounded-lg items-center justify-center ${
                   value.times.length === 1
                     ? 'opacity-40 bg-gray-100 dark:bg-gray-800'

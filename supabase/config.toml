@@ -69,6 +69,17 @@ verify_jwt = false
 [functions.sending-domain]
 verify_jwt = true
 
+# Per-gym custom domain management (Vercel Domains API). Signed-in staff
+# caller; re-checks can_manage_website per action.
+[functions.custom-domain]
+verify_jwt = true
+
+# Pexels stock-photo picker for the site builder. Signed-in staff
+# caller; re-checks can_manage_website per action. `save` copies the
+# chosen photo into gym-website-assets under the service role.
+[functions.stock-photos]
+verify_jwt = true
+
 # Emails a gym invite. Signed-in staff caller; mints the code via
 # create_invite (which enforces the role gate) and sends via Resend.
 [functions.send-invite]

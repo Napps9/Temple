@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   bestOf,
+  formatPace,
   formatResultValue,
   formatSeconds,
+  paceIntervalForText,
   parseDuration,
   type TrackedResultRow,
 } from './track';
@@ -57,6 +59,35 @@ describe('formatSeconds', () => {
   it('handles edge cases', () => {
     expect(formatSeconds(0)).toBe('0:00');
     expect(formatSeconds(-5)).toBe('0:00');
+  });
+});
+
+describe('formatPace', () => {
+  it('derives /500m erg pace', () => {
+    // 5,000 m in 20:00 → 2:00 per 500 m.
+    expect(formatPace(5000, 1200, 500)).toBe('2:00 /500m');
+  });
+  it('derives /km running pace', () => {
+    // 5,000 m in 23:45 → 4:45 per km.
+    expect(formatPace(5000, 1425, 1000)).toBe('4:45 /km');
+  });
+  it('returns null without both positive inputs', () => {
+    expect(formatPace(null, 1200, 500)).toBe(null);
+    expect(formatPace(5000, null, 500)).toBe(null);
+    expect(formatPace(0, 1200, 500)).toBe(null);
+    expect(formatPace(5000, 0, 500)).toBe(null);
+  });
+});
+
+describe('paceIntervalForText', () => {
+  it('reads running work in /km', () => {
+    expect(paceIntervalForText('20 min max distance run')).toBe(1000);
+    expect(paceIntervalForText('Running intervals')).toBe(1000);
+  });
+  it('defaults erg work to /500m', () => {
+    expect(paceIntervalForText('20 min max distance row')).toBe(500);
+    expect(paceIntervalForText('Ski erg + assault bike')).toBe(500);
+    expect(paceIntervalForText('')).toBe(500);
   });
 });
 

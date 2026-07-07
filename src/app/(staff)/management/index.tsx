@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
@@ -44,6 +44,7 @@ import {
   type MembershipPolicies,
 } from '@/lib/membership-changes';
 import { supabase } from '@/lib/supabase';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import type { GymRole } from '@/types/database';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -94,14 +95,15 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'members' | 'comms' | 'store' | 'team' | 'plans' | 'settings';
+type Category = 'insights' | 'members' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
   members: 'Members',
-  comms: 'Comms',
+  comms: 'Email campaigns',
+  website: 'Website',
   store: 'Store',
   team: 'Team',
   plans: 'Plans',
@@ -112,16 +114,83 @@ const CATEGORY_ICONS: Record<Category, IconName> = {
   insights: 'bar-chart-outline',
   members: 'people-outline',
   comms: 'mail-outline',
+  website: 'globe-outline',
   store: 'bag-handle-outline',
   team: 'briefcase-outline',
   plans: 'pricetags-outline',
   settings: 'settings-outline',
 };
 
+// Section nav, shared by the desktop sidebar menu (vertical, transparent
+// rows in a bordered panel) and the mobile pill row (horizontal white
+// cards on the page). Same items, two layouts.
+function ManageNav({
+  categories,
+  active,
+  onSelect,
+  vertical,
+}: {
+  categories: Category[];
+  active: Category;
+  onSelect: (c: Category) => void;
+  vertical: boolean;
+}) {
+  const pills = categories.map((c) => {
+    const selected = c === active;
+    return (
+      <Pressable
+        key={c}
+        onPress={() => onSelect(c)}
+        accessibilityRole="tab"
+        accessibilityState={{ selected }}
+        className={`flex-row items-center gap-2.5 rounded-lg px-3 py-2.5 active:opacity-80 ${
+          vertical ? 'w-full' : ''
+        } ${
+          selected
+            ? 'bg-primary shadow-card'
+            : vertical
+              ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
+              : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
+        }`}>
+        <Ionicons
+          name={CATEGORY_ICONS[c]}
+          size={17}
+          color={selected ? '#FFFFFF' : '#6B7280'}
+        />
+        <Text
+          className={`text-sm font-medium ${
+            selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+          }`}>
+          {CATEGORY_LABELS[c]}
+        </Text>
+      </Pressable>
+    );
+  });
+
+  if (vertical) {
+    return <View className="gap-1">{pills}</View>;
+  }
+
+  // Mobile: a single horizontal strip that bleeds to the screen edges
+  // (the parent content padding is px-4) rather than wrapping into
+  // ragged rows. The last pill peeking off the right edge is the scroll
+  // affordance.
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      className="-mx-4"
+      contentContainerClassName="flex-row gap-2 px-4">
+      {pills}
+    </ScrollView>
+  );
+}
+
 const CATEGORY_ORDER: Category[] = [
   'insights',
   'members',
   'comms',
+  'website',
   'store',
   'team',
   'plans',
@@ -153,13 +222,14 @@ export default function ManagementHome() {
   const canManageComms = useCan('can_manage_comms');
   const canManageStore = useCan('can_manage_store');
   const canAssignPlan = useCan('can_assign_plan');
+  const canManageWebsite = useCan('can_manage_website');
 
   const cards: Card[] = [
     {
       category: 'insights',
       title: 'Insights',
       description: 'Intros, expiring members, conversion vs targets.',
-      href: '/management/insights',
+      href: '/management/attendance',
       visible: !!canSeeInsights,
     },
     {
@@ -249,10 +319,17 @@ export default function ManagementHome() {
     },
     {
       category: 'comms',
-      title: 'Communications',
+      title: 'Email campaigns',
       description: 'Design, send and analyse email campaigns to your members.',
       href: '/management/communications',
       visible: !!canManageComms,
+    },
+    {
+      category: 'website',
+      title: 'Website',
+      description: 'A public site built from your own schedule, pricing and brand.',
+      href: '/management/website',
+      visible: !!canManageWebsite,
     },
     {
       category: 'store',
@@ -318,47 +395,50 @@ export default function ManagementHome() {
     (c) => c.visible && c.category === activeCategory,
   );
 
+  // The Website "category" is really just a doorway to the full-screen
+  // site builder — it has no inline panel, only a single card that
+  // links onward. So selecting it in the nav goes straight to the
+  // builder rather than parking the user on a one-card page.
+  function selectCategory(c: Category) {
+    if (c === 'website') {
+      router.push('/management/website');
+      return;
+    }
+    setActive(c);
+  }
+
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        {/* Owner-only setup nudge. Self-hides once all five steps are
-            done so the card never nags a finished gym. */}
-        <GymSetupChecklist />
-        {/* Tabs lead the page; the headline KPI tiles live inside the
-            Insights tab where the rest of the metrics are. */}
+    <Screen edges={['bottom', 'left', 'right']} className="px-0">
+      <View className="flex-1 lg:flex-row">
+        {/* Desktop: a full-height left sidebar menu. Mobile: hidden — the
+            pills render inside the scroll area instead. */}
         {availableCategories.length > 1 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerClassName="gap-2">
-            {availableCategories.map((c) => {
-              const selected = c === activeCategory;
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => setActive(c)}
-                  className={`px-4 py-2 rounded-full flex-row items-center gap-1.5 ${
-                    selected ? 'bg-primary' : 'bg-slate-200 dark:bg-gray-800'
-                  }`}>
-                  <Ionicons
-                    name={CATEGORY_ICONS[c]}
-                    size={16}
-                    color={selected ? '#FFFFFF' : '#6B7280'}
-                  />
-                  <Text
-                    className={`text-sm font-medium ${
-                      selected
-                        ? 'text-white'
-                        : 'text-gray-700 dark:text-gray-200'
-                    }`}>
-                    {CATEGORY_LABELS[c]}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-gray-200 dark:border-gray-800 px-4 py-6">
+            <ManageNav
+              categories={availableCategories}
+              active={activeCategory}
+              onSelect={selectCategory}
+              vertical
+            />
+          </View>
         ) : null}
-        {activeCategory === 'insights' ? (
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
+          {availableCategories.length > 1 ? (
+            <View className="lg:hidden">
+              <ManageNav
+                categories={availableCategories}
+                active={activeCategory}
+                onSelect={selectCategory}
+                vertical={false}
+              />
+            </View>
+          ) : null}
+          {/* Owner-only setup nudge. Self-hides once all five steps are done
+              so the card never nags a finished gym. */}
+          <GymSetupChecklist />
+          {activeCategory === 'insights' ? (
           <InsightsTab />
         ) : activeCategory === 'members' ? (
           <MembersTab />
@@ -397,7 +477,8 @@ export default function ManagementHome() {
             />
           ))
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Screen>
   );
 }
@@ -539,6 +620,8 @@ function PolicyRow({
             <Pressable
               key={opt}
               onPress={() => onChange(opt)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
               className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                 selected
                   ? 'bg-primary border-primary'
@@ -952,6 +1035,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
                     </Text>
                   </View>
                   <Switch
+                    accessibilityLabel={ct.name}
                     value={qualified}
                     onValueChange={(v) =>
                       toggle.mutate({ classTypeId: ct.id, next: v })
@@ -1055,12 +1139,18 @@ function dayBefore(iso: string): string {
   return isoDate(new Date(d.getTime() - 86400000));
 }
 
-// Pick the dominant currency by charge_count, otherwise USD. Multi-
+// Pick the dominant currency by charge_count. With no charges yet, fall
+// back to the gym's configured currency (which follows its connected
+// Stripe account) so the empty tile reads "£0.00" not "US$0.00". Multi-
 // currency gyms are rare enough that one tile per gym is the right
 // trade — if a gym needs more, the Plans / Reports screens still show
 // per-currency detail.
-function pickPrimaryCurrency(rows: RevenueRow[]): RevenueRow {
-  if (rows.length === 0) return { currency: 'USD', gross_cents: 0, charge_count: 0 };
+function pickPrimaryCurrency(
+  rows: RevenueRow[],
+  fallbackCurrency: string,
+): RevenueRow {
+  if (rows.length === 0)
+    return { currency: fallbackCurrency, gross_cents: 0, charge_count: 0 };
   return [...rows].sort((a, b) => b.charge_count - a.charge_count)[0]!;
 }
 
@@ -1097,6 +1187,7 @@ type InsightsSummary = {
   retention_base: number;
   retention_target: number;
   retention_target_unit: TargetUnit;
+  lead_conversions: number;
   expiring_soon: number;
   expired: number;
   paying_now: number;
@@ -1149,6 +1240,7 @@ const TARGET_PERIOD_LABELS: Record<TargetPeriod, string> = {
 
 function InsightsTab() {
   const { data: membership } = useGymMembership();
+  const gymCurrency = useGymCurrency();
   const canSeeInsights = useCan('can_see_insights') ?? false;
   const canSetTargets = useCan('can_set_targets') ?? false;
   const showRevenue = useCan('can_see_money') ?? false;
@@ -1273,6 +1365,7 @@ function InsightsTab() {
           retention_base: 0,
           retention_target: 0,
           retention_target_unit: 'count',
+          lead_conversions: 0,
           expiring_soon: 0,
           expired: 0,
           paying_now: 0,
@@ -1280,6 +1373,47 @@ function InsightsTab() {
         };
       }
       return rows[0];
+    },
+  });
+
+  // Per-source breakdown of converted leads in the period — surfaced
+  // alongside the lead_conversions tile so owners can tell which
+  // acquisition channels are paying off.
+  const leadBySource = useQuery({
+    queryKey: ['insights-leads-by-source', gymId, start, end],
+    enabled: !!gymId && canSeeInsights && rangeValid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('source_id, source:lead_sources!source_id(label, color)')
+        .eq('gym_id', gymId!)
+        .gte('converted_at', start)
+        .lte('converted_at', `${end}T23:59:59`);
+      if (error) throw error;
+      const tally = new Map<string, { label: string; color: string; n: number }>();
+      let untagged = 0;
+      for (const row of data ?? []) {
+        const r = row as unknown as {
+          source_id: string | null;
+          source: { label: string; color: string } | null;
+        };
+        if (!r.source_id || !r.source) {
+          untagged += 1;
+          continue;
+        }
+        const existing = tally.get(r.source_id);
+        if (existing) existing.n += 1;
+        else
+          tally.set(r.source_id, {
+            label: r.source.label,
+            color: r.source.color,
+            n: 1,
+          });
+      }
+      return {
+        untagged,
+        sources: [...tally.values()].sort((a, b) => b.n - a.n),
+      };
     },
   });
 
@@ -1300,8 +1434,8 @@ function InsightsTab() {
     attendeesPrev.error ??
     summary.error;
 
-  const revenueNow = pickPrimaryCurrency(revenueCurrent.data ?? []);
-  const revenueThen = pickPrimaryCurrency(revenuePrev.data ?? []);
+  const revenueNow = pickPrimaryCurrency(revenueCurrent.data ?? [], gymCurrency);
+  const revenueThen = pickPrimaryCurrency(revenuePrev.data ?? [], gymCurrency);
   const revenueLoading = revenueCurrent.isLoading || revenuePrev.isLoading;
   const revenueDelta = revenueLoading
     ? undefined
@@ -1352,60 +1486,123 @@ function InsightsTab() {
 
       {/* One continuous grid so tiles pair up two-per-row on mobile
           instead of each group stranding a full-width odd one out. */}
-      <View className="flex-row gap-3 flex-wrap">
+      {/* KPI grid — 2-up on mobile, 3-up on desktop, via padding-gutter
+          cells so the tiles stay a comfortable size instead of stranding
+          six tiny columns across a wide dashboard. */}
+      <View className="flex-row flex-wrap -m-1.5">
         {showRevenue ? (
-          <StatTile
-            title="Revenue"
-            value={
-              revenueLoading
-                ? '—'
-                : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
-            }
-            subtitle="vs previous period"
-            delta={revenueDelta}
-            href="/management/plans"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Revenue"
+              value={
+                revenueLoading
+                  ? '—'
+                  : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
+              }
+              subtitle="vs previous period"
+              delta={revenueDelta}
+              href="/management/plans"
+            />
+          </View>
         ) : null}
         {showMembers ? (
-          <StatTile
-            title="Members"
-            value={membersLoading ? '—' : membersNow}
-            subtitle="vs previous period"
-            delta={membersDelta}
-            href="/management/members"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Members"
+              value={membersLoading ? '—' : membersNow}
+              subtitle="vs previous period"
+              delta={membersDelta}
+              href="/management/members"
+            />
+          </View>
         ) : null}
         {showMembers ? (
-          <StatTile
-            title="Attendance"
-            value={attendanceLoading ? '—' : `${ratePctNow.toFixed(0)}%`}
-            subtitle="of members checked in"
-            delta={attendanceDelta}
-            href="/management/attendance"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Attendance"
+              value={attendanceLoading ? '—' : `${ratePctNow.toFixed(0)}%`}
+              subtitle="of members checked in"
+              delta={attendanceDelta}
+              href="/management/attendance"
+            />
+          </View>
         ) : null}
         {canSeeInsights ? (
-          <StatTile
-            title="Intros"
-            value={summary.data?.intros_new ?? '—'}
-            subtitle="new this period"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Intros"
+              value={summary.data?.intros_new ?? '—'}
+              subtitle="new this period"
+            />
+          </View>
         ) : null}
         {canSeeInsights ? (
-          <StatTile
-            title="Expiring soon"
-            value={summary.data?.expiring_soon ?? '—'}
-            subtitle="≤ 7 days"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Leads converted"
+              value={summary.data?.lead_conversions ?? '—'}
+              subtitle="in this period"
+            />
+          </View>
         ) : null}
         {canSeeInsights ? (
-          <StatTile
-            title="Expired"
-            value={summary.data?.expired ?? '—'}
-            subtitle="no live access"
-          />
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Expiring soon"
+              value={summary.data?.expiring_soon ?? '—'}
+              subtitle="≤ 7 days"
+            />
+          </View>
+        ) : null}
+        {canSeeInsights ? (
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Expired"
+              value={summary.data?.expired ?? '—'}
+              subtitle="no live access"
+            />
+          </View>
         ) : null}
       </View>
+
+      {canSeeInsights &&
+      ((leadBySource.data?.sources.length ?? 0) > 0 ||
+        (leadBySource.data?.untagged ?? 0) > 0) ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Conversions by source
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {leadBySource.data!.sources.map((s) => (
+              <View
+                key={s.label}
+                style={{ backgroundColor: s.color + '22' }}
+                className="rounded-full px-3 py-1 flex-row items-center gap-1.5">
+                <View
+                  style={{ backgroundColor: s.color }}
+                  className="w-2 h-2 rounded-full"
+                />
+                <Text style={{ color: s.color }} className="text-xs font-semibold">
+                  {s.label}
+                </Text>
+                <Text style={{ color: s.color }} className="text-xs">
+                  · {s.n}
+                </Text>
+              </View>
+            ))}
+            {leadBySource.data!.untagged > 0 ? (
+              <View className="rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 flex-row items-center gap-1.5">
+                <Text className="text-gray-600 dark:text-gray-300 text-xs font-semibold">
+                  No source
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  · {leadBySource.data!.untagged}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
 
       {canSeeInsights && summary.data ? (
         <View className="gap-3">
@@ -1852,6 +2049,7 @@ function MembersTab() {
   const canManageTags = useCan('can_manage_tags') ?? false;
   const canManageStaff = useCan('can_manage_staff') ?? false;
   const canInvite = useCan('can_invite') ?? false;
+  const canAssignPlan = useCan('can_assign_plan') ?? false;
   const exportMembers = useExportMembersCsv();
 
   const [preset, setPreset] = useState<Preset>('month');
@@ -1983,6 +2181,24 @@ function MembersTab() {
       ) : null}
 
       <MemberSignupLinkCard />
+
+      {canAssignPlan ? (
+        <View className="gap-3">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Pipeline
+          </Text>
+          <ManagementCard
+            title="Leads"
+            description="Track prospects from first contact through conversion."
+            href="/management/leads"
+          />
+          <ManagementCard
+            title="Membership requests"
+            description="Approve or reject member requests to switch or cancel a plan."
+            href="/management/membership-requests"
+          />
+        </View>
+      ) : null}
 
       {canManageStaff ? (
         <View className="gap-3">

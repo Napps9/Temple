@@ -137,6 +137,8 @@ export const FORMAT_ENERGY_BIAS: Record<SectionFormatKey, EnergySystem[]> = {
   max_load: ['phosphagen'],
   emom: ['glycolytic'],
   intervals: ['glycolytic', 'oxidative'],
+  max_distance: ['oxidative'],
+  max_calories: ['glycolytic', 'oxidative'],
   amrap: ['glycolytic'],
   for_time: ['glycolytic'],
   no_score: [],

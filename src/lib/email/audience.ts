@@ -15,7 +15,8 @@ export type AudienceDefinition =
   | { kind: 'all_members' }
   | { kind: 'cohort'; cohorts: CohortKey[] }
   | { kind: 'tags'; tags: string[] }
-  | { kind: 'manual'; profile_ids: string[] };
+  | { kind: 'manual'; profile_ids: string[] }
+  | { kind: 'pending_members' };
 
 export type AudienceKind = AudienceDefinition['kind'];
 
@@ -62,6 +63,8 @@ export function normalizeAudience(raw: unknown): AudienceDefinition {
         : [];
       return { kind: 'manual', profile_ids: ids };
     }
+    case 'pending_members':
+      return { kind: 'pending_members' };
     case 'all_members':
     default:
       return DEFAULT_AUDIENCE;
@@ -80,6 +83,8 @@ export function isAudienceEmptyByConstruction(def: AudienceDefinition): boolean 
       return def.tags.length === 0;
     case 'manual':
       return def.profile_ids.length === 0;
+    case 'pending_members':
+      return false;
   }
 }
 
@@ -99,6 +104,8 @@ export function describeAudience(def: AudienceDefinition): string {
       return def.profile_ids.length === 1
         ? '1 hand-picked member'
         : `${def.profile_ids.length} hand-picked members`;
+    case 'pending_members':
+      return 'Newly imported members';
   }
 }
 
@@ -107,4 +114,5 @@ export const AUDIENCE_KIND_LABELS: Record<AudienceKind, string> = {
   cohort: 'By lifecycle',
   tags: 'By tag',
   manual: 'Pick members',
+  pending_members: 'Newly imported members',
 };

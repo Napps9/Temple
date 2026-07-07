@@ -321,6 +321,8 @@ function AddLeadModal({
                 <Pressable
                   onPress={onClose}
                   hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
                   <Ionicons name="close" size={18} color="#6B7280" />
                 </Pressable>
@@ -540,6 +542,8 @@ function LeadDetailModal({
             <Pressable
               onPress={onClose}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
               className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
               <Ionicons name="close" size={18} color="#6B7280" />
             </Pressable>
@@ -735,6 +739,8 @@ function SourcesEditorModal({
                 <Pressable
                   onPress={onClose}
                   hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
                   <Ionicons name="close" size={18} color="#6B7280" />
                 </Pressable>

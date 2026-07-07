@@ -8,13 +8,21 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
+import { TileGrid } from '@/components/TileGrid';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
-import { HYROX_SIM, HYROX_STATIONS, type HyroxStation } from '@/lib/hyrox';
-import { MOVEMENT_GROUPS } from '@/lib/movements';
+import { HYROX_TILE_META } from '@/lib/hyrox';
+import {
+  allGroupsDisciplineFirst,
+  MOVEMENT_GROUPS,
+  type Discipline,
+  type Movement,
+  type MovementGroup,
+} from '@/lib/movements';
 import { useLogNudge } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
+import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -27,14 +35,6 @@ import {
 } from '@/lib/workout-streak';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-function chunkPairs<T>(items: T[]): T[][] {
-  const pairs: T[][] = [];
-  for (let i = 0; i < items.length; i += 2) {
-    pairs.push(items.slice(i, i + 2));
-  }
-  return pairs;
-}
 
 export default function TrackHome() {
   const colors = useThemeColors();
@@ -161,7 +161,7 @@ export default function TrackHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-3">
           <View className="flex-1 gap-0.5">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
@@ -178,7 +178,7 @@ export default function TrackHome() {
               setRecordPrefill(null);
               setRecording(true);
             }}
-            className="bg-primary active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
+            className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
             <Ionicons name="add" size={16} color="#FFFFFF" />
             <Text className="text-white text-sm font-semibold">Record</Text>
           </Pressable>
@@ -214,116 +214,73 @@ export default function TrackHome() {
           </View>
         ) : null}
 
-        {(recentWorkouts.data?.size ?? 0) > 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
-            <View className="flex-row gap-2">
-              <Stat
-                icon="flame"
-                tint="#F59E0B"
-                value={streak}
-                label={streak === 1 ? 'day in a row' : 'days in a row'}
-              />
-              <Stat
-                icon="calendar"
-                tint={colors.primary}
-                value={weeks}
-                label={weeks === 1 ? 'week in a row' : 'weeks in a row'}
-              />
-              <Stat
-                icon="barbell"
-                tint="#10B981"
-                value={monthSessions}
-                label="this month"
-              />
-            </View>
-            <View className="gap-2">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                Last 12 weeks
-              </Text>
-              <WorkoutHeatmap
-                loggedDays={recentWorkouts.data ?? new Set()}
-                anchor={new Date()}
-                primaryColor={colors.primary}
-              />
-            </View>
-          </View>
-        ) : null}
+        {/* Desktop dashboard: a summary rail (consistency + journal +
+            leaderboards) beside the wide movements grid. On mobile the
+            same blocks stack in order — the rail width and column flip only
+            engage at lg, so phones are unchanged. */}
+        <View className="gap-4 lg:flex-row lg:items-start">
+          <View className="gap-4 lg:w-80">
+            {(recentWorkouts.data?.size ?? 0) > 0 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+                <View className="flex-row gap-2">
+                  <Stat
+                    icon="flame"
+                    tint="#F59E0B"
+                    value={streak}
+                    label={streak === 1 ? 'day in a row' : 'days in a row'}
+                  />
+                  <Stat
+                    icon="calendar"
+                    tint={colors.primary}
+                    value={weeks}
+                    label={weeks === 1 ? 'week in a row' : 'weeks in a row'}
+                  />
+                  <Stat
+                    icon="barbell"
+                    tint="#10B981"
+                    value={monthSessions}
+                    label="this month"
+                  />
+                </View>
+                <View className="gap-2">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    Last 12 weeks
+                  </Text>
+                  <WorkoutHeatmap
+                    loggedDays={recentWorkouts.data ?? new Set()}
+                    anchor={new Date()}
+                    primaryColor={colors.primary}
+                  />
+                </View>
+              </View>
+            ) : null}
 
-        {/* Journal + Leaderboards live as a 2-up tile row above the
-            Movements grid — same tile shape as a movement group so they
-            read as siblings instead of a stack of full-width cards. */}
-        <View className="flex-row items-stretch gap-2">
-          <View className="flex-1">
-            <JournalEntryTile workoutCount={journalCount.data ?? 0} />
+            {/* Utility tiles (Journal, Leaderboards, Movement Library,
+                Injury): a 2-up grid on mobile, stacked in the rail on
+                desktop. */}
+            <View className="flex-row flex-wrap -m-1 lg:flex-col lg:m-0 lg:gap-2">
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
+                <JournalEntryTile workoutCount={journalCount.data ?? 0} />
+              </View>
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
+                <LeaderboardsTile />
+              </View>
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
+                <LibraryTile />
+              </View>
+              <View className="w-1/2 p-1 lg:w-full lg:p-0">
+                <InjuryTile />
+              </View>
+            </View>
           </View>
-          <View className="flex-1">
-            <LeaderboardsTile />
+
+          <View className="lg:flex-1">
+            <MyMovementsCard
+              discipline={discipline}
+              recentByGroup={recentByGroup}
+            />
           </View>
         </View>
-
-        {/* Movements / stations + injury tracker share a home: both are
-            about how the body is moving. The grid swaps to the Hyrox
-            stations when the gym runs that discipline. */}
-        {isHyrox ? (
-          <HyroxStationsCard />
-        ) : (
-          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
-            <View className="flex-row items-center gap-3">
-              <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-                <Ionicons name="barbell-outline" size={22} color={colors.primary} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                  Movements
-                </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  PRs and history per movement.
-                </Text>
-              </View>
-            </View>
-
-            {/* Explicit row pairs (rather than flex-wrap) so the two tiles
-                in each row stretch to the taller item's height — flex-wrap
-                alone wouldn't equalise them, and "Bodyweight Movements"
-                (two-line title) was making the injury tile look squashed. */}
-            <View className="gap-2">
-              {chunkPairs([
-                ...MOVEMENT_GROUPS.map((g) => ({
-                  kind: 'group' as const,
-                  key: g.key,
-                  group: g,
-                })),
-                { kind: 'injury' as const, key: 'injury' },
-              ]).map((pair, i) => (
-                <View key={i} className="flex-row items-stretch gap-2">
-                  {pair.map((tile) =>
-                    tile.kind === 'group' ? (
-                      <View key={tile.key} className="flex-1">
-                        <GroupTile
-                          name={tile.group.name}
-                          count={tile.group.movements.length}
-                          icon={tile.group.icon as IoniconName}
-                          accent={tile.group.accent}
-                          recentCount={recentByGroup[tile.group.key] ?? 0}
-                          onPress={() =>
-                            router.push(
-                              `/track/group/${tile.group.key}` as never,
-                            )
-                          }
-                        />
-                      </View>
-                    ) : (
-                      <View key={tile.key} className="flex-1">
-                        <InjuryTile />
-                      </View>
-                    ),
-                  )}
-                  {pair.length === 1 ? <View className="flex-1" /> : null}
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
       </ScrollView>
 
       <RecordWorkoutModal
@@ -382,7 +339,7 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -409,7 +366,7 @@ function LeaderboardsTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -443,7 +400,7 @@ function InjuryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -476,70 +433,162 @@ function InjuryTile() {
   );
 }
 
-// The Hyrox Track grid — the eight stations + 1 km run split, the race
-// simulation, and the injury tracker, each tile deep-linking straight
-// to that station's PB / trend / journal detail.
-function HyroxStationsCard() {
-  const colors = useThemeColors();
-  const tiles: ({ kind: 'station'; station: HyroxStation } | { kind: 'sim' } | {
-    kind: 'injury';
-  })[] = [
-    ...HYROX_STATIONS.map((station) => ({ kind: 'station' as const, station })),
-    { kind: 'sim' as const },
-    { kind: 'injury' as const },
-  ];
+// Entry point to the cross-discipline Movement Library (search + browse
+// the full catalog + starred favourites). Shares the grid tile shape so
+// it reads as a sibling of the movement groups / stations.
+function LibraryTile() {
+  const accent = '#6366F1';
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+    <Pressable
+      onPress={() => router.push('/track/movements' as never)}
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      <View
+        style={{ backgroundColor: accent }}
+        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
+      />
+      <View
+        style={{ backgroundColor: `${accent}26` }}
+        className="w-11 h-11 rounded-full items-center justify-center">
+        <Ionicons name="library-outline" size={22} color={accent} />
+      </View>
+      <View className="flex-1 justify-end">
+        <Text
+          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          numberOfLines={2}>
+          Movement Library
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Search & star all movements
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+// A starred movement renders with its own chrome where we have it (Hyrox
+// stations keep their colour + work spec); otherwise it inherits the
+// group's icon/accent and shows the group name as its subtitle.
+function movementTileChrome(group: MovementGroup, movement: Movement) {
+  const hyrox = HYROX_TILE_META[movement.key];
+  return {
+    icon: (hyrox?.icon ?? group.icon) as IoniconName,
+    accent: hyrox?.accent ?? group.accent,
+    spec: hyrox?.spec ?? group.name,
+  };
+}
+
+type FavTile =
+  | { kind: 'group'; group: MovementGroup; count: number }
+  | { kind: 'movement'; group: MovementGroup; movement: Movement };
+
+function FavMovementTile({
+  group,
+  movement,
+}: {
+  group: MovementGroup;
+  movement: Movement;
+}) {
+  const chrome = movementTileChrome(group, movement);
+  return (
+    <StationTile
+      name={movement.name}
+      spec={chrome.spec}
+      icon={chrome.icon}
+      accent={chrome.accent}
+      onPress={() =>
+        router.push(`/track/movement/${movement.key}` as never)
+      }
+    />
+  );
+}
+
+// Turn the member's starred groups/movements into home tiles. A starred
+// group is a group tile while ≥2 of its movements remain selected; it
+// collapses to a single movement tile at one, and disappears at zero.
+// Movements starred on their own always render as their own tiles.
+function deriveTiles(
+  groups: Set<string>,
+  movements: Set<string>,
+  discipline: Discipline,
+): FavTile[] {
+  const out: FavTile[] = [];
+  for (const g of allGroupsDisciplineFirst(discipline)) {
+    const selected = g.movements.filter((m) => movements.has(m.key));
+    if (selected.length === 0) continue;
+    if (groups.has(g.key)) {
+      if (selected.length >= 2) out.push({ kind: 'group', group: g, count: selected.length });
+      else out.push({ kind: 'movement', group: g, movement: selected[0] });
+    } else {
+      for (const m of selected) out.push({ kind: 'movement', group: g, movement: m });
+    }
+  }
+  return out;
+}
+
+// The member's pinned movements & groups, rendered from their favourites
+// (which default to the gym discipline's catalog). Library + Injury are
+// fixed tiles so the customisation entry point and the injury tracker are
+// always reachable.
+function MyMovementsCard({
+  discipline,
+  recentByGroup,
+}: {
+  discipline: Discipline;
+  recentByGroup: Record<string, number>;
+}) {
+  const colors = useThemeColors();
+  const fav = useMovementFavourites(discipline);
+  const favTiles = useMemo(
+    () => deriveTiles(fav.groups, fav.movements, discipline),
+    [fav.groups, fav.movements, discipline],
+  );
+
+  return (
+    <View className="gap-3">
       <View className="flex-row items-center gap-3">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-          <Ionicons name="flame-outline" size={22} color={colors.primary} />
+          <Ionicons name="barbell-outline" size={22} color={colors.primary} />
         </View>
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Hyrox stations
+            Movements
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Best times per station, run split and race.
+            Your pinned movements &amp; groups — edit in the Library.
           </Text>
         </View>
       </View>
 
-      <View className="gap-2">
-        {chunkPairs(tiles).map((pair, i) => (
-          <View key={i} className="flex-row items-stretch gap-2">
-            {pair.map((tile, j) => (
-              <View key={j} className="flex-1">
-                {tile.kind === 'station' ? (
-                  <StationTile
-                    name={tile.station.name}
-                    spec={tile.station.spec}
-                    icon={tile.station.icon as IoniconName}
-                    accent={tile.station.accent}
-                    onPress={() =>
-                      router.push(
-                        `/track/movement/${tile.station.key}` as never,
-                      )
-                    }
-                  />
-                ) : tile.kind === 'sim' ? (
-                  <StationTile
-                    name={HYROX_SIM.name}
-                    spec={HYROX_SIM.spec}
-                    icon={HYROX_SIM.icon as IoniconName}
-                    accent={HYROX_SIM.accent}
-                    onPress={() =>
-                      router.push(`/track/movement/${HYROX_SIM.key}` as never)
-                    }
-                  />
-                ) : (
-                  <InjuryTile />
-                )}
-              </View>
-            ))}
-            {pair.length === 1 ? <View className="flex-1" /> : null}
-          </View>
-        ))}
-      </View>
+      {favTiles.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          Nothing pinned yet. Star movements or groups in the Library to pin
+          them here.
+        </Text>
+      ) : (
+        <TileGrid>
+          {favTiles.map((t) =>
+            t.kind === 'group' ? (
+              <GroupTile
+                key={`g:${t.group.key}`}
+                name={t.group.name}
+                count={t.count}
+                icon={t.group.icon as IoniconName}
+                accent={t.group.accent}
+                recentCount={recentByGroup[t.group.key] ?? 0}
+                onPress={() =>
+                  router.push(`/track/group/${t.group.key}` as never)
+                }
+              />
+            ) : (
+              <FavMovementTile
+                key={`m:${t.movement.key}`}
+                group={t.group}
+                movement={t.movement}
+              />
+            ),
+          )}
+        </TileGrid>
+      )}
     </View>
   );
 }
@@ -560,7 +609,7 @@ function StationTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -600,7 +649,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-slate-100 dark:bg-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
+      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"

@@ -8,8 +8,9 @@ import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { SendingDomainCard } from '@/components/email/SendingDomainCard';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { useCommsSettings } from '@/lib/comms';
+import { useCommsSettings, useSendingDomain } from '@/lib/comms';
 import { errorMessage } from '@/lib/errors';
+import { fromAddress } from '@/lib/sending-domain';
 import { supabase } from '@/lib/supabase';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -19,6 +20,7 @@ export default function CommsSettingsScreen() {
   const session = useSession();
   const brand = useGymBrand();
   const settings = useCommsSettings();
+  const sendingDomain = useSendingDomain();
   const queryClient = useQueryClient();
   const [saved, markSaved] = useSavedFlag();
 
@@ -69,7 +71,7 @@ export default function CommsSettingsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Communications" />
+        <BackLink label="Email campaigns" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Sender & footer
@@ -126,17 +128,28 @@ export default function CommsSettingsScreen() {
           </Text>
         </View>
 
-        <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-1">
-          <Text className="text-amber-700 dark:text-amber-400 font-semibold text-sm">
-            Delivery
-          </Text>
-          <Text className="text-amber-700/90 dark:text-amber-300/90 text-xs">
-            With no Resend API key configured yet, sends are recorded as a
-            simulation so you can build and review end-to-end. Once it’s set,
-            campaigns send from your verified domain above — or the shared
-            platform address if you haven’t connected one.
-          </Text>
-        </View>
+        {sendingDomain.data?.status === 'verified' ? (
+          <View className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 gap-1">
+            <Text className="text-green-700 dark:text-green-400 font-semibold text-sm">
+              Delivery is live
+            </Text>
+            <Text className="text-green-700/90 dark:text-green-300/90 text-xs">
+              Campaigns and invites send from{' '}
+              <Text className="font-mono">{fromAddress(sendingDomain.data)}</Text>.
+            </Text>
+          </View>
+        ) : (
+          <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-1">
+            <Text className="text-amber-700 dark:text-amber-400 font-semibold text-sm">
+              Delivery
+            </Text>
+            <Text className="text-amber-700/90 dark:text-amber-300/90 text-xs">
+              Until you verify a sending domain above, sends are recorded as a
+              simulation so you can build and review end-to-end. Verify a domain
+              to send from your own address for real.
+            </Text>
+          </View>
+        )}
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>

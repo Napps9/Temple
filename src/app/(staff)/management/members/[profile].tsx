@@ -405,6 +405,7 @@ export default function MemberDetailScreen() {
                 </Text>
               </View>
               <Switch
+                accessibilityLabel="Require a membership to book"
                 value={gymMembership.data.require_membership_to_book ?? false}
                 onValueChange={(v) => setBookingRequirement.mutate(v)}
                 disabled={setBookingRequirement.isPending}

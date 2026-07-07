@@ -175,27 +175,50 @@ export function confirmRedirectTo(): string | undefined {
     : undefined;
 }
 
+export type AcceptInviteResult =
+  | { status: 'accepted' }
+  | { status: 'pending_confirmation'; email: string };
+
 export async function acceptInvite(
   code: string,
   email: string,
   password: string,
   fullName: string,
-) {
+): Promise<AcceptInviteResult> {
   // The on_auth_user_created trigger (0042) creates the profiles row
   // server-side from raw_user_meta_data.full_name, so the client never
   // writes to profiles directly — avoids the post-signUp RLS rejection
   // when the session hasn't propagated to the client's JWT yet.
-  const { error } = await supabase.auth.signUp({
+  //
+  // The invite code is also stashed in metadata so that when email
+  // confirmation is on (signUp returns no session), we can re-apply the
+  // invite after the user confirms and signs in — otherwise they'd land
+  // gymless on the athlete home with no way to bind the invite. Mirrors
+  // the pending_join_slug handling in joinGymWithSignup.
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: confirmRedirectTo(),
-      data: { full_name: fullName },
+      data: { full_name: fullName, pending_invite_code: code },
     },
   });
   if (error) throw error;
+  const resolved = await ensureSessionAfterSignUp(email, password, data.session);
+  if (resolved.status === 'pending_confirmation') {
+    return { status: 'pending_confirmation', email };
+  }
   const { error: rpcError } = await supabase.rpc('accept_invite', { invite_code: code });
   if (rpcError) throw rpcError;
+  await clearPendingInviteMetadata();
+  return { status: 'accepted' };
+}
+
+// Accept an invite from an already-authenticated session (a member who
+// opens an invite link while signed in — one tap, no signup).
+export async function joinGymByInvite(code: string): Promise<void> {
+  const { error } = await supabase.rpc('accept_invite', { invite_code: code });
+  if (error) throw error;
 }
 
 export function useSignOut() {
@@ -448,4 +471,32 @@ export async function completePendingJoin(args: {
   if (error) throw error;
   await clearPendingJoinMetadata();
   return { gymId: data as unknown as string };
+}
+
+// Clears the pending-invite hint once the membership exists.
+async function clearPendingInviteMetadata(): Promise<void> {
+  try {
+    await supabase.auth.updateUser({ data: { pending_invite_code: null } });
+  } catch {
+    // Ignore — best effort.
+  }
+}
+
+// Reads the pending-invite hint left by acceptInvite when email
+// confirmation deferred binding the invite. Mirror of pendingJoinFromSession.
+export function pendingInviteFromSession(
+  session: { user: { user_metadata?: Record<string, unknown> | null } } | null,
+): { code: string } | null {
+  const meta = session?.user.user_metadata ?? null;
+  const code =
+    typeof meta?.pending_invite_code === 'string' ? meta.pending_invite_code : '';
+  return code ? { code } : null;
+}
+
+// Finishes an invite deferred by email confirmation: apply the stashed
+// code now that the user has signed in.
+export async function completePendingInvite(args: { code: string }): Promise<void> {
+  const { error } = await supabase.rpc('accept_invite', { invite_code: args.code });
+  if (error) throw error;
+  await clearPendingInviteMetadata();
 }

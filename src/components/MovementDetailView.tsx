@@ -5,11 +5,13 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { RecordHyroxRaceModal } from '@/components/RecordHyroxRaceModal';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { Sparkline } from '@/components/Sparkline';
 import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { HYROX_SIM } from '@/lib/hyrox';
 import { findMovement, type Metric } from '@/lib/movements';
 import {
   bestOfMerged,
@@ -22,6 +24,7 @@ import {
 } from '@/lib/movement-journal';
 import { normaliseForPlot, trendPoints } from '@/lib/movement-trend';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
+import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 import {
   categoryLabel,
   type SectionCategoryKey,
@@ -55,6 +58,8 @@ type RawTagRow = {
     section_format: SectionFormatKey;
     total_time_seconds: number | null;
     total_rounds: number | null;
+    total_distance_m: number | null;
+    total_calories: number | null;
     entries: {
       weight_numeric: number | null;
       reps: number | null;
@@ -77,9 +82,12 @@ export function MovementDetailView({
   const colors = useThemeColors();
   const discipline = useGymDiscipline();
   const meta = movementKey ? findMovement(movementKey) : undefined;
+  const fav = useMovementFavourites(discipline);
+  const starred = fav.movements.has(movementKey);
   const [recording, setRecording] = useState<{ trackKey?: string } | null>(
     null,
   );
+  const [recordingRace, setRecordingRace] = useState(false);
 
   const direct = useQuery({
     queryKey: ['tracked-results-by-movement', session?.user.id, movementKey],
@@ -105,7 +113,7 @@ export function MovementDetailView({
       const { data, error } = await supabase
         .from('tracked_section_movement_tags')
         .select(
-          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_category, title, section_format, total_time_seconds, total_rounds, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
+          'id, movement_key, track_key, performed_at, notes, section:tracked_workout_sections(workout_id, section_category, title, section_format, total_time_seconds, total_rounds, total_distance_m, total_calories, entries:tracked_section_entries(weight_numeric, reps, time_seconds, distance_numeric, calories))',
         )
         .eq('profile_id', session!.user.id)
         .eq('movement_key', movementKey)
@@ -200,11 +208,22 @@ export function MovementDetailView({
               {movement.name}
             </Text>
           </View>
+          <Pressable
+            onPress={() => fav.toggleMovement(movementKey, !starred)}
+            hitSlop={8}
+            accessibilityLabel={starred ? 'Unstar movement' : 'Star movement'}
+            className="w-9 h-9 rounded-full items-center justify-center hover:opacity-80 active:opacity-60">
+            <Ionicons
+              name={starred ? 'star' : 'star-outline'}
+              size={20}
+              color={starred ? '#F59E0B' : colors.iconSecondary}
+            />
+          </Pressable>
           {isMember ? (
             <Pressable
               onPress={() => setRecording({})}
               hitSlop={6}
-              className="bg-primary active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
+              className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
               <Ionicons name="add" size={14} color="#FFFFFF" />
               <Text className="text-white text-xs font-semibold">Record</Text>
             </Pressable>
@@ -212,9 +231,22 @@ export function MovementDetailView({
         </View>
 
         <View className="gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            {isStation ? 'Personal bests' : 'Rep maxes'}
-          </Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+              {isStation ? 'Personal bests' : 'Rep maxes'}
+            </Text>
+            {isMember && movement.key === HYROX_SIM.key ? (
+              <Pressable
+                onPress={() => setRecordingRace(true)}
+                hitSlop={6}
+                className="flex-row items-center gap-1 active:opacity-70">
+                <Ionicons name="flag-outline" size={13} color={colors.primary} />
+                <Text className="text-primary text-xs font-semibold">
+                  Log full splits
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
           <View className="gap-2">
             {movement.schemes.map((scheme) => {
               const best = bestOfMerged(merged, scheme.key, scheme);
@@ -245,7 +277,13 @@ export function MovementDetailView({
                     )}
                   </View>
                   {series.length >= 2 ? (
-                    <Sparkline values={series} color={colors.primary} width={88} height={32} />
+                    <Sparkline
+                      values={series}
+                      color={colors.primary}
+                      width={88}
+                      height={32}
+                      label={`${scheme.label} trend, ${series.length} results`}
+                    />
                   ) : null}
                   <Text
                     className={
@@ -324,6 +362,13 @@ export function MovementDetailView({
           initialTrackKey={recording?.trackKey}
         />
       ) : null}
+
+      {isMember && movement.key === HYROX_SIM.key ? (
+        <RecordHyroxRaceModal
+          visible={recordingRace}
+          onClose={() => setRecordingRace(false)}
+        />
+      ) : null}
     </Screen>
   );
 }
@@ -367,6 +412,8 @@ function MovementLeaderboardSection({
           <Pressable
             key={s.key}
             onPress={() => setActiveScheme(s.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: s.key === scheme.key }}
             className={`rounded-full px-3 py-1 border active:opacity-70 ${
               s.key === scheme.key
                 ? 'bg-primary border-primary'

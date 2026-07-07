@@ -201,7 +201,11 @@ export function WaiverPanel() {
               numberOfLines={1}>
               {pending.name}
             </Text>
-            <Pressable onPress={() => setPending(null)} hitSlop={8}>
+            <Pressable
+              onPress={() => setPending(null)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Remove file">
               <Ionicons name="close" size={16} color="#9CA3AF" />
             </Pressable>
           </View>
@@ -488,12 +492,15 @@ export function ParqPanel() {
                 </Text>
               </View>
               <Switch
+                accessibilityLabel={'Alert coaches on "yes"'}
                 value={r.flag_on_yes}
                 onValueChange={(v) => update(idx, { flag_on_yes: v })}
               />
               <Pressable
                 onPress={() => remove(idx)}
                 hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Delete question"
                 className="active:opacity-70">
                 <Ionicons name="trash-outline" size={18} color="#DC2626" />
               </Pressable>

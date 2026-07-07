@@ -1,0 +1,75 @@
+name: Demo gym
+
+# Manual seed/teardown of the demo gym against the hosted Supabase
+# project — the cloud-only counterpart to running `npm run seed:demo`
+# on a laptop. Needs the SUPABASE_SERVICE_ROLE_KEY repo secret
+# (Supabase Dashboard -> Settings -> API -> service_role) alongside
+# the existing SUPABASE_PROJECT_REF.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: What to do
+        type: choice
+        options: [seed, teardown]
+        required: true
+      slug:
+        description: Gym slug (must start with demo-)
+        default: demo-ironworks
+      members:
+        description: Member count (seed only, 10-60)
+        default: "40"
+      discipline:
+        description: Gym discipline (seed only)
+        type: choice
+        options: [crossfit, hyrox]
+        default: crossfit
+      name:
+        description: Gym display name (seed only; blank = sensible default for the discipline)
+        default: ""
+
+env:
+  DO_NOT_TRACK: "1"
+
+jobs:
+  demo-gym:
+    runs-on: ubuntu-latest
+    # Serialise runs: a seed and a teardown racing each other would
+    # trip the freshness/orphan checks halfway through.
+    concurrency:
+      group: demo-gym
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: "0"
+      - name: Run seeder
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Routed through env vars rather than interpolated directly
+          # into the script below, so a crafted input value can't
+          # break out into arbitrary shell.
+          MODE: ${{ inputs.mode }}
+          SLUG: ${{ inputs.slug }}
+          MEMBERS: ${{ inputs.members }}
+          DISCIPLINE: ${{ inputs.discipline }}
+          GYM_NAME: ${{ inputs.name }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY repo secret is not set — add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          if [ "$MODE" = "teardown" ]; then
+            npx tsx scripts/seed-demo-gym.ts --teardown --slug "$SLUG" --yes
+          else
+            ARGS=(--slug "$SLUG" --members "$MEMBERS" --discipline "$DISCIPLINE" --yes)
+            if [ -n "$GYM_NAME" ]; then ARGS+=(--name "$GYM_NAME"); fi
+            npx tsx scripts/seed-demo-gym.ts "${ARGS[@]}"
+          fi

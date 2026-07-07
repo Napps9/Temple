@@ -21,7 +21,7 @@ import {
   formatSeconds,
   type TrackedResultRow,
 } from '@/lib/track';
-import { FORMAT_SHAPES } from '@/lib/track-sections';
+import { aggregateHeadline, FORMAT_SHAPES } from '@/lib/track-sections';
 
 type SectionEntryRow = {
   id: string;
@@ -50,6 +50,8 @@ type SectionRow = {
   total_time_seconds: number | null;
   total_rounds: number | null;
   total_extra_reps: number | null;
+  total_distance_m: number | null;
+  total_calories: number | null;
   did_not_finish: boolean | null;
   free_text_result: string | null;
   entries: SectionEntryRow[];
@@ -78,7 +80,7 @@ export default function Journal() {
         .select(
           [
             'id, performed_at, title, notes, class_session_id',
-            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, did_not_finish, free_text_result, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes))',
+            'sections:tracked_workout_sections(id, section_category, section_format, title, body, notes, sort_order, total_time_seconds, total_rounds, total_extra_reps, total_distance_m, total_calories, did_not_finish, free_text_result, entries:tracked_section_entries(id, entry_index, round_index, label, weight_numeric, weight_unit, reps, time_seconds, distance_numeric, distance_unit, calories, done, notes))',
             'legacy_results:tracked_movement_results(id, workout_id, movement_key, track_key, value_numeric, value_seconds, value_unit, notes, performed_at)',
           ].join(', '),
         )
@@ -239,23 +241,7 @@ function renderHeadline(section: SectionRow): string | null {
   if (shape.kind === 'notes_only') {
     return section.free_text_result?.trim() || (section.notes ? null : '—');
   }
-  if (shape.kind === 'aggregate_first') {
-    const parts: string[] = [];
-    if (section.total_time_seconds != null) {
-      parts.push(formatSeconds(section.total_time_seconds));
-    }
-    if (section.total_rounds != null) {
-      const r = `${section.total_rounds} round${section.total_rounds === 1 ? '' : 's'}`;
-      const e =
-        section.total_extra_reps && section.total_extra_reps > 0
-          ? ` + ${section.total_extra_reps} reps`
-          : '';
-      parts.push(r + e);
-    }
-    if (section.did_not_finish) parts.push('DNF');
-    return parts.length > 0 ? parts.join(' · ') : null;
-  }
-  return null;
+  return aggregateHeadline(section);
 }
 
 function EntryLine({

@@ -136,11 +136,15 @@ export function mergeJournal(
 // aggregate (For time); fall back to the best entry-level
 // `time_seconds`. Weight / reps / distance / calories metrics pick
 // the best matching entry column. AMRAP's `total_rounds` covers the
-// reps case when no per-round entries exist.
+// reps case when no per-round entries exist; the cardio aggregates
+// (`total_distance_m`, `total_calories`) cover distance / calories
+// the same way.
 export type SectionForDerivation = {
   section_format: SectionFormatKey;
   total_time_seconds: number | null;
   total_rounds: number | null;
+  total_distance_m: number | null;
+  total_calories: number | null;
   entries: {
     weight_numeric: number | null;
     reps: number | null;
@@ -180,8 +184,13 @@ export function deriveTagValue(
   else if (scheme.metric === 'reps') {
     v = pick('reps');
     if (v == null && section.total_rounds != null) v = section.total_rounds;
-  } else if (scheme.metric === 'distance') v = pick('distance_numeric');
-  else if (scheme.metric === 'calories') v = pick('calories');
+  } else if (scheme.metric === 'distance') {
+    v = pick('distance_numeric');
+    if (v == null && section.total_distance_m != null) v = section.total_distance_m;
+  } else if (scheme.metric === 'calories') {
+    v = pick('calories');
+    if (v == null && section.total_calories != null) v = section.total_calories;
+  }
   return { value_numeric: v, value_seconds: null };
 }
 

@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Button } from './Button';
 import { DatePicker } from './DatePicker';
@@ -10,9 +18,10 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { detectMovementsInText } from '@/lib/movement-detection';
 import {
-  catalogGroups,
+  allGroupsDisciplineFirst,
   findMovement,
   type Discipline,
+  type Movement,
   type MovementGroup,
 } from '@/lib/movements';
 import {
@@ -55,6 +64,8 @@ type SectionDraft = {
   total_time_seconds: string;
   total_rounds: string;
   total_extra_reps: string;
+  total_distance_m: string;
+  total_calories: string;
   did_not_finish: boolean;
   free_text_result: string;
   // Entries — for entries-only formats and optional expand on aggregate-first.
@@ -82,6 +93,8 @@ function emptyDraft(): SectionDraft {
     total_time_seconds: '',
     total_rounds: '',
     total_extra_reps: '',
+    total_distance_m: '',
+    total_calories: '',
     did_not_finish: false,
     free_text_result: '',
     entries: [],
@@ -118,6 +131,8 @@ function draftFromProgrammedSection(args: {
     total_time_seconds: '',
     total_rounds: '',
     total_extra_reps: '',
+    total_distance_m: '',
+    total_calories: '',
     did_not_finish: false,
     free_text_result: '',
     entries,
@@ -549,9 +564,15 @@ export function RecordWorkoutModal({
       onRequestClose={close}>
       <Pressable
         onPress={close}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Record workout"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[92vh]">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
@@ -644,7 +665,11 @@ export function RecordWorkoutModal({
           </ScrollView>
 
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-sm">
+              {error}
+            </Text>
           ) : null}
 
           <View className="flex-row gap-3">
@@ -682,7 +707,7 @@ export function RecordWorkoutModal({
 
       <MovementTagPickerModal
         visible={movementPickerForIdx !== null}
-        groups={catalogGroups(discipline)}
+        groups={allGroupsDisciplineFirst(discipline)}
         onPick={(tag) => {
           if (movementPickerForIdx !== null) addTag(movementPickerForIdx, tag);
           setMovementPickerForIdx(null);
@@ -937,6 +962,26 @@ function AggregateInputs({
   if (shape.kind !== 'aggregate_first') return null;
   return (
     <View className="gap-3">
+      {shape.aggregateFields.includes('total_distance_m') ? (
+        <Input
+          label="Distance (m)"
+          value={draft.total_distance_m}
+          onChangeText={(v) => onUpdate({ total_distance_m: v })}
+          placeholder="5000"
+          keyboardType="numeric"
+          inputMode="decimal"
+        />
+      ) : null}
+      {shape.aggregateFields.includes('total_calories') ? (
+        <Input
+          label="Calories"
+          value={draft.total_calories}
+          onChangeText={(v) => onUpdate({ total_calories: v })}
+          placeholder="120"
+          keyboardType="numeric"
+          inputMode="numeric"
+        />
+      ) : null}
       {shape.aggregateFields.includes('total_time_seconds') ? (
         <Input
           label="Total time (MM:SS or HH:MM:SS)"
@@ -1035,7 +1080,9 @@ function EntriesTable({
             </Text>
             <Pressable
               onPress={() => onRemoveEntry(j)}
-              hitSlop={4}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Remove entry"
               className="w-7 h-7 rounded items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
               <Ionicons name="close" size={14} color="#9CA3AF" />
             </Pressable>
@@ -1135,7 +1182,9 @@ function QuickFillBar({
         </Text>
         <Pressable
           onPress={() => setExpanded(false)}
-          hitSlop={4}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Close quick fill"
           className="w-6 h-6 rounded items-center justify-center active:opacity-70">
           <Ionicons name="close" size={14} color="#9CA3AF" />
         </Pressable>
@@ -1348,9 +1397,15 @@ function TagEditModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Edit tag"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm gap-3">
           <View className="gap-1">
             <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
@@ -1455,13 +1510,76 @@ function MovementTagPickerModal({
 }) {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [expandedMovement, setExpandedMovement] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!visible) {
       setExpandedGroup(null);
       setExpandedMovement(null);
+      setSearch('');
     }
   }, [visible]);
+
+  const q = search.trim().toLowerCase();
+  // Search spans the full catalog passed in (name + aliases), so a member
+  // can tag any movement — including ones outside their gym's discipline.
+  const matches = useMemo(() => {
+    if (!q) return [] as Movement[];
+    const out: Movement[] = [];
+    for (const g of groups) {
+      for (const m of g.movements) {
+        const hay = [m.name, ...(m.aliases ?? [])].join(' ').toLowerCase();
+        if (hay.includes(q)) out.push(m);
+      }
+    }
+    return out;
+  }, [groups, q]);
+
+  // One movement row, shared by the browse accordion and the search
+  // results: tap the name to tag with no scheme, or expand to pick one.
+  const renderMovement = (m: Movement) => (
+    <View key={m.key}>
+      <View className="flex-row items-center gap-2">
+        <Pressable
+          onPress={() => onPick({ movement_key: m.key, track_key: null })}
+          className="flex-1 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
+          <Text className="text-gray-900 dark:text-gray-50 text-sm">{m.name}</Text>
+          <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+            No rep scheme
+          </Text>
+        </Pressable>
+        {m.schemes.length > 0 ? (
+          <Pressable
+            onPress={() =>
+              setExpandedMovement((cur) => (cur === m.key ? null : m.key))
+            }
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${m.name} rep schemes`}
+            accessibilityState={{ expanded: expandedMovement === m.key }}
+            className="w-8 h-8 rounded items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-800">
+            <Ionicons
+              name={expandedMovement === m.key ? 'chevron-up' : 'chevron-down'}
+              size={14}
+              color="#9CA3AF"
+            />
+          </Pressable>
+        ) : null}
+      </View>
+      {expandedMovement === m.key ? (
+        <View className="pl-3 gap-1">
+          {m.schemes.map((s) => (
+            <Pressable
+              key={s.key}
+              onPress={() => onPick({ movement_key: m.key, track_key: s.key })}
+              className="rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
+              <Text className="text-primary text-xs">{s.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
 
   return (
     <Modal
@@ -1471,9 +1589,15 @@ function MovementTagPickerModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel="Tag a movement"
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Tag a movement
@@ -1482,86 +1606,63 @@ function MovementTagPickerModal({
             Tag the movement (optionally with a rep scheme) so it lands
             in your per-movement Journal.
           </Text>
+          <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+            <Ionicons name="search" size={16} color="#9CA3AF" />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search all movements"
+              accessibilityLabel="Search all movements"
+              placeholderTextColor="#9CA3AF"
+              autoCorrect={false}
+              className="flex-1 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
+            />
+            {q ? (
+              <Pressable
+                onPress={() => setSearch('')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search">
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              </Pressable>
+            ) : null}
+          </View>
           <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
-            {groups.map((g) => (
-              <View key={g.key}>
-                <Pressable
-                  onPress={() =>
-                    setExpandedGroup((cur) => (cur === g.key ? null : g.key))
-                  }
-                  className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
-                  <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
-                    {g.name}
-                  </Text>
-                  <Ionicons
-                    name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#9CA3AF"
-                  />
-                </Pressable>
-                {expandedGroup === g.key ? (
-                  <View className="pt-2 pl-3 gap-2">
-                    {g.movements.map((m) => (
-                      <View key={m.key}>
-                        <View className="flex-row items-center gap-2">
-                          <Pressable
-                            onPress={() =>
-                              onPick({ movement_key: m.key, track_key: null })
-                            }
-                            className="flex-1 rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
-                            <Text className="text-gray-900 dark:text-gray-50 text-sm">
-                              {m.name}
-                            </Text>
-                            <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
-                              No rep scheme
-                            </Text>
-                          </Pressable>
-                          {m.schemes.length > 0 ? (
-                            <Pressable
-                              onPress={() =>
-                                setExpandedMovement((cur) =>
-                                  cur === m.key ? null : m.key,
-                                )
-                              }
-                              hitSlop={4}
-                              className="w-8 h-8 rounded items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                              <Ionicons
-                                name={
-                                  expandedMovement === m.key
-                                    ? 'chevron-up'
-                                    : 'chevron-down'
-                                }
-                                size={14}
-                                color="#9CA3AF"
-                              />
-                            </Pressable>
-                          ) : null}
-                        </View>
-                        {expandedMovement === m.key ? (
-                          <View className="pl-3 gap-1">
-                            {m.schemes.map((s) => (
-                              <Pressable
-                                key={s.key}
-                                onPress={() =>
-                                  onPick({
-                                    movement_key: m.key,
-                                    track_key: s.key,
-                                  })
-                                }
-                                className="rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
-                                <Text className="text-primary text-xs">
-                                  {s.label}
-                                </Text>
-                              </Pressable>
-                            ))}
-                          </View>
-                        ) : null}
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-              </View>
-            ))}
+            {q ? (
+              matches.length === 0 ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-sm py-2">
+                  No movements match “{search.trim()}”.
+                </Text>
+              ) : (
+                matches.map((m) => renderMovement(m))
+              )
+            ) : (
+              groups.map((g) => (
+                <View key={g.key}>
+                  <Pressable
+                    onPress={() =>
+                      setExpandedGroup((cur) => (cur === g.key ? null : g.key))
+                    }
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: expandedGroup === g.key }}
+                    className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:opacity-70">
+                    <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                      {g.name}
+                    </Text>
+                    <Ionicons
+                      name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color="#9CA3AF"
+                    />
+                  </Pressable>
+                  {expandedGroup === g.key ? (
+                    <View className="pt-2 pl-3 gap-2">
+                      {g.movements.map((m) => renderMovement(m))}
+                    </View>
+                  ) : null}
+                </View>
+              ))
+            )}
           </ScrollView>
           <Button variant="secondary" onPress={onClose}>
             Cancel
@@ -1593,9 +1694,15 @@ function PickerModal({
       onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
+          accessibilityViewIsModal
+          role="dialog"
+          aria-modal
+          accessibilityLabel={title}
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             {title}
@@ -1651,6 +1758,8 @@ function buildSectionInsert(args: {
     total_time_seconds: null as number | null,
     total_rounds: null as number | null,
     total_extra_reps: null as number | null,
+    total_distance_m: null as number | null,
+    total_calories: null as number | null,
     did_not_finish: null as boolean | null,
     free_text_result: null as string | null,
   };
@@ -1666,6 +1775,16 @@ function buildSectionInsert(args: {
     if (shape.aggregateFields.includes('total_extra_reps')) {
       const n = parseInt(draft.total_extra_reps.trim(), 10);
       if (Number.isFinite(n)) base.total_extra_reps = n;
+    }
+    if (shape.aggregateFields.includes('total_distance_m')) {
+      const n = Number(draft.total_distance_m.trim());
+      if (draft.total_distance_m.trim() && Number.isFinite(n)) {
+        base.total_distance_m = n;
+      }
+    }
+    if (shape.aggregateFields.includes('total_calories')) {
+      const n = parseInt(draft.total_calories.trim(), 10);
+      if (Number.isFinite(n)) base.total_calories = n;
     }
     if (shape.aggregateFields.includes('did_not_finish')) {
       base.did_not_finish = draft.did_not_finish;

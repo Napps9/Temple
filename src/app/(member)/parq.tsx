@@ -97,7 +97,10 @@ export default function ParqForm() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['parq-state'] });
       queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
-      router.replace('/book' as never);
+      // Health screening flows straight into the injury check — same
+      // "tell us how to keep you safe" beat, so we ask while they're in
+      // that headspace rather than surfacing it later on the checklist.
+      router.replace('/injury-check' as never);
     },
     onError: (e) => setError(errorMessage(e, 'Could not submit')),
   });

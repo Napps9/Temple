@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import { BRAND_THEMES } from '../brand-themes';
 import {
   appendBlock,
+  applyTheme,
   coerceDocument,
   createBlock,
   documentWarnings,
@@ -15,8 +17,11 @@ import {
   starterDocument,
   updateBlock,
   type ButtonBlock,
+  type DividerBlock,
   type EmailDocument,
   type HeadingBlock,
+  type ImageBlock,
+  type TextBlock,
 } from './blocks';
 
 const brand = { primaryColor: '#112233', secondaryColor: '#445566', textColor: '#778899' };
@@ -107,6 +112,86 @@ describe('coerceDocument', () => {
     const doc = coerceDocument({ settings: { contentWidth: 5000 } }, brand);
     expect(doc.settings.contentWidth).toBe(800);
     expect(doc.settings.linkColor).toBe('#112233');
+  });
+
+  it('back-fills the new typography/theme settings for a pre-existing stored campaign', () => {
+    // Simulates a row written to email_campaigns.design before themes
+    // existed — settings has none of the 5 new keys at all.
+    const oldRow = {
+      version: 1,
+      settings: {
+        backgroundColor: '#EEEEEE',
+        contentBackgroundColor: '#FFFFFF',
+        textColor: '#111111',
+        linkColor: '#222222',
+        fontFamily: 'Arial',
+        contentWidth: 600,
+      },
+      blocks: [{ id: 'a', type: 'heading', text: 'Hi', level: 2, align: 'left', color: '#111111' }],
+    };
+    const doc = coerceDocument(oldRow, brand);
+    expect(doc.settings.headingWeight).toBe(700);
+    expect(doc.settings.headingTransform).toBe('none');
+    expect(doc.settings.headingLetterSpacing).toBe(0);
+    expect(doc.settings.buttonRadius).toBe(8);
+    expect(doc.settings.themeId).toBeNull();
+    // and everything that WAS already there is preserved untouched.
+    expect(doc.settings.backgroundColor).toBe('#EEEEEE');
+    expect(doc.settings.linkColor).toBe('#222222');
+  });
+
+  it('drops an unrecognised or stale themeId back to null instead of crashing', () => {
+    const doc = coerceDocument({ settings: { themeId: 'retired-theme-2024' } }, brand);
+    expect(doc.settings.themeId).toBeNull();
+  });
+
+  it('accepts a valid themeId', () => {
+    const doc = coerceDocument({ settings: { themeId: 'ringside' } }, brand);
+    expect(doc.settings.themeId).toBe('ringside');
+  });
+});
+
+describe('applyTheme', () => {
+  it('reskins every existing block to match the theme, not just future ones', () => {
+    let doc = emptyDocument(brand);
+    doc = appendBlock(doc, createBlock('heading', brand, 'h'));
+    doc = appendBlock(doc, createBlock('text', brand, 't'));
+    doc = appendBlock(doc, createBlock('button', brand, 'btn'));
+    doc = appendBlock(doc, createBlock('divider', brand, 'd'));
+    doc = appendBlock(doc, createBlock('image', brand, 'img'));
+    doc = appendBlock(doc, createBlock('spacer', brand, 'sp'));
+
+    const themed = applyTheme(doc, BRAND_THEMES.forged);
+
+    expect((themed.blocks.find((b) => b.id === 'h') as HeadingBlock).color).toBe(
+      BRAND_THEMES.forged.palette.text,
+    );
+    expect((themed.blocks.find((b) => b.id === 't') as TextBlock).color).toBe(
+      BRAND_THEMES.forged.palette.text,
+    );
+    const button = themed.blocks.find((b) => b.id === 'btn') as ButtonBlock;
+    expect(button.backgroundColor).toBe(BRAND_THEMES.forged.palette.accent);
+    expect(button.textColor).toBe(BRAND_THEMES.forged.palette.accentText);
+    expect(button.radius).toBe(0); // 'square' shape
+    expect((themed.blocks.find((b) => b.id === 'd') as DividerBlock).color).toBe(
+      BRAND_THEMES.forged.palette.muted,
+    );
+    // image/spacer have no themeable colour fields — untouched.
+    const original = doc.blocks.find((b) => b.id === 'img') as ImageBlock;
+    const afterTheme = themed.blocks.find((b) => b.id === 'img') as ImageBlock;
+    expect(afterTheme).toEqual(original);
+
+    expect(themed.settings.themeId).toBe('forged');
+    expect(themed.settings.backgroundColor).toBe(BRAND_THEMES.forged.palette.background);
+    expect(themed.settings.headingWeight).toBe(BRAND_THEMES.forged.typography.headingWeight);
+  });
+
+  it('does not mutate the source document', () => {
+    let doc = emptyDocument(brand);
+    doc = appendBlock(doc, createBlock('heading', brand, 'h'));
+    const before = JSON.stringify(doc);
+    applyTheme(doc, BRAND_THEMES.daybreak);
+    expect(JSON.stringify(doc)).toBe(before);
   });
 });
 
