@@ -380,7 +380,13 @@ The staff area shows up when `can_access_staff_area` is on.
   `tracked_workouts` row). Each step is a deep link to the page that
   completes it. The card disappears once every required step is done.
   Backed by `get_gym_setup_progress(gym_id)` so it never drifts from
-  reality — delete a class type and the step flips back open.
+  reality — delete a class type and the step flips back open. A new
+  owner with required steps still pending is also redirected to a
+  dedicated full-screen `/onboarding` version of the same checklist on
+  sign-in; **Skip for now** permanently dismisses it
+  (`gyms.onboarding_dismissed_at`, set via `dismiss_gym_onboarding`) so
+  it doesn't reappear next sign-in — the inline Manage card stays
+  available regardless, for whenever they want to finish.
 
 The Manage page presents a tab strip:
 

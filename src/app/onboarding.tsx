@@ -1,15 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
@@ -24,9 +17,9 @@ import { useThemeColors } from '@/lib/theme';
 // the only ways out are Skip, completing setup, or hitting back.
 //
 // Routing: src/app/index.tsx sends owners with incomplete setup here
-// unless they've hit Skip this session (per-gym sessionStorage flag).
-// Once Skip is set, root redirects them to /classes instead so they
-// can explore freely without being nagged again until next sign-in.
+// unless they've dismissed it (gyms.onboarding_dismissed_at). Once
+// Skip is set, root redirects them to /classes instead — for good,
+// not just this session; the steps are still reachable from Manage.
 
 type StepKey =
   | 'logo'
@@ -128,25 +121,33 @@ type ProgressRow = {
   target: number;
 };
 
-function skipKey(gymId: string): string {
-  return `temple-onboarding-skipped:${gymId}`;
-}
-
-function writeSkipped(gymId: string): void {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-  try {
-    window.sessionStorage?.setItem(skipKey(gymId), '1');
-  } catch {
-    /* storage unavailable — Skip still navigates */
-  }
-}
-
 export default function OnboardingScreen() {
   const colors = useThemeColors();
   const session = useSession();
   const role = useRole();
   const { data: membership, isLoading: membershipLoading } = useGymMembership();
   const brand = useGymBrand();
+  const queryClient = useQueryClient();
+
+  const dismiss = useMutation({
+    mutationFn: async () => {
+      if (!membership?.gymId) return;
+      const { error } = await supabase.rpc('dismiss_gym_onboarding', {
+        p_gym_id: membership.gymId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gym-onboarding-dismissed'] });
+      router.replace('/classes' as never);
+    },
+    onError: () => {
+      // Dismissal failed to save — still let them through this visit
+      // rather than trap them here, but they'll see the screen again
+      // next sign-in since the flag never got stamped server-side.
+      router.replace('/classes' as never);
+    },
+  });
 
   const progress = useQuery({
     queryKey: ['gym-setup-progress', membership?.gymId],
@@ -187,11 +188,6 @@ export default function OnboardingScreen() {
   const optionalSteps = status.filter((s) => s.optional);
   const requiredDone = requiredSteps.filter((s) => s.done).length;
   const allRequiredDone = requiredDone === requiredSteps.length;
-
-  function onSkip() {
-    if (membership?.gymId) writeSkipped(membership.gymId);
-    router.replace('/classes' as never);
-  }
 
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
@@ -262,9 +258,14 @@ export default function OnboardingScreen() {
           </Button>
         ) : (
           <View className="items-center pt-2">
-            <Pressable hitSlop={8} onPress={onSkip}>
+            <Pressable
+              hitSlop={8}
+              disabled={dismiss.isPending}
+              onPress={() => dismiss.mutate()}>
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Skip for now — I'll set this up later
+                {dismiss.isPending
+                  ? 'Skipping…'
+                  : "Skip for now — I'll set this up later"}
               </Text>
             </Pressable>
           </View>

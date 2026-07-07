@@ -91,6 +91,7 @@ export type Database = {
           store_shipping_fee_cents: number;
           discipline: 'crossfit' | 'hyrox';
           website_builder_enabled: boolean;
+          onboarding_dismissed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -130,6 +131,7 @@ export type Database = {
           cancel_cutoff_time?: string | null;
           cancel_cutoff_days_before?: number;
           discipline?: 'crossfit' | 'hyrox';
+          onboarding_dismissed_at?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -169,6 +171,7 @@ export type Database = {
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
           discipline: 'crossfit' | 'hyrox';
+          onboarding_dismissed_at: string | null;
         }>;
         Relationships: [];
       };
@@ -3361,6 +3364,10 @@ export type Database = {
       set_gym_public_signup: {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;
+      };
+      dismiss_gym_onboarding: {
+        Args: { p_gym_id: string };
+        Returns: void;
       };
       set_gym_operating_defaults: {
         Args: {
