@@ -14,7 +14,11 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
-import { useClassRecurrences } from '@/lib/useClassCatalog';
+import {
+  useClassRecurrences,
+  useClassTypes,
+  type ClassTypeRow,
+} from '@/lib/useClassCatalog';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 
@@ -319,6 +323,56 @@ function TodayButton({ onPress }: { onPress: () => void }) {
   );
 }
 
+// Book mode only — lets a member narrow the calendar to just the
+// class types they care about. Multi-select toggle chips, same idiom
+// as the members-list status filters; empty selection means "show
+// everything" rather than "show nothing".
+function ClassTypeFilterRow({
+  classTypes,
+  selected,
+  onChange,
+}: {
+  classTypes: ClassTypeRow[];
+  selected: Set<string>;
+  onChange: (next: Set<string>) => void;
+}) {
+  function toggle(id: string) {
+    haptic.selection();
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onChange(next);
+  }
+  return (
+    <View className="flex-row flex-wrap gap-2 pb-4 -mt-2 justify-center">
+      {classTypes.map((ct) => {
+        const active = selected.has(ct.id);
+        return (
+          <Pressable
+            key={ct.id}
+            onPress={() => toggle(ct.id)}
+            className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
+              active
+                ? 'border-primary bg-primary/10'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+            }`}>
+            <View
+              style={{ backgroundColor: ct.color }}
+              className="w-2 h-2 rounded-full"
+            />
+            <Text
+              className={`text-xs font-semibold ${
+                active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+              }`}>
+              {ct.name}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function ClassesCalendar({
   mode,
   topSlot,
@@ -331,7 +385,9 @@ export function ClassesCalendar({
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
   const { data: membership } = useGymMembership();
+  const classTypesQuery = useClassTypes();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
   const canEditClasses = useCan('can_edit_classes') ?? false;
@@ -402,6 +458,16 @@ export function ClassesCalendar({
     },
   });
   const bookedSet = myBookingsQuery.data ?? new Set<string>();
+
+  // Members filtering to "just CrossFit" etc. — staff scheduling
+  // (manage mode) always sees everything, since hiding a class type
+  // there would look like it had been unscheduled.
+  const visibleSessions =
+    mode === 'book' && typeFilter.size > 0
+      ? sessionsQuery.data?.filter(
+          (s) => !!s.class_type_id && typeFilter.has(s.class_type_id),
+        )
+      : sessionsQuery.data;
 
   const extend = useMutation({
     mutationFn: async (untilDate: string) => {
@@ -530,6 +596,14 @@ export function ClassesCalendar({
           <ViewSwitcher view={view} />
           <TodayButton onPress={goToToday} />
         </View>
+
+        {mode === 'book' && (classTypesQuery.data?.length ?? 0) > 0 ? (
+          <ClassTypeFilterRow
+            classTypes={classTypesQuery.data!}
+            selected={typeFilter}
+            onChange={setTypeFilter}
+          />
+        ) : null}
       </View>
 
       <GestureDetector gesture={swipe}>
@@ -539,7 +613,7 @@ export function ClassesCalendar({
               mode={mode}
               date={date}
               setDate={setDate}
-              sessions={sessionsQuery.data}
+              sessions={visibleSessions}
               onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
               onSessionPress={openSession}
               canCreate={canCreate}
@@ -552,7 +626,7 @@ export function ClassesCalendar({
               date={date}
               setDate={setDate}
               gotoDay={() => router.setParams({ view: 'day' })}
-              sessions={sessionsQuery.data}
+              sessions={visibleSessions}
               onCreateAt={(d, hour) => setCreateAt({ date: d, hour })}
               onSessionPress={openSession}
               canCreate={canCreate}
@@ -566,7 +640,7 @@ export function ClassesCalendar({
               date={date}
               setDate={setDate}
               gotoDay={() => router.setParams({ view: 'day' })}
-              sessions={sessionsQuery.data}
+              sessions={visibleSessions}
               weekStartsOn={weekStartsOn}
             />
           ) : null}
@@ -684,12 +758,31 @@ function DayView({
         className="flex-1"
         contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2">
-          {mode === 'book' && dayClasses.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                No classes scheduled today.
-              </Text>
-            </View>
+          {mode === 'book' ? (
+            dayClasses.length === 0 ? (
+              <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  No classes scheduled today.
+                </Text>
+              </View>
+            ) : (
+              // A compact stacked list, not the hourly grid — a member
+              // scanning today's classes doesn't need 18 mostly-empty
+              // hour rows between a 06:00 and a 17:30 class; the grid
+              // stays for manage mode, where the gaps are the point
+              // (they're where a coach schedules the next class).
+              <View className="gap-3">
+                {dayClasses.map((s) => (
+                  <DayClassCard
+                    key={s.id}
+                    session={s}
+                    onPress={() => onSessionPress(s.id)}
+                    bookedByMe={bookedSet.has(s.id)}
+                    dimPast
+                  />
+                ))}
+              </View>
+            )
           ) : (
             <DayGrid
               date={date}
@@ -698,7 +791,6 @@ function DayView({
               onCreateAt={onCreateAt}
               onSessionPress={onSessionPress}
               bookedSet={bookedSet}
-              dimPast={mode === 'book'}
             />
           )}
         </View>
@@ -720,7 +812,6 @@ function DayGrid({
   onCreateAt,
   onSessionPress,
   bookedSet,
-  dimPast,
 }: {
   date: Date;
   sessions: ClassSession[] | undefined;
@@ -728,9 +819,6 @@ function DayGrid({
   onCreateAt: (d: Date, hour: number) => void;
   onSessionPress: (id: string) => void;
   bookedSet: Set<string>;
-  // Book mode: render empty hours as bare grid lines (no "+ Add"
-  // placeholder) and dim finished classes so they read as unbookable.
-  dimPast?: boolean;
 }) {
   const positioned = layoutDay(sessions, date, HOURS[0], HOUR_HEIGHT, HOURS.length);
   const occupied = occupiedHourSet(positioned, HOURS[0], HOUR_HEIGHT);
@@ -761,7 +849,7 @@ function DayGrid({
                   style={{ height: HOUR_HEIGHT - 12 }}>
                   <Text className="text-gray-400 dark:text-gray-500 text-sm">+ Add a class</Text>
                 </Pressable>
-              ) : dimPast ? null : (
+              ) : (
                 <View
                   className="border border-dashed border-gray-200 dark:border-gray-700 rounded-xl px-4 justify-center"
                   style={{ height: HOUR_HEIGHT - 12 }}>
@@ -802,7 +890,6 @@ function DayGrid({
               heightPx={p.heightPx}
               onPress={() => onSessionPress(p.session.id)}
               bookedByMe={bookedSet.has(p.session.id)}
-              dimPast={dimPast}
             />
           </View>
         ))}
