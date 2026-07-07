@@ -91,7 +91,9 @@ function useStaffPreviewData(gymId: string | null | undefined) {
       const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       const { data, error } = await supabase
         .from('class_sessions')
-        .select('id, starts_at, duration_minutes, class_types(name, color), profiles(full_name)')
+        .select(
+          'id, starts_at, duration_minutes, class_types(name, color), profiles!coach_id(full_name)',
+        )
         .eq('gym_id', gymId!)
         .gte('starts_at', now.toISOString())
         .lt('starts_at', in7Days.toISOString())
