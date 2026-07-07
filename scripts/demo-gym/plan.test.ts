@@ -177,7 +177,7 @@ describe('buildDemoPlan', () => {
   it('site design round-trips coerceDocument unchanged and has no publish blockers', () => {
     const design = plan.website.design as unknown as SiteDocument;
     expect(coerceDocument(JSON.parse(JSON.stringify(design)))).toEqual(design);
-    expect(documentWarnings(design)).toEqual([]);
+    expect(documentWarnings(design.pages[0])).toEqual([]);
     expect(plan.website.published).toBe(true);
   });
 
@@ -266,11 +266,11 @@ describe('buildDemoPlan — discipline: hyrox', () => {
     const design = hyroxPlan.website.design as unknown as SiteDocument;
     expect(coerceDocument(JSON.parse(JSON.stringify(design)))).toEqual(design);
     expect(hyroxPlan.website.published).toBe(false);
-    const warnings = documentWarnings(design);
+    const warnings = documentWarnings(design.pages[0]);
     expect(warnings.some((w) => w.includes('testimonials'))).toBe(true);
     expect(warnings.some((w) => w.includes('address'))).toBe(true);
     expect(warnings.some((w) => w.includes('description'))).toBe(true);
-    const gallery = design.blocks.find((b) => b.type === 'gallery');
+    const gallery = design.pages[0].blocks.find((b) => b.type === 'gallery');
     expect(gallery).toBeTruthy();
   });
 

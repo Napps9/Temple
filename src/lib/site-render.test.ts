@@ -4,7 +4,7 @@ import { BRAND_THEMES } from './brand-themes';
 import {
   appendBlock,
   createBlock,
-  emptyDocument,
+  emptyPage,
   type AboutBlock,
   type ContactBlock,
   type GalleryBlock,
@@ -41,7 +41,7 @@ const baseCtx: SiteRenderContext = {
 
 describe('renderSiteHtml', () => {
   it('produces a full HTML document with the theme CSS variables set', () => {
-    const html = renderSiteHtml(emptyDocument(), baseCtx);
+    const html = renderSiteHtml([], baseCtx);
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true);
     expect(html).toContain(`--accent:${BRAND_THEMES.forged.palette.accent};`);
     expect(html).toContain('<title>Iron Gym</title>');
@@ -51,25 +51,25 @@ describe('renderSiteHtml', () => {
   });
 
   it('always renders a site header with the logo, unconditionally on every page', () => {
-    const html = renderSiteHtml(emptyDocument(), { ...baseCtx, gymLogoUrl: 'https://x.com/logo.png' });
+    const html = renderSiteHtml([], { ...baseCtx, gymLogoUrl: 'https://x.com/logo.png' });
     expect(html).toContain('<header class="site-header">');
     expect(html).toContain('src="https://x.com/logo.png"');
   });
 
   it('falls back to the gym name in the header when there is no logo', () => {
-    const html = renderSiteHtml(emptyDocument(), baseCtx);
+    const html = renderSiteHtml([], baseCtx);
     expect(html).toContain('<header class="site-header">');
     expect(html).toContain('<span>Iron Gym</span>');
   });
 
   it('escapes author text so it cannot inject markup', () => {
     const hero = createBlock('hero') as HeroBlock;
-    const doc = appendBlock(emptyDocument(), {
+    const page = appendBlock(emptyPage(), {
       ...hero,
       headline: '<script>alert(1)</script>',
       subheadline: 'Safe & sound "quoted"',
     });
-    const html = renderSiteHtml(doc, baseCtx);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('&lt;script&gt;');
     expect(html).toContain('&amp;');
@@ -77,25 +77,25 @@ describe('renderSiteHtml', () => {
 
   it('hero CTA links to the join flow on the platform origin, and to #contact when targeted at the page', () => {
     const hero = createBlock('hero') as HeroBlock;
-    const joinDoc = appendBlock(emptyDocument(), { ...hero, ctaTarget: 'join' });
+    const joinPage = appendBlock(emptyPage(), { ...hero, ctaTarget: 'join' });
     // Absolute on purpose: on a custom domain a relative /join/<slug>
     // would land on the app shell at an origin auth emails can't use.
-    expect(renderSiteHtml(joinDoc, baseCtx)).toContain(
+    expect(renderSiteHtml(joinPage.blocks, baseCtx)).toContain(
       'href="https://app.example.com/join/iron-gym"',
     );
 
-    const contactDoc = appendBlock(emptyDocument(), { ...hero, ctaTarget: 'contact' });
-    expect(renderSiteHtml(contactDoc, baseCtx)).toContain('href="#contact"');
+    const contactPage = appendBlock(emptyPage(), { ...hero, ctaTarget: 'contact' });
+    expect(renderSiteHtml(contactPage.blocks, baseCtx)).toContain('href="#contact"');
   });
 
   it('renders an empty-state message for the schedule block with no sessions', () => {
-    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
-    const html = renderSiteHtml(doc, baseCtx);
+    const page = appendBlock(emptyPage(), createBlock('schedule') as ScheduleBlock);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain('Check back soon for the full schedule.');
   });
 
   it('renders session and coach details, with a next-up banner and closed-day placeholders', () => {
-    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
+    const page = appendBlock(emptyPage(), createBlock('schedule') as ScheduleBlock);
     const sessions: ScheduleSession[] = [
       {
         sessionId: 's1',
@@ -106,7 +106,7 @@ describe('renderSiteHtml', () => {
         coachName: 'Priya Sharma',
       },
     ];
-    const html = renderSiteHtml(doc, { ...baseCtx, schedule: sessions });
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, schedule: sessions });
     expect(html).toContain('CrossFit');
     expect(html).toContain('Priya Sharma');
     // Reuses the Team block's avatar-initials pattern.
@@ -118,7 +118,7 @@ describe('renderSiteHtml', () => {
   });
 
   it('renders a 7-day grid with a today marker, closed-day states, and per-class colour ticket accents', () => {
-    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
+    const page = appendBlock(emptyPage(), createBlock('schedule') as ScheduleBlock);
     const sessions: ScheduleSession[] = [
       {
         sessionId: 's1',
@@ -137,7 +137,7 @@ describe('renderSiteHtml', () => {
         coachName: null,
       },
     ];
-    const html = renderSiteHtml(doc, { ...baseCtx, schedule: sessions });
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, schedule: sessions });
 
     // Matches the column wrapper's own class attribute only — not the
     // sched-col-head div nested inside each one.
@@ -151,7 +151,7 @@ describe('renderSiteHtml', () => {
   });
 
   it('formats schedule times per theme — tight 24h for the intense themes, lowercase 12h for the calm ones', () => {
-    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
+    const page = appendBlock(emptyPage(), createBlock('schedule') as ScheduleBlock);
     const sessions: ScheduleSession[] = [
       {
         sessionId: 's1',
@@ -190,32 +190,32 @@ describe('renderSiteHtml', () => {
     const ticket = (time: string, name: string) =>
       `<div class="sched-ticket-time">${time}</div><div class="sched-ticket-name">${name}</div>`;
 
-    const forgedHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.forged, schedule: sessions });
+    const forgedHtml = renderSiteHtml(page.blocks, { ...baseCtx, theme: BRAND_THEMES.forged, schedule: sessions });
     expect(forgedHtml).toContain(ticket('09:00', 'CrossFit'));
     expect(forgedHtml).toContain(ticket('14:30', 'Open gym'));
 
-    const ringsideHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.ringside, schedule: sessions });
+    const ringsideHtml = renderSiteHtml(page.blocks, { ...baseCtx, theme: BRAND_THEMES.ringside, schedule: sessions });
     expect(ringsideHtml).toContain(ticket('09:00', 'CrossFit'));
 
-    const baselineHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.baseline, schedule: sessions });
+    const baselineHtml = renderSiteHtml(page.blocks, { ...baseCtx, theme: BRAND_THEMES.baseline, schedule: sessions });
     expect(baselineHtml).toContain(ticket('9:00am', 'CrossFit'));
     expect(baselineHtml).toContain(ticket('2:30pm', 'Open gym'));
     expect(baselineHtml).toContain(ticket('12:00am', 'Midnight open gym'));
     expect(baselineHtml).toContain(ticket('12:00pm', 'Noon session'));
 
-    const daybreakHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.daybreak, schedule: sessions });
+    const daybreakHtml = renderSiteHtml(page.blocks, { ...baseCtx, theme: BRAND_THEMES.daybreak, schedule: sessions });
     expect(daybreakHtml).toContain(ticket('9:00am', 'CrossFit'));
   });
 
   it('formats plan pricing by kind and hides plans in hiddenPlanIds', () => {
     const pricing = createBlock('pricing') as PricingBlock;
-    const doc = appendBlock(emptyDocument(), { ...pricing, hiddenPlanIds: ['p2'] });
+    const page = appendBlock(emptyPage(), { ...pricing, hiddenPlanIds: ['p2'] });
     const plans: PublicPlan[] = [
       { planId: 'p1', name: 'Unlimited', kind: 'unlimited', creditCount: null, monthlyPriceCents: 12000 },
       { planId: 'p2', name: 'Legacy plan', kind: 'unlimited', creditCount: null, monthlyPriceCents: 5000 },
       { planId: 'p3', name: 'Drop-in', kind: 'credit_pack', creditCount: 1, monthlyPriceCents: 1500 },
     ];
-    const html = renderSiteHtml(doc, { ...baseCtx, plans });
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, plans });
     expect(html).toContain('Unlimited');
     expect(html).toContain('Drop-in');
     expect(html).not.toContain('Legacy plan');
@@ -225,30 +225,30 @@ describe('renderSiteHtml', () => {
 
   it('shows a fallback message when every plan is hidden or none exist', () => {
     const pricing = createBlock('pricing') as PricingBlock;
-    const doc = appendBlock(emptyDocument(), pricing);
-    const html = renderSiteHtml(doc, { ...baseCtx, plans: [] });
+    const page = appendBlock(emptyPage(), pricing);
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, plans: [] });
     expect(html).toContain('Get in touch for membership options.');
   });
 
   it('omits the testimonials/gallery sections entirely when they have no content', () => {
-    let doc = emptyDocument();
-    doc = appendBlock(doc, createBlock('testimonials') as TestimonialsBlock);
-    doc = appendBlock(doc, createBlock('gallery') as GalleryBlock);
-    const html = renderSiteHtml(doc, baseCtx);
+    let page = emptyPage();
+    page = appendBlock(page, createBlock('testimonials') as TestimonialsBlock);
+    page = appendBlock(page, createBlock('gallery') as GalleryBlock);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     // The shared stylesheet always defines these classes; what matters
     // is that neither block emitted a <section> into the body at all.
     expect(html).not.toContain('<section');
   });
 
   it('renders testimonial quotes and gallery images when present', () => {
-    let doc = emptyDocument();
+    let page = emptyPage();
     const testimonials = createBlock('testimonials') as TestimonialsBlock;
     testimonials.quotes = [{ id: 'q1', quote: 'Great gym', name: 'Sam' }];
-    doc = appendBlock(doc, testimonials);
+    page = appendBlock(page, testimonials);
     const gallery = createBlock('gallery') as GalleryBlock;
     gallery.images = [{ id: 'g1', url: 'https://x.com/a.png', alt: 'Training' }];
-    doc = appendBlock(doc, gallery);
-    const html = renderSiteHtml(doc, baseCtx);
+    page = appendBlock(page, gallery);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain('Great gym');
     expect(html).toContain('Sam');
     expect(html).toContain('src="https://x.com/a.png"');
@@ -257,28 +257,28 @@ describe('renderSiteHtml', () => {
 
   it('lets bold/italic/underline through on rich-text fields (About body, testimonial quotes)', () => {
     const about = createBlock('about') as AboutBlock;
-    const doc = appendBlock(emptyDocument(), {
+    const page = appendBlock(emptyPage(), {
       ...about,
       body: 'Coached sessions, <b>smart programming</b> and a standard you <i>rise</i> to — <u>free</u> first class.',
     });
-    const html = renderSiteHtml(doc, baseCtx);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain('<b>smart programming</b>');
     expect(html).toContain('a standard you <i>rise</i> to');
     expect(html).toContain('<u>free</u> first class');
 
     // The field is marked rich so the canvas bridge captures innerHTML,
     // not innerText, for it specifically — only present on the editable path.
-    const editableHtml = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    const editableHtml = renderSiteHtml(page.blocks, { ...baseCtx, editable: true });
     expect(editableHtml).toContain('data-rich="true"');
   });
 
   it('strips everything except bold/italic/underline from rich-text fields, including tags written straight into stored content', () => {
     const about = createBlock('about') as AboutBlock;
-    const hostile = appendBlock(emptyDocument(), {
+    const hostile = appendBlock(emptyPage(), {
       ...about,
       body: '<script>alert(1)</script><img src=x onerror="alert(1)"><b onclick="alert(1)">bold</b><a href="javascript:alert(1)">link</a>',
     });
-    const html = renderSiteHtml(hostile, baseCtx);
+    const html = renderSiteHtml(hostile.blocks, baseCtx);
     // No real tag ever reaches the output for anything but b/i/u — the
     // words "onerror"/"onclick"/"javascript:" can still appear as inert
     // visible text (harmless letters on a page), but never as part of
@@ -298,11 +298,11 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('&lt;b onclick=&quot;alert(1)&quot;&gt;bold</b>');
 
     const testimonials = createBlock('testimonials') as TestimonialsBlock;
-    const hostileQuote = appendBlock(emptyDocument(), {
+    const hostileQuote = appendBlock(emptyPage(), {
       ...testimonials,
       quotes: [{ id: 'q1', quote: '<b>Great</b> gym <script>alert(2)</script>', name: 'Sam' }],
     });
-    const quoteHtml = renderSiteHtml(hostileQuote, baseCtx);
+    const quoteHtml = renderSiteHtml(hostileQuote.blocks, baseCtx);
     expect(quoteHtml).toContain('<b>Great</b> gym');
     expect(quoteHtml).not.toContain('<script>');
     expect(quoteHtml).toContain('&lt;script&gt;');
@@ -312,21 +312,21 @@ describe('renderSiteHtml', () => {
     const location = createBlock('location') as LocationBlock;
     location.address = '1 Gym St';
     location.hours = 'Mon-Fri 6am-8pm';
-    const doc = appendBlock(emptyDocument(), location);
-    const html = renderSiteHtml(doc, baseCtx);
+    const page = appendBlock(emptyPage(), location);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain('1 Gym St');
     expect(html).toContain('Mon-Fri 6am-8pm');
   });
 
   it('renders the visible team roster and hides members in hiddenMemberIds', () => {
     const team = createBlock('team') as TeamBlock;
-    const doc = appendBlock(emptyDocument(), { ...team, hiddenMemberIds: ['m2'] });
+    const page = appendBlock(emptyPage(), { ...team, hiddenMemberIds: ['m2'] });
     const members: TeamMember[] = [
       { profileId: 'm1', fullName: 'Priya Shah', avatarUrl: 'https://x.com/priya.png' },
       { profileId: 'm2', fullName: 'Hidden Coach', avatarUrl: null },
       { profileId: 'm3', fullName: 'Sam Lee', avatarUrl: null },
     ];
-    const html = renderSiteHtml(doc, { ...baseCtx, team: members });
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, team: members });
     expect(html).toContain('Priya Shah');
     expect(html).toContain('src="https://x.com/priya.png"');
     expect(html).not.toContain('Hidden Coach');
@@ -337,30 +337,30 @@ describe('renderSiteHtml', () => {
 
   it('omits the team section in public mode with no visible members, but keeps it editable', () => {
     const team = createBlock('team') as TeamBlock;
-    const doc = appendBlock(emptyDocument(), { ...team, heading: 'Meet the team' });
-    const publicHtml = renderSiteHtml(doc, baseCtx);
+    const page = appendBlock(emptyPage(), { ...team, heading: 'Meet the team' });
+    const publicHtml = renderSiteHtml(page.blocks, baseCtx);
     expect(publicHtml).not.toContain('<section');
 
-    const editableHtml = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    const editableHtml = renderSiteHtml(page.blocks, { ...baseCtx, editable: true });
     expect(editableHtml).toContain('<section');
     expect(editableHtml).toContain(`data-field="${team.id}:heading"`);
   });
 
   it('escapes team member names', () => {
     const team = createBlock('team') as TeamBlock;
-    const doc = appendBlock(emptyDocument(), team);
+    const page = appendBlock(emptyPage(), team);
     const members: TeamMember[] = [
       { profileId: 'm1', fullName: '<script>alert(1)</script>', avatarUrl: null },
     ];
-    const html = renderSiteHtml(doc, { ...baseCtx, team: members });
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, team: members });
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('&lt;script&gt;');
   });
 
   it('wires the contact form to the right slug, supabase url and anon key', () => {
     const contact = createBlock('contact') as ContactBlock;
-    const doc = appendBlock(emptyDocument(), contact);
-    const html = renderSiteHtml(doc, baseCtx);
+    const page = appendBlock(emptyPage(), contact);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain('id="temple-contact-form"');
     expect(html).toContain(JSON.stringify('iron-gym'));
     expect(html).toContain(JSON.stringify('https://example.supabase.co'));
@@ -371,9 +371,9 @@ describe('renderSiteHtml', () => {
   it('marks fields as canvas-editable and suppresses the lead-capture script when editable', () => {
     const hero = createBlock('hero') as HeroBlock;
     const contact = createBlock('contact') as ContactBlock;
-    let doc = appendBlock(emptyDocument(), { ...hero, headline: 'Iron Gym' });
-    doc = appendBlock(doc, contact);
-    const html = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    let page = appendBlock(emptyPage(), { ...hero, headline: 'Iron Gym' });
+    page = appendBlock(page, contact);
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, editable: true });
     expect(html).toContain(`data-field="${hero.id}:headline"`);
     expect(html).toContain('contenteditable="true"');
     expect(html).toContain('temple-site-canvas');
@@ -381,10 +381,10 @@ describe('renderSiteHtml', () => {
   });
 
   it('keeps testimonials/gallery headings editable even with zero items when editable', () => {
-    let doc = emptyDocument();
+    let page = emptyPage();
     const testimonials = createBlock('testimonials') as TestimonialsBlock;
-    doc = appendBlock(doc, { ...testimonials, heading: 'What members say' });
-    const html = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    page = appendBlock(page, { ...testimonials, heading: 'What members say' });
+    const html = renderSiteHtml(page.blocks, { ...baseCtx, editable: true });
     expect(html).toContain('<section');
     expect(html).toContain(`data-field="${testimonials.id}:heading"`);
   });
@@ -392,10 +392,10 @@ describe('renderSiteHtml', () => {
   it('produces zero editable markers or bridge script on the public (non-editable) path', () => {
     const hero = createBlock('hero') as HeroBlock;
     const testimonials = createBlock('testimonials') as TestimonialsBlock;
-    let doc = appendBlock(emptyDocument(), hero);
-    doc = appendBlock(doc, testimonials);
+    let page = appendBlock(emptyPage(), hero);
+    page = appendBlock(page, testimonials);
     // Same baseCtx shape api/site/[slug].ts actually passes (editable: false).
-    const html = renderSiteHtml(doc, baseCtx);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).not.toContain('data-field');
     expect(html).not.toContain('contenteditable');
     expect(html).not.toContain('temple-site-canvas');
@@ -404,8 +404,8 @@ describe('renderSiteHtml', () => {
 
 describe('accessibility structure', () => {
   it('emits a skip link, a main landmark, and labelled contact fields', () => {
-    const doc = appendBlock(emptyDocument(), createBlock('contact') as ContactBlock);
-    const html = renderSiteHtml(doc, baseCtx);
+    const page = appendBlock(emptyPage(), createBlock('contact') as ContactBlock);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain('class="skip-link" href="#main"');
     expect(html).toContain('<main id="main">');
     expect(html).toContain('<label class="sr-only" for="temple-contact-name">');
@@ -418,21 +418,21 @@ describe('accessibility structure', () => {
     const heroA = { ...(createBlock('hero') as HeroBlock), id: 'hero_a' };
     const heroB = { ...(createBlock('hero') as HeroBlock), id: 'hero_b' };
     const html = renderSiteHtml(
-      appendBlock(appendBlock(emptyDocument(), heroA), heroB),
+      appendBlock(appendBlock(emptyPage(), heroA), heroB).blocks,
       baseCtx,
     );
     expect(html.match(/<h1[\s>]/g)?.length).toBe(1);
   });
 
   it('adds a visually-hidden h1 when the page has no hero block', () => {
-    const doc = appendBlock(emptyDocument(), createBlock('about') as never);
-    const html = renderSiteHtml(doc, baseCtx);
+    const page = appendBlock(emptyPage(), createBlock('about') as never);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain('<h1 class="sr-only">Iron Gym</h1>');
   });
 
   it('renders secondary text with the readable muted-text token, keeping --muted for borders only', () => {
-    const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
-    const html = renderSiteHtml(doc, baseCtx);
+    const page = appendBlock(emptyPage(), createBlock('schedule') as ScheduleBlock);
+    const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).toContain(`--muted-text:${BRAND_THEMES.forged.palette.mutedText};`);
     expect(html).not.toContain('color:var(--muted);');
   });
@@ -440,18 +440,18 @@ describe('accessibility structure', () => {
   it('falls back to body text for accent-as-text when the accent misses 4.5:1', () => {
     // Ringside's red accent is ~4.0:1 on its background — fine as a
     // button fill, too low for link/eyebrow text.
-    const html = renderSiteHtml(emptyDocument(), {
+    const html = renderSiteHtml([], {
       ...baseCtx,
       theme: BRAND_THEMES.ringside,
     });
     expect(html).toContain(`--accent-ink:${BRAND_THEMES.ringside.palette.text};`);
     // Forged's orange clears 4.5:1 and keeps the accent as ink.
-    const forged = renderSiteHtml(emptyDocument(), baseCtx);
+    const forged = renderSiteHtml([], baseCtx);
     expect(forged).toContain(`--accent-ink:${BRAND_THEMES.forged.palette.accent};`);
   });
 
   it('keeps focus-visible outlines in the public CSS', () => {
-    const html = renderSiteHtml(emptyDocument(), baseCtx);
+    const html = renderSiteHtml([], baseCtx);
     expect(html).toContain(':focus-visible{outline:2px solid var(--text)');
   });
 });

@@ -12,6 +12,15 @@
 // render time (composeThemeWithBrand), never baked into the document.
 // If an owner changes their brand colour later, every themed site page
 // picks it up automatically; nothing needs "reapplying".
+//
+// A site is multi-page: `SiteDocument.pages` is an ordered list of
+// `SitePage`, each with its own blocks. `pages[0]` is always the home
+// page (its `slug` is always `''`, forced by coerceDocument) — that
+// invariant isn't yet enforced beyond position because there's no way
+// to add a second page yet (that's a later phase); the block-level
+// operations below (insertBlock, appendBlock, etc.) work on a single
+// `SitePage` directly, not the whole multi-page document, since the
+// editor only ever has one page open for editing at a time.
 
 import type { ThemeId } from './brand-themes';
 import { isThemeId } from './brand-themes';
@@ -119,8 +128,28 @@ export type SiteSettings = {
   themeId: ThemeId;
 };
 
+// slug: '' for the home page, a URL segment (e.g. 'schedule') for every
+// other page — /site/<gym-slug> vs /site/<gym-slug>/<page-slug>.
+export type SitePage = {
+  id: string;
+  slug: string;
+  title: string;
+  blocks: SiteBlock[];
+};
+
 export type SiteDocument = {
-  version: 1;
+  version: 2;
+  settings: SiteSettings;
+  pages: SitePage[];
+};
+
+// What SiteEditor (the side-panel form) actually needs: the active
+// page's blocks, plus the document-level theme setting shown in its
+// own "Theme & Ownership" section — not the whole multi-page document,
+// which SiteEditor has no concept of. The caller (website.tsx) builds
+// this from `document.pages[activePageIndex]` and splices the result
+// back into the right page after an edit.
+export type SiteEditorDocument = {
   settings: SiteSettings;
   blocks: SiteBlock[];
 };
@@ -210,84 +239,122 @@ export function createBlock(type: SiteBlockType, id: string = genId()): SiteBloc
 // of truth for starter copy, and site-templates already imports this
 // module, so it can't live here without a circular import.
 
+export function emptyPage(title = 'Home', slug = ''): SitePage {
+  return { id: genId(), slug, title, blocks: [] };
+}
+
 export function emptyDocument(): SiteDocument {
-  return { version: 1, settings: defaultSettings(), blocks: [] };
+  return { version: 2, settings: defaultSettings(), pages: [emptyPage()] };
 }
 
 // ---------------------------------------------------------------------------
-// Pure document operations — identical shape to email/blocks.ts's set.
+// Pure block operations — generic over anything with a `.blocks` array,
+// so the same functions work on a SitePage (page-level editing, most
+// callers) and on SiteEditorDocument (what SiteEditor.tsx actually
+// holds — the active page's blocks plus the document-level theme
+// setting) without SiteEditor needing to know a page's id/slug/title
+// even exist. Identical operation shape to email/blocks.ts's set
+// (which has no page concept to worry about).
 // ---------------------------------------------------------------------------
 
-export function insertBlock(doc: SiteDocument, block: SiteBlock, index: number): SiteDocument {
-  const clamped = Math.max(0, Math.min(index, doc.blocks.length));
-  const blocks = [...doc.blocks];
+export function insertBlock<T extends { blocks: SiteBlock[] }>(
+  target: T,
+  block: SiteBlock,
+  index: number,
+): T {
+  const clamped = Math.max(0, Math.min(index, target.blocks.length));
+  const blocks = [...target.blocks];
   blocks.splice(clamped, 0, block);
-  return { ...doc, blocks };
+  return { ...target, blocks };
 }
 
-export function appendBlock(doc: SiteDocument, block: SiteBlock): SiteDocument {
-  return { ...doc, blocks: [...doc.blocks, block] };
+export function appendBlock<T extends { blocks: SiteBlock[] }>(target: T, block: SiteBlock): T {
+  return { ...target, blocks: [...target.blocks, block] };
 }
 
-export function removeBlock(doc: SiteDocument, id: string): SiteDocument {
-  return { ...doc, blocks: doc.blocks.filter((b) => b.id !== id) };
+export function removeBlock<T extends { blocks: SiteBlock[] }>(target: T, id: string): T {
+  return { ...target, blocks: target.blocks.filter((b) => b.id !== id) };
 }
 
-export function updateBlock<B extends SiteBlock>(
-  doc: SiteDocument,
+// B first, T second: lets every existing call site keep writing
+// updateBlock<HeroBlock>(target, id, patch) with T inferred from
+// `target` — only B (rarely inferable from a patch alone) needs to be
+// explicit.
+export function updateBlock<B extends SiteBlock, T extends { blocks: SiteBlock[] }>(
+  target: T,
   id: string,
   patch: Partial<B>,
-): SiteDocument {
+): T {
   return {
-    ...doc,
-    blocks: doc.blocks.map((b) => (b.id === id ? ({ ...b, ...patch } as SiteBlock) : b)),
+    ...target,
+    blocks: target.blocks.map((b) => (b.id === id ? ({ ...b, ...patch } as SiteBlock) : b)),
   };
 }
 
-export function moveBlock(doc: SiteDocument, id: string, direction: 'up' | 'down'): SiteDocument {
-  const index = doc.blocks.findIndex((b) => b.id === id);
-  if (index < 0) return doc;
-  const target = direction === 'up' ? index - 1 : index + 1;
-  if (target < 0 || target >= doc.blocks.length) return doc;
-  const blocks = [...doc.blocks];
+export function moveBlock<T extends { blocks: SiteBlock[] }>(
+  target: T,
+  id: string,
+  direction: 'up' | 'down',
+): T {
+  const index = target.blocks.findIndex((b) => b.id === id);
+  if (index < 0) return target;
+  const dest = direction === 'up' ? index - 1 : index + 1;
+  if (dest < 0 || dest >= target.blocks.length) return target;
+  const blocks = [...target.blocks];
   const [moved] = blocks.splice(index, 1);
-  blocks.splice(target, 0, moved);
-  return { ...doc, blocks };
+  blocks.splice(dest, 0, moved);
+  return { ...target, blocks };
 }
 
-export function reorderBlocks(doc: SiteDocument, from: number, to: number): SiteDocument {
+export function reorderBlocks<T extends { blocks: SiteBlock[] }>(
+  target: T,
+  from: number,
+  to: number,
+): T {
   if (
     from === to ||
     from < 0 ||
     to < 0 ||
-    from >= doc.blocks.length ||
-    to >= doc.blocks.length
+    from >= target.blocks.length ||
+    to >= target.blocks.length
   ) {
-    return doc;
+    return target;
   }
-  const blocks = [...doc.blocks];
+  const blocks = [...target.blocks];
   const [moved] = blocks.splice(from, 1);
   blocks.splice(to, 0, moved);
-  return { ...doc, blocks };
+  return { ...target, blocks };
 }
 
-export function duplicateBlock(doc: SiteDocument, id: string): SiteDocument {
-  const index = doc.blocks.findIndex((b) => b.id === id);
-  if (index < 0) return doc;
-  const copy = { ...doc.blocks[index], id: genId() } as SiteBlock;
-  const blocks = [...doc.blocks];
+export function duplicateBlock<T extends { blocks: SiteBlock[] }>(target: T, id: string): T {
+  const index = target.blocks.findIndex((b) => b.id === id);
+  if (index < 0) return target;
+  const copy = { ...target.blocks[index], id: genId() } as SiteBlock;
+  const blocks = [...target.blocks];
   blocks.splice(index + 1, 0, copy);
-  return { ...doc, blocks };
+  return { ...target, blocks };
 }
 
-export function updateSettings(doc: SiteDocument, patch: Partial<SiteSettings>): SiteDocument {
-  return { ...doc, settings: { ...doc.settings, ...patch } };
+// Also generic — SiteDocument and SiteEditorDocument both carry
+// `.settings`, and the theme is the one thing that's genuinely
+// document-level (shared across every page of a site) rather than
+// page-level like blocks are.
+export function updateSettings<T extends { settings: SiteSettings }>(
+  target: T,
+  patch: Partial<SiteSettings>,
+): T {
+  return { ...target, settings: { ...target.settings, ...patch } };
 }
 
 // ---------------------------------------------------------------------------
 // Coercion — `design` is stored as untyped jsonb, so anything from the
 // DB is run through here before the editor/renderer touches it. Unknown
 // block types and malformed fields are dropped rather than thrown on.
+//
+// Accepts both shapes: a legacy single-page document (`blocks` directly
+// on the object, from before multi-page existed) gets wrapped into a
+// single home page; a document already shaped as `pages` is coerced
+// page by page. Either way the result always has at least one page.
 // ---------------------------------------------------------------------------
 
 function asString(v: unknown, fallback: string): string {
@@ -395,29 +462,56 @@ function coerceBlock(raw: unknown): SiteBlock | null {
   }
 }
 
+function coercePage(raw: unknown, isHome: boolean): SitePage | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const rawBlocks = Array.isArray(r.blocks) ? r.blocks : [];
+  const blocks = rawBlocks.map(coerceBlock).filter((b): b is SiteBlock => b !== null);
+  return {
+    id: asString(r.id, genId()),
+    // The home page's slug is always '' regardless of what's stored —
+    // position in the array is what makes a page "home", not its slug.
+    slug: isHome ? '' : asString(r.slug, ''),
+    title: asString(r.title, isHome ? 'Home' : 'Untitled'),
+    blocks,
+  };
+}
+
 export function coerceDocument(raw: unknown): SiteDocument {
   const defaults = defaultSettings();
   if (!raw || typeof raw !== 'object') {
-    return { version: 1, settings: defaults, blocks: [] };
+    return { version: 2, settings: defaults, pages: [emptyPage()] };
   }
   const r = raw as Record<string, unknown>;
   const s = (r.settings ?? {}) as Record<string, unknown>;
   const settings: SiteSettings = {
     themeId: isThemeId(s.themeId) ? s.themeId : defaults.themeId,
   };
+
+  if (Array.isArray(r.pages)) {
+    const pages = r.pages
+      .map((p, i) => coercePage(p, i === 0))
+      .filter((p): p is SitePage => p !== null);
+    return { version: 2, settings, pages: pages.length > 0 ? pages : [emptyPage()] };
+  }
+
+  // Legacy single-page shape: blocks lived directly on the document.
   const rawBlocks = Array.isArray(r.blocks) ? r.blocks : [];
   const blocks = rawBlocks.map(coerceBlock).filter((b): b is SiteBlock => b !== null);
-  return { version: 1, settings, blocks };
+  return { version: 2, settings, pages: [{ id: genId(), slug: '', title: 'Home', blocks }] };
 }
 
 // Lightweight readiness check, same role as the email builder's
-// documentWarnings — gates the Publish button, warns the author.
-export function documentWarnings(doc: SiteDocument): string[] {
+// documentWarnings — gates the Publish button, warns the author. Scoped
+// to a single page for now (generic over `.blocks`, same reason as the
+// block operations above); called once per page rather than across the
+// whole document.
+export function documentWarnings<T extends { blocks: SiteBlock[] }>(target: T): string[] {
   const warnings: string[] = [];
-  if (doc.blocks.length === 0) {
+  if (target.blocks.length === 0) {
     warnings.push('The site has no content blocks yet.');
   }
-  for (const b of doc.blocks) {
+  for (const b of target.blocks) {
     if (b.type === 'hero' && !b.headline.trim()) {
       warnings.push('The hero block has no headline.');
     }

@@ -35,6 +35,8 @@ import {
   updateBlock,
   type SiteBlock,
   type SiteDocument,
+  type SiteEditorDocument,
+  type SitePage,
   type TestimonialsBlock,
 } from '@/lib/site-blocks';
 import { SITE_TEMPLATES, SITE_TEMPLATE_LIST, type SiteTemplateId } from '@/lib/site-templates';
@@ -471,7 +473,7 @@ export default function WebsiteManageScreen() {
     const next = !site.data.published;
     // Defense in depth — the Publish button's own `disabled` prop should
     // already prevent reaching this, but never trust the client-only gate.
-    if (next && documentWarnings(document).length > 0) return;
+    if (next && documentWarnings(document.pages[0]).length > 0) return;
     setPublishState('working');
     const { error: pubErr } = await supabase
       .from('gym_websites')
@@ -491,11 +493,19 @@ export default function WebsiteManageScreen() {
   // Side-panel/structural edits: always reload the canvas (debounced via
   // structuralVersion → debouncedSyncKey), since these genuinely change
   // the rendered DOM shape (a block was added/removed/reordered, the
-  // theme changed).
-  function handlePanelChange(next: SiteDocument) {
-    setDocument(next);
+  // theme changed). `next` is SiteEditor's view of just the active
+  // page's blocks plus the document-level theme — merged back into the
+  // full document here (currently always one page; the active-page
+  // index becomes real, not hardcoded to 0, once pages are addable).
+  function handlePanelChange(next: SiteEditorDocument) {
+    const merged: SiteDocument = {
+      ...document,
+      settings: next.settings,
+      pages: document.pages.map((p, i) => (i === 0 ? { ...p, blocks: next.blocks } : p)),
+    };
+    setDocument(merged);
     setStructuralVersion((v) => v + 1);
-    scheduleSave(next);
+    scheduleSave(merged);
   }
 
   // Canvas keystrokes: write straight into document state without ever
@@ -505,23 +515,36 @@ export default function WebsiteManageScreen() {
     const parsed = parseFieldPath(path);
     if (!parsed) return;
     setDocument((prev) => {
-      const block = prev.blocks.find((b) => b.id === parsed.blockId);
+      const page = prev.pages[0];
+      const block = page.blocks.find((b) => b.id === parsed.blockId);
       if (!block || !isFieldEditable(block.type, parsed)) return prev;
-      let next: SiteDocument;
+      let nextPage: SitePage;
       if (parsed.kind === 'array-item') {
         if (block.type !== 'testimonials') return prev;
         const quotes = block.quotes.map((q) =>
           q.id === parsed.itemId ? { ...q, [parsed.field]: value } : q,
         );
-        next = updateBlock<TestimonialsBlock>(prev, block.id, { quotes });
+        nextPage = updateBlock<TestimonialsBlock, SitePage>(page, block.id, { quotes });
       } else {
         const patch: Record<string, string> = { [parsed.field]: value };
-        next = updateBlock<SiteBlock>(prev, block.id, patch as Partial<SiteBlock>);
+        nextPage = updateBlock<SiteBlock, SitePage>(page, block.id, patch as Partial<SiteBlock>);
       }
+      const next: SiteDocument = {
+        ...prev,
+        pages: prev.pages.map((p, i) => (i === 0 ? nextPage : p)),
+      };
       scheduleSave(next);
       return next;
     });
   }
+
+  // Hardcoded to the first page for now — every site has exactly one
+  // page until pages become addable (a later phase); this is the one
+  // spot that changes to `document.pages[activePageIndex]` when they are.
+  const activePage = document.pages[0];
+  // SiteEditor's own view of the world — the active page's blocks plus
+  // the document-level theme, no multi-page concept at all.
+  const editorDoc: SiteEditorDocument = { settings: document.settings, blocks: activePage.blocks };
 
   const themeId = isThemeId(document.settings.themeId) ? document.settings.themeId : 'forged';
   const composedTheme = composeThemeWithBrand(BRAND_THEMES[themeId], brand.primaryColor);
@@ -539,14 +562,14 @@ export default function WebsiteManageScreen() {
     supabaseUrl: '',
     supabaseAnonKey: '',
   };
-  const previewHtml = renderSiteHtml(document, { ...siteRenderCtx, editable: true });
+  const previewHtml = renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: true });
   // Preview mode renders this instead — no contentEditable, no canvas-sync
   // script, byte-identical to what /api/site/[slug] actually ships. Only
   // computed while previewing, since it's not needed on every keystroke.
   const trueDocumentHtml = showPreview
-    ? renderSiteHtml(document, { ...siteRenderCtx, editable: false })
+    ? renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: false })
     : null;
-  const warnings = documentWarnings(document);
+  const warnings = documentWarnings(activePage);
   // Only blocks the *publish* direction — an already-live site must
   // always be unpublishable regardless of what the document looks like
   // now. Mirrors the email builder's canSend: a hard gate, no override.
@@ -622,7 +645,7 @@ export default function WebsiteManageScreen() {
               <ScrollView className="flex-1" contentContainerClassName="p-4 md:p-6 gap-4">
                 {statusBlock}
                 <SiteEditor
-                  document={document}
+                  document={editorDoc}
                   onChange={handlePanelChange}
                   gymId={brand.gymId ?? ''}
                   gymName={brand.gymName}
@@ -649,7 +672,7 @@ export default function WebsiteManageScreen() {
           <ScrollView className="flex-1" contentContainerClassName="p-4 md:p-6 gap-4">
             {statusBlock}
             <SiteEditor
-              document={document}
+              document={editorDoc}
               onChange={handlePanelChange}
               gymId={brand.gymId ?? ''}
               gymName={brand.gymName}

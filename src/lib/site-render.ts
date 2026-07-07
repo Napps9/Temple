@@ -21,7 +21,6 @@ import type {
   PricingBlock,
   ScheduleBlock,
   SiteBlock,
-  SiteDocument,
   TeamBlock,
   TestimonialsBlock,
 } from './site-blocks';
@@ -729,10 +728,13 @@ const CANVAS_BRIDGE_SCRIPT = `
 })();
 </script>`;
 
-export function renderSiteHtml(doc: SiteDocument, ctx: SiteRenderContext): string {
+// Takes one page's blocks directly, not a whole (possibly multi-page)
+// SiteDocument — the caller resolves which page to render (the staff
+// editor's active page, or the page matching the public route's slug).
+export function renderSiteHtml(blocks: SiteBlock[], ctx: SiteRenderContext): string {
   const header = renderSiteHeader(ctx);
-  const firstHeroId = doc.blocks.find((b) => b.type === 'hero')?.id;
-  const blocksHtml = doc.blocks
+  const firstHeroId = blocks.find((b) => b.type === 'hero')?.id;
+  const blocksHtml = blocks
     .map((b) => renderBlock(b, ctx, b.id === firstHeroId))
     .join('');
   // A page with no hero would otherwise have no h1 at all — give it a

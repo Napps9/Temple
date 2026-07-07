@@ -7,6 +7,7 @@ import {
   documentWarnings,
   duplicateBlock,
   emptyDocument,
+  emptyPage,
   insertBlock,
   moveBlock,
   removeBlock,
@@ -17,7 +18,7 @@ import {
   type GalleryBlock,
   type HeroBlock,
   type PricingBlock,
-  type SiteDocument,
+  type SitePage,
   type TeamBlock,
   type TestimonialsBlock,
 } from './site-blocks';
@@ -36,46 +37,54 @@ describe('createBlock', () => {
   });
 });
 
-describe('document operations are immutable', () => {
-  const base: SiteDocument = emptyDocument();
+describe('block operations are immutable, and generic over any {blocks} shape', () => {
+  const base: SitePage = emptyPage();
   const a = createBlock('hero', 'a');
   const b = createBlock('about', 'b');
   const c = createBlock('contact', 'c');
-  const doc = appendBlock(appendBlock(appendBlock(base, a), b), c);
+  const page = appendBlock(appendBlock(appendBlock(base, a), b), c);
 
   it('insertBlock places at the index without mutating the original', () => {
     const sched = createBlock('schedule', 's');
-    const next = insertBlock(doc, sched, 1);
+    const next = insertBlock(page, sched, 1);
     expect(next.blocks.map((x) => x.id)).toEqual(['a', 's', 'b', 'c']);
-    expect(doc.blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
+    expect(page.blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
   });
 
   it('moveBlock up/down respects bounds', () => {
-    expect(moveBlock(doc, 'a', 'up').blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
-    expect(moveBlock(doc, 'c', 'down').blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
-    expect(moveBlock(doc, 'b', 'up').blocks.map((x) => x.id)).toEqual(['b', 'a', 'c']);
+    expect(moveBlock(page, 'a', 'up').blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
+    expect(moveBlock(page, 'c', 'down').blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
+    expect(moveBlock(page, 'b', 'up').blocks.map((x) => x.id)).toEqual(['b', 'a', 'c']);
   });
 
   it('reorderBlocks moves by index', () => {
-    expect(reorderBlocks(doc, 0, 2).blocks.map((x) => x.id)).toEqual(['b', 'c', 'a']);
-    expect(reorderBlocks(doc, 1, 1).blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
+    expect(reorderBlocks(page, 0, 2).blocks.map((x) => x.id)).toEqual(['b', 'c', 'a']);
+    expect(reorderBlocks(page, 1, 1).blocks.map((x) => x.id)).toEqual(['a', 'b', 'c']);
   });
 
   it('removeBlock and duplicateBlock', () => {
-    expect(removeBlock(doc, 'b').blocks.map((x) => x.id)).toEqual(['a', 'c']);
-    const dup = duplicateBlock(doc, 'a');
+    expect(removeBlock(page, 'b').blocks.map((x) => x.id)).toEqual(['a', 'c']);
+    const dup = duplicateBlock(page, 'a');
     expect(dup.blocks).toHaveLength(4);
     expect(dup.blocks[1].type).toBe('hero');
     expect(dup.blocks[1].id).not.toBe('a');
   });
 
   it('updateBlock patches a single block', () => {
-    const next = updateBlock<HeroBlock>(doc, 'a', { headline: 'Changed' });
+    const next = updateBlock<HeroBlock, SitePage>(page, 'a', { headline: 'Changed' });
     expect((next.blocks[0] as HeroBlock).headline).toBe('Changed');
-    expect((doc.blocks[0] as HeroBlock).headline).not.toBe('Changed');
+    expect((page.blocks[0] as HeroBlock).headline).not.toBe('Changed');
   });
 
-  it('updateSettings patches the theme', () => {
+  it('preserves the page id/slug/title — only .blocks changes', () => {
+    const next = insertBlock(page, createBlock('schedule'), 0);
+    expect(next.id).toBe(page.id);
+    expect(next.slug).toBe(page.slug);
+    expect(next.title).toBe(page.title);
+  });
+
+  it('updateSettings patches the theme on a full document', () => {
+    const doc = emptyDocument();
     const next = updateSettings(doc, { themeId: 'ringside' });
     expect(next.settings.themeId).toBe('ringside');
     expect(doc.settings.themeId).toBe('forged');
@@ -83,13 +92,16 @@ describe('document operations are immutable', () => {
 });
 
 describe('coerceDocument', () => {
-  it('returns an empty doc for junk input', () => {
-    expect(coerceDocument(null).blocks).toEqual([]);
-    expect(coerceDocument(42).blocks).toEqual([]);
-    expect(coerceDocument('nope').blocks).toEqual([]);
+  it('wraps junk input in a single empty home page', () => {
+    for (const junk of [null, 42, 'nope']) {
+      const doc = coerceDocument(junk);
+      expect(doc.pages).toHaveLength(1);
+      expect(doc.pages[0].slug).toBe('');
+      expect(doc.pages[0].blocks).toEqual([]);
+    }
   });
 
-  it('drops unknown block types and keeps valid ones', () => {
+  it('migrates a legacy single-page document (blocks directly on the object) into a home page', () => {
     const raw = {
       version: 1,
       settings: {},
@@ -100,17 +112,44 @@ describe('coerceDocument', () => {
       ],
     };
     const doc = coerceDocument(raw);
-    expect(doc.blocks).toHaveLength(2);
-    expect(doc.blocks[0].type).toBe('hero');
-    expect((doc.blocks[0] as HeroBlock).layout).toBe('background'); // invalid layout falls back
-    expect((doc.blocks[0] as HeroBlock).ctaTarget).toBe('join'); // invalid ctaTarget falls back
-    expect(doc.blocks[1].type).toBe('schedule');
-    expect(doc.blocks[1].id).toBeTruthy();
+    expect(doc.version).toBe(2);
+    expect(doc.pages).toHaveLength(1);
+    const page = doc.pages[0];
+    expect(page.slug).toBe('');
+    expect(page.title).toBe('Home');
+    expect(page.blocks).toHaveLength(2);
+    expect(page.blocks[0].type).toBe('hero');
+    expect((page.blocks[0] as HeroBlock).layout).toBe('background'); // invalid layout falls back
+    expect((page.blocks[0] as HeroBlock).ctaTarget).toBe('join'); // invalid ctaTarget falls back
+    expect(page.blocks[1].type).toBe('schedule');
+    expect(page.blocks[1].id).toBeTruthy();
+  });
+
+  it('coerces an already multi-page document, forcing the first page to slug ""', () => {
+    const raw = {
+      pages: [
+        { id: 'p1', slug: 'ignored-should-become-home', title: 'Home', blocks: [{ id: 'h', type: 'hero' }] },
+        { id: 'p2', slug: 'schedule', title: 'Schedule', blocks: [{ id: 's', type: 'schedule' }] },
+      ],
+    };
+    const doc = coerceDocument(raw);
+    expect(doc.pages).toHaveLength(2);
+    expect(doc.pages[0].slug).toBe('');
+    expect(doc.pages[0].title).toBe('Home');
+    expect(doc.pages[1].slug).toBe('schedule');
+    expect(doc.pages[1].title).toBe('Schedule');
+    expect(doc.pages[1].blocks[0].type).toBe('schedule');
+  });
+
+  it('falls back to a single empty home page when pages is an empty array', () => {
+    const doc = coerceDocument({ pages: [] });
+    expect(doc.pages).toHaveLength(1);
+    expect(doc.pages[0].slug).toBe('');
   });
 
   it('accepts a valid hero ctaTarget of contact', () => {
     const doc = coerceDocument({ blocks: [{ id: 'h', type: 'hero', ctaTarget: 'contact' }] });
-    expect((doc.blocks[0] as HeroBlock).ctaTarget).toBe('contact');
+    expect((doc.pages[0].blocks[0] as HeroBlock).ctaTarget).toBe('contact');
   });
 
   it('defaults an invalid or missing themeId rather than crashing', () => {
@@ -137,8 +176,8 @@ describe('coerceDocument', () => {
       ],
     };
     const doc = coerceDocument(raw);
-    expect((doc.blocks[0] as GalleryBlock).images).toHaveLength(1);
-    expect((doc.blocks[0] as GalleryBlock).images[0].url).toBe('https://x.com/a.png');
+    expect((doc.pages[0].blocks[0] as GalleryBlock).images).toHaveLength(1);
+    expect((doc.pages[0].blocks[0] as GalleryBlock).images[0].url).toBe('https://x.com/a.png');
   });
 
   it('round-trips a team block including hiddenMemberIds', () => {
@@ -148,43 +187,43 @@ describe('coerceDocument', () => {
       ],
     };
     const doc = coerceDocument(raw);
-    expect(doc.blocks[0].type).toBe('team');
-    expect((doc.blocks[0] as TeamBlock).heading).toBe('Our coaches');
-    expect((doc.blocks[0] as TeamBlock).hiddenMemberIds).toEqual(['m1', 'm2']);
+    expect(doc.pages[0].blocks[0].type).toBe('team');
+    expect((doc.pages[0].blocks[0] as TeamBlock).heading).toBe('Our coaches');
+    expect((doc.pages[0].blocks[0] as TeamBlock).hiddenMemberIds).toEqual(['m1', 'm2']);
   });
 
   it('defaults a team block with no heading or hiddenMemberIds', () => {
     const doc = coerceDocument({ blocks: [{ id: 'tm', type: 'team' }] });
-    expect((doc.blocks[0] as TeamBlock).heading).toBe('Meet the team');
-    expect((doc.blocks[0] as TeamBlock).hiddenMemberIds).toEqual([]);
+    expect((doc.pages[0].blocks[0] as TeamBlock).heading).toBe('Meet the team');
+    expect((doc.pages[0].blocks[0] as TeamBlock).hiddenMemberIds).toEqual([]);
   });
 });
 
 describe('documentWarnings', () => {
-  it('flags an empty document', () => {
-    expect(documentWarnings(emptyDocument())).toContain('The site has no content blocks yet.');
+  it('flags an empty page', () => {
+    expect(documentWarnings(emptyPage())).toContain('The site has no content blocks yet.');
   });
 
   it('flags an empty hero headline, testimonials, gallery and location address', () => {
-    let doc = emptyDocument();
-    doc = appendBlock(doc, { ...createBlock('hero'), headline: '' } as HeroBlock);
-    doc = appendBlock(doc, createBlock('testimonials'));
-    doc = appendBlock(doc, createBlock('gallery'));
-    doc = appendBlock(doc, createBlock('location'));
-    const warnings = documentWarnings(doc);
+    let page = emptyPage();
+    page = appendBlock(page, { ...createBlock('hero'), headline: '' } as HeroBlock);
+    page = appendBlock(page, createBlock('testimonials'));
+    page = appendBlock(page, createBlock('gallery'));
+    page = appendBlock(page, createBlock('location'));
+    const warnings = documentWarnings(page);
     expect(warnings.some((w) => w.includes('hero'))).toBe(true);
     expect(warnings.some((w) => w.includes('testimonials'))).toBe(true);
     expect(warnings.some((w) => w.includes('gallery'))).toBe(true);
     expect(warnings.some((w) => w.includes('address'))).toBe(true);
   });
 
-  it('passes a document whose blocks all have their required content', () => {
-    let doc = emptyDocument();
-    doc = appendBlock(doc, createBlock('hero'));
-    doc = appendBlock(doc, createBlock('schedule'));
-    doc = appendBlock(doc, createBlock('pricing'));
-    doc = appendBlock(doc, createBlock('contact'));
-    expect(documentWarnings(doc)).toEqual([]);
+  it('passes a page whose blocks all have their required content', () => {
+    let page = emptyPage();
+    page = appendBlock(page, createBlock('hero'));
+    page = appendBlock(page, createBlock('schedule'));
+    page = appendBlock(page, createBlock('pricing'));
+    page = appendBlock(page, createBlock('contact'));
+    expect(documentWarnings(page)).toEqual([]);
   });
 });
 
@@ -199,14 +238,14 @@ describe('gallery alt warnings', () => {
         { id: 'b', url: 'https://x/b.jpg', alt: 'Members mid-workout' },
       ],
     };
-    const doc = appendBlock(emptyDocument(), withImages);
-    expect(documentWarnings(doc).some((w) => w.includes('needs a short description'))).toBe(true);
+    const page = appendBlock(emptyPage(), withImages);
+    expect(documentWarnings(page).some((w) => w.includes('needs a short description'))).toBe(true);
 
     const filled = {
       ...withImages,
       images: withImages.images.map((i) => ({ ...i, alt: i.alt || 'Gym floor' })),
     };
-    const okDoc = appendBlock(emptyDocument(), filled);
-    expect(documentWarnings(okDoc).some((w) => w.includes('description'))).toBe(false);
+    const okPage = appendBlock(emptyPage(), filled);
+    expect(documentWarnings(okPage).some((w) => w.includes('description'))).toBe(false);
   });
 });

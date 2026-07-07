@@ -74,7 +74,7 @@ describe.each(SITE_TEMPLATE_LIST.map((t) => [t.id, t] as const))('template %s', 
 
   it('follows the research section skeleton, with no gallery', () => {
     const doc = t.build('Iron Gym');
-    expect(doc.blocks.map((b) => b.type)).toEqual([
+    expect(doc.pages[0].blocks.map((b) => b.type)).toEqual([
       'hero',
       'about',
       'schedule',
@@ -89,7 +89,7 @@ describe.each(SITE_TEMPLATE_LIST.map((t) => [t.id, t] as const))('template %s', 
 
   it('builds a typographic hero — background layout, no image, headline seeded', () => {
     const seeded = t.build('Iron Gym');
-    const hero = seeded.blocks[0];
+    const hero = seeded.pages[0].blocks[0];
     if (hero.type !== 'hero') throw new Error('first block must be hero');
     expect(hero.layout).toBe('background');
     expect(hero.imageUrl).toBe('');
@@ -97,14 +97,14 @@ describe.each(SITE_TEMPLATE_LIST.map((t) => [t.id, t] as const))('template %s', 
 
     for (const name of [undefined, '', '   ']) {
       const doc = t.build(name);
-      const h = doc.blocks[0];
+      const h = doc.pages[0].blocks[0];
       if (h.type !== 'hero') throw new Error('first block must be hero');
       expect(h.headline.trim().length).toBeGreaterThan(0);
     }
   });
 
   it('ships exactly the two launch-checklist warnings (testimonials + address)', () => {
-    const warnings = documentWarnings(t.build('Iron Gym'));
+    const warnings = documentWarnings(t.build('Iron Gym').pages[0]);
     expect(warnings).toHaveLength(2);
     expect(warnings.some((w) => w.includes('testimonials'))).toBe(true);
     expect(warnings.some((w) => w.includes('address'))).toBe(true);
@@ -113,30 +113,30 @@ describe.each(SITE_TEMPLATE_LIST.map((t) => [t.id, t] as const))('template %s', 
   it('generates fresh, unique block ids on every build', () => {
     const a = t.build('Iron Gym');
     const b = t.build('Iron Gym');
-    const aIds = a.blocks.map((blk) => blk.id);
+    const aIds = a.pages[0].blocks.map((blk) => blk.id);
     expect(new Set(aIds).size).toBe(aIds.length);
-    const bIds = new Set(b.blocks.map((blk) => blk.id));
+    const bIds = new Set(b.pages[0].blocks.map((blk) => blk.id));
     expect(aIds.some((id) => bIds.has(id))).toBe(false);
   });
 
   it('renders without throwing in both public and editable modes', () => {
     const doc = t.build('Iron Gym');
-    const publicHtml = renderSiteHtml(doc, baseCtx);
+    const publicHtml = renderSiteHtml(doc.pages[0].blocks, baseCtx);
     expect(publicHtml).toContain('Iron Gym');
-    const editableHtml = renderSiteHtml(doc, { ...baseCtx, editable: true });
+    const editableHtml = renderSiteHtml(doc.pages[0].blocks, { ...baseCtx, editable: true });
     expect(editableHtml).toContain('contenteditable');
   });
 });
 
 describe('CTA funnels', () => {
   it('coaching is the consult-first template: its CTA scrolls to the contact form', () => {
-    const html = renderSiteHtml(SITE_TEMPLATES.coaching.build('Iron Gym'), baseCtx);
+    const html = renderSiteHtml(SITE_TEMPLATES.coaching.build('Iron Gym').pages[0].blocks, baseCtx);
     expect(html).toContain('class="btn" href="#contact"');
   });
 
   it('the other three link to the join flow', () => {
     for (const id of ['strength', 'combat', 'studio'] as const) {
-      const html = renderSiteHtml(SITE_TEMPLATES[id].build('Iron Gym'), baseCtx);
+      const html = renderSiteHtml(SITE_TEMPLATES[id].build('Iron Gym').pages[0].blocks, baseCtx);
       expect(html).toContain('href="https://app.example.com/join/iron-gym"');
     }
   });

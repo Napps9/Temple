@@ -18,6 +18,7 @@
 import type { ThemeId } from './brand-themes';
 import {
   createBlock,
+  emptyPage,
   type AboutBlock,
   type ContactBlock,
   type HeroBlock,
@@ -92,9 +93,14 @@ function buildFromCopy(themeId: ThemeId, copy: TemplateCopy, gymName?: string): 
   contact.subheading = copy.contact.subheading;
 
   return {
-    version: 1,
+    version: 2,
     settings: { themeId },
-    blocks: [hero, about, schedule, team, pricing, testimonials, location, contact],
+    pages: [
+      {
+        ...emptyPage(),
+        blocks: [hero, about, schedule, team, pricing, testimonials, location, contact],
+      },
+    ],
   };
 }
 

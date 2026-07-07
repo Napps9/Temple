@@ -40,7 +40,7 @@ import {
   type PricingBlock,
   type SiteBlock,
   type SiteBlockType,
-  type SiteDocument,
+  type SiteEditorDocument,
   type TeamBlock,
   type TestimonialsBlock,
 } from '@/lib/site-blocks';
@@ -946,8 +946,8 @@ function ThemePicker({
   onChange,
   brandPrimaryColor,
 }: {
-  document: SiteDocument;
-  onChange: (doc: SiteDocument) => void;
+  document: SiteEditorDocument;
+  onChange: (doc: SiteEditorDocument) => void;
   brandPrimaryColor: string;
 }) {
   return (
@@ -1107,8 +1107,8 @@ function TemplatePickerModal({
 // ---------------------------------------------------------------------------
 
 // Module-scope on purpose — SiteEditor's own `document` prop is a
-// SiteDocument, not the DOM, so a helper defined inside the component
-// would shadow window.document right when it's needed.
+// SiteEditorDocument, not the DOM, so a helper defined inside the
+// component would shadow window.document right when it's needed.
 function downloadJson(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1133,8 +1133,8 @@ export function SiteEditor({
   selectedId,
   onSelectBlock,
 }: {
-  document: SiteDocument;
-  onChange: (doc: SiteDocument) => void;
+  document: SiteEditorDocument;
+  onChange: (doc: SiteEditorDocument) => void;
   gymId: string;
   // Seeds a template's hero headline when one is applied here.
   gymName: string;
@@ -1166,10 +1166,13 @@ export function SiteEditor({
 
   function applyTemplate() {
     if (!pendingTemplate) return;
-    // Flows through website.tsx's handlePanelChange: structural bump →
-    // canvas reload; autosave persists both design and the theme
-    // column (persist() writes theme from settings.themeId).
-    onChange(pendingTemplate.build(gymName));
+    // A template's build() returns a full (single-page) SiteDocument;
+    // this replaces the active page's blocks and the document theme
+    // with it. Flows through website.tsx's handlePanelChange:
+    // structural bump → canvas reload; autosave persists both design
+    // and the theme column (persist() writes theme from settings.themeId).
+    const built = pendingTemplate.build(gymName);
+    onChange({ settings: built.settings, blocks: built.pages[0].blocks });
     // The old selection points at block ids that no longer exist.
     onSelectBlock(null);
     setPendingTemplate(null);

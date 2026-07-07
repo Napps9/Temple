@@ -95,8 +95,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const themeId = isThemeId(site.theme) ? site.theme : 'forged';
     const theme = composeThemeWithBrand(BRAND_THEMES[themeId], site.gym_primary_color);
     const document = coerceDocument(site.design);
+    // Always the home page for now — multi-page routing (resolving a
+    // page slug from the URL) is a later phase; every site has exactly
+    // one page today, so this is behaviorally unchanged.
+    const homePage = document.pages[0];
 
-    const html = renderSiteHtml(document, {
+    const html = renderSiteHtml(homePage.blocks, {
       slug,
       gymName: site.gym_name,
       gymLogoUrl: site.gym_logo_url,

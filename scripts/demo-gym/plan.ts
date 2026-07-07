@@ -739,7 +739,11 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   // CrossFit, Hyrox" (see brand-themes.ts's tagline for 'forged'), so
   // both disciplines reuse it — only the copy and publish state differ.
   const siteDoc = SITE_TEMPLATES.strength.build(config.gymName);
-  const patchedBlocks = siteDoc.blocks.map((raw, i) => {
+  // build() mints a time-based page id (same reason block ids get
+  // rewritten below) — pin it so the same seed yields a byte-identical
+  // plan.
+  const homePage = { ...siteDoc.pages[0], id: 'sp_demo_home' };
+  const patchedBlocks = homePage.blocks.map((raw, i) => {
     const block = { ...raw, id: `sb_demo${i + 1}` };
     if (block.type === 'hero' && isHyrox) {
       return {
@@ -802,7 +806,10 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   const website: T<'gym_websites'> = {
     gym_id: gymId,
     theme: SITE_TEMPLATES.strength.themeId,
-    design: asJson({ ...siteDoc, blocks: blocksWithGallery }),
+    design: asJson({
+      ...siteDoc,
+      pages: [{ ...homePage, blocks: blocksWithGallery }],
+    }),
     // A CrossFit demo ships live so the public site is something to
     // see immediately; the Hyrox demo stays unpublished so the site
     // builder's draft state — warnings, the disabled-until-ready
