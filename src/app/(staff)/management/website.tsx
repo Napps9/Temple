@@ -495,6 +495,7 @@ export default function WebsiteManageScreen() {
     schedule: preview.schedule.data ?? [],
     plans: preview.plans.data ?? [],
     team: preview.team.data ?? [],
+    now: new Date().toISOString(),
     platformOrigin: 'https://app.jointemple.io',
     supabaseUrl: '',
     supabaseAnonKey: '',

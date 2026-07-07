@@ -105,6 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       schedule,
       plans,
       team,
+      now: new Date().toISOString(),
       // Same hardcoded-fallback precedent as send-invite's origin.
       platformOrigin: 'https://app.jointemple.io',
       supabaseUrl,

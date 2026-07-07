@@ -31,6 +31,7 @@ const baseCtx: SiteRenderContext = {
   schedule: [],
   plans: [],
   team: [],
+  now: '2026-07-06T08:00:00Z',
   platformOrigin: 'https://app.example.com',
   supabaseUrl: 'https://example.supabase.co',
   supabaseAnonKey: 'anon-key-123',
@@ -92,7 +93,7 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('Check back soon for the full schedule.');
   });
 
-  it('groups schedule sessions by day and formats the coach name', () => {
+  it('renders session and coach details, with a next-up banner and closed-day placeholders', () => {
     const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
     const sessions: ScheduleSession[] = [
       {
@@ -101,20 +102,26 @@ describe('renderSiteHtml', () => {
         durationMinutes: 60,
         classTypeName: 'CrossFit',
         classTypeColor: '#FF0000',
-        coachName: 'Priya',
+        coachName: 'Priya Sharma',
       },
     ];
     const html = renderSiteHtml(doc, { ...baseCtx, schedule: sessions });
     expect(html).toContain('CrossFit');
-    expect(html).toContain('Priya');
+    expect(html).toContain('Priya Sharma');
+    // Reuses the Team block's avatar-initials pattern.
+    expect(html).toContain('<span class="sched-coach-dot">PS</span>');
+    // The one session is today, so it drives "next up"...
+    expect(html).toContain('CrossFit today at 09:00 with Priya Sharma');
+    // ...and the other six days in the grid render as closed, not blank.
+    expect((html.match(/sched-empty">Closed</g) ?? []).length).toBe(6);
   });
 
-  it('colour-codes schedule rows by class type, falling back to the theme accent', () => {
+  it('renders a 7-day grid with a today marker, closed-day states, and per-class colour ticket accents', () => {
     const doc = appendBlock(emptyDocument(), createBlock('schedule') as ScheduleBlock);
     const sessions: ScheduleSession[] = [
       {
         sessionId: 's1',
-        startsAt: '2026-07-06T09:00:00Z',
+        startsAt: '2026-07-06T09:00:00Z', // today, matches baseCtx.now
         durationMinutes: 60,
         classTypeName: 'CrossFit',
         classTypeColor: '#FF0000',
@@ -122,7 +129,7 @@ describe('renderSiteHtml', () => {
       },
       {
         sessionId: 's2',
-        startsAt: '2026-07-06T10:00:00Z',
+        startsAt: '2026-07-08T18:00:00Z', // Wednesday
         durationMinutes: 60,
         classTypeName: 'Open gym',
         classTypeColor: null,
@@ -130,8 +137,16 @@ describe('renderSiteHtml', () => {
       },
     ];
     const html = renderSiteHtml(doc, { ...baseCtx, schedule: sessions });
-    expect(html).toContain('background:#FF0000;');
-    expect(html).toContain('background:var(--accent);');
+
+    // Matches the column wrapper's own class attribute only — not the
+    // sched-col-head div nested inside each one.
+    expect((html.match(/class="sched-col["\s]/g) ?? []).length).toBe(7);
+    expect(html).toContain('class="sched-col is-today"');
+    expect(html).toContain('<span class="sched-today-chip">Today</span>');
+    expect((html.match(/sched-empty">Closed</g) ?? []).length).toBe(5);
+    expect(html).toContain('<b>2</b> classes · <b>0</b> coaches this week');
+    expect(html).toContain('--dot:#FF0000;');
+    expect(html).toContain('--dot:var(--accent);');
   });
 
   it('formats schedule times per theme — tight 24h for the intense themes, lowercase 12h for the calm ones', () => {
@@ -171,21 +186,24 @@ describe('renderSiteHtml', () => {
       },
     ];
 
+    const ticket = (time: string, name: string) =>
+      `<div class="sched-ticket-time">${time}</div><div class="sched-ticket-name">${name}</div>`;
+
     const forgedHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.forged, schedule: sessions });
-    expect(forgedHtml).toContain('09:00 — CrossFit');
-    expect(forgedHtml).toContain('14:30 — Open gym');
+    expect(forgedHtml).toContain(ticket('09:00', 'CrossFit'));
+    expect(forgedHtml).toContain(ticket('14:30', 'Open gym'));
 
     const ringsideHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.ringside, schedule: sessions });
-    expect(ringsideHtml).toContain('09:00 — CrossFit');
+    expect(ringsideHtml).toContain(ticket('09:00', 'CrossFit'));
 
     const baselineHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.baseline, schedule: sessions });
-    expect(baselineHtml).toContain('9:00am — CrossFit');
-    expect(baselineHtml).toContain('2:30pm — Open gym');
-    expect(baselineHtml).toContain('12:00am — Midnight open gym');
-    expect(baselineHtml).toContain('12:00pm — Noon session');
+    expect(baselineHtml).toContain(ticket('9:00am', 'CrossFit'));
+    expect(baselineHtml).toContain(ticket('2:30pm', 'Open gym'));
+    expect(baselineHtml).toContain(ticket('12:00am', 'Midnight open gym'));
+    expect(baselineHtml).toContain(ticket('12:00pm', 'Noon session'));
 
     const daybreakHtml = renderSiteHtml(doc, { ...baseCtx, theme: BRAND_THEMES.daybreak, schedule: sessions });
-    expect(daybreakHtml).toContain('9:00am — CrossFit');
+    expect(daybreakHtml).toContain(ticket('9:00am', 'CrossFit'));
   });
 
   it('formats plan pricing by kind and hides plans in hiddenPlanIds', () => {

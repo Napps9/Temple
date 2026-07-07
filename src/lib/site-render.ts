@@ -58,6 +58,11 @@ export type SiteRenderContext = {
   schedule: ScheduleSession[];
   plans: PublicPlan[];
   team: TeamMember[];
+  // The schedule block's reference "today" — the caller's own idea of
+  // "now" at the moment it ran the schedule query, so the 7-day grid's
+  // first column and "next up" wording ("today" vs a weekday name)
+  // line up with whichever sessions actually came back.
+  now: string;
   // The join CTA links here rather than staying same-origin: on a
   // custom domain a relative /join/<slug> would land on the Expo app
   // shell at that origin, where Supabase auth confirmation emails
@@ -181,10 +186,31 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .site-header .wrap{display:flex;align-items:center;gap:10px;padding-top:14px;padding-bottom:14px;}
 .site-header img{height:32px;width:auto;display:block;}
 .site-header span{font-weight:700;font-size:16px;letter-spacing:.01em;}
-.sched-day{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--accent-ink);margin:20px 0 8px;}
-.sched-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid color-mix(in srgb, var(--muted) 40%, transparent);}
-.sched-row:first-of-type{border-top:none;}
-.sched-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;}
+.sched-head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
+.sched-stat{font-size:12px;color:var(--muted-text);font-variant-numeric:tabular-nums;padding-bottom:3px;}
+.sched-stat b{color:var(--text);font-weight:700;}
+.sched-next{margin-top:16px;display:flex;align-items:center;gap:10px;background:color-mix(in srgb, var(--accent) 12%, var(--surface));border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);border-radius:var(--radius);padding:10px 14px;}
+.sched-next-dot{flex-shrink:0;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:sched-pulse 2.2s ease-out infinite;}
+@media(prefers-reduced-motion:reduce){.sched-next-dot{animation:none;}}
+@keyframes sched-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);}70%{box-shadow:0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent);}100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);}}
+.sched-next-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);margin-right:2px;}
+.sched-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:16px;}
+@media(max-width:760px){.sched-grid{grid-template-columns:repeat(7,minmax(120px,1fr));overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px;}.sched-col{scroll-snap-align:start;}}
+.sched-col{background:var(--surface);border:1px solid color-mix(in srgb, var(--muted) 45%, transparent);border-top:2px solid transparent;border-radius:var(--radius);padding:12px 9px;display:flex;flex-direction:column;gap:8px;}
+.sched-col.is-today{border-top-color:var(--accent);background:color-mix(in srgb, var(--accent) 6%, var(--surface));}
+.sched-col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.sched-day-name{display:block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-text);}
+.sched-col.is-today .sched-day-name{color:var(--accent-ink);}
+.sched-day-date{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;}
+.sched-col.is-today .sched-day-date{color:var(--accent-ink);}
+.sched-today-chip{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--accent);color:var(--accent-text);border-radius:var(--radius);padding:2px 6px;align-self:flex-start;}
+.sched-ticket{border-radius:var(--radius);background:color-mix(in srgb, var(--dot) 11%, var(--surface));border-left:3px solid var(--dot);padding:6px 8px 7px;}
+.sched-ticket-time{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.3;}
+.sched-ticket-name{font-size:11.5px;line-height:1.35;margin-top:1px;}
+.sched-ticket-coach{display:flex;align-items:center;gap:5px;margin-top:5px;}
+.sched-coach-dot{flex-shrink:0;width:15px;height:15px;border-radius:50%;background:var(--accent);color:var(--accent-text);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.sched-coach-name{font-size:10.5px;color:var(--muted-text);}
+.sched-empty{flex:1;display:flex;align-items:center;justify-content:center;border:1px dashed color-mix(in srgb, var(--muted) 70%, transparent);border-radius:var(--radius);font-size:10.5px;color:var(--muted-text);text-transform:uppercase;letter-spacing:.05em;padding:14px 4px;min-height:64px;}
 .plan-price{font-size:32px;font-weight:800;}
 .quote-mark{font-size:32px;color:var(--accent);line-height:.4;display:block;margin-bottom:6px;}
 .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
@@ -252,9 +278,6 @@ function renderAbout(b: AboutBlock, ctx: SiteRenderContext): string {
   return `<section class="sec"><div class="wrap about-grid side">${order.join('')}</div></section>`;
 }
 
-function fmtSessionDay(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: 'long' });
-}
 // A deliberate per-theme style choice, not the visitor's browser
 // locale — tight 24h reads tactical for the intense themes (Forged,
 // Ringside), 12h lowercase reads calm/welcoming for the boutique and
@@ -270,34 +293,113 @@ function fmtSessionTime(iso: string, format: BrandTheme['typography']['timeForma
   return `${hours12}:${minutes}${hours24 < 12 ? 'am' : 'pm'}`;
 }
 
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY_LONG = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
+// First + last initial, matching the Team block's own avatar-initials
+// pattern (renderTeam) so the schedule reuses the same visual language
+// rather than inventing a second one. Falls back to the first two
+// letters of a single-word name.
+function coachInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return (parts[0]![0] + parts[parts.length - 1]![0]).toUpperCase();
+}
+
+type ScheduleDay = { date: Date; sessions: ScheduleSession[] };
+
+// Buckets sessions into 7 calendar-day columns starting at ctx.now's
+// local midnight, so a day with zero sessions still gets a column
+// (rendered as "Closed") instead of silently vanishing from the grid —
+// the caller's query already limits `sessions` to roughly this window,
+// this just gives every day in it a slot even when empty.
+function buildScheduleWeek(nowIso: string, sessions: ScheduleSession[]): ScheduleDay[] {
+  const start = new Date(nowIso);
+  start.setHours(0, 0, 0, 0);
+  const days: ScheduleDay[] = Array.from({ length: 7 }, (_, i) => ({
+    date: new Date(start.getTime() + i * 86_400_000),
+    sessions: [],
+  }));
+  for (const s of sessions) {
+    const idx = Math.floor((new Date(s.startsAt).getTime() - start.getTime()) / 86_400_000);
+    if (idx >= 0 && idx < 7) days[idx]!.sessions.push(s);
+  }
+  return days;
+}
+
+function renderScheduleTicket(s: ScheduleSession, format: BrandTheme['typography']['timeFormat']): string {
+  const dot = s.classTypeColor ? escapeAttr(s.classTypeColor) : 'var(--accent)';
+  const coach = s.coachName
+    ? `<div class="sched-ticket-coach"><span class="sched-coach-dot">${escapeHtml(
+        coachInitials(s.coachName),
+      )}</span><span class="sched-coach-name">${escapeHtml(s.coachName)}</span></div>`
+    : '';
+  return `<div class="sched-ticket" style="--dot:${dot};"><div class="sched-ticket-time">${fmtSessionTime(
+    s.startsAt,
+    format,
+  )}</div><div class="sched-ticket-name">${escapeHtml(s.classTypeName ?? 'Class')}</div>${coach}</div>`;
+}
+
+// The single most useful fact before scanning a 7-day grid: what's
+// next, when, with whom. ctx.schedule is already ordered by starts_at
+// ascending and pre-filtered to upcoming sessions by both callers'
+// queries, so the first entry (if any) IS the next class — no
+// re-filtering needed here.
+function renderScheduleNextUp(
+  next: ScheduleSession,
+  today: Date,
+  format: BrandTheme['typography']['timeFormat'],
+): string {
+  const at = new Date(next.startsAt);
+  const isToday =
+    at.getFullYear() === today.getFullYear() &&
+    at.getMonth() === today.getMonth() &&
+    at.getDate() === today.getDate();
+  const when = isToday ? 'today' : WEEKDAY_LONG[at.getDay()];
+  const withCoach = next.coachName ? ` with ${escapeHtml(next.coachName)}` : '';
+  return `<div class="sched-next"><span class="sched-next-dot" aria-hidden="true"></span><span><span class="sched-next-label">Next up</span>${escapeHtml(
+    next.classTypeName ?? 'Class',
+  )} ${when} at ${fmtSessionTime(next.startsAt, format)}${withCoach}</span></div>`;
+}
+
 function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
   if (ctx.schedule.length === 0) {
     return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2><p style="color:var(--muted-text);">Check back soon for the full schedule.</p></div></section>`;
   }
-  const byDay = new Map<string, ScheduleSession[]>();
-  for (const s of ctx.schedule) {
-    const day = fmtSessionDay(s.startsAt);
-    if (!byDay.has(day)) byDay.set(day, []);
-    byDay.get(day)!.push(s);
-  }
-  const days = Array.from(byDay.entries())
-    .map(
-      ([day, sessions]) =>
-        `<div class="sched-day">${escapeHtml(day)}</div>` +
-        sessions
-          .map((s) => {
-            const dotColor = s.classTypeColor ? escapeAttr(s.classTypeColor) : 'var(--accent)';
-            return `<div class="sched-row"><span><span class="sched-dot" style="background:${dotColor};"></span>${fmtSessionTime(
-              s.startsAt,
-              ctx.theme.typography.timeFormat,
-            )} — ${escapeHtml(s.classTypeName ?? 'Class')}</span><span style="color:var(--muted-text);">${
-              s.coachName ? escapeHtml(s.coachName) : ''
-            }</span></div>`;
-          })
-          .join(''),
-    )
+  const format = ctx.theme.typography.timeFormat;
+  const week = buildScheduleWeek(ctx.now, ctx.schedule);
+  const coachCount = new Set(ctx.schedule.map((s) => s.coachName).filter(Boolean)).size;
+
+  const cols = week
+    .map((day, i) => {
+      const isToday = i === 0;
+      const chip = isToday ? '<span class="sched-today-chip">Today</span>' : '';
+      const head = `<div class="sched-col-head"><div><span class="sched-day-name">${
+        WEEKDAY_SHORT[day.date.getDay()]
+      }</span><span class="sched-day-date">${day.date.getDate()}</span></div>${chip}</div>`;
+      const body =
+        day.sessions.length === 0
+          ? '<div class="sched-empty">Closed</div>'
+          : day.sessions.map((s) => renderScheduleTicket(s, format)).join('');
+      return `<div class="sched-col${isToday ? ' is-today' : ''}">${head}${body}</div>`;
+    })
     .join('');
-  return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>${days}</div></section>`;
+
+  const classWord = ctx.schedule.length === 1 ? 'class' : 'classes';
+  const coachWord = coachCount === 1 ? 'coach' : 'coaches';
+  const stat = `<span class="sched-stat"><b>${ctx.schedule.length}</b> ${classWord} · <b>${coachCount}</b> ${coachWord} this week</span>`;
+  const nextUp = renderScheduleNextUp(ctx.schedule[0]!, week[0]!.date, format);
+
+  return `<section class="sec"><div class="wrap"><div class="sched-head-row"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${escapeHtml(b.heading)}</h2>${stat}</div>${nextUp}<div class="sched-grid">${cols}</div></div></section>`;
 }
 
 function fmtPlanPrice(p: PublicPlan, currency: string): string {
