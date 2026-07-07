@@ -370,7 +370,12 @@ The staff area shows up when `can_access_staff_area` is on.
   `tracked_workouts` row). Each step is a deep link to the page that
   completes it. The card disappears once every required step is done.
   Backed by `get_gym_setup_progress(gym_id)` so it never drifts from
-  reality — delete a class type and the step flips back open.
+  reality — delete a class type and the step flips back open. The
+  dedicated `/onboarding` screen (root redirects owners with pending
+  required steps here) has a "Skip for now" link that calls the
+  `dismiss_gym_onboarding` RPC, stamping `gyms.onboarding_dismissed_at`
+  so the redirect stays off across devices and sessions until the
+  owner finishes the required steps.
 
 The Manage page presents a tab strip:
 

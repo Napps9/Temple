@@ -1,15 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
@@ -24,9 +17,9 @@ import { useThemeColors } from '@/lib/theme';
 // the only ways out are Skip, completing setup, or hitting back.
 //
 // Routing: src/app/index.tsx sends owners with incomplete setup here
-// unless they've hit Skip this session (per-gym sessionStorage flag).
-// Once Skip is set, root redirects them to /classes instead so they
-// can explore freely without being nagged again until next sign-in.
+// unless they've hit Skip (gyms.onboarding_dismissed_at, set via the
+// dismiss_gym_onboarding RPC). Once dismissed, root redirects them to
+// /classes instead, on any device, until they clear the required steps.
 
 type StepKey =
   | 'logo'
@@ -128,25 +121,13 @@ type ProgressRow = {
   target: number;
 };
 
-function skipKey(gymId: string): string {
-  return `temple-onboarding-skipped:${gymId}`;
-}
-
-function writeSkipped(gymId: string): void {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-  try {
-    window.sessionStorage?.setItem(skipKey(gymId), '1');
-  } catch {
-    /* storage unavailable — Skip still navigates */
-  }
-}
-
 export default function OnboardingScreen() {
   const colors = useThemeColors();
   const session = useSession();
   const role = useRole();
   const { data: membership, isLoading: membershipLoading } = useGymMembership();
   const brand = useGymBrand();
+  const queryClient = useQueryClient();
 
   const progress = useQuery({
     queryKey: ['gym-setup-progress', membership?.gymId],
@@ -188,8 +169,16 @@ export default function OnboardingScreen() {
   const requiredDone = requiredSteps.filter((s) => s.done).length;
   const allRequiredDone = requiredDone === requiredSteps.length;
 
-  function onSkip() {
-    if (membership?.gymId) writeSkipped(membership.gymId);
+  async function onSkip() {
+    const gymId = membership?.gymId;
+    if (gymId) {
+      const { error } = await supabase.rpc('dismiss_gym_onboarding', {
+        p_gym_id: gymId,
+      });
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ['gym-onboarding-dismissed', gymId] });
+      }
+    }
     router.replace('/classes' as never);
   }
 

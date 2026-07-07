@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import {
   pendingGymFromSession,
@@ -24,17 +24,6 @@ const REQUIRED_SETUP_KEYS = new Set([
 ]);
 
 type SetupRow = { step_key: string; done: boolean };
-
-function isOnboardingSkippedThisSession(gymId: string | null | undefined): boolean {
-  if (!gymId || Platform.OS !== 'web' || typeof window === 'undefined') return false;
-  try {
-    return (
-      window.sessionStorage?.getItem(`temple-onboarding-skipped:${gymId}`) === '1'
-    );
-  } catch {
-    return false;
-  }
-}
 
 type ParqState = {
   active_questionnaire_id: string | null;
@@ -60,7 +49,8 @@ export default function Index() {
 
   // Owner-only setup gate. Returning owners with complete setup short-
   // circuit cheaply; new ones get sent to the dedicated /onboarding
-  // page unless they've hit Skip in this browser session.
+  // page unless they've dismissed it (gyms.onboarding_dismissed_at,
+  // set via the Skip link — persists across devices and sessions).
   const setupProgress = useQuery({
     queryKey: ['gym-setup-progress', membership?.gymId],
     enabled: !!membership?.gymId && role === 'owner',
@@ -70,6 +60,20 @@ export default function Index() {
       });
       if (error) throw error;
       return (data ?? []) as SetupRow[];
+    },
+  });
+
+  const onboardingDismissed = useQuery({
+    queryKey: ['gym-onboarding-dismissed', membership?.gymId],
+    enabled: !!membership?.gymId && role === 'owner',
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase
+        .from('gyms')
+        .select('onboarding_dismissed_at')
+        .eq('id', membership!.gymId)
+        .single();
+      if (error) throw error;
+      return data?.onboarding_dismissed_at != null;
     },
   });
 
@@ -144,13 +148,14 @@ export default function Index() {
   if (canAccessStaff === undefined) return <Loading />;
   if (canAccessStaff) {
     if (role === 'owner') {
-      if (setupProgress.isLoading) return <Loading />;
+      if (setupProgress.isLoading || onboardingDismissed.isLoading) return <Loading />;
       const rows = setupProgress.data ?? [];
       const requiredPending = rows.some(
         (r) => REQUIRED_SETUP_KEYS.has(r.step_key) && !r.done,
       );
-      const skipped = isOnboardingSkippedThisSession(membership?.gymId);
-      if (requiredPending && !skipped) return <Redirect href="/onboarding" />;
+      if (requiredPending && !onboardingDismissed.data) {
+        return <Redirect href="/onboarding" />;
+      }
     }
     return <Redirect href="/classes" />;
   }
