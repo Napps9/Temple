@@ -24,6 +24,10 @@ begin
   v_inj := log_injury(v_gym, 'shoulder', 'left', 'twinge on press', 4,
     '{overhead press}', '{squat}', current_date);
 
+  -- staff_alerts is RLS-gated on can_see_health_flag, which a bare
+  -- member doesn't have — switch to the coach before reading it back,
+  -- or this select silently sees zero rows.
+  perform _test_act_as(v_coach);
   select id into v_alert from public.staff_alerts
     where kind = 'injury_new' and related_id = v_inj;
 
