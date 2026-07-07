@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Redirect, useNavigation } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -218,40 +218,80 @@ export default function WebsiteManageScreen() {
     initialized.current = true;
   }, [site.data]);
 
-  const persist = useMemo(
-    () =>
-      async function persist() {
-        if (!site.data) return;
-        setSaveState('saving');
-        const { error: upErr } = await supabase
-          .from('gym_websites')
-          .update({
-            design: document as unknown as Json,
-            theme: document.settings.themeId,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', site.data.id);
-        if (upErr) {
-          setSaveState('idle');
-          setError(errorMessage(upErr, 'Could not save'));
-        } else {
-          setSaveState('saved');
-          unsavedRef.current = false;
-        }
-      },
-    [document, site.data],
-  );
+  // Takes the document explicitly rather than closing over state, and is
+  // only ever called from the two real-edit paths (handlePanelChange /
+  // handleCanvasFieldChange) below — never from a useEffect reacting to
+  // `document` itself. That distinction matters: the initial load also
+  // changes `document` (emptyDocument() -> the loaded design), and an
+  // effect keyed on that change would schedule a save carrying whatever
+  // `document` a stale closure captured at that instant — a real race
+  // that depends on the next render happening before the 1200ms timer
+  // fires to avoid overwriting the loaded design with a blank one.
+  async function persistDocument(doc: SiteDocument) {
+    if (!site.data) return;
+    setSaveState('saving');
+    const { error: upErr } = await supabase
+      .from('gym_websites')
+      .update({
+        design: doc as unknown as Json,
+        theme: doc.settings.themeId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', site.data.id);
+    if (upErr) {
+      setSaveState('idle');
+      setError(errorMessage(upErr, 'Could not save'));
+    } else {
+      setSaveState('saved');
+      unsavedRef.current = false;
+    }
+  }
 
-  useEffect(() => {
-    if (!initialized.current) return;
+  function scheduleSave(next: SiteDocument) {
     unsavedRef.current = true;
     setSaveState('idle');
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void persist(), 1200);
+    saveTimer.current = setTimeout(() => void persistDocument(next), 1200);
+  }
+
+  useEffect(() => {
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [persist]);
+  }, []);
+
+  // The staff preview's schedule/plans/team queries resolve after the
+  // first paint, but the editable iframe only reloads on structuralVersion
+  // changing (see SiteHtmlPreview.web.tsx — deliberately never on `html`
+  // itself, so a canvas keystroke can't trigger a reload mid-word). Left
+  // alone, that means a page load that finishes those queries a moment
+  // after the first render never gets shown — the schedule block stays on
+  // whatever it rendered (usually empty) forever. Bump structuralVersion
+  // once, the first time all three have settled, to pick up the real data.
+  const previewDataSynced = useRef(false);
+  useEffect(() => {
+    if (previewDataSynced.current) return;
+    // data !== undefined (not !isLoading) — a query that's still enabled:
+    // false while brand.gymId resolves reads isLoading: false too in v5,
+    // which would mark this synced before anything actually loaded.
+    const settled = (d: unknown, isError: boolean) => d !== undefined || isError;
+    if (
+      !settled(preview.schedule.data, preview.schedule.isError) ||
+      !settled(preview.plans.data, preview.plans.isError) ||
+      !settled(preview.team.data, preview.team.isError)
+    ) {
+      return;
+    }
+    previewDataSynced.current = true;
+    setStructuralVersion((v) => v + 1);
+  }, [
+    preview.schedule.data,
+    preview.schedule.isError,
+    preview.plans.data,
+    preview.plans.isError,
+    preview.team.data,
+    preview.team.isError,
+  ]);
 
   // In-app navigation (BackLink, the Domain link, tab/gesture back) goes
   // through this listener; a real browser tab close/reload doesn't, so
@@ -414,6 +454,7 @@ export default function WebsiteManageScreen() {
   function handlePanelChange(next: SiteDocument) {
     setDocument(next);
     setStructuralVersion((v) => v + 1);
+    scheduleSave(next);
   }
 
   // Canvas keystrokes: write straight into document state without ever
@@ -425,15 +466,19 @@ export default function WebsiteManageScreen() {
     setDocument((prev) => {
       const block = prev.blocks.find((b) => b.id === parsed.blockId);
       if (!block || !isFieldEditable(block.type, parsed)) return prev;
+      let next: SiteDocument;
       if (parsed.kind === 'array-item') {
         if (block.type !== 'testimonials') return prev;
         const quotes = block.quotes.map((q) =>
           q.id === parsed.itemId ? { ...q, [parsed.field]: value } : q,
         );
-        return updateBlock<TestimonialsBlock>(prev, block.id, { quotes });
+        next = updateBlock<TestimonialsBlock>(prev, block.id, { quotes });
+      } else {
+        const patch: Record<string, string> = { [parsed.field]: value };
+        next = updateBlock<SiteBlock>(prev, block.id, patch as Partial<SiteBlock>);
       }
-      const patch: Record<string, string> = { [parsed.field]: value };
-      return updateBlock<SiteBlock>(prev, block.id, patch as Partial<SiteBlock>);
+      scheduleSave(next);
+      return next;
     });
   }
 
