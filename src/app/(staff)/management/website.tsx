@@ -525,7 +525,7 @@ export default function WebsiteManageScreen() {
 
   const themeId = isThemeId(document.settings.themeId) ? document.settings.themeId : 'forged';
   const composedTheme = composeThemeWithBrand(BRAND_THEMES[themeId], brand.primaryColor);
-  const previewHtml = renderSiteHtml(document, {
+  const siteRenderCtx = {
     slug: brand.slug ?? '',
     gymName: brand.gymName,
     gymLogoUrl: brand.logoUrl,
@@ -538,8 +538,14 @@ export default function WebsiteManageScreen() {
     platformOrigin: 'https://app.jointemple.io',
     supabaseUrl: '',
     supabaseAnonKey: '',
-    editable: true,
-  });
+  };
+  const previewHtml = renderSiteHtml(document, { ...siteRenderCtx, editable: true });
+  // Preview mode renders this instead — no contentEditable, no canvas-sync
+  // script, byte-identical to what /api/site/[slug] actually ships. Only
+  // computed while previewing, since it's not needed on every keystroke.
+  const trueDocumentHtml = showPreview
+    ? renderSiteHtml(document, { ...siteRenderCtx, editable: false })
+    : null;
   const warnings = documentWarnings(document);
   // Only blocks the *publish* direction — an already-live site must
   // always be unpublishable regardless of what the document looks like
@@ -583,16 +589,13 @@ export default function WebsiteManageScreen() {
         <View className="flex-row items-center gap-3 py-3 px-4 md:px-6 border-b border-gray-100 dark:border-gray-800">
           <BackLink inline label="Manage" fallbackHref="/management" />
           <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">Website</Text>
-          {Platform.OS === 'web' && !isSplitView ? (
-            <Pressable
-              onPress={() => setShowPreview((v) => !v)}
-              hitSlop={6}
-              className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
-              <Ionicons name={showPreview ? 'create-outline' : 'eye-outline'} size={15} color="#6B7280" />
-              <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
-                {showPreview ? 'Back to editor' : 'Preview'}
-              </Text>
-            </Pressable>
+          {Platform.OS === 'web' ? (
+            <Button
+              variant={showPreview ? 'primary' : 'secondary'}
+              icon={showPreview ? 'create-outline' : 'eye-outline'}
+              onPress={() => setShowPreview((v) => !v)}>
+              {showPreview ? 'Back to editor' : 'Preview'}
+            </Button>
           ) : null}
           <Link href="/management/website/domain" asChild>
             <Pressable hitSlop={6} className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
@@ -609,7 +612,11 @@ export default function WebsiteManageScreen() {
           </Button>
         </View>
 
-        {isSplitView ? (
+        {showPreview && Platform.OS === 'web' ? (
+          <View className="flex-1">
+            <SiteHtmlPreview html={trueDocumentHtml ?? ''} height="100%" />
+          </View>
+        ) : isSplitView ? (
           <View className="flex-1 flex-row">
             <View className="w-[460px] shrink-0 border-r border-gray-100 dark:border-gray-800">
               <ScrollView className="flex-1" contentContainerClassName="p-4 md:p-6 gap-4">
@@ -638,17 +645,6 @@ export default function WebsiteManageScreen() {
               />
             </View>
           </View>
-        ) : showPreview && Platform.OS === 'web' ? (
-          <ScrollView className="flex-1">
-            <SiteHtmlPreview
-              html={previewHtml}
-              editable
-              syncKey={debouncedSyncKey}
-              onFieldChange={handleCanvasFieldChange}
-              selectedBlockId={selectedId}
-              onCanvasSelect={setSelectedId}
-            />
-          </ScrollView>
         ) : (
           <ScrollView className="flex-1" contentContainerClassName="p-4 md:p-6 gap-4">
             {statusBlock}
