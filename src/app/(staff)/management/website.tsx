@@ -176,6 +176,44 @@ function SaveIndicator({ state }: { state: 'idle' | 'saving' | 'saved' }) {
   return null;
 }
 
+// Collapsed by default — a standing amber banner cost real vertical
+// space in the editor column for something most owners only need to
+// read once, right before they try to publish.
+function WarningsChip({
+  warnings,
+  expanded,
+  onToggle,
+}: {
+  warnings: string[];
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <View className="gap-2">
+      <Pressable
+        onPress={onToggle}
+        className="flex-row items-center gap-1.5 self-start bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-full pl-1.5 pr-2.5 py-1 active:opacity-70">
+        <View className="w-4 h-4 rounded-full bg-amber-500 items-center justify-center">
+          <Text className="text-white text-[9px] font-bold">{warnings.length}</Text>
+        </View>
+        <Text className="text-amber-700 dark:text-amber-400 text-xs font-medium">
+          {warnings.length === 1 ? 'thing' : 'things'} to fix before publishing
+        </Text>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color="#B45309" />
+      </Pressable>
+      {expanded ? (
+        <View className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 gap-1">
+          {warnings.map((w) => (
+            <Text key={w} className="text-amber-700 dark:text-amber-400 text-xs">
+              {w}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function WebsiteManageScreen() {
   const canManageWebsite = useCan('can_manage_website');
   const brand = useGymBrand();
@@ -196,6 +234,7 @@ export default function WebsiteManageScreen() {
   const [publishState, setPublishState] = useState<'idle' | 'working'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [pendingLeaveAction, setPendingLeaveAction] = useState<unknown>(null);
+  const [warningsExpanded, setWarningsExpanded] = useState(false);
   // Bumped only by side-panel/structural edits (block add/remove/reorder,
   // theme changes) — never by canvas keystrokes — so the debounced,
   // syncKey-keyed effect in SiteHtmlPreview.web.tsx can never reload the
@@ -507,18 +546,43 @@ export default function WebsiteManageScreen() {
   // now. Mirrors the email builder's canSend: a hard gate, no override.
   const blockedByWarnings = !site.data.published && warnings.length > 0;
 
+  // Save state, "Live at" and publish warnings used to sit in a shared
+  // row above the split view, permanently costing height the preview
+  // could otherwise use. They live in the editor column now — same
+  // information, read right next to the blocks that caused it — while
+  // Domain/Publish stay in the top bar since they're reachable from
+  // every view mode, including the mobile preview-only screen where
+  // the editor column isn't rendered at all.
+  const statusBlock = (
+    <View className="gap-2">
+      <View className="flex-row items-center gap-2 flex-wrap">
+        <SaveIndicator state={saveState} />
+        {site.data.published ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Live at{' '}
+            {customDomain.data?.status === 'verified'
+              ? customDomain.data.domain
+              : `/site/${brand.slug}`}
+          </Text>
+        ) : null}
+      </View>
+      {error ? <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text> : null}
+      {warnings.length > 0 ? (
+        <WarningsChip
+          warnings={warnings}
+          expanded={warningsExpanded}
+          onToggle={() => setWarningsExpanded((v) => !v)}
+        />
+      ) : null}
+    </View>
+  );
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <View className="flex-1 gap-4 py-4 px-4 md:px-6">
-        <View className="flex-row items-center gap-3 flex-wrap">
+      <View className="flex-1">
+        <View className="flex-row items-center gap-3 py-3 px-4 md:px-6 border-b border-gray-100 dark:border-gray-800">
           <BackLink inline label="Manage" fallbackHref="/management" />
-          <View className="flex-1 min-w-[160px]">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">Website</Text>
-            <SaveIndicator state={saveState} />
-            {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
-            ) : null}
-          </View>
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">Website</Text>
           {Platform.OS === 'web' && !isSplitView ? (
             <Pressable
               onPress={() => setShowPreview((v) => !v)}
@@ -545,29 +609,11 @@ export default function WebsiteManageScreen() {
           </Button>
         </View>
 
-        {site.data.published ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Live at{' '}
-            {customDomain.data?.status === 'verified'
-              ? customDomain.data.domain
-              : `/site/${brand.slug}`}
-          </Text>
-        ) : null}
-
-        {warnings.length > 0 ? (
-          <View className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 gap-1">
-            {warnings.map((w) => (
-              <Text key={w} className="text-amber-700 dark:text-amber-400 text-xs">
-                {w}
-              </Text>
-            ))}
-          </View>
-        ) : null}
-
         {isSplitView ? (
-          <View className="flex-1 flex-row gap-4">
-            <View className="w-[460px] shrink-0">
-              <ScrollView className="flex-1" contentContainerClassName="pb-4">
+          <View className="flex-1 flex-row">
+            <View className="w-[460px] shrink-0 border-r border-gray-100 dark:border-gray-800">
+              <ScrollView className="flex-1" contentContainerClassName="p-4 md:p-6 gap-4">
+                {statusBlock}
                 <SiteEditor
                   document={document}
                   onChange={handlePanelChange}
@@ -593,7 +639,7 @@ export default function WebsiteManageScreen() {
             </View>
           </View>
         ) : showPreview && Platform.OS === 'web' ? (
-          <ScrollView className="flex-1" contentContainerClassName="pb-4">
+          <ScrollView className="flex-1">
             <SiteHtmlPreview
               html={previewHtml}
               editable
@@ -604,7 +650,8 @@ export default function WebsiteManageScreen() {
             />
           </ScrollView>
         ) : (
-          <ScrollView className="flex-1" contentContainerClassName="pb-4">
+          <ScrollView className="flex-1" contentContainerClassName="p-4 md:p-6 gap-4">
+            {statusBlock}
             <SiteEditor
               document={document}
               onChange={handlePanelChange}
