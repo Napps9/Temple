@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BillingNotLiveTile } from '@/components/BillingNotLiveTile';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import {
   DateRangeCta,
   type Preset,
@@ -22,16 +23,23 @@ import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 // "Target period" — distinct from the page-level date picker. Targets
-// are configured monthly OR quarterly on gym_insight_targets; the
-// page picker can show any date range and the compute_insight_summary
-// RPC picks the right target row based on the range length.
-type TargetPeriod = 'month' | 'quarter';
+// are configured per week/month/quarter/year on gym_insight_targets;
+// the page picker can show any date range and the
+// compute_insight_summary RPC picks the right target row based on
+// the range length.
+type TargetPeriod = 'week' | 'month' | 'quarter' | 'year';
+type TargetUnit = 'count' | 'rate';
 
 type Summary = {
   intros_new: number;
   intros_target: number;
   conversions: number;
   conversions_target: number;
+  conversions_target_unit: TargetUnit;
+  retention_now: number;
+  retention_base: number;
+  retention_target: number;
+  retention_target_unit: TargetUnit;
   lead_conversions: number;
   expiring_soon: number;
   expired: number;
@@ -45,27 +53,42 @@ type TargetRow = {
   metric: TargetMetric;
   period: TargetPeriod;
   target_value: number;
+  unit: TargetUnit;
 };
 
-const TARGET_METRICS: { value: TargetMetric; label: string; description: string }[] = [
+const TARGET_METRICS: {
+  value: TargetMetric;
+  label: string;
+  description: string;
+  supportsRate: boolean;
+}[] = [
   {
     value: 'intros_new',
     label: 'New intros',
     description: 'Members starting an intro period (e.g. trial, foundations).',
+    supportsRate: false,
   },
   {
     value: 'conversions',
     label: 'Conversions',
     description: 'Intros who became paying members in the period.',
+    supportsRate: true,
   },
   {
     value: 'retention',
     label: 'Retention',
     description: 'Members who stay active across the period.',
+    supportsRate: true,
   },
 ];
 
-const TARGET_PERIODS: TargetPeriod[] = ['month', 'quarter'];
+const TARGET_PERIODS: TargetPeriod[] = ['week', 'month', 'quarter', 'year'];
+const TARGET_PERIOD_LABELS: Record<TargetPeriod, string> = {
+  week: 'Per week',
+  month: 'Per month',
+  quarter: 'Per quarter',
+  year: 'Per year',
+};
 
 export default function InsightsScreen() {
   const { data: membership } = useGymMembership();
@@ -102,6 +125,11 @@ export default function InsightsScreen() {
           intros_target: 0,
           conversions: 0,
           conversions_target: 0,
+          conversions_target_unit: 'count',
+          retention_now: 0,
+          retention_base: 0,
+          retention_target: 0,
+          retention_target_unit: 'count',
           lead_conversions: 0,
           expiring_soon: 0,
           expired: 0,
@@ -252,7 +280,9 @@ export default function InsightsScreen() {
                 />
                 <ConversionTile
                   conversions={summary.data.conversions}
+                  introsNew={summary.data.intros_new}
                   target={summary.data.conversions_target}
+                  targetUnit={summary.data.conversions_target_unit}
                 />
               </View>
             ) : (
@@ -261,6 +291,15 @@ export default function InsightsScreen() {
                 <BillingNotLiveTile title="Conversion" />
               </View>
             )}
+
+            <View className="flex-row gap-3 flex-wrap">
+              <RetentionTile
+                retained={summary.data.retention_now}
+                base={summary.data.retention_base}
+                target={summary.data.retention_target}
+                targetUnit={summary.data.retention_target_unit}
+              />
+            </View>
 
             <Text className="text-gray-400 dark:text-gray-500 text-xs">
               Period: {start} → {end}. Intros target:{' '}
@@ -296,19 +335,37 @@ function TargetsLauncher() {
     <View className="gap-3">
       <TargetsSection />
       <View className="self-start">
-        <Button variant="ghost" onPress={() => setOpen(false)}>
-          Hide targets
-        </Button>
+        <ChipButton
+          label="Hide targets"
+          icon="chevron-up-outline"
+          tone="neutral"
+          onPress={() => setOpen(false)}
+        />
       </View>
     </View>
   );
 }
+
+const DEFAULT_UNITS: Record<TargetMetric, TargetUnit> = {
+  intros_new: 'count',
+  conversions: 'count',
+  retention: 'count',
+};
+
+const DEFAULT_ACTIVE_PERIOD: Record<TargetMetric, TargetPeriod> = {
+  intros_new: 'month',
+  conversions: 'month',
+  retention: 'month',
+};
 
 function TargetsSection() {
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
+  const [units, setUnits] = useState<Record<TargetMetric, TargetUnit>>(DEFAULT_UNITS);
+  const [activePeriod, setActivePeriod] =
+    useState<Record<TargetMetric, TargetPeriod>>(DEFAULT_ACTIVE_PERIOD);
   const [error, setError] = useState<string | null>(null);
   const [saved, markSaved] = useSavedFlag();
 
@@ -318,7 +375,7 @@ function TargetsSection() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gym_insight_targets')
-        .select('metric, period, target_value')
+        .select('metric, period, target_value, unit')
         .eq('gym_id', membership!.gymId);
       if (error) throw error;
       return (data ?? []) as TargetRow[];
@@ -328,10 +385,22 @@ function TargetsSection() {
   useEffect(() => {
     if (!targetsQuery.data) return;
     const next: Record<string, string> = {};
+    const nextUnits = { ...DEFAULT_UNITS };
     for (const t of targetsQuery.data) {
       next[`${t.metric}-${t.period}`] = String(t.target_value);
+      nextUnits[t.metric] = t.unit;
     }
     setValues(next);
+    setUnits(nextUnits);
+    // Land on whichever period already has a saved value, so an owner
+    // who set a quarterly target opens the editor and sees it — not an
+    // empty "Month" box.
+    const nextActive = { ...DEFAULT_ACTIVE_PERIOD };
+    for (const m of TARGET_METRICS) {
+      const withValue = TARGET_PERIODS.find((p) => next[`${m.value}-${p}`] !== undefined);
+      if (withValue) nextActive[m.value] = withValue;
+    }
+    setActivePeriod(nextActive);
   }, [targetsQuery.data]);
 
   const save = useMutation({
@@ -342,22 +411,29 @@ function TargetsSection() {
         metric: TargetMetric;
         period: TargetPeriod;
         target_value: number;
+        unit: TargetUnit;
         updated_by: string;
       }[] = [];
       for (const m of TARGET_METRICS) {
+        const unit = units[m.value];
         for (const p of TARGET_PERIODS) {
           const key = `${m.value}-${p}`;
           const raw = values[key]?.trim() ?? '';
           if (raw.length === 0) continue;
           const n = Number.parseInt(raw, 10);
-          if (!Number.isFinite(n) || n < 0) {
-            throw new Error(`${m.label} (${p}): must be a non-negative integer`);
+          if (!Number.isFinite(n) || n < 0 || (unit === 'rate' && n > 100)) {
+            throw new Error(
+              unit === 'rate'
+                ? `${m.label} (${p}): must be a percentage between 0 and 100`
+                : `${m.label} (${p}): must be a non-negative integer`,
+            );
           }
           toUpsert.push({
             gym_id: membership.gymId,
             metric: m.value,
             period: p,
             target_value: n,
+            unit,
             updated_by: session.user.id,
           });
         }
@@ -384,8 +460,8 @@ function TargetsSection() {
           Targets
         </Text>
         <Text className="text-gray-500 dark:text-gray-400">
-          Set monthly and quarterly goals. The tiles above show progress
-          against these.
+          Set goals per week, month, quarter or year. The tiles above show
+          progress against these.
         </Text>
       </View>
 
@@ -394,30 +470,37 @@ function TargetsSection() {
           <View
             key={m.value}
             className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-            <View className="gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                {m.label}
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                {m.description}
-              </Text>
+            <View className="flex-row items-start justify-between gap-2">
+              <View className="gap-1 flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  {m.label}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  {m.description}
+                </Text>
+              </View>
+              {m.supportsRate ? (
+                <UnitToggle
+                  value={units[m.value]}
+                  onChange={(u) => setUnits({ ...units, [m.value]: u })}
+                />
+              ) : null}
             </View>
-            <View className="flex-row gap-3">
-              {TARGET_PERIODS.map((p) => {
-                const key = `${m.value}-${p}`;
-                return (
-                  <View key={p} className="flex-1">
-                    <Input
-                      label={p === 'month' ? 'Per month' : 'Per quarter'}
-                      value={values[key] ?? ''}
-                      onChangeText={(v) => setValues({ ...values, [key]: v })}
-                      placeholder="0"
-                      keyboardType="number-pad"
-                    />
-                  </View>
-                );
-              })}
-            </View>
+            <TargetInput
+              period={activePeriod[m.value]}
+              unit={units[m.value]}
+              value={values[`${m.value}-${activePeriod[m.value]}`] ?? ''}
+              onChangeText={(v) =>
+                setValues({
+                  ...values,
+                  [`${m.value}-${activePeriod[m.value]}`]: v,
+                })
+              }
+            />
+            <PeriodToggle
+              value={activePeriod[m.value]}
+              onChange={(p) => setActivePeriod({ ...activePeriod, [m.value]: p })}
+            />
           </View>
         ))}
       </View>
@@ -433,26 +516,182 @@ function TargetsSection() {
   );
 }
 
+function TargetInput({
+  period,
+  unit,
+  value,
+  onChangeText,
+}: {
+  period: TargetPeriod;
+  unit: TargetUnit;
+  value: string;
+  onChangeText: (v: string) => void;
+}) {
+  return (
+    <View className="flex-1">
+      <Input
+        label={`${TARGET_PERIOD_LABELS[period]}${unit === 'rate' ? ' (%)' : ''}`}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={unit === 'rate' ? '0-100' : '0'}
+        keyboardType="number-pad"
+      />
+    </View>
+  );
+}
+
+function UnitToggle({
+  value,
+  onChange,
+}: {
+  value: TargetUnit;
+  onChange: (u: TargetUnit) => void;
+}) {
+  return (
+    <View className="flex-row gap-2">
+      {(['count', 'rate'] as const).map((u) => {
+        const active = value === u;
+        return (
+          <Pressable
+            key={u}
+            onPress={() => onChange(u)}
+            className={`px-3 py-1 rounded-full border ${
+              active
+                ? 'border-primary bg-primary/10'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+            }`}>
+            <Text
+              className={`text-xs font-semibold ${
+                active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+              }`}>
+              {u === 'count' ? 'Count' : 'Rate %'}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function PeriodToggle({
+  value,
+  onChange,
+}: {
+  value: TargetPeriod;
+  onChange: (p: TargetPeriod) => void;
+}) {
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {TARGET_PERIODS.map((p) => {
+        const active = value === p;
+        return (
+          <Pressable
+            key={p}
+            onPress={() => onChange(p)}
+            className={`px-3 py-1 rounded-full border ${
+              active
+                ? 'border-primary bg-primary/10'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+            }`}>
+            <Text
+              className={`capitalize text-xs font-semibold ${
+                active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+              }`}>
+              {p}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function ConversionTile({
   conversions,
+  introsNew,
   target,
+  targetUnit,
 }: {
   conversions: number;
+  introsNew: number;
   target: number;
+  targetUnit: TargetUnit;
 }) {
   const hasTarget = target > 0;
-  const ratio = hasTarget ? Math.min(1, conversions / target) : 0;
+  const rate = introsNew > 0 ? (conversions / introsNew) * 100 : 0;
+  const actual = targetUnit === 'rate' ? rate : conversions;
+  const ratio = hasTarget ? Math.min(1, actual / target) : 0;
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 flex-1 min-w-[150px]">
       <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
         Conversion
       </Text>
       <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
-        {conversions}
+        {targetUnit === 'rate' ? `${rate.toFixed(0)}%` : conversions}
         {hasTarget ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-lg"> / {target}</Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-lg">
+            {' '}
+            / {target}
+            {targetUnit === 'rate' ? '%' : ''}
+          </Text>
         ) : null}
       </Text>
+      {targetUnit === 'rate' ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {conversions} of {introsNew} intros
+        </Text>
+      ) : null}
+      {hasTarget ? (
+        <View className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <View
+            className="h-full bg-primary"
+            style={{ width: `${ratio * 100}%` }}
+          />
+        </View>
+      ) : (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Target not set
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function RetentionTile({
+  retained,
+  base,
+  target,
+  targetUnit,
+}: {
+  retained: number;
+  base: number;
+  target: number;
+  targetUnit: TargetUnit;
+}) {
+  const hasTarget = target > 0;
+  const rate = base > 0 ? (retained / base) * 100 : 0;
+  const actual = targetUnit === 'rate' ? rate : retained;
+  const ratio = hasTarget ? Math.min(1, actual / target) : 0;
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 flex-1 min-w-[150px]">
+      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        Retention
+      </Text>
+      <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+        {targetUnit === 'rate' ? `${rate.toFixed(0)}%` : retained}
+        {hasTarget ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-lg">
+            {' '}
+            / {target}
+            {targetUnit === 'rate' ? '%' : ''}
+          </Text>
+        ) : null}
+      </Text>
+      {targetUnit === 'rate' ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {retained} of {base} stayed active
+        </Text>
+      ) : null}
       {hasTarget ? (
         <View className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <View

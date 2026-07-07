@@ -1426,24 +1426,27 @@ export type Database = {
         Row: {
           gym_id: string;
           metric: 'intros_new' | 'conversions' | 'retention';
-          period: 'month' | 'quarter';
+          period: 'week' | 'month' | 'quarter' | 'year';
           target_value: number;
+          unit: 'count' | 'rate';
           updated_by: string;
           updated_at: string;
         };
         Insert: {
           gym_id: string;
           metric: 'intros_new' | 'conversions' | 'retention';
-          period: 'month' | 'quarter';
+          period: 'week' | 'month' | 'quarter' | 'year';
           target_value: number;
+          unit?: 'count' | 'rate';
           updated_by: string;
           updated_at?: string;
         };
         Update: Partial<{
           gym_id: string;
           metric: 'intros_new' | 'conversions' | 'retention';
-          period: 'month' | 'quarter';
+          period: 'week' | 'month' | 'quarter' | 'year';
           target_value: number;
+          unit: 'count' | 'rate';
           updated_by: string;
           updated_at: string;
         }>;
@@ -2876,6 +2879,7 @@ export type Database = {
           p_member_profile_id: string;
           p_entitlement_kind?: 'comp_grant' | 'plan_subscription' | null;
           p_entitlement_id?: string | null;
+          p_no_charge?: boolean;
         };
         Returns: string | null;
       };
@@ -2957,6 +2961,11 @@ export type Database = {
           intros_target: number;
           conversions: number;
           conversions_target: number;
+          conversions_target_unit: 'count' | 'rate';
+          retention_now: number;
+          retention_base: number;
+          retention_target: number;
+          retention_target_unit: 'count' | 'rate';
           expiring_soon: number;
           expired: number;
           paying_now: number;
@@ -3182,6 +3191,10 @@ export type Database = {
       };
       count_members_as_of: {
         Args: { p_gym_id: string; p_as_of: string };
+        Returns: number;
+      };
+      count_open_staff_alerts: {
+        Args: { p_gym_id: string };
         Returns: number;
       };
       count_attendance_attendees: {
