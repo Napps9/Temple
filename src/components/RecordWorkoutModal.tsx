@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -167,6 +167,7 @@ export function RecordWorkoutModal({
   onClose,
   initialDate,
   initialClassSessionId,
+  initialClassTypeId,
   initialTitle,
   discipline = 'crossfit',
 }: {
@@ -174,6 +175,12 @@ export function RecordWorkoutModal({
   onClose: () => void;
   initialDate?: string;
   initialClassSessionId?: string | null;
+  // When the caller already knows which class the member attended (e.g.
+  // the post-class nudge on Book), pre-fill that class type's
+  // programming automatically instead of making them tap the chip
+  // themselves. Omitted by the open-ended entry points (Track, the
+  // Programming page's own prompt) where no specific class is known.
+  initialClassTypeId?: string | null;
   initialTitle?: string | null;
   discipline?: Discipline;
 }) {
@@ -197,6 +204,7 @@ export function RecordWorkoutModal({
     { sectionIdx: number; tagIdx: number } | null
   >(null);
   const [saved, markSaved] = useSavedFlag();
+  const autoPrefilledRef = useRef(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -208,6 +216,7 @@ export function RecordWorkoutModal({
     setPickerOpenFor(null);
     setMovementPickerForIdx(null);
     setEditingTag(null);
+    autoPrefilledRef.current = false;
   }, [visible, initialDate, initialTitle]);
 
   // Pre-fill source: any programming on this date for class types the
@@ -294,6 +303,23 @@ export function RecordWorkoutModal({
       return [...cur, ...newDrafts];
     });
   }
+
+  // The system already knows which class the member attended — do the
+  // chip tap for them the moment that class type's programming shows
+  // up, rather than making them find and press it themselves. Runs
+  // once per modal open (autoPrefilledRef reset alongside the other
+  // per-open state above); a plain effect rather than folding into the
+  // reset effect because programmingQuery resolves asynchronously,
+  // after the reset has already run.
+  useEffect(() => {
+    if (!visible || !initialClassTypeId || autoPrefilledRef.current) return;
+    const group = programmingByClassType.find(
+      (g) => g.class_type_id === initialClassTypeId,
+    );
+    if (!group) return;
+    autoPrefilledRef.current = true;
+    prefillFromClassType(initialClassTypeId);
+  }, [visible, initialClassTypeId, programmingByClassType]);
 
   function updateDraft(idx: number, next: Partial<SectionDraft>) {
     setDrafts((cur) =>

@@ -21,6 +21,7 @@ type PastBooking = {
   class_session_id: string;
   class_sessions: {
     starts_at: string;
+    class_type_id: string | null;
     class_types: { name: string; color: string } | null;
   } | null;
 };
@@ -58,7 +59,7 @@ export function PostClassLogPrompt() {
       const { data, error } = await supabase
         .from('class_bookings')
         .select(
-          'id, class_session_id, class_sessions!inner(starts_at, class_types(name, color))',
+          'id, class_session_id, class_sessions!inner(starts_at, class_type_id, class_types(name, color))',
         )
         .eq('profile_id', userId!)
         .lt('class_sessions.starts_at', now.toISOString())
@@ -137,6 +138,7 @@ export function PostClassLogPrompt() {
         }}
         initialDate={fmtDateLocal(new Date(classStart))}
         initialClassSessionId={recent.data.class_session_id}
+        initialClassTypeId={recent.data.class_sessions?.class_type_id ?? null}
       />
     </View>
   );
