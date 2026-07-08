@@ -14,6 +14,7 @@ import {
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Screen } from '@/components/Screen';
 import { PageManagerModal } from '@/components/website/PageManagerModal';
@@ -310,6 +311,8 @@ export default function WebsiteManageScreen() {
   const [error, setError] = useState<string | null>(null);
   const [pendingLeaveAction, setPendingLeaveAction] = useState<unknown>(null);
   const [warningsExpanded, setWarningsExpanded] = useState(false);
+  const [showDeleteSite, setShowDeleteSite] = useState(false);
+  const [deletingSite, setDeletingSite] = useState(false);
   // Bumped only by side-panel/structural edits (block add/remove/reorder,
   // theme changes) — never by canvas keystrokes — so the debounced,
   // syncKey-keyed effect in SiteHtmlPreview.web.tsx can never reload the
@@ -511,6 +514,31 @@ export default function WebsiteManageScreen() {
     initialized.current = true;
     setDocument(coerceDocument(data.design));
     queryClient.setQueryData(['gym-website', brand.gymId], data);
+  }
+
+  // Lets an owner start over from the template picker — the only way
+  // back there once a site exists. Removing the gym_websites row (not
+  // just clearing design) also takes an already-published site offline,
+  // since /api/site/[...path] has nothing left to serve; the storage
+  // images a previous design referenced are left in place, matching
+  // AccountScreen's "erase the record, not the underlying media" split.
+  async function deleteSite() {
+    if (!site.data) return;
+    setDeletingSite(true);
+    const { error: delErr } = await supabase.from('gym_websites').delete().eq('id', site.data.id);
+    setDeletingSite(false);
+    if (delErr) {
+      setError(errorMessage(delErr, 'Could not delete the site'));
+      return;
+    }
+    setShowDeleteSite(false);
+    setError(null);
+    initialized.current = false;
+    setDocument(emptyDocument());
+    setActivePageId(null);
+    setSelectedId(null);
+    setShowPreview(false);
+    queryClient.setQueryData(['gym-website', brand.gymId], null);
   }
 
   if (!site.data) {
@@ -716,6 +744,25 @@ export default function WebsiteManageScreen() {
     </View>
   );
 
+  // Tucked below the editor, mirroring AccountScreen's "Leave this gym"
+  // placement — a destructive action deliberately kept away from the
+  // primary Save/Publish flow above.
+  const dangerZoneBlock = (
+    <View className="gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+      <ChipButton
+        tone="red"
+        className="self-start"
+        label="Delete website"
+        icon="trash-outline"
+        onPress={() => setShowDeleteSite(true)}
+      />
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        Removes every page and block, and takes the site offline if it's published, so you can
+        start over from the template picker. Photos already saved to storage aren't deleted.
+      </Text>
+    </View>
+  );
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="flex-1">
@@ -799,6 +846,7 @@ export default function WebsiteManageScreen() {
                   selectedId={selectedId}
                   onSelectBlock={setSelectedId}
                 />
+                {dangerZoneBlock}
               </ScrollView>
             </View>
             <View className="flex-1">
@@ -825,6 +873,7 @@ export default function WebsiteManageScreen() {
               selectedId={selectedId}
               onSelectBlock={setSelectedId}
             />
+            {dangerZoneBlock}
           </ScrollView>
         )}
       </View>
@@ -842,6 +891,17 @@ export default function WebsiteManageScreen() {
           if (action) navigation.dispatch(action as never);
         }}
         onCancel={() => setPendingLeaveAction(null)}
+      />
+
+      <ConfirmDialog
+        visible={showDeleteSite}
+        title="Delete this website?"
+        body="This removes every page and block for this site — the design and publish state are gone for good, and you'll land back on the template picker to start fresh. Photos already saved to storage aren't deleted. This can't be undone."
+        confirmLabel="Delete website"
+        cancelLabel="Keep it"
+        pending={deletingSite}
+        onConfirm={() => void deleteSite()}
+        onCancel={() => setShowDeleteSite(false)}
       />
 
       <PageManagerModal
