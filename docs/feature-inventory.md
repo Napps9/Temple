@@ -826,9 +826,11 @@ billing for it yet.
   button opening `PageManagerModal` (add/rename/reslug/delete —
   `addPage`/`renamePage`/`reslugPage`/`removePage` in
   `site-blocks.ts`; slugs auto-dedupe as `-2`, `-3`…). The Publish gate
-  and the warnings panel both check whichever page is currently being
-  viewed, not the whole site — a full cross-page publish audit isn't
-  built yet.
+  and the warnings panel both cover every page (`allPageWarnings`), not
+  just the one on screen — a warning on a page the owner isn't
+  currently viewing shows up prefixed with that page's title, and
+  tapping it switches to that page. `/site/<slug>/sitemap.xml`
+  (`api/site-sitemap/[slug].ts`) lists every page of a published site.
 - **Live on-canvas editing (web)** — free-text fields (Hero headline/
   subheadline/CTA, About body, Testimonial quotes, Location address/
   hours, Contact copy) are directly editable inside the live rendered

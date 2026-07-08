@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   addPage,
+  allPageWarnings,
   appendBlock,
   coerceDocument,
   createBlock,
@@ -316,5 +317,38 @@ describe('page operations', () => {
 
     const unknownPage = reslugPage(doc, 'not-a-real-id', 'whatever');
     expect(unknownPage).toEqual(doc);
+  });
+});
+
+describe('allPageWarnings', () => {
+  it('flags a single-page site under the one home page id', () => {
+    const doc = emptyDocument();
+    const warnings = allPageWarnings(doc);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toEqual({
+      pageId: doc.pages[0].id,
+      pageTitle: 'Home',
+      message: 'The site has no content blocks yet.',
+    });
+  });
+
+  it('collects warnings across every page, tagged with that page', () => {
+    let doc = addPage(emptyDocument(), 'Schedule');
+    doc = { ...doc, pages: [{ ...doc.pages[0], blocks: [createBlock('hero')] }, doc.pages[1]] };
+    const warnings = allPageWarnings(doc);
+    // Home now has content (no warning); Schedule is still empty.
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].pageId).toBe(doc.pages[1].id);
+    expect(warnings[0].pageTitle).toBe('Schedule');
+    expect(warnings[0].message).toBe('The site has no content blocks yet.');
+  });
+
+  it('returns nothing once every page has content and passes its own warnings', () => {
+    let doc = addPage(emptyDocument(), 'Schedule');
+    doc = {
+      ...doc,
+      pages: doc.pages.map((p) => ({ ...p, blocks: [createBlock('hero')] })),
+    };
+    expect(allPageWarnings(doc)).toEqual([]);
   });
 });

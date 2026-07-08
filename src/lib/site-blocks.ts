@@ -569,10 +569,10 @@ export function coerceDocument(raw: unknown): SiteDocument {
 }
 
 // Lightweight readiness check, same role as the email builder's
-// documentWarnings — gates the Publish button, warns the author. Scoped
-// to a single page for now (generic over `.blocks`, same reason as the
-// block operations above); called once per page rather than across the
-// whole document.
+// documentWarnings — gates the Publish button, warns the author.
+// Generic over `.blocks` (same reason as the block operations above)
+// so it runs against a single SitePage; allPageWarnings below is what
+// actually gates a multi-page document's Publish button.
 export function documentWarnings<T extends { blocks: SiteBlock[] }>(target: T): string[] {
   const warnings: string[] = [];
   if (target.blocks.length === 0) {
@@ -599,4 +599,18 @@ export function documentWarnings<T extends { blocks: SiteBlock[] }>(target: T): 
     }
   }
   return warnings;
+}
+
+export type PageWarning = { pageId: string; pageTitle: string; message: string };
+
+// Every page's own documentWarnings, tagged with which page it's on —
+// what actually gates Publish now that a site can have more than one
+// page. A single-page site's warnings all carry the same pageId, so
+// UI that only shows the page label when there's more than one page
+// (avoiding "Home: ..." noise on the common case) can key off
+// `document.pages.length > 1` directly.
+export function allPageWarnings(doc: SiteDocument): PageWarning[] {
+  return doc.pages.flatMap((p) =>
+    documentWarnings(p).map((message) => ({ pageId: p.id, pageTitle: p.title, message })),
+  );
 }

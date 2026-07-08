@@ -30,10 +30,11 @@ import {
   type TeamMember,
 } from '@/lib/site-render';
 import {
+  allPageWarnings,
   coerceDocument,
-  documentWarnings,
   emptyDocument,
   updateBlock,
+  type PageWarning,
   type SiteBlock,
   type SiteDocument,
   type SiteEditorDocument,
@@ -188,15 +189,25 @@ function SaveIndicator({ state }: { state: 'idle' | 'saving' | 'saved' }) {
 
 // Collapsed by default — a standing amber banner cost real vertical
 // space in the editor column for something most owners only need to
-// read once, right before they try to publish.
+// read once, right before they try to publish. Spans every page (see
+// allPageWarnings), not just the one on screen — since Publish is
+// blocked by ANY page's warnings, a warning on a page the owner isn't
+// currently looking at needs to be both visible and actionable here,
+// or "why is Publish disabled?" has no answer. showPageLabel is only
+// true once a site actually has more than one page, so a single-page
+// site keeps the plain flat list it always had.
 function WarningsChip({
   warnings,
+  showPageLabel,
   expanded,
   onToggle,
+  onSelectPage,
 }: {
-  warnings: string[];
+  warnings: PageWarning[];
+  showPageLabel: boolean;
   expanded: boolean;
   onToggle: () => void;
+  onSelectPage: (pageId: string) => void;
 }) {
   return (
     <View className="gap-2">
@@ -212,11 +223,17 @@ function WarningsChip({
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color="#B45309" />
       </Pressable>
       {expanded ? (
-        <View className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 gap-1">
-          {warnings.map((w) => (
-            <Text key={w} className="text-amber-700 dark:text-amber-400 text-xs">
-              {w}
-            </Text>
+        <View className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 gap-1.5">
+          {warnings.map((w, i) => (
+            <Pressable
+              key={`${w.pageId}:${i}`}
+              onPress={() => onSelectPage(w.pageId)}
+              className="active:opacity-70">
+              <Text className="text-amber-700 dark:text-amber-400 text-xs">
+                {showPageLabel ? <Text className="font-semibold">{w.pageTitle}: </Text> : null}
+                {w.message}
+              </Text>
+            </Pressable>
           ))}
         </View>
       ) : null}
@@ -485,11 +502,10 @@ export default function WebsiteManageScreen() {
     if (!site.data) return;
     const next = !site.data.published;
     // Defense in depth — the Publish button's own `disabled` prop should
-    // already prevent reaching this, but never trust the client-only gate.
-    // Checks the currently-viewed page, matching the warnings the owner
-    // can actually see in the panel below — a full cross-page audit is
-    // a later phase.
-    if (next && documentWarnings(resolveActivePage(document, activePageId)).length > 0) return;
+    // already prevent reaching this, but never trust the client-only
+    // gate. Checks every page, not just the one being viewed — the
+    // warnings panel below lists which page each one is on.
+    if (next && allPageWarnings(document).length > 0) return;
     setPublishState('working');
     const { error: pubErr } = await supabase
       .from('gym_websites')
@@ -594,7 +610,7 @@ export default function WebsiteManageScreen() {
   const trueDocumentHtml = showPreview
     ? renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: false })
     : null;
-  const warnings = documentWarnings(activePage);
+  const warnings = allPageWarnings(document);
   // Only blocks the *publish* direction — an already-live site must
   // always be unpublishable regardless of what the document looks like
   // now. Mirrors the email builder's canSend: a hard gate, no override.
@@ -629,8 +645,10 @@ export default function WebsiteManageScreen() {
       {warnings.length > 0 ? (
         <WarningsChip
           warnings={warnings}
+          showPageLabel={document.pages.length > 1}
           expanded={warningsExpanded}
           onToggle={() => setWarningsExpanded((v) => !v)}
+          onSelectPage={setActivePageId}
         />
       ) : null}
     </View>
