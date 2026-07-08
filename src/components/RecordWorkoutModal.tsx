@@ -834,6 +834,19 @@ function SectionDraftCard({
         autoCapitalize="words"
       />
 
+      {draft.body.trim() ? (
+        <View className="gap-1">
+          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            The work
+          </Text>
+          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5">
+            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+              {draft.body}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       <PickerButton
         label="Scoring format"
         value={
