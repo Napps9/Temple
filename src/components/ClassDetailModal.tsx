@@ -94,11 +94,13 @@ export function ClassDetailModal({
   visible,
   sessionId,
   mode,
+  recommended,
   onClose,
 }: {
   visible: boolean;
   sessionId: string | null;
   mode: 'manage' | 'book';
+  recommended?: boolean;
   onClose: () => void;
 }) {
   const colors = useThemeColors();
@@ -504,6 +506,14 @@ export function ClassDetailModal({
           ) : (
             <>
               <View className="gap-2">
+                {recommended && mode === 'book' ? (
+                  <View className="self-start flex-row items-center gap-1 rounded-full border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1">
+                    <Ionicons name="sparkles" size={12} color="#A855F7" />
+                    <Text className="text-purple-600 dark:text-purple-300 text-[10px] font-semibold uppercase tracking-widest">
+                      Recommended
+                    </Text>
+                  </View>
+                ) : null}
                 <View
                   style={{ backgroundColor: typeColor }}
                   className="self-start rounded-full px-3 py-1">

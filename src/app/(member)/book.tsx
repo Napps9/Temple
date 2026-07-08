@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
@@ -11,10 +11,16 @@ import { PostClassLogPrompt } from '@/components/PostClassLogPrompt';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
+import {
+  EIGHT_WEEKS_MS,
+  buildTasteProfile,
+  scoreSession,
+  type AttendedRow,
+} from '@/lib/recommend';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 
-const EIGHT_WEEKS_MS = 56 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 type NextBooking = {
   id: string;
@@ -28,6 +34,7 @@ type NextBooking = {
 type RecommendedSession = {
   id: string;
   starts_at: string;
+  class_type_id: string | null;
   class_types: { name: string; color: string } | null;
 };
 
@@ -52,39 +59,36 @@ function useRecommendedClass() {
   const session = useSession();
   const { data: membership } = useGymMembership();
 
-  // Pick the class type the member attended most often over the last
-  // eight weeks (attended_at present, not just booked). Returns null
-  // when the member has no attendance history — we hide the card in
-  // that case to avoid a cold-start recommendation.
-  const favouriteType = useQuery({
-    queryKey: ['my-favourite-class-type', session?.user.id],
+  // The member's attendance over the last eight weeks: each attended
+  // class contributes its type and the hour it ran at. Feeds the taste
+  // profile below. Empty for a member with no attendance history — we
+  // hide the card in that case to avoid a cold-start recommendation.
+  const history = useQuery({
+    queryKey: ['my-attendance-history', session?.user.id],
     enabled: !!session?.user.id,
-    queryFn: async (): Promise<string | null> => {
+    queryFn: async (): Promise<AttendedRow[]> => {
       const sinceIso = new Date(Date.now() - EIGHT_WEEKS_MS).toISOString();
       const { data, error: err } = await supabase
         .from('class_bookings')
-        .select('class_sessions!inner(class_type_id)')
+        .select('attended_at, class_sessions!inner(class_type_id, starts_at)')
         .eq('profile_id', session!.user.id)
         .not('attended_at', 'is', null)
         .gte('attended_at', sinceIso);
       if (err) throw err;
-      const counts = new Map<string, number>();
-      for (const row of (data ?? []) as unknown as {
-        class_sessions: { class_type_id: string | null } | null;
-      }[]) {
-        const id = row.class_sessions?.class_type_id;
-        if (!id) continue;
-        counts.set(id, (counts.get(id) ?? 0) + 1);
-      }
-      let topId: string | null = null;
-      let topCount = 0;
-      for (const [id, c] of counts) {
-        if (c > topCount) {
-          topCount = c;
-          topId = id;
-        }
-      }
-      return topId;
+      return (data ?? []).map((r) => {
+        const row = r as unknown as {
+          attended_at: string;
+          class_sessions: {
+            class_type_id: string | null;
+            starts_at: string;
+          } | null;
+        };
+        return {
+          typeId: row.class_sessions?.class_type_id ?? null,
+          startedAt: row.class_sessions?.starts_at ?? null,
+          attendedAt: row.attended_at,
+        };
+      });
     },
   });
 
@@ -107,47 +111,75 @@ function useRecommendedClass() {
     },
   });
 
-  // Next upcoming session of the favoured class type that the member
-  // hasn't already booked AND is actually entitled to book — the
-  // is_booking_eligible RPC applies their membership (plan class-type
+  const historyRows = history.data;
+  // Stable identity for the attendance set, independent of wall-clock, so
+  // re-renders don't thrash the query key. The day bucket below lets the
+  // recency weighting re-settle once a day.
+  const historyKey = useMemo(
+    () =>
+      (historyRows ?? [])
+        .map((r) => `${r.typeId}@${r.startedAt}`)
+        .sort()
+        .join('|'),
+    [historyRows],
+  );
+
+  // Rank every upcoming session across the member's attended class types
+  // by the blended taste score (type affinity + time-of-day + soonness),
+  // then return the best one they haven't booked AND are entitled to
+  // book — is_booking_eligible applies their membership (plan class-type
   // allowlists, credit balance, paid period, comp grants), so we never
   // recommend a class their plan doesn't cover.
   const recommendation = useQuery({
     queryKey: [
       'recommended-class',
       membership?.gymId,
-      favouriteType.data,
+      historyKey,
+      Math.floor(Date.now() / DAY_MS),
       // The set's identity changes with each refetch; serialise so
       // React Query treats logically-equal sets as the same key.
       futureBooked.data ? Array.from(futureBooked.data).sort().join(',') : '',
     ],
-    enabled: !!membership?.gymId && !!favouriteType.data && !!futureBooked.data,
+    enabled:
+      !!membership?.gymId &&
+      !!historyRows &&
+      historyRows.length > 0 &&
+      !!futureBooked.data,
     queryFn: async (): Promise<RecommendedSession | null> => {
-      const nowIso = new Date().toISOString();
+      const nowMs = Date.now();
+      const profile = buildTasteProfile(historyRows!, nowMs);
+      if (profile.affinity.size === 0) return null;
+      const typeIds = [...profile.affinity.keys()];
+      const maxAffinity = Math.max(...profile.affinity.values());
+
       const { data, error: err } = await supabase
         .from('class_sessions')
         .select('id, starts_at, class_type_id, class_types(name, color)')
         .eq('gym_id', membership!.gymId)
-        .eq('class_type_id', favouriteType.data!)
-        .gt('starts_at', nowIso)
+        .in('class_type_id', typeIds)
+        .gt('starts_at', new Date(nowMs).toISOString())
         .order('starts_at', { ascending: true })
-        .limit(10);
+        .limit(40);
       if (err) throw err;
-      const candidates = (data ?? []).filter(
-        (r) => !futureBooked.data!.has((r as { id: string }).id),
-      ) as unknown as RecommendedSession[];
-      // Check eligibility soonest-first; cap the RPC round trips.
-      for (const cand of candidates.slice(0, 6)) {
+
+      const ranked = (data ?? [])
+        .map((r) => r as unknown as RecommendedSession)
+        .filter((s) => !futureBooked.data!.has(s.id))
+        .map((s) => ({ s, score: scoreSession(profile, maxAffinity, s, nowMs) }))
+        .sort((a, b) => b.score - a.score);
+
+      // Check eligibility best-first; cap the RPC round trips.
+      for (const { s } of ranked.slice(0, 6)) {
         const { data: ok, error: eligErr } = await supabase.rpc(
           'is_booking_eligible',
           {
             p_profile_id: session!.user.id,
             p_gym_id: membership!.gymId,
-            p_class_session_id: cand.id,
+            p_class_session_id: s.id,
           },
         );
         if (eligErr) throw eligErr;
-        if (ok) return cand;
+        if (ok) return s;
       }
       return null;
     },
@@ -244,6 +276,7 @@ function RecommendedClassCard() {
         visible={detailOpen}
         sessionId={rec.id}
         mode="book"
+        recommended
         onClose={() => setDetailOpen(false)}
       />
     </View>

@@ -47,9 +47,15 @@ dead-end). It carries:
   hours, with class-type filter chips above it. Staff's Manage
   calendar always keeps the full hourly grid, since the gaps are where
   a class gets scheduled.
-- **Quick-book recommendation** — surfaces the member's next eligible
-  class of their most-attended class type; respects plan class-type
-  allowlists, credit balance, paid period and active comp grants.
+- **Quick-book recommendation** — ranks upcoming sessions by a blended,
+  explainable taste score (`src/lib/recommend.ts`, unit-tested): recency-
+  weighted class-type affinity (3-week half-life, all attended types
+  considered, not just the top one), time-of-day match to the member's
+  usual training hour for that type, and a mild soonness nudge. The
+  top-scoring eligible session is surfaced (respecting plan class-type
+  allowlists, credit balance, paid period and active comp grants). Marked
+  with a sparkles glyph on the recommended card, the highlighted agenda
+  row, and the class detail modal.
 - **Next class card + My bookings** — combined tile showing the
   member's upcoming class plus a route into the full bookings list.
 - **Waitlist** — automatic queue + promotion when a slot opens, honest

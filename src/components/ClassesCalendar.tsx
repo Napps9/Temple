@@ -823,6 +823,9 @@ export function ClassesCalendar({
         visible={openSessionId !== null}
         sessionId={openSessionId}
         mode={mode}
+        recommended={
+          openSessionId !== null && openSessionId === recommendedSessionId
+        }
         onClose={() => setOpenSessionId(null)}
       />
 
