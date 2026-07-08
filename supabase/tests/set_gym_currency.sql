@@ -1,4 +1,4 @@
--- gyms.currency + set_gym_currency (0089):
+-- gyms.currency + set_gym_currency (0106):
 --   * A new gym defaults to GBP.
 --   * Only an owner can change it; a member is refused.
 --   * The owner can set it; the code is stored upper-cased.
