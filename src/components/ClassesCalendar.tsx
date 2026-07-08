@@ -1130,6 +1130,9 @@ function AgendaCard({
             style={{ backgroundColor: color }}
             className="w-2 h-2 rounded-full"
           />
+          {recommended && !bookedByMe ? (
+            <Ionicons name="sparkles" size={13} color="#A855F7" />
+          ) : null}
           <Text
             numberOfLines={1}
             className="text-gray-900 dark:text-gray-50 font-semibold flex-1">

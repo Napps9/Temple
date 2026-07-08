@@ -216,9 +216,12 @@ function RecommendedClassCard() {
           <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
         </View>
         <View className="flex-1">
-          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
-            Recommended
-          </Text>
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="sparkles" size={11} color="#A855F7" />
+            <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+              Recommended
+            </Text>
+          </View>
           <Text className="text-gray-900 dark:text-gray-50 font-medium">
             {fmtNext(start)}
           </Text>
