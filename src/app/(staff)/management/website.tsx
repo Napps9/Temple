@@ -687,7 +687,15 @@ export default function WebsiteManageScreen() {
     plans: preview.plans.data ?? [],
     team: preview.team.data ?? [],
     now: new Date().toISOString(),
-    platformOrigin: 'https://app.jointemple.io',
+    // Empty, unlike the public /api/site/[...path] route's hardcoded
+    // production domain — this preview never leaves the Temple app's own
+    // origin (it's never served on a gym's custom domain), so nav/CTA
+    // links should stay relative and resolve against wherever the staff
+    // app itself is actually running. Hardcoding the production domain
+    // here sent every non-Home page-nav click inside this preview to
+    // app.jointemple.io regardless of environment, 404ing whenever that
+    // wasn't the deployment this gym's data actually lives on.
+    platformOrigin: '',
     supabaseUrl: '',
     supabaseAnonKey: '',
     pages: document.pages.map((p) => ({ slug: p.slug, title: p.title })),
