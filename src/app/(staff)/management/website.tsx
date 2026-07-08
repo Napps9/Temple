@@ -16,6 +16,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Screen } from '@/components/Screen';
+import { PageManagerModal } from '@/components/website/PageManagerModal';
 import { SiteEditor } from '@/components/website/SiteEditor';
 import { SiteHtmlPreview } from '@/components/website/SiteHtmlPreview';
 import { BRAND_THEMES, composeThemeWithBrand, isThemeId } from '@/lib/brand-themes';
@@ -168,6 +169,13 @@ function useStaffPreviewData(gymId: string | null | undefined) {
   return { schedule, plans, team };
 }
 
+// Falls back to home whenever activePageId doesn't match any page —
+// the initial render (before a page has ever been explicitly picked),
+// and after the active page itself gets deleted from under the owner.
+function resolveActivePage(document: SiteDocument, activePageId: string | null): SitePage {
+  return document.pages.find((p) => p.id === activePageId) ?? document.pages[0]!;
+}
+
 function SaveIndicator({ state }: { state: 'idle' | 'saving' | 'saved' }) {
   if (state === 'saving') {
     return <Text className="text-gray-400 dark:text-gray-500 text-xs">Saving…</Text>;
@@ -230,6 +238,11 @@ export default function WebsiteManageScreen() {
   // Pre-load placeholder only — always overwritten by coerceDocument
   // (site load) or createSite before the editor is ever shown.
   const [document, setDocument] = useState<SiteDocument>(() => emptyDocument());
+  // null until the owner explicitly picks a page — resolveActivePage
+  // falls back to home (pages[0]) in that case, so this never needs an
+  // effect to "initialise" it once the real document loads.
+  const [activePageId, setActivePageId] = useState<string | null>(null);
+  const [managingPages, setManagingPages] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [creatingId, setCreatingId] = useState<SiteTemplateId | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -473,7 +486,10 @@ export default function WebsiteManageScreen() {
     const next = !site.data.published;
     // Defense in depth — the Publish button's own `disabled` prop should
     // already prevent reaching this, but never trust the client-only gate.
-    if (next && documentWarnings(document.pages[0]).length > 0) return;
+    // Checks the currently-viewed page, matching the warnings the owner
+    // can actually see in the panel below — a full cross-page audit is
+    // a later phase.
+    if (next && documentWarnings(resolveActivePage(document, activePageId)).length > 0) return;
     setPublishState('working');
     const { error: pubErr } = await supabase
       .from('gym_websites')
@@ -490,18 +506,28 @@ export default function WebsiteManageScreen() {
     });
   }
 
+  // Page add/rename/reslug/delete from PageManagerModal — always
+  // structural (a new/removed page, or a nav label/URL change), same
+  // treatment as handlePanelChange.
+  function handlePagesChange(next: SiteDocument) {
+    setDocument(next);
+    setStructuralVersion((v) => v + 1);
+    scheduleSave(next);
+  }
+
   // Side-panel/structural edits: always reload the canvas (debounced via
   // structuralVersion → debouncedSyncKey), since these genuinely change
   // the rendered DOM shape (a block was added/removed/reordered, the
   // theme changed). `next` is SiteEditor's view of just the active
   // page's blocks plus the document-level theme — merged back into the
-  // full document here (currently always one page; the active-page
-  // index becomes real, not hardcoded to 0, once pages are addable).
+  // active page here (resolveActivePage — home unless the owner has
+  // picked a different page via the tabs below).
   function handlePanelChange(next: SiteEditorDocument) {
+    const activeId = resolveActivePage(document, activePageId).id;
     const merged: SiteDocument = {
       ...document,
       settings: next.settings,
-      pages: document.pages.map((p, i) => (i === 0 ? { ...p, blocks: next.blocks } : p)),
+      pages: document.pages.map((p) => (p.id === activeId ? { ...p, blocks: next.blocks } : p)),
     };
     setDocument(merged);
     setStructuralVersion((v) => v + 1);
@@ -515,7 +541,7 @@ export default function WebsiteManageScreen() {
     const parsed = parseFieldPath(path);
     if (!parsed) return;
     setDocument((prev) => {
-      const page = prev.pages[0];
+      const page = resolveActivePage(prev, activePageId);
       const block = page.blocks.find((b) => b.id === parsed.blockId);
       if (!block || !isFieldEditable(block.type, parsed)) return prev;
       let nextPage: SitePage;
@@ -531,17 +557,14 @@ export default function WebsiteManageScreen() {
       }
       const next: SiteDocument = {
         ...prev,
-        pages: prev.pages.map((p, i) => (i === 0 ? nextPage : p)),
+        pages: prev.pages.map((p) => (p.id === page.id ? nextPage : p)),
       };
       scheduleSave(next);
       return next;
     });
   }
 
-  // Hardcoded to the first page for now — every site has exactly one
-  // page until pages become addable (a later phase); this is the one
-  // spot that changes to `document.pages[activePageIndex]` when they are.
-  const activePage = document.pages[0];
+  const activePage = resolveActivePage(document, activePageId);
   // SiteEditor's own view of the world — the active page's blocks plus
   // the document-level theme, no multi-page concept at all.
   const editorDoc: SiteEditorDocument = { settings: document.settings, blocks: activePage.blocks };
@@ -561,10 +584,12 @@ export default function WebsiteManageScreen() {
     platformOrigin: 'https://app.jointemple.io',
     supabaseUrl: '',
     supabaseAnonKey: '',
+    pages: document.pages.map((p) => ({ slug: p.slug, title: p.title })),
+    activePageSlug: activePage.slug,
   };
   const previewHtml = renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: true });
   // Preview mode renders this instead — no contentEditable, no canvas-sync
-  // script, byte-identical to what /api/site/[slug] actually ships. Only
+  // script, byte-identical to what /api/site/[...path] actually ships. Only
   // computed while previewing, since it's not needed on every keystroke.
   const trueDocumentHtml = showPreview
     ? renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: false })
@@ -582,6 +607,11 @@ export default function WebsiteManageScreen() {
   // Domain/Publish stay in the top bar since they're reachable from
   // every view mode, including the mobile preview-only screen where
   // the editor column isn't rendered at all.
+  // The custom domain only ever resolves its bare root to the site (see
+  // middleware.ts) — a non-home page isn't reachable there yet, so that
+  // label always shows the domain itself, not this page's own path.
+  const activePagePath =
+    activePage.slug === '' ? `/site/${brand.slug}` : `/site/${brand.slug}/${activePage.slug}`;
   const statusBlock = (
     <View className="gap-2">
       <View className="flex-row items-center gap-2 flex-wrap">
@@ -591,7 +621,7 @@ export default function WebsiteManageScreen() {
             Live at{' '}
             {customDomain.data?.status === 'verified'
               ? customDomain.data.domain
-              : `/site/${brand.slug}`}
+              : activePagePath}
           </Text>
         ) : null}
       </View>
@@ -633,6 +663,41 @@ export default function WebsiteManageScreen() {
             onPress={togglePublish}>
             {site.data.published ? 'Unpublish' : 'Publish'}
           </Button>
+        </View>
+
+        {/* Always visible, including while previewing, so switching
+            pages doesn't require dropping back into the editor first. */}
+        <View className="flex-row items-center gap-2 px-4 md:px-6 py-2 border-b border-gray-100 dark:border-gray-800 flex-wrap">
+          {document.pages.map((p) => {
+            const isActive = p.id === activePage.id;
+            return (
+              <Pressable
+                key={p.id}
+                onPress={() => setActivePageId(p.id)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
+                className={`px-3 py-1.5 rounded-full ${
+                  isActive
+                    ? 'bg-primary'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}>
+                <Text
+                  className={`text-xs font-semibold ${
+                    isActive ? 'text-white' : 'text-gray-600 dark:text-gray-300'
+                  }`}>
+                  {p.title}
+                </Text>
+              </Pressable>
+            );
+          })}
+          <Pressable
+            onPress={() => setManagingPages(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Manage pages"
+            className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/60">
+            <Ionicons name="add" size={12} color="#6B7280" />
+            <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Pages</Text>
+          </Pressable>
         </View>
 
         {showPreview && Platform.OS === 'web' ? (
@@ -697,6 +762,15 @@ export default function WebsiteManageScreen() {
           if (action) navigation.dispatch(action as never);
         }}
         onCancel={() => setPendingLeaveAction(null)}
+      />
+
+      <PageManagerModal
+        visible={managingPages}
+        document={document}
+        gymSlug={brand.slug ?? ''}
+        onChange={handlePagesChange}
+        onSelectPage={setActivePageId}
+        onClose={() => setManagingPages(false)}
       />
     </Screen>
   );

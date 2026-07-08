@@ -19,8 +19,15 @@
 // `x-middleware-rewrite` / `x-middleware-next` response headers — rather
 // than taking on the `@vercel/functions` package for two header-setting
 // helpers, matching this repo's existing preference for a minimal
-// dependency footprint in the Vercel-runtime layer (api/site/[slug].ts
-// avoids src/lib/supabase.ts for the same reason).
+// dependency footprint in the Vercel-runtime layer
+// (api/site/[...path].ts avoids src/lib/supabase.ts for the same
+// reason).
+//
+// Only ever rewrites to the bare gym slug (the site's Home page) —
+// a connected custom domain doesn't yet resolve any other page
+// (/site/<slug>/<page-slug>); this middleware is scoped to `/` only
+// (see `matcher`), so those links always point at the platform origin
+// instead (see site-render.ts's renderSiteNav).
 
 export const config = { matcher: ['/'] };
 
@@ -53,7 +60,7 @@ function respond(slug: string | null, request: Request): Response {
   if (slug) {
     const url = new URL(request.url);
     url.pathname = `/api/site/${encodeURIComponent(slug)}`;
-    return rewrite(url); // reuses api/site/[slug].ts verbatim — no rendering logic duplicated
+    return rewrite(url); // reuses api/site/[...path].ts verbatim — no rendering logic duplicated
   }
   return new Response(notConnectedHtml(), {
     status: 404,

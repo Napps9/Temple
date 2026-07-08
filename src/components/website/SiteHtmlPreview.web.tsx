@@ -9,7 +9,7 @@ type CanvasMessage =
   | { source: typeof CANVAS_SOURCE; type: 'field-focus'; path: string };
 
 // Web preview: the actual rendered page HTML inside a sandboxed
-// iframe — same renderer that ships to /api/site/[slug], so what an
+// iframe — same renderer that ships to /api/site/[...path], so what an
 // owner sees here is what a visitor sees.
 //
 // Two modes:

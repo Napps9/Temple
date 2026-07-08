@@ -1,7 +1,7 @@
 // Turns a SiteDocument + resolved theme + live gym data into the HTML
 // a visitor (or a search crawler) actually sees. Pure and
 // dependency-free, mirroring src/lib/email/render.ts's role — this is
-// what both the public /api/site/[slug] function and the in-app editor
+// what both the public /api/site/[...path] function and the in-app editor
 // preview call, so "what you see while editing" and "what ships" are
 // the same code path, not two renderers that can drift apart.
 //
@@ -80,6 +80,18 @@ export type SiteRenderContext = {
   // bridge script, and the contact block's live lead-capture script is
   // suppressed (see renderContact) — never true on the public path.
   editable: boolean;
+  // Optional, unlike the fields above — every existing call site
+  // (every test, every single-page site rendered before multi-page
+  // nav existed) keeps rendering exactly as before when these are
+  // omitted: the header shows no nav, and <title> is just the gym
+  // name. Only set once a document actually HAS more than one page —
+  // omitted or a single-page `pages` array both render the same
+  // nav-less header.
+  pages?: { slug: string; title: string }[];
+  // Which of `pages` is the one being rendered — drives the nav's
+  // active/aria-current state and, for a non-home page, the <title>.
+  // Ignored when `pages` is omitted.
+  activePageSlug?: string;
 };
 
 function escapeHtml(input: string): string {
@@ -212,9 +224,13 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 @media(min-width:640px){.about-grid.side{grid-template-columns:1fr 1fr;}}
 .about-grid img{width:100%;border-radius:var(--radius);}
 .site-header{background:var(--surface);border-bottom:1px solid color-mix(in srgb, var(--muted) 40%, transparent);}
-.site-header .wrap{display:flex;align-items:center;gap:10px;padding-top:14px;padding-bottom:14px;}
+.site-header .wrap{display:flex;align-items:center;gap:10px;padding-top:14px;padding-bottom:14px;flex-wrap:wrap;}
 .site-header img{height:32px;width:auto;display:block;}
 .site-header span{font-weight:700;font-size:16px;letter-spacing:.01em;}
+.site-nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:2px;}
+.site-nav-link{padding:7px 12px;border-radius:var(--radius);font-size:13px;font-weight:600;color:var(--text);text-decoration:none;}
+.site-nav-link:hover{background:color-mix(in srgb, var(--muted) 30%, transparent);}
+.site-nav-link.is-active{color:var(--accent-ink);background:color-mix(in srgb, var(--accent) 12%, transparent);}
 .sched-head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
 .sched-stat{font-size:12px;color:var(--muted-text);font-variant-numeric:tabular-nums;padding-bottom:3px;}
 .sched-stat b{color:var(--text);font-weight:700;}
@@ -251,11 +267,35 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .team-name{font-weight:700;font-size:14px;}${editableCss}`;
 }
 
+// Renders nothing for a single-page site (the common case today) —
+// only shows up once a gym has actually added a second page. Absolute
+// on the platform origin, same reasoning as the hero CTA's join link:
+// a custom domain's middleware only rewrites `/` to the site renderer
+// (see middleware.ts), so a relative /site/<slug>/<page> would 404
+// there. Known tradeoff: a custom-domain visitor briefly leaves the
+// custom domain when moving between pages, rather than a broken link.
+function renderSiteNav(ctx: SiteRenderContext): string {
+  if (!ctx.pages || ctx.pages.length <= 1) return '';
+  const activeSlug = ctx.activePageSlug ?? '';
+  const links = ctx.pages
+    .map((p) => {
+      const isActive = p.slug === activeSlug;
+      const path = p.slug
+        ? `/site/${encodeURIComponent(ctx.slug)}/${encodeURIComponent(p.slug)}`
+        : `/site/${encodeURIComponent(ctx.slug)}`;
+      return `<a class="site-nav-link${isActive ? ' is-active' : ''}" href="${escapeAttr(ctx.platformOrigin + path)}"${
+        isActive ? ' aria-current="page"' : ''
+      }>${escapeHtml(p.title)}</a>`;
+    })
+    .join('');
+  return `<nav class="site-nav" aria-label="Site pages">${links}</nav>`;
+}
+
 function renderSiteHeader(ctx: SiteRenderContext): string {
   const brand = ctx.gymLogoUrl
     ? `<img src="${escapeAttr(ctx.gymLogoUrl)}" alt="${escapeAttr(ctx.gymName)}" />`
     : `<span>${escapeHtml(ctx.gymName)}</span>`;
-  return `<header class="site-header"><div class="wrap">${brand}</div></header>`;
+  return `<header class="site-header"><div class="wrap">${brand}${renderSiteNav(ctx)}</div></header>`;
 }
 
 // `headlineTag`: only the FIRST hero on the page renders an <h1> —
@@ -743,7 +783,16 @@ export function renderSiteHtml(blocks: SiteBlock[], ctx: SiteRenderContext): str
     ? ''
     : `<h1 class="sr-only">${escapeHtml(ctx.gymName)}</h1>`;
   const body = `<a class="skip-link" href="#main">Skip to content</a>${header}<main id="main">${fallbackH1}${blocksHtml}</main>`;
-  const title = escapeHtml(ctx.gymName);
+  // Home (or a single-page site, or `pages` omitted entirely) keeps the
+  // plain gym-name title every existing page already has; a non-home
+  // page prefixes its own title so browser tabs/bookmarks/search
+  // results can tell pages apart. No per-page meta description yet —
+  // that stays gym-level, same as before multi-page existed.
+  const activePage = ctx.pages?.find((p) => p.slug === (ctx.activePageSlug ?? ''));
+  const title =
+    activePage && activePage.slug !== ''
+      ? escapeHtml(`${activePage.title} — ${ctx.gymName}`)
+      : escapeHtml(ctx.gymName);
   const description = escapeAttr(
     `${ctx.gymName} — book a class, see membership options and get in touch.`,
   );

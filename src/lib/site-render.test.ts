@@ -62,6 +62,43 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('<span>Iron Gym</span>');
   });
 
+  it('renders no nav and the plain gym-name title when pages is omitted or has one page', () => {
+    const noPages = renderSiteHtml([], baseCtx);
+    expect(noPages).not.toContain('class="site-nav"');
+    expect(noPages).toContain('<title>Iron Gym</title>');
+
+    const onePage = renderSiteHtml([], { ...baseCtx, pages: [{ slug: '', title: 'Home' }] });
+    expect(onePage).not.toContain('class="site-nav"');
+    expect(onePage).toContain('<title>Iron Gym</title>');
+  });
+
+  it('renders a nav link per page, marks the active one, and links absolutely to the platform origin', () => {
+    const pages = [
+      { slug: '', title: 'Home' },
+      { slug: 'schedule', title: 'Schedule' },
+    ];
+    const html = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: 'schedule' });
+    expect(html).toContain('<nav class="site-nav" aria-label="Site pages">');
+    expect(html).toContain('href="https://app.example.com/site/iron-gym"');
+    expect(html).toContain('href="https://app.example.com/site/iron-gym/schedule"');
+    // The active page gets aria-current + is-active; home (inactive here) doesn't.
+    expect(html).toContain('class="site-nav-link is-active" href="https://app.example.com/site/iron-gym/schedule" aria-current="page"');
+    expect(html).toContain('class="site-nav-link" href="https://app.example.com/site/iron-gym"');
+  });
+
+  it('titles a non-home page as "<page title> — <gym name>", but keeps home as just the gym name', () => {
+    const pages = [
+      { slug: '', title: 'Home' },
+      { slug: 'schedule', title: 'This Week' },
+    ];
+    const home = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: '' });
+    expect(home).toContain('<title>Iron Gym</title>');
+
+    const sub = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: 'schedule' });
+    expect(sub).toContain('<title>This Week — Iron Gym</title>');
+    expect(sub).toContain('<meta property="og:title" content="This Week — Iron Gym">');
+  });
+
   it('escapes author text so it cannot inject markup', () => {
     const hero = createBlock('hero') as HeroBlock;
     const page = appendBlock(emptyPage(), {
@@ -394,7 +431,7 @@ describe('renderSiteHtml', () => {
     const testimonials = createBlock('testimonials') as TestimonialsBlock;
     let page = appendBlock(emptyPage(), hero);
     page = appendBlock(page, testimonials);
-    // Same baseCtx shape api/site/[slug].ts actually passes (editable: false).
+    // Same baseCtx shape api/site/[...path].ts actually passes (editable: false).
     const html = renderSiteHtml(page.blocks, baseCtx);
     expect(html).not.toContain('data-field');
     expect(html).not.toContain('contenteditable');

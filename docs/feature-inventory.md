@@ -816,6 +816,19 @@ billing for it yet.
   if no logo is set) in a small header, rendered directly by
   `renderSiteHtml` rather than as a removable block — page furniture
   every gym site should always have, not something to add or delete.
+  Once a gym has more than one page, the header also shows a nav link
+  per page (current one marked `aria-current`), so it never appears
+  for a single-page site.
+- **Multi-page sites** — a site is `SiteDocument.pages: SitePage[]`,
+  not a single flat block list; `pages[0]` is always Home (slug `''`,
+  can't be renamed-away-from-home, reslugged, or deleted).
+  Manage → Website shows a page-tab row (switch pages) plus a "Pages"
+  button opening `PageManagerModal` (add/rename/reslug/delete —
+  `addPage`/`renamePage`/`reslugPage`/`removePage` in
+  `site-blocks.ts`; slugs auto-dedupe as `-2`, `-3`…). The Publish gate
+  and the warnings panel both check whichever page is currently being
+  viewed, not the whole site — a full cross-page publish audit isn't
+  built yet.
 - **Live on-canvas editing (web)** — free-text fields (Hero headline/
   subheadline/CTA, About body, Testimonial quotes, Location address/
   hours, Contact copy) are directly editable inside the live rendered
@@ -843,13 +856,15 @@ billing for it yet.
   autosave. The staff-side preview reads the gym's real schedule/plans
   under the signed-in member's own RLS so a draft still previews with
   real content; the public route only ever serves a *published* site.
-- **Public rendering (`/site/<slug>`)** — a standalone Vercel
-  Serverless Function (`api/site/[slug].ts`), not an Expo Router
-  screen: this project's web build is static-export only and can't mix
-  in per-route server rendering, so a normal app route would ship an
-  empty HTML shell to crawlers. The function renders real HTML
-  server-side per request via the same `renderSiteHtml` the in-app
-  preview uses, reading `gym_website_by_slug` /
+- **Public rendering (`/site/<slug>` for Home,
+  `/site/<slug>/<page-slug>` for every other page)** — a standalone
+  Vercel Serverless Function (`api/site/[...path].ts`, a catch-all so
+  one function resolves both shapes), not an Expo Router screen: this
+  project's web build is static-export only and can't mix in per-route
+  server rendering, so a normal app route would ship an empty HTML
+  shell to crawlers. An unknown page slug 404s; the function renders
+  real HTML server-side per request via the same `renderSiteHtml` the
+  in-app preview uses, reading `gym_website_by_slug` /
   `gym_public_schedule` / `gym_public_plans` / `gym_public_team` — four
   anon-grantable RPCs, each re-checking `published = true` itself since
   `security definer` bypasses the base tables' RLS. `gym_public_team`
@@ -857,7 +872,14 @@ billing for it yet.
   members), matching the roster query Manage → Team already uses. The
   contact block
   submits straight to the existing `capture_public_lead` RPC via a
-  small inline script — a real working form, not a link-out.
+  small inline script — a real working form, not a link-out. A
+  non-home page's `<title>` is `<page title> — <gym name>`; Home stays
+  just the gym name. Nav links (and the hero's join CTA) are always
+  absolute to the platform origin: a connected custom domain's
+  middleware only rewrites its bare root to the renderer
+  (`middleware.ts`), so a relative link to another page would 404
+  there — a custom-domain visitor briefly leaves the custom domain when
+  moving between pages, a known limitation, not a broken link.
 - **Images** — hero/about/gallery uploads go to the `gym-website-assets`
   Storage bucket, gated the same way as the store's product-image
   bucket (`can_manage_website` + folder-scoped to the gym).

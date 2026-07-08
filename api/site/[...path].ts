@@ -1,6 +1,10 @@
 // Public, unauthenticated route for a gym's published website —
-// /site/<slug>, rewritten here from vercel.json. Deliberately a
-// standalone Vercel Serverless Function, not an Expo Router screen:
+// /site/<slug> for the home page, /site/<slug>/<page-slug> for every
+// other page, both rewritten here from vercel.json. A catch-all
+// function (not a plain [slug].ts) so one file serves both shapes
+// without duplicating the gym/schedule/plans/team fetch — Vercel
+// passes every path segment after /site/ as req.query.path.
+// Deliberately a standalone Vercel Serverless Function, not an Expo Router screen:
 // Expo Router in this project is static-export only and doesn't
 // support per-route server rendering (confirmed before building this),
 // so a normal app route would ship an empty HTML shell to crawlers —
@@ -33,12 +37,16 @@ function notFoundHtml(): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const slugParam = req.query.slug;
-  const slug = Array.isArray(slugParam) ? slugParam[0] : slugParam;
-  if (!slug) {
+  const pathParam = req.query.path;
+  const segments = Array.isArray(pathParam) ? pathParam : pathParam ? [pathParam] : [];
+  const slug = segments[0];
+  // /site/<slug>[/<page-slug>] only — a third segment (or none) has
+  // nothing to resolve to.
+  if (!slug || segments.length > 2) {
     res.status(400).send(notFoundHtml());
     return;
   }
+  const pageSlug = segments[1] ?? '';
 
   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -95,12 +103,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const themeId = isThemeId(site.theme) ? site.theme : 'forged';
     const theme = composeThemeWithBrand(BRAND_THEMES[themeId], site.gym_primary_color);
     const document = coerceDocument(site.design);
-    // Always the home page for now — multi-page routing (resolving a
-    // page slug from the URL) is a later phase; every site has exactly
-    // one page today, so this is behaviorally unchanged.
-    const homePage = document.pages[0];
+    // Home's slug is always '' (coerceDocument forces it), so the
+    // no-second-segment case (pageSlug === '') resolves to home here
+    // with no special-casing needed.
+    const page = document.pages.find((p) => p.slug === pageSlug);
+    if (!page) {
+      res.status(404).send(notFoundHtml());
+      return;
+    }
 
-    const html = renderSiteHtml(homePage.blocks, {
+    const html = renderSiteHtml(page.blocks, {
       slug,
       gymName: site.gym_name,
       gymLogoUrl: site.gym_logo_url,
@@ -115,6 +127,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       supabaseUrl,
       supabaseAnonKey,
       editable: false,
+      pages: document.pages.map((p) => ({ slug: p.slug, title: p.title })),
+      activePageSlug: page.slug,
     });
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  addPage,
   appendBlock,
   coerceDocument,
   createBlock,
@@ -11,7 +12,10 @@ import {
   insertBlock,
   moveBlock,
   removeBlock,
+  removePage,
+  renamePage,
   reorderBlocks,
+  reslugPage,
   updateBlock,
   updateSettings,
   type AboutBlock,
@@ -247,5 +251,70 @@ describe('gallery alt warnings', () => {
     };
     const okPage = appendBlock(emptyPage(), filled);
     expect(documentWarnings(okPage).some((w) => w.includes('description'))).toBe(false);
+  });
+});
+
+describe('page operations', () => {
+  it('addPage appends with a title-derived, deduped slug and never touches the home page', () => {
+    const doc = emptyDocument();
+    const withSchedule = addPage(doc, 'Our Schedule!');
+    expect(withSchedule.pages).toHaveLength(2);
+    expect(withSchedule.pages[0]).toEqual(doc.pages[0]);
+    expect(withSchedule.pages[1].slug).toBe('our-schedule');
+    expect(withSchedule.pages[1].title).toBe('Our Schedule!');
+    expect(withSchedule.pages[1].blocks).toEqual([]);
+
+    const withDupe = addPage(withSchedule, 'Our Schedule!');
+    expect(withDupe.pages[2].slug).toBe('our-schedule-2');
+  });
+
+  it('addPage falls back to "page" for a title that slugifies to nothing, and "Untitled" for a blank title', () => {
+    const doc = emptyDocument();
+    expect(addPage(doc, '!!!').pages[1].slug).toBe('page');
+    const blank = addPage(doc, '   ');
+    expect(blank.pages[1].title).toBe('Untitled');
+    expect(blank.pages[1].slug).toBe('untitled');
+  });
+
+  it('removePage removes a non-home page but refuses to remove home', () => {
+    const doc = addPage(emptyDocument(), 'Schedule');
+    const homeId = doc.pages[0].id;
+    const scheduleId = doc.pages[1].id;
+
+    const withoutSchedule = removePage(doc, scheduleId);
+    expect(withoutSchedule.pages).toHaveLength(1);
+    expect(withoutSchedule.pages[0].id).toBe(homeId);
+
+    const unchanged = removePage(doc, homeId);
+    expect(unchanged).toEqual(doc);
+  });
+
+  it('renamePage updates the title of any page, including home', () => {
+    const doc = addPage(emptyDocument(), 'Schedule');
+    const homeId = doc.pages[0].id;
+    const scheduleId = doc.pages[1].id;
+
+    const renamedHome = renamePage(doc, homeId, 'Welcome');
+    expect(renamedHome.pages[0].title).toBe('Welcome');
+    expect(renamedHome.pages[0].slug).toBe('');
+
+    const renamedOther = renamePage(doc, scheduleId, 'This Week');
+    expect(renamedOther.pages[1].title).toBe('This Week');
+    expect(renamedOther.pages[1].slug).toBe('schedule');
+  });
+
+  it('reslugPage updates a non-home page slug, deduping against the rest, but refuses home', () => {
+    const doc = addPage(addPage(emptyDocument(), 'Schedule'), 'Team');
+    const homeId = doc.pages[0].id;
+    const teamId = doc.pages[2].id;
+
+    const reslugged = reslugPage(doc, teamId, 'Schedule');
+    expect(reslugged.pages[2].slug).toBe('schedule-2');
+
+    const homeUnchanged = reslugPage(doc, homeId, 'anything');
+    expect(homeUnchanged).toEqual(doc);
+
+    const unknownPage = reslugPage(doc, 'not-a-real-id', 'whatever');
+    expect(unknownPage).toEqual(doc);
   });
 });

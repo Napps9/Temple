@@ -1,5 +1,5 @@
 // The block document a gym's website editor authors and the public
-// renderer (both the in-app preview and /api/site/[slug]) turns into a
+// renderer (both the in-app preview and /api/site/[...path]) turns into a
 // page. Mirrors src/lib/email/blocks.ts deliberately — same shape of
 // pure, React-free document operations, same coerce-on-read defence for
 // untyped jsonb — but is its own module, not a shared one, matching how
@@ -15,13 +15,18 @@
 //
 // A site is multi-page: `SiteDocument.pages` is an ordered list of
 // `SitePage`, each with its own blocks. `pages[0]` is always the home
-// page (its `slug` is always `''`, forced by coerceDocument) — that
-// invariant isn't yet enforced beyond position because there's no way
-// to add a second page yet (that's a later phase); the block-level
-// operations below (insertBlock, appendBlock, etc.) work on a single
-// `SitePage` directly, not the whole multi-page document, since the
-// editor only ever has one page open for editing at a time.
+// page (its `slug` is always `''`, forced by coerceDocument and by
+// addPage/reslugPage/removePage below never touching index 0) — home
+// is identified by array position, not a flag, so it can never be
+// deleted or given a real slug. The block-level operations below
+// (insertBlock, appendBlock, etc.) work on a single `SitePage`
+// directly, not the whole multi-page document, since the editor only
+// ever has one page open for editing at a time; addPage/removePage/
+// renamePage/reslugPage are the document-level page-list operations,
+// since only they need to reason about "which page is home" and
+// dedupe slugs across the whole page list.
 
+import { slugify } from './brand';
 import type { ThemeId } from './brand-themes';
 import { isThemeId } from './brand-themes';
 
@@ -245,6 +250,68 @@ export function emptyPage(title = 'Home', slug = ''): SitePage {
 
 export function emptyDocument(): SiteDocument {
   return { version: 2, settings: defaultSettings(), pages: [emptyPage()] };
+}
+
+// ---------------------------------------------------------------------------
+// Page operations — document-level, unlike the block operations below,
+// because they need to reason about the whole page list (dedupe a
+// slug, refuse to touch index 0).
+// ---------------------------------------------------------------------------
+
+// Derives a URL-safe slug from a page title and de-dupes it against
+// every other page's slug by suffixing -2, -3… A title that slugifies
+// to nothing (e.g. "!!!" or "日本語" with only ascii-safe slugify)
+// falls back to 'page' rather than producing an empty URL segment.
+function uniquePageSlug(desired: string, others: SitePage[]): string {
+  const base = slugify(desired) || 'page';
+  const taken = new Set(others.map((p) => p.slug));
+  if (!taken.has(base)) return base;
+  let i = 2;
+  while (taken.has(`${base}-${i}`)) i += 1;
+  return `${base}-${i}`;
+}
+
+// Appends a new page with a title-derived slug. The home page
+// (pages[0]) is untouched.
+export function addPage(doc: SiteDocument, title: string): SiteDocument {
+  const trimmed = title.trim() || 'Untitled';
+  const page: SitePage = {
+    id: genId(),
+    slug: uniquePageSlug(trimmed, doc.pages),
+    title: trimmed,
+    blocks: [],
+  };
+  return { ...doc, pages: [...doc.pages, page] };
+}
+
+// Refuses to remove the home page (index 0) — a site always has a
+// home page, identified by position, not an id check.
+export function removePage(doc: SiteDocument, pageId: string): SiteDocument {
+  if (doc.pages[0]?.id === pageId) return doc;
+  return { ...doc, pages: doc.pages.filter((p) => p.id !== pageId) };
+}
+
+// Title is freely editable on every page, including home — only the
+// URL (slug) is special-cased there.
+export function renamePage(doc: SiteDocument, pageId: string, title: string): SiteDocument {
+  return {
+    ...doc,
+    pages: doc.pages.map((p) => (p.id === pageId ? { ...p, title } : p)),
+  };
+}
+
+// Refuses to reslug the home page — it's always '' (see coercePage),
+// since /site/<gym-slug> with no further segment IS the home page by
+// definition. De-dupes against every other page's slug the same way
+// addPage does.
+export function reslugPage(doc: SiteDocument, pageId: string, slug: string): SiteDocument {
+  if (doc.pages[0]?.id === pageId) return doc;
+  if (!doc.pages.some((p) => p.id === pageId)) return doc;
+  const next = uniquePageSlug(slug, doc.pages.filter((p) => p.id !== pageId));
+  return {
+    ...doc,
+    pages: doc.pages.map((p) => (p.id === pageId ? { ...p, slug: next } : p)),
+  };
 }
 
 // ---------------------------------------------------------------------------
