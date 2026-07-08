@@ -44,13 +44,13 @@ function fmtNext(start: Date) {
   return `${date} at ${time}`;
 }
 
-function RecommendedClassCard() {
-  const colors = useThemeColors();
+// Shared by RecommendedClassCard (renders the standalone card) and Book
+// (which needs the session id to highlight the matching agenda row) —
+// react-query dedupes the underlying fetches since both call sites share
+// the same query keys.
+function useRecommendedClass() {
   const session = useSession();
   const { data: membership } = useGymMembership();
-  const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
 
   // Pick the class type the member attended most often over the last
   // eight weeks (attended_at present, not just booked). Returns null
@@ -152,6 +152,16 @@ function RecommendedClassCard() {
       return null;
     },
   });
+
+  return recommendation;
+}
+
+function RecommendedClassCard() {
+  const colors = useThemeColors();
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const recommendation = useRecommendedClass();
 
   const book = useMutation({
     mutationFn: async () => {
@@ -299,9 +309,11 @@ function NextClassCard() {
 }
 
 export default function Book() {
+  const recommendation = useRecommendedClass();
   return (
     <ClassesCalendar
       mode="book"
+      recommendedSessionId={recommendation.data?.id ?? null}
       headerSlot={
         <View className="gap-2">
           <PostClassLogPrompt />

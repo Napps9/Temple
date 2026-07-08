@@ -1029,25 +1029,34 @@ function AggregateInputs({
           placeholder="8:42"
         />
       ) : null}
-      {shape.aggregateFields.includes('total_rounds') ? (
-        <Input
-          label="Rounds"
-          value={draft.total_rounds}
-          onChangeText={(v) => onUpdate({ total_rounds: v })}
-          placeholder="7"
-          keyboardType="numeric"
-          inputMode="numeric"
-        />
-      ) : null}
-      {shape.aggregateFields.includes('total_extra_reps') ? (
-        <Input
-          label="Extra reps"
-          value={draft.total_extra_reps}
-          onChangeText={(v) => onUpdate({ total_extra_reps: v })}
-          placeholder="5"
-          keyboardType="numeric"
-          inputMode="numeric"
-        />
+      {shape.aggregateFields.includes('total_rounds') ||
+      shape.aggregateFields.includes('total_extra_reps') ? (
+        <View className="flex-row gap-3">
+          {shape.aggregateFields.includes('total_rounds') ? (
+            <View className="flex-1">
+              <Input
+                label="Rounds"
+                value={draft.total_rounds}
+                onChangeText={(v) => onUpdate({ total_rounds: v })}
+                placeholder="7"
+                keyboardType="numeric"
+                inputMode="numeric"
+              />
+            </View>
+          ) : null}
+          {shape.aggregateFields.includes('total_extra_reps') ? (
+            <View className="flex-1">
+              <Input
+                label="Extra reps"
+                value={draft.total_extra_reps}
+                onChangeText={(v) => onUpdate({ total_extra_reps: v })}
+                placeholder="5"
+                keyboardType="numeric"
+                inputMode="numeric"
+              />
+            </View>
+          ) : null}
+        </View>
       ) : null}
       {shape.aggregateFields.includes('did_not_finish') ? (
         <View className="flex-row items-center gap-3">

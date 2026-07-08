@@ -427,10 +427,16 @@ export function ClassesCalendar({
   mode,
   topSlot,
   headerSlot,
+  recommendedSessionId,
 }: {
   mode: 'manage' | 'book';
   topSlot?: React.ReactNode;
   headerSlot?: React.ReactNode;
+  // The session id the member's "Recommended" card is pointing at (see
+  // useRecommendedClass in book.tsx) — the matching agenda row gets a
+  // purple border so the recommendation is visible in the day's list,
+  // not just in the standalone card above it.
+  recommendedSessionId?: string | null;
 }) {
   const params = useLocalSearchParams<{ view?: string; session?: string }>();
   const { width } = useWindowDimensions();
@@ -755,6 +761,7 @@ export function ClassesCalendar({
               onSessionPress={openSession}
               dimPast={mode === 'book'}
               topSlot={topSlot}
+              recommendedSessionId={recommendedSessionId}
             />
           ) : null}
           {view === 'day' ? (
@@ -890,6 +897,7 @@ function AgendaView({
   onSessionPress,
   dimPast,
   topSlot,
+  recommendedSessionId,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -900,6 +908,7 @@ function AgendaView({
   onSessionPress: (id: string) => void;
   dimPast?: boolean;
   topSlot?: React.ReactNode;
+  recommendedSessionId?: string | null;
 }) {
   const colors = useThemeColors();
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
@@ -1046,6 +1055,7 @@ function AgendaView({
                 session={s}
                 count={counts.data?.get(s.id) ?? 0}
                 bookedByMe={bookedSet.has(s.id)}
+                recommended={recommendedSessionId === s.id}
                 onPress={() => onSessionPress(s.id)}
                 dimPast={dimPast}
               />
@@ -1061,12 +1071,14 @@ function AgendaCard({
   session,
   count,
   bookedByMe,
+  recommended,
   onPress,
   dimPast,
 }: {
   session: ClassSession;
   count: number;
   bookedByMe: boolean;
+  recommended?: boolean;
   onPress: () => void;
   dimPast?: boolean;
 }) {
@@ -1099,7 +1111,9 @@ function AgendaCard({
       className={`flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-2xl p-3.5 border shadow-card active:bg-gray-50 dark:active:bg-gray-800 ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
-          : 'border-gray-200 dark:border-gray-700'
+          : recommended
+            ? 'border-purple-400 dark:border-purple-500'
+            : 'border-gray-200 dark:border-gray-700'
       } ${isPast ? 'opacity-50' : ''}`}>
       <View className="w-14">
         <Text className="text-gray-900 dark:text-gray-50 text-[17px] font-extrabold">
