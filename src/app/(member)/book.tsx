@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
+import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { PostClassLogPrompt } from '@/components/PostClassLogPrompt';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -49,6 +50,7 @@ function RecommendedClassCard() {
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   // Pick the class type the member attended most often over the last
   // eight weeks (attended_at present, not just booked). Returns null
@@ -193,8 +195,10 @@ function RecommendedClassCard() {
   return (
     <View className="gap-1">
       <Pressable
-        onPress={() => book.mutate()}
-        disabled={book.isPending}
+        onPress={() => {
+          haptic.tap();
+          setDetailOpen(true);
+        }}
         className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
         <View
           style={{ backgroundColor: typeColor }}
@@ -209,14 +213,26 @@ function RecommendedClassCard() {
             {fmtNext(start)}
           </Text>
         </View>
+        {/* Its own onPress — a nested Pressable inside the row, same
+            pattern as the programming card's "View leaderboard" chip —
+            so quick-booking stays a one-tap shortcut without the row
+            tap (which opens full class details) firing at the same time. */}
         <ChipButton
           label={book.isPending ? 'Booking…' : 'Quick book'}
           icon="flash"
+          disabled={book.isPending}
+          onPress={() => book.mutate()}
         />
       </Pressable>
       {error ? (
         <Text className="text-red-500 dark:text-red-400 text-xs px-3">{error}</Text>
       ) : null}
+      <ClassDetailModal
+        visible={detailOpen}
+        sessionId={rec.id}
+        mode="book"
+        onClose={() => setDetailOpen(false)}
+      />
     </View>
   );
 }
@@ -286,11 +302,11 @@ export default function Book() {
   return (
     <ClassesCalendar
       mode="book"
-      headerSlot={<NextClassCard />}
-      topSlot={
+      headerSlot={
         <View className="gap-2">
           <PostClassLogPrompt />
           <RecommendedClassCard />
+          <NextClassCard />
         </View>
       }
     />

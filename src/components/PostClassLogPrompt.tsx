@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
@@ -18,6 +18,7 @@ const WINDOW_MS = 48 * 60 * 60 * 1000;
 
 type PastBooking = {
   id: string;
+  class_session_id: string;
   class_sessions: {
     starts_at: string;
     class_types: { name: string; color: string } | null;
@@ -34,11 +35,19 @@ function relativeDay(start: Date): string {
   return start.toLocaleDateString(undefined, { weekday: 'long' });
 }
 
+function fmtDateLocal(d: Date): string {
+  return `${d.getFullYear()}-${(d.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+}
+
 export function PostClassLogPrompt() {
   const colors = useThemeColors();
   const session = useSession();
   const userId = session?.user.id;
+  const queryClient = useQueryClient();
   const [dismissed, setDismissed] = useState(false);
+  const [recording, setRecording] = useState(false);
 
   const recent = useQuery({
     queryKey: ['my-recent-past-booking', userId],
@@ -49,7 +58,7 @@ export function PostClassLogPrompt() {
       const { data, error } = await supabase
         .from('class_bookings')
         .select(
-          'id, class_sessions!inner(starts_at, class_types(name, color))',
+          'id, class_session_id, class_sessions!inner(starts_at, class_types(name, color))',
         )
         .eq('profile_id', userId!)
         .lt('class_sessions.starts_at', now.toISOString())
@@ -113,10 +122,22 @@ export function PostClassLogPrompt() {
         </Pressable>
       </View>
       <Pressable
-        onPress={() => router.push('/track' as never)}
+        onPress={() => setRecording(true)}
         className="bg-primary rounded-lg py-3 items-center justify-center active:bg-primary-dark">
         <Text className="text-white font-semibold">Log your workout</Text>
       </Pressable>
+      {/* Same flow the Programming page's "Record results" prompt opens —
+          pre-filled with this class's date and tied to its session id,
+          rather than dropping the member into a blank /track screen. */}
+      <RecordWorkoutModal
+        visible={recording}
+        onClose={() => {
+          setRecording(false);
+          queryClient.invalidateQueries({ queryKey: ['logged-since-class'] });
+        }}
+        initialDate={fmtDateLocal(new Date(classStart))}
+        initialClassSessionId={recent.data.class_session_id}
+      />
     </View>
   );
 }
