@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildTasteProfile,
+  dayAffinity,
   hourAffinity,
   scoreSession,
   type AttendedRow,
@@ -41,6 +42,13 @@ describe('buildTasteProfile', () => {
     expect(profile.hoursByType.get('crossfit')!.has(6)).toBe(true);
   });
 
+  it('records attended weekdays per type', () => {
+    const row = attended('crossfit', 1, 6);
+    const dow = new Date(row.startedAt!).getDay();
+    const profile = buildTasteProfile([row], NOW);
+    expect(profile.daysByType.get('crossfit')!.has(dow)).toBe(true);
+  });
+
   it('ignores rows with no type or start', () => {
     const profile = buildTasteProfile(
       [{ typeId: null, startedAt: null, attendedAt: new Date(NOW).toISOString() }],
@@ -66,6 +74,25 @@ describe('hourAffinity', () => {
   it('is zero with no history', () => {
     expect(hourAffinity(undefined, 6)).toBe(0);
     expect(hourAffinity(new Map(), 6)).toBe(0);
+  });
+});
+
+describe('dayAffinity', () => {
+  it('scores an exact-weekday match highest', () => {
+    const hist = new Map([[1, 1]]); // Monday
+    expect(dayAffinity(hist, 1)).toBeGreaterThan(dayAffinity(hist, 2));
+    expect(dayAffinity(hist, 2)).toBeGreaterThan(dayAffinity(hist, 4));
+  });
+
+  it('wraps around the week', () => {
+    const hist = new Map([[6, 1]]); // Saturday
+    // Sunday (0) is one day from Saturday across the week boundary, not six.
+    expect(dayAffinity(hist, 0)).toBeGreaterThan(dayAffinity(hist, 3));
+  });
+
+  it('is zero with no history', () => {
+    expect(dayAffinity(undefined, 1)).toBe(0);
+    expect(dayAffinity(new Map(), 1)).toBe(0);
   });
 });
 
@@ -121,12 +148,31 @@ describe('scoreSession', () => {
     expect(tomorrow).toBeGreaterThan(nextWeek);
   });
 
-  it('scores an unseen type on time-of-day and soonness only', () => {
+  it('favours the member usual weekday even over a sooner off-day session', () => {
+    // History on one weekday: NOW-6d and NOW-13d are both two weeks off
+    // NOW+8d, so they share its weekday. crossfit at 06:00 throughout, so
+    // type + time-of-day are identical across the candidates below.
+    const rows = [attended('crossfit', 6, 6), attended('crossfit', 13, 6)];
+    const profile = buildTasteProfile(rows, NOW);
+    const max = Math.max(...profile.affinity.values());
+    const mk = (days: number) => {
+      const d = new Date(NOW + days * DAY);
+      d.setHours(6, 0, 0, 0);
+      return d.toISOString();
+    };
+    // Same weekday as the member's history, but eight days out.
+    const usualDay = scoreSession(profile, max, { class_type_id: 'crossfit', starts_at: mk(8) }, NOW);
+    // A different weekday that lands two days sooner.
+    const offDay = scoreSession(profile, max, { class_type_id: 'crossfit', starts_at: mk(6) }, NOW);
+    expect(usualDay).toBeGreaterThan(offDay);
+  });
+
+  it('scores an unseen type on soonness only', () => {
     const profile = buildTasteProfile([attended('crossfit', 1, 6)], NOW);
     const max = Math.max(...profile.affinity.values());
     const soon = new Date(NOW + DAY).toISOString();
     const score = scoreSession(profile, max, { class_type_id: 'yoga', starts_at: soon }, NOW);
-    expect(score).toBeGreaterThanOrEqual(0);
+    expect(score).toBeGreaterThan(0);
     expect(score).toBeLessThan(1);
   });
 });

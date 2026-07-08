@@ -125,8 +125,9 @@ function useRecommendedClass() {
   );
 
   // Rank every upcoming session across the member's attended class types
-  // by the blended taste score (type affinity + time-of-day + soonness),
-  // then return the best one they haven't booked AND are entitled to
+  // by the blended taste score (type affinity + time-of-day + day-of-week
+  // + soonness), then return the best one they haven't booked AND are
+  // entitled to
   // book — is_booking_eligible applies their membership (plan class-type
   // allowlists, credit balance, paid period, comp grants), so we never
   // recommend a class their plan doesn't cover.
