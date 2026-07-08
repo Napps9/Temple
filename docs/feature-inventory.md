@@ -362,8 +362,12 @@ The staff area shows up when `can_access_staff_area` is on.
   **Switch plan** [`can_assign_plan`] — per-booking swap action lets
   a coach change which entitlement an existing booking is charged
   against (the cancel-refund path follows the pointer, so a swap
-  redirects the refund target too). Both flows verify the pick is
-  eligible via `list_booking_entitlements` against the target member.
+  redirects the refund target too), or pick **No charge** to comp an
+  existing booking: `p_no_charge` on `swap_booking_subscription`
+  refunds the credit burned at book time (via `_refund_booking_credit`)
+  and nulls the pointer, so a session already booked on Unlimited or a
+  credit pack becomes a genuinely free seat. Both flows verify the pick
+  is eligible via `list_booking_entitlements` against the target member.
 - **Cancel session** — refunds credits, drops waitlist, deletes the
   session.
 

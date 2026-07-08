@@ -140,11 +140,12 @@ export function StaffBookingSheet({
   const swap = useMutation({
     mutationFn: async () => {
       if (!swapTarget) throw new Error('No booking to swap');
-      if (!chosen) throw new Error('Pick a plan');
+      if (!noCharge && !chosen) throw new Error('Pick a plan');
       const { error: e } = await supabase.rpc('swap_booking_subscription', {
         p_booking_id: swapTarget.bookingId,
-        p_entitlement_kind: chosen.kind,
-        p_entitlement_id: chosen.id,
+        p_entitlement_kind: noCharge ? null : chosen!.kind,
+        p_entitlement_id: noCharge ? null : chosen!.id,
+        p_no_charge: noCharge,
       });
       if (e) throw e;
     },
@@ -256,16 +257,15 @@ export function StaffBookingSheet({
                 <Text className="text-gray-500 dark:text-gray-400 text-sm">
                   Loading memberships…
                 </Text>
-              ) : (entitlements.data?.length ?? 0) === 0 && mode === 'swap' ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                  This member has no eligible plans or comps for this class.
-                </Text>
               ) : (
                 <View className="gap-2">
                   {(entitlements.data?.length ?? 0) === 0 ? (
                     <Text className="text-gray-500 dark:text-gray-400 text-sm">
                       This member has no eligible plans or comps for this
-                      class — book them without charging instead.
+                      class —{' '}
+                      {mode === 'add'
+                        ? 'book them without charging instead.'
+                        : 'comp this session instead.'}
                     </Text>
                   ) : null}
                   {entitlements.data?.map((e) => {
@@ -310,30 +310,28 @@ export function StaffBookingSheet({
                       </Pressable>
                     );
                   })}
-                  {mode === 'add' ? (
-                    <Pressable
-                      onPress={() => {
-                        setNoCharge(true);
-                        setChosen(null);
-                      }}
-                      className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
-                        noCharge
-                          ? 'border-primary bg-primary/10'
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}>
-                      <Ionicons
-                        name={noCharge ? 'radio-button-on' : 'radio-button-off'}
-                        size={18}
-                        color={noCharge ? '#2563EB' : '#9CA3AF'}
-                      />
-                      <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
-                        No charge
-                      </Text>
-                      <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
-                        Free
-                      </Text>
-                    </Pressable>
-                  ) : null}
+                  <Pressable
+                    onPress={() => {
+                      setNoCharge(true);
+                      setChosen(null);
+                    }}
+                    className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
+                      noCharge
+                        ? 'border-primary bg-primary/10'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}>
+                    <Ionicons
+                      name={noCharge ? 'radio-button-on' : 'radio-button-off'}
+                      size={18}
+                      color={noCharge ? '#2563EB' : '#9CA3AF'}
+                    />
+                    <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
+                      No charge
+                    </Text>
+                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                      Free
+                    </Text>
+                  </Pressable>
                 </View>
               )}
               {error ? (
@@ -366,9 +364,7 @@ export function StaffBookingSheet({
                     loading={book.isPending || swap.isPending}
                     disabled={
                       entitlements.isLoading ||
-                      (mode === 'add'
-                        ? !noCharge && (entitlements.data?.length ?? 0) === 0
-                        : (entitlements.data?.length ?? 0) === 0)
+                      (!noCharge && (entitlements.data?.length ?? 0) === 0)
                     }>
                     {mode === 'add' ? 'Book' : 'Swap'}
                   </Button>

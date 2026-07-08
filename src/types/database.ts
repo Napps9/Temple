@@ -3091,8 +3091,9 @@ export type Database = {
       swap_booking_subscription: {
         Args: {
           p_booking_id: string;
-          p_entitlement_kind: 'comp_grant' | 'plan_subscription';
-          p_entitlement_id: string;
+          p_entitlement_kind?: 'comp_grant' | 'plan_subscription' | null;
+          p_entitlement_id?: string | null;
+          p_no_charge?: boolean;
         };
         Returns: null;
       };
