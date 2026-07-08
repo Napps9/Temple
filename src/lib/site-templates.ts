@@ -1,19 +1,24 @@
 // Named starting points for a gym's website — the same registry role
 // brand-themes.ts plays for themes, and paired 1:1 with those themes.
-// Each template is the research-consensus single-page gym-site
-// skeleton (hero → about → schedule → team → pricing → testimonials →
-// location → contact) with copy voiced for a discipline archetype;
-// schedule/pricing/team populate themselves from the gym's real data.
+// Each template follows the researched multi-page gym-site structure:
+// a Home page that pitches, proves and converts (hero → about →
+// testimonials → location → contact), plus dedicated Schedule, Team
+// and Pricing pages for the three things that carry real,
+// information-dense live data and benefit from room of their own
+// rather than being buried partway down a single long page.
+// schedule/pricing/team populate themselves from the gym's real data
+// regardless of which page they're on.
 //
 // Two deliberate gaps: testimonials ship with zero quotes and
 // location with an empty address, so the existing publish-blocking
 // warnings become the owner's launch checklist — fabricated member
-// quotes or a missing address can never go live. Gallery is omitted
-// entirely (an empty one also blocks publish); owners add it once
-// they have real photos. Heroes are typographic on purpose
-// (layout 'background', no image): a big headline over the theme
-// colour reads as designed, while the 'side' layout looks broken
-// without a photo — templates never use it.
+// quotes or a missing address can never go live. Heroes default to
+// typographic (layout 'background', no image): a big headline over
+// the theme colour reads as designed on its own, and the same layout
+// also supports a background photo once one's set (see
+// site-auto-images.ts, which fills the hero image and a gallery from
+// the gym's own class types at site-creation time) — the 'side'
+// layout looks broken without a photo, so templates never use it.
 
 import type { ThemeId } from './brand-themes';
 import {
@@ -96,10 +101,10 @@ function buildFromCopy(themeId: ThemeId, copy: TemplateCopy, gymName?: string): 
     version: 2,
     settings: { themeId },
     pages: [
-      {
-        ...emptyPage(),
-        blocks: [hero, about, schedule, team, pricing, testimonials, location, contact],
-      },
+      { ...emptyPage('Home', ''), blocks: [hero, about, testimonials, location, contact] },
+      { ...emptyPage('Schedule', 'schedule'), blocks: [schedule] },
+      { ...emptyPage('Team', 'team'), blocks: [team] },
+      { ...emptyPage('Pricing', 'pricing'), blocks: [pricing] },
     ],
   };
 }

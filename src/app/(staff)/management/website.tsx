@@ -19,9 +19,10 @@ import { Screen } from '@/components/Screen';
 import { PageManagerModal } from '@/components/website/PageManagerModal';
 import { SiteEditor } from '@/components/website/SiteEditor';
 import { SiteHtmlPreview } from '@/components/website/SiteHtmlPreview';
-import { BRAND_THEMES, composeThemeWithBrand, isThemeId } from '@/lib/brand-themes';
+import { BRAND_THEMES, composeThemeWithBrand, isThemeId, type ThemeId } from '@/lib/brand-themes';
 import { useCustomDomain } from '@/lib/custom-domain';
 import { errorMessage } from '@/lib/errors';
+import { applyAutoImages, buildAutoImageQueries, type AutoImage } from '@/lib/site-auto-images';
 import { isFieldEditable, parseFieldPath } from '@/lib/site-canvas-sync';
 import {
   renderSiteHtml,
@@ -42,12 +43,54 @@ import {
   type TestimonialsBlock,
 } from '@/lib/site-blocks';
 import { SITE_TEMPLATES, SITE_TEMPLATE_LIST, type SiteTemplateId } from '@/lib/site-templates';
+import { saveStockPhoto, searchStockPhotos } from '@/lib/stock-photos';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useGymWebsite } from '@/lib/use-gym-website';
 import type { Json } from '@/types/database';
+
+async function fetchTopStockPhoto(gymId: string, query: string): Promise<AutoImage | null> {
+  const { photos } = await searchStockPhotos(gymId, query);
+  const top = photos[0];
+  if (!top) return null;
+  const saved = await saveStockPhoto(gymId, top.id);
+  return { url: saved.url, alt: saved.alt || top.alt || query };
+}
+
+// The one network-touching entry point around site-auto-images.ts's
+// pure buildAutoImageQueries/applyAutoImages — kept beside its one
+// caller (createSite below) rather than in that module, which stays
+// import-free of stock-photos.ts (and, through it, supabase.ts) so it
+// can be unit tested (see site-auto-images.test.ts). Best-effort: a
+// gym's own class types make the hero/gallery photos feel specific
+// instead of generic-archetype stock art, but site creation must never
+// fail because Pexels isn't configured, is rate-limited, or the network
+// hiccups — any failure here just returns the document unchanged, the
+// same plain template as before this existed. Sequential, not
+// Promise.all: friendlier to Pexels' per-second behaviour than
+// bursting up to 4 simultaneous requests, and site creation already
+// shows a loading spinner, so a few extra seconds here is fine.
+async function autoPopulateImages(
+  gymId: string,
+  document: SiteDocument,
+  classTypeNames: string[],
+  themeId: ThemeId,
+): Promise<SiteDocument> {
+  try {
+    const { heroQuery, galleryQueries } = buildAutoImageQueries(classTypeNames, themeId);
+    const hero = await fetchTopStockPhoto(gymId, heroQuery);
+    const gallery: AutoImage[] = [];
+    for (const query of galleryQueries) {
+      const photo = await fetchTopStockPhoto(gymId, query);
+      if (photo) gallery.push(photo);
+    }
+    return applyAutoImages(document, hero, gallery);
+  } catch {
+    return document;
+  }
+}
 
 type GymWebsiteSettings = { websiteBuilderEnabled: boolean; currency: string };
 
@@ -427,7 +470,26 @@ export default function WebsiteManageScreen() {
   async function createSite(templateId: SiteTemplateId) {
     if (!brand.gymId) return;
     setCreatingId(templateId);
-    const design = SITE_TEMPLATES[templateId].build(brand.gymName);
+    const template = SITE_TEMPLATES[templateId];
+    let design = template.build(brand.gymName);
+    // Best-effort: a gym's own class types make the hero/gallery photos
+    // feel specific instead of generic-archetype stock art. Silently
+    // skipped (design stays exactly as build() returned it) if the gym
+    // has no class types yet or Pexels isn't configured/reachable —
+    // autoPopulateImages never throws.
+    const { data: classTypeRows } = await supabase
+      .from('class_types')
+      .select('name')
+      .eq('gym_id', brand.gymId)
+      .is('archived_at', null)
+      .order('name')
+      .limit(6);
+    design = await autoPopulateImages(
+      brand.gymId,
+      design,
+      (classTypeRows ?? []).map((c) => c.name),
+      template.themeId,
+    );
     const { data, error: insErr } = await supabase
       .from('gym_websites')
       .insert({

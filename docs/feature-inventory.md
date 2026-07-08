@@ -801,17 +801,37 @@ billing for it yet.
   starting points, paired 1:1 with the themes: Strength & Conditioning
   (Forged), Fight & Combat (Ringside), Boutique Studio (Daybreak),
   Coaching & PT (Baseline — the one consult-first funnel, its hero CTA
-  scrolls to the contact form). Each follows the researched gym-site
-  skeleton (hero → about → schedule → team → pricing → testimonials →
-  location → contact) with the hero headline seeded from the gym's
-  real name. Creating a site starts from a template picker; an
+  scrolls to the contact form). Each builds the researched **multi-page**
+  structure: a Home page that pitches, proves and converts (hero →
+  about → testimonials → location → contact) plus dedicated Schedule,
+  Team and Pricing pages for the three things that carry real,
+  information-dense live data. The hero headline is seeded from the
+  gym's real name. Creating a site starts from a template picker; an
   existing site can apply a template from the editor's Theme section
-  (confirm-gated — replaces all content, keeps publish state).
+  (confirm-gated — replaces every block on the *active page only*,
+  keeps publish state and the site's other pages untouched).
   Deliberate gaps: testimonials ship empty and location without an
   address so the publish-blocking warnings act as a launch checklist —
-  fabricated quotes or a missing address can never go live. Photo-less
-  background heroes render with a subtle accent glow instead of a flat
-  colour slab.
+  fabricated quotes or a missing address can never go live.
+- **Class-type-aware image auto-population (`src/lib/site-auto-images.ts`)**
+  — at site-creation time only (not when applying a template to an
+  existing page), the hero photo and a gallery of up to 3 photos are
+  searched and saved via the existing Pexels stock-photos integration,
+  queried from the gym's own real class type names ("CrossFit gym",
+  "Yoga training"…) rather than a generic archetype query — falls back
+  to the archetype's `DEFAULT_STOCK_QUERIES` when the gym has no class
+  types yet. Best-effort and silent: no `PEXELS_API_KEY`, a rate limit,
+  or any network failure just leaves the template exactly as it was
+  before this existed (photo-less hero, no gallery block) — site
+  creation itself never fails because of it. Capped at 4 photos total
+  per site (1 hero + 3 gallery) to respect the integration's
+  platform-wide 200 req/hour Pexels budget. Pure query-building and
+  image-placement logic lives in site-auto-images.ts (tested); the
+  actual network calls live beside their one caller, `createSite` in
+  management/website.tsx, since anything importing stock-photos.ts (and
+  through it supabase.ts) can't be parsed by vitest. Photo-less
+  background heroes still render with a subtle accent glow instead of a
+  flat colour slab, for the no-class-types-yet / no-Pexels-key case.
 - **Always-on site header** — every page shows the gym's logo (or name,
   if no logo is set) in a small header, rendered directly by
   `renderSiteHtml` rather than as a removable block — page furniture

@@ -739,10 +739,25 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   // CrossFit, Hyrox" (see brand-themes.ts's tagline for 'forged'), so
   // both disciplines reuse it — only the copy and publish state differ.
   const siteDoc = SITE_TEMPLATES.strength.build(config.gymName);
-  // build() mints a time-based page id (same reason block ids get
-  // rewritten below) — pin it so the same seed yields a byte-identical
-  // plan.
+  // build() mints time-based page ids and block ids (same reason
+  // home's block ids get rewritten below) — pin every page's id and its
+  // one block's id so the same seed yields a byte-identical plan.
   const homePage = { ...siteDoc.pages[0], id: 'sp_demo_home' };
+  const schedulePage = {
+    ...siteDoc.pages[1],
+    id: 'sp_demo_schedule',
+    blocks: siteDoc.pages[1].blocks.map((b) => ({ ...b, id: 'sb_demo_schedule' })),
+  };
+  const teamPage = {
+    ...siteDoc.pages[2],
+    id: 'sp_demo_team',
+    blocks: siteDoc.pages[2].blocks.map((b) => ({ ...b, id: 'sb_demo_team' })),
+  };
+  const pricingPage = {
+    ...siteDoc.pages[3],
+    id: 'sp_demo_pricing',
+    blocks: siteDoc.pages[3].blocks.map((b) => ({ ...b, id: 'sb_demo_pricing' })),
+  };
   const patchedBlocks = homePage.blocks.map((raw, i) => {
     const block = { ...raw, id: `sb_demo${i + 1}` };
     if (block.type === 'hero' && isHyrox) {
@@ -808,7 +823,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     theme: SITE_TEMPLATES.strength.themeId,
     design: asJson({
       ...siteDoc,
-      pages: [{ ...homePage, blocks: blocksWithGallery }],
+      pages: [{ ...homePage, blocks: blocksWithGallery }, schedulePage, teamPage, pricingPage],
     }),
     // A CrossFit demo ships live so the public site is something to
     // see immediately; the Hyrox demo stays unpublished so the site

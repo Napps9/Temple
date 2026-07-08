@@ -1166,11 +1166,19 @@ export function SiteEditor({
 
   function applyTemplate() {
     if (!pendingTemplate) return;
-    // A template's build() returns a full (single-page) SiteDocument;
-    // this replaces the active page's blocks and the document theme
-    // with it. Flows through website.tsx's handlePanelChange:
-    // structural bump → canvas reload; autosave persists both design
-    // and the theme column (persist() writes theme from settings.themeId).
+    // A template's build() returns a full multi-page SiteDocument
+    // (Home/Schedule/Team/Pricing); this deliberately takes only
+    // pages[0] (Home) and replaces the ACTIVE page's blocks with it,
+    // matching the confirm dialog's "replaces every block... on this
+    // page" wording — SiteEditor has no multi-page concept, and
+    // resetting the other pages the owner may have already customised
+    // out from under them here would be a much bigger, more surprising
+    // action than what this button promises. Flows through website.tsx's
+    // handlePanelChange: structural bump → canvas reload; autosave
+    // persists both design and the theme column (persist() writes theme
+    // from settings.themeId). Doesn't re-run the image auto-population
+    // createSite does — the owner can still use "Search stock photos"
+    // on this page afterward.
     const built = pendingTemplate.build(gymName);
     onChange({ settings: built.settings, blocks: built.pages[0].blocks });
     // The old selection points at block ids that no longer exist.

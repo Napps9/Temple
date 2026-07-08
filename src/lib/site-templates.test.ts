@@ -72,18 +72,20 @@ describe.each(SITE_TEMPLATE_LIST.map((t) => [t.id, t] as const))('template %s', 
     expect(coerceDocument(JSON.parse(JSON.stringify(doc)))).toEqual(doc);
   });
 
-  it('follows the research section skeleton, with no gallery', () => {
+  it('follows the researched multi-page skeleton: Home pitches/proves/converts, Schedule/Team/Pricing get their own page', () => {
     const doc = t.build('Iron Gym');
+    expect(doc.pages.map((p) => p.slug)).toEqual(['', 'schedule', 'team', 'pricing']);
+    expect(doc.pages.map((p) => p.title)).toEqual(['Home', 'Schedule', 'Team', 'Pricing']);
     expect(doc.pages[0].blocks.map((b) => b.type)).toEqual([
       'hero',
       'about',
-      'schedule',
-      'team',
-      'pricing',
       'testimonials',
       'location',
       'contact',
     ]);
+    expect(doc.pages[1].blocks.map((b) => b.type)).toEqual(['schedule']);
+    expect(doc.pages[2].blocks.map((b) => b.type)).toEqual(['team']);
+    expect(doc.pages[3].blocks.map((b) => b.type)).toEqual(['pricing']);
     expect(doc.settings.themeId).toBe(t.themeId);
   });
 
@@ -110,21 +112,28 @@ describe.each(SITE_TEMPLATE_LIST.map((t) => [t.id, t] as const))('template %s', 
     expect(warnings.some((w) => w.includes('address'))).toBe(true);
   });
 
-  it('generates fresh, unique block ids on every build', () => {
+  it('generates fresh, unique page and block ids on every build', () => {
     const a = t.build('Iron Gym');
     const b = t.build('Iron Gym');
-    const aIds = a.pages[0].blocks.map((blk) => blk.id);
+    const aPageIds = a.pages.map((p) => p.id);
+    expect(new Set(aPageIds).size).toBe(aPageIds.length);
+    const aIds = a.pages.flatMap((p) => p.blocks.map((blk) => blk.id));
     expect(new Set(aIds).size).toBe(aIds.length);
-    const bIds = new Set(b.pages[0].blocks.map((blk) => blk.id));
+    const bIds = new Set(b.pages.flatMap((p) => p.blocks.map((blk) => blk.id)));
     expect(aIds.some((id) => bIds.has(id))).toBe(false);
   });
 
-  it('renders without throwing in both public and editable modes', () => {
+  it('renders every page without throwing in both public and editable modes', () => {
     const doc = t.build('Iron Gym');
-    const publicHtml = renderSiteHtml(doc.pages[0].blocks, baseCtx);
-    expect(publicHtml).toContain('Iron Gym');
-    const editableHtml = renderSiteHtml(doc.pages[0].blocks, { ...baseCtx, editable: true });
-    expect(editableHtml).toContain('contenteditable');
+    for (const page of doc.pages) {
+      const publicHtml = renderSiteHtml(page.blocks, baseCtx);
+      expect(publicHtml).toContain('Iron Gym');
+      // Every page here has at least one block with an editable heading
+      // (Schedule/Team/Pricing included — see renderSchedule/renderTeam/
+      // renderPricing's own fieldAttrs calls).
+      const editableHtml = renderSiteHtml(page.blocks, { ...baseCtx, editable: true });
+      expect(editableHtml).toContain('contenteditable');
+    }
   });
 });
 
