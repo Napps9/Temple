@@ -599,7 +599,7 @@ The Leads screen adds a per-lead assignee, a Reassign control
 (cold + untouched > 24h) and a Nudge action (`nudge_lead`) that re-notifies
 the assignee. GDPR retention: unconverted leads past
 `gyms.lead_retention_days` (default 365, owner-configurable) are deleted by
-`purge_expired_leads`, scheduled daily via `pg_cron` (0109) alongside the
+`purge_expired_leads`, scheduled daily via `pg_cron` (0115) alongside the
 health-data purge; converted leads are kept as members.
 
 ### Member import

@@ -1,6 +1,6 @@
 -- Schedule the lead-retention sweep.
 --
--- purge_expired_leads() (0108) deletes unconverted leads past their gym's
+-- purge_expired_leads() (0114) deletes unconverted leads past their gym's
 -- lead_retention_days window, but nothing calls it on its own. This wires
 -- it to pg_cron, mirroring the health-data purge in 0095 — same
 -- enable-via-migration pattern, same off-peak slot (staggered 30 minutes

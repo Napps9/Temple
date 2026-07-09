@@ -497,7 +497,7 @@ $$;
 grant execute on function public.count_unread_lead_notifications(uuid) to authenticated;
 
 -- ============================================================================
--- 12. purge_expired_leads — retention sweep (internal; scheduled in 0109)
+-- 12. purge_expired_leads — retention sweep (internal; scheduled in 0115)
 -- ============================================================================
 --
 -- Deletes unconverted leads past their gym's retention window. Converted
