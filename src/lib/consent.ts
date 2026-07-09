@@ -10,6 +10,27 @@ import { supabase } from './supabase';
 // on the consent screen.
 export const CONSENT_POLICY_VERSION = '2026-07';
 
+// Whole years between an ISO `YYYY-MM-DD` date of birth and today. Returns
+// null for a malformed string. The server enforces the same rule from
+// profiles.date_of_birth (migration 0110) — this is for the UI.
+export function computeAge(iso: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const today = new Date();
+  let age = today.getFullYear() - y;
+  const beforeBirthday =
+    today.getMonth() + 1 < mo ||
+    (today.getMonth() + 1 === mo && today.getDate() < d);
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+export function isMinor(iso: string): boolean {
+  const age = computeAge(iso);
+  return age != null && age < 18;
+}
+
 // The clauses presented on the consent screen. Each must be ticked.
 // Wording is aligned with docs/legal/privacy-policy.md and docs/legal/dpa.md
 // — a material change here must bump CONSENT_POLICY_VERSION above so members

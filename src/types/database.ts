@@ -84,6 +84,7 @@ export type Database = {
           cancel_cutoff_days_before: number;
           members_can_self_checkout: boolean;
           require_membership_to_book: boolean;
+          allow_minors: boolean;
           membership_upgrade_policy: 'self_serve' | 'request';
           membership_downgrade_policy: 'self_serve' | 'request';
           membership_cancel_policy: 'self_serve' | 'request';
@@ -822,6 +823,8 @@ export type Database = {
           policy_version: string;
           lawful_basis: string;
           consented_at: string;
+          guardian_name: string | null;
+          guardian_contact: string | null;
         };
         Insert: {
           id?: string;
@@ -830,6 +833,8 @@ export type Database = {
           policy_version: string;
           lawful_basis?: string;
           consented_at?: string;
+          guardian_name?: string | null;
+          guardian_contact?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -838,6 +843,8 @@ export type Database = {
           policy_version: string;
           lawful_basis: string;
           consented_at: string;
+          guardian_name: string | null;
+          guardian_contact: string | null;
         }>;
         Relationships: [];
       };
@@ -3042,12 +3049,18 @@ export type Database = {
           p_gym_id: string;
           p_policy_version: string;
           p_lawful_basis?: string;
+          p_guardian_name?: string;
+          p_guardian_contact?: string;
         };
         Returns: null;
       };
       erase_member_health_data: {
         Args: { p_gym_id: string; p_profile: string };
         Returns: null;
+      };
+      purge_expired_waiver_signatures: {
+        Args: Record<string, never>;
+        Returns: number;
       };
       purge_expired_health_data: {
         Args: Record<string, never>;
@@ -3505,6 +3518,10 @@ export type Database = {
         Returns: undefined;
       };
       set_require_membership_to_book: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: undefined;
+      };
+      set_allow_minors: {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: undefined;
       };

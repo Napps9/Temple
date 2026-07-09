@@ -12,6 +12,7 @@ import { errorMessage } from '@/lib/errors';
 import type { Discipline } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -68,6 +69,12 @@ export function OperatingDefaultsPanel() {
   useEffect(() => {
     setCurrency(currentCurrency);
   }, [currentCurrency]);
+
+  const currentAllowMinors = useGymAllowMinors();
+  const [allowMinors, setAllowMinors] = useState<boolean | null>(null);
+  useEffect(() => {
+    setAllowMinors(currentAllowMinors);
+  }, [currentAllowMinors]);
 
   const cfg = useQuery({
     queryKey: ['gym-operating-defaults', membership?.gymId],
@@ -138,6 +145,13 @@ export function OperatingDefaultsPanel() {
         });
         if (ce) throw ce;
       }
+      if (allowMinors !== null && allowMinors !== currentAllowMinors) {
+        const { error: me } = await supabase.rpc('set_allow_minors', {
+          p_gym_id: membership.gymId,
+          p_enabled: allowMinors,
+        });
+        if (me) throw me;
+      }
     },
     onSuccess: () => {
       setError(null);
@@ -145,6 +159,7 @@ export function OperatingDefaultsPanel() {
       queryClient.invalidateQueries({ queryKey: ['gym-operating-defaults'] });
       queryClient.invalidateQueries({ queryKey: ['gym-discipline'] });
       queryClient.invalidateQueries({ queryKey: ['gym-currency'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-allow-minors'] });
       // Saving stamps operating_defaults_reviewed_at, which flips the
       // 'settings' onboarding step done — refresh the checklist so it
       // ticks without a reload.
@@ -198,6 +213,25 @@ export function OperatingDefaultsPanel() {
           ]}
           value={discipline ?? 'crossfit'}
           onChange={(v) => setDiscipline(v as Discipline)}
+        />
+      </Section>
+
+      <Section title="Members under 18">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Off by default. When on, a member whose date of birth makes them
+          under 18 can join, but must provide a parent or guardian's consent
+          before they finish signing up — and you remain responsible for
+          confirming that consent is valid. Leave off to refuse under-18
+          members entirely.
+        </Text>
+        <Choice
+          label="Allow members under 18"
+          options={[
+            { key: 'no', label: 'No — adults only (18+)' },
+            { key: 'yes', label: 'Yes — with guardian consent' },
+          ]}
+          value={allowMinors ? 'yes' : 'no'}
+          onChange={(v) => setAllowMinors(v === 'yes')}
         />
       </Section>
 

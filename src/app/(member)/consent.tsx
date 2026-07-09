@@ -12,9 +12,11 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import {
   CONSENT_CLAUSES,
   CONSENT_POLICY_VERSION,
+  isMinor,
 } from '@/lib/consent';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
 
 // Onboarding gate: confirm identity (name + date of birth; email comes
 // from the auth account), then capture data-processing consent. The
@@ -29,7 +31,11 @@ export default function ConsentForm() {
   const [fullName, setFullName] = useState('');
   const [dob, setDob] = useState('');
   const [ticked, setTicked] = useState<Record<string, boolean>>({});
+  const [guardianName, setGuardianName] = useState('');
+  const [guardianContact, setGuardianContact] = useState('');
+  const [guardianAck, setGuardianAck] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const allowMinors = useGymAllowMinors();
 
   // Pre-fill name + DOB from the existing profile if present.
   const profile = useQuery({
@@ -55,7 +61,20 @@ export default function ConsentForm() {
 
   const allTicked = CONSENT_CLAUSES.every((c) => ticked[c.key]);
   const validDob = /^\d{4}-\d{2}-\d{2}$/.test(dob);
-  const canSubmit = fullName.trim().length > 0 && validDob && allTicked;
+  const under18 = validDob && isMinor(dob);
+  // Gym hasn't opted in to minors → this member can't proceed here.
+  const minorBlocked = under18 && !allowMinors;
+  const guardianValid =
+    !under18 ||
+    (guardianName.trim().length > 0 &&
+      guardianContact.trim().length > 0 &&
+      guardianAck);
+  const canSubmit =
+    fullName.trim().length > 0 &&
+    validDob &&
+    allTicked &&
+    guardianValid &&
+    !minorBlocked;
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -67,10 +86,18 @@ export default function ConsentForm() {
         .eq('id', session!.user.id);
       if (pErr) throw pErr;
 
-      // 2. Record consent for the active policy version.
+      // 2. Record consent for the active policy version, carrying guardian
+      // details for an under-18 member (the server also re-checks age +
+      // the gym's allow_minors opt-in).
       const { error: cErr } = await supabase.rpc('record_consent', {
         p_gym_id: membership.gymId,
         p_policy_version: CONSENT_POLICY_VERSION,
+        ...(under18
+          ? {
+              p_guardian_name: guardianName.trim(),
+              p_guardian_contact: guardianContact.trim(),
+            }
+          : {}),
       });
       if (cErr) throw cErr;
     },
@@ -125,55 +152,111 @@ export default function ConsentForm() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Consent
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            Your gym needs your agreement before it can store any health
-            information. You can withdraw it at any time from your
-            account, which erases the data.
-          </Text>
-          {CONSENT_CLAUSES.map((c) => {
-            const on = !!ticked[c.key];
-            return (
-              <Pressable
-                key={c.key}
-                onPress={() => setTicked((t) => ({ ...t, [c.key]: !on }))}
-                className="flex-row items-start gap-3 active:opacity-70">
-                <View
-                  className={`w-6 h-6 rounded-md items-center justify-center mt-0.5 ${
-                    on
-                      ? 'bg-primary'
-                      : 'border border-gray-300 dark:border-gray-600'
-                  }`}>
-                  {on ? (
-                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                  ) : null}
-                </View>
-                <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
-                  {c.label}
+        {minorBlocked ? (
+          <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl p-4 gap-1">
+            <Text className="text-amber-800 dark:text-amber-200 font-semibold">
+              This gym doesn't accept members under 18
+            </Text>
+            <Text className="text-amber-700 dark:text-amber-300 text-sm">
+              Please contact your gym directly — they'll be able to help you
+              join.
+            </Text>
+          </View>
+        ) : (
+          <>
+            {under18 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Parent or guardian consent
                 </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  You're under 18, so a parent or guardian needs to give
+                  consent on your behalf.
+                </Text>
+                <Input
+                  label="Parent/guardian name"
+                  value={guardianName}
+                  onChangeText={setGuardianName}
+                  autoCapitalize="words"
+                />
+                <Input
+                  label="Parent/guardian email or phone"
+                  value={guardianContact}
+                  onChangeText={setGuardianContact}
+                />
+                <Pressable
+                  onPress={() => setGuardianAck((v) => !v)}
+                  className="flex-row items-start gap-3 active:opacity-70">
+                  <View
+                    className={`w-6 h-6 rounded-md items-center justify-center mt-0.5 ${
+                      guardianAck
+                        ? 'bg-primary'
+                        : 'border border-gray-300 dark:border-gray-600'
+                    }`}>
+                    {guardianAck ? (
+                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    ) : null}
+                  </View>
+                  <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+                    I confirm I am the parent or guardian named above and I
+                    give my consent.
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
 
-        {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-        ) : null}
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                Consent
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Your gym needs your agreement before it can store any health
+                information. You can withdraw it at any time from your
+                account, which erases the data.
+              </Text>
+              {CONSENT_CLAUSES.map((c) => {
+                const on = !!ticked[c.key];
+                return (
+                  <Pressable
+                    key={c.key}
+                    onPress={() => setTicked((t) => ({ ...t, [c.key]: !on }))}
+                    className="flex-row items-start gap-3 active:opacity-70">
+                    <View
+                      className={`w-6 h-6 rounded-md items-center justify-center mt-0.5 ${
+                        on
+                          ? 'bg-primary'
+                          : 'border border-gray-300 dark:border-gray-600'
+                      }`}>
+                      {on ? (
+                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      ) : null}
+                    </View>
+                    <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+                      {c.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-        <Button
-          onPress={() => submit.mutate()}
-          loading={submit.isPending}
-          disabled={!canSubmit}>
-          Agree & continue
-        </Button>
-        {!canSubmit ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
-            Add your name + date of birth and tick all three to continue.
-          </Text>
-        ) : null}
+            {error ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            ) : null}
+
+            <Button
+              onPress={() => submit.mutate()}
+              loading={submit.isPending}
+              disabled={!canSubmit}>
+              Agree & continue
+            </Button>
+            {!canSubmit ? (
+              <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+                Fill in your details{under18 ? ', the guardian consent,' : ''}{' '}
+                and tick all three boxes to continue.
+              </Text>
+            ) : null}
+          </>
+        )}
       </ScrollView>
     </Screen>
   );

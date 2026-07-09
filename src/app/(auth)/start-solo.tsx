@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
@@ -20,6 +21,7 @@ import {
   resendConfirmation,
   useSession,
 } from '@/lib/auth';
+import { isMinor } from '@/lib/consent';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
@@ -35,6 +37,7 @@ export default function StartSoloScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [dob, setDob] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +75,19 @@ export default function StartSoloScreen() {
       setError('Email and password are required');
       return;
     }
+    // Solo is a direct contract with Temple — no gym, no guardian path — so
+    // it is strictly 18+. (Under-18s train through a gym that opts in.)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      setError('Please enter your date of birth');
+      return;
+    }
+    if (isMinor(dob)) {
+      setError(
+        'You must be 18 or over to sign up for solo tracking. If you train ' +
+          'at a gym, ask them to invite you.',
+      );
+      return;
+    }
     setLoading(true);
     try {
       const { data, error: signUpErr } = await supabase.auth.signUp({
@@ -79,7 +95,7 @@ export default function StartSoloScreen() {
         password,
         options: {
           emailRedirectTo: confirmRedirectTo(),
-          data: { full_name: fullName.trim(), intent: 'solo' },
+          data: { full_name: fullName.trim(), intent: 'solo', date_of_birth: dob },
         },
       });
       if (signUpErr) throw signUpErr;
@@ -95,6 +111,15 @@ export default function StartSoloScreen() {
           setResendNotice(null);
           return;
         }
+      }
+      // Persist DOB now that we're authenticated (the 18+ gate already
+      // passed); auth metadata also carries it. Best-effort.
+      const { data: authed } = await supabase.auth.getUser();
+      if (authed.user) {
+        await supabase
+          .from('profiles')
+          .update({ date_of_birth: dob })
+          .eq('id', authed.user.id);
       }
       const { error: rpcErr } = await supabase.rpc('start_athlete_subscription');
       if (rpcErr) throw rpcErr;
@@ -198,6 +223,12 @@ export default function StartSoloScreen() {
                       autoCapitalize="words"
                       textContentType="name"
                       autoComplete="name"
+                    />
+                    <DatePicker
+                      label="Date of birth"
+                      value={dob}
+                      onChange={setDob}
+                      max={new Date().toISOString().slice(0, 10)}
                     />
                     <Input
                       label="Email"
