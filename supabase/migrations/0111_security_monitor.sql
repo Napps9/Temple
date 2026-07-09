@@ -129,3 +129,10 @@ begin
   return v_new;
 end;
 $$;
+
+-- Ops/cron only. New functions default to EXECUTE for PUBLIC, so lock it
+-- down (matching the _book_class_for pattern) — this is a privileged,
+-- RLS-bypassing definer function that fires outbound HTTP, and no client
+-- should be able to invoke it. pg_cron runs as the job owner, unaffected.
+revoke execute on function public.run_security_monitor()
+  from public, anon, authenticated;
