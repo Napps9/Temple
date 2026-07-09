@@ -104,6 +104,16 @@ dead-end). It carries:
   liability records — deliberately *not* swept by the health-data
   erasure/purge (lawful basis: defence of legal claims). Publishing a
   new waiver version re-prompts everyone to re-sign.
+- **Family / dependents** — where the gym allows minors, a member can
+  add loginless child accounts from a Family screen (`create_dependent`
+  → a `managed` profile linked by `guardianships`). The guardian
+  completes the child's waiver / PAR-Q on their behalf (`?subject=`
+  param), books and cancels the child into classes
+  (`parent_book_dependent` / `parent_cancel_dependent_booking`), and
+  removes the child (`remove_dependent`, soft-removal mirroring
+  `leave_gym`). Staff rosters show a "Child" badge + a Children filter;
+  the member detail page notes a managed account. Guardian reads of a
+  child's health state are audit-logged.
 
 ### Plans, payments & onboarding
 - **Plan subscription self-view** — see active plans, credit balance,
@@ -1115,14 +1125,35 @@ surround:
 - **Retention purge** — `purge_expired_health_data()` sweeps health
   data for members who left more than 3 months ago (schedule via
   pg_cron or a nightly job; safe to run manually).
+- **Waiver-signature purge** — `purge_expired_waiver_signatures()`
+  deletes waiver signatures 6 years after the member left (statutory
+  limitation window), scheduled nightly via pg_cron (`0108`/`0109`).
+  Waivers are deliberately outside the health-data erasure sweep
+  (lawful basis: defence of legal claims).
 - **Access audit trail** — `health_data_access_log` records every
   health-data view / erase / purge with actor, subject, surface and
   timestamp, admin-readable only. Staff health surfaces call
-  `log_health_data_access` on open.
+  `log_health_data_access` on open; a guardian reading a child's
+  waiver / PAR-Q state is logged too.
+- **Breach detection** — `run_security_monitor()` (pg_cron, every 15
+  min) scans for anomalous health-data access and privilege changes,
+  records findings in `security_alerts`, and POSTs new alerts to the
+  `security-alert` edge function, which emails ops when its shared
+  secret is configured. Runbook: `docs/legal/breach-response.md`.
+- **Under-18 members** — off by default per gym (`gyms.allow_minors`,
+  set via `set_allow_minors`). When on, `record_consent` enforces the
+  age floor server-side and captures date of birth + guardian details.
+- **Company legal documents** — Terms of Service, Privacy Policy and
+  DPA drafted for Temple Software Ltd (`docs/legal/`), surfaced
+  in-app at `/terms` and `/privacy` with a sign-up consent notice. A
+  web cookie banner (`CookieBanner`) records analytics consent ahead
+  of product tracking. DPIA + lawful-basis register drafted in
+  `docs/legal/` (still need owner sign-off, not engineering).
 
-> Still pending (needs legal / DPO input, not engineering): formal
-> lawful-basis sign-off + DPIA, the consent-text legal copy, and
-> scheduling the purge job in the hosted environment.
+> Still pending (needs owner / DPO sign-off, not engineering): the
+> DPIA and lawful-basis register are drafted in `docs/legal/` but
+> need formal sign-off, and the legal docs carry a DRAFT banner with
+> registered-office / effective-date placeholders to fill in.
 
 ---
 
@@ -1152,10 +1183,13 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
-- **Health-data GDPR — policy-dependent remainder**: formal
-  lawful-basis sign-off + DPIA, the consent-text legal copy, and
-  scheduling `purge_expired_health_data()` in the hosted environment
-  (pg_cron / nightly job). The engineering surround (consent gate,
+- **Health-data GDPR — owner sign-off remainder**: the DPIA and
+  lawful-basis register are drafted (`docs/legal/`) but need formal
+  owner sign-off, the in-app legal docs carry a DRAFT banner with
+  registered-office / effective-date placeholders to fill in, and
+  `purge_expired_health_data()` still needs scheduling in the hosted
+  environment (the waiver-signature purge and security monitor are
+  already on pg_cron). The engineering surround (consent gate,
   erasure, retention sweep, audit log) has shipped.
 - Health-data reads hardened to definer-function access (today the
   audit log is written by the app surfaces, not enforced at the row
