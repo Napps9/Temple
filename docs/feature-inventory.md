@@ -816,7 +816,10 @@ billing for it yet.
   structure: a Home page that pitches, proves and converts (hero →
   about → testimonials → location → contact) plus dedicated Schedule,
   Team and Pricing pages for the three things that carry real,
-  information-dense live data. The hero headline is seeded from the
+  information-dense live data. Each of those three opens with a short
+  intro paragraph (a per-template, benefit-first about block) before its
+  live-data block — the page sets context and reassures before the raw
+  grid/roster/plans. The hero headline is seeded from the
   gym's real name. Creating a site starts from a template picker; an
   existing site can apply a template from the editor's Theme section
   (confirm-gated — replaces every block on the *active page only*,
@@ -834,9 +837,13 @@ billing for it yet.
   types yet. Best-effort and silent: no `PEXELS_API_KEY`, a rate limit,
   or any network failure just leaves the template exactly as it was
   before this existed (photo-less hero, no gallery block) — site
-  creation itself never fails because of it. Capped at 4 photos total
-  per site (1 hero + 3 gallery) to respect the integration's
-  platform-wide 200 req/hour Pexels budget. Pure query-building and
+  creation itself never fails because of it. The same fetched photos are
+  also spread onto the intro about block of each non-home page
+  (Schedule/Team/Pricing), alternating image side, so those pages open
+  with a relevant image rather than a bare heading — reused, not
+  re-fetched, so the photo cap stays at 4 total per site (1 hero + 3
+  gallery) to respect the integration's platform-wide 200 req/hour
+  Pexels budget. Pure query-building and
   image-placement logic lives in site-auto-images.ts (tested); the
   actual network calls live beside their one caller, `createSite` in
   management/website.tsx, since anything importing stock-photos.ts (and
