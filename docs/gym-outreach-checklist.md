@@ -68,20 +68,39 @@ simulate or degrade to "code created, not emailed." Runbook:
 ## Tier 2 — legal & compliance (before real member health data flows)
 
 Members submit PAR-Q and injury data — special-category health data
-under GDPR Article 9. The engineering surround is done (consent gate,
-erasure on leave, audit log, and the retention purge is now scheduled via
-pg_cron in migration `0095`). What's left is **policy/legal, not code**:
+under GDPR Article 9. Most of this shipped this session and is live
+(drafts in `docs/legal/`, surfaced in-app); both retention purges run on
+pg_cron. What remains is **your sign-off and filling placeholders, not
+code**.
 
-- [ ] Formal lawful-basis sign-off + a DPIA for the health-data
-      processing (needs legal/DPO input)
-- [ ] Real consent-text legal copy for the `/consent` screen (currently
-      placeholder clauses)
-- [ ] **Temple's own Terms of Service + Privacy Policy** — none exist in
-      the repo yet. You're selling SaaS to businesses; you need the
-      gym-facing agreement.
-- [ ] **Data Processing Agreement (DPA)** — each gym is the data
-      controller, Temple is the processor. Standard for any B2B SaaS
-      touching member PII/health data.
+Shipped:
+- [x] **Terms of Service, Privacy Policy, DPA** — drafted (`docs/legal/`),
+      live in-app at `/terms` + `/privacy`, sign-up consent notice wired.
+- [x] **Real consent-text copy** on `/consent` — clauses aligned to the
+      privacy policy + DPA (`src/lib/consent.ts`), no longer placeholder.
+- [x] **DPIA + lawful-basis register** — drafted (`docs/legal/dpia.md`,
+      `lawful-basis-register.md`).
+- [x] **Cookie banner** — web analytics-consent banner shipped ahead of
+      the product tracking to come.
+- [x] **Breach detection + response** — security monitor (pg_cron, every
+      15 min, records to `security_alerts`) + runbook
+      `docs/legal/breach-response.md`.
+- [x] **Retention purges scheduled** — health data (`0095`) and the
+      6-year waiver-signature purge (`0108`/`0109`) both on pg_cron.
+
+Left for you (policy/config, not code):
+- [ ] **Sign off the DPIA + lawful-basis register** (your call as data
+      controller).
+- [ ] **Fill the legal-doc placeholders and drop the DRAFT banner** —
+      registered office address, effective date, the monitored contact
+      inbox.
+- [ ] **Create the contact inbox** the legal docs reference (privacy/DPO
+      + security), then put the real address in the docs.
+- [ ] **Make breach alerts actually email** — set the `security-alert`
+      function's shared secret + the monitor's GUCs in hosted; until then
+      alerts record silently in `security_alerts`.
+- [ ] **(per gym, optional) Under-18 members** — decide whether to enable
+      `allow_minors` (off by default); it captures DoB + guardian details.
 
 ---
 
@@ -126,6 +145,8 @@ back cleanly if the key is unset.
 Before the first outreach, walk the **whole new-gym journey** on the live
 site yourself, exactly as a prospect would:
 
+- [ ] Confirm `/terms` + `/privacy` render and the sign-up consent notice
+      shows before you go live
 - [ ] Sign up → **receive and click the confirmation email** → land in-app
 - [ ] Create a gym → complete the setup checklist (logo, settings, class
       type, schedule, health screening, plan)

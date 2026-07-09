@@ -1158,8 +1158,8 @@ surround:
   `emergency_contact`. Members can also withdraw + erase from their
   account screen.
 - **Retention purge** — `purge_expired_health_data()` sweeps health
-  data for members who left more than 3 months ago (schedule via
-  pg_cron or a nightly job; safe to run manually).
+  data for members who left more than 3 months ago, scheduled via
+  pg_cron (`0095`); safe to run manually.
 - **Waiver-signature purge** — `purge_expired_waiver_signatures()`
   deletes waiver signatures 6 years after the member left (statutory
   limitation window), scheduled nightly via pg_cron (`0108`/`0109`).
@@ -1220,12 +1220,10 @@ Items the conversation has flagged but not implemented yet:
 
 - **Health-data GDPR — owner sign-off remainder**: the DPIA and
   lawful-basis register are drafted (`docs/legal/`) but need formal
-  owner sign-off, the in-app legal docs carry a DRAFT banner with
-  registered-office / effective-date placeholders to fill in, and
-  `purge_expired_health_data()` still needs scheduling in the hosted
-  environment (the waiver-signature purge and security monitor are
-  already on pg_cron). The engineering surround (consent gate,
-  erasure, retention sweep, audit log) has shipped.
+  owner sign-off, and the in-app legal docs carry a DRAFT banner with
+  registered-office / effective-date placeholders to fill in. The
+  engineering surround (consent gate, erasure, retention sweep + its
+  pg_cron schedule, audit log) has shipped.
 - Health-data reads hardened to definer-function access (today the
   audit log is written by the app surfaces, not enforced at the row
   level for raw API calls).
