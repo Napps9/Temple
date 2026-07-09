@@ -84,6 +84,9 @@ begin
     '{"paths":["M0 0 L1 1"],"width":10,"height":10}'::jsonb,
     current_setting('test.kid')::uuid);
 end $$;
+-- Assert as the owner: waiver_signatures RLS hides the child's row from the
+-- guardian (self-or-can_see_health_flag), even though the row exists.
+do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
 select is(
   (select count(*)::int from public.waiver_signatures
      where profile_id = current_setting('test.kid')::uuid),
@@ -136,11 +139,13 @@ select is(
   0,
   'remove_dependent drops the guardianship link'
 );
-select isnt(
+-- Assert the health/membership rows as the owner: gym_memberships and the
+-- admin-only health_data_access_log aren't visible to the guardian's role.
+do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
+select ok(
   (select left_at from public.gym_memberships
      where gym_id = current_setting('test.gym')::uuid
-       and profile_id = current_setting('test.kid')::uuid),
-  null,
+       and profile_id = current_setting('test.kid')::uuid) is not null,
   'remove_dependent ends the child''s membership (left_at set)'
 );
 select is(
