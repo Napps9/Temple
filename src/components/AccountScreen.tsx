@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -362,6 +362,24 @@ export function AccountScreen() {
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
               Choose which topics you hear from this gym about — newsletter,
               programming, promos, billing.
+            </Text>
+          </View>
+        ) : null}
+
+        {membership && session ? (
+          <View className="mt-4 gap-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Family
+            </Text>
+            <ChipButton
+              tone="neutral"
+              className="self-start"
+              label="Manage children"
+              icon="people-outline"
+              onPress={() => router.push('/family' as never)}
+            />
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Add children you look after and book their classes.
             </Text>
           </View>
         ) : null}

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
@@ -31,6 +31,9 @@ export default function ParqForm() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const queryClient = useQueryClient();
+  // When opened for a dependent (from the Family screen), the guardian
+  // completes the child's PAR-Q and returns there.
+  const { subject } = useLocalSearchParams<{ subject?: string }>();
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +93,7 @@ export default function ParqForm() {
         p_gym_id: membership.gymId,
         p_questionnaire_id: active.data.id,
         p_answers: payload,
+        ...(subject ? { p_subject_profile_id: subject } : {}),
       });
       if (error) throw error;
     },
@@ -97,10 +101,17 @@ export default function ParqForm() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['parq-state'] });
       queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
-      // Health screening flows straight into the injury check — same
-      // "tell us how to keep you safe" beat, so we ask while they're in
-      // that headspace rather than surfacing it later on the checklist.
-      router.replace('/injury-check' as never);
+      queryClient.invalidateQueries({ queryKey: ['dependent-screening'] });
+      if (subject) {
+        // Completing a child's PAR-Q returns to Family — the injury check is
+        // the member's own next step, not the child's.
+        router.replace('/family' as never);
+      } else {
+        // Health screening flows straight into the injury check — same
+        // "tell us how to keep you safe" beat, so we ask while they're in
+        // that headspace rather than surfacing it later on the checklist.
+        router.replace('/injury-check' as never);
+      }
     },
     onError: (e) => setError(errorMessage(e, 'Could not submit')),
   });

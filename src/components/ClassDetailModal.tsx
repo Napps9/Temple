@@ -28,6 +28,7 @@ import {
   type GymPlan,
 } from '@/lib/subscriptions';
 import { useCan } from '@/lib/useCan';
+import { useDependents } from '@/lib/useDependents';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 import { dayBeforeCutoffEpoch } from '@/lib/zoned-time';
@@ -791,6 +792,13 @@ export function ClassDetailModal({
                 />
               )}
 
+              {mode === 'book' && sessionId && !inPast ? (
+                <DependentBookRow
+                  sessionId={sessionId}
+                  bookedIds={new Set(bookings.map((b) => b.profile_id))}
+                />
+              ) : null}
+
               {mode === 'manage' && canEditClasses && !inPast ? (
                 <Button
                   variant="destructive"
@@ -843,6 +851,78 @@ export function ClassDetailModal({
       />
     ) : null}
     </>
+  );
+}
+
+// A guardian's children, each with a Book button, shown under the member's
+// own booking action. Books the child via parent_book_dependent (no-charge
+// seat); the server still enforces the child's own PAR-Q/waiver, so an
+// unscreened child surfaces that error here.
+function DependentBookRow({
+  sessionId,
+  bookedIds,
+}: {
+  sessionId: string;
+  bookedIds: Set<string>;
+}) {
+  const queryClient = useQueryClient();
+  const dependents = useDependents();
+  const [error, setError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const kids = dependents.data ?? [];
+  if (kids.length === 0) return null;
+
+  async function bookChild(id: string) {
+    setError(null);
+    setPendingId(id);
+    try {
+      const { error: e } = await supabase.rpc('parent_book_dependent', {
+        p_session_id: sessionId,
+        p_dependent_id: id,
+      });
+      if (e) throw e;
+      queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+    } catch (e) {
+      setError(errorMessage(e, 'Could not book your child'));
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  return (
+    <View className="gap-2 border-t border-gray-100 dark:border-gray-800 pt-3">
+      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        Book a child
+      </Text>
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+      {kids.map((k) => {
+        const booked = bookedIds.has(k.id);
+        return (
+          <View key={k.id} className="flex-row items-center justify-between">
+            <Text className="text-gray-700 dark:text-gray-200">
+              {k.fullName ?? 'Child'}
+            </Text>
+            {booked ? (
+              <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                Booked
+              </Text>
+            ) : (
+              <ChipButton
+                tone="primary"
+                icon="add-outline"
+                label={pendingId === k.id ? 'Booking…' : 'Book'}
+                onPress={() => bookChild(k.id)}
+                disabled={pendingId !== null}
+              />
+            )}
+          </View>
+        );
+      })}
+    </View>
   );
 }
 

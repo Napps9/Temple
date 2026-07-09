@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -32,6 +32,9 @@ export default function WaiverForm() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
+  // When opened for a dependent (from the Family screen), the guardian signs
+  // on the child's behalf and returns there instead of the entry gate.
+  const { subject } = useLocalSearchParams<{ subject?: string }>();
   const [signature, setSignature] = useState<SignatureValue | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +63,7 @@ export default function WaiverForm() {
         p_gym_id: membership.gymId,
         p_waiver_id: active.data.id,
         p_signature: signature as unknown as Json,
+        ...(subject ? { p_subject_profile_id: subject } : {}),
       });
       if (error) throw error;
     },
@@ -67,9 +71,14 @@ export default function WaiverForm() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['waiver-state'] });
       queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
-      // Back through the entry gate so any remaining step (e.g. PAR-Q,
-      // when the gym runs both) is picked up before /book.
-      router.replace('/' as never);
+      queryClient.invalidateQueries({ queryKey: ['dependent-screening'] });
+      if (subject) {
+        router.replace('/family' as never);
+      } else {
+        // Back through the entry gate so any remaining step (e.g. PAR-Q,
+        // when the gym runs both) is picked up before /book.
+        router.replace('/' as never);
+      }
     },
     onError: (e) => setError(errorMessage(e, 'Could not submit your signature')),
   });
