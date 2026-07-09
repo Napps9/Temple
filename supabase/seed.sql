@@ -161,3 +161,30 @@ begin
   raise notice 'Lead-automation demo seeded for gym %.', v_gym_id;
 end;
 $$;
+
+-- Email-automation demo: one enabled "welcome new members" automation so
+-- the automations surface has something to show on a fresh reset. Idempotent.
+do $$
+declare
+  v_gym_id   uuid;
+  v_owner_id uuid := '11111111-1111-1111-1111-111111111111';
+begin
+  select id into v_gym_id from public.gyms where slug = 'iron-temple';
+  if v_gym_id is null then return; end if;
+  if exists (select 1 from public.email_automations where gym_id = v_gym_id) then return; end if;
+
+  insert into public.email_automations
+    (gym_id, name, enabled, trigger_type, delay_minutes, subject, preheader,
+     compiled_html, compiled_text, created_by)
+  values
+    (v_gym_id, 'Welcome new members', true, 'member_joined', 4320,
+     'Welcome to Iron Temple', 'Glad to have you on board',
+     '<html><body><h1>Welcome to Iron Temple</h1><p>We''re glad you joined. '
+       || 'Book your first class whenever you''re ready.</p>'
+       || '<p><a href="{{unsubscribe_url}}">Unsubscribe</a></p></body></html>',
+     'Welcome to Iron Temple. Book your first class whenever you''re ready.',
+     v_owner_id);
+
+  raise notice 'Email-automation demo seeded for gym %.', v_gym_id;
+end;
+$$;

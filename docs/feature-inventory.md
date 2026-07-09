@@ -834,6 +834,38 @@ surface, reachable from the **Comms** tab on Manage or
   `can_manage_comms`-gated security-definer RPCs, never handed to the
   client raw.
 
+### Email automations
+
+[`can_manage_comms`] Event-triggered emails an owner configures once and the
+platform fires unattended, reachable from Comms → Automations
+(`/management/communications/automations`). Built on the Comms Suite: the
+same block editor + renderer author the email, `comms_audience_rows`
+resolves recipients and applies per-topic/blanket suppression, and the gym's
+sender identity / sending domain carry the send. Four triggers (0116):
+`member_joined` (welcome, N days after joining), `member_first_class`
+(follow-up after the earliest attended `class_bookings` row),
+`member_inactive` (win-back after N days with no attendance), and `lead_cold`
+(nurture a still-cold, consented lead N hours after capture). Each fires only
+for anchor events at or after the automation's `created_at`, so enabling one
+never blasts the back-catalogue.
+
+There is no event bus, so the engine is a `pg_cron` sweep
+(`dispatch-email-automations`, every 15 min, 0117): `enqueue_due_automation_runs`
+inserts `email_automation_runs` (the ledger + queue, once-only via a unique
+`idempotency_key`), then `dispatch_email_automations` best-effort
+`net.http_post`s the `send-email-automations` edge worker (URL + secret from
+GUCs, skipped when unset — same pattern as the security monitor). The worker
+drains queued runs via Resend (per-send idempotency key, live-vs-simulated
+gate) and also serves the public one-click unsubscribe link carried in each
+email — a member run adds an `email_unsubscribes` row (blanket or per-topic)
+via `automation_unsubscribe`; a lead run withdraws consent via
+`lead_withdraw_marketing_consent`. Owners get a "Send a test to me"
+(`send_automation_test`) and an Enable switch gated on a valid body. The email
+body is compiled to HTML on save (no human at fire time). v1 tracks delivery +
+unsubscribe; per-recipient open/click analytics are a noted follow-up. Real
+unattended sending needs the two GUCs, the worker deployed, and a Resend key;
+until then automations enqueue and simulate.
+
 ### Website
 
 [`can_manage_website`, owner + admin by default] A public marketing

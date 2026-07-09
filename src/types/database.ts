@@ -2409,6 +2409,115 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      email_automations: {
+        Row: {
+          id: string;
+          gym_id: string;
+          name: string;
+          enabled: boolean;
+          trigger_type:
+            | 'member_joined'
+            | 'member_first_class'
+            | 'member_inactive'
+            | 'lead_cold';
+          delay_minutes: number;
+          params: Json;
+          topic_id: string | null;
+          subject: string;
+          preheader: string;
+          from_name: string | null;
+          design: Json;
+          compiled_html: string | null;
+          compiled_text: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          name?: string;
+          enabled?: boolean;
+          trigger_type?:
+            | 'member_joined'
+            | 'member_first_class'
+            | 'member_inactive'
+            | 'lead_cold';
+          delay_minutes?: number;
+          params?: Json;
+          topic_id?: string | null;
+          subject?: string;
+          preheader?: string;
+          from_name?: string | null;
+          design?: Json;
+          compiled_html?: string | null;
+          compiled_text?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          name: string;
+          enabled: boolean;
+          trigger_type:
+            | 'member_joined'
+            | 'member_first_class'
+            | 'member_inactive'
+            | 'lead_cold';
+          delay_minutes: number;
+          params: Json;
+          topic_id: string | null;
+          subject: string;
+          preheader: string;
+          from_name: string | null;
+          design: Json;
+          compiled_html: string | null;
+          compiled_text: string | null;
+          updated_by: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      email_automation_runs: {
+        Row: {
+          id: string;
+          gym_id: string;
+          automation_id: string;
+          subject_profile_id: string | null;
+          lead_id: string | null;
+          recipient_email: string;
+          recipient_name: string | null;
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'suppressed';
+          error: string | null;
+          idempotency_key: string;
+          scheduled_at: string | null;
+          created_at: string;
+          sent_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          automation_id: string;
+          subject_profile_id?: string | null;
+          lead_id?: string | null;
+          recipient_email: string;
+          recipient_name?: string | null;
+          status?: 'queued' | 'sent' | 'failed' | 'skipped' | 'suppressed';
+          error?: string | null;
+          idempotency_key: string;
+          scheduled_at?: string | null;
+          created_at?: string;
+          sent_at?: string | null;
+        };
+        Update: Partial<{
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'suppressed';
+          error: string | null;
+          sent_at: string | null;
+        }>;
+        Relationships: [];
+      };
       email_campaigns: {
         Row: {
           id: string;
@@ -3842,6 +3951,18 @@ export type Database = {
       comms_finalize_simulation: {
         Args: { p_campaign_id: string };
         Returns: number;
+      };
+      send_automation_test: {
+        Args: { p_automation_id: string };
+        Returns: null;
+      };
+      automation_unsubscribe: {
+        Args: { p_run_id: string };
+        Returns: null;
+      };
+      lead_withdraw_marketing_consent: {
+        Args: { p_run_id: string };
+        Returns: null;
       };
       import_pending_members: {
         Args: { p_gym_id: string; p_rows: Json };

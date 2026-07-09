@@ -129,3 +129,10 @@ verify_jwt = false
 # pg_net (no user JWT); guarded by the x-security-secret shared secret.
 [functions.security-alert]
 verify_jwt = false
+
+# Email-automation worker. Two paths, both no-JWT: the drain (called by the
+# dispatch-email-automations pg_cron job via pg_net, guarded by the
+# x-automation-secret shared secret) and the public one-click unsubscribe
+# link carried in each automated email.
+[functions.send-email-automations]
+verify_jwt = false
