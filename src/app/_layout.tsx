@@ -9,6 +9,7 @@ import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { CookieBanner } from '@/components/CookieBanner';
 import { hexToPrimaryDarkRgbTriplet, hexToRgbTriplet } from '@/lib/brand';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
@@ -292,6 +293,7 @@ function ThemedShell() {
         <Stack.Screen name="(member)" />
         <Stack.Screen name="athlete" />
       </Stack>
+      <CookieBanner />
     </View>
   );
 }
