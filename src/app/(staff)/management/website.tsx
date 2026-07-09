@@ -790,9 +790,14 @@ export default function WebsiteManageScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="flex-1">
-        <View className="flex-row items-center gap-3 py-3 px-4 md:px-6 border-b border-gray-100 dark:border-gray-800">
+        {/* One compact bar: title + Preview/Domain + page tabs on the
+            left, Publish on the right. Merged from what used to be two
+            stacked rows so the editor/preview gets that height back. The
+            page tabs stay visible while previewing, so switching pages
+            doesn't need dropping back into the editor first. */}
+        <View className="flex-row items-center gap-2 py-2 px-4 md:px-6 border-b border-gray-100 dark:border-gray-800 flex-wrap">
           <BackLink inline label="Manage" fallbackHref="/management" />
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">Website</Text>
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">Website</Text>
           {Platform.OS === 'web' ? (
             <Button
               variant={showPreview ? 'primary' : 'secondary'}
@@ -807,18 +812,7 @@ export default function WebsiteManageScreen() {
               <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">Domain</Text>
             </Pressable>
           </Link>
-          <Button
-            variant={site.data.published ? 'secondary' : 'primary'}
-            loading={publishState === 'working'}
-            disabled={blockedByWarnings}
-            onPress={togglePublish}>
-            {site.data.published ? 'Unpublish' : 'Publish'}
-          </Button>
-        </View>
-
-        {/* Always visible, including while previewing, so switching
-            pages doesn't require dropping back into the editor first. */}
-        <View className="flex-row items-center gap-2 px-4 md:px-6 py-2 border-b border-gray-100 dark:border-gray-800 flex-wrap">
+          <View className="w-px self-stretch bg-gray-200 dark:bg-gray-700 mx-1" />
           {document.pages.map((p) => {
             const isActive = p.id === activePage.id;
             return (
@@ -849,6 +843,14 @@ export default function WebsiteManageScreen() {
             <Ionicons name="add" size={12} color="#6B7280" />
             <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Pages</Text>
           </Pressable>
+          <View className="flex-1" />
+          <Button
+            variant={site.data.published ? 'secondary' : 'primary'}
+            loading={publishState === 'working'}
+            disabled={blockedByWarnings}
+            onPress={togglePublish}>
+            {site.data.published ? 'Unpublish' : 'Publish'}
+          </Button>
         </View>
 
         {showPreview && Platform.OS === 'web' ? (
