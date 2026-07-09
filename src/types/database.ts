@@ -78,6 +78,8 @@ export type Database = {
           booking_cutoff_minutes_before: number;
           cancel_cutoff_minutes_before: number;
           public_lead_capture_enabled: boolean;
+          lead_sms_enabled: boolean;
+          lead_retention_days: number;
           operating_defaults_reviewed_at: string | null;
           cancel_cutoff_mode: 'relative' | 'day_before';
           cancel_cutoff_time: string | null;
@@ -127,6 +129,8 @@ export type Database = {
           booking_cutoff_minutes_before?: number;
           cancel_cutoff_minutes_before?: number;
           public_lead_capture_enabled?: boolean;
+          lead_sms_enabled?: boolean;
+          lead_retention_days?: number;
           operating_defaults_reviewed_at?: string | null;
           cancel_cutoff_mode?: 'relative' | 'day_before';
           cancel_cutoff_time?: string | null;
@@ -167,6 +171,8 @@ export type Database = {
           booking_cutoff_minutes_before: number;
           cancel_cutoff_minutes_before: number;
           public_lead_capture_enabled: boolean;
+          lead_sms_enabled: boolean;
+          lead_retention_days: number;
           operating_defaults_reviewed_at: string | null;
           cancel_cutoff_mode: 'relative' | 'day_before';
           cancel_cutoff_time: string | null;
@@ -314,6 +320,12 @@ export type Database = {
           notes: string | null;
           captured_at: string;
           captured_by: string | null;
+          assigned_coach_id: string | null;
+          assigned_at: string | null;
+          marketing_consent: boolean;
+          consent_at: string | null;
+          lawful_basis: string;
+          consent_policy_version: string | null;
           converted_at: string | null;
           converted_profile_id: string | null;
           archived_at: string | null;
@@ -331,6 +343,12 @@ export type Database = {
           notes?: string | null;
           captured_at?: string;
           captured_by?: string | null;
+          assigned_coach_id?: string | null;
+          assigned_at?: string | null;
+          marketing_consent?: boolean;
+          consent_at?: string | null;
+          lawful_basis?: string;
+          consent_policy_version?: string | null;
           converted_at?: string | null;
           converted_profile_id?: string | null;
           archived_at?: string | null;
@@ -348,11 +366,78 @@ export type Database = {
           notes: string | null;
           captured_at: string;
           captured_by: string | null;
+          assigned_coach_id: string | null;
+          assigned_at: string | null;
+          marketing_consent: boolean;
+          consent_at: string | null;
+          lawful_basis: string;
+          consent_policy_version: string | null;
           converted_at: string | null;
           converted_profile_id: string | null;
           archived_at: string | null;
           created_at: string;
           updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      lead_assignment_rules: {
+        Row: {
+          gym_id: string;
+          strategy: 'round_robin' | 'single_default' | 'manual';
+          default_coach_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          gym_id: string;
+          strategy?: 'round_robin' | 'single_default' | 'manual';
+          default_coach_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<{
+          gym_id: string;
+          strategy: 'round_robin' | 'single_default' | 'manual';
+          default_coach_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        }>;
+        Relationships: [];
+      };
+      lead_notifications: {
+        Row: {
+          id: string;
+          gym_id: string;
+          lead_id: string;
+          channel: 'email' | 'in_app' | 'sms';
+          recipient: string | null;
+          recipient_profile_id: string | null;
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          idempotency_key: string;
+          created_at: string;
+          sent_at: string | null;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          lead_id: string;
+          channel: 'email' | 'in_app' | 'sms';
+          recipient?: string | null;
+          recipient_profile_id?: string | null;
+          status?: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error?: string | null;
+          idempotency_key: string;
+          created_at?: string;
+          sent_at?: string | null;
+          read_at?: string | null;
+        };
+        Update: Partial<{
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          sent_at: string | null;
+          read_at: string | null;
         }>;
         Relationships: [];
       };
@@ -3199,6 +3284,46 @@ export type Database = {
         };
         Returns: null;
       };
+      assign_lead: {
+        Args: { p_lead_id: string };
+        Returns: string | null;
+      };
+      set_lead_assignee: {
+        Args: { p_lead_id: string; p_coach_id: string | null };
+        Returns: null;
+      };
+      nudge_lead: {
+        Args: { p_lead_id: string };
+        Returns: null;
+      };
+      mark_lead_notification_read: {
+        Args: { p_id: string };
+        Returns: null;
+      };
+      requeue_lead_notification: {
+        Args: { p_id: string };
+        Returns: null;
+      };
+      count_unread_lead_notifications: {
+        Args: { p_gym_id: string };
+        Returns: number;
+      };
+      set_lead_assignment_rule: {
+        Args: {
+          p_gym_id: string;
+          p_strategy: 'round_robin' | 'single_default' | 'manual';
+          p_default_coach_id?: string | null;
+        };
+        Returns: null;
+      };
+      set_gym_lead_sms: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_gym_lead_retention: {
+        Args: { p_gym_id: string; p_days: number };
+        Returns: null;
+      };
       is_booking_eligible: {
         Args: {
           p_profile_id: string;
@@ -3400,6 +3525,7 @@ export type Database = {
           p_email: string;
           p_phone?: string | null;
           p_message?: string | null;
+          p_marketing_consent?: boolean;
         };
         Returns: null;
       };

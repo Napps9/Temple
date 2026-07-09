@@ -108,6 +108,26 @@ export function useLogNudge() {
   });
 }
 
+// Unread in-app lead notifications for the signed-in coach — a lead
+// assigned to them that they haven't opened yet. Only the assignee sees
+// their own count (the RPC filters on auth.uid()), so it's cheap and safe
+// to include for every staff member.
+export function useUnreadLeadNotifications() {
+  const { data: membership } = useGymMembership();
+  const canAssignPlan = useCan('can_assign_plan') ?? false;
+  return useQuery({
+    queryKey: ['unread-lead-notifications', membership?.gymId],
+    enabled: !!membership?.gymId && canAssignPlan,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc('count_unread_lead_notifications', {
+        p_gym_id: membership!.gymId,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+}
+
 // Open (unacknowledged) PAR-Q/injury alerts — the Alerts tab's own
 // count, surfaced here so it also contributes to the nav badges
 // instead of only being visible once you open the Inbox.
@@ -134,6 +154,7 @@ export function useNotificationCount(): number {
   const injuries = useMyInjuries();
   const logNudge = useLogNudge();
   const openAlerts = useOpenStaffAlertsCount();
+  const leadNotifications = useUnreadLeadNotifications();
   const unreadTotal =
     (unread.data?.dm_unread ?? 0) +
     (unread.data?.announcement_unread ?? 0) +
@@ -142,6 +163,7 @@ export function useNotificationCount(): number {
     unreadTotal +
     dueCheckIns(injuries.data).length +
     (logNudge.data?.length ?? 0) +
-    (openAlerts.data ?? 0)
+    (openAlerts.data ?? 0) +
+    (leadNotifications.data ?? 0)
   );
 }

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -49,6 +50,7 @@ export default function LeadCaptureScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
@@ -65,8 +67,20 @@ export default function LeadCaptureScreen() {
         p_email: email.trim(),
         p_phone: phone.trim() || null,
         p_message: message.trim() || null,
+        p_marketing_consent: marketingConsent,
       });
       if (e) throw e;
+      // Nudge the notification worker so the assigned coach hears about it
+      // straight away. Best-effort — the enquiry is already safely stored.
+      if (gym.data?.id) {
+        try {
+          await supabase.functions.invoke('send-lead-notifications', {
+            body: { gym_id: gym.data.id },
+          });
+        } catch {
+          // Non-fatal: the coach's email stays queued for retry.
+        }
+      }
     },
     onSuccess: () => {
       setError(null);
@@ -192,6 +206,27 @@ export default function LeadCaptureScreen() {
                 placeholder="What are you looking for?"
                 multiline
               />
+
+              <Pressable
+                onPress={() => setMarketingConsent((v) => !v)}
+                className="flex-row items-start gap-3 active:opacity-70">
+                <View
+                  className={`w-5 h-5 rounded border items-center justify-center mt-0.5 ${
+                    marketingConsent
+                      ? 'bg-primary border-primary'
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                  {marketingConsent ? (
+                    <Ionicons name="checkmark" size={14} color="#fff" />
+                  ) : null}
+                </View>
+                <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs leading-5">
+                  I'm happy for {info.name} to email or text me about
+                  membership, offers and classes. You can unsubscribe at any
+                  time. We'll always handle your details in line with our
+                  privacy policy.
+                </Text>
+              </Pressable>
 
               {error ? (
                 <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>

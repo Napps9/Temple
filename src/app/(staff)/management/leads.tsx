@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect } from 'expo-router';
+import { Redirect, Link } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
@@ -23,14 +24,23 @@ type LeadRow = {
   source_id: string | null;
   notes: string | null;
   captured_at: string;
+  assigned_coach_id: string | null;
+  assigned_at: string | null;
+  marketing_consent: boolean;
   converted_profile_id: string | null;
   source: { label: string; color: string } | null;
+  assignee: { full_name: string | null } | null;
 };
 
 type SourceRow = {
   id: string;
   label: string;
   color: string;
+};
+
+type CoachRow = {
+  profile_id: string;
+  full_name: string | null;
 };
 
 const STATUS_LABELS: Record<LeadStatus, string> = {
@@ -60,11 +70,37 @@ const STATUS_ORDER: LeadStatus[] = [
   'lost',
 ];
 
+const STALE_MS = 24 * 60 * 60 * 1000;
+
+// A lead needs following up when it's still cold and has sat untouched for
+// more than a day (or was never assigned to anyone).
+function needsFollowUp(l: LeadRow): boolean {
+  if (l.status !== 'cold') return false;
+  const since = l.assigned_at ?? l.captured_at;
+  return Date.now() - new Date(since).getTime() > STALE_MS;
+}
+
+// Best-effort nudge to the edge worker to drain any queued lead emails.
+// Never throws — a failed drain leaves the rows queued and retryable.
+async function drainLeadEmails(gymId: string) {
+  try {
+    await supabase.functions.invoke('send-lead-notifications', {
+      body: { gym_id: gymId },
+    });
+  } catch {
+    // Non-fatal: the in-app notification already landed and the email
+    // stays queued for the owner to retry.
+  }
+}
+
 export default function LeadsScreen() {
   const { data: membership } = useGymMembership();
   const canAssignPlan = useCan('can_assign_plan');
+  const isOwner = membership?.role === 'owner';
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<LeadStatus | 'all' | 'active'>('active');
+  const [filter, setFilter] = useState<
+    LeadStatus | 'all' | 'active' | 'followup'
+  >('active');
   const [openLead, setOpenLead] = useState<LeadRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
@@ -76,12 +112,12 @@ export default function LeadsScreen() {
       let q = supabase
         .from('leads')
         .select(
-          'id, full_name, email, phone, status, source_id, notes, captured_at, converted_profile_id, source:lead_sources!source_id(label, color)',
+          'id, full_name, email, phone, status, source_id, notes, captured_at, assigned_coach_id, assigned_at, marketing_consent, converted_profile_id, source:lead_sources!source_id(label, color), assignee:profiles!assigned_coach_id(full_name)',
         )
         .eq('gym_id', membership!.gymId)
         .is('archived_at', null)
         .order('captured_at', { ascending: false });
-      if (filter === 'active') {
+      if (filter === 'active' || filter === 'followup') {
         q = q.in('status', [
           'cold',
           'contacted',
@@ -93,7 +129,8 @@ export default function LeadsScreen() {
       }
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as unknown as LeadRow[];
+      const rows = (data ?? []) as unknown as LeadRow[];
+      return filter === 'followup' ? rows.filter(needsFollowUp) : rows;
     },
   });
 
@@ -111,6 +148,36 @@ export default function LeadsScreen() {
       return (data ?? []) as SourceRow[];
     },
   });
+
+  const coaches = useQuery({
+    queryKey: ['lead-coaches', membership?.gymId],
+    enabled: !!membership?.gymId && canAssignPlan === true,
+    queryFn: async (): Promise<CoachRow[]> => {
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select('profile_id, profiles!profile_id(full_name)')
+        .eq('gym_id', membership!.gymId)
+        .is('left_at', null)
+        .in('role', ['owner', 'admin', 'coach', 'staff']);
+      if (error) throw error;
+      return (data ?? [])
+        .map((r) => {
+          const row = r as unknown as {
+            profile_id: string;
+            profiles: { full_name: string | null } | null;
+          };
+          return {
+            profile_id: row.profile_id,
+            full_name: row.profiles?.full_name ?? null,
+          };
+        })
+        .sort((a, b) =>
+          (a.full_name ?? '').localeCompare(b.full_name ?? ''),
+        );
+    },
+  });
+
+  const followUpCount = (leads.data ?? []).filter(needsFollowUp).length;
 
   if (canAssignPlan === false) return <Redirect href="/management" />;
   if (!membership) return null;
@@ -130,14 +197,25 @@ export default function LeadsScreen() {
           </View>
           <View className="gap-2 items-end">
             <Button onPress={() => setAddOpen(true)}>Add lead</Button>
-            <Pressable
-              onPress={() => setSourcesOpen(true)}
-              hitSlop={6}
-              className="active:opacity-70">
-              <Text className="text-primary text-xs font-medium">
-                Manage sources
-              </Text>
-            </Pressable>
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => setSourcesOpen(true)}
+                hitSlop={6}
+                className="active:opacity-70">
+                <Text className="text-primary text-xs font-medium">
+                  Manage sources
+                </Text>
+              </Pressable>
+              {isOwner ? (
+                <Link href="/management/leads/settings" asChild>
+                  <Pressable hitSlop={6} className="active:opacity-70">
+                    <Text className="text-primary text-xs font-medium">
+                      Automation
+                    </Text>
+                  </Pressable>
+                </Link>
+              ) : null}
+            </View>
           </View>
         </View>
 
@@ -147,34 +225,40 @@ export default function LeadsScreen() {
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-2">
-              {(['active', 'all', ...STATUS_ORDER] as const).map((k) => {
-                const sel = filter === k;
-                const label =
-                  k === 'active'
-                    ? 'Active'
-                    : k === 'all'
-                    ? 'All'
-                    : STATUS_LABELS[k];
-                return (
-                  <Pressable
-                    key={k}
-                    onPress={() => setFilter(k as typeof filter)}
-                    className={`px-3 py-1.5 rounded-full border ${
-                      sel
-                        ? 'bg-primary border-primary'
-                        : 'border-gray-200 dark:border-gray-700'
-                    }`}>
-                    <Text
-                      className={`text-xs font-medium ${
+              {(['active', 'followup', 'all', ...STATUS_ORDER] as const).map(
+                (k) => {
+                  const sel = filter === k;
+                  const label =
+                    k === 'active'
+                      ? 'Active'
+                      : k === 'followup'
+                      ? `Needs follow-up${
+                          followUpCount > 0 ? ` (${followUpCount})` : ''
+                        }`
+                      : k === 'all'
+                      ? 'All'
+                      : STATUS_LABELS[k];
+                  return (
+                    <Pressable
+                      key={k}
+                      onPress={() => setFilter(k as typeof filter)}
+                      className={`px-3 py-1.5 rounded-full border ${
                         sel
-                          ? 'text-white'
-                          : 'text-gray-700 dark:text-gray-200'
+                          ? 'bg-primary border-primary'
+                          : 'border-gray-200 dark:border-gray-700'
                       }`}>
-                      {label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                      <Text
+                        className={`text-xs font-medium ${
+                          sel
+                            ? 'text-white'
+                            : 'text-gray-700 dark:text-gray-200'
+                        }`}>
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                },
+              )}
             </View>
           </ScrollView>
         </View>
@@ -185,48 +269,73 @@ export default function LeadsScreen() {
           <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2">
             <Ionicons name="people-outline" size={32} color="#9CA3AF" />
             <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-              No leads yet. Tap “Add lead” to capture your first prospect.
+              {filter === 'followup'
+                ? 'Nothing needs chasing right now. Nice.'
+                : 'No leads yet. Tap “Add lead” to capture your first prospect.'}
             </Text>
           </View>
         ) : (
           <View className="gap-2">
-            {leads.data!.map((l) => (
-              <Pressable
-                key={l.id}
-                onPress={() => setOpenLead(l)}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70">
-                <View className="flex-row items-start justify-between gap-3">
-                  <View className="flex-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                      {l.full_name}
-                    </Text>
-                    {l.email || l.phone ? (
-                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                        {[l.email, l.phone].filter(Boolean).join(' · ')}
+            {leads.data!.map((l) => {
+              const stale = needsFollowUp(l);
+              return (
+                <Pressable
+                  key={l.id}
+                  onPress={() => setOpenLead(l)}
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70">
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="flex-1">
+                      <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                        {l.full_name}
                       </Text>
+                      {l.email || l.phone ? (
+                        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                          {[l.email, l.phone].filter(Boolean).join(' · ')}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View
+                      style={{ backgroundColor: STATUS_COLORS[l.status] }}
+                      className="rounded-full px-2.5 py-0.5">
+                      <Text className="text-white text-[10px] font-semibold uppercase tracking-widest">
+                        {STATUS_LABELS[l.status]}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center flex-wrap gap-2">
+                    <View className="flex-row items-center gap-1">
+                      <Ionicons
+                        name="person-circle-outline"
+                        size={14}
+                        color="#9CA3AF"
+                      />
+                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                        {l.assignee?.full_name ??
+                          (l.assigned_coach_id ? 'Coach' : 'Unassigned')}
+                      </Text>
+                    </View>
+                    {stale ? (
+                      <View className="bg-amber-100 dark:bg-amber-900/40 rounded px-2 py-0.5">
+                        <Text className="text-amber-700 dark:text-amber-300 text-[10px] font-semibold uppercase tracking-widest">
+                          Follow up
+                        </Text>
+                      </View>
+                    ) : null}
+                    {l.source ? (
+                      <View
+                        style={{ backgroundColor: l.source.color + '22' }}
+                        className="rounded px-2 py-0.5">
+                        <Text
+                          style={{ color: l.source.color }}
+                          className="text-[10px] font-semibold uppercase tracking-widest">
+                          {l.source.label}
+                        </Text>
+                      </View>
                     ) : null}
                   </View>
-                  <View
-                    style={{ backgroundColor: STATUS_COLORS[l.status] }}
-                    className="rounded-full px-2.5 py-0.5">
-                    <Text className="text-white text-[10px] font-semibold uppercase tracking-widest">
-                      {STATUS_LABELS[l.status]}
-                    </Text>
-                  </View>
-                </View>
-                {l.source ? (
-                  <View
-                    style={{ backgroundColor: l.source.color + '22' }}
-                    className="self-start rounded px-2 py-0.5">
-                    <Text
-                      style={{ color: l.source.color }}
-                      className="text-[10px] font-semibold uppercase tracking-widest">
-                      {l.source.label}
-                    </Text>
-                  </View>
-                ) : null}
-              </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -250,6 +359,7 @@ export default function LeadsScreen() {
         visible={openLead !== null}
         lead={openLead}
         gymId={membership.gymId}
+        coaches={coaches.data ?? []}
         onClose={() => setOpenLead(null)}
         onChanged={() => {
           setOpenLead(null);
@@ -291,6 +401,8 @@ function AddLeadModal({
         p_notes: notes.trim() || null,
       });
       if (e) throw e;
+      // Kick the worker so the assigned coach's email goes out promptly.
+      await drainLeadEmails(gymId);
     },
     onSuccess: () => {
       setName('');
@@ -429,29 +541,57 @@ function AddLeadModal({
   );
 }
 
+type NotificationRow = {
+  id: string;
+  channel: string;
+  status: string;
+  error: string | null;
+  sent_at: string | null;
+};
+
 function LeadDetailModal({
   visible,
   lead,
   gymId,
+  coaches,
   onClose,
   onChanged,
 }: {
   visible: boolean;
   lead: LeadRow | null;
   gymId: string;
+  coaches: CoachRow[];
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [convertPicker, setConvertPicker] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
   const [memberQuery, setMemberQuery] = useState('');
+
+  const notifications = useQuery({
+    queryKey: ['lead-notifications', lead?.id],
+    enabled: visible && !!lead,
+    queryFn: async (): Promise<NotificationRow[]> => {
+      const { data, error: e } = await supabase
+        .from('lead_notifications')
+        .select('id, channel, status, error, sent_at')
+        .eq('lead_id', lead!.id)
+        .order('created_at', { ascending: false });
+      if (e) throw e;
+      return (data ?? []) as NotificationRow[];
+    },
+  });
+
+  const latestEmail = (notifications.data ?? []).find(
+    (n) => n.channel === 'email',
+  );
 
   const setStatus = useMutation({
     mutationFn: async (next: LeadStatus) => {
       if (!lead) throw new Error('No lead selected');
       if (next === 'converted') {
-        // Convert flow opens the picker instead; the actual RPC call
-        // happens via `convert` below once the member is chosen.
         setConvertPicker(true);
         return;
       }
@@ -467,6 +607,55 @@ function LeadDetailModal({
       if (!convertPicker) onChanged();
     },
     onError: (e) => setError(errorMessage(e, 'Could not change status')),
+  });
+
+  const reassign = useMutation({
+    mutationFn: async (coachId: string) => {
+      if (!lead) throw new Error('No lead selected');
+      const { error: e } = await supabase.rpc('set_lead_assignee', {
+        p_lead_id: lead.id,
+        p_coach_id: coachId,
+      });
+      if (e) throw e;
+      await drainLeadEmails(gymId);
+    },
+    onSuccess: () => {
+      setError(null);
+      setReassignOpen(false);
+      onChanged();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not reassign lead')),
+  });
+
+  const nudge = useMutation({
+    mutationFn: async () => {
+      if (!lead) throw new Error('No lead selected');
+      const { error: e } = await supabase.rpc('nudge_lead', {
+        p_lead_id: lead.id,
+      });
+      if (e) throw e;
+      await drainLeadEmails(gymId);
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['lead-notifications', lead?.id] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not nudge the coach')),
+  });
+
+  const retry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e } = await supabase.rpc('requeue_lead_notification', {
+        p_id: id,
+      });
+      if (e) throw e;
+      await drainLeadEmails(gymId);
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['lead-notifications', lead?.id] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not retry the send')),
   });
 
   const members = useQuery({
@@ -520,6 +709,17 @@ function LeadDetailModal({
 
   if (!lead) return null;
 
+  const sendStatusLabel = (n: NotificationRow) =>
+    n.status === 'sent'
+      ? 'Email sent'
+      : n.status === 'queued'
+      ? 'Email queued'
+      : n.status === 'failed'
+      ? 'Email failed'
+      : n.status === 'skipped'
+      ? 'Email skipped'
+      : n.status;
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
@@ -527,131 +727,226 @@ function LeadDetailModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
-          <View className="flex-row items-start justify-between gap-3">
-            <View className="flex-1 gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-                {lead.full_name}
-              </Text>
-              {lead.email || lead.phone ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                  {[lead.email, lead.phone].filter(Boolean).join(' · ')}
-                </Text>
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4 max-h-[90%]">
+          <ScrollView>
+            <View className="gap-4">
+              <View className="flex-row items-start justify-between gap-3">
+                <View className="flex-1 gap-1">
+                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                    {lead.full_name}
+                  </Text>
+                  {lead.email || lead.phone ? (
+                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      {[lead.email, lead.phone].filter(Boolean).join(' · ')}
+                    </Text>
+                  ) : null}
+                </View>
+                <Pressable
+                  onPress={onClose}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                  className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+                  <Ionicons name="close" size={18} color="#6B7280" />
+                </Pressable>
+              </View>
+
+              {lead.notes ? (
+                <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                    {lead.notes}
+                  </Text>
+                </View>
               ) : null}
-            </View>
-            <Pressable
-              onPress={onClose}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="close" size={18} color="#6B7280" />
-            </Pressable>
-          </View>
 
-          {lead.notes ? (
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm">
-                {lead.notes}
-              </Text>
-            </View>
-          ) : null}
-
-          {convertPicker ? (
-            <View className="gap-2">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                Link to a member
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                Pick the member this lead became. (Future signups with a
-                matching email auto-link inside the gym's conversion
-                window.)
-              </Text>
-              <Input
-                label=""
-                value={memberQuery}
-                onChangeText={setMemberQuery}
-                placeholder="Search members"
-              />
-              <ScrollView className="max-h-56">
-                {members.isLoading ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                    Loading…
+              {convertPicker ? (
+                <View className="gap-2">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    Link to a member
                   </Text>
-                ) : (members.data?.length ?? 0) === 0 ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                    No matching members in this gym.
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    Pick the member this lead became. (Future signups with a
+                    matching email auto-link inside the gym's conversion
+                    window.)
                   </Text>
-                ) : (
-                  <View className="gap-1.5">
-                    {(members.data ?? []).map((m) => (
-                      <Pressable
-                        key={m.profile_id}
-                        onPress={() => convert.mutate(m.profile_id)}
-                        disabled={convert.isPending}
-                        className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
-                        <Text className="text-gray-900 dark:text-gray-50 flex-1">
-                          {m.full_name ?? 'Member'}
-                        </Text>
-                        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-                      </Pressable>
-                    ))}
+                  <Input
+                    label=""
+                    value={memberQuery}
+                    onChangeText={setMemberQuery}
+                    placeholder="Search members"
+                  />
+                  <ScrollView className="max-h-56">
+                    {members.isLoading ? (
+                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                        Loading…
+                      </Text>
+                    ) : (members.data?.length ?? 0) === 0 ? (
+                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                        No matching members in this gym.
+                      </Text>
+                    ) : (
+                      <View className="gap-1.5">
+                        {(members.data ?? []).map((m) => (
+                          <Pressable
+                            key={m.profile_id}
+                            onPress={() => convert.mutate(m.profile_id)}
+                            disabled={convert.isPending}
+                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                            <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                              {m.full_name ?? 'Member'}
+                            </Text>
+                            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+                  </ScrollView>
+                  <View className="flex-row gap-3">
+                    <View className="flex-1">
+                      <Button
+                        variant="secondary"
+                        onPress={() => {
+                          setConvertPicker(false);
+                          setMemberQuery('');
+                        }}>
+                        Back
+                      </Button>
+                    </View>
                   </View>
-                )}
-              </ScrollView>
-              <View className="flex-row gap-3">
-                <View className="flex-1">
+                </View>
+              ) : reassignOpen ? (
+                <View className="gap-2">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    Assign to
+                  </Text>
+                  <ScrollView className="max-h-56">
+                    <View className="gap-1.5">
+                      {coaches.map((c) => {
+                        const sel = c.profile_id === lead.assigned_coach_id;
+                        return (
+                          <Pressable
+                            key={c.profile_id}
+                            onPress={() => reassign.mutate(c.profile_id)}
+                            disabled={reassign.isPending}
+                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                            <Ionicons
+                              name={sel ? 'checkmark-circle' : 'ellipse-outline'}
+                              size={18}
+                              color={sel ? '#10B981' : '#9CA3AF'}
+                            />
+                            <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                              {c.full_name ?? 'Coach'}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
                   <Button
                     variant="secondary"
-                    onPress={() => {
-                      setConvertPicker(false);
-                      setMemberQuery('');
-                    }}>
+                    onPress={() => setReassignOpen(false)}>
                     Back
                   </Button>
                 </View>
-              </View>
-            </View>
-          ) : (
-            <View className="gap-2">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                Status
-              </Text>
-              <View className="flex-row flex-wrap gap-2">
-                {STATUS_ORDER.map((s) => {
-                  const sel = lead.status === s;
-                  return (
-                    <Pressable
-                      key={s}
-                      onPress={() => setStatus.mutate(s)}
-                      disabled={setStatus.isPending}
-                      className={`px-3 py-1.5 rounded-full border ${
-                        sel ? 'border-primary' : 'border-gray-200 dark:border-gray-700'
-                      }`}
-                      style={
-                        sel
-                          ? { backgroundColor: STATUS_COLORS[s] + '22' }
-                          : undefined
-                      }>
-                      <Text
-                        className="text-xs font-medium"
-                        style={sel ? { color: STATUS_COLORS[s] } : undefined}>
-                        {STATUS_LABELS[s]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          )}
+              ) : (
+                <>
+                  <View className="gap-2">
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                      Assigned to
+                    </Text>
+                    <View className="flex-row items-center justify-between gap-3">
+                      <View className="flex-row items-center gap-2">
+                        <Ionicons
+                          name="person-circle-outline"
+                          size={18}
+                          color="#9CA3AF"
+                        />
+                        <Text className="text-gray-900 dark:text-gray-50">
+                          {lead.assignee?.full_name ??
+                            (lead.assigned_coach_id ? 'Coach' : 'Unassigned')}
+                        </Text>
+                      </View>
+                      <View className="flex-row gap-2">
+                        <ChipButton
+                          label="Reassign"
+                          icon="swap-horizontal"
+                          tone="neutral"
+                          onPress={() => setReassignOpen(true)}
+                        />
+                        {lead.assigned_coach_id ? (
+                          <ChipButton
+                            label="Nudge"
+                            icon="notifications-outline"
+                            tone="amber"
+                            onPress={() => nudge.mutate()}
+                          />
+                        ) : null}
+                      </View>
+                    </View>
+                    {latestEmail ? (
+                      <View className="flex-row items-center justify-between gap-3">
+                        <Text
+                          className={`text-xs ${
+                            latestEmail.status === 'failed'
+                              ? 'text-red-500 dark:text-red-400'
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                          {sendStatusLabel(latestEmail)}
+                        </Text>
+                        {latestEmail.status === 'failed' ? (
+                          <ChipButton
+                            label="Retry"
+                            icon="refresh"
+                            tone="red"
+                            onPress={() => retry.mutate(latestEmail.id)}
+                          />
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
 
-          {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-          ) : null}
+                  <View className="gap-2">
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                      Status
+                    </Text>
+                    <View className="flex-row flex-wrap gap-2">
+                      {STATUS_ORDER.map((s) => {
+                        const sel = lead.status === s;
+                        return (
+                          <Pressable
+                            key={s}
+                            onPress={() => setStatus.mutate(s)}
+                            disabled={setStatus.isPending}
+                            className={`px-3 py-1.5 rounded-full border ${
+                              sel ? 'border-primary' : 'border-gray-200 dark:border-gray-700'
+                            }`}
+                            style={
+                              sel
+                                ? { backgroundColor: STATUS_COLORS[s] + '22' }
+                                : undefined
+                            }>
+                            <Text
+                              className="text-xs font-medium"
+                              style={sel ? { color: STATUS_COLORS[s] } : undefined}>
+                              {STATUS_LABELS[s]}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </>
+              )}
 
-          <Button variant="secondary" onPress={onClose}>
-            Close
-          </Button>
+              {error ? (
+                <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              ) : null}
+
+              <Button variant="secondary" onPress={onClose}>
+                Close
+              </Button>
+            </View>
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>

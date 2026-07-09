@@ -564,8 +564,43 @@ enquiries, checks a loose email shape, and dedups on
 `(gym, lower(email))` within a 30-day window so repeat submissions
 refresh the existing open lead instead of piling up duplicates.
 Captured rows land in Manage → Leads as `cold` with no
-`captured_by`. IP-level throttling is a noted follow-up (would need
-an edge function in front).
+`captured_by`. The public form also carries an explicit marketing-consent
+tick (unticked by default); ticking it records `marketing_consent`,
+`consent_at` and a `consent_policy_version` on the lead, while the enquiry
+record itself rests on `lawful_basis = 'legitimate_interest'`. IP-level
+throttling is a noted follow-up (would need an edge function in front).
+
+### Lead-to-coach automation
+
+Every captured lead (staff-entered or public) is auto-assigned to a coach
+and the coach is notified, so nothing falls through the cracks. Assignment
+is deterministic and zero-config: with no rule set, `assign_lead`
+round-robins across active coaches (least-loaded first, longest-idle
+tie-break), falling back to an owner/admin if a gym has no coaches — a lead
+is never silently dropped. Owners can change the strategy at Manage → Leads
+→ Automation (`/management/leads/settings`): `round_robin` (default),
+`single_default` (one named coach), or `manual` (no auto-assign). Rules live
+in `lead_assignment_rules`; the setter and page are owner-only.
+
+Notifications are logged in `lead_notifications` — the reliability backbone.
+On assignment `enqueue_lead_notifications` writes an in-app row (delivered
+instantly; drives the assignee's nav badge via
+`count_unread_lead_notifications`) and a queued email row, deduped by an
+`idempotency_key` so retries never double-fire. The `send-lead-notifications`
+edge function drains queued email rows via Resend (from-address + live-vs-
+simulated gating identical to `send-invite`), invoked best-effort by the
+client after capture and re-invokable from the owner screen. Failed sends
+show on the lead detail with a Retry (`requeue_lead_notification`). SMS is a
+seam: gated on `gyms.lead_sms_enabled` (owner toggle) and stubbed as
+`skipped` in the worker until a provider is wired.
+
+The Leads screen adds a per-lead assignee, a Reassign control
+(`set_lead_assignee`, cross-tenant-guarded), a "Needs follow-up" filter
+(cold + untouched > 24h) and a Nudge action (`nudge_lead`) that re-notifies
+the assignee. GDPR retention: unconverted leads past
+`gyms.lead_retention_days` (default 365, owner-configurable) are deleted by
+`purge_expired_leads`, scheduled daily via `pg_cron` (0109) alongside the
+health-data purge; converted leads are kept as members.
 
 ### Member import
 

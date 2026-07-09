@@ -81,3 +81,83 @@ begin
   raise notice 'Seed applied: gym % — sign in as owner@temple.test / password123.', v_gym_id;
 end;
 $$;
+
+-- Lead-automation demo data. Two coaches to round-robin across, a couple
+-- of sources, and a spread of leads including a stale one (assigned but
+-- untouched for days) and a consented one, so the funnel + follow-up
+-- surfaces have something to show on a fresh reset. Idempotent.
+do $$
+declare
+  v_gym_id    uuid;
+  v_member_id uuid := '22222222-2222-2222-2222-222222222222';
+  v_coach1    uuid := '33333333-3333-3333-3333-333333333333';
+  v_coach2    uuid := '44444444-4444-4444-4444-444444444444';
+  v_src_ig    uuid := '55555555-5555-5555-5555-555555555551';
+  v_src_walk  uuid := '55555555-5555-5555-5555-555555555552';
+  v_lead      uuid;
+begin
+  select id into v_gym_id from public.gyms where slug = 'iron-temple';
+  if v_gym_id is null then return; end if;
+  -- Already seeded? bail.
+  if exists (select 1 from public.leads where gym_id = v_gym_id) then return; end if;
+
+  -- Two coach accounts (assignment targets; not set up to sign in).
+  insert into auth.users
+    (instance_id, id, aud, role, email, encrypted_password,
+     email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+  values
+    ('00000000-0000-0000-0000-000000000000', v_coach1, 'authenticated', 'authenticated',
+     'sarah@temple.test', '', now(), '{}', '{}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', v_coach2, 'authenticated', 'authenticated',
+     'dan@temple.test', '', now(), '{}', '{}', now(), now())
+  on conflict (id) do nothing;
+
+  insert into public.profiles (id, full_name) values
+    (v_coach1, 'Sarah Coach'),
+    (v_coach2, 'Dan Coach')
+  on conflict (id) do nothing;
+
+  insert into public.gym_memberships (gym_id, profile_id, role) values
+    (v_gym_id, v_coach1, 'coach'),
+    (v_gym_id, v_coach2, 'coach')
+  on conflict do nothing;
+
+  insert into public.lead_sources (id, gym_id, label, color) values
+    (v_src_ig,   v_gym_id, 'Instagram', '#EC4899'),
+    (v_src_walk, v_gym_id, 'Walk-in',   '#10B981')
+  on conflict (id) do nothing;
+
+  -- A fresh, consented enquiry — auto-assigned by round-robin.
+  insert into public.leads
+    (gym_id, full_name, email, phone, source_id, notes, status,
+     marketing_consent, consent_at, lawful_basis, consent_policy_version)
+  values
+    (v_gym_id, 'Jordan Fresh', 'jordan@example.test', '07700900001', v_src_ig,
+     'Saw the Instagram reel, wants to try a class.', 'cold',
+     true, now(), 'legitimate_interest', 'lead-capture-2026-07')
+  returning id into v_lead;
+  perform public.assign_lead(v_lead);
+
+  -- A stale lead: assigned but untouched for three days (shows in the
+  -- "Needs follow-up" filter).
+  insert into public.leads (gym_id, full_name, email, source_id, notes, status)
+  values (v_gym_id, 'Sam Stale', 'sam@example.test', v_src_walk,
+          'Walked in Saturday, asked about pricing.', 'cold')
+  returning id into v_lead;
+  perform public.assign_lead(v_lead);
+  update public.leads set assigned_at = now() - interval '3 days' where id = v_lead;
+
+  -- One already contacted, one converted (links to the demo member).
+  insert into public.leads (gym_id, full_name, email, source_id, status)
+  values (v_gym_id, 'Pat Contacted', 'pat@example.test', v_src_ig, 'contacted')
+  returning id into v_lead;
+  perform public.assign_lead(v_lead);
+
+  insert into public.leads
+    (gym_id, full_name, email, source_id, status, converted_profile_id, converted_at)
+  values (v_gym_id, 'Robin Converted', 'robin@example.test', v_src_walk,
+          'converted', v_member_id, now() - interval '2 days');
+
+  raise notice 'Lead-automation demo seeded for gym %.', v_gym_id;
+end;
+$$;
