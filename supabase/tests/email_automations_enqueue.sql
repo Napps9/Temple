@@ -18,7 +18,7 @@ declare
   v_m5 uuid := _test_mk_user('m5@auto.test');   -- recently active (not due)
   v_gym uuid := _test_mk_gym('Auto Gym', 'auto-gym');
   v_s1 uuid; v_s2 uuid; v_s3 uuid; v_s4 uuid;
-  v_b1 uuid; v_b2 uuid;
+  v_b1 uuid; v_b2 uuid; v_b3 uuid; v_b4 uuid;
   v_a_join uuid; v_a_first uuid; v_a_inactive uuid; v_a_cold uuid;
   v_old timestamptz := now() - interval '365 days';
 begin
@@ -44,8 +44,10 @@ begin
   -- member_inactive: m4 last attended 30 days ago; m5 attended 5 days ago.
   v_s3 := _test_mk_session(v_gym, v_coach, now() - interval '30 days');
   v_s4 := _test_mk_session(v_gym, v_coach, now() - interval '5 days');
-  update public.class_bookings set attended_at = now() - interval '30 days', marked_by = v_coach where id = _test_mk_booking(v_s3, v_m4);
-  update public.class_bookings set attended_at = now() - interval '5 days',  marked_by = v_coach where id = _test_mk_booking(v_s4, v_m5);
+  v_b3 := _test_mk_booking(v_s3, v_m4);
+  v_b4 := _test_mk_booking(v_s4, v_m5);
+  update public.class_bookings set attended_at = now() - interval '30 days', marked_by = v_coach where id = v_b3;
+  update public.class_bookings set attended_at = now() - interval '5 days',  marked_by = v_coach where id = v_b4;
 
   insert into public.email_automations (gym_id, name, enabled, trigger_type, delay_minutes, compiled_html, created_by, created_at)
     values (v_gym, 'Welcome', true, 'member_joined', 1440, '<html>hi</html>', v_owner, v_old) returning id into v_a_join;
