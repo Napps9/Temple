@@ -120,3 +120,4 @@ jobs:
           deploy store-cancel-subscription
           deploy custom-domain
           deploy stock-photos
+          deploy security-alert
