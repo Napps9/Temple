@@ -78,11 +78,13 @@ select is(
   'queued',
   'requeue_lead_notification flips a failed send back to queued');
 
--- 6. A non-recipient cannot mark the in-app row read.
+-- 6. A non-recipient cannot mark the in-app row read. (Read back as the
+-- owner — a member can't see lead_notifications under RLS.)
 do $$
 begin
   perform _test_act_as(current_setting('test.member')::uuid);
   perform mark_lead_notification_read(current_setting('test.inapp')::uuid);
+  perform _test_act_as(current_setting('test.owner')::uuid);
 end $$;
 select is(
   (select status from public.lead_notifications
@@ -109,13 +111,13 @@ select is(
   0,
   'unread count drops to zero after the coach reads the notification');
 
--- 9. SMS only enqueues when the gym has opted in.
+-- 9. SMS only enqueues when the gym has opted in. Flip the flag through
+-- the owner-only RPC (a raw UPDATE is blocked by gym RLS).
 do $$
 declare v_lead2 uuid;
 begin
-  update public.gyms set lead_sms_enabled = true
-    where id = current_setting('test.gym')::uuid;
   perform _test_act_as(current_setting('test.owner')::uuid);
+  perform set_gym_lead_sms(current_setting('test.gym')::uuid, true);
   v_lead2 := record_lead(current_setting('test.gym')::uuid, 'SMS Prospect', null, '+447700900000');
   perform set_config('test.lead2', v_lead2::text, true);
 end $$;
