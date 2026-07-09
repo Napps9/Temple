@@ -795,6 +795,7 @@ export type Database = {
           avatar_url: string | null;
           phone: string | null;
           date_of_birth: string | null;
+          managed: boolean;
           created_at: string;
         };
         Insert: {
@@ -803,6 +804,7 @@ export type Database = {
           avatar_url?: string | null;
           phone?: string | null;
           date_of_birth?: string | null;
+          managed?: boolean;
           created_at?: string;
         };
         Update: Partial<{
@@ -811,6 +813,31 @@ export type Database = {
           avatar_url: string | null;
           phone: string | null;
           date_of_birth: string | null;
+          managed: boolean;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
+      guardianships: {
+        Row: {
+          id: string;
+          guardian_profile_id: string;
+          dependent_profile_id: string;
+          gym_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          guardian_profile_id: string;
+          dependent_profile_id: string;
+          gym_id: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          guardian_profile_id: string;
+          dependent_profile_id: string;
+          gym_id: string;
           created_at: string;
         }>;
         Relationships: [];
@@ -2982,8 +3009,30 @@ export type Database = {
           p_gym_id: string;
           p_questionnaire_id: string;
           p_answers: Json;
+          p_subject_profile_id?: string;
         };
         Returns: string;
+      };
+      create_dependent: {
+        Args: {
+          p_gym_id: string;
+          p_full_name: string;
+          p_dob: string;
+          p_policy_version: string;
+        };
+        Returns: string;
+      };
+      is_guardian_of: {
+        Args: { p_dependent_profile_id: string };
+        Returns: boolean;
+      };
+      parent_book_dependent: {
+        Args: { p_session_id: string; p_dependent_id: string };
+        Returns: string;
+      };
+      parent_cancel_dependent_booking: {
+        Args: { p_booking_id: string };
+        Returns: null;
       };
       current_parq_state: {
         Args: { p_gym_id: string; p_profile_id: string };
@@ -3005,7 +3054,12 @@ export type Database = {
         Returns: string;
       };
       sign_waiver: {
-        Args: { p_gym_id: string; p_waiver_id: string; p_signature: Json };
+        Args: {
+          p_gym_id: string;
+          p_waiver_id: string;
+          p_signature: Json;
+          p_subject_profile_id?: string;
+        };
         Returns: string;
       };
       current_waiver_state: {
