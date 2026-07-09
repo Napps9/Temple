@@ -21,6 +21,7 @@ import {
 } from '@/lib/movements';
 import { useLogNudge } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
+import { useDismissLogNudge } from '@/lib/useLogNudgeDismissed';
 import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
@@ -48,6 +49,7 @@ export default function TrackHome() {
     title?: string;
   } | null>(null);
   const logNudge = useLogNudge();
+  const dismissLogNudge = useDismissLogNudge();
 
   // Logs from the last week per movement group — used to show
   // fresh-activity badges. The query returns rows with their
@@ -195,6 +197,16 @@ export default function TrackHome() {
                   ? `You trained ${logNudge.data![0].className} — log it?`
                   : `${logNudge.data!.length} sessions to log`}
               </Text>
+              <Pressable
+                onPress={() =>
+                  dismissLogNudge((logNudge.data ?? []).map((i) => i.day))
+                }
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss"
+                className="active:opacity-70">
+                <Ionicons name="close" size={18} color="#9CA3AF" />
+              </Pressable>
             </View>
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               Logging keeps your streak, PRs and history up to date.

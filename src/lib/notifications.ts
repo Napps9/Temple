@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import { useGymMembership, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
+import { useDismissedLogNudgeDays } from '@/lib/useLogNudgeDismissed';
 import { localDayKey } from '@/lib/workout-streak';
 
 // In-app "what needs you" surfacing. No push/email — these read the same
@@ -50,7 +52,7 @@ const LOG_NUDGE_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 // Classes the member was marked present for in the last few days that
 // they haven't logged a workout against. Day-grained so any log on that
 // day clears it (we never double-nag), and one item per day.
-export function useLogNudge() {
+function useRawLogNudge() {
   const session = useSession();
   return useQuery({
     queryKey: ['log-nudge', session?.user.id],
@@ -106,6 +108,20 @@ export function useLogNudge() {
         .filter((i) => (seen.has(i.day) ? false : (seen.add(i.day), true)));
     },
   });
+}
+
+// Public hook: the raw nudge minus any days the member has manually
+// dismissed (useLogNudgeDismissed), so a dismissal takes the item off the
+// Track card, the inbox banner and the nav badge at once.
+export function useLogNudge() {
+  const raw = useRawLogNudge();
+  const dismissed = useDismissedLogNudgeDays();
+  const data = useMemo(() => {
+    if (!raw.data) return raw.data;
+    const dset = dismissed.data ?? new Set<string>();
+    return raw.data.filter((i) => !dset.has(i.day));
+  }, [raw.data, dismissed.data]);
+  return { ...raw, data };
 }
 
 // Open (unacknowledged) PAR-Q/injury alerts — the Alerts tab's own
