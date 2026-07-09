@@ -27,17 +27,26 @@ describe('buildAutoImageQueries', () => {
       'forged',
     );
     expect(queries.heroQuery).toBe('CrossFit gym');
+    // "workout", not "training" — "training" stems to "train" on Pexels
+    // and returns literal locomotives.
     expect(queries.galleryQueries).toEqual([
-      'CrossFit training',
-      'Olympic Lifting training',
-      'Yoga training',
+      'CrossFit workout',
+      'Olympic Lifting workout',
+      'Yoga workout',
     ]);
+  });
+
+  it('never emits the word "training" (Pexels stems it to "train")', () => {
+    const queries = buildAutoImageQueries(['Engine', 'Conditioning'], 'forged');
+    for (const q of [queries.heroQuery, ...queries.galleryQueries]) {
+      expect(q).not.toMatch(/train/i);
+    }
   });
 
   it('trims class type names before using them', () => {
     const queries = buildAutoImageQueries(['  Boxing  '], 'ringside');
     expect(queries.heroQuery).toBe('Boxing gym');
-    expect(queries.galleryQueries).toEqual(['Boxing training']);
+    expect(queries.galleryQueries).toEqual(['Boxing workout']);
   });
 });
 

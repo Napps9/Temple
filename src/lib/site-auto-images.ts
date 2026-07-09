@@ -42,9 +42,17 @@ export function buildAutoImageQueries(
   if (names.length === 0) {
     return { heroQuery: DEFAULT_STOCK_QUERIES[themeId], galleryQueries: [] };
   }
+  // "<name> workout", not "<name> training": Pexels stems "training"
+  // down to "train" and happily returns steam locomotives — a gym whose
+  // class types include words like "Engine" got a literal train on its
+  // Team page. "workout" carries no such homonym and still returns
+  // people exercising, while the class-type name keeps each query
+  // specific ("Boxing workout" vs "Yoga workout"). Hero stays "<name>
+  // gym" so it and the first gallery photo don't resolve to the same
+  // top result.
   return {
     heroQuery: `${names[0]} gym`,
-    galleryQueries: names.slice(0, MAX_GALLERY_PHOTOS).map((n) => `${n} training`),
+    galleryQueries: names.slice(0, MAX_GALLERY_PHOTOS).map((n) => `${n} workout`),
   };
 }
 
