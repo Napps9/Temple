@@ -621,6 +621,22 @@ export default function WebsiteManageScreen() {
     scheduleSave(next);
   }
 
+  // Switching which page the editor is on is a structural change from the
+  // canvas's point of view — a different page's blocks entirely. The
+  // editable canvas iframe only reloads on structuralVersion (see
+  // SiteHtmlPreview.web.tsx — deliberately never on `html`, so a canvas
+  // keystroke can't reload mid-word), so a bare setActivePageId leaves
+  // the canvas frozen on the previous page even though the left panel
+  // switched. Bump it here so every page switch (tabs, a warning's
+  // jump-to-page, PageManagerModal) actually re-renders the canvas.
+  // selectedId is cleared too: the highlighted block belonged to the
+  // page we just left and has no match on the new one.
+  function selectPage(pageId: string) {
+    setActivePageId(pageId);
+    setSelectedId(null);
+    setStructuralVersion((v) => v + 1);
+  }
+
   // Side-panel/structural edits: always reload the canvas (debounced via
   // structuralVersion → debouncedSyncKey), since these genuinely change
   // the rendered DOM shape (a block was added/removed/reordered, the
@@ -746,7 +762,7 @@ export default function WebsiteManageScreen() {
           showPageLabel={document.pages.length > 1}
           expanded={warningsExpanded}
           onToggle={() => setWarningsExpanded((v) => !v)}
-          onSelectPage={setActivePageId}
+          onSelectPage={selectPage}
         />
       ) : null}
     </View>
@@ -808,7 +824,7 @@ export default function WebsiteManageScreen() {
             return (
               <Pressable
                 key={p.id}
-                onPress={() => setActivePageId(p.id)}
+                onPress={() => selectPage(p.id)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
                 className={`px-3 py-1.5 rounded-full ${
@@ -917,7 +933,7 @@ export default function WebsiteManageScreen() {
         document={document}
         gymSlug={brand.slug ?? ''}
         onChange={handlePagesChange}
-        onSelectPage={setActivePageId}
+        onSelectPage={selectPage}
         onClose={() => setManagingPages(false)}
       />
     </Screen>
