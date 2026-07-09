@@ -25,9 +25,10 @@ export const TERMS_OF_SERVICE: LegalDoc = {
   updated: 'July 2026',
   draftNotice: DRAFT_NOTICE,
   intro: [
-    'These terms govern how a gym, studio, or other fitness business uses ' +
-      'Temple to run its business. By creating a gym on Temple you agree to ' +
-      'them on behalf of that business.',
+    'These terms apply to two kinds of user: a gym or fitness business that ' +
+      'runs its business on Temple, and an individual who creates their own ' +
+      'account to train solo or join a gym. By creating an account you agree ' +
+      'to them (for a gym, on behalf of that business).',
   ],
   sections: [
     {
@@ -41,11 +42,27 @@ export const TERMS_OF_SERVICE: LegalDoc = {
       ],
     },
     {
-      heading: 'Your account',
+      heading: 'Your account and age',
       body: [
-        'You must be authorised to act for your business and are responsible ' +
-          'for your staff’s use of the platform and for keeping your ' +
-          'credentials secure.',
+        'Account holders must be 18 or over. You are responsible for the ' +
+          'accuracy of your details, for any staff’s use of the platform, ' +
+          'and for keeping your credentials secure.',
+        'Temple does not currently verify a member’s age. Where a gym ' +
+          'enrols a member under 18, the gym is responsible for obtaining ' +
+          'parental or guardian consent before that member provides any ' +
+          'personal data, including health data.',
+      ],
+    },
+    {
+      heading: 'If you are a consumer',
+      body: [
+        'If you use Temple as an individual (for example solo training or as ' +
+          'a gym member), nothing in these terms removes your statutory ' +
+          'rights under the Consumer Rights Act 2015 or the Consumer ' +
+          'Contracts Regulations 2013 — including a 14-day right to cancel a ' +
+          'paid subscription you buy directly from Temple. Memberships and ' +
+          'class purchases you make with a gym are a contract with that gym, ' +
+          'not with Temple, so raise those refunds with your gym.',
       ],
     },
     {
@@ -162,6 +179,26 @@ export const PRIVACY_POLICY: LegalDoc = {
         'We isolate every gym’s data with row-level security, log ' +
           'health-data access, encrypt data in transit, and route sensitive ' +
           'writes through authorised server-side routines.',
+      ],
+    },
+    {
+      heading: 'Cookies',
+      body: [
+        'The app is cookie-light. It uses no analytics, advertising, or ' +
+          'third-party tracking cookies and runs no behavioural-analytics ' +
+          'SDKs — it stores only what is needed to keep you signed in and ' +
+          'remember preferences like light/dark theme. No cookie banner is ' +
+          'required. (Marketing emails a gym sends via Temple may track ' +
+          'opens and clicks under the gym’s own privacy notice, and always ' +
+          'carry a one-click unsubscribe.)',
+      ],
+    },
+    {
+      heading: 'Children',
+      body: [
+        'Temple accounts are for people aged 18 or over. Where a gym enrols a ' +
+          'member under 18, the gym is responsible for parental or guardian ' +
+          'consent and the right lawful basis for that member’s data.',
       ],
     },
   ],
