@@ -850,6 +850,18 @@ billing for it yet.
   through it supabase.ts) can't be parsed by vitest. Photo-less
   background heroes still render with a subtle accent glow instead of a
   flat colour slab, for the no-class-types-yet / no-Pexels-key case.
+- **Backfill intro sections (`addMissingIntros`/`applyIntroImages`)** —
+  sites created before per-page intros existed (or any Schedule/Team/
+  Pricing page an owner stripped back to just its live-data block) show
+  an "Add intro sections" prompt in the editor. One tap inserts the
+  intro about block for the site's own theme's template into every page
+  that's missing one — in place, keeping every other edit, no
+  delete-and-rebuild — and gives each a class-type photo the same way a
+  fresh build does. Idempotent (only adds where missing, never
+  duplicates, never touches Home) and best-effort on the photos (text-
+  only if Pexels is off). `missingIntroSlugs`/`addMissingIntros` are
+  pure and tested in site-templates.ts; the network fetch is orchestrated
+  in `backfillIntros` in management/website.tsx.
 - **Always-on site header** — every page shows the gym's logo (or name,
   if no logo is set) in a small header, rendered directly by
   `renderSiteHtml` rather than as a removable block — page furniture

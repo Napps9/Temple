@@ -95,6 +95,40 @@ export function applyAutoImages(
   };
 }
 
+// Backfill counterpart to applyAutoImages, for the "add intro sections
+// to an existing site" flow: set a photo on the intro about block of
+// just the named pages (the ones addMissingIntros created), leaving
+// Home and every other page's existing imagery untouched. Cycles photos
+// if there are more pages than photos and alternates the image side by
+// page position, matching applyAutoImages so a backfilled site looks
+// the same as one built fresh.
+export function applyIntroImages(
+  doc: SiteDocument,
+  slugs: string[],
+  photos: AutoImage[],
+): SiteDocument {
+  if (photos.length === 0 || slugs.length === 0) return doc;
+  const targets = new Set(slugs);
+  let assigned = 0;
+  return {
+    ...doc,
+    pages: doc.pages.map((page, i) => {
+      if (!targets.has(page.slug)) return page;
+      const aboutIdx = page.blocks.findIndex((b) => b.type === 'about');
+      if (aboutIdx < 0) return page;
+      const photo = photos[assigned % photos.length]!;
+      assigned += 1;
+      const layout: AboutBlock['layout'] = i % 2 === 1 ? 'image-right' : 'image-left';
+      return {
+        ...page,
+        blocks: page.blocks.map((b, bi) =>
+          bi === aboutIdx && b.type === 'about' ? { ...b, imageUrl: photo.url, layout } : b,
+        ),
+      };
+    }),
+  };
+}
+
 function applyHomeImages(
   homeBlocks: SiteDocument['pages'][number]['blocks'],
   hero: AutoImage | null,

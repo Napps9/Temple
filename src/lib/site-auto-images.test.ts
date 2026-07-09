@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyAutoImages, buildAutoImageQueries } from './site-auto-images';
-import { appendBlock, createBlock, emptyDocument, type HeroBlock } from './site-blocks';
+import { applyAutoImages, applyIntroImages, buildAutoImageQueries } from './site-auto-images';
+import {
+  appendBlock,
+  createBlock,
+  emptyDocument,
+  type AboutBlock,
+  type HeroBlock,
+  type SiteDocument,
+} from './site-blocks';
 
 describe('buildAutoImageQueries', () => {
   it('falls back to the archetype default when the gym has no class types yet', () => {
@@ -134,5 +141,42 @@ describe('applyAutoImages', () => {
     };
     const next = applyAutoImages(doc, { url: 'https://x/hero.jpg', alt: '' }, []);
     expect(next.pages[1]).toEqual(doc.pages[1]);
+  });
+});
+
+describe('applyIntroImages (backfill)', () => {
+  function docWithThreeIntroPages(): SiteDocument {
+    return {
+      version: 2,
+      settings: { themeId: 'forged' },
+      pages: [
+        { id: 'h', slug: '', title: 'Home', blocks: [createBlock('hero'), createBlock('about')] },
+        { id: 's', slug: 'schedule', title: 'Schedule', blocks: [createBlock('about'), createBlock('schedule')] },
+        { id: 't', slug: 'team', title: 'Team', blocks: [createBlock('about'), createBlock('team')] },
+      ],
+    };
+  }
+
+  it('sets a photo only on the named pages, leaving Home and unnamed pages alone', () => {
+    const doc = docWithThreeIntroPages();
+    const next = applyIntroImages(doc, ['schedule'], [{ url: 'https://x/a.jpg', alt: 'CrossFit' }]);
+    expect((next.pages[1].blocks[0] as AboutBlock).imageUrl).toBe('https://x/a.jpg');
+    expect((next.pages[1].blocks[0] as AboutBlock).layout).not.toBe('none');
+    // Team (not named) and Home's about block are untouched.
+    expect((next.pages[2].blocks[0] as AboutBlock).imageUrl).toBe('');
+    expect((next.pages[0].blocks[1] as AboutBlock).imageUrl).toBe('');
+  });
+
+  it('cycles photos across multiple named pages', () => {
+    const doc = docWithThreeIntroPages();
+    const next = applyIntroImages(doc, ['schedule', 'team'], [{ url: 'https://x/a.jpg', alt: '' }]);
+    expect((next.pages[1].blocks[0] as AboutBlock).imageUrl).toBe('https://x/a.jpg');
+    expect((next.pages[2].blocks[0] as AboutBlock).imageUrl).toBe('https://x/a.jpg');
+  });
+
+  it('is a no-op with no photos or no slugs', () => {
+    const doc = docWithThreeIntroPages();
+    expect(applyIntroImages(doc, ['schedule'], [])).toEqual(doc);
+    expect(applyIntroImages(doc, [], [{ url: 'https://x/a.jpg', alt: '' }])).toEqual(doc);
   });
 });

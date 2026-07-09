@@ -23,7 +23,12 @@ import { SiteHtmlPreview } from '@/components/website/SiteHtmlPreview';
 import { BRAND_THEMES, composeThemeWithBrand, isThemeId, type ThemeId } from '@/lib/brand-themes';
 import { useCustomDomain } from '@/lib/custom-domain';
 import { errorMessage } from '@/lib/errors';
-import { applyAutoImages, buildAutoImageQueries, type AutoImage } from '@/lib/site-auto-images';
+import {
+  applyAutoImages,
+  applyIntroImages,
+  buildAutoImageQueries,
+  type AutoImage,
+} from '@/lib/site-auto-images';
 import { isFieldEditable, parseFieldPath } from '@/lib/site-canvas-sync';
 import {
   renderSiteHtml,
@@ -43,7 +48,13 @@ import {
   type SitePage,
   type TestimonialsBlock,
 } from '@/lib/site-blocks';
-import { SITE_TEMPLATES, SITE_TEMPLATE_LIST, type SiteTemplateId } from '@/lib/site-templates';
+import {
+  addMissingIntros,
+  missingIntroSlugs,
+  SITE_TEMPLATES,
+  SITE_TEMPLATE_LIST,
+  type SiteTemplateId,
+} from '@/lib/site-templates';
 import { saveStockPhoto, searchStockPhotos } from '@/lib/stock-photos';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -313,6 +324,7 @@ export default function WebsiteManageScreen() {
   const [warningsExpanded, setWarningsExpanded] = useState(false);
   const [showDeleteSite, setShowDeleteSite] = useState(false);
   const [deletingSite, setDeletingSite] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
   // Bumped only by side-panel/structural edits (block add/remove/reorder,
   // theme changes) — never by canvas keystrokes — so the debounced,
   // syncKey-keyed effect in SiteHtmlPreview.web.tsx can never reload the
@@ -637,6 +649,53 @@ export default function WebsiteManageScreen() {
     setStructuralVersion((v) => v + 1);
   }
 
+  // Backfill for sites that predate per-page intros: add the missing
+  // Schedule/Team/Pricing intro about blocks in place (so the owner
+  // keeps every other edit) and give each a class-type photo, the same
+  // way a freshly-built site gets them. Image fetching is best-effort
+  // and never blocks the text — same stance as createSite: if Pexels is
+  // off or the network hiccups, the intros just stay text-only. The
+  // whole thing is a no-op if nothing's missing (the prompt that calls
+  // this only shows when something is).
+  async function backfillIntros() {
+    if (!brand.gymId || backfilling) return;
+    setBackfilling(true);
+    const { doc: withIntros, addedSlugs } = addMissingIntros(document, brand.gymName);
+    if (addedSlugs.length === 0) {
+      setBackfilling(false);
+      return;
+    }
+    const themeForQueries = isThemeId(document.settings.themeId)
+      ? document.settings.themeId
+      : 'forged';
+    let next = withIntros;
+    try {
+      const { data: classTypeRows } = await supabase
+        .from('class_types')
+        .select('name')
+        .eq('gym_id', brand.gymId)
+        .is('archived_at', null)
+        .order('name')
+        .limit(6);
+      const { galleryQueries } = buildAutoImageQueries(
+        (classTypeRows ?? []).map((c) => c.name),
+        themeForQueries,
+      );
+      const photos: AutoImage[] = [];
+      for (const query of galleryQueries) {
+        const photo = await fetchTopStockPhoto(brand.gymId, query);
+        if (photo) photos.push(photo);
+      }
+      next = applyIntroImages(withIntros, addedSlugs, photos);
+    } catch {
+      // Keep the text-only intros.
+    }
+    setBackfilling(false);
+    setDocument(next);
+    setStructuralVersion((v) => v + 1);
+    await persistDocument(next);
+  }
+
   // Side-panel/structural edits: always reload the canvas (debounced via
   // structuralVersion → debouncedSyncKey), since these genuinely change
   // the rendered DOM shape (a block was added/removed/reordered, the
@@ -742,6 +801,10 @@ export default function WebsiteManageScreen() {
   // label always shows the domain itself, not this page's own path.
   const activePagePath =
     activePage.slug === '' ? `/site/${brand.slug}` : `/site/${brand.slug}/${activePage.slug}`;
+  // Sites created before per-page intros shipped (and any page an owner
+  // stripped back) — offer to add the intro sections in place rather
+  // than making them delete and rebuild the whole site.
+  const introsToAdd = missingIntroSlugs(document);
   const statusBlock = (
     <View className="gap-2">
       <View className="flex-row items-center gap-2 flex-wrap">
@@ -764,6 +827,26 @@ export default function WebsiteManageScreen() {
           onToggle={() => setWarningsExpanded((v) => !v)}
           onSelectPage={selectPage}
         />
+      ) : null}
+      {introsToAdd.length > 0 ? (
+        <View className="bg-primary/5 border border-primary/20 rounded-lg p-3 gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+            Give your other pages a stronger opening
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Add a short intro section — a paragraph plus a photo drawn from your class types — to
+            the top of your {introsToAdd.length === 1 ? 'other page' : 'other pages'}. You can edit
+            or delete it afterwards.
+          </Text>
+          <ChipButton
+            tone="primary"
+            className="self-start"
+            label={backfilling ? 'Adding…' : 'Add intro sections'}
+            icon="sparkles-outline"
+            disabled={backfilling}
+            onPress={() => void backfillIntros()}
+          />
+        </View>
       ) : null}
     </View>
   );

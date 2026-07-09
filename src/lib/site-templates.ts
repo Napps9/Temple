@@ -319,6 +319,59 @@ export function isSiteTemplateId(v: unknown): v is SiteTemplateId {
   return typeof v === 'string' && v in SITE_TEMPLATES;
 }
 
+export function templateIdForTheme(themeId: ThemeId): SiteTemplateId {
+  return SITE_TEMPLATE_LIST.find((t) => t.themeId === themeId)?.id ?? 'strength';
+}
+
+// The Schedule/Team/Pricing pages every template's buildFromCopy opens
+// with an intro about block. Kept here (not hardcoded at call sites) so
+// the cheap render-time check and the actual backfill agree on which
+// pages qualify.
+const INTRO_PAGE_SLUGS = new Set(['schedule', 'team', 'pricing']);
+
+// Cheap enough to call on every render (no template build): the
+// Schedule/Team/Pricing pages that don't currently open with an about
+// block — the ones addMissingIntros would fill. Drives the editor's
+// "add intro sections" prompt.
+export function missingIntroSlugs(doc: SiteDocument): string[] {
+  return doc.pages
+    .filter((p) => INTRO_PAGE_SLUGS.has(p.slug) && !p.blocks.some((b) => b.type === 'about'))
+    .map((p) => p.slug);
+}
+
+// Backfill for sites created before per-page intros existed (or a page
+// an owner stripped back to just its live-data block): give each
+// Schedule/Team/Pricing page the same intro about block a freshly-built
+// template of the site's own theme would have. Only adds where the page
+// has no about block already — never duplicates, never touches Home or
+// custom pages. The added blocks start image-less (which renders as
+// clean text); the caller applies photos separately, since that's a
+// network step. Returns the slugs that gained an intro so the caller
+// knows which pages to fetch images for.
+export function addMissingIntros(
+  doc: SiteDocument,
+  gymName?: string,
+): { doc: SiteDocument; addedSlugs: string[] } {
+  const template = SITE_TEMPLATES[templateIdForTheme(doc.settings.themeId)].build(gymName);
+  const introBySlug = new Map<string, AboutBlock>();
+  for (const p of template.pages) {
+    if (p.slug === '') continue;
+    const about = p.blocks.find((b) => b.type === 'about') as AboutBlock | undefined;
+    if (about) introBySlug.set(p.slug, about);
+  }
+  const addedSlugs: string[] = [];
+  const pages = doc.pages.map((page) => {
+    const intro = introBySlug.get(page.slug);
+    if (!intro || page.blocks.some((b) => b.type === 'about')) return page;
+    const fresh = createBlock('about') as AboutBlock;
+    fresh.heading = intro.heading;
+    fresh.body = intro.body;
+    addedSlugs.push(page.slug);
+    return { ...page, blocks: [fresh, ...page.blocks] };
+  });
+  return { doc: { ...doc, pages }, addedSlugs };
+}
+
 // Pre-fills the stock-photo picker's search per archetype. Keyed by
 // theme (documents store only settings.themeId, and themes pair 1:1
 // with templates). "weightlifting" not "CrossFit" — trademarked.
