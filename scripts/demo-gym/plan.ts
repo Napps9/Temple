@@ -743,20 +743,23 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   // home's block ids get rewritten below) — pin every page's id and its
   // one block's id so the same seed yields a byte-identical plan.
   const homePage = { ...siteDoc.pages[0], id: 'sp_demo_home' };
+  // Each of these pages now carries an intro about block plus its
+  // live-data block, so ids are suffixed by index to stay unique (and
+  // deterministic for a byte-identical plan across runs).
   const schedulePage = {
     ...siteDoc.pages[1],
     id: 'sp_demo_schedule',
-    blocks: siteDoc.pages[1].blocks.map((b) => ({ ...b, id: 'sb_demo_schedule' })),
+    blocks: siteDoc.pages[1].blocks.map((b, i) => ({ ...b, id: `sb_demo_schedule_${i + 1}` })),
   };
   const teamPage = {
     ...siteDoc.pages[2],
     id: 'sp_demo_team',
-    blocks: siteDoc.pages[2].blocks.map((b) => ({ ...b, id: 'sb_demo_team' })),
+    blocks: siteDoc.pages[2].blocks.map((b, i) => ({ ...b, id: `sb_demo_team_${i + 1}` })),
   };
   const pricingPage = {
     ...siteDoc.pages[3],
     id: 'sp_demo_pricing',
-    blocks: siteDoc.pages[3].blocks.map((b) => ({ ...b, id: 'sb_demo_pricing' })),
+    blocks: siteDoc.pages[3].blocks.map((b, i) => ({ ...b, id: `sb_demo_pricing_${i + 1}` })),
   };
   const patchedBlocks = homePage.blocks.map((raw, i) => {
     const block = { ...raw, id: `sb_demo${i + 1}` };

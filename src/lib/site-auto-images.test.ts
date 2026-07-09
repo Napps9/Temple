@@ -87,7 +87,7 @@ describe('applyAutoImages', () => {
     expect(next.pages[0].blocks.map((b) => b.type)).toEqual(['hero', 'gallery']);
   });
 
-  it('never touches pages other than home', () => {
+  it('leaves a non-home page untouched when it has no about block', () => {
     let doc = docWithHeroAndAbout();
     doc = {
       ...doc,
@@ -96,6 +96,43 @@ describe('applyAutoImages', () => {
     const next = applyAutoImages(doc, { url: 'https://x/hero.jpg', alt: '' }, [
       { url: 'https://x/a.jpg', alt: '' },
     ]);
+    expect(next.pages[1]).toEqual(doc.pages[1]);
+  });
+
+  it("gives a non-home page's intro about block one of the fetched photos", () => {
+    let doc = docWithHeroAndAbout();
+    doc = {
+      ...doc,
+      pages: [
+        ...doc.pages,
+        {
+          id: 'p2',
+          slug: 'schedule',
+          title: 'Schedule',
+          blocks: [createBlock('about'), createBlock('schedule')],
+        },
+      ],
+    };
+    const next = applyAutoImages(doc, null, [{ url: 'https://x/a.jpg', alt: 'CrossFit training' }]);
+    const about = next.pages[1].blocks[0];
+    if (about.type !== 'about') throw new Error('expected about');
+    expect(about.imageUrl).toBe('https://x/a.jpg');
+    // A photo was set, so it renders side-by-side rather than text-only.
+    expect(about.layout).not.toBe('none');
+    // The live-data block on that page is left alone.
+    expect(next.pages[1].blocks[1].type).toBe('schedule');
+  });
+
+  it('leaves non-home about blocks untouched when there are no photos', () => {
+    let doc = docWithHeroAndAbout();
+    doc = {
+      ...doc,
+      pages: [
+        ...doc.pages,
+        { id: 'p2', slug: 'team', title: 'Team', blocks: [createBlock('about'), createBlock('team')] },
+      ],
+    };
+    const next = applyAutoImages(doc, { url: 'https://x/hero.jpg', alt: '' }, []);
     expect(next.pages[1]).toEqual(doc.pages[1]);
   });
 });

@@ -11,7 +11,13 @@
 
 import type { ThemeId } from './brand-themes';
 import { DEFAULT_STOCK_QUERIES } from './site-templates';
-import { createBlock, type GalleryBlock, type GalleryImage, type SiteDocument } from './site-blocks';
+import {
+  createBlock,
+  type AboutBlock,
+  type GalleryBlock,
+  type GalleryImage,
+  type SiteDocument,
+} from './site-blocks';
 
 const MAX_GALLERY_PHOTOS = 3;
 
@@ -50,6 +56,16 @@ export type AutoImage = { url: string; alt: string };
 // needed. Gallery is only added when there's at least one photo to
 // put in it: an empty gallery block would just trip the existing "no
 // photos yet" publish warning for nothing.
+//
+// Every non-home page (Schedule/Team/Pricing) opens with an intro
+// about block; each gets one of the same fetched photos so those pages
+// don't open with a bare heading. Reusing the gallery photos rather
+// than fetching more is deliberate — the Pexels budget is small and
+// platform-wide — cycling if there are more pages than photos and
+// alternating the image side page-to-page for a little rhythm. A page
+// with no about block, or no photos at all, is left untouched (an
+// about with an empty imageUrl already renders as clean text — see
+// renderAbout).
 export function applyAutoImages(
   doc: SiteDocument,
   hero: AutoImage | null,
@@ -58,9 +74,35 @@ export function applyAutoImages(
   const home = doc.pages[0];
   if (!home) return doc;
 
+  return {
+    ...doc,
+    pages: doc.pages.map((page, i) => {
+      if (i === 0) return { ...page, blocks: applyHomeImages(page.blocks, hero, gallery) };
+      if (gallery.length === 0) return page;
+      const aboutIdx = page.blocks.findIndex((b) => b.type === 'about');
+      if (aboutIdx < 0) return page;
+      const photo = gallery[(i - 1) % gallery.length]!;
+      const layout: AboutBlock['layout'] = i % 2 === 1 ? 'image-right' : 'image-left';
+      return {
+        ...page,
+        blocks: page.blocks.map((b, bi) =>
+          bi === aboutIdx && b.type === 'about'
+            ? { ...b, imageUrl: photo.url, layout }
+            : b,
+        ),
+      };
+    }),
+  };
+}
+
+function applyHomeImages(
+  homeBlocks: SiteDocument['pages'][number]['blocks'],
+  hero: AutoImage | null,
+  gallery: AutoImage[],
+) {
   let blocks = hero
-    ? home.blocks.map((b) => (b.type === 'hero' ? { ...b, imageUrl: hero.url } : b))
-    : home.blocks;
+    ? homeBlocks.map((b) => (b.type === 'hero' ? { ...b, imageUrl: hero.url } : b))
+    : homeBlocks;
 
   if (gallery.length > 0) {
     const images: GalleryImage[] = gallery.map((g) => ({
@@ -76,5 +118,5 @@ export function applyAutoImages(
     blocks = [...blocks.slice(0, insertAt), galleryBlock, ...blocks.slice(insertAt)];
   }
 
-  return { ...doc, pages: doc.pages.map((p, i) => (i === 0 ? { ...p, blocks } : p)) };
+  return blocks;
 }

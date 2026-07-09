@@ -5,7 +5,11 @@
 // testimonials → location → contact), plus dedicated Schedule, Team
 // and Pricing pages for the three things that carry real,
 // information-dense live data and benefit from room of their own
-// rather than being buried partway down a single long page.
+// rather than being buried partway down a single long page. Each of
+// those three opens with a short intro paragraph (an about block)
+// before its live-data block — best-practice pages set context and
+// reassure before the raw grid/roster/plans — and that intro gets a
+// relevant photo attached at creation time (see site-auto-images.ts).
 // schedule/pricing/team populate themselves from the gym's real data
 // regardless of which page they're on.
 //
@@ -54,6 +58,13 @@ type TemplateCopy = {
     ctaTarget: 'join' | 'contact';
   };
   about: { heading: string; body: string };
+  // Each non-home page opens with a short intro paragraph before its
+  // live-data block (schedule grid / roster / plans) — best-practice
+  // gym pages set context and reassure before the raw data. These get a
+  // relevant photo attached at creation time too (see site-auto-images).
+  scheduleIntro: { heading: string; body: string };
+  teamIntro: { heading: string; body: string };
+  pricingIntro: { heading: string; body: string };
   scheduleHeading: string;
   teamHeading: string;
   pricingHeading: string;
@@ -78,11 +89,23 @@ function buildFromCopy(themeId: ThemeId, copy: TemplateCopy, gymName?: string): 
   about.heading = copy.about.heading;
   about.body = copy.about.body;
 
+  const scheduleIntro = createBlock('about') as AboutBlock;
+  scheduleIntro.heading = copy.scheduleIntro.heading;
+  scheduleIntro.body = copy.scheduleIntro.body;
+
   const schedule = createBlock('schedule') as ScheduleBlock;
   schedule.heading = copy.scheduleHeading;
 
+  const teamIntro = createBlock('about') as AboutBlock;
+  teamIntro.heading = copy.teamIntro.heading;
+  teamIntro.body = copy.teamIntro.body;
+
   const team = createBlock('team') as TeamBlock;
   team.heading = copy.teamHeading;
+
+  const pricingIntro = createBlock('about') as AboutBlock;
+  pricingIntro.heading = copy.pricingIntro.heading;
+  pricingIntro.body = copy.pricingIntro.body;
 
   const pricing = createBlock('pricing') as PricingBlock;
   pricing.heading = copy.pricingHeading;
@@ -102,9 +125,9 @@ function buildFromCopy(themeId: ThemeId, copy: TemplateCopy, gymName?: string): 
     settings: { themeId },
     pages: [
       { ...emptyPage('Home', ''), blocks: [hero, about, testimonials, location, contact] },
-      { ...emptyPage('Schedule', 'schedule'), blocks: [schedule] },
-      { ...emptyPage('Team', 'team'), blocks: [team] },
-      { ...emptyPage('Pricing', 'pricing'), blocks: [pricing] },
+      { ...emptyPage('Schedule', 'schedule'), blocks: [scheduleIntro, schedule] },
+      { ...emptyPage('Team', 'team'), blocks: [teamIntro, team] },
+      { ...emptyPage('Pricing', 'pricing'), blocks: [pricingIntro, pricing] },
     ],
   };
 }
@@ -121,6 +144,18 @@ const STRENGTH_COPY: TemplateCopy = {
   about: {
     heading: 'Why we built this gym',
     body: "We built this gym for people who want to train properly: coached sessions, smart programming and a standard you can't help but rise to. Whether you're brand new to the barbell or chasing a new PB, every session is scaled to where you are and built to move you forward. Come in for a free class and see what training with intent feels like.",
+  },
+  scheduleIntro: {
+    heading: 'How training works here',
+    body: "Every class on the timetable is coached start to finish and scaled to whoever's in the room — turn up as a total beginner or a seasoned lifter and you'll get a session that fits. New here? Book a free class, arrive ten minutes early, and a coach will walk you through everything.",
+  },
+  teamIntro: {
+    heading: 'Coached by people who train',
+    body: "Our coaches lift, run and sweat alongside you — qualified, experienced, and in it for your progress, not just the rep count. They'll learn your name, your goals and your niggles, and program every session to move you forward safely.",
+  },
+  pricingIntro: {
+    heading: 'Membership without the gimmicks',
+    body: 'Simple plans, no long lock-in contracts and your first class free — join because the training works, not because you signed something you can\'t get out of. Every membership includes full coaching; pick the one that matches how often you\'ll train.',
   },
   scheduleHeading: 'Train with us this week',
   teamHeading: 'Your coaches',
@@ -146,6 +181,18 @@ const COMBAT_COPY: TemplateCopy = {
     heading: 'Respect the craft',
     body: "Fight training builds more than fitness — it builds discipline, composure and a confidence that follows you out of the gym. Our coaches hold a high standard and teach proper technique from day one, whether you're here to compete or just to train like you mean it. Every fighter in this gym started with a first class.",
   },
+  scheduleIntro: {
+    heading: 'What to expect on the mats',
+    body: "There's a class for every level on the timetable — beginners start with the fundamentals, no sparring thrown at you on day one. Come in loose kit, bring water, and arrive early for your first session so a coach can get you wrapped up and settled in.",
+  },
+  teamIntro: {
+    heading: 'Learn from real coaches',
+    body: "Our coaches have put in the rounds — some still compete — and they teach because they take the craft seriously. Expect honest feedback, proper technique and a standard held with respect, never ego.",
+  },
+  pricingIntro: {
+    heading: 'Membership, straight up',
+    body: 'No joining fees, no hidden extras and a first class that costs you nothing but effort. Pick a membership that suits how often you train — everything from beginner guidance to open-mat access is included.',
+  },
   scheduleHeading: 'This week on the mats',
   teamHeading: 'Your coaches',
   pricingHeading: 'Membership, no hidden fees',
@@ -170,6 +217,18 @@ const STUDIO_COPY: TemplateCopy = {
   about: {
     heading: 'Our story',
     body: "We opened this studio to be the kind of place we always looked for: expert teaching without the intimidation, movement that leaves you feeling better than when you arrived, and a community that learns each other's names. Classes stay small so you're never just a face in the crowd — come as you are, start where you are.",
+  },
+  scheduleIntro: {
+    heading: 'Finding your class',
+    body: "Whatever your experience, there's a class here for you — every session is welcoming and can be taken gently or pushed harder. Spaces are limited so classes stay small, so do book ahead, and arrive a few minutes early to settle in before we begin.",
+  },
+  teamIntro: {
+    heading: "The people who'll guide you",
+    body: 'Our instructors are experienced, warm and genuinely invested in how you feel — they teach to the person in front of them, not a routine on a wall. You\'ll always have someone watching your form and cheering your progress.',
+  },
+  pricingIntro: {
+    heading: 'Passes & memberships',
+    body: "Drop in, buy a pass or join as a member — whatever suits your rhythm, with no pressure to commit before you're ready. Your first class is on us, so you can feel the space and the teaching before you decide.",
   },
   scheduleHeading: 'This week at the studio',
   teamHeading: 'Meet your instructors',
@@ -198,6 +257,18 @@ const COACHING_COPY: TemplateCopy = {
   about: {
     heading: "Who you'll be working with",
     body: "Good coaching starts with listening. Before we write a single session, we take the time to understand your history, your goals and how training has to fit around real life. Our coaches are qualified, experienced and honest about what it takes — whether you're returning from injury, starting from scratch or chasing a specific number, we'll meet you where you are and build from there.",
+  },
+  scheduleIntro: {
+    heading: 'How sessions run',
+    body: "Sessions are built around you — one-to-one or small-group, scheduled to fit real life rather than the other way round. Here's what the week currently looks like; if nothing lines up, get in touch and we'll find a time that works.",
+  },
+  teamIntro: {
+    heading: 'The coaches in your corner',
+    body: 'You\'ll work with qualified, experienced coaches who listen before they prescribe and stay honest about what progress really takes. This is a relationship, not a transaction — expect support between sessions, not just during them.',
+  },
+  pricingIntro: {
+    heading: 'Coaching options',
+    body: "Every plan starts with a free, no-pressure consultation so we can recommend the right fit before you commit to anything. Pricing is transparent and matched to your goals — from focused blocks to ongoing coaching.",
   },
   scheduleHeading: 'Weekly sessions',
   teamHeading: 'Your coaching team',

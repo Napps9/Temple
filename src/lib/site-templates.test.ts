@@ -83,9 +83,11 @@ describe.each(SITE_TEMPLATE_LIST.map((t) => [t.id, t] as const))('template %s', 
       'location',
       'contact',
     ]);
-    expect(doc.pages[1].blocks.map((b) => b.type)).toEqual(['schedule']);
-    expect(doc.pages[2].blocks.map((b) => b.type)).toEqual(['team']);
-    expect(doc.pages[3].blocks.map((b) => b.type)).toEqual(['pricing']);
+    // Each non-home page opens with an intro about block before its
+    // live-data block.
+    expect(doc.pages[1].blocks.map((b) => b.type)).toEqual(['about', 'schedule']);
+    expect(doc.pages[2].blocks.map((b) => b.type)).toEqual(['about', 'team']);
+    expect(doc.pages[3].blocks.map((b) => b.type)).toEqual(['about', 'pricing']);
     expect(doc.settings.themeId).toBe(t.themeId);
   });
 
