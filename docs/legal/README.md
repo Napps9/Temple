@@ -62,8 +62,11 @@ the two in sync when you change the legal position.
 
 ## Product follow-ups the review surfaced
 
-- [ ] **Automated breach/anomaly alerting** — today detection is Supabase logs
-      + reports; no automated alerting yet (noted honestly in the docs).
+- [x] **Automated breach/anomaly alerting** — a scheduled security monitor
+      records RLS-regression / health-exfiltration / auth-burst signals to
+      `security_alerts` (migration 0111). *To email them:* enable `pg_net`, set
+      the `security-alert` function secrets + the `app.security_alert_url`/
+      secret GUCs (see `breach-response.md`).
 - [ ] **Consumer flow for paid solo** — solo is free in beta; if a paid tier
       launches, wire the Consumer Contracts Regs cancellation/refund path
       referenced in Terms §3.

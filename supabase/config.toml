@@ -124,3 +124,8 @@ verify_jwt = true
 # carries none); guarded by the signature against STRIPE_WEBHOOK_SECRET.
 [functions.stripe-webhook]
 verify_jwt = false
+
+# Ops security-alert notifier, called by the security-monitor pg_cron job via
+# pg_net (no user JWT); guarded by the x-security-secret shared secret.
+[functions.security-alert]
+verify_jwt = false

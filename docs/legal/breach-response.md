@@ -11,28 +11,45 @@ to, personal data. Under UK GDPR, **Temple (processor)** must tell the
 decides whether to notify the **ICO within 72 hours** and whether to tell
 affected individuals.
 
-## How we detect a breach (honest, current state)
+## How we detect a breach
 
-There is **no third-party monitoring or error-telemetry** in the stack today
-(confirmed by code review). Detection currently relies on:
+### Automated security monitor (built)
 
-- **Supabase platform logs** — Postgres logs, API/PostgREST logs, and **Auth
-  logs** (sign-ins, password resets, admin actions) in the Supabase
-  dashboard. *Action: enable Supabase log drains / alerting so anomalies
-  surface without someone watching the dashboard.*
-- **Row-Level Security as the primary control** — every table is RLS-isolated
-  per gym, so the most likely breach class (one tenant reading another's
-  data) is prevented by design rather than merely detected. A regression
-  would show up in tests/CI or a user report.
-- **Stripe & Resend dashboards** — anomalous payment or email-sending
-  activity.
-- **Reports** — from gyms, members, or security researchers. *Action: publish
-  a security contact (security@ or privacy@jointemple.io) so reports have a
-  route in.*
+A scheduled `pg_cron` job, `run_security_monitor()` (migration 0111, runs
+every 15 min), records signals into the `security_alerts` table and — when
+configured — emails a Temple ops address via the `security-alert` edge
+function. It computes three signals:
 
-> Known gap to close: there is no automated intrusion/anomaly alerting yet.
-> Until there is, detection is largely manual + platform logs — do not claim
-> more than that anywhere.
+- **RLS regression** — any `public` base table with row-level security
+  **disabled** (a direct anon/authenticated exposure). High-confidence.
+- **Health-data exfiltration** — an actor who viewed an unusually high number
+  of distinct members' health data in the last hour (from
+  `health_data_access_log`).
+- **Auth anomaly (best-effort)** — bursts of failed logins / recovery requests
+  in `auth.audit_log_entries`.
+
+**What it deliberately does NOT catch** (do not claim otherwise): health reads
+that bypass the logging RPC or run under the service role; RLS policies that
+are present but misconfigured; and it depends on Supabase's internal auth-log
+shape for signal 3. It is a tripwire for specific, likely failure modes — not
+a complete IDS.
+
+*Config to make it email (else it records silently):* enable `pg_net`
+(migration 0112 does), set `SECURITY_ALERT_SECRET` + `RESEND_API_KEY` +
+`RESEND_FROM_EMAIL` + `SECURITY_ALERT_EMAIL` on the `security-alert` function,
+and set the `app.security_alert_url` / `app.security_alert_secret` Postgres
+settings to the function URL + the same secret.
+
+### Also relied on
+
+- **Supabase platform logs** — Postgres / PostgREST / Auth logs in the
+  dashboard; enable log drains for retention.
+- **RLS as the primary control** — every table is RLS-isolated per gym, so the
+  likeliest breach class (cross-tenant reads) is prevented by design; the
+  monitor's RLS-regression check guards against a lapse.
+- **Stripe & Resend dashboards** — anomalous payment / email activity.
+- **Reports** — from gyms, members, or researchers. Publish a security contact
+  so reports have a route in.
 
 ## Response flow
 

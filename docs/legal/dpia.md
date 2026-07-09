@@ -45,18 +45,18 @@ before starting.
 | Risk | Likelihood / severity | Mitigation in the product |
 |---|---|---|
 | One gym accessing another's member/health data | [score] | **RLS** on every table; dangerous writes only via authorised server-side routines |
-| Staff over-access to health data | [score] | Access **audit log** (`health_data_access_log`); capability gating |
+| Staff over-access to health data | [score] | Access **audit log** (`health_data_access_log`); capability gating; **automated exfiltration monitor** flags an actor viewing many members' health data |
 | Health data kept too long | [score] | Erased on leaving; **auto-purge** 3 months after membership ends (scheduled) |
 | Waiver records kept indefinitely | [score] | Now bounded to **6 years**, then purged (scheduled) |
 | A child's data processed without authority | [score] | Age check from DOB; gym **opt-in** required; **guardian consent** captured; solo sign-up blocked under 18 |
 | Consent not meaningful / not recorded | [score] | Explicit tick-box consent gate, versioned; re-consent on policy change |
-| Breach exposure | [score] | Encryption in transit; RLS; breach runbook (`breach-response.md`) — **gap: no automated anomaly alerting yet** |
+| Breach exposure | [score] | Encryption in transit; RLS; a **scheduled security monitor** (RLS-regression, health-data exfiltration, auth bursts → `security_alerts` + optional ops email); breach runbook (`breach-response.md`) |
 | Data transferred outside the UK | [score] | IDTA/SCCs where applicable — **confirm per sub-processor (DPA Annex B)** |
 
 ## 5. Residual risk & sign-off
 
-- Outstanding items to resolve: automated breach alerting; confirm all
-  international-transfer mechanisms; [others].
+- Outstanding items to resolve: configure the security monitor's ops email;
+  confirm all international-transfer mechanisms; [others].
 - Residual risk after mitigations: [low / medium / high — justify].
 
 **Assessed by:** ______________  **Signed off (director):** ______________
