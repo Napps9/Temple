@@ -3,7 +3,7 @@
 -- child into a class; a non-guardian can do none of it.
 
 begin;
-select plan(6);
+select plan(10);
 
 \ir _helpers.psql
 
@@ -105,10 +105,51 @@ begin
 end $$;
 select is(
   (select count(*)::int from public.class_bookings
-     where session_id = current_setting('test.sess')::uuid
+     where class_session_id = current_setting('test.sess')::uuid
        and profile_id = current_setting('test.kid')::uuid),
   1,
   'a guardian books their child into a class'
+);
+
+-- 7. A non-guardian cannot remove the child.
+do $$ begin perform _test_act_as(current_setting('test.other')::uuid); end $$;
+select throws_like(
+  format('select remove_dependent(%L::uuid)', current_setting('test.kid')),
+  '%Not authorised%',
+  'remove_dependent refuses a non-guardian'
+);
+
+-- 8. The guardian removes the child: membership ends, guardianship + health
+--    rows go, and a guardian PAR-Q read is audit-logged.
+do $$
+begin
+  -- First, a guardian read that should be logged.
+  perform _test_act_as(current_setting('test.parent')::uuid);
+  perform public.current_parq_state(
+    current_setting('test.gym')::uuid, current_setting('test.kid')::uuid);
+  perform public.remove_dependent(current_setting('test.kid')::uuid);
+end $$;
+
+select is(
+  (select count(*)::int from public.guardianships
+     where dependent_profile_id = current_setting('test.kid')::uuid),
+  0,
+  'remove_dependent drops the guardianship link'
+);
+select isnt(
+  (select left_at from public.gym_memberships
+     where gym_id = current_setting('test.gym')::uuid
+       and profile_id = current_setting('test.kid')::uuid),
+  null,
+  'remove_dependent ends the child''s membership (left_at set)'
+);
+select is(
+  (select count(*)::int from public.health_data_access_log
+     where actor_id = current_setting('test.parent')::uuid
+       and subject_profile_id = current_setting('test.kid')::uuid
+       and action = 'view'),
+  1,
+  'a guardian read of the child''s PAR-Q state is audit-logged'
 );
 
 select * from finish();

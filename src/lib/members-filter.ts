@@ -1,7 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
 
-export type MembersFilter = 'all' | 'intro' | 'expiring' | 'expired' | 'active';
+export type MembersFilter =
+  | 'all'
+  | 'intro'
+  | 'expiring'
+  | 'expired'
+  | 'active'
+  | 'managed';
 
 export type MembersFilterState = {
   filter: MembersFilter;
@@ -26,7 +32,8 @@ export function parseMembersFilter(raw: string | null | undefined): MembersFilte
       parsed.filter === 'intro' ||
       parsed.filter === 'expiring' ||
       parsed.filter === 'expired' ||
-      parsed.filter === 'active'
+      parsed.filter === 'active' ||
+      parsed.filter === 'managed'
         ? parsed.filter
         : 'all';
     const search = typeof parsed.search === 'string' ? parsed.search : '';

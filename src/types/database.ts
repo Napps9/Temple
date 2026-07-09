@@ -3034,6 +3034,10 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: null;
       };
+      remove_dependent: {
+        Args: { p_dependent_id: string };
+        Returns: null;
+      };
       current_parq_state: {
         Args: { p_gym_id: string; p_profile_id: string };
         Returns: {

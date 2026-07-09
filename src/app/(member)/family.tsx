@@ -5,6 +5,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -136,6 +138,25 @@ function DependentCard({
   dependent: Dependent;
   gymId?: string;
 }) {
+  const queryClient = useQueryClient();
+  const [showRemove, setShowRemove] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('remove_dependent', {
+        p_dependent_id: dependent.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setShowRemove(false);
+      setRemoveError(null);
+      queryClient.invalidateQueries({ queryKey: ['dependents'] });
+    },
+    onError: (e) => setRemoveError(errorMessage(e, 'Could not remove')),
+  });
+
   const screening = useQuery({
     queryKey: ['dependent-screening', dependent.id, gymId],
     enabled: !!gymId,
@@ -170,11 +191,19 @@ function DependentCard({
         <Text className="text-gray-900 dark:text-gray-50 font-semibold">
           {dependent.fullName ?? 'Child'}
         </Text>
-        {age != null ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
-            age {age}
-          </Text>
-        ) : null}
+        <View className="flex-row items-center gap-3">
+          {age != null ? (
+            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              age {age}
+            </Text>
+          ) : null}
+          <ChipButton
+            tone="red"
+            icon="trash-outline"
+            label="Remove"
+            onPress={() => setShowRemove(true)}
+          />
+        </View>
       </View>
 
       {screening.isLoading ? (
@@ -209,6 +238,22 @@ function DependentCard({
           ) : null}
         </View>
       )}
+
+      <ConfirmDialog
+        visible={showRemove}
+        title="Remove this child?"
+        body={`This removes ${
+          dependent.fullName ?? 'this child'
+        } from the gym and erases their health data (PAR-Q, injuries). This can't be undone.`}
+        confirmLabel="Remove"
+        onConfirm={() => remove.mutate()}
+        onCancel={() => {
+          setShowRemove(false);
+          setRemoveError(null);
+        }}
+        pending={remove.isPending}
+        error={removeError}
+      />
     </View>
   );
 }

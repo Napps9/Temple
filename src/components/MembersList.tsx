@@ -24,7 +24,11 @@ type CohortRow = {
   is_expiring_soon: boolean;
   is_expired: boolean;
   days_until_expiry: number | null;
-  profiles: { full_name: string | null; avatar_url: string | null } | null;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+    managed: boolean;
+  } | null;
 };
 
 type TagRow = {
@@ -66,7 +70,7 @@ export function MembersList() {
           // profiles!profile_id: member_injuries' FKs (profiles +
           // composite to gym_memberships) gave PostgREST a second
           // resolution path — the bare embed became ambiguous.
-          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name, avatar_url)',
+          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name, avatar_url, managed)',
         )
         .eq('gym_id', membership!.gymId);
       if (error) throw error;
@@ -199,6 +203,7 @@ export function MembersList() {
         if (filter === 'expiring' && !r.is_expiring_soon) return false;
         if (filter === 'expired' && !r.is_expired) return false;
         if (filter === 'active' && !r.is_active) return false;
+        if (filter === 'managed' && !r.profiles?.managed) return false;
         if (q.length > 0) {
           const name = r.profiles?.full_name?.toLowerCase() ?? '';
           return name.includes(q);
@@ -231,6 +236,11 @@ export function MembersList() {
           label="Active"
           active={filter === 'active'}
           onPress={() => setFilter('active')}
+        />
+        <FilterChip
+          label="Children"
+          active={filter === 'managed'}
+          onPress={() => setFilter('managed')}
         />
       </View>
 
@@ -391,6 +401,7 @@ function CohortBadges({
   const colors = useThemeColors();
   return (
     <View className="flex-row gap-1">
+      {row.profiles?.managed ? <Badge label="Child" color="#8B5CF6" /> : null}
       {flagged ? <Badge label="PAR-Q" color="#DC2626" /> : null}
       {injured ? <Badge label="Injury" color="#F59E0B" /> : null}
       {row.is_intro ? <Badge label="Intro" color="#10B981" /> : null}

@@ -28,6 +28,7 @@ import type { InjurySide, InjuryStatus } from '@/types/database';
 type ProfileRow = {
   full_name: string | null;
   avatar_url: string | null;
+  managed: boolean;
 };
 
 type MembershipRow = {
@@ -132,7 +133,7 @@ export default function MemberDetailScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url')
+        .select('full_name, avatar_url, managed')
         .eq('id', profileId!)
         .single();
       if (error) throw error;
@@ -283,6 +284,11 @@ export default function MemberDetailScreen() {
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
               {profile.data?.full_name ?? 'Member'}
             </Text>
+            {profile.data?.managed ? (
+              <Text className="text-violet-600 dark:text-violet-400 text-xs font-medium">
+                Child account (managed by a guardian)
+              </Text>
+            ) : null}
             {gymMembership.data ? (
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Joined {gymMembership.data.created_at.slice(0, 10)}

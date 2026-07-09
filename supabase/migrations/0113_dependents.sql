@@ -333,6 +333,15 @@ begin
     raise exception 'Not authorised';
   end if;
 
+  -- Audit a guardian reading their child's health state (staff reads are
+  -- logged client-side; self-reads aren't logged). log_health_data_access is
+  -- staff-gated, so insert directly (this definer bypasses the log's RLS).
+  if auth.uid() <> p_profile_id and public.is_guardian_of(p_profile_id) then
+    insert into public.health_data_access_log
+      (gym_id, actor_id, subject_profile_id, action, surface)
+      values (p_gym_id, auth.uid(), p_profile_id, 'view', 'guardian_waiver_state');
+  end if;
+
   select id into v_active
     from public.waiver_documents
     where gym_id = p_gym_id and is_active
@@ -381,6 +390,14 @@ begin
      and not public.is_guardian_of(p_profile_id)
      and not public.effective_can(p_gym_id, 'can_see_health_flag') then
     raise exception 'Not authorised';
+  end if;
+
+  -- Audit a guardian reading their child's PAR-Q state (see the waiver
+  -- reader for the rationale).
+  if auth.uid() <> p_profile_id and public.is_guardian_of(p_profile_id) then
+    insert into public.health_data_access_log
+      (gym_id, actor_id, subject_profile_id, action, surface)
+      values (p_gym_id, auth.uid(), p_profile_id, 'view', 'guardian_parq_state');
   end if;
 
   select parq_expiry_days into v_parq_days from public.gyms where id = p_gym_id;
@@ -473,3 +490,64 @@ begin
 end;
 $$;
 grant execute on function public.parent_cancel_dependent_booking(uuid) to authenticated;
+
+-- Remove a dependent. Mirrors leave_gym (0037) for the child — a soft
+-- removal (end the membership + erase health data + drop future bookings)
+-- rather than a hard profile delete, which billing_events.member_id (a NOT
+-- NULL/RESTRICT FK) would block for anyone ever charged. Guardian-gated;
+-- leave_gym itself can't be reused (it authorises self-or-admin, and a
+-- guardian is neither).
+create or replace function public.remove_dependent(
+  p_dependent_id uuid
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_gym uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Not authenticated';
+  end if;
+  if not public.is_guardian_of(p_dependent_id) then
+    raise exception 'Not authorised to remove this member';
+  end if;
+
+  select gym_id into v_gym
+    from public.guardianships
+    where dependent_profile_id = p_dependent_id
+      and guardian_profile_id = auth.uid();
+
+  update public.gym_memberships
+    set left_at = now()
+    where gym_id = v_gym and profile_id = p_dependent_id and left_at is null;
+
+  delete from public.class_bookings
+    where profile_id = p_dependent_id
+      and class_session_id in (
+        select id from public.class_sessions
+        where gym_id = v_gym and starts_at > now()
+      );
+
+  update public.plan_subscriptions
+    set status = 'cancelled', cancelled_at = coalesce(cancelled_at, now())
+    where gym_id = v_gym and profile_id = p_dependent_id
+      and not public.is_terminal_subscription_status(status);
+
+  delete from public.class_waitlist
+    where gym_id = v_gym and profile_id = p_dependent_id;
+
+  -- Waivers aren't health data (leave_gym/_erase leave them), but a removed
+  -- dependent has no reason to retain one.
+  delete from public.waiver_signatures
+    where gym_id = v_gym and profile_id = p_dependent_id;
+
+  perform public._erase_member_health_data(v_gym, p_dependent_id, 'erase');
+
+  delete from public.guardianships
+    where dependent_profile_id = p_dependent_id
+      and guardian_profile_id = auth.uid();
+end;
+$$;
+grant execute on function public.remove_dependent(uuid) to authenticated;
