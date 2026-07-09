@@ -9,7 +9,7 @@
 
 **Last updated: [DATE]**
 
-This policy explains how **[Temple Technology Ltd / sole trader — confirm]**
+This policy explains how **Temple Software Ltd** (company no. 15867522)
 ("Temple", "we") handles personal data for which **we are the controller** —
 principally the account data of gym owners, staff, and individual users who
 sign up to Temple.
@@ -23,8 +23,9 @@ If you are a gym member, contact your gym about its use of your data.
 
 ## 1. Who we are
 
-[Temple Technology Ltd], [company no.], [registered office]. Data protection
-contact: **[privacy@jointemple.io — confirm a monitored inbox]**.
+Temple Software Ltd, company no. 15867522, registered in England and Wales,
+registered office [registered office — to be confirmed]. Data protection
+contact: **privacy@jointemple.io**.
 
 ## 2. Data we control, and why
 
@@ -65,9 +66,11 @@ location before publishing.]
 
 ## 4. International transfers
 
-Some providers may process data outside the UK/EEA. Where they do, we rely on
-appropriate safeguards (e.g. the UK IDTA or EU Standard Contractual Clauses
-with the UK Addendum). [Confirm the mechanism per provider.]
+Some providers may process data outside the UK/EEA. Where they do, we put an
+appropriate safeguard in place (such as the UK IDTA or EU Standard
+Contractual Clauses with the UK Addendum). We are completing confirmation of
+the exact mechanism for each provider — see the sub-processor annex in the
+DPA (`dpa.md`).
 
 ## 5. Retention
 
@@ -105,12 +108,13 @@ notify you and/or the ICO of a personal-data breach where the law requires.
 
 ## 9. Cookies and local storage
 
-The app is **cookie-light**. It does **not** use analytics, advertising, or
-third-party tracking cookies, and it does not run behavioural analytics or
-error-telemetry SDKs. It stores only what is **strictly necessary or
-functional** on your device — your sign-in session and preferences such as
-light/dark theme and UI state. Because none of this is non-essential
-tracking, **no cookie consent banner is required** for the app.
+The app stores what is **strictly necessary or functional** on your device —
+your sign-in session and preferences such as light/dark theme and UI state —
+which needs no consent. Any **analytics or other non-essential** storage is
+used **only if you accept it** in the cookie banner shown on first visit; you
+can accept or reject with equal ease, and rejecting leaves only the essential
+storage above. [When an analytics tool is enabled, name it and its purpose
+here.]
 
 Separately, marketing emails a **gym** sends via Temple's communications
 tools may include open/click tracking; that is the gym's processing under its
@@ -120,11 +124,13 @@ opens or clicks.
 
 ## 10. Children
 
-Temple accounts are for people aged 18 or over. Where a gym enrols a member
-under 18, the gym (as controller) is responsible for obtaining
-parental/guardian consent and the appropriate lawful basis; see the DPA. If
-you believe a child has given us data without authorisation, contact us and
-we will address it.
+Individual (solo) accounts are for people aged 18 or over, and solo sign-up
+refuses an under-18 date of birth. A gym may opt in to enrolling members
+under 18; where it does, Temple checks age from date of birth and captures a
+parent or guardian's consent in-app before the member proceeds, and the gym
+(as controller) remains responsible for the appropriate lawful basis; see the
+DPA. If you believe a child has given us data without authorisation, contact
+us and we will address it.
 
 ## 11. Changes
 

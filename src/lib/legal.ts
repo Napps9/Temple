@@ -110,12 +110,13 @@ export const TERMS_OF_SERVICE: LegalDoc = {
       body: [
         'To the extent permitted by law we disclaim implied warranties and ' +
           'limit our liability; nothing limits liability that cannot lawfully ' +
-          'be limited. These terms are governed by the laws of England and ' +
-          'Wales.',
+          'be limited. Our total liability to you is capped at the fees you ' +
+          'paid Temple in the 3 months before the claim. These terms are ' +
+          'governed by the laws of England and Wales.',
       ],
     },
   ],
-  contact: 'Questions about these terms: legal@jointemple.io',
+  contact: 'Questions about these terms: privacy@jointemple.io',
 };
 
 export const PRIVACY_POLICY: LegalDoc = {
@@ -123,8 +124,9 @@ export const PRIVACY_POLICY: LegalDoc = {
   updated: 'July 2026',
   draftNotice: DRAFT_NOTICE,
   intro: [
-    'This policy explains how Temple handles the personal data we control — ' +
-      'mainly the account data of gym owners, staff, and individual users.',
+    'This policy explains how Temple Software Ltd (company no. 15867522) ' +
+      'handles the personal data we control — mainly the account data of gym ' +
+      'owners, staff, and individual users.',
     'For the member data a gym stores in Temple (bookings, training history, ' +
       'and health data such as PAR-Q answers and injuries), the gym is the ' +
       'controller and Temple is its processor. If you are a gym member, ' +
@@ -184,21 +186,25 @@ export const PRIVACY_POLICY: LegalDoc = {
     {
       heading: 'Cookies',
       body: [
-        'The app is cookie-light. It uses no analytics, advertising, or ' +
-          'third-party tracking cookies and runs no behavioural-analytics ' +
-          'SDKs — it stores only what is needed to keep you signed in and ' +
-          'remember preferences like light/dark theme. No cookie banner is ' +
-          'required. (Marketing emails a gym sends via Temple may track ' +
-          'opens and clicks under the gym’s own privacy notice, and always ' +
-          'carry a one-click unsubscribe.)',
+        'The app stores only what is needed to keep you signed in and ' +
+          'remember preferences like light/dark theme — this needs no ' +
+          'consent. Any analytics or other non-essential storage runs only if ' +
+          'you accept it in the banner shown on your first visit; you can ' +
+          'accept or reject with equal ease, and rejecting keeps only the ' +
+          'essential storage. (Marketing emails a gym sends via Temple may ' +
+          'track opens and clicks under the gym’s own privacy notice, and ' +
+          'always carry a one-click unsubscribe.)',
       ],
     },
     {
       heading: 'Children',
       body: [
-        'Temple accounts are for people aged 18 or over. Where a gym enrols a ' +
-          'member under 18, the gym is responsible for parental or guardian ' +
-          'consent and the right lawful basis for that member’s data.',
+        'Solo accounts are for people aged 18 or over, and solo sign-up ' +
+          'refuses an under-18 date of birth. A gym may opt in to enrolling ' +
+          'members under 18; where it does, we check age from date of birth ' +
+          'and capture a parent or guardian’s consent in-app before the ' +
+          'member proceeds, and the gym remains responsible for the lawful ' +
+          'basis.',
       ],
     },
   ],

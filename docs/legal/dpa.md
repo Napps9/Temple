@@ -11,7 +11,7 @@
 **Last updated: [DATE]**
 
 This Data Processing Agreement ("DPA") forms part of the Terms of Service
-between **[Temple Technology Ltd / sole trader — confirm]** ("Processor",
+between **Temple Software Ltd** (company no. 15867522) ("Processor",
 "Temple") and the gym or fitness business that uses Temple ("Controller",
 "the Gym"). It governs Temple's processing of personal data on the Gym's
 behalf under UK GDPR and the Data Protection Act 2018. Where this DPA
@@ -79,9 +79,10 @@ The Gym warrants and undertakes that it:
   to Temple for processing;
 - gives its members the required **privacy information** and handles their
   requests (Temple assists per §4.6);
-- where it enrols a **member under 18**, obtains verifiable
-  parental/guardian consent and applies age-appropriate safeguards before
-  that member's data is collected;
+- where it opts in to enrolling a **member under 18** (a gym setting),
+  obtains verifiable parental/guardian consent — Temple captures a
+  guardian's consent in-app as a supporting record, but the Gym remains
+  responsible for its validity — and applies age-appropriate safeguards;
 - complies with **PECR** and marketing law when it uses Temple's
   communications tools — including any consent/soft-opt-in for marketing
   email and its open/click tracking, and honouring unsubscribes; and
@@ -102,7 +103,7 @@ Temple maintains, at minimum (detailed in Annex C):
   after a membership ends.
 - **Consent gate** — members record data-processing consent before any
   health data can be stored.
-- Encryption in transit; access controls; monitoring.
+- Encryption in transit; access controls; platform logging (via Supabase).
 
 ## 7. Sub-processors
 
@@ -119,10 +120,12 @@ may terminate the affected service.
 ## 8. Breach, DPIA, assistance
 
 Temple will notify the Gym **without undue delay** after becoming aware of a
-personal-data breach affecting the Gym's data [target: within [72] hours],
-with the information the Gym reasonably needs to meet its own notification
-duties to the ICO and data subjects. Temple will provide reasonable
-assistance with the Gym's DPIAs and any prior consultation with the ICO.
+personal-data breach affecting the Gym's data, with the information the Gym
+reasonably needs to meet its own notification duties to the ICO and data
+subjects (the Gym, as controller, must report to the ICO within 72 hours
+where required). Temple's detection and response process is described in
+`docs/legal/breach-response.md`. Temple will provide reasonable assistance
+with the Gym's DPIAs and any prior consultation with the ICO.
 
 ## 9. Audit
 

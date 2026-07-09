@@ -25,9 +25,9 @@ platform ("Temple", "we", "us"). They apply to two kinds of user:
 clicking to accept these Terms, you agree to them (and, for a Gym, on behalf
 of that business).
 
-The operating entity is **[Temple Technology Ltd / sole trader — confirm]**,
-[registered in England and Wales, company no. [NUMBER], registered office
-[ADDRESS] — or, if a sole trader, trading name and address].
+The operating entity is **Temple Software Ltd**, a company registered in
+England and Wales (company no. **15867522**), registered office
+[registered office — to be confirmed].
 
 ## 1. The service
 
@@ -42,13 +42,16 @@ change or be withdrawn.
 
 - **Account holders must be 18 or over.** This applies to Gym owners/staff
   and to Individual Users who create their own account.
-- **Under-18 gym members.** Temple does not currently verify a member's age.
-  Where a Gym enrols a member under 18, **the Gym is responsible** for
-  obtaining verifiable consent from a parent or guardian before that member
-  provides any personal data (including health data), for identifying the
-  correct lawful basis, and for any age-appropriate safeguards. The Gym must
-  not use Temple to collect a child's data without that authorisation. (See
-  the DPA, `dpa.md`.)
+- **Under-18 gym members.** Temple checks a member's age from their date of
+  birth. By default a gym cannot enrol members under 18; a gym may opt in via
+  its settings. Where it does, Temple captures a parent or guardian's consent
+  in-app before that member proceeds. The Gym remains **responsible** for
+  ensuring that consent is valid and for any age-appropriate safeguards, and
+  must not use Temple to collect a child's data without it. (See the DPA,
+  `dpa.md`.)
+- **Individual (solo) accounts are strictly 18 or over** — solo sign-up is a
+  direct contract with Temple, with no gym or guardian involved, so under-18
+  solo sign-up is refused.
 - You are responsible for the accuracy of the information you provide, for
   your staff's use of the platform, and for keeping account credentials
   secure.
@@ -163,8 +166,8 @@ Subject to that:
 - To the maximum extent permitted by law we disclaim implied warranties.
 - We are not liable for indirect or consequential loss, loss of profit,
   goodwill, or data.
-- Our total aggregate liability is capped at [the greater of the fees you
-  paid us in the 12 months before the claim, or £[AMOUNT]].
+- Our total aggregate liability to you is capped at the total fees you paid
+  Temple for the service in the **3 months** before the claim.
 
 For consumers, these limits apply only so far as the law allows and do not
 affect your statutory rights.
@@ -210,5 +213,5 @@ local courts. [Confirm for any target markets outside the UK.]
 ## 16. Contact and complaints
 
 Questions or complaints about these Terms or the service:
-**[legal@jointemple.io — confirm a monitored inbox]**. We aim to acknowledge
-complaints promptly and resolve them fairly.
+**privacy@jointemple.io**. We aim to acknowledge complaints promptly and
+resolve them fairly.
