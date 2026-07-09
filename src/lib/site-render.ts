@@ -231,6 +231,13 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .site-nav-link{padding:7px 12px;border-radius:var(--radius);font-size:13px;font-weight:600;color:var(--text);text-decoration:none;}
 .site-nav-link:hover{background:color-mix(in srgb, var(--muted) 30%, transparent);}
 .site-nav-link.is-active{color:var(--accent-ink);background:color-mix(in srgb, var(--accent) 12%, transparent);}
+.site-footer{background:var(--surface);border-top:1px solid color-mix(in srgb, var(--muted) 40%, transparent);margin-top:8px;}
+.site-footer .wrap{display:flex;align-items:center;gap:12px;padding-top:20px;padding-bottom:20px;flex-wrap:wrap;}
+.site-footer-brand{font-size:13px;font-weight:600;color:var(--muted-text);text-decoration:none;}
+.site-footer-brand:hover{color:var(--text);}
+.site-footer-links{margin-left:auto;display:flex;gap:16px;}
+.site-footer-links a{font-size:13px;color:var(--muted-text);text-decoration:none;}
+.site-footer-links a:hover{color:var(--text);}
 .sched-head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
 .sched-stat{font-size:12px;color:var(--muted-text);font-variant-numeric:tabular-nums;padding-bottom:3px;}
 .sched-stat b{color:var(--text);font-weight:700;}
@@ -299,6 +306,17 @@ function renderSiteHeader(ctx: SiteRenderContext): string {
     ? `<img src="${escapeAttr(ctx.gymLogoUrl)}" alt="${escapeAttr(ctx.gymName)}" />`
     : `<span>${escapeHtml(ctx.gymName)}</span>`;
   return `<header class="site-header"><div class="wrap">${brand}${renderSiteNav(ctx)}</div></header>`;
+}
+
+// Platform footer every published gym site carries: a "Powered by Temple"
+// backlink plus the platform's legal pages. Links are absolute to the
+// platform origin so they resolve from a connected custom domain too
+// (middleware only rewrites that domain's bare root to the renderer).
+function renderSiteFooter(ctx: SiteRenderContext): string {
+  const home = escapeAttr(ctx.platformOrigin);
+  const terms = escapeAttr(`${ctx.platformOrigin}/terms`);
+  const privacy = escapeAttr(`${ctx.platformOrigin}/privacy`);
+  return `<footer class="site-footer"><div class="wrap"><a class="site-footer-brand" href="${home}">Powered by Temple</a><nav class="site-footer-links"><a href="${privacy}">Privacy</a><a href="${terms}">Terms</a></nav></div></footer>`;
 }
 
 // `headlineTag`: only the FIRST hero on the page renders an <h1> —
@@ -793,7 +811,8 @@ export function renderSiteHtml(blocks: SiteBlock[], ctx: SiteRenderContext): str
   const fallbackH1 = firstHeroId
     ? ''
     : `<h1 class="sr-only">${escapeHtml(ctx.gymName)}</h1>`;
-  const body = `<a class="skip-link" href="#main">Skip to content</a>${header}<main id="main">${fallbackH1}${blocksHtml}</main>`;
+  const footer = renderSiteFooter(ctx);
+  const body = `<a class="skip-link" href="#main">Skip to content</a>${header}<main id="main">${fallbackH1}${blocksHtml}</main>${footer}`;
   // Home (or a single-page site, or `pages` omitted entirely) keeps the
   // plain gym-name title every existing page already has; a non-home
   // page prefixes its own title so browser tabs/bookmarks/search

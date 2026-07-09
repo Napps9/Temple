@@ -55,7 +55,7 @@ type T<Name extends keyof TablesAndViews> = TablesAndViews[Name] extends { Inser
 // Kept in sync with CONSENT_POLICY_VERSION in src/lib/consent.ts —
 // not imported because consent.ts pulls in the app's supabase client,
 // which needs EXPO_PUBLIC_* env at module load.
-export const DEMO_CONSENT_POLICY_VERSION = '2026-01';
+export const DEMO_CONSENT_POLICY_VERSION = '2026-07';
 
 export const DEMO_PASSWORD = 'TempleDemo1!';
 export const LEFT_MEMBER_COUNT = 4;

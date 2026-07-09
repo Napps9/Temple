@@ -12,6 +12,7 @@ import {
 
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
 import {
   confirmRedirectTo,
@@ -228,6 +229,7 @@ export default function StartSoloScreen() {
                 <Button onPress={onSubmit} loading={loading}>
                   {session ? 'Start solo tracking' : 'Create account and start'}
                 </Button>
+                {!session ? <LegalConsentNotice /> : null}
               </View>
             )}
 

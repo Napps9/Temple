@@ -285,6 +285,8 @@ function ThemedShell() {
         }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="onboarding" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="privacy" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(staff)" />
         <Stack.Screen name="(member)" />

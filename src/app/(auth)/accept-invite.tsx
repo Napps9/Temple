@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/Button';
 import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
+import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
 import { TempleLockup } from '@/components/TempleLockup';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -333,6 +334,7 @@ export default function AcceptInviteScreen() {
           loading={signUpAndAccept.isPending}>
           Create account & join
         </BrandButton>
+        <LegalConsentNotice />
       </>
     );
   }

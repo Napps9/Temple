@@ -62,6 +62,14 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('<span>Iron Gym</span>');
   });
 
+  it('renders a Temple footer with legal links absolute to the platform origin', () => {
+    const html = renderSiteHtml([], baseCtx);
+    expect(html).toContain('<footer class="site-footer">');
+    expect(html).toContain('href="https://app.example.com">Powered by Temple');
+    expect(html).toContain('href="https://app.example.com/privacy"');
+    expect(html).toContain('href="https://app.example.com/terms"');
+  });
+
   it('renders no nav and the plain gym-name title when pages is omitted or has one page', () => {
     const noPages = renderSiteHtml([], baseCtx);
     expect(noPages).not.toContain('class="site-nav"');

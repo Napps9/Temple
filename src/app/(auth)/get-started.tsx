@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { TempleLockup } from '@/components/TempleLockup';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useThemePreference } from '@/lib/theme';
@@ -340,6 +341,8 @@ export default function GetStartedScreen() {
               </Pressable>
             </Link>
           </View>
+
+          <LegalConsentNotice />
         </View>
       </ScrollView>
     </SafeAreaView>

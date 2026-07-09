@@ -420,6 +420,24 @@ export function AccountScreen() {
             Sign out
           </Button>
         </View>
+
+        <View className="mt-2 mb-4 flex-row items-center justify-center gap-3">
+          <Link href="/terms" asChild>
+            <Pressable hitSlop={6}>
+              <Text className="text-gray-400 dark:text-gray-500 text-xs underline">
+                Terms of Service
+              </Text>
+            </Pressable>
+          </Link>
+          <Text className="text-gray-300 dark:text-gray-600 text-xs">·</Text>
+          <Link href="/privacy" asChild>
+            <Pressable hitSlop={6}>
+              <Text className="text-gray-400 dark:text-gray-500 text-xs underline">
+                Privacy Policy
+              </Text>
+            </Pressable>
+          </Link>
+        </View>
       </ScrollView>
 
       {membership && session ? (

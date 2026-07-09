@@ -8,27 +8,34 @@ import { supabase } from './supabase';
 // member_consents row matching the current version, so a new policy
 // forces re-consent on next entry. Keep it in sync with the copy shown
 // on the consent screen.
-export const CONSENT_POLICY_VERSION = '2026-01';
+export const CONSENT_POLICY_VERSION = '2026-07';
 
 // The clauses presented on the consent screen. Each must be ticked.
+// Wording is aligned with docs/legal/privacy-policy.md and docs/legal/dpa.md
+// — a material change here must bump CONSENT_POLICY_VERSION above so members
+// re-consent against the new text.
 export const CONSENT_CLAUSES: { key: string; label: string }[] = [
   {
     key: 'processing',
     label:
-      'I consent to my gym storing and processing my health information ' +
-      '(PAR-Q answers and any injuries I log) to keep my training safe.',
+      'I give my explicit consent to my gym collecting and processing my ' +
+      'health information — my PAR-Q screening answers and any injuries I ' +
+      'record — to keep my training safe. I understand this is ' +
+      'special-category data.',
   },
   {
     key: 'staff_access',
     label:
-      'I understand my coaches and gym admins can see this health ' +
-      'information, and that every access is logged.',
+      'I understand the coaches and admins at my gym can view this health ' +
+      'information to support my training, and that every access is recorded ' +
+      'in an audit log.',
   },
   {
     key: 'retention',
     label:
-      'I understand my health data is erased when I leave the gym, and ' +
-      'at the latest three months after my membership ends.',
+      'I understand I can withdraw this consent at any time from my account, ' +
+      'which erases my health data, and that it is in any case erased when I ' +
+      'leave the gym and no later than three months after my membership ends.',
   },
 ];
 

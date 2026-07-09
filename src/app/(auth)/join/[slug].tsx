@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/Button';
 import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
+import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
 import {
   joinGymBySlug,
@@ -309,6 +310,7 @@ export default function JoinGymScreen() {
                     </Pressable>
                   </Link>
                 </View>
+                <LegalConsentNotice />
               </View>
             )}
           </View>

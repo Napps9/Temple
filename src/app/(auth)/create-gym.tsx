@@ -14,6 +14,7 @@ import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
 import { ColourField } from '@/components/ColourField';
 import { Input } from '@/components/Input';
+import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
 import { TempleLockup } from '@/components/TempleLockup';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -360,6 +361,8 @@ export default function CreateGymScreen() {
                 </Pressable>
               </Link>
             </View>
+
+            {!session && step !== 'check_email' ? <LegalConsentNotice /> : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
