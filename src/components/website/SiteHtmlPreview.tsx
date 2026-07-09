@@ -15,6 +15,7 @@ export function SiteHtmlPreview({
   onFieldChange?: (path: string, value: string) => void;
   selectedBlockId?: string | null;
   onCanvasSelect?: (blockId: string | null) => void;
+  onNavigatePage?: (slug: string) => void;
 }) {
   return (
     <View

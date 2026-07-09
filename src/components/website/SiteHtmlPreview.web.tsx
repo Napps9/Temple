@@ -6,7 +6,8 @@ const CANVAS_SOURCE = 'temple-site-canvas';
 
 type CanvasMessage =
   | { source: typeof CANVAS_SOURCE; type: 'field-input'; path: string; value: string }
-  | { source: typeof CANVAS_SOURCE; type: 'field-focus'; path: string };
+  | { source: typeof CANVAS_SOURCE; type: 'field-focus'; path: string }
+  | { source: typeof CANVAS_SOURCE; type: 'nav-page'; slug: string };
 
 // Web preview: the actual rendered page HTML inside a sandboxed
 // iframe — same renderer that ships to /api/site/[...path], so what an
@@ -30,6 +31,7 @@ export function SiteHtmlPreview({
   onFieldChange,
   selectedBlockId,
   onCanvasSelect,
+  onNavigatePage,
 }: {
   html: string;
   height?: number | string;
@@ -38,6 +40,7 @@ export function SiteHtmlPreview({
   onFieldChange?: (path: string, value: string) => void;
   selectedBlockId?: string | null;
   onCanvasSelect?: (blockId: string | null) => void;
+  onNavigatePage?: (slug: string) => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -61,11 +64,13 @@ export function SiteHtmlPreview({
       } else if (msg.type === 'field-focus') {
         const parsed = parseFieldPath(msg.path);
         if (parsed) onCanvasSelect?.(parsed.blockId);
+      } else if (msg.type === 'nav-page') {
+        onNavigatePage?.(msg.slug);
       }
     }
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [editable, onFieldChange, onCanvasSelect]);
+  }, [editable, onFieldChange, onCanvasSelect, onNavigatePage]);
 
   useEffect(() => {
     if (!editable) return;

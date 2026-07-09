@@ -283,7 +283,10 @@ function renderSiteNav(ctx: SiteRenderContext): string {
       const path = p.slug
         ? `/site/${encodeURIComponent(ctx.slug)}/${encodeURIComponent(p.slug)}`
         : `/site/${encodeURIComponent(ctx.slug)}`;
-      return `<a class="site-nav-link${isActive ? ' is-active' : ''}" href="${escapeAttr(ctx.platformOrigin + path)}"${
+      // data-page-slug is inert on the public render (the href is what
+      // navigates there); the editable-canvas bridge script reads it to
+      // switch the editor's active page instead of navigating the iframe.
+      return `<a class="site-nav-link${isActive ? ' is-active' : ''}" href="${escapeAttr(ctx.platformOrigin + path)}" data-page-slug="${escapeAttr(p.slug)}"${
         isActive ? ' aria-current="page"' : ''
       }>${escapeHtml(p.title)}</a>`;
     })
@@ -699,9 +702,17 @@ const CANVAS_BRIDGE_SCRIPT = `
 
   // A real page navigation (join CTA, contact "Send enquiry") would
   // otherwise carry the editing iframe away from the editable canvas.
+  // For the site's own page-nav links, forward the target page to the
+  // parent so it can switch the editor's active page — clicking
+  // "Schedule" in the preview then does the same thing as the top tab,
+  // instead of doing nothing.
   document.addEventListener('click', function(e){
     var a = e.target.closest && e.target.closest('a');
-    if (a) e.preventDefault();
+    if (!a) return;
+    e.preventDefault();
+    if (a.classList.contains('site-nav-link')) {
+      post({ type: 'nav-page', slug: a.getAttribute('data-page-slug') || '' });
+    }
   });
   document.addEventListener('submit', function(e){ e.preventDefault(); });
 

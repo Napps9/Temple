@@ -82,8 +82,10 @@ describe('renderSiteHtml', () => {
     expect(html).toContain('href="https://app.example.com/site/iron-gym"');
     expect(html).toContain('href="https://app.example.com/site/iron-gym/schedule"');
     // The active page gets aria-current + is-active; home (inactive here) doesn't.
-    expect(html).toContain('class="site-nav-link is-active" href="https://app.example.com/site/iron-gym/schedule" aria-current="page"');
-    expect(html).toContain('class="site-nav-link" href="https://app.example.com/site/iron-gym"');
+    // Each link also carries data-page-slug so the editable-canvas bridge can
+    // switch the editor's active page instead of navigating the iframe.
+    expect(html).toContain('class="site-nav-link is-active" href="https://app.example.com/site/iron-gym/schedule" data-page-slug="schedule" aria-current="page"');
+    expect(html).toContain('class="site-nav-link" href="https://app.example.com/site/iron-gym" data-page-slug=""');
   });
 
   it('titles a non-home page as "<page title> — <gym name>", but keeps home as just the gym name', () => {

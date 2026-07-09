@@ -881,6 +881,10 @@ export default function WebsiteManageScreen() {
                 onFieldChange={handleCanvasFieldChange}
                 selectedBlockId={selectedId}
                 onCanvasSelect={setSelectedId}
+                onNavigatePage={(slug) => {
+                  const target = document.pages.find((p) => p.slug === slug);
+                  if (target) selectPage(target.id);
+                }}
                 height="100%"
               />
             </View>
