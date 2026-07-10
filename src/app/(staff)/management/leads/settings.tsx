@@ -10,7 +10,6 @@ import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import { useThemeColors } from '@/lib/theme';
 
 type Strategy = 'round_robin' | 'single_default' | 'manual';
 
@@ -43,7 +42,6 @@ const STRATEGY_COPY: Record<Strategy, { title: string; blurb: string }> = {
 
 export default function LeadAutomationSettings() {
   const { data: membership } = useGymMembership();
-  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const isOwner = membership?.role === 'owner';
 
@@ -251,9 +249,9 @@ export default function LeadAutomationSettings() {
               </Text>
             </View>
             <Switch
+              accessibilityLabel="Text the coach too"
               value={smsOn}
               onValueChange={(v) => toggleSms.mutate(v)}
-              trackColor={{ true: colors.primary }}
             />
           </View>
         </View>

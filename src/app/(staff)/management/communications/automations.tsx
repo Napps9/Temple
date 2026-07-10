@@ -14,7 +14,6 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
-import { useThemeColors } from '@/lib/theme';
 import type { Json } from '@/types/database';
 
 type TriggerType =
@@ -42,7 +41,6 @@ export default function AutomationsScreen() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const brand = useGymBrand();
-  const colors = useThemeColors();
   const canManageComms = useCan('can_manage_comms');
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -171,9 +169,9 @@ export default function AutomationsScreen() {
                   </Pressable>
                 </Link>
                 <Switch
+                  accessibilityLabel={a.name}
                   value={a.enabled}
                   onValueChange={(v) => toggle.mutate({ id: a.id, enabled: v })}
-                  trackColor={{ true: colors.primary }}
                 />
               </View>
             ))}

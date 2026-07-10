@@ -21,7 +21,6 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
-import { useThemeColors } from '@/lib/theme';
 import type { Json } from '@/types/database';
 
 import { TRIGGER_LABELS } from '../automations';
@@ -97,7 +96,6 @@ export default function AutomationEditor() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const brand = useGymBrand();
-  const colors = useThemeColors();
   const canManageComms = useCan('can_manage_comms');
   const queryClient = useQueryClient();
 
@@ -335,51 +333,33 @@ export default function AutomationEditor() {
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
             Edit automation
           </Text>
-          <View className="flex-row items-center gap-2">
-            <Button
-              variant="secondary"
-              onPress={saveNow}
-              loading={save.isPending}
-              success={justSaved}>
-              Save
-            </Button>
-            <View
-              className={`flex-row items-center gap-2 rounded-full border pl-3 pr-1.5 py-1 ${
-                enabled
-                  ? 'border-primary bg-primary/10'
-                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
-              }`}>
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: enabled ? '#10B981' : '#9CA3AF',
-                }}
-              />
-              <Text
-                className={`text-sm font-semibold ${
-                  enabled ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
-                }`}>
-                {enabled ? 'On' : 'Off'}
-              </Text>
-              <Switch
-                value={enabled}
-                disabled={!canEnable && !enabled}
-                onValueChange={(v) => toggleEnabled.mutate(v)}
-                trackColor={{ false: '#D1D5DB', true: colors.primary }}
-                thumbColor="#ffffff"
-                ios_backgroundColor="#D1D5DB"
-              />
-            </View>
-          </View>
+          <Button
+            variant="secondary"
+            onPress={saveNow}
+            loading={save.isPending}
+            success={justSaved}>
+            Save
+          </Button>
         </View>
 
-        {!canEnable && !enabled ? (
-          <Text className="text-amber-600 dark:text-amber-400 text-xs">
-            Add a subject and some content before turning this on.
-          </Text>
-        ) : null}
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between gap-3">
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+              Automation is live
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              {canEnable
+                ? 'Sends automatically whenever the trigger fires.'
+                : 'Add a subject and some content before turning this on.'}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Automation is live"
+            value={enabled}
+            disabled={!canEnable && !enabled}
+            onValueChange={(v) => toggleEnabled.mutate(v)}
+          />
+        </View>
 
         <Input label="Automation name" value={name} onChangeText={setName} placeholder="Welcome new members" />
 
