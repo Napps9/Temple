@@ -62,7 +62,10 @@ select is(
   false,
   'front-desk staff effectively cannot see retention');
 
--- 8. An explicit override can revoke it from a coach.
+-- 8. An explicit override can revoke it from a coach. The write goes
+-- through the owner, whose RLS policy permits it (a coach/staff can't
+-- write the capability table).
+do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
 do $$
 begin
   insert into public.gym_role_capabilities (gym_id, role, capability, enabled)
