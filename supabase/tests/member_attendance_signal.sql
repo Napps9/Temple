@@ -33,11 +33,12 @@ begin
 
   -- Decaying member: 2 attended in the last fortnight, 5 in the baseline
   -- window. baseline_weekly = 5/10 = 0.5; cadence = (2/4)/0.5 = 1.0.
-  foreach v_days in array v_recent || v_base loop
+  foreach v_days in array (v_recent || v_base) loop
     v_s := _test_mk_session(v_gym, v_coach, now() - make_interval(days => v_days), 60, v_ct);
     perform _test_mk_booking(v_s, v_decay);
+    -- attended_at requires marked_by (class_bookings_marked_by_required).
     update public.class_bookings
-      set attended_at = now() - make_interval(days => v_days)
+      set attended_at = now() - make_interval(days => v_days), marked_by = v_coach
       where class_session_id = v_s and profile_id = v_decay;
   end loop;
 
@@ -45,7 +46,7 @@ begin
   v_s := _test_mk_session(v_gym, v_coach, now() - interval '1 day', 60, v_ct);
   perform _test_mk_booking(v_s, v_new);
   update public.class_bookings
-    set attended_at = now() - interval '1 day'
+    set attended_at = now() - interval '1 day', marked_by = v_coach
     where class_session_id = v_s and profile_id = v_new;
 
   -- Never-attended member: a booking with no check-in.
