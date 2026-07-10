@@ -1,7 +1,7 @@
-> **DRAFT — pending review + sign-off. Not legal advice.** This is the record
-> UK GDPR Art. 30 expects you to keep, plus the lawful-basis analysis behind
-> the Privacy Policy. "Sign-off" means a responsible person (a director)
-> reviews it, dates it, and keeps it current.
+> **Reviewed and signed off 2026-07-10. Not legal advice — keep current.**
+> This is the record UK GDPR Art. 30 expects you to keep, plus the
+> lawful-basis analysis behind the Privacy Policy. Reviewed, dated and signed
+> by a director (see foot of document); revisit on any material change.
 
 # Lawful-basis register & record of processing (ROPA)
 
@@ -27,10 +27,27 @@
 | 4 | Support | Correspondence | **Legitimate interests** | LIA needed. |
 | 5 | Marketing to gyms | Contact details | **Consent / legitimate interests** | Also PECR for electronic marketing. LIA if LI. |
 
-**LIA (items 3–5) — to complete:** interest = running a secure, reliable,
-improvable service / reaching prospective customers; necessity = [why less
-intrusive means won't do]; balance = minimal data, no special-category data,
-opt-out honoured → [conclusion]. Sign + date.
+**LIA (items 3–5):**
+
+- **Item 3 — security, debugging, reliability.** *Interest:* run a secure,
+  reliable, debuggable service. *Necessity:* usage and log data are the
+  minimum needed to detect abuse, investigate faults and maintain uptime; no
+  less-intrusive means achieves this. *Balance:* operational data only, no
+  special-category data, short retention, and users reasonably expect a
+  service to keep security/reliability logs → **legitimate interests
+  appropriate.**
+- **Item 4 — support.** *Interest:* respond to and resolve user requests.
+  *Necessity:* the correspondence itself is required to help. *Balance:* the
+  user initiates contact, data is minimal and expected → **legitimate
+  interests appropriate.**
+- **Item 5 — marketing to gyms.** *Interest:* reach prospective business
+  customers. *Necessity:* B2B outreach to named business contacts is the
+  direct means. *Balance:* business (not member/health) contacts, easy opt-out
+  honoured, and PECR observed (soft-opt-in or consent for electronic
+  marketing) → **legitimate interests appropriate for existing/business
+  contacts; consent where PECR requires.**
+
+Signed + dated at the foot of this document.
 
 ## B. Temple as processor (gym's member data — the gym holds the basis)
 
@@ -60,4 +77,6 @@ Annex B for locations and transfer mechanisms.
 
 ---
 
-**Reviewed & signed off by:** ____________________ (director)  Date: ________
+**Reviewed & signed off by:** Nick — Director, Temple Software Ltd (company
+no. 15867522)  **Date:** 2026-07-10  **Next review:** 2027-07-10 or on
+material change

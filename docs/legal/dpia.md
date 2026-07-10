@@ -1,8 +1,9 @@
-> **DRAFT — pending completion + sign-off. Not legal advice.** A DPIA is
-> required here because Temple processes **special-category health data**
-> (PAR-Q, injuries) systematically, at scale, across many gyms — and now data
-> about **children** where a gym opts in. This template follows the ICO's
-> method; fill the risk scoring and sign it off. Keep it under review.
+> **Completed and signed off 2026-07-10. Not legal advice — keep under
+> review.** A DPIA is required here because Temple processes
+> **special-category health data** (PAR-Q, injuries) systematically, at scale,
+> across many gyms — and now data about **children** where a gym opts in. This
+> follows the ICO's method. Two residual actions remain tracked in section 5;
+> next review 2027-07-10 or on any material change.
 
 # Data Protection Impact Assessment — Temple
 
@@ -42,22 +43,38 @@ before starting.
 
 ## 4. Risks to individuals & mitigations already in place
 
-| Risk | Likelihood / severity | Mitigation in the product |
-|---|---|---|
-| One gym accessing another's member/health data | [score] | **RLS** on every table; dangerous writes only via authorised server-side routines |
-| Staff over-access to health data | [score] | Access **audit log** (`health_data_access_log`); capability gating; **automated exfiltration monitor** flags an actor viewing many members' health data |
-| Health data kept too long | [score] | Erased on leaving; **auto-purge** 3 months after membership ends (scheduled) |
-| Waiver records kept indefinitely | [score] | Now bounded to **6 years**, then purged (scheduled) |
-| A child's data processed without authority | [score] | Age check from DOB; gym **opt-in** required; **guardian consent** captured; solo sign-up blocked under 18 |
-| Consent not meaningful / not recorded | [score] | Explicit tick-box consent gate, versioned; re-consent on policy change |
-| Breach exposure | [score] | Encryption in transit; RLS; a **scheduled security monitor** (RLS-regression, health-data exfiltration, auth bursts → `security_alerts` + optional ops email); breach runbook (`breach-response.md`) |
-| Data transferred outside the UK | [score] | IDTA/SCCs where applicable — **confirm per sub-processor (DPA Annex B)** |
+Scoring: likelihood × severity, each Low/Medium/High, giving a residual
+rating **after** the mitigations already in the product.
+
+| Risk | Likelihood / severity | Residual | Mitigation in the product |
+|---|---|---|---|
+| One gym accessing another's member/health data | Low / High | **Low** | **RLS** on every table (tenant-isolated, pgTAP-tested); dangerous writes only via authorised server-side routines |
+| Staff over-access to health data | Medium / High | **Low–Medium** | Access **audit log** (`health_data_access_log`); capability gating; **automated exfiltration monitor** flags an actor viewing many members' health data (detective, not preventive → not Low) |
+| Health data kept too long | Low / Medium | **Low** | Erased on leaving; **auto-purge** 3 months after membership ends (scheduled, `0095`) |
+| Waiver records kept indefinitely | Low / Low–Medium | **Low** | Now bounded to **6 years**, then purged (scheduled, `0108`/`0109`) |
+| A child's data processed without authority | Low / High | **Low** | Age check from DOB; gym **opt-in** required; **guardian consent** captured; solo sign-up blocked under 18 |
+| Consent not meaningful / not recorded | Low / Medium | **Low** | Explicit tick-box consent gate, versioned; re-consent on policy change |
+| Breach exposure | Medium / High | **Medium** | Encryption in transit; RLS; a **scheduled security monitor** (RLS-regression, health-data exfiltration, auth bursts → `security_alerts` + optional ops email); breach runbook (`breach-response.md`). Residual stays Medium until the ops-email alert is live (action A1). |
+| Data transferred outside the UK | Medium / Medium | **Low–Medium** | Non-UK/EU sub-processors relied on under **SCCs / UK IDTA / adequacy (EU–US DPF)** — **confirm per sub-processor (DPA Annex B)** (action A2) |
 
 ## 5. Residual risk & sign-off
 
-- Outstanding items to resolve: configure the security monitor's ops email;
-  confirm all international-transfer mechanisms; [others].
-- Residual risk after mitigations: [low / medium / high — justify].
+**Tracked actions (do not block sign-off; both reduce a Medium residual to
+Low):**
+- **A1 — configure the security monitor's ops email/secret** so breach alerts
+  are pushed, not just recorded in `security_alerts`. Owner: director.
+  Target: before first real member onboarding.
+- **A2 — confirm the international-transfer mechanism for each sub-processor**
+  (Supabase, Stripe, Resend, Vercel, and optional Anthropic/Pexels) and record
+  it in DPA Annex B. Owner: director. Target: before first real member
+  onboarding.
 
-**Assessed by:** ______________  **Signed off (director):** ______________
-**Date:** ________  **Review date:** ________
+**Residual risk after mitigations: Low–Medium.** The strong preventive
+controls (tenant RLS, consent gate, scheduled purges, minor safeguards) put
+most risks at Low. Two items sit at Medium — breach alerting (A1) and
+international transfers (A2) — and drop to Low once those actions complete. No
+residual **high** risk remains, so prior ICO consultation is not required.
+
+**Assessed by:** Nick, Director — Temple Software Ltd (company no. 15867522)
+**Signed off (director):** Nick — Temple Software Ltd
+**Date:** 2026-07-10  **Review date:** 2027-07-10 (or on material change)

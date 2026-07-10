@@ -1238,13 +1238,14 @@ surround:
   DPA drafted for Temple Software Ltd (`docs/legal/`), surfaced
   in-app at `/terms` and `/privacy` with a sign-up consent notice. A
   web cookie banner (`CookieBanner`) records analytics consent ahead
-  of product tracking. DPIA + lawful-basis register drafted in
-  `docs/legal/` (still need owner sign-off, not engineering).
+  of product tracking. DPIA + lawful-basis register in `docs/legal/`,
+  signed off by the director 2026-07-10.
 
-> Still pending (needs owner / DPO sign-off, not engineering): the
-> DPIA and lawful-basis register are drafted in `docs/legal/` but
-> need formal sign-off, and the legal docs carry a DRAFT banner with
-> registered-office / effective-date placeholders to fill in.
+> Still pending (owner config, not engineering): the customer-facing
+> legal docs (Terms/Privacy/DPA) carry a DRAFT banner with
+> registered-office / effective-date placeholders to fill in, and the
+> DPIA's two tracked residual actions — configure the breach-alert
+> email (A1) and confirm sub-processor transfer mechanisms (A2).
 
 ---
 

@@ -121,8 +121,9 @@ Shipped:
       6-year waiver-signature purge (`0108`/`0109`) both on pg_cron.
 
 Left for you (policy/config, not code):
-- [ ] **Sign off the DPIA + lawful-basis register** (your call as data
-      controller).
+- [x] **Sign off the DPIA + lawful-basis register** — signed off
+      2026-07-10 (director); two tracked residual actions remain (breach-alert
+      email A1, transfer mechanisms A2), review 2027-07-10.
 - [ ] **Fill the legal-doc placeholders and drop the DRAFT banner** —
       registered office address, effective date, the monitored contact
       inbox.
