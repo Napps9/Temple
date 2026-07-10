@@ -37,7 +37,7 @@ function RequestCard({
         req.target_plan_name ? ` to ${req.target_plan_name}` : ''
       }`;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -141,7 +141,7 @@ export default function MembershipRequestsScreen() {
           <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
         ) : requests.length === 0 ? (
           <EmptyState
-            icon="checkmark-done-outline"
+            icon="checkmark-done-circle"
             title="No pending requests"
             description="When a member asks to change or cancel their plan, it shows up here for approval."
           />

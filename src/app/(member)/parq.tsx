@@ -171,7 +171,7 @@ export default function ParqForm() {
           return (
             <View
               key={q.id}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
               <Text className="text-gray-900 dark:text-gray-50 font-medium">
                 {q.prompt}
               </Text>

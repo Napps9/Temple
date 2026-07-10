@@ -15,6 +15,7 @@ import {
   type SectionFormatKey,
 } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import {
   fmtDateLong,
   formatResultValue,
@@ -121,7 +122,7 @@ export default function Journal() {
         {journal.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
         ) : (journal.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               No workouts yet.
             </Text>
@@ -140,12 +141,13 @@ export default function Journal() {
 }
 
 function WorkoutCard({ workout }: { workout: WorkoutRow }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={() =>
         router.push(`/track/workout/${workout.id}` as never)
       }
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card active:opacity-70">
       <View className="flex-row items-center">
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -155,7 +157,7 @@ function WorkoutCard({ workout }: { workout: WorkoutRow }) {
             {fmtDateLong(workout.performed_at)}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
       </View>
 
       {workout.sections.length > 0 ? (

@@ -59,7 +59,7 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
   const isSelf = session?.user.id === offer.original_coach_id;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: typeColor }}

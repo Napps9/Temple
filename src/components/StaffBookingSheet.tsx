@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { errorMessage } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import type { GymRole } from '@/types/database';
 
 type Entitlement = {
@@ -48,6 +49,7 @@ export function StaffBookingSheet({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [selectedMember, setSelectedMember] = useState<Candidate | null>(null);
@@ -204,7 +206,7 @@ export function StaffBookingSheet({
               accessibilityRole="button"
               accessibilityLabel="Close"
               className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="close" size={18} color="#6B7280" />
+              <Ionicons name="close" size={18} color={colors.iconSecondary} />
             </Pressable>
           </View>
 
@@ -244,7 +246,7 @@ export function StaffBookingSheet({
                             {c.role}
                           </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                        <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
                       </Pressable>
                     ))}
                   </View>
@@ -293,7 +295,7 @@ export function StaffBookingSheet({
                         <Ionicons
                           name={sel ? 'radio-button-on' : 'radio-button-off'}
                           size={18}
-                          color={sel ? '#2563EB' : '#9CA3AF'}
+                          color={sel ? colors.primary : colors.iconTertiary}
                         />
                         <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
                           {e.label}
@@ -323,7 +325,7 @@ export function StaffBookingSheet({
                     <Ionicons
                       name={noCharge ? 'radio-button-on' : 'radio-button-off'}
                       size={18}
-                      color={noCharge ? '#2563EB' : '#9CA3AF'}
+                      color={noCharge ? colors.primary : colors.iconTertiary}
                     />
                     <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
                       No charge

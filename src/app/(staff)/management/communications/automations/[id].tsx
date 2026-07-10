@@ -21,6 +21,7 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
+import { useThemeColors } from '@/lib/theme';
 import type { Json } from '@/types/database';
 
 import { TRIGGER_LABELS } from '../automations';
@@ -96,6 +97,7 @@ export default function AutomationEditor() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const brand = useGymBrand();
+  const colors = useThemeColors();
   const canManageComms = useCan('can_manage_comms');
   const queryClient = useQueryClient();
 
@@ -276,7 +278,7 @@ export default function AutomationEditor() {
               onPress={() => setMode('setup')}
               hitSlop={6}
               className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
-              <Ionicons name="chevron-back" size={18} color="#6B7280" />
+              <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
               <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
                 Setup
               </Text>
@@ -299,7 +301,7 @@ export default function AutomationEditor() {
                 <Ionicons
                   name={showPreview ? 'create-outline' : 'eye-outline'}
                   size={15}
-                  color="#6B7280"
+                  color={colors.iconSecondary}
                 />
                 <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
                   {showPreview ? 'Back to editor' : 'Preview'}
@@ -342,7 +344,7 @@ export default function AutomationEditor() {
           </Button>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between gap-3 shadow-card">
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-medium">
               Automation is live
@@ -363,7 +365,7 @@ export default function AutomationEditor() {
 
         <Input label="Automation name" value={name} onChangeText={setName} placeholder="Welcome new members" />
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             When it fires
           </Text>
@@ -397,7 +399,7 @@ export default function AutomationEditor() {
           </View>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             The email
           </Text>
@@ -444,9 +446,9 @@ export default function AutomationEditor() {
 
         <Pressable
           onPress={() => setMode('design')}
-          className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70">
+          className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-            <Ionicons name="brush-outline" size={18} color="#6B7280" />
+            <Ionicons name="brush-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -457,7 +459,7 @@ export default function AutomationEditor() {
               layout and content
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </Pressable>
 
         {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}

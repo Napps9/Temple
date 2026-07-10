@@ -18,12 +18,14 @@ import { errorMessage } from '@/lib/errors';
 import { estimateElsewhereMarkup } from '@/lib/payment-savings';
 import { supabase } from '@/lib/supabase';
 import { useGymCurrency } from '@/lib/useGymCurrency';
+import { useThemeColors } from '@/lib/theme';
 
 // Phase 1 of Stripe billing: connect the gym's own Stripe (Connect
 // Standard, via OAuth) so it can charge members directly. Charges,
 // subscriptions, and webhooks come in later phases — this screen is the
 // connection gate plus its status.
 export default function BillingScreen() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const role = useRole();
   const params = useLocalSearchParams<{ stripe?: string }>();
@@ -160,7 +162,7 @@ export default function BillingScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             What that's worth
           </Text>
@@ -210,7 +212,7 @@ export default function BillingScreen() {
           </View>
         ) : null}
 
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
           {account.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               Checking connection…
@@ -232,7 +234,7 @@ export default function BillingScreen() {
           ) : (
             <>
               <View className="flex-row items-center gap-2">
-                <Ionicons name="card-outline" size={20} color="#6B7280" />
+                <Ionicons name="card-outline" size={20} color={colors.iconSecondary} />
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
                   Not connected yet
                 </Text>
@@ -254,7 +256,7 @@ export default function BillingScreen() {
           )}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -280,7 +282,7 @@ export default function BillingScreen() {
           ) : null}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">

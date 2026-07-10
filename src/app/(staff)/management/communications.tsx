@@ -9,10 +9,12 @@ import { BackLink } from '@/components/BackLink';
 import { StatTile } from '@/components/StatTile';
 import { useCampaigns } from '@/lib/comms';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 // Reusable overview + list, also embedded in the Manage → Comms tab.
 export function CommunicationsHome() {
   const campaigns = useCampaigns();
+  const colors = useThemeColors();
 
   const stats = useMemo(() => {
     const rows = campaigns.data ?? [];
@@ -30,9 +32,9 @@ export function CommunicationsHome() {
       </View>
 
       <Link href="/management/communications/settings" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70">
+        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-            <Ionicons name="settings-outline" size={18} color="#6B7280" />
+            <Ionicons name="settings-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -42,14 +44,14 @@ export function CommunicationsHome() {
               From name, reply-to, and the required postal-address footer.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </Pressable>
       </Link>
 
       <Link href="/management/communications/topics" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70">
+        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-            <Ionicons name="layers-outline" size={18} color="#6B7280" />
+            <Ionicons name="layers-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -59,14 +61,14 @@ export function CommunicationsHome() {
               Let members subscribe and unsubscribe per topic — newsletter, promos, billing.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </Pressable>
       </Link>
 
       <Link href="/management/communications/automations" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70">
+        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-            <Ionicons name="flash-outline" size={18} color="#6B7280" />
+            <Ionicons name="flash-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -76,7 +78,7 @@ export function CommunicationsHome() {
               Emails that send themselves — welcome, first-class follow-up, win-back, lead nurture.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </Pressable>
       </Link>
 

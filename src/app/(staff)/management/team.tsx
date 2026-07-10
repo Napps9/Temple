@@ -272,7 +272,7 @@ function RolePermissionsSection() {
               <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
                 {group.title}
               </Text>
-              <View className="bg-white dark:bg-gray-900 rounded-xl divide-y divide-gray-100 dark:divide-gray-800">
+              <View className="bg-white dark:bg-gray-900 rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
                 {group.caps.map((c) => {
                   const overrideValue = overrideMap.get(`${activeRole}:${c.value}`);
                   const isOverridden = overrideValue !== undefined;

@@ -96,7 +96,7 @@ export function AudienceBuilder({
               <Ionicons
                 name={opt.icon as keyof typeof Ionicons.glyphMap}
                 size={18}
-                color={selected ? colors.primary : '#9CA3AF'}
+                color={selected ? colors.primary : colors.iconTertiary}
               />
               <Text
                 className={`text-xs font-medium text-center ${
@@ -160,7 +160,7 @@ export function AudienceBuilder({
       ) : null}
 
       {/* Live recipient count */}
-      <View className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
+      <View className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-3 shadow-card">
         <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center">
           <Ionicons name="send-outline" size={18} color={colors.primary} />
         </View>

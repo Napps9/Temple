@@ -37,6 +37,7 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
+import { useThemeColors } from '@/lib/theme';
 import type { Database, Json } from '@/types/database';
 
 type Campaign = Database['public']['Tables']['email_campaigns']['Row'];
@@ -111,6 +112,7 @@ export default function CampaignDetailScreen() {
 function EditorView({ campaign }: { campaign: Campaign }) {
   const { data: membership } = useGymMembership();
   const brand = useGymBrand();
+  const colors = useThemeColors();
   const settings = useCommsSettings();
   const send = useSendCampaign();
   const queryClient = useQueryClient();
@@ -261,7 +263,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
               onPress={() => setMode('setup')}
               hitSlop={6}
               className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
-              <Ionicons name="chevron-back" size={18} color="#6B7280" />
+              <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
               <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
                 Setup
               </Text>
@@ -278,7 +280,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                 <Ionicons
                   name={showPreview ? 'create-outline' : 'eye-outline'}
                   size={15}
-                  color="#6B7280"
+                  color={colors.iconSecondary}
                 />
                 <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
                   {showPreview ? 'Back to editor' : 'Preview'}
@@ -320,7 +322,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         </View>
 
         {/* Details */}
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Input
             label="Campaign name (internal)"
             value={title}
@@ -370,7 +372,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                   } · open the builder`}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </Pressable>
 
         {/* Topic */}

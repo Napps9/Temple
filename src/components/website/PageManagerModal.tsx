@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Input } from '@/components/Input';
+import { useThemeColors } from '@/lib/theme';
 import { addPage, removePage, renamePage, reslugPage, type SiteDocument } from '@/lib/site-blocks';
 
 // Add/rename/reslug/delete every page in one place, rather than
@@ -29,6 +30,7 @@ export function PageManagerModal({
   onClose: () => void;
   onSelectPage: (pageId: string) => void;
 }) {
+  const colors = useThemeColors();
   const [newTitle, setNewTitle] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -65,7 +67,7 @@ export function PageManagerModal({
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel="Close">
-                <Ionicons name="close" size={20} color="#9CA3AF" />
+                <Ionicons name="close" size={20} color={colors.iconTertiary} />
               </Pressable>
             </View>
 

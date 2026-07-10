@@ -109,7 +109,7 @@ export default function DirectThread() {
               Loading…
             </Text>
           ) : grouped.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 No messages yet. Say hi.
               </Text>

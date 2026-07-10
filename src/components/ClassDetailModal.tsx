@@ -498,7 +498,7 @@ export function ClassDetailModal({
             accessibilityRole="button"
             accessibilityLabel="Close"
             className="absolute right-3 top-3 z-10 w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-            <Ionicons name="close" size={20} color="#6B7280" />
+            <Ionicons name="close" size={20} color={colors.iconSecondary} />
           </Pressable>
           {sessionQuery.isLoading || !detail ? (
             <View className="py-6 items-center">
@@ -700,9 +700,9 @@ export function ClassDetailModal({
                                 accessibilityLabel="Switch plan"
                                 className="active:opacity-70 px-2 py-1">
                                 <Ionicons
-                                  name="swap-horizontal"
+                                  name="swap-horizontal-outline"
                                   size={16}
-                                  color="#6B7280"
+                                  color={colors.iconSecondary}
                                 />
                               </Pressable>
                             ) : null}
@@ -1054,6 +1054,7 @@ function BookActions({
   booksOpenAt: number | null;
   booksCloseAt: number | null;
 }) {
+  const colors = useThemeColors();
   if (inPast && !myBookingExists) {
     return (
       <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -1101,7 +1102,7 @@ function BookActions({
                   <Ionicons
                     name={isSel ? 'radio-button-on' : 'radio-button-off'}
                     size={18}
-                    color={isSel ? '#2563EB' : '#9CA3AF'}
+                    color={isSel ? colors.primary : colors.iconTertiary}
                   />
                   <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
                     {e.label}

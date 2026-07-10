@@ -20,6 +20,7 @@ import {
   type MyStoreOrder,
   type MyStoreSubscription,
 } from '@/lib/store';
+import { useThemeColors } from '@/lib/theme';
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   pending: { label: 'Awaiting payment', tone: 'text-amber-600 dark:text-amber-400' },
@@ -278,6 +279,7 @@ function ShippingSection({
 }
 
 function OrderCard({ order }: { order: MyStoreOrder }) {
+  const colors = useThemeColors();
   const download = useStoreDownload();
   const status = STATUS_LABEL[order.status] ?? STATUS_LABEL.paid;
 
@@ -337,7 +339,7 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
 
       {order.has_physical && order.status === 'paid' ? (
         <View className="flex-row items-center gap-1.5 mt-1">
-          <Ionicons name="cube-outline" size={14} color="#9CA3AF" />
+          <Ionicons name="cube-outline" size={14} color={colors.iconTertiary} />
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
             Being prepared for shipping.
           </Text>

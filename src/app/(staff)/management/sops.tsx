@@ -129,7 +129,7 @@ export default function SopsScreen() {
               </Text>
             ) : null}
           </View>
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 whitespace-pre-wrap">
               {active.body_markdown || 'No content.'}
             </Text>
@@ -233,7 +233,7 @@ export default function SopsScreen() {
               <Pressable
                 key={d.id}
                 onPress={() => setActiveId(d.id)}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                   {d.title}
                 </Text>

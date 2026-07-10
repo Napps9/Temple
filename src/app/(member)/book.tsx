@@ -242,7 +242,7 @@ function RecommendedClassCard() {
           haptic.tap();
           setDetailOpen(true);
         }}
-        className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+        className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
         <View
           style={{ backgroundColor: typeColor }}
           className="rounded-full px-2 py-0.5">
@@ -321,9 +321,9 @@ function NextClassCard() {
   return (
     <Pressable
       onPress={() => router.push('/bookings')}
-      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
       <View className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-        <Ionicons name="ticket-outline" size={16} color="#6B7280" />
+        <Ionicons name="ticket-outline" size={16} color={colors.iconSecondary} />
       </View>
       <View className="flex-1">
         <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
@@ -340,7 +340,7 @@ function NextClassCard() {
           <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
         </View>
       ) : null}
-      <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+      <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
     </Pressable>
   );
 }

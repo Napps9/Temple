@@ -69,7 +69,7 @@ export function LeaderboardsPanel() {
 
   return (
     <View className="gap-3">
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -89,7 +89,7 @@ export function LeaderboardsPanel() {
         </View>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">

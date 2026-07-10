@@ -229,7 +229,7 @@ export default function AttendanceScreen() {
               return (
                 <View
                   key={`${b.class_type_id ?? 'open'}`}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
                   <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                     {typeName}
                   </Text>

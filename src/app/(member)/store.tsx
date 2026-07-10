@@ -17,6 +17,7 @@ import {
   useStoreProducts,
   type StoreProduct,
 } from '@/lib/store';
+import { useThemeColors } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
 
 export default function StoreScreen() {
@@ -159,6 +160,7 @@ function ProductCard({
   alreadySubscribed: boolean;
   onBuy: (quantity: number) => void;
 }) {
+  const colors = useThemeColors();
   const max = maxQuantityFor(product);
   const [qty, setQty] = useState(1);
   const clamped = Math.min(qty, Math.max(1, max));
@@ -239,7 +241,7 @@ function ProductCard({
                   onPress={() => setQty((q) => Math.max(1, q - 1))}
                   hitSlop={6}
                   className="px-3 py-2 active:opacity-60">
-                  <Ionicons name="remove" size={16} color="#6B7280" />
+                  <Ionicons name="remove" size={16} color={colors.iconSecondary} />
                 </Pressable>
                 <Text className="text-gray-900 dark:text-gray-50 w-8 text-center">
                   {clamped}
@@ -248,7 +250,7 @@ function ProductCard({
                   onPress={() => setQty((q) => Math.min(max, q + 1))}
                   hitSlop={6}
                   className="px-3 py-2 active:opacity-60">
-                  <Ionicons name="add" size={16} color="#6B7280" />
+                  <Ionicons name="add" size={16} color={colors.iconSecondary} />
                 </Pressable>
               </View>
             ) : null}

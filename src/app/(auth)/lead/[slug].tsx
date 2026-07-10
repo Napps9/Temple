@@ -217,7 +217,7 @@ export default function LeadCaptureScreen() {
                       : 'border-gray-300 dark:border-gray-600'
                   }`}>
                   {marketingConsent ? (
-                    <Ionicons name="checkmark" size={14} color="#fff" />
+                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                   ) : null}
                 </View>
                 <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs leading-5">

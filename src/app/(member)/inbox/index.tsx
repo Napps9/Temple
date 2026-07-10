@@ -245,7 +245,7 @@ function DirectList() {
       {inbox.isLoading ? (
         <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
       ) : (inbox.data?.length ?? 0) === 0 ? (
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
           <Text className="text-gray-500 dark:text-gray-400 text-sm">
             No conversations yet. Tap New to send a message.
           </Text>
@@ -257,7 +257,7 @@ function DirectList() {
             onPress={() =>
               router.push(`/inbox/direct/${row.peer_profile_id}` as never)
             }
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70 flex-row items-center gap-3">
+            className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70 flex-row items-center gap-3">
             <View className="flex-1">
               <View className="flex-row items-center gap-2">
                 <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold" numberOfLines={1}>
@@ -406,7 +406,7 @@ function AnnouncementsTab({
       </View>
 
       {composeOpen ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Input
             label="Title"
             value={title}
@@ -446,7 +446,7 @@ function AnnouncementsTab({
       {list.isLoading ? (
         <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
       ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
           <Text className="text-gray-500 dark:text-gray-400 text-sm">
             No announcements yet.
           </Text>
@@ -455,7 +455,7 @@ function AnnouncementsTab({
         list.data!.map((a) => (
           <View
             key={a.id}
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
             <View className="flex-row items-center gap-2">
               {a.pinned ? (
                 <Ionicons name="pin" size={14} color={colors.primary} />
@@ -557,7 +557,7 @@ function ClassesTab({
       {list.isLoading ? (
         <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
       ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
           <Text className="text-gray-500 dark:text-gray-400 text-sm">
             {role === 'member'
               ? 'No class messages yet. You\'ll see anything your coach sends to a class you\'re booked into.'
@@ -573,7 +573,7 @@ function ClassesTab({
           return (
             <View
               key={b.id}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
               <View className="flex-row items-center gap-2">
                 <View
                   style={{ backgroundColor: typeColor }}

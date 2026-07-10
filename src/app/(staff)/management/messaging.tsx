@@ -65,7 +65,7 @@ export function MessagingPanel() {
 
   return (
     <View className="gap-3">
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <Text className="text-gray-900 dark:text-gray-50 font-semibold">
           Direct message scope
         </Text>
@@ -84,7 +84,7 @@ export function MessagingPanel() {
               <Ionicons
                 name={selected ? 'radio-button-on' : 'radio-button-off'}
                 size={18}
-                color={selected ? colors.primary : '#9CA3AF'}
+                color={selected ? colors.primary : colors.iconTertiary}
               />
               <View className="flex-1">
                 <Text

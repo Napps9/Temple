@@ -17,7 +17,7 @@ import {
   type WorkoutField,
 } from '@/lib/import/workout-columns';
 import { supabase } from '@/lib/supabase';
-import { useThemePreference } from '@/lib/theme';
+import { useThemePreference, useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { webSelectStyle } from '@/lib/webSelect';
 import type { Json } from '@/types/database';
@@ -40,6 +40,7 @@ const FIELD_OPTIONS: { key: WorkoutField | 'ignore'; label: string }[] = [
 ];
 
 export default function ImportWorkoutsScreen() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
@@ -123,7 +124,7 @@ export default function ImportWorkoutsScreen() {
         </View>
 
         {phase === 'upload' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             {Platform.OS === 'web' ? (
               <>
                 <div
@@ -157,7 +158,7 @@ export default function ImportWorkoutsScreen() {
                       : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Ionicons name="cloud-upload-outline" size={24} color="#6B7280" />
+                  <Ionicons name="cloud-upload-outline" size={24} color={colors.iconSecondary} />
                   <Text className="text-gray-700 dark:text-gray-200 font-medium">
                     {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
@@ -215,7 +216,7 @@ export default function ImportWorkoutsScreen() {
         ) : null}
 
         {phase === 'map' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <View className="gap-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                 Map your columns
@@ -235,7 +236,7 @@ export default function ImportWorkoutsScreen() {
                     numberOfLines={1}>
                     {h || `(column ${i + 1})`}
                   </Text>
-                  <Ionicons name="arrow-forward" size={14} color="#9CA3AF" />
+                  <Ionicons name="arrow-forward" size={14} color={colors.iconTertiary} />
                   <FieldPicker
                     value={mapping[i] ?? 'ignore'}
                     onChange={(v) =>
@@ -277,7 +278,7 @@ export default function ImportWorkoutsScreen() {
         ) : null}
 
         {phase === 'preview' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               Preview
             </Text>

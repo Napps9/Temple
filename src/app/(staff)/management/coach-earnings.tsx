@@ -190,7 +190,7 @@ export default function CoachEarningsPage() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Credit policy
           </Text>
@@ -212,7 +212,7 @@ export default function CoachEarningsPage() {
                   <Ionicons
                     name={selected ? 'radio-button-on' : 'radio-button-off'}
                     size={18}
-                    color={selected ? colors.primary : '#9CA3AF'}
+                    color={selected ? colors.primary : colors.iconTertiary}
                   />
                   <View className="flex-1">
                     <Text
@@ -260,7 +260,7 @@ export default function CoachEarningsPage() {
         </View>
 
         {coaches.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               No coaches yet. Invite one from the Team page.
             </Text>
@@ -301,6 +301,7 @@ function CoachCard({
   periodStart: string;
   periodEnd: string;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
 
@@ -329,7 +330,7 @@ function CoachCard({
   const rateByCt = new Map(rates.map((r) => [r.class_type_id, r.per_class_cents]));
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <Pressable
         onPress={() => setExpanded((v) => !v)}
         className="flex-row items-center gap-3 active:opacity-70">
@@ -345,7 +346,7 @@ function CoachCard({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color="#9CA3AF"
+          color={colors.iconTertiary}
         />
       </Pressable>
 
@@ -532,7 +533,7 @@ function ClassTypeRateEditor({
           </Text>
           <ChipButton
             label={existingCents == null ? 'Set' : 'Edit'}
-            icon={existingCents == null ? 'add' : 'pencil'}
+            icon={existingCents == null ? 'add' : 'create-outline'}
           />
         </Pressable>
       )}

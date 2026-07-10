@@ -142,7 +142,7 @@ export default function NewDirectMessage() {
               onPress={() =>
                 router.replace(`/inbox/direct/${c.profile_id}` as never)
               }
-              className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+              className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
               <View className="flex-1">
                 <Text className="text-gray-900 dark:text-gray-50 font-medium">
                   {c.full_name?.trim() || 'Member'}

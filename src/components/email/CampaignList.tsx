@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
+import { EmptyState } from '@/components/EmptyState';
+import { useThemeColors } from '@/lib/theme';
 import {
   campaignStatusMeta,
   formatDateTime,
@@ -28,6 +30,7 @@ export function StatusBadge({ status }: { status: CampaignListRow['status'] }) {
 }
 
 function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
+  const colors = useThemeColors();
   const subtitle =
     campaign.status === 'sent'
       ? `${campaign.recipient_count} sent · ${formatDateTime(campaign.sent_at)}`
@@ -36,7 +39,7 @@ function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
         : 'No subject yet';
   return (
     <Link href={`/management/communications/${campaign.id}`} asChild>
-      <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70">
+      <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
             <View className="flex-row items-center gap-2">
@@ -51,7 +54,7 @@ function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
               {subtitle}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </View>
       </Pressable>
     </Link>
@@ -73,15 +76,11 @@ export function CampaignList() {
       {campaigns.isLoading ? (
         <Text className="text-gray-500 dark:text-gray-400">Loading campaigns…</Text>
       ) : (campaigns.data ?? []).length === 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2">
-          <Ionicons name="mail-outline" size={28} color="#9CA3AF" />
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            No campaigns yet
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-            Create your first email campaign to reach your members.
-          </Text>
-        </View>
+        <EmptyState
+          icon="mail-outline"
+          title="No campaigns yet"
+          description="Create your first email campaign to reach your members."
+        />
       ) : (
         <View className="gap-2">
           {(campaigns.data ?? []).map((c) => (

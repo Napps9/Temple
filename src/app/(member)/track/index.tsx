@@ -221,7 +221,7 @@ export default function TrackHome() {
         <View className="gap-4 lg:flex-row lg:items-start">
           <View className="gap-4 lg:w-80">
             {(recentWorkouts.data?.size ?? 0) > 0 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
                 <View className="flex-row gap-2">
                   <Stat
                     icon="flame"
@@ -339,7 +339,7 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -366,7 +366,7 @@ function LeaderboardsTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -400,7 +400,7 @@ function InjuryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -441,7 +441,7 @@ function LibraryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/movements' as never)}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -609,7 +609,7 @@ function StationTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -649,7 +649,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden hover:border-slate-300 dark:hover:border-gray-700 hover:shadow-card active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"

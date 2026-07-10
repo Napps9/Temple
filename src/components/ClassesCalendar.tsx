@@ -438,6 +438,7 @@ export function ClassesCalendar({
   // not just in the standalone card above it.
   recommendedSessionId?: string | null;
 }) {
+  const colors = useThemeColors();
   const params = useLocalSearchParams<{ view?: string; session?: string }>();
   const { width } = useWindowDimensions();
   // On a phone the member Book calendar drops Month entirely and shows an
@@ -652,7 +653,7 @@ export function ClassesCalendar({
                 accessibilityRole="button"
                 accessibilityLabel="Jump to today"
                 className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                <Ionicons name="locate-outline" size={18} color="#6B7280" />
+                <Ionicons name="locate-outline" size={18} color={colors.iconSecondary} />
               </Pressable>
             </View>
             <View className="flex-row items-center gap-0.5">
@@ -1302,7 +1303,7 @@ function DayView({
         <View className="w-full max-w-5xl mx-auto px-2">
           {mode === 'book' ? (
             dayClasses.length === 0 ? (
-              <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
                 <Text className="text-gray-500 dark:text-gray-400 text-sm">
                   No classes scheduled today.
                 </Text>

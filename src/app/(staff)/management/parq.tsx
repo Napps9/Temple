@@ -20,6 +20,7 @@ import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
@@ -45,6 +46,7 @@ type ActiveWaiver = {
 // can sign and book". Publishing a new version re-prompts every member
 // to re-sign (their old signature stays tied to the version they saw).
 export function WaiverPanel() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canManage = useCan('can_manage_parq');
   const queryClient = useQueryClient();
@@ -184,7 +186,7 @@ export function WaiverPanel() {
         </Text>
       )}
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <Input
           label="Waiver title (optional)"
           value={title}
@@ -206,7 +208,7 @@ export function WaiverPanel() {
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Remove file">
-              <Ionicons name="close" size={16} color="#9CA3AF" />
+              <Ionicons name="close" size={16} color={colors.iconTertiary} />
             </Pressable>
           </View>
         ) : null}
@@ -215,7 +217,7 @@ export function WaiverPanel() {
           onPress={() => pick.mutate()}
           disabled={pick.isPending}
           className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
-          <Ionicons name="cloud-upload-outline" size={18} color="#6B7280" />
+          <Ionicons name="cloud-upload-outline" size={18} color={colors.iconSecondary} />
           <Text className="text-gray-600 dark:text-gray-300 font-medium">
             {pick.isPending
               ? 'Uploading…'
@@ -256,6 +258,7 @@ export function WaiverPanel() {
 // can_manage_parq capability. A gym only needs one of the two to let
 // members book, but if both are published a member must clear both.
 export function HealthScreeningPanel() {
+  const colors = useThemeColors();
   const [showParq, setShowParq] = useState(false);
   return (
     <View className="gap-5">
@@ -264,14 +267,14 @@ export function HealthScreeningPanel() {
       {/* Same card treatment as WaiverPanel so the two halves of the
           health-screening surface read as siblings rather than the
           PAR-Q section feeling orphaned underneath. */}
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <Pressable
           onPress={() => setShowParq((v) => !v)}
           className="flex-row items-center gap-2 active:opacity-70">
           <Ionicons
             name={showParq ? 'chevron-down' : 'chevron-forward'}
             size={18}
-            color="#6B7280"
+            color={colors.iconSecondary}
           />
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -330,6 +333,7 @@ function makeBlank(): DraftQuestion {
 }
 
 export function ParqPanel() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const canManage = useCan('can_manage_parq');
@@ -472,7 +476,7 @@ export function ParqPanel() {
         {rows.map((r, idx) => (
           <View
             key={r.localId}
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
             <Input
               label={`Question ${idx + 1}`}
               value={r.prompt}
@@ -512,7 +516,7 @@ export function ParqPanel() {
       <Pressable
         onPress={add}
         className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-        <Ionicons name="add" size={16} color="#6B7280" />
+        <Ionicons name="add" size={16} color={colors.iconSecondary} />
         <Text className="text-gray-500 dark:text-gray-400">Add question</Text>
       </Pressable>
 

@@ -30,6 +30,7 @@ import {
   type RecurrenceRow,
 } from '@/lib/useClassCatalog';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { useThemeColors } from '@/lib/theme';
 
 // Fallback if the gym defaults query hasn't resolved yet — matches the
 // SQL default in 0049.
@@ -94,6 +95,7 @@ function recurrenceFromServer(r: RecurrenceRow): RecurrenceForm {
 }
 
 export function ClassTypesPanel() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const queryClient = useQueryClient();
@@ -638,7 +640,7 @@ export function ClassTypesPanel() {
             return (
               <View
                 key={r.id ?? `new-${idx}`}
-                className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-3">
+                className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-3 shadow-card">
                 <View className="flex-row items-center gap-3">
                   <Pressable
                     onPress={() =>
@@ -667,7 +669,7 @@ export function ClassTypesPanel() {
                       accessibilityRole="button"
                       accessibilityLabel="Remove"
                       className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                      <Ionicons name="close" size={18} color="#9CA3AF" />
+                      <Ionicons name="close" size={18} color={colors.iconTertiary} />
                     </Pressable>
                   ) : null}
                 </View>
@@ -702,7 +704,7 @@ export function ClassTypesPanel() {
                   <ChipButton
                     label={r.scheduleOpen ? 'Hide' : hasSchedule ? 'Edit' : 'Set up'}
                     icon={
-                      r.scheduleOpen ? 'chevron-up' : hasSchedule ? 'pencil' : 'add'
+                      r.scheduleOpen ? 'chevron-up' : hasSchedule ? 'create-outline' : 'add'
                     }
                   />
                 </Pressable>
@@ -739,7 +741,7 @@ export function ClassTypesPanel() {
                     <Pressable
                       onPress={() => addSchedule(idx)}
                       className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-                      <Ionicons name="add" size={14} color="#6B7280" />
+                      <Ionicons name="add" size={14} color={colors.iconSecondary} />
                       <Text className="text-gray-500 dark:text-gray-400 text-sm">
                         Add another schedule
                       </Text>
@@ -948,7 +950,7 @@ export function ClassTypesPanel() {
               <Ionicons
                 name={showArchived ? 'chevron-down' : 'chevron-forward'}
                 size={16}
-                color="#6B7280"
+                color={colors.iconSecondary}
               />
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Archived ({archivedRows.length})

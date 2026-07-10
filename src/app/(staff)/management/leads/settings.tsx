@@ -177,7 +177,7 @@ export default function LeadAutomationSettings() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             When a lead comes in
           </Text>
@@ -237,7 +237,7 @@ export default function LeadAutomationSettings() {
           </Button>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -256,7 +256,7 @@ export default function LeadAutomationSettings() {
           </View>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             Data retention
           </Text>

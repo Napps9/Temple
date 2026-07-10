@@ -254,7 +254,7 @@ export function MovementDetailView({
                 scheme.better,
               );
               const row = (
-                <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3">
+                <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card">
                   <View className="flex-1">
                     <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                       {scheme.label}
@@ -321,7 +321,7 @@ export function MovementDetailView({
               Loading…
             </Text>
           ) : merged.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 No results for {movement.name} yet.
               </Text>
@@ -398,7 +398,7 @@ function MovementLeaderboardSection({
   return (
     <View className="gap-3">
       <View className="flex-row items-center gap-2">
-        <Ionicons name="trophy-outline" size={18} color={colors.primary} />
+        <Ionicons name="trophy" size={18} color={colors.primary} />
         <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
           Leaderboard
         </Text>
@@ -485,7 +485,7 @@ function JournalRowView({
   );
   if (!linkable) {
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card">
         {body}
       </View>
     );
@@ -497,7 +497,7 @@ function JournalRowView({
           ? router.push(`/track/workout/${row.workout_id}` as never)
           : router.push('/track/journal' as never)
       }
-      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
       {body}
     </Pressable>
   );

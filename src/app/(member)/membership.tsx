@@ -172,7 +172,7 @@ function CurrentSubCard({ sub }: { sub: MySubscription }) {
   const notice = plan?.notice_period_days ?? 0;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -301,7 +301,7 @@ function money(cents: number, currency: string): string {
 function InvoiceRow({ inv }: { inv: MemberInvoice }) {
   const hasDoc = !!(inv.invoice_url || inv.invoice_pdf);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -609,7 +609,7 @@ export default function MembershipScreen() {
               return (
                 <View
                   key={plan.plan_id}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-gray-200 dark:border-gray-800">
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
                       <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
@@ -688,7 +688,7 @@ export default function MembershipScreen() {
                           modify.variables?.targetPlanId === plan.plan_id;
                         return (
                           <Button
-                            icon="swap-horizontal"
+                            icon="swap-horizontal-outline"
                             loading={switching}
                             onPress={() =>
                               modify.mutate({

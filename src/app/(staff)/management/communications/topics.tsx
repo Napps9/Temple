@@ -6,12 +6,14 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 type Topic = {
   id: string;
@@ -24,6 +26,7 @@ export default function EmailTopicsScreen() {
   const { data: membership } = useGymMembership();
   const canManageComms = useCan('can_manage_comms');
   const queryClient = useQueryClient();
+  const colors = useThemeColors();
   const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +98,7 @@ export default function EmailTopicsScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Add a topic
           </Text>
@@ -135,19 +138,17 @@ export default function EmailTopicsScreen() {
               Loading…
             </Text>
           ) : (topics.data?.length ?? 0) === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2">
-              <Ionicons name="layers-outline" size={28} color="#9CA3AF" />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-                No topics yet. New campaigns will send without a topic —
-                blanket unsubscribes are the only suppression.
-              </Text>
-            </View>
+            <EmptyState
+              icon="layers-outline"
+              title="No topics yet"
+              description="New campaigns will send without a topic — blanket unsubscribes are the only suppression."
+            />
           ) : (
             <View className="gap-2">
               {topics.data!.map((t) => (
                 <View
                   key={t.id}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
                   <View className="flex-row items-start gap-3">
                     <View className="flex-1">
                       <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -167,7 +168,7 @@ export default function EmailTopicsScreen() {
                       <Ionicons
                         name="trash-outline"
                         size={16}
-                        color="#9CA3AF"
+                        color={colors.iconTertiary}
                       />
                     </Pressable>
                   </View>

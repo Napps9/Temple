@@ -11,6 +11,7 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import type { Discipline } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
 import { useGymCurrency } from '@/lib/useGymCurrency';
@@ -454,7 +455,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <Text className="text-gray-900 dark:text-gray-50 font-semibold">
         {title}
       </Text>
@@ -541,6 +542,7 @@ function Choice<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-1.5">
       <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
@@ -560,7 +562,7 @@ function Choice<T extends string>({
             <Ionicons
               name={selected ? 'radio-button-on' : 'radio-button-off'}
               size={18}
-              color={selected ? '#2563EB' : '#9CA3AF'}
+              color={selected ? colors.primary : colors.iconTertiary}
             />
             <Text
               className={`text-sm ${

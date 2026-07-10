@@ -13,6 +13,7 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 import type { LeadStatus } from '@/types/database';
 
 type LeadRow = {
@@ -94,6 +95,7 @@ async function drainLeadEmails(gymId: string) {
 }
 
 export default function LeadsScreen() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canAssignPlan = useCan('can_assign_plan');
   const isOwner = membership?.role === 'owner';
@@ -219,7 +221,7 @@ export default function LeadsScreen() {
           </View>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             Show
           </Text>
@@ -267,7 +269,7 @@ export default function LeadsScreen() {
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
         ) : (leads.data?.length ?? 0) === 0 ? (
           <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2">
-            <Ionicons name="people-outline" size={32} color="#9CA3AF" />
+            <Ionicons name="people-outline" size={32} color={colors.iconTertiary} />
             <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
               {filter === 'followup'
                 ? 'Nothing needs chasing right now. Nice.'
@@ -282,7 +284,7 @@ export default function LeadsScreen() {
                 <Pressable
                   key={l.id}
                   onPress={() => setOpenLead(l)}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70">
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70 shadow-card">
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
                       <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -307,7 +309,7 @@ export default function LeadsScreen() {
                       <Ionicons
                         name="person-circle-outline"
                         size={14}
-                        color="#9CA3AF"
+                        color={colors.iconTertiary}
                       />
                       <Text className="text-gray-500 dark:text-gray-400 text-xs">
                         {l.assignee?.full_name ??
@@ -383,6 +385,7 @@ function AddLeadModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const colors = useThemeColors();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -436,7 +439,7 @@ function AddLeadModal({
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-                  <Ionicons name="close" size={18} color="#6B7280" />
+                  <Ionicons name="close" size={18} color={colors.iconSecondary} />
                 </Pressable>
               </View>
 
@@ -564,6 +567,7 @@ function LeadDetailModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [convertPicker, setConvertPicker] = useState(false);
@@ -747,7 +751,7 @@ function LeadDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-                  <Ionicons name="close" size={18} color="#6B7280" />
+                  <Ionicons name="close" size={18} color={colors.iconSecondary} />
                 </Pressable>
               </View>
 
@@ -795,7 +799,7 @@ function LeadDetailModal({
                             <Text className="text-gray-900 dark:text-gray-50 flex-1">
                               {m.full_name ?? 'Member'}
                             </Text>
-                            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                            <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
                           </Pressable>
                         ))}
                       </View>
@@ -859,7 +863,7 @@ function LeadDetailModal({
                         <Ionicons
                           name="person-circle-outline"
                           size={18}
-                          color="#9CA3AF"
+                          color={colors.iconTertiary}
                         />
                         <Text className="text-gray-900 dark:text-gray-50">
                           {lead.assignee?.full_name ??
@@ -869,7 +873,7 @@ function LeadDetailModal({
                       <View className="flex-row gap-2">
                         <ChipButton
                           label="Reassign"
-                          icon="swap-horizontal"
+                          icon="swap-horizontal-outline"
                           tone="neutral"
                           onPress={() => setReassignOpen(true)}
                         />
@@ -967,6 +971,7 @@ function SourcesEditorModal({
   gymId: string;
   onClose: () => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [label, setLabel] = useState('');
   const [color, setColor] = useState(SOURCE_COLOURS[0]);
@@ -1037,7 +1042,7 @@ function SourcesEditorModal({
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-                  <Ionicons name="close" size={18} color="#6B7280" />
+                  <Ionicons name="close" size={18} color={colors.iconSecondary} />
                 </Pressable>
               </View>
 
@@ -1071,7 +1076,7 @@ function SourcesEditorModal({
                         <Ionicons
                           name="trash-outline"
                           size={16}
-                          color="#9CA3AF"
+                          color={colors.iconTertiary}
                         />
                       </Pressable>
                     </View>

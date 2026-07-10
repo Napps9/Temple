@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
 import { Input } from './Input';
+import { useThemeColors } from '@/lib/theme';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -30,6 +31,7 @@ export function RecurrenceEditor({
   value: RecurrenceForm;
   onChange: (next: RecurrenceForm) => void;
 }) {
+  const colors = useThemeColors();
   const daysSet = new Set(value.days);
 
   function toggleDay(i: number) {
@@ -109,14 +111,14 @@ export function RecurrenceEditor({
                     ? 'opacity-40 bg-gray-100 dark:bg-gray-800'
                     : 'bg-gray-100 dark:bg-gray-800'
                 }`}>
-                <Ionicons name="close" size={18} color="#6B7280" />
+                <Ionicons name="close" size={18} color={colors.iconSecondary} />
               </Pressable>
             </View>
           ))}
           <Pressable
             onPress={addTime}
             className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-            <Ionicons name="add" size={14} color="#6B7280" />
+            <Ionicons name="add" size={14} color={colors.iconSecondary} />
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               Add time
             </Text>

@@ -17,6 +17,7 @@ import {
   type Section,
 } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -104,6 +105,7 @@ export function ProgrammingCalendar({
   // on desktop, its own row on mobile) — staff use it for Analysis.
   headerAction?: React.ReactNode;
 }) {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
@@ -223,7 +225,7 @@ export function ProgrammingCalendar({
               accessibilityRole="button"
               accessibilityLabel="Jump to today"
               className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="locate-outline" size={18} color="#6B7280" />
+              <Ionicons name="locate-outline" size={18} color={colors.iconSecondary} />
             </Pressable>
           </View>
           <View className="flex-row items-center gap-0.5">
@@ -314,7 +316,7 @@ export function ProgrammingCalendar({
             </Pressable>
           ) : null}
           {dayTypes.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 No classes scheduled for this day.
               </Text>
@@ -396,7 +398,7 @@ function ClassTypeCard({
       {mode === 'manage' ? (
         <ChipButton
           label={sections.length === 0 ? 'Add' : 'Edit'}
-          icon={sections.length === 0 ? 'add' : 'pencil'}
+          icon={sections.length === 0 ? 'add' : 'create-outline'}
         />
       ) : null}
     </View>
@@ -428,7 +430,7 @@ function ClassTypeCard({
               <ChipButton
                 className="self-start mt-1"
                 label="View leaderboard"
-                icon="trophy-outline"
+                icon="trophy"
                 onPress={() =>
                   setLeaderboardOpenFor({
                     sectionIndex: idx,
@@ -447,7 +449,7 @@ function ClassTypeCard({
       <>
         <Pressable
           onPress={onEdit}
-          className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800">
+          className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
           {header}
           {body}
         </Pressable>
@@ -464,7 +466,7 @@ function ClassTypeCard({
 
   return (
     <>
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         {header}
         {body}
       </View>

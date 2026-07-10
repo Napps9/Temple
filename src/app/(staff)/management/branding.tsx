@@ -53,6 +53,7 @@ type ColourPickerTarget =
   | 'textDark';
 
 export function BrandingPanel() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
@@ -265,7 +266,7 @@ export function BrandingPanel() {
         {/* Colours sit beside the live preview so each edit is visible
             the moment it's typed or picked. Stacks on small screens. */}
         <View className="md:flex-row gap-4 items-stretch">
-          <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               Colours
             </Text>
@@ -308,7 +309,7 @@ export function BrandingPanel() {
           </View>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Logo
           </Text>
@@ -371,7 +372,7 @@ export function BrandingPanel() {
           onSetPicker={setPickerFor}
         />
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Gym details
           </Text>
@@ -399,7 +400,7 @@ export function BrandingPanel() {
           ) : null}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -428,14 +429,14 @@ export function BrandingPanel() {
                   onPress={() => copyToClipboard(joinUrl(origin, cleanedSlug))}
                   hitSlop={6}
                   className="active:opacity-70">
-                  <Ionicons name="copy-outline" size={18} color="#9CA3AF" />
+                  <Ionicons name="copy-outline" size={18} color={colors.iconTertiary} />
                 </Pressable>
               </View>
             </View>
           ) : null}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -465,7 +466,7 @@ export function BrandingPanel() {
                   onPress={() => copyToClipboard(leadUrl(origin, cleanedSlug))}
                   hitSlop={6}
                   className="active:opacity-70">
-                  <Ionicons name="copy-outline" size={18} color="#9CA3AF" />
+                  <Ionicons name="copy-outline" size={18} color={colors.iconTertiary} />
                 </Pressable>
               </View>
             </View>
@@ -554,7 +555,7 @@ function AdvancedBrandingCard({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl">
+    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
       <Pressable
         onPress={onToggle}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
@@ -573,7 +574,7 @@ function AdvancedBrandingCard({
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color="#9CA3AF"
+          color={colors.iconTertiary}
         />
       </Pressable>
 
@@ -635,7 +636,7 @@ function AdvancedBrandingCard({
               <ChipButton
                 tone="inverse"
                 label="Auto-generate from light"
-                icon="sparkles-outline"
+                icon="sparkles"
                 onPress={autoGenerate}
               />
             </View>

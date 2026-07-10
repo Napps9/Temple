@@ -130,7 +130,7 @@ export default function ConsentForm() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Your details
           </Text>
@@ -165,7 +165,7 @@ export default function ConsentForm() {
         ) : (
           <>
             {under18 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                   Parent or guardian consent
                 </Text>
@@ -205,7 +205,7 @@ export default function ConsentForm() {
               </View>
             ) : null}
 
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                 Consent
               </Text>

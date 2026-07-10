@@ -135,7 +135,7 @@ export default function CoverScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Request cover
           </Text>
@@ -197,7 +197,7 @@ export default function CoverScreen() {
             (myRequestsQuery.data ?? []).map((r) => (
               <View
                 key={r.id}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
                 <View className="flex-row justify-between items-center">
                   <Text className="text-gray-900 dark:text-gray-50 font-medium">
                     {r.range_start.slice(0, 10)} → {r.range_end.slice(0, 10)}

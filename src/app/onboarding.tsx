@@ -290,6 +290,7 @@ function StepRow({
   step: Step & { done: boolean; complete: number; target: number };
   accent: string;
 }) {
+  const colors = useThemeColors();
   const partial = !step.done && step.complete > 0 && step.complete < step.target;
   return (
     <Pressable
@@ -336,7 +337,7 @@ function StepRow({
       <Ionicons
         name="chevron-forward"
         size={16}
-        color={step.done ? '#6B7280' : '#9CA3AF'}
+        color={step.done ? colors.iconSecondary : colors.iconTertiary}
       />
     </Pressable>
   );

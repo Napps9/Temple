@@ -17,6 +17,7 @@ import {
 } from '@/lib/movement-journal';
 import type { SectionFormatKey } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { formatResultValue, type TrackedResultRow } from '@/lib/track';
 import { useMarkGroupViewed } from '@/lib/useGroupViewed';
 
@@ -44,6 +45,7 @@ type RawTagRow = {
 };
 
 export default function GroupPage() {
+  const colors = useThemeColors();
   const { group: groupKey } = useLocalSearchParams<{ group: string }>();
   const session = useSession();
   const group = groupKey ? findGroup(groupKey) : undefined;
@@ -194,7 +196,7 @@ export default function GroupPage() {
                 onPress={() =>
                   router.push(`/track/movement/${m.key}` as never)
                 }
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
                 <View className="flex-1">
                   <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                     {m.name}
@@ -218,7 +220,7 @@ export default function GroupPage() {
                     </Text>
                   ) : null}
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
               </Pressable>
             );
           })}

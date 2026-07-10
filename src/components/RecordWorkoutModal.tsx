@@ -672,7 +672,7 @@ export function RecordWorkoutModal({
               <Pressable
                 onPress={addDraft}
                 className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-                <Ionicons name="add" size={16} color="#6B7280" />
+                <Ionicons name="add" size={16} color={colors.iconSecondary} />
                 <Text className="text-gray-500 dark:text-gray-400">
                   Add section
                 </Text>
@@ -796,6 +796,7 @@ function SectionDraftCard({
   onEditTag: (tagIdx: number) => void;
   onRemove: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 gap-3">
       <View className="flex-row items-center justify-between">
@@ -808,7 +809,7 @@ function SectionDraftCard({
             hitSlop={4}
             className="w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-700"
           accessibilityLabel="Close">
-            <Ionicons name="close" size={18} color="#9CA3AF" />
+            <Ionicons name="close" size={18} color={colors.iconTertiary} />
           </Pressable>
         ) : null}
       </View>
@@ -893,6 +894,7 @@ function MovementTagList({
   onAdd: () => void;
   onEdit: (idx: number) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-2">
       <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
@@ -912,14 +914,14 @@ function MovementTagList({
               <Text className="text-gray-900 dark:text-gray-50 text-xs">
                 {label}
               </Text>
-              <Ionicons name="chevron-down" size={12} color="#9CA3AF" />
+              <Ionicons name="chevron-down" size={12} color={colors.iconTertiary} />
             </Pressable>
           );
         })}
         <Pressable
           onPress={onAdd}
           className="flex-row items-center gap-1 rounded-full border border-dashed border-gray-300 dark:border-gray-600 px-2.5 py-1 active:opacity-70">
-          <Ionicons name="add" size={12} color="#6B7280" />
+          <Ionicons name="add" size={12} color={colors.iconSecondary} />
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
             Add tag
           </Text>
@@ -1090,13 +1092,14 @@ function EntriesTable({
   onRemoveEntry: (entryIdx: number) => void;
   collapsible: boolean;
 }) {
+  const colors = useThemeColors();
   const [expanded, setExpanded] = useState(!collapsible);
   if (collapsible && !expanded) {
     return (
       <Pressable
         onPress={() => setExpanded(true)}
         className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-        <Ionicons name="add" size={14} color="#6B7280" />
+        <Ionicons name="add" size={14} color={colors.iconSecondary} />
         <Text className="text-gray-500 dark:text-gray-400 text-sm">
           Add per-set details
         </Text>
@@ -1132,7 +1135,7 @@ function EntriesTable({
               accessibilityRole="button"
               accessibilityLabel="Remove entry"
               className="w-7 h-7 rounded items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="close" size={14} color="#9CA3AF" />
+              <Ionicons name="close" size={14} color={colors.iconTertiary} />
             </Pressable>
           </View>
           <EntryFields
@@ -1145,7 +1148,7 @@ function EntriesTable({
       <Pressable
         onPress={onAddEntry}
         className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-        <Ionicons name="add" size={14} color="#6B7280" />
+        <Ionicons name="add" size={14} color={colors.iconSecondary} />
         <Text className="text-gray-500 dark:text-gray-400 text-sm">
           Add row
         </Text>
@@ -1234,7 +1237,7 @@ function QuickFillBar({
           accessibilityRole="button"
           accessibilityLabel="Close quick fill"
           className="w-6 h-6 rounded items-center justify-center active:opacity-70">
-          <Ionicons name="close" size={14} color="#9CA3AF" />
+          <Ionicons name="close" size={14} color={colors.iconTertiary} />
         </Pressable>
       </View>
 
@@ -1401,6 +1404,7 @@ function PickerButton({
   placeholder: string;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-1.5">
       <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
@@ -1417,7 +1421,7 @@ function PickerButton({
           }>
           {value ?? placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-down" size={16} color={colors.iconTertiary} />
       </Pressable>
     </View>
   );
@@ -1531,7 +1535,7 @@ function SchemeRow({
       <Ionicons
         name={selected ? 'checkmark-circle' : 'ellipse-outline'}
         size={16}
-        color={selected ? colors.primary : '#9CA3AF'}
+        color={selected ? colors.primary : colors.iconTertiary}
       />
       <Text
         className={
@@ -1556,6 +1560,7 @@ function MovementTagPickerModal({
   onPick: (tag: MovementTagDraft) => void;
   onClose: () => void;
 }) {
+  const colors = useThemeColors();
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [expandedMovement, setExpandedMovement] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -1609,7 +1614,7 @@ function MovementTagPickerModal({
             <Ionicons
               name={expandedMovement === m.key ? 'chevron-up' : 'chevron-down'}
               size={14}
-              color="#9CA3AF"
+              color={colors.iconTertiary}
             />
           </Pressable>
         ) : null}
@@ -1655,7 +1660,7 @@ function MovementTagPickerModal({
             in your per-movement Journal.
           </Text>
           <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3">
-            <Ionicons name="search" size={16} color="#9CA3AF" />
+            <Ionicons name="search" size={16} color={colors.iconTertiary} />
             <TextInput
               value={search}
               onChangeText={setSearch}
@@ -1671,7 +1676,7 @@ function MovementTagPickerModal({
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+                <Ionicons name="close-circle" size={16} color={colors.iconTertiary} />
               </Pressable>
             ) : null}
           </View>
@@ -1700,7 +1705,7 @@ function MovementTagPickerModal({
                     <Ionicons
                       name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
                       size={16}
-                      color="#9CA3AF"
+                      color={colors.iconTertiary}
                     />
                   </Pressable>
                   {expandedGroup === g.key ? (

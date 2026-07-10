@@ -204,7 +204,7 @@ export default function CreateGymScreen() {
             <Steps current={step} />
 
             {step === 'check_email' && pendingEmail ? (
-              <View className="gap-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+              <View className="gap-4 bg-white dark:bg-gray-900 rounded-xl p-5 shadow-card">
                 <View className="gap-2">
                   <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
                     Check your email

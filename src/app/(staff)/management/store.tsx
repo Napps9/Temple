@@ -30,6 +30,7 @@ import {
   type StaffSubscription,
 } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
@@ -145,6 +146,7 @@ function draftFrom(p: AdminProduct): Draft {
 }
 
 function ProductsTab() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const products = useAdminStoreProducts(membership?.gymId);
   const config = useGymStoreConfig(membership?.gymId);
@@ -199,7 +201,7 @@ function ProductsTab() {
                 <Ionicons
                   name={p.kind === 'digital' ? 'cloud-download-outline' : 'cube-outline'}
                   size={20}
-                  color="#9CA3AF"
+                  color={colors.iconTertiary}
                 />
               </View>
             )}
@@ -228,7 +230,7 @@ function ProductsTab() {
                 </Text>
               </View>
             ) : (
-              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+              <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
             )}
           </Pressable>
         ))
@@ -246,6 +248,7 @@ function ProductEditor({
   currency: string;
   onClose: () => void;
 }) {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const queryClient = useQueryClient();
@@ -397,11 +400,11 @@ function ProductEditor({
       <Pressable
         onPress={onClose}
         className="flex-row items-center gap-1 self-start active:opacity-70">
-        <Ionicons name="chevron-back" size={18} color="#6B7280" />
+        <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
         <Text className="text-gray-600 dark:text-gray-300">All products</Text>
       </Pressable>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
         <Input
           label="Name"
           value={d.name}
@@ -533,7 +536,7 @@ function ProductEditor({
               />
             ) : (
               <View className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-                <Ionicons name="image-outline" size={22} color="#9CA3AF" />
+                <Ionicons name="image-outline" size={22} color={colors.iconTertiary} />
               </View>
             )}
             <ChipButton
@@ -561,7 +564,7 @@ function ProductEditor({
               <Ionicons
                 name={d.digital_asset_path ? 'document-text' : 'document-outline'}
                 size={22}
-                color={d.digital_asset_path ? '#16A34A' : '#9CA3AF'}
+                color={d.digital_asset_path ? '#16A34A' : colors.iconTertiary}
               />
               <Text className="flex-1 text-gray-600 dark:text-gray-300 text-sm" numberOfLines={1}>
                 {d.digital_asset_name ?? 'No file yet'}
@@ -916,7 +919,7 @@ function StoreSettingsPanel() {
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-3">
           <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -982,7 +985,7 @@ function RevenuePanel() {
       {revenue.isLoading ? (
         <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
       ) : rows.length === 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
           <Text className="text-gray-500 dark:text-gray-400">
             No sales yet this month.
           </Text>
@@ -992,7 +995,7 @@ function RevenuePanel() {
           {rows.map((r) => (
             <View
               key={r.currency}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 flex-1 min-w-[150px]">
+              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 flex-1 min-w-[150px] shadow-card">
               <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
                 {formatMoney(r.gross_cents, r.currency)}
               </Text>

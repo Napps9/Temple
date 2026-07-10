@@ -58,6 +58,7 @@ import {
 import { saveStockPhoto, searchStockPhotos } from '@/lib/stock-photos';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useGymWebsite } from '@/lib/use-gym-website';
@@ -297,6 +298,7 @@ function WarningsChip({
 }
 
 export default function WebsiteManageScreen() {
+  const colors = useThemeColors();
   const canManageWebsite = useCan('can_manage_website');
   const brand = useGymBrand();
   const settings = useGymWebsiteSettings(brand.gymId);
@@ -471,7 +473,7 @@ export default function WebsiteManageScreen() {
               A public site for {brand.gymName}, built from your own schedule and pricing.
             </Text>
           </View>
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 gap-2">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
             <Text className="text-gray-700 dark:text-gray-200 text-sm">
               The site builder isn't turned on for your gym yet — get in touch with Temple
               to add it.
@@ -589,7 +591,7 @@ export default function WebsiteManageScreen() {
                   {creatingId === t.id ? (
                     <ActivityIndicator />
                   ) : (
-                    <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                    <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
                   )}
                 </Pressable>
               );
@@ -842,7 +844,7 @@ export default function WebsiteManageScreen() {
             tone="primary"
             className="self-start"
             label={backfilling ? 'Adding…' : 'Add intro sections'}
-            icon="sparkles-outline"
+            icon="sparkles"
             disabled={backfilling}
             onPress={() => void backfillIntros()}
           />
@@ -891,7 +893,7 @@ export default function WebsiteManageScreen() {
           ) : null}
           <Link href="/management/website/domain" asChild>
             <Pressable hitSlop={6} className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
-              <Ionicons name="globe-outline" size={15} color="#6B7280" />
+              <Ionicons name="globe-outline" size={15} color={colors.iconSecondary} />
               <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">Domain</Text>
             </Pressable>
           </Link>
@@ -923,7 +925,7 @@ export default function WebsiteManageScreen() {
             accessibilityRole="button"
             accessibilityLabel="Manage pages"
             className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/60">
-            <Ionicons name="add" size={12} color="#6B7280" />
+            <Ionicons name="add" size={12} color={colors.iconSecondary} />
             <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Pages</Text>
           </Pressable>
           <View className="flex-1" />

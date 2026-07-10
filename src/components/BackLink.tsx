@@ -3,6 +3,7 @@ import { type Href, router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
 import { haptic } from '@/lib/haptic';
+import { useThemeColors } from '@/lib/theme';
 
 // Standard back affordance for deep-link sub-pages.
 //
@@ -48,6 +49,7 @@ export function BackLink({
   inline?: boolean;
   preferBack?: boolean;
 }) {
+  const colors = useThemeColors();
   function onPress() {
     haptic.selection();
     if (preferBack) {
@@ -77,7 +79,7 @@ export function BackLink({
         accessibilityRole="button"
         accessibilityLabel={a11yLabel}
         className="active:opacity-70">
-        <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
+        <Ionicons name="chevron-back" size={22} color={colors.iconTertiary} />
       </Pressable>
     );
   }
@@ -89,7 +91,7 @@ export function BackLink({
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
       className="flex-row items-center gap-1 self-start py-1 active:opacity-70">
-      <Ionicons name="chevron-back" size={18} color="#6B7280" />
+      <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
       <Text className="text-gray-500 dark:text-gray-400">{label}</Text>
     </Pressable>
   );

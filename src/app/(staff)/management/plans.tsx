@@ -18,6 +18,7 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { useThemeColors } from '@/lib/theme';
 
 type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 
@@ -99,6 +100,7 @@ function rowDiffers(r: EditablePlan): boolean {
 }
 
 export function PlansPanel() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditablePlan[]>([]);
@@ -487,7 +489,7 @@ export function PlansPanel() {
             return (
               <View
                 key={r.localId}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
                 <Input
                   label="Name"
                   value={r.name}
@@ -688,7 +690,7 @@ export function PlansPanel() {
               <Ionicons
                 name={showArchived ? 'chevron-down' : 'chevron-forward'}
                 size={16}
-                color="#6B7280"
+                color={colors.iconSecondary}
               />
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Archived ({archivedRows.length})

@@ -77,7 +77,7 @@ export default function FamilyScreen() {
             </Text>
           </View>
         ) : (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               Add a child
             </Text>
@@ -186,7 +186,7 @@ function DependentCard({
   const ready = screening.data && !needsWaiver && !needsParq;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center justify-between">
         <Text className="text-gray-900 dark:text-gray-50 font-semibold">
           {dependent.fullName ?? 'Child'}

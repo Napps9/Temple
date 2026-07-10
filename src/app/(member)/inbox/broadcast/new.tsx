@@ -124,7 +124,7 @@ export default function NewClassBroadcast() {
         {sessions.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
         ) : (sessions.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               No upcoming sessions in the next week.
             </Text>
@@ -160,7 +160,7 @@ export default function NewClassBroadcast() {
                   <Ionicons
                     name={selectedNow ? 'checkmark-circle' : 'ellipse-outline'}
                     size={18}
-                    color={selectedNow ? colors.primary : '#9CA3AF'}
+                    color={selectedNow ? colors.primary : colors.iconTertiary}
                   />
                 </Pressable>
               );

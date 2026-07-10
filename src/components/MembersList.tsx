@@ -263,7 +263,7 @@ export function MembersList() {
             return (
               <View
                 key={m.profile_id}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
                 <Link
                   href={{
                     pathname: '/management/members/[profile]',

@@ -9,6 +9,7 @@ import { Input } from './Input';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { useClassTypes } from '@/lib/useClassCatalog';
 
 export type ClassType = { id: string; name: string; color: string };
@@ -20,6 +21,7 @@ export function ClassTypePicker({
   value: string | null;
   onChange: (id: string) => void;
 }) {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
@@ -102,7 +104,7 @@ export function ClassTypePicker({
           <Pressable
             onPress={() => setCreating(!creating)}
             className="flex-row items-center gap-1 px-3 py-2 rounded-full border border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
-            <Ionicons name="add" size={14} color="#6B7280" />
+            <Ionicons name="add" size={14} color={colors.iconSecondary} />
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               New type
             </Text>

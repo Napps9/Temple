@@ -22,6 +22,7 @@ import { BRAND_THEMES, BRAND_THEME_LIST, composeThemeWithBrand, isThemeId } from
 import { errorMessage } from '@/lib/errors';
 import { DEFAULT_STOCK_QUERIES, SITE_TEMPLATE_LIST, type SiteTemplate } from '@/lib/site-templates';
 import { useStockPhotoSave, useStockPhotoSearch, type StockPhoto } from '@/lib/stock-photos';
+import { useThemeColors } from '@/lib/theme';
 import {
   SITE_BLOCK_ICONS,
   SITE_BLOCK_LABELS,
@@ -152,6 +153,7 @@ function IconBtn({
   disabled?: boolean;
   danger?: boolean;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -160,7 +162,7 @@ function IconBtn({
       className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:opacity-60 ${
         disabled ? 'opacity-30' : ''
       }`}>
-      <Ionicons name={icon} size={15} color={danger ? '#EF4444' : '#6B7280'} />
+      <Ionicons name={icon} size={15} color={danger ? '#EF4444' : colors.iconSecondary} />
     </Pressable>
   );
 }
@@ -229,6 +231,7 @@ function StockPhotoPickerModal({
   defaultQuery: string;
   onPick: (photo: { url: string; alt: string }) => void;
 }) {
+  const colors = useThemeColors();
   const [query, setQuery] = useState(defaultQuery);
   const [photos, setPhotos] = useState<StockPhoto[]>([]);
   const [page, setPage] = useState(1);
@@ -305,7 +308,7 @@ function StockPhotoPickerModal({
               onPress={() => runSearch(query, 1)}
               disabled={search.isPending}
               className="w-10 h-10 rounded-lg items-center justify-center bg-primary/10 border border-primary/30 active:opacity-70">
-              <Ionicons name="search" size={16} color="#2563EB" />
+              <Ionicons name="search" size={16} color={colors.primary} />
             </Pressable>
           </View>
           {search.error ? (
@@ -401,6 +404,7 @@ function ImagePickerField({
   gymId: string;
   defaultStockQuery: string;
 }) {
+  const colors = useThemeColors();
   const { pickAndUpload, uploading, error } = useImageUpload(gymId);
   const [stockOpen, setStockOpen] = useState(false);
   return (
@@ -417,7 +421,7 @@ function ImagePickerField({
           }}
           disabled={uploading}
           className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
-          <Ionicons name="cloud-upload-outline" size={16} color="#2563EB" />
+          <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">
             {uploading ? 'Uploading…' : value ? 'Replace image' : 'Upload image'}
           </Text>
@@ -425,7 +429,7 @@ function ImagePickerField({
         <Pressable
           onPress={() => setStockOpen(true)}
           className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
-          <Ionicons name="images-outline" size={16} color="#2563EB" />
+          <Ionicons name="images-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">Stock photos</Text>
         </Pressable>
       </View>
@@ -588,6 +592,7 @@ function PricingInspector({
   onPatch: (patch: Partial<PricingBlock>) => void;
   gymId: string;
 }) {
+  const colors = useThemeColors();
   const plans = usePlans(gymId);
   const hidden = new Set(block.hiddenPlanIds);
   return (
@@ -617,7 +622,7 @@ function PricingInspector({
                 <Ionicons
                   name={isHidden ? 'square-outline' : 'checkbox'}
                   size={18}
-                  color={isHidden ? '#9CA3AF' : '#2563EB'}
+                  color={isHidden ? colors.iconTertiary : colors.primary}
                 />
                 <Text className="text-gray-700 dark:text-gray-200 text-sm">{p.name}</Text>
               </Pressable>
@@ -659,6 +664,7 @@ function TeamInspector({
   onPatch: (patch: Partial<TeamBlock>) => void;
   gymId: string;
 }) {
+  const colors = useThemeColors();
   const roster = useTeamRoster(gymId);
   const hidden = new Set(block.hiddenMemberIds);
   return (
@@ -688,7 +694,7 @@ function TeamInspector({
                 <Ionicons
                   name={isHidden ? 'square-outline' : 'checkbox'}
                   size={18}
-                  color={isHidden ? '#9CA3AF' : '#2563EB'}
+                  color={isHidden ? colors.iconTertiary : colors.primary}
                 />
                 <Text className="text-gray-700 dark:text-gray-200 text-sm">
                   {m.full_name ?? 'Team member'}
@@ -709,6 +715,7 @@ function TestimonialsInspector({
   block: TestimonialsBlock;
   onPatch: (patch: Partial<TestimonialsBlock>) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-3">
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
@@ -760,7 +767,7 @@ function TestimonialsInspector({
           })
         }
         className="flex-row items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg py-2.5 active:opacity-70">
-        <Ionicons name="add" size={16} color="#6B7280" />
+        <Ionicons name="add" size={16} color={colors.iconSecondary} />
         <Text className="text-gray-700 dark:text-gray-200 font-medium text-sm">Add a quote</Text>
       </Pressable>
     </View>
@@ -778,6 +785,7 @@ function GalleryInspector({
   gymId: string;
   defaultStockQuery: string;
 }) {
+  const colors = useThemeColors();
   const { pickAndUpload, uploading, error } = useImageUpload(gymId);
   const [stockOpen, setStockOpen] = useState(false);
   return (
@@ -823,13 +831,13 @@ function GalleryInspector({
           }}
           disabled={uploading}
           className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
-          <Ionicons name="cloud-upload-outline" size={16} color="#2563EB" />
+          <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">{uploading ? 'Uploading…' : 'Add a photo'}</Text>
         </Pressable>
         <Pressable
           onPress={() => setStockOpen(true)}
           className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
-          <Ionicons name="images-outline" size={16} color="#2563EB" />
+          <Ionicons name="images-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">Stock photos</Text>
         </Pressable>
       </View>
@@ -999,17 +1007,18 @@ function CollapsibleSection({
   icon: IconName;
   children: ReactNode;
 }) {
+  const colors = useThemeColors();
   const [open, setOpen] = useState(false);
   return (
     <View>
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-2.5 active:opacity-70">
-        <Ionicons name={icon} size={16} color="#6B7280" />
+        <Ionicons name={icon} size={16} color={colors.iconSecondary} />
         <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
           {title}
         </Text>
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color="#9CA3AF" />
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={colors.iconTertiary} />
       </Pressable>
       {open ? <View className="gap-3 pt-3">{children}</View> : null}
     </View>
@@ -1028,6 +1037,7 @@ function AddBlockModal({
   onClose: () => void;
   onPick: (type: SiteBlockType) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
@@ -1041,7 +1051,7 @@ function AddBlockModal({
                 key={type}
                 onPress={() => onPick(type)}
                 className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
-                <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color="#6B7280" />
+                <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color={colors.iconSecondary} />
                 <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
                   {SITE_BLOCK_LABELS[type]}
                 </Text>
@@ -1148,6 +1158,7 @@ export function SiteEditor({
   selectedId: string | null;
   onSelectBlock: (id: string | null) => void;
 }) {
+  const colors = useThemeColors();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const blockPendingDelete = document.blocks.find((b) => b.id === confirmDeleteId) ?? null;
   // Same themeId normalization website.tsx applies before persisting.
@@ -1198,7 +1209,7 @@ export function SiteEditor({
       key={type}
       onPress={() => addBlock(type)}
       className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
-      <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={15} color="#6B7280" />
+      <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={15} color={colors.iconSecondary} />
       <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
         {SITE_BLOCK_LABELS[type]}
       </Text>
@@ -1247,7 +1258,7 @@ export function SiteEditor({
         <Pressable
           onPress={() => setAddBlockModalOpen(true)}
           className="flex-row items-center justify-center gap-2 bg-white dark:bg-gray-900 rounded-xl p-3 active:opacity-70">
-          <Ionicons name="add-circle-outline" size={16} color="#6B7280" />
+          <Ionicons name="add" size={16} color={colors.iconSecondary} />
           <Text className="text-gray-700 dark:text-gray-200 font-medium text-sm">Add block</Text>
         </Pressable>
       ) : (
@@ -1265,7 +1276,7 @@ export function SiteEditor({
         </Text>
         {document.blocks.length === 0 ? (
           <View className="py-12 items-center px-6">
-            <Ionicons name="globe-outline" size={32} color="#CBD5E1" />
+            <Ionicons name="globe-outline" size={32} color={colors.iconTertiary} />
             <Text className="text-gray-400 dark:text-gray-500 text-sm mt-2 text-center">
               Your page is empty. Add blocks from the left to start building.
             </Text>
@@ -1285,7 +1296,7 @@ export function SiteEditor({
                   <Ionicons
                     name={SITE_BLOCK_ICONS[block.type] as IconName}
                     size={16}
-                    color="#6B7280"
+                    color={colors.iconSecondary}
                   />
                   <Text className="flex-1 text-gray-800 dark:text-gray-100 text-sm font-medium">
                     {SITE_BLOCK_LABELS[block.type]}
@@ -1293,7 +1304,7 @@ export function SiteEditor({
                   <Ionicons
                     name={isSelected ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#9CA3AF"
+                    color={colors.iconTertiary}
                   />
                 </Pressable>
                 {isSelected ? (

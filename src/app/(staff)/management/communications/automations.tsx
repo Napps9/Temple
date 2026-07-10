@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
@@ -6,6 +5,7 @@ import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
@@ -145,18 +145,17 @@ export default function AutomationsScreen() {
         {automations.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
         ) : (automations.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2">
-            <Ionicons name="flash-outline" size={32} color="#9CA3AF" />
-            <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-              No automations yet. Tap “New” to set your first one up.
-            </Text>
-          </View>
+          <EmptyState
+            icon="flash-outline"
+            title="No automations yet"
+            description="Tap “New” to set your first one up."
+          />
         ) : (
           <View className="gap-2">
             {automations.data!.map((a) => (
               <View
                 key={a.id}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card">
                 <Link href={`/management/communications/automations/${a.id}`} asChild>
                   <Pressable className="flex-1 active:opacity-70">
                     <Text className="text-gray-900 dark:text-gray-50 font-medium">

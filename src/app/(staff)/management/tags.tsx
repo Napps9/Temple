@@ -144,7 +144,7 @@ function MemberTags({ profileId }: { profileId: string }) {
           )}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Add manual tag
           </Text>
@@ -244,7 +244,7 @@ function RulesEditor() {
                   setEditing(r);
                   setCreating(false);
                 }}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card">
                 <View
                   style={{ backgroundColor: r.color }}
                   className="w-3 h-3 rounded-full"

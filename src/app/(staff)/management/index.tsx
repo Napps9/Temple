@@ -48,6 +48,7 @@ import { useGymCurrency } from '@/lib/useGymCurrency';
 import type { GymRole } from '@/types/database';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { useThemeColors } from '@/lib/theme';
 import { BrandingPanel } from './branding';
 import { ClassTypesPanel } from './class-types';
 import { CommunicationsHome } from './communications';
@@ -135,6 +136,7 @@ function ManageNav({
   onSelect: (c: Category) => void;
   vertical: boolean;
 }) {
+  const colors = useThemeColors();
   const pills = categories.map((c) => {
     const selected = c === active;
     return (
@@ -155,7 +157,7 @@ function ManageNav({
         <Ionicons
           name={CATEGORY_ICONS[c]}
           size={17}
-          color={selected ? '#FFFFFF' : '#6B7280'}
+          color={selected ? '#FFFFFF' : colors.iconSecondary}
         />
         <Text
           className={`text-sm font-medium ${
@@ -519,7 +521,7 @@ function SettingsTab() {
         <SettingsSection
           title="Leaderboards"
           description="Turn class and strength comparisons on or off."
-          icon="trophy-outline">
+          icon="trophy">
           <LeaderboardsPanel />
         </SettingsSection>
       ) : null}
@@ -558,13 +560,14 @@ function SettingsSection({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const colors = useThemeColors();
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
         <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-          <Ionicons name={icon} size={18} color="#6B7280" />
+          <Ionicons name={icon} size={18} color={colors.iconSecondary} />
         </View>
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -577,7 +580,7 @@ function SettingsSection({
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color="#9CA3AF"
+          color={colors.iconTertiary}
         />
       </Pressable>
       {open ? (
@@ -837,7 +840,7 @@ function TeamMemberRow({
   });
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl">
+    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
       <View className="flex-row items-center gap-3 p-4">
         <Avatar
           name={name}
@@ -884,9 +887,10 @@ function CountPill({
   value: number | null;
   href: LinkHref;
 }) {
+  const colors = useThemeColors();
   const body = (
     <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-800">
-      <Ionicons name={icon} size={13} color="#6B7280" />
+      <Ionicons name={icon} size={13} color={colors.iconSecondary} />
       <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold min-w-[10px] text-center">
         {value === null ? '—' : value}
       </Text>
@@ -909,6 +913,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
   const session = useSession();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const colors = useThemeColors();
 
   const classTypesQuery = useQuery({
     queryKey: ['class-types-roster', membership?.gymId],
@@ -996,7 +1001,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center justify-between active:opacity-70 py-1">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="ribbon-outline" size={16} color="#6B7280" />
+          <Ionicons name="ribbon-outline" size={16} color={colors.iconSecondary} />
           <Text className="text-gray-700 dark:text-gray-200 text-sm">
             Class type qualifications
           </Text>
@@ -1004,7 +1009,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#9CA3AF"
+          color={colors.iconTertiary}
         />
       </Pressable>
       {open ? (
@@ -1058,6 +1063,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
 
 function CoachEarningsSummary({ profileId }: { profileId: string }) {
   const { data: membership } = useGymMembership();
+  const colors = useThemeColors();
   const range = useMemo(() => presetRange('month', new Date()), []);
   const earnings = useQuery({
     queryKey: ['team-earnings', membership?.gymId, profileId, range.start, range.end],
@@ -1079,7 +1085,7 @@ function CoachEarningsSummary({ profileId }: { profileId: string }) {
     <Link href="/management/coach-earnings" asChild>
       <Pressable className="flex-row items-center justify-between active:opacity-70">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="cash-outline" size={16} color="#6B7280" />
+          <Ionicons name="cash-outline" size={16} color={colors.iconSecondary} />
           <Text className="text-gray-700 dark:text-gray-200 text-sm">
             Earnings this month
           </Text>
@@ -1568,7 +1574,7 @@ function InsightsTab() {
       {canSeeInsights &&
       ((leadBySource.data?.sources.length ?? 0) > 0 ||
         (leadBySource.data?.untagged ?? 0) > 0) ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             Conversions by source
           </Text>
@@ -1665,7 +1671,7 @@ function ConversionTile({
   const actual = targetUnit === 'rate' ? rate : conversions;
   const ratio = hasTarget ? Math.min(1, actual / target) : 0;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 flex-1 min-w-[150px]">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 flex-1 min-w-[150px] shadow-card">
       <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
         Conversion
       </Text>
@@ -1716,7 +1722,7 @@ function RetentionTile({
   const actual = targetUnit === 'rate' ? rate : retained;
   const ratio = hasTarget ? Math.min(1, actual / target) : 0;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 flex-1 min-w-[150px]">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 flex-1 min-w-[150px] shadow-card">
       <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
         Retention
       </Text>
@@ -1900,7 +1906,7 @@ function TargetsSection() {
         {TARGET_METRICS.map((m) => (
           <View
             key={m.value}
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
             <View className="flex-row items-start justify-between gap-2">
               <View className="gap-1 flex-1">
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold">

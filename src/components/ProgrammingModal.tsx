@@ -85,6 +85,7 @@ export function ProgrammingModal({
   date: Date | null;
   onClose: () => void;
 }) {
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
@@ -285,7 +286,7 @@ export function ProgrammingModal({
                     <Pressable
                       onPress={addDraft}
                       className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-                      <Ionicons name="add" size={16} color="#6B7280" />
+                      <Ionicons name="add" size={16} color={colors.iconSecondary} />
                       <Text className="text-gray-500 dark:text-gray-400">
                         Add section
                       </Text>
@@ -359,7 +360,7 @@ function DraftCard({
         hitSlop={4}
         className="self-end w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-700"
           accessibilityLabel="Close">
-        <Ionicons name="close" size={18} color="#9CA3AF" />
+        <Ionicons name="close" size={18} color={colors.iconTertiary} />
       </Pressable>
 
       <PickerButton
@@ -413,7 +414,7 @@ function DraftCard({
         <Ionicons
           name={draft.leaderboard_enabled ? 'checkbox' : 'square-outline'}
           size={20}
-          color={draft.leaderboard_enabled ? colors.primary : '#9CA3AF'}
+          color={draft.leaderboard_enabled ? colors.primary : colors.iconTertiary}
         />
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
@@ -439,6 +440,7 @@ function PickerButton({
   placeholder: string;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-1.5">
       <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
@@ -455,7 +457,7 @@ function PickerButton({
           }>
           {value ?? placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-down" size={16} color={colors.iconTertiary} />
       </Pressable>
     </View>
   );

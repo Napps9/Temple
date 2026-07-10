@@ -16,6 +16,7 @@ import {
   type SchemeOption,
 } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { defaultUnit, parseDuration } from '@/lib/track';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
@@ -69,6 +70,7 @@ export function RecordMovementResultModal({
   solo?: boolean;
   discipline?: Discipline;
 }) {
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
@@ -263,7 +265,7 @@ export function RecordMovementResultModal({
               <Pressable
                 onPress={addDraft}
                 className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-                <Ionicons name="add" size={16} color="#6B7280" />
+                <Ionicons name="add" size={16} color={colors.iconSecondary} />
                 <Text className="text-gray-500 dark:text-gray-400">
                   Add result
                 </Text>
@@ -336,6 +338,7 @@ function DraftCard({
   onUpdate: (next: Partial<DraftResult>) => void;
   onRemove: () => void;
 }) {
+  const colors = useThemeColors();
   const opt = draft.option;
   return (
     <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3">
@@ -359,7 +362,7 @@ function DraftCard({
               </Text>
             )}
           </View>
-          <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+          <Ionicons name="chevron-down" size={16} color={colors.iconTertiary} />
         </Pressable>
         {total > 1 ? (
           <Pressable
@@ -367,7 +370,7 @@ function DraftCard({
             hitSlop={4}
             className="w-9 h-9 rounded-lg items-center justify-center active:bg-gray-200 dark:active:bg-gray-700"
           accessibilityLabel="Close">
-            <Ionicons name="close" size={18} color="#9CA3AF" />
+            <Ionicons name="close" size={18} color={colors.iconTertiary} />
           </Pressable>
         ) : null}
       </View>
@@ -408,6 +411,7 @@ function SchemePickerModal({
   onPick: (opt: SchemeOption) => void;
   onClose: () => void;
 }) {
+  const colors = useThemeColors();
   // Group the flat scheme list back by category for navigation.
   const groups = useMemo(() => {
     const byGroup = new Map<
@@ -485,7 +489,7 @@ function SchemePickerModal({
                   <Ionicons
                     name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
                     size={16}
-                    color="#9CA3AF"
+                    color={colors.iconTertiary}
                   />
                 </Pressable>
                 {expandedGroup === g.key ? (
@@ -511,7 +515,7 @@ function SchemePickerModal({
                                 : 'chevron-down'
                             }
                             size={14}
-                            color="#9CA3AF"
+                            color={colors.iconTertiary}
                           />
                         </Pressable>
                         {expandedMovement === m.key ? (

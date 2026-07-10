@@ -80,7 +80,7 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2">
         <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
           Custom domain

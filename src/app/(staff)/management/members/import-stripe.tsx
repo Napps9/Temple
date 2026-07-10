@@ -23,6 +23,7 @@ import {
   unixToDateIso,
 } from '@/lib/import/stripe';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import type { Json } from '@/types/database';
 
 type PlanReview = {
@@ -43,6 +44,7 @@ function fmtRenew(unix: number | null): string {
 }
 
 export default function ImportStripeScreen() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const isOwner = membership?.role === 'owner';
@@ -259,7 +261,7 @@ export default function ImportStripeScreen() {
             </Button>
           </View>
         ) : members.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-2">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-2 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               No active subscriptions found
             </Text>
@@ -284,14 +286,14 @@ export default function ImportStripeScreen() {
               {plans.map((p) => (
                 <View
                   key={p.price_id}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
                   <Pressable
                     onPress={() => updatePlan(p.price_id, { include: !p.include })}
                     className="flex-row items-center gap-2">
                     <Ionicons
                       name={p.include ? 'checkbox' : 'square-outline'}
                       size={20}
-                      color={p.include ? '#2563EB' : '#9CA3AF'}
+                      color={p.include ? colors.primary : colors.iconTertiary}
                     />
                     <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
                       {p.label}
@@ -386,7 +388,7 @@ export default function ImportStripeScreen() {
                       <Ionicons
                         name={on ? 'checkbox' : 'square-outline'}
                         size={20}
-                        color={on ? '#2563EB' : '#9CA3AF'}
+                        color={on ? colors.primary : colors.iconTertiary}
                       />
                       <View className="flex-1">
                         <Text

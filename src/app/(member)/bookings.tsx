@@ -292,7 +292,7 @@ function BookingCard({
   const att = attendanceLabel(row);
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: typeColor }}
@@ -349,7 +349,7 @@ function WaitlistCard({
   return (
     <Pressable
       onPress={onOpen}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70">
+      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70 shadow-card">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: typeColor }}

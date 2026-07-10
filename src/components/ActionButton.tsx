@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react';
 import { Pressable, Text } from 'react-native';
 
 import { haptic } from '@/lib/haptic';
+import { useThemeColors } from '@/lib/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -58,12 +59,13 @@ export function ActionButton({
   disabled?: boolean;
   disabledLabel?: string;
 }) {
+  const colors = useThemeColors();
   if (disabled) {
     return (
       <Pressable
         disabled
         className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-        <Ionicons name="lock-closed-outline" size={14} color="#9CA3AF" />
+        <Ionicons name="lock-closed-outline" size={14} color={colors.iconTertiary} />
         <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold">
           {disabledLabel ?? label}
         </Text>

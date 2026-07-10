@@ -39,7 +39,7 @@ import {
   type ReviewedPlan,
 } from '@/lib/import/infer';
 import { supabase } from '@/lib/supabase';
-import { useThemePreference } from '@/lib/theme';
+import { useThemePreference, useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { webSelectStyle } from '@/lib/webSelect';
@@ -85,6 +85,7 @@ function sameMapping(
 }
 
 export default function ImportMembersScreen() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
   const brand = useGymBrand();
@@ -406,7 +407,7 @@ export default function ImportMembersScreen() {
         </View>
 
         {phase === 'upload' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             {Platform.OS === 'web' ? (
               <>
                 {/* A real <div> rather than <Pressable> so the standard
@@ -443,7 +444,7 @@ export default function ImportMembersScreen() {
                       : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Ionicons name="cloud-upload-outline" size={24} color="#6B7280" />
+                  <Ionicons name="cloud-upload-outline" size={24} color={colors.iconSecondary} />
                   <Text className="text-gray-700 dark:text-gray-200 font-medium">
                     {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
@@ -503,7 +504,7 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'map' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <View className="gap-1">
               <View className="flex-row items-center gap-2">
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
@@ -519,7 +520,7 @@ export default function ImportMembersScreen() {
                 ) : mappingSource === 'ai' ? (
                   <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
                     <Ionicons
-                      name="sparkles-outline"
+                      name="sparkles"
                       size={12}
                       color={brand.primaryColor}
                     />
@@ -545,7 +546,7 @@ export default function ImportMembersScreen() {
                     numberOfLines={1}>
                     {h || `(column ${i + 1})`}
                   </Text>
-                  <Ionicons name="arrow-forward" size={14} color="#9CA3AF" />
+                  <Ionicons name="arrow-forward" size={14} color={colors.iconTertiary} />
                   <FieldPicker
                     value={mapping[i] ?? 'ignore'}
                     onChange={(v) =>
@@ -596,7 +597,7 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'preview' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               Preview
             </Text>
@@ -682,13 +683,14 @@ function ReviewPanel({
   onContinue: () => void;
   error: string | null;
 }) {
+  const colors = useThemeColors();
   const planEntries = inference?.plans ?? [];
   const fallback = inference?.source === 'fallback';
   return (
     <View className="gap-4">
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="sparkles-outline" size={18} color="#6B7280" />
+          <Ionicons name="sparkles" size={18} color={colors.iconSecondary} />
           <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
             What we found in your CSV
           </Text>
@@ -719,13 +721,13 @@ function ReviewPanel({
           Plans found ({planEntries.length})
         </Text>
         {loading && planEntries.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               Reading the rows and inferring plans…
             </Text>
           </View>
         ) : planEntries.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
               No plan_name column was mapped. Members will be staged without a
               linked plan — staff can attach one later.
@@ -758,7 +760,7 @@ function ReviewPanel({
         <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
           Tags found
         </Text>
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
           {(inference?.tags.keep.length ?? 0) +
             (inference?.tags.drop.length ?? 0) >
           0 ? (
@@ -805,7 +807,7 @@ function ReviewPanel({
       </View>
 
       {/* Cohort summary */}
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
         <Text className="text-gray-900 dark:text-gray-50 font-semibold">
           What you're bringing across
         </Text>
@@ -864,7 +866,7 @@ function PlanReviewCard({
   const bodyDimmed = final.drop || usingExisting;
   return (
     <View
-      className={`bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 ${
+      className={`bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card ${
         final.drop ? 'opacity-60' : ''
       }`}>
       <View className="flex-row items-center gap-2">
@@ -1250,7 +1252,7 @@ function HandoverPanel({
         </Text>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Hand the join link to your members
@@ -1287,7 +1289,7 @@ function HandoverPanel({
         )}
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Or, let Temple send the welcome
@@ -1319,7 +1321,7 @@ function HandoverPanel({
       </View>
 
       {stats.data ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Linking progress
           </Text>

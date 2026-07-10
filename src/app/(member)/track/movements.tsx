@@ -146,6 +146,7 @@ function GroupSection({
   isStarred: (key: string) => boolean;
   onToggleStar: (key: string) => void;
 }) {
+  const colors = useThemeColors();
   const anyStarred = starredCount > 0;
   return (
     <View
@@ -192,13 +193,13 @@ function GroupSection({
           <Ionicons
             name={anyStarred ? 'star' : 'star-outline'}
             size={20}
-            color={anyStarred ? '#F59E0B' : '#9CA3AF'}
+            color={anyStarred ? '#F59E0B' : colors.iconTertiary}
           />
         </Pressable>
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color="#9CA3AF"
+          color={colors.iconTertiary}
         />
       </Pressable>
       {open ? (
@@ -258,6 +259,7 @@ function MovementRow({
   starred: boolean;
   onToggle: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={() => router.push(`/track/movement/${movement.key}` as never)}
@@ -287,10 +289,10 @@ function MovementRow({
         <Ionicons
           name={starred ? 'star' : 'star-outline'}
           size={20}
-          color={starred ? '#F59E0B' : '#9CA3AF'}
+          color={starred ? '#F59E0B' : colors.iconTertiary}
         />
       </Pressable>
-      <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+      <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
     </Pressable>
   );
 }

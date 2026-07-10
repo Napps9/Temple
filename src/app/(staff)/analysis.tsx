@@ -109,6 +109,7 @@ type TagRow = {
 // twelve weeks.
 export default function AnalysisScreen() {
   const { data: membership } = useGymMembership();
+  const colors = useThemeColors();
   const canSeeHealth = useCan('can_see_health_flag') ?? false;
   const canSeeLogs = useCan('can_see_workout_logs') ?? false;
 
@@ -281,7 +282,7 @@ export default function AnalysisScreen() {
               You don't have permission to view health data.
             </Text>
           ) : (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
               <BodyMap highlights={highlights.map} figureWidth={figureWidth} />
               {open.length === 0 ? (
                 <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
@@ -314,7 +315,7 @@ export default function AnalysisScreen() {
               onPress={() =>
                 router.push(`/management/members/${r.profile_id}` as never)
               }
-              className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70">
+              className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
               <View
                 style={{ backgroundColor: painColour(r.pain_level) }}
                 className="w-7 h-7 rounded-full items-center justify-center">
@@ -340,7 +341,11 @@ export default function AnalysisScreen() {
                     : ''}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.iconTertiary}
+              />
             </Pressable>
           ))}
         </View>
@@ -361,7 +366,7 @@ export default function AnalysisScreen() {
           ) : results.isLoading || tags.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
           ) : trends.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Not enough logged results yet — trends need at least two
                 results per member on a movement.
@@ -582,7 +587,7 @@ function ProgrammingBalanceBlock({
           Loading programming…
         </Text>
       ) : !hasData ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
           <Text className="text-gray-500 dark:text-gray-400 text-sm">
             No programmed sections in this window. Programme a few
             classes and the matrices will populate.
@@ -628,7 +633,7 @@ function InfoButton({
       <Ionicons
         name={active ? 'information-circle' : 'information-circle-outline'}
         size={18}
-        color={active ? colors.primary : '#9CA3AF'}
+        color={active ? colors.primary : colors.iconTertiary}
       />
     </Pressable>
   );
@@ -791,7 +796,7 @@ function PatternEnergyMatrix({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Pattern × energy"
         what="Rows are movement patterns, columns are the three energy systems — phosphagen (short, heavy, near-maximal), glycolytic (hard 1–10 min efforts), oxidative (longer aerobic work). Each cell counts the sections that train that pattern through that system. The badges show your push-to-pull and front-to-back (anterior vs posterior) balance."
@@ -898,7 +903,7 @@ function EnergyMixCard({
   mix: ReturnType<typeof computeEnergyMix>;
 }) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Energy system mix"
         what="The share of your programmed sections that fall under each energy system across the window."
@@ -943,7 +948,7 @@ function PatternMixCard({
   const max = nonzero[0]?.count ?? 0;
   if (nonzero.length === 0) return null;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Movement pattern volume"
         what="How many sections touched each movement pattern, ranked highest to lowest."
@@ -995,7 +1000,7 @@ function RegionHeatCard({ regions }: { regions: Record<string, number> }) {
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Region heat"
         what="Lights up the body silhouette by how often the movements you programmed load each region — hotter means more volume."
@@ -1034,7 +1039,7 @@ function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 6);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
       <CardHeading
         title="Untagged sections"
         subtitle="These sections' bodies don't mention a movement we recognise. Add specific movement names so they get counted."
@@ -1081,9 +1086,10 @@ function TrendCard({
   nameOf: (profileId: string) => string;
 }) {
   const [openCard, setOpenCard] = useState(false);
+  const colors = useThemeColors();
   const scheme = findScheme(trend.movement_key, trend.track_key);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl">
+    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
       <Pressable
         onPress={() => setOpenCard((v) => !v)}
         className="p-3 md:p-4 gap-1 active:opacity-70">
@@ -1098,7 +1104,7 @@ function TrendCard({
           <Ionicons
             name={openCard ? 'chevron-up' : 'chevron-down'}
             size={16}
-            color="#9CA3AF"
+            color={colors.iconTertiary}
           />
         </View>
         <View className="flex-row items-center gap-3">

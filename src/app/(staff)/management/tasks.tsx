@@ -155,7 +155,7 @@ export default function TasksScreen() {
         </View>
 
         {canManage ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               New task
             </Text>
@@ -247,7 +247,7 @@ export default function TasksScreen() {
                     next: t.status === 'open' ? 'done' : 'open',
                   })
                 }
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1">
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
                 <View className="flex-row items-center gap-2">
                   <View
                     className={`w-5 h-5 rounded border ${

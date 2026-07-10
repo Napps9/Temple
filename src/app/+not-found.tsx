@@ -29,7 +29,7 @@ export default function NotFound() {
             </Pressable>
           </Link>
           <Link href="/sign-in" asChild>
-            <Pressable className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 items-center active:opacity-80">
+            <Pressable className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 items-center active:opacity-80">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
                 Sign in
               </Text>

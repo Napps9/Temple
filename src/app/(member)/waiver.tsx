@@ -127,7 +127,7 @@ export default function WaiverForm() {
 
         <Pressable
           onPress={() => openUrl(active.data!.file_url)}
-          className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70 border border-gray-200 dark:border-gray-800">
+          className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70 shadow-card">
           <View className="w-10 h-10 rounded-lg bg-primary/10 items-center justify-center">
             <Ionicons name="document-text-outline" size={20} color={colors.primary} />
           </View>
@@ -139,7 +139,7 @@ export default function WaiverForm() {
               Opens the full document — v{active.data.version}
             </Text>
           </View>
-          <Ionicons name="open-outline" size={18} color="#9CA3AF" />
+          <Ionicons name="open-outline" size={18} color={colors.iconTertiary} />
         </Pressable>
 
         <View className="gap-2">

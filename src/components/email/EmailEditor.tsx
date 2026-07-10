@@ -70,6 +70,7 @@ function IconBtn({
   disabled?: boolean;
   danger?: boolean;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -81,7 +82,7 @@ function IconBtn({
       <Ionicons
         name={icon}
         size={15}
-        color={danger ? '#EF4444' : '#6B7280'}
+        color={danger ? '#EF4444' : colors.iconSecondary}
       />
     </Pressable>
   );
@@ -112,7 +113,7 @@ function Segmented<T extends string | number>({
               <Ionicons
                 name={opt.icon}
                 size={14}
-                color={selected ? colors.primary : '#9CA3AF'}
+                color={selected ? colors.primary : colors.iconTertiary}
               />
             ) : null}
             {opt.label ? (
@@ -208,6 +209,7 @@ function BlockInspector({
   onUploadImage: () => void;
   uploading: boolean;
 }) {
+  const colors = useThemeColors();
   switch (block.type) {
     case 'heading': {
       const b = block as HeadingBlock;
@@ -302,7 +304,7 @@ function BlockInspector({
             onPress={onUploadImage}
             disabled={uploading}
             className="flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
-            <Ionicons name="cloud-upload-outline" size={16} color="#2563EB" />
+            <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />
             <Text className="text-primary font-semibold text-sm">
               {uploading ? 'Uploading…' : b.src ? 'Replace image' : 'Upload image'}
             </Text>
@@ -462,6 +464,7 @@ export function EmailEditor({
   brand: BrandSeed;
   gymId: string;
 }) {
+  const colors = useThemeColors();
   const session = useSession();
   const { width } = useWindowDimensions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -554,7 +557,7 @@ export function EmailEditor({
       key={type}
       onPress={() => addBlock(type)}
       className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
-      <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color="#6B7280" />
+      <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color={colors.iconSecondary} />
       <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
         {BLOCK_LABELS[type]}
       </Text>
@@ -579,7 +582,7 @@ export function EmailEditor({
       </Text>
       {document.blocks.length === 0 ? (
         <View className="py-10 items-center px-6">
-          <Ionicons name="mail-open-outline" size={30} color="#CBD5E1" />
+          <Ionicons name="mail-open-outline" size={30} color={colors.iconTertiary} />
           <Text className="text-gray-400 dark:text-gray-500 text-sm mt-2 text-center">
             Your email is empty. Add a block above to start building.
           </Text>
@@ -600,7 +603,7 @@ export function EmailEditor({
                   <Ionicons
                     name={BLOCK_ICONS[block.type] as IconName}
                     size={16}
-                    color="#6B7280"
+                    color={colors.iconSecondary}
                   />
                   <Text className="flex-1 text-gray-800 dark:text-gray-100 text-sm font-medium">
                     {BLOCK_LABELS[block.type]}
@@ -608,7 +611,7 @@ export function EmailEditor({
                   <Ionicons
                     name={isSelected ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#9CA3AF"
+                    color={colors.iconTertiary}
                   />
                 </Pressable>
                 {isSelected ? (

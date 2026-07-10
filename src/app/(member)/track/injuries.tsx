@@ -81,7 +81,7 @@ export default function InjuriesScreen() {
           </View>
         ) : null}
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <BodyMap
             selected={picking}
             highlights={highlights}
@@ -108,7 +108,7 @@ export default function InjuriesScreen() {
           {injuries.isLoading ? (
             <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
           ) : open.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Nothing logged. Long may it last.
               </Text>
@@ -237,7 +237,7 @@ function InjuryCard({ injury }: { injury: InjuryRow }) {
   const updatedDays = daysAgo(injury.updated_at);
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: painColour(injury.pain_level) }}
@@ -368,7 +368,7 @@ function CheckInForm({
               <Ionicons
                 name={icon as never}
                 size={13}
-                color={feeling === key ? colors.primary : '#9CA3AF'}
+                color={feeling === key ? colors.primary : colors.iconTertiary}
               />
               <Text
                 className={`text-xs font-semibold ${

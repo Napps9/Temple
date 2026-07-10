@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -77,7 +77,7 @@ export default function EmailPreferencesScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -101,12 +101,11 @@ export default function EmailPreferencesScreen() {
             Loading…
           </Text>
         ) : topics.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2">
-            <Ionicons name="mail-outline" size={28} color="#9CA3AF" />
-            <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-              This gym hasn’t set up email topics yet. Until they do, your only switch is the master one above.
-            </Text>
-          </View>
+          <EmptyState
+            icon="mail-outline"
+            title="No email topics yet"
+            description="Until this gym sets some up, your only switch is the master one above."
+          />
         ) : (
           <View className="gap-2">
             <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
@@ -122,7 +121,7 @@ export default function EmailPreferencesScreen() {
                     subscribed: !t.subscribed,
                   })
                 }
-                className={`bg-white dark:bg-gray-900 rounded-xl p-4 ${
+                className={`bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card ${
                   blanketUnsub ? 'opacity-50' : ''
                 }`}>
                 <View className="flex-row items-center gap-3">

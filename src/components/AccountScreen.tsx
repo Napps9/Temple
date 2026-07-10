@@ -25,9 +25,11 @@ import {
 import { errorMessage } from '@/lib/errors';
 import { useGymStoreConfig } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 export function AccountScreen() {
+  const colors = useThemeColors();
   const session = useSession();
   const role = useRole();
   const { data: membership } = useGymMembership();
@@ -180,7 +182,7 @@ export function AccountScreen() {
         <View className="gap-6 lg:flex-row lg:items-start">
         <View className="gap-6 lg:flex-1">
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <AvatarUploader
             currentUrl={profile?.avatar_url}
             fullName={displayName}
@@ -230,7 +232,7 @@ export function AccountScreen() {
         </View>
         <View className="gap-6 lg:flex-1">
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
             Your details
           </Text>
@@ -291,7 +293,7 @@ export function AccountScreen() {
           </Button>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Pressable
             onPress={() => setShowPasswordFields((v) => !v)}
             className="flex-row items-center gap-2 hover:opacity-80 active:opacity-70">
@@ -304,7 +306,7 @@ export function AccountScreen() {
             <Ionicons
               name={showPasswordFields ? 'chevron-up' : 'chevron-down'}
               size={16}
-              color="#9CA3AF"
+              color={colors.iconTertiary}
             />
           </Pressable>
           {showPasswordFields ? (
