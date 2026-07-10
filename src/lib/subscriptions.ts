@@ -230,6 +230,10 @@ export const CURRENT_SUB_STATUSES: ReadonlySet<PlanSubState> = new Set<PlanSubSt
   'paused',
   'cancelled_at_period_end',
   'refunded_retained',
+  // A failing renewal is still the member's current subscription — surface it
+  // (as "Payment failed") so they can fix the card. Booking stays gated
+  // separately (isPlanSubEligible excludes past_due).
+  'past_due',
 ]);
 
 export const SUB_STATUS_META: Record<
@@ -243,6 +247,7 @@ export const SUB_STATUS_META: Record<
   refunded_retained: { label: 'Active', tone: 'active' },
   lapsed: { label: 'Lapsed', tone: 'muted' },
   cancelled: { label: 'Cancelled', tone: 'muted' },
+  past_due: { label: 'Payment failed', tone: 'warn' },
 };
 
 export function planPriceLabel(plan: {

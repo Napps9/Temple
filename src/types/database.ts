@@ -12,7 +12,8 @@ export type PlanSubState =
   | 'cancelled_at_period_end'
   | 'lapsed'
   | 'cancelled'
-  | 'refunded_retained';
+  | 'refunded_retained'
+  | 'past_due';
 
 export type MembershipPlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
 

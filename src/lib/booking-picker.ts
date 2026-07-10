@@ -129,11 +129,17 @@ export type ActivityInput = {
   comp_grants: Pick<PickerCompGrant, 'starts_at' | 'ends_at' | 'revoked_at'>[];
 };
 
+// Mirrors is_active_relationship's status set in SQL
+// (0011 + 0118). 'past_due' is active-but-at-risk: a failing renewal is
+// still a live relationship, not a departure — it must not fall into the
+// is_expired cohort. Booking eligibility is stricter (see isPlanSubEligible)
+// and deliberately excludes past_due.
 const ACTIVE_SUB_STATUSES: ReadonlySet<PlanSubState> = new Set<PlanSubState>([
   'active',
   'pending',
   'paused',
   'cancelled_at_period_end',
+  'past_due',
 ]);
 
 export function isActiveRelationship(input: ActivityInput): boolean {

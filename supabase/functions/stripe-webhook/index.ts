@@ -15,6 +15,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 import { templeEmailHtml } from '../_shared/email-layout.ts';
+import { mapMembershipSubStatus } from '../_shared/subscription-status.ts';
 
 // Verify the Stripe-Signature header (t=…,v1=…) with HMAC-SHA256 over
 // `${t}.${rawBody}`, within a 5-minute tolerance.
@@ -739,11 +740,66 @@ Deno.serve(async (req: Request) => {
         currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
       });
     } else if (type === 'customer.subscription.updated') {
-      // Keep store subscriptions in sync — cancel-at-period-end toggles,
-      // renewal date, past_due. Membership subs carry no store metadata,
-      // so this is a no-op for them.
+      // Store subscriptions sync through their own path (cancel-at-period-end
+      // toggles, renewal date, past_due).
       if (obj.metadata?.kind === 'store_sub') {
         await ensureStoreSubscription(service, obj);
+      } else {
+        // Membership sub: reflect a failing renewal (past_due) or a recovery
+        // (back to active) onto plan_subscriptions so the retention cockpit
+        // can see a payment problem. Previously a no-op, which left a failing
+        // membership looking active until Stripe finally deleted it.
+        const subId: string = obj.id;
+        const { data: ps } = await service
+          .from('plan_subscriptions')
+          .select('id, status')
+          .eq('stripe_subscription_id', subId)
+          .maybeSingle();
+        if (ps) {
+          const next = mapMembershipSubStatus(obj.status, ps.status);
+          if (next && next !== ps.status) {
+            const { error: msErr } = await service
+              .from('plan_subscriptions')
+              .update({ status: next })
+              .eq('id', ps.id);
+            if (msErr) throw msErr;
+          }
+        }
+      }
+    } else if (type === 'invoice.payment_failed') {
+      // A membership renewal charge failed. Record it in the billing ledger
+      // (kind is free-text, no schema change) and mark the sub past_due, so
+      // both the failure event and the current state are observable. The
+      // subscription.updated event usually also lands, but recording here
+      // makes the failure visible even if that event is delayed or dropped.
+      const subId: string | null =
+        (obj.subscription as string | null | undefined) ??
+        (obj.parent?.subscription_details?.subscription as string | undefined) ??
+        (obj.subscription_details?.subscription as string | undefined) ??
+        null;
+      if (subId) {
+        const { data: ps } = await service
+          .from('plan_subscriptions')
+          .select('id, gym_id, profile_id, status')
+          .eq('stripe_subscription_id', subId)
+          .maybeSingle();
+        if (ps) {
+          const next = mapMembershipSubStatus('past_due', ps.status);
+          if (next && next !== ps.status) {
+            await service
+              .from('plan_subscriptions')
+              .update({ status: next })
+              .eq('id', ps.id);
+          }
+          await recordBilling({
+            gymId: ps.gym_id,
+            memberId: ps.profile_id,
+            planSubId: ps.id,
+            kind: 'invoice.payment_failed',
+            amountCents: (obj.amount_due as number) ?? 0,
+            currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
+          });
+        }
       }
     } else if (type === 'customer.subscription.deleted') {
       const subId: string = obj.id;
