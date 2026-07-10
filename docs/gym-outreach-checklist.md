@@ -63,6 +63,28 @@ simulate or degrade to "code created, not emailed." Runbook:
 > Note: items 1 and 3 share the same Resend account + verified domain, so
 > do the domain verification once and both benefit.
 
+### [ ] 4. Set up company email mailboxes on the domain
+
+Items 1 and 3 verify the domain for **sending**; you still need real
+**receiving** mailboxes for humans and for the role addresses the app and
+legal docs already point at. Set these up (Google Workspace / Fastmail /
+etc.) on the company domain:
+- [ ] Founder / staff mailboxes — e.g. `nick@jointemple.io`
+- [ ] `support@jointemple.io` — member/gym support (already the Resend
+      sending subdomain)
+- [ ] **`privacy@jointemple.io`** — monitored; the Privacy Policy, Terms
+      and DPA all direct data-subject and GDPR requests here
+- [ ] **`security@jointemple.io`** — monitored; breach-response inbox
+      (`docs/legal/breach-response.md`) and where the security monitor's
+      alerts should land
+- [ ] `noreply@` / `updates@` — transactional + campaign senders
+
+> Domain check: every existing doc and the app use **`jointemple.io`**
+> (`app.jointemple.io`, `support.jointemple.io`, `privacy@jointemple.io`).
+> You wrote `jointemple.com` — decide which domain the mailboxes live on
+> and make it consistent across the legal docs before publishing. If you
+> switch to `.com`, update `docs/legal/` and the checklist to match.
+
 ---
 
 ## Tier 2 — legal & compliance (before real member health data flows)
@@ -94,8 +116,9 @@ Left for you (policy/config, not code):
 - [ ] **Fill the legal-doc placeholders and drop the DRAFT banner** —
       registered office address, effective date, the monitored contact
       inbox.
-- [ ] **Create the contact inbox** the legal docs reference (privacy/DPO
-      + security), then put the real address in the docs.
+- [ ] **Create + monitor the contact inboxes** the legal docs reference
+      (`privacy@`, `security@`) — see Tier 1 item 4 — then confirm the
+      real addresses in the docs.
 - [ ] **Make breach alerts actually email** — set the `security-alert`
       function's shared secret + the monitor's GUCs in hosted; until then
       alerts record silently in `security_alerts`.
