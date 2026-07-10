@@ -147,14 +147,36 @@ export function useOpenStaffAlertsCount() {
   });
 }
 
+// At-risk member count for the retention-capable staff nav badge. Reads the
+// cheap summary RPC (never the full row-level scorer) so a passive nav render
+// stays light. Gated on can_see_retention like the cockpit itself.
+export function useAtRiskCount() {
+  const { data: membership } = useGymMembership();
+  const canSeeRetention = useCan('can_see_retention') ?? false;
+  return useQuery({
+    queryKey: ['retention-summary', membership?.gymId],
+    enabled: !!membership?.gymId && canSeeRetention,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc('compute_retention_summary', {
+        p_gym_id: membership!.gymId,
+      });
+      if (error) throw error;
+      const row = (data ?? [])[0] as { at_risk: number } | undefined;
+      return row?.at_risk ?? 0;
+    },
+  });
+}
+
 // Total count behind the nav badges: unread messages + injury
-// check-ins due + classes waiting to be logged + open staff alerts.
+// check-ins due + classes waiting to be logged + open staff alerts +
+// at-risk members.
 export function useNotificationCount(): number {
   const unread = useInboxUnread();
   const injuries = useMyInjuries();
   const logNudge = useLogNudge();
   const openAlerts = useOpenStaffAlertsCount();
   const leadNotifications = useUnreadLeadNotifications();
+  const atRisk = useAtRiskCount();
   const unreadTotal =
     (unread.data?.dm_unread ?? 0) +
     (unread.data?.announcement_unread ?? 0) +
@@ -164,6 +186,7 @@ export function useNotificationCount(): number {
     dueCheckIns(injuries.data).length +
     (logNudge.data?.length ?? 0) +
     (openAlerts.data ?? 0) +
-    (leadNotifications.data ?? 0)
+    (leadNotifications.data ?? 0) +
+    (atRisk.data ?? 0)
   );
 }

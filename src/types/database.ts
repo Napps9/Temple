@@ -3384,6 +3384,34 @@ export type Database = {
           charge_count: number;
         }[];
       };
+      compute_retention_risk: {
+        Args: { p_gym_id: string };
+        Returns: {
+          member_id: string;
+          full_name: string | null;
+          risk_band: 'critical' | 'at_risk' | 'watch';
+          risk_score: number;
+          reasons: string[];
+          days_until_expiry: number | null;
+          is_past_due: boolean;
+          last_attended_at: string | null;
+          cadence_ratio: number | null;
+          assigned_coach_id: string | null;
+        }[];
+      };
+      compute_retention_summary: {
+        Args: { p_gym_id: string };
+        Returns: {
+          at_risk: number;
+          expiring: number;
+          past_due: number;
+          winback: number;
+        }[];
+      };
+      assign_member_coach: {
+        Args: { p_gym_id: string; p_member_id: string; p_coach_id: string | null };
+        Returns: undefined;
+      };
       compute_coach_earnings: {
         Args: {
           p_gym_id: string;
