@@ -385,7 +385,8 @@ export default function AutomationEditor() {
   const [fromName, setFromName] = useState('');
   const [doc, setDoc] = useState<EmailDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [testSent, setTestSent] = useState(false);
+  // null = none sent; 'primary' = the main email; else the step id just tested.
+  const [testSent, setTestSent] = useState<string | null>(null);
   const [mode, setMode] = useState<'setup' | 'design'>('setup');
   const [showPreview, setShowPreview] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
@@ -624,15 +625,16 @@ export default function AutomationEditor() {
   });
 
   const sendTest = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (stepId: string | null) => {
       const { error: e } = await supabase.rpc('send_automation_test', {
         p_automation_id: id!,
+        p_step_id: stepId,
       });
       if (e) throw e;
     },
-    onSuccess: () => {
+    onSuccess: (_d, stepId) => {
       setError(null);
-      setTestSent(true);
+      setTestSent(stepId ?? 'primary');
     },
     onError: (e) => setError(errorMessage(e, 'Could not send a test')),
   });
@@ -984,18 +986,28 @@ export default function AutomationEditor() {
                 onHour={(h) => updateStep(s.id, { sendHour: h })}
                 onDays={(fn) => updateStep(s.id, { sendDays: fn(s.sendDays) })}
               />
-              <Pressable
-                onPress={() => {
-                  setEditingStep(s.id);
-                  setMode('design');
-                }}
-                className="flex-row items-center gap-2 active:opacity-70">
-                <Ionicons name="brush-outline" size={16} color={colors.iconSecondary} />
-                <Text className="text-primary text-sm font-medium">
-                  Design this email · {s.doc.blocks.length} block
-                  {s.doc.blocks.length === 1 ? '' : 's'}
-                </Text>
-              </Pressable>
+              <View className="flex-row items-center justify-between gap-3">
+                <Pressable
+                  onPress={() => {
+                    setEditingStep(s.id);
+                    setMode('design');
+                  }}
+                  className="flex-row items-center gap-2 active:opacity-70">
+                  <Ionicons name="brush-outline" size={16} color={colors.iconSecondary} />
+                  <Text className="text-primary text-sm font-medium">
+                    Design this email · {s.doc.blocks.length} block
+                    {s.doc.blocks.length === 1 ? '' : 's'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => sendTest.mutate(s.id)}
+                  disabled={sendTest.isPending}
+                  className="active:opacity-70">
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
+                    {testSent === s.id ? 'Test queued' : 'Send a test'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           ))}
 
@@ -1010,10 +1022,10 @@ export default function AutomationEditor() {
         {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
 
         <View className="gap-2">
-          <Button variant="secondary" onPress={() => sendTest.mutate()} loading={sendTest.isPending}>
+          <Button variant="secondary" onPress={() => sendTest.mutate(null)} loading={sendTest.isPending}>
             Send a test to me
           </Button>
-          {testSent ? (
+          {testSent === 'primary' ? (
             <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
               Test queued — it’ll arrive shortly (or simulate in dev).
             </Text>
