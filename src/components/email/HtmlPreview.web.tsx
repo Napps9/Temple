@@ -2,7 +2,13 @@
 // so its inline styles can't leak into (or read from) the app chrome.
 // react-native-web renders through react-dom, so a raw <iframe> is fine
 // here. The native sibling (HtmlPreview.tsx) shows a fallback.
-export function HtmlPreview({ html, height = 520 }: { html: string; height?: number }) {
+export function HtmlPreview({
+  html,
+  height = 520,
+}: {
+  html: string;
+  height?: number | string;
+}) {
   return (
     <iframe
       title="Email preview"

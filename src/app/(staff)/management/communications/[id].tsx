@@ -296,7 +296,6 @@ function EditorView({ campaign }: { campaign: Campaign }) {
               onChange={setDocument}
               brand={brandSeed}
               gymId={membership?.gymId ?? ''}
-              variant="builder"
             />
           )}
         </View>

@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useState, type ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import {
-  Image,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
-  type TextStyle,
 } from 'react-native';
 
 import { useSession } from '@/lib/auth';
@@ -16,6 +16,7 @@ import { useThemeColors } from '@/lib/theme';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
+import { renderEmailHtml } from '@/lib/email/render';
 import {
   BLOCK_ICONS,
   BLOCK_LABELS,
@@ -34,7 +35,6 @@ import {
   type EmailBlock,
   type EmailBlockType,
   type EmailDocument,
-  type EmailSettings,
   type HeadingBlock,
   type ImageBlock,
   type SpacerBlock,
@@ -42,6 +42,7 @@ import {
 } from '@/lib/email/blocks';
 
 import { ColorField } from './ColorField';
+import { HtmlPreview } from './HtmlPreview';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -53,103 +54,6 @@ const ADDABLE: EmailBlockType[] = [
   'divider',
   'spacer',
 ];
-
-function alignItemsFor(align: BlockAlign): 'flex-start' | 'center' | 'flex-end' {
-  return align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
-}
-
-// RN's TextStyle only accepts specific weight-string literals — round a
-// theme's arbitrary numeric weight to the nearest valid one rather than
-// asserting an unchecked cast.
-function toFontWeight(n: number): TextStyle['fontWeight'] {
-  const step = Math.min(900, Math.max(100, Math.round(n / 100) * 100));
-  return String(step) as TextStyle['fontWeight'];
-}
-
-// ---------------------------------------------------------------------------
-// WYSIWYG block rendering — a React Native echo of what the HTML renderer
-// emits, so the canvas previews the email as it's built.
-// ---------------------------------------------------------------------------
-
-function BlockView({ block, settings }: { block: EmailBlock; settings: EmailSettings }) {
-  switch (block.type) {
-    case 'heading':
-      return (
-        <Text
-          style={{
-            fontSize: block.level === 1 ? 28 : block.level === 2 ? 22 : 18,
-            fontWeight: toFontWeight(settings.headingWeight),
-            color: block.color,
-            textAlign: block.align,
-            textTransform: settings.headingTransform,
-            letterSpacing: settings.headingLetterSpacing,
-            fontFamily: settings.fontFamily,
-          }}>
-          {block.text || 'Heading'}
-        </Text>
-      );
-    case 'text':
-      return (
-        <Text
-          style={{
-            fontSize: 16,
-            lineHeight: 24,
-            color: block.color,
-            textAlign: block.align,
-            fontFamily: settings.fontFamily,
-          }}>
-          {block.text || 'Text'}
-        </Text>
-      );
-    case 'button':
-      return (
-        <View style={{ alignItems: alignItemsFor(block.align) }}>
-          <View
-            style={{
-              backgroundColor: block.backgroundColor,
-              borderRadius: block.radius,
-              paddingVertical: 12,
-              paddingHorizontal: 24,
-            }}>
-            <Text style={{ color: block.textColor, fontWeight: '600' }}>
-              {block.text || 'Button'}
-            </Text>
-          </View>
-        </View>
-      );
-    case 'image':
-      return (
-        <View style={{ alignItems: alignItemsFor(block.align) }}>
-          {block.src ? (
-            <View style={{ width: `${block.widthPct}%` }}>
-              <Image
-                source={{ uri: block.src }}
-                style={{ width: '100%', height: 180 }}
-                resizeMode="contain"
-              />
-            </View>
-          ) : (
-            <View className="w-full h-28 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-              <Ionicons name="image-outline" size={28} color="#9CA3AF" />
-              <Text className="text-gray-400 text-xs mt-1">No image yet</Text>
-            </View>
-          )}
-        </View>
-      );
-    case 'divider':
-      return <View style={{ borderTopWidth: 1, borderTopColor: block.color }} />;
-    case 'spacer':
-      return (
-        <View
-          style={{ height: block.height }}
-          className="items-center justify-center">
-          <Text className="text-gray-300 dark:text-gray-700 text-[10px]">
-            {block.height}px space
-          </Text>
-        </View>
-      );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Small shared controls
@@ -542,28 +446,43 @@ function SettingsInspector({
 // Editor
 // ---------------------------------------------------------------------------
 
+// Mirrors the website builder (SiteEditor): an accordion block list — each
+// block is a labelled row that expands an inline inspector — plus an
+// "Add a block" palette and an "Email style" card, in a rail. On wide web
+// the rail sits beside a live read-only preview; on narrow it stacks and the
+// caller offers a Preview toggle.
 export function EmailEditor({
   document,
   onChange,
   brand,
   gymId,
-  variant = 'stacked',
 }: {
   document: EmailDocument;
   onChange: (doc: EmailDocument) => void;
   brand: BrandSeed;
   gymId: string;
-  // 'stacked' = palette / canvas / inspector top-to-bottom (mobile + the
-  // old inline layout). 'builder' = a 3-pane desktop builder: block rail
-  // left, canvas centre, inspector right.
-  variant?: 'stacked' | 'builder';
 }) {
   const session = useSession();
+  const { width } = useWindowDimensions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const selected = document.blocks.find((b) => b.id === selectedId) ?? null;
+
+  // Debounced live-preview HTML — re-rendering the iframe on every keystroke
+  // would flicker and drop scroll position, so settle edits first (the
+  // website builder avoids canvas reloads mid-word for the same reason).
+  const [previewHtml, setPreviewHtml] = useState(() =>
+    renderEmailHtml(document, { unsubscribeUrl: '#' }),
+  );
+  useEffect(() => {
+    const t = setTimeout(
+      () => setPreviewHtml(renderEmailHtml(document, { unsubscribeUrl: '#' })),
+      250,
+    );
+    return () => clearTimeout(t);
+  }, [document]);
 
   function addBlock(type: EmailBlockType) {
     // Seed from the document's live settings, not the raw gym-brand
@@ -634,9 +553,7 @@ export function EmailEditor({
     <Pressable
       key={type}
       onPress={() => addBlock(type)}
-      className={`flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70 ${
-        variant === 'builder' ? 'w-full' : ''
-      }`}>
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
       <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color="#6B7280" />
       <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
         {BLOCK_LABELS[type]}
@@ -644,62 +561,70 @@ export function EmailEditor({
     </Pressable>
   ));
 
-  const palette = (
+  const paletteCard = (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
       <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
         Add a block
       </Text>
-      {variant === 'builder' ? (
-        <View className="gap-2">{blockButtons}</View>
-      ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2">
-          {blockButtons}
-        </ScrollView>
-      )}
+      <View className="flex-row flex-wrap gap-2">{blockButtons}</View>
     </View>
   );
 
-  const canvas = (
-    <View style={{ backgroundColor: document.settings.backgroundColor }} className="rounded-xl p-3">
-        <View
-          style={{
-            backgroundColor: document.settings.contentBackgroundColor,
-            maxWidth: document.settings.contentWidth,
-            width: '100%',
-            alignSelf: 'center',
-          }}
-          className="rounded-xl overflow-hidden">
-          {document.blocks.length === 0 ? (
-            <View className="py-12 items-center px-6">
-              <Ionicons name="mail-open-outline" size={32} color="#CBD5E1" />
-              <Text className="text-gray-400 dark:text-gray-500 text-sm mt-2 text-center">
-                Your email is empty. Add blocks from the toolbar above to start
-                building.
-              </Text>
-            </View>
-          ) : (
-            document.blocks.map((block, idx) => {
-              const isSelected = block.id === selectedId;
-              return (
-                <View key={block.id}>
-                  <Pressable
-                    onPress={() => setSelectedId(isSelected ? null : block.id)}
-                    style={{
-                      paddingVertical: block.type === 'spacer' ? 0 : 12,
-                      paddingHorizontal: 20,
-                    }}
-                    className={
-                      isSelected
-                        ? 'border-2 border-primary'
-                        : 'border-2 border-transparent'
-                    }>
-                    <BlockView block={block} settings={document.settings} />
-                  </Pressable>
-                  {isSelected ? (
-                    <View className="flex-row items-center justify-end gap-1.5 px-3 pb-2">
+  // The block list: labelled rows that expand an inline inspector, matching
+  // the website builder's accordion.
+  const listCard = (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
+      <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+        Content{document.blocks.length ? ` (${document.blocks.length})` : ''}
+      </Text>
+      {document.blocks.length === 0 ? (
+        <View className="py-10 items-center px-6">
+          <Ionicons name="mail-open-outline" size={30} color="#CBD5E1" />
+          <Text className="text-gray-400 dark:text-gray-500 text-sm mt-2 text-center">
+            Your email is empty. Add a block above to start building.
+          </Text>
+        </View>
+      ) : (
+        <View className="gap-1.5">
+          {document.blocks.map((block, idx) => {
+            const isSelected = block.id === selectedId;
+            return (
+              <View key={block.id}>
+                <Pressable
+                  onPress={() => setSelectedId(isSelected ? null : block.id)}
+                  className={`flex-row items-center gap-2 rounded-lg px-3 py-2.5 ${
+                    isSelected
+                      ? 'bg-primary/10 border border-primary'
+                      : 'bg-gray-50 dark:bg-gray-800 border border-transparent'
+                  }`}>
+                  <Ionicons
+                    name={BLOCK_ICONS[block.type] as IconName}
+                    size={16}
+                    color="#6B7280"
+                  />
+                  <Text className="flex-1 text-gray-800 dark:text-gray-100 text-sm font-medium">
+                    {BLOCK_LABELS[block.type]}
+                  </Text>
+                  <Ionicons
+                    name={isSelected ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color="#9CA3AF"
+                  />
+                </Pressable>
+                {isSelected ? (
+                  <View className="gap-3 p-3 border border-t-0 border-primary/30 rounded-b-lg">
+                    <BlockInspector
+                      block={block}
+                      onPatch={(patch) => onChange(updateBlock(document, block.id, patch))}
+                      onUploadImage={uploadImageForSelected}
+                      uploading={uploading}
+                    />
+                    {uploadError ? (
+                      <Text className="text-red-500 dark:text-red-400 text-xs">
+                        {uploadError}
+                      </Text>
+                    ) : null}
+                    <View className="flex-row items-center justify-end gap-1.5">
                       <IconBtn
                         icon="arrow-up"
                         onPress={() => onChange(moveBlock(document, block.id, 'up'))}
@@ -723,58 +648,54 @@ export function EmailEditor({
                         }}
                       />
                     </View>
-                  ) : null}
-                </View>
-              );
-            })
-          )}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
-      </View>
+      )}
+    </View>
   );
 
-  const inspector = (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            {selected ? `Edit ${BLOCK_LABELS[selected.type]}` : 'Email style'}
-          </Text>
-          {selected ? (
-            <Pressable onPress={() => setSelectedId(null)} hitSlop={6} className="active:opacity-70">
-              <Text className="text-primary text-sm font-medium">Done</Text>
-            </Pressable>
-          ) : null}
-        </View>
-        {selected ? (
-          <>
-            <BlockInspector
-              block={selected}
-              onPatch={(patch) => onChange(updateBlock(document, selected.id, patch))}
-              onUploadImage={uploadImageForSelected}
-              uploading={uploading}
-            />
-            {uploadError ? (
-              <Text className="text-red-500 dark:text-red-400 text-xs">{uploadError}</Text>
-            ) : null}
-          </>
-        ) : (
-          <SettingsInspector document={document} onChange={onChange} brand={brand} />
-        )}
-      </View>
+  const styleCard = (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
+      <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+        Email style
+      </Text>
+      <SettingsInspector document={document} onChange={onChange} brand={brand} />
+    </View>
   );
 
-  return variant === 'builder' ? (
-    <View className="flex-1 lg:flex-row gap-3">
-      <View className="lg:w-44 lg:shrink-0">{palette}</View>
-      <ScrollView className="flex-1" contentContainerClassName="pb-4">
-        {canvas}
-      </ScrollView>
-      <View className="lg:w-80 lg:shrink-0">{inspector}</View>
-    </View>
-  ) : (
-    <View className="gap-3">
-      {palette}
-      {canvas}
-      {inspector}
-    </View>
+  const rail = (
+    <>
+      {paletteCard}
+      {listCard}
+      {styleCard}
+    </>
+  );
+
+  // Wide web pairs the editor rail with a live read-only preview, like the
+  // website builder's split view; narrow stacks the rail (the caller offers
+  // a Preview toggle).
+  if (Platform.OS === 'web' && width >= 1280) {
+    return (
+      <View className="flex-1 flex-row">
+        <View className="w-[420px] shrink-0 border-r border-gray-100 dark:border-gray-800">
+          <ScrollView className="flex-1" contentContainerClassName="gap-3 p-1 pb-6">
+            {rail}
+          </ScrollView>
+        </View>
+        <View className="flex-1 p-3">
+          <HtmlPreview html={previewHtml} height="100%" />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView className="flex-1" contentContainerClassName="gap-3 pb-6">
+      {rail}
+    </ScrollView>
   );
 }

@@ -1,13 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { EmailEditor } from '@/components/email/EmailEditor';
+import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { useGymMembership, useSession } from '@/lib/auth';
 import {
   coerceDocument,
@@ -146,6 +148,8 @@ export default function AutomationEditor() {
   const [doc, setDoc] = useState<EmailDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [testSent, setTestSent] = useState(false);
+  const [mode, setMode] = useState<'setup' | 'design'>('setup');
+  const [showPreview, setShowPreview] = useState(false);
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -165,6 +169,11 @@ export default function AutomationEditor() {
   const enabled = automation.data?.enabled ?? false;
   const warnings = doc ? documentWarnings(doc) : ['Loading'];
   const canEnable = warnings.length === 0 && subject.trim() !== '';
+
+  const previewHtml = useMemo(
+    () => (doc ? renderEmailHtml(doc, { preheader, unsubscribeUrl: '#' }) : ''),
+    [doc, preheader],
+  );
 
   const save = useMutation({
     mutationFn: async (patch: Record<string, unknown>) => {
@@ -240,6 +249,59 @@ export default function AutomationEditor() {
         <View className="py-6 px-4">
           <BackLink label="Automations" fallbackHref="/management/communications/automations" />
           <Text className="text-gray-500 dark:text-gray-400 mt-4">Loading…</Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  if (mode === 'design') {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <View className="flex-1 gap-3 py-4">
+          <View className="flex-row items-center gap-3 px-4">
+            <Pressable
+              onPress={() => setMode('setup')}
+              hitSlop={6}
+              className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
+              <Ionicons name="chevron-back" size={18} color="#6B7280" />
+              <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+                Setup
+              </Text>
+            </Pressable>
+            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              Design email
+            </Text>
+            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              {save.isPending ? 'Saving…' : 'Saved'}
+            </Text>
+            {Platform.OS === 'web' ? (
+              <Pressable
+                onPress={() => setShowPreview((v) => !v)}
+                hitSlop={6}
+                className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
+                <Ionicons
+                  name={showPreview ? 'create-outline' : 'eye-outline'}
+                  size={15}
+                  color="#6B7280"
+                />
+                <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+                  {showPreview ? 'Back to editor' : 'Preview'}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {showPreview && Platform.OS === 'web' ? (
+            <ScrollView className="flex-1" contentContainerClassName="pb-4 px-4">
+              <HtmlPreview html={previewHtml} />
+            </ScrollView>
+          ) : (
+            <EmailEditor
+              document={doc}
+              onChange={setDoc}
+              brand={brandSeed}
+              gymId={membership.gymId}
+            />
+          )}
         </View>
       </Screen>
     );
@@ -354,7 +416,23 @@ export default function AutomationEditor() {
           ) : null}
         </View>
 
-        <EmailEditor document={doc} onChange={setDoc} brand={brandSeed} gymId={membership.gymId} variant="stacked" />
+        <Pressable
+          onPress={() => setMode('design')}
+          className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70">
+          <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+            <Ionicons name="brush-outline" size={18} color="#6B7280" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Design your email
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              {doc.blocks.length} block{doc.blocks.length === 1 ? '' : 's'} · edit the
+              layout and content
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </Pressable>
 
         {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
 
