@@ -95,12 +95,13 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'members' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
+type Category = 'insights' | 'retention' | 'members' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
+  retention: 'Retention',
   members: 'Members',
   comms: 'Email campaigns',
   website: 'Website',
@@ -112,6 +113,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
 
 const CATEGORY_ICONS: Record<Category, IconName> = {
   insights: 'bar-chart-outline',
+  retention: 'pulse-outline',
   members: 'people-outline',
   comms: 'mail-outline',
   website: 'globe-outline',
@@ -188,6 +190,7 @@ function ManageNav({
 
 const CATEGORY_ORDER: Category[] = [
   'insights',
+  'retention',
   'members',
   'comms',
   'website',
@@ -223,8 +226,16 @@ export default function ManagementHome() {
   const canManageStore = useCan('can_manage_store');
   const canAssignPlan = useCan('can_assign_plan');
   const canManageWebsite = useCan('can_manage_website');
+  const canSeeRetention = useCan('can_see_retention');
 
   const cards: Card[] = [
+    {
+      category: 'retention',
+      title: 'At-risk members',
+      description: 'Members expiring, past due or dropping off — and how to nudge them.',
+      href: '/management/retention',
+      visible: !!canSeeRetention,
+    },
     {
       category: 'insights',
       title: 'Insights',
@@ -360,7 +371,7 @@ export default function ManagementHome() {
       visible: !!canManageStaff,
     },
     {
-      category: 'members',
+      category: 'retention',
       title: 'Leads',
       description: 'Track prospects from first contact through conversion.',
       href: '/management/leads',
