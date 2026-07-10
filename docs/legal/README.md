@@ -39,26 +39,32 @@ the two in sync when you change the legal position.
 ## Before you publish — still to fill in
 
 - [ ] **Registered office** address (the one remaining entity `[bracket]`).
-- [ ] **Create + monitor `privacy@jointemple.io`** — the docs point to it; a
-      DSAR must be answered within one month, so it must reach someone.
-- [ ] **Effective date** — replace every `[DATE]` / "Last updated".
+- [x] **Effective date** — set to **10 July 2026** on ToS, Privacy, DPA.
+- [x] **Privacy contact** — `privacy@jointemple.io` un-bracketed in the docs
+      (the mailbox itself still needs creating — checklist Tier 1 item 4;
+      a DSAR must be answered within one month, so it must reach someone).
+- [x] **Sub-processor Annex (DPA Annex B)** — locations + transfer mechanisms
+      filled (Supabase = project region; US vendors on UK IDTA / EU SCCs / DPF;
+      Pexels = no personal data), each marked "confirm on vendor DPA".
+- [x] **Breach-response contacts** filled (internal lead + security/privacy
+      inbox).
 - [ ] **Payment terms** — renewal, price-change notice, and (for any paid
       individual/consumer tier) the cancellation/refund mechanics.
-- [ ] **Sub-processor Annex (DPA Annex B)** — confirm the list, each one's
-      processing location, and the transfer mechanism (UK IDTA / SCCs).
-- [ ] **Sub-processor change mechanism + notice period** (DPA §7).
-- [ ] **Deletion window** (DPA §10 — drafted as 30/60 days; confirm).
+- [ ] **Sub-processor change mechanism + notice period** (DPA §7 — still `[30]`).
+- [ ] **Deletion window** (DPA §10 — still drafted as `[30/60]` days; confirm).
 - [ ] Publish the Terms + Privacy Policy on the `jointemple.io` marketing site
       too, if you want them there as well as the in-app `/terms` `/privacy`.
 
 ## Still outstanding — needs a person, not drafting
 
-- [ ] **Solicitor review + sign-off** of all documents.
-- [ ] **Complete + sign off the DPIA** (`dpia.md`) — score the risks, confirm
-      residual risk, director signature.
-- [ ] **Complete + sign off the lawful-basis register** (`lawful-basis-register.md`),
-      including the legitimate-interests assessments.
-- [ ] **Fill the breach-response contacts** and enable Supabase log alerting.
+- [ ] **Solicitor review + sign-off** of all documents (still open — the docs
+      keep their "pending solicitor review" banner until this happens).
+- [x] **Complete + sign off the DPIA** (`dpia.md`) — scored, residual risk
+      Low–Medium, director signature 2026-07-10 (two tracked residual actions).
+- [x] **Complete + sign off the lawful-basis register**
+      (`lawful-basis-register.md`) — LIAs done, signed 2026-07-10.
+- [x] **Fill the breach-response contacts**; log alerting still to enable
+      (the `security-alert` secret/GUCs — checklist Tier 2).
 
 ## Product follow-ups the review surfaced
 

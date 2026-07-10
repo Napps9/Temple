@@ -7,7 +7,7 @@
 
 # Temple — Privacy Policy
 
-**Last updated: [DATE]**
+**Last updated: 10 July 2026**
 
 This policy explains how **Temple Software Ltd** (company no. 15867522)
 ("Temple", "we") handles personal data for which **we are the controller** —
@@ -87,7 +87,7 @@ more than three months after a membership ends.
 Subject to law, you may access, correct, delete, restrict, or port your data,
 object to processing based on legitimate interests, and withdraw consent
 where we rely on it. To exercise rights over data **we control**, contact
-**[privacy@jointemple.io]**. For data **a gym controls**, contact the gym.
+**privacy@jointemple.io**. For data **a gym controls**, contact the gym.
 You may also complain to the UK Information Commissioner's Office (ICO),
 though we'd ask you to raise it with us first.
 

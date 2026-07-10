@@ -8,7 +8,7 @@
 
 # Temple — Terms of Service
 
-**Last updated: [DATE]**
+**Last updated: 10 July 2026**
 
 These Terms of Service ("Terms") govern access to and use of the Temple
 platform ("Temple", "we", "us"). They apply to two kinds of user:

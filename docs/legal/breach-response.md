@@ -67,9 +67,10 @@ settings to the function URL + the same secret.
    log, whether or not it was notifiable (UK GDPR requires this record).
 6. **Review** — root cause and a preventative fix.
 
-## Contacts (fill in)
+## Contacts
 
-- Internal lead: [name / role]
+- Internal lead: Nick — Director, Temple Software Ltd
 - ICO reporting: ico.org.uk/for-organisations/report-a-breach/ (or 0303 123
   1113)
-- Security/breach inbox: [security@ / privacy@jointemple.io — create + monitor]
+- Security/breach inbox: security@jointemple.io / privacy@jointemple.io
+  (mailboxes to be created — see the outreach checklist, Tier 1 item 4)

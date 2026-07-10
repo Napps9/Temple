@@ -8,7 +8,7 @@
 
 # Temple — Data Processing Agreement
 
-**Last updated: [DATE]**
+**Last updated: 10 July 2026**
 
 This Data Processing Agreement ("DPA") forms part of the Terms of Service
 between **Temple Software Ltd** (company no. 15867522) ("Processor",
@@ -143,7 +143,7 @@ record across tenant data as implemented in the platform.
 
 **Waiver signatures** are an exception: they are retained as liability
 records on the lawful basis of establishing/defending legal claims, for the
-limitation period — **[6 years] from the end of the relevant membership**
+limitation period — **6 years from the end of the relevant membership**
 (Limitation Act 1980) — and then deleted, rather than being swept by the
 health-data erasure/retention machinery.
 
@@ -172,12 +172,12 @@ Liability under this DPA is subject to the limitations in the Terms.
 
 | Sub-processor | Service | Processing location | Transfer mechanism |
 | --- | --- | --- | --- |
-| Supabase | Database, auth, storage | [confirm] | [confirm] |
-| Stripe | Payments infrastructure | [confirm] | [confirm] |
-| Resend | Email delivery | [confirm] | [confirm] |
-| Vercel | Hosting / delivery | [confirm] | [confirm] |
-| Anthropic (optional) | AI import assistance (aggregate, no member rows) | [confirm] | [confirm] |
-| Pexels (optional) | Stock-photo search (no member data) | [confirm] | [confirm] |
+| Supabase | Database, auth, storage | Project region (confirm in Project → settings; London/Frankfurt = UK/EU) | None if UK/EU region; otherwise UK IDTA / EU SCCs — confirm on vendor DPA |
+| Stripe | Payments infrastructure | US + global | UK IDTA / EU SCCs (+ EU–US DPF where certified) — confirm on vendor DPA |
+| Resend | Email delivery | US | UK IDTA / EU SCCs — confirm on vendor DPA |
+| Vercel | Hosting / delivery | US + global | UK IDTA / EU SCCs (+ EU–US DPF where certified) — confirm on vendor DPA |
+| Anthropic (optional) | AI import assistance (aggregate, no member rows) | US | UK IDTA / EU SCCs — confirm on vendor DPA |
+| Pexels (optional) | Stock-photo search (no member data) | US | No personal data processed |
 
 ## Annex C — technical and organisational measures
 
