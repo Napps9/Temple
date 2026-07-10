@@ -155,11 +155,12 @@ Left for you (policy/config, not code):
 These improve the experience but never block anything — every path falls
 back cleanly if the key is unset.
 
-- [ ] `ANTHROPIC_API_KEY` — AI-assisted column mapping + plan/tag
-      inference in the member importer (falls back to deterministic rules)
-- [ ] `PEXELS_API_KEY` — stock-photo search + website hero/gallery
-      auto-population (falls back to upload-only / photo-less);
-      `docs/pexels-photos-setup.md`
+- [x] `ANTHROPIC_API_KEY` — set in hosted. AI-assisted column mapping +
+      plan/tag inference in the member importer (falls back to
+      deterministic rules if ever unset).
+- [x] `PEXELS_API_KEY` — set in hosted. Stock-photo search + website
+      hero/gallery auto-population (falls back to upload-only / photo-less
+      if ever unset); `docs/pexels-photos-setup.md`
 
 ---
 
