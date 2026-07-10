@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
+import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -152,6 +153,7 @@ export default function ParqForm() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
+        {router.canGoBack() ? <BackLink /> : null}
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Health screening

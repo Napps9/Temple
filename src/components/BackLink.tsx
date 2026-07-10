@@ -15,12 +15,24 @@ import { haptic } from '@/lib/haptic';
 //     a flex-row header — the pattern Track / Inbox / Athlete / Member
 //     deep pages reach for.
 //
-// When `fallbackHref` is given, that path is always the destination —
-// the label is a promise about where you'll land, so we honour it
-// regardless of what's on the back stack. (Earlier behaviour preferred
-// router.back() when any history existed, which broke for a user who
-// navigated Classes → Analysis → a Manage sub-page: tapping "Manage"
-// went to Analysis because that's what router.back() saw.)
+// Two navigation contracts, chosen by `preferBack`:
+//
+//   - Named destination (default): when `fallbackHref` is given, that
+//     path is ALWAYS the destination — the label is a promise about
+//     where you'll land ("Manage", "Email campaigns"), so we honour it
+//     regardless of the back stack. (Earlier behaviour preferred
+//     router.back() when any history existed, which broke for a user
+//     who navigated Classes → Analysis → a Manage sub-page: tapping
+//     "Manage" went to Analysis because that's what router.back() saw.)
+//
+//   - Came-from (`preferBack`): return to wherever the user actually
+//     came from via router.back(), and only fall back to `fallbackHref`
+//     when there's no history (a deep-link / cold open). This is the
+//     right contract for content pages reachable from many places — a
+//     movement opened from Track, Journal, a workout, or a group should
+//     go back to whichever of those the user was on, not to one fixed
+//     parent. Pair it with the bare chevron (`inline`) so no visible
+//     label over-promises a single destination.
 //
 // Without a fallbackHref the component falls back to router.back() and
 // the label should just be "Back" — the destination genuinely is
@@ -29,13 +41,23 @@ export function BackLink({
   label = 'Back',
   fallbackHref,
   inline = false,
+  preferBack = false,
 }: {
   label?: string;
   fallbackHref?: Href;
   inline?: boolean;
+  preferBack?: boolean;
 }) {
   function onPress() {
     haptic.selection();
+    if (preferBack) {
+      if (router.canGoBack()) {
+        router.back();
+        return;
+      }
+      if (fallbackHref) router.replace(fallbackHref);
+      return;
+    }
     if (fallbackHref) {
       router.replace(fallbackHref);
       return;
@@ -45,13 +67,15 @@ export function BackLink({
     }
   }
 
+  const a11yLabel = label === 'Back' ? 'Back' : `Back to ${label}`;
+
   if (inline) {
     return (
       <Pressable
         onPress={onPress}
         hitSlop={6}
         accessibilityRole="button"
-        accessibilityLabel={`Back to ${label}`}
+        accessibilityLabel={a11yLabel}
         className="active:opacity-70">
         <Ionicons name="chevron-back" size={22} color="#9CA3AF" />
       </Pressable>
@@ -63,7 +87,7 @@ export function BackLink({
       onPress={onPress}
       hitSlop={6}
       accessibilityRole="button"
-      accessibilityLabel={`Back to ${label}`}
+      accessibilityLabel={a11yLabel}
       className="flex-row items-center gap-1 self-start py-1 active:opacity-70">
       <Ionicons name="chevron-back" size={18} color="#6B7280" />
       <Text className="text-gray-500 dark:text-gray-400">{label}</Text>
