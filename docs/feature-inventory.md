@@ -849,6 +849,15 @@ sender identity / sending domain carry the send. Four triggers (0116):
 for anchor events at or after the automation's `created_at`, so enabling one
 never blasts the back-catalogue.
 
+An automation can be narrowed to a segment via `email_automations.conditions`
+(jsonb, 0118): `plan_ids` gates the member triggers to members on a current
+subscription to those plans, `class_type_ids` scopes `member_first_class` to
+the first attended class *of those types*, and `lead_source_ids` limits
+`lead_cold` to those `lead_sources`. Any key absent or empty = fire for
+everyone (the default), so existing automations are unchanged. Owners pick
+these in the editor's "Only send to" card; cross-tenant ids are inert because
+every predicate is gym-scoped.
+
 There is no event bus, so the engine is a `pg_cron` sweep
 (`dispatch-email-automations`, every 15 min, 0117): `enqueue_due_automation_runs`
 inserts `email_automation_runs` (the ledger + queue, once-only via a unique

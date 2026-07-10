@@ -40,12 +40,19 @@ type AutomationRow = {
   trigger_type: TriggerType;
   delay_minutes: number;
   params: { inactive_days?: number; cold_hours?: number } | null;
+  conditions: AutomationConditions | null;
   topic_id: string | null;
   subject: string;
   preheader: string;
   from_name: string | null;
   design: unknown;
   compiled_html: string | null;
+};
+
+type AutomationConditions = {
+  plan_ids?: string[];
+  class_type_ids?: string[];
+  lead_source_ids?: string[];
 };
 
 const TRIGGER_BLURB: Record<TriggerType, string> = {
@@ -91,6 +98,48 @@ function storageToKnob(row: AutomationRow): number {
 }
 
 type Topic = { id: string; label: string };
+type Option = { id: string; label: string };
+
+function ConditionChips({
+  label,
+  hint,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  hint: string;
+  options: Option[];
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
+  if (options.length === 0) return null;
+  return (
+    <View className="gap-1.5">
+      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">{label}</Text>
+      <View className="flex-row flex-wrap gap-2">
+        {options.map((o) => {
+          const sel = selected.includes(o.id);
+          return (
+            <Pressable
+              key={o.id}
+              onPress={() => onToggle(o.id)}
+              className={`px-3 py-1.5 rounded-full border ${
+                sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+              }`}>
+              <Text className="text-xs text-gray-700 dark:text-gray-200">{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text className="text-gray-400 dark:text-gray-500 text-xs">{hint}</Text>
+    </View>
+  );
+}
+
+function toggleId(id: string, set: (fn: (prev: string[]) => string[]) => void) {
+  set((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+}
 
 export default function AutomationEditor() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -114,7 +163,7 @@ export default function AutomationEditor() {
       const { data, error } = await supabase
         .from('email_automations')
         .select(
-          'id, gym_id, name, enabled, trigger_type, delay_minutes, params, topic_id, subject, preheader, from_name, design, compiled_html',
+          'id, gym_id, name, enabled, trigger_type, delay_minutes, params, conditions, topic_id, subject, preheader, from_name, design, compiled_html',
         )
         .eq('id', id!)
         .single();
@@ -138,10 +187,59 @@ export default function AutomationEditor() {
     },
   });
 
+  // Options for the "Only send to…" audience conditions. Which picker shows
+  // depends on the trigger; all are gym-scoped and readable by any member.
+  const plans = useQuery({
+    queryKey: ['gym-plans', membership?.gymId],
+    enabled: !!membership?.gymId && canManageComms === true,
+    queryFn: async (): Promise<Option[]> => {
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .select('plan_id, name')
+        .eq('gym_id', membership!.gymId)
+        .is('archived_at', null)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []).map((p) => ({ id: p.plan_id, label: p.name }));
+    },
+  });
+
+  const classTypes = useQuery({
+    queryKey: ['gym-class-types', membership?.gymId],
+    enabled: !!membership?.gymId && canManageComms === true,
+    queryFn: async (): Promise<Option[]> => {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('id, name')
+        .eq('gym_id', membership!.gymId)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []).map((c) => ({ id: c.id, label: c.name }));
+    },
+  });
+
+  const leadSources = useQuery({
+    queryKey: ['gym-lead-sources', membership?.gymId],
+    enabled: !!membership?.gymId && canManageComms === true,
+    queryFn: async (): Promise<Option[]> => {
+      const { data, error } = await supabase
+        .from('lead_sources')
+        .select('id, label')
+        .eq('gym_id', membership!.gymId)
+        .is('archived_at', null)
+        .order('label');
+      if (error) throw error;
+      return (data ?? []) as Option[];
+    },
+  });
+
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<TriggerType>('member_joined');
   const [knob, setKnob] = useState('3');
   const [topicId, setTopicId] = useState<string | null>(null);
+  const [planIds, setPlanIds] = useState<string[]>([]);
+  const [classTypeIds, setClassTypeIds] = useState<string[]>([]);
+  const [sourceIds, setSourceIds] = useState<string[]>([]);
   const [subject, setSubject] = useState('');
   const [preheader, setPreheader] = useState('');
   const [fromName, setFromName] = useState('');
@@ -160,6 +258,9 @@ export default function AutomationEditor() {
     setTrigger(a.trigger_type);
     setKnob(String(storageToKnob(a)));
     setTopicId(a.topic_id);
+    setPlanIds(a.conditions?.plan_ids ?? []);
+    setClassTypeIds(a.conditions?.class_type_ids ?? []);
+    setSourceIds(a.conditions?.lead_source_ids ?? []);
     setSubject(a.subject);
     setPreheader(a.preheader);
     setFromName(a.from_name ?? '');
@@ -176,6 +277,20 @@ export default function AutomationEditor() {
     [doc, preheader],
   );
 
+  // Only carry the conditions the current trigger actually uses, so switching
+  // trigger never leaves a stale filter behind. Empty = fire for everyone.
+  function buildConditions(): AutomationConditions {
+    const c: AutomationConditions = {};
+    const memberTrigger =
+      trigger === 'member_joined' ||
+      trigger === 'member_inactive' ||
+      trigger === 'member_first_class';
+    if (memberTrigger && planIds.length) c.plan_ids = planIds;
+    if (trigger === 'member_first_class' && classTypeIds.length) c.class_type_ids = classTypeIds;
+    if (trigger === 'lead_cold' && sourceIds.length) c.lead_source_ids = sourceIds;
+    return c;
+  }
+
   function buildPatch(): Record<string, unknown> | null {
     if (!doc) return null;
     const { delay_minutes, params } = knobToStorage(trigger, Number(knob) || 0);
@@ -184,6 +299,7 @@ export default function AutomationEditor() {
       trigger_type: trigger,
       delay_minutes,
       params,
+      conditions: buildConditions() as unknown as Json,
       topic_id: topicId,
       subject,
       preheader,
@@ -226,7 +342,7 @@ export default function AutomationEditor() {
     }, 1200);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, trigger, knob, topicId, subject, preheader, fromName, doc]);
+  }, [name, trigger, knob, topicId, planIds, classTypeIds, sourceIds, subject, preheader, fromName, doc]);
 
   const toggleEnabled = useMutation({
     mutationFn: async (next: boolean) => {
@@ -398,6 +514,59 @@ export default function AutomationEditor() {
             </Text>
           </View>
         </View>
+
+        {(() => {
+          const showPlan =
+            trigger === 'member_joined' ||
+            trigger === 'member_inactive' ||
+            trigger === 'member_first_class';
+          const showType = trigger === 'member_first_class';
+          const showSource = trigger === 'lead_cold';
+          const anyOptions =
+            (showPlan && (plans.data?.length ?? 0) > 0) ||
+            (showType && (classTypes.data?.length ?? 0) > 0) ||
+            (showSource && (leadSources.data?.length ?? 0) > 0);
+          if (!anyOptions) return null;
+          return (
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+              <View className="gap-1">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  Only send to
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Leave everything unticked to send to everyone the trigger matches.
+                </Text>
+              </View>
+              {showPlan ? (
+                <ConditionChips
+                  label="Members on these plans"
+                  hint="Only members with a current subscription to a ticked plan."
+                  options={plans.data ?? []}
+                  selected={planIds}
+                  onToggle={(pid) => toggleId(pid, setPlanIds)}
+                />
+              ) : null}
+              {showType ? (
+                <ConditionChips
+                  label="Whose first class is one of these"
+                  hint="Fires on their first attended class of a ticked type."
+                  options={classTypes.data ?? []}
+                  selected={classTypeIds}
+                  onToggle={(cid) => toggleId(cid, setClassTypeIds)}
+                />
+              ) : null}
+              {showSource ? (
+                <ConditionChips
+                  label="Leads from these sources"
+                  hint="Only leads captured from a ticked source."
+                  options={leadSources.data ?? []}
+                  selected={sourceIds}
+                  onToggle={(sid) => toggleId(sid, setSourceIds)}
+                />
+              ) : null}
+            </View>
+          );
+        })()}
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">

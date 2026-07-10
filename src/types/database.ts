@@ -2422,6 +2422,7 @@ export type Database = {
             | 'lead_cold';
           delay_minutes: number;
           params: Json;
+          conditions: Json;
           topic_id: string | null;
           subject: string;
           preheader: string;
@@ -2446,6 +2447,7 @@ export type Database = {
             | 'lead_cold';
           delay_minutes?: number;
           params?: Json;
+          conditions?: Json;
           topic_id?: string | null;
           subject?: string;
           preheader?: string;
@@ -2468,6 +2470,7 @@ export type Database = {
             | 'lead_cold';
           delay_minutes: number;
           params: Json;
+          conditions: Json;
           topic_id: string | null;
           subject: string;
           preheader: string;
