@@ -150,6 +150,7 @@ export default function AutomationEditor() {
   const [testSent, setTestSent] = useState(false);
   const [mode, setMode] = useState<'setup' | 'design'>('setup');
   const [showPreview, setShowPreview] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -175,6 +176,24 @@ export default function AutomationEditor() {
     [doc, preheader],
   );
 
+  function buildPatch(): Record<string, unknown> | null {
+    if (!doc) return null;
+    const { delay_minutes, params } = knobToStorage(trigger, Number(knob) || 0);
+    return {
+      name: name.trim() || 'Untitled automation',
+      trigger_type: trigger,
+      delay_minutes,
+      params,
+      topic_id: topicId,
+      subject,
+      preheader,
+      from_name: fromName.trim() || null,
+      design: doc as unknown as Json,
+      compiled_html: renderEmailHtml(doc, { preheader }),
+      compiled_text: renderEmailText(doc, { preheader }),
+    };
+  }
+
   const save = useMutation({
     mutationFn: async (patch: Record<string, unknown>) => {
       const { error: e } = await supabase
@@ -186,28 +205,24 @@ export default function AutomationEditor() {
     onError: (e) => setError(errorMessage(e, 'Could not save')),
     onSuccess: () => {
       setError(null);
+      setJustSaved(true);
       queryClient.invalidateQueries({ queryKey: ['email-automations', membership?.gymId] });
     },
   });
 
-  // Debounced autosave of the whole form once it has loaded.
+  async function saveNow() {
+    const patch = buildPatch();
+    if (patch) await save.mutateAsync(patch);
+  }
+
+  // Debounced autosave of the whole form once it has loaded. Any edit marks
+  // the form dirty (clears the "Saved" state) and schedules a save.
   useEffect(() => {
     if (!loaded.current || !doc) return;
-    const { delay_minutes, params } = knobToStorage(trigger, Number(knob) || 0);
+    setJustSaved(false);
     const timer = setTimeout(() => {
-      save.mutate({
-        name: name.trim() || 'Untitled automation',
-        trigger_type: trigger,
-        delay_minutes,
-        params,
-        topic_id: topicId,
-        subject,
-        preheader,
-        from_name: fromName.trim() || null,
-        design: doc as unknown as Json,
-        compiled_html: renderEmailHtml(doc, { preheader }),
-        compiled_text: renderEmailText(doc, { preheader }),
-      });
+      const patch = buildPatch();
+      if (patch) save.mutate(patch);
     }, 1200);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -271,9 +286,13 @@ export default function AutomationEditor() {
             <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
               Design email
             </Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
-              {save.isPending ? 'Saving…' : 'Saved'}
-            </Text>
+            <Button
+              variant="secondary"
+              onPress={saveNow}
+              loading={save.isPending}
+              success={justSaved}>
+              Save
+            </Button>
             {Platform.OS === 'web' ? (
               <Pressable
                 onPress={() => setShowPreview((v) => !v)}
@@ -312,20 +331,47 @@ export default function AutomationEditor() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink label="Automations" fallbackHref="/management/communications/automations" />
 
-        <View className="flex-row items-center justify-between gap-3">
+        <View className="flex-row items-center justify-between gap-3 flex-wrap">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
             Edit automation
           </Text>
-          <View className="items-end">
-            <Text className="text-gray-500 dark:text-gray-400 text-xs mb-1">
-              {enabled ? 'On' : 'Off'}
-            </Text>
-            <Switch
-              value={enabled}
-              disabled={!canEnable && !enabled}
-              onValueChange={(v) => toggleEnabled.mutate(v)}
-              trackColor={{ true: colors.primary }}
-            />
+          <View className="flex-row items-center gap-2">
+            <Button
+              variant="secondary"
+              onPress={saveNow}
+              loading={save.isPending}
+              success={justSaved}>
+              Save
+            </Button>
+            <View
+              className={`flex-row items-center gap-2 rounded-full border pl-3 pr-1.5 py-1 ${
+                enabled
+                  ? 'border-primary bg-primary/10'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
+              }`}>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: enabled ? '#10B981' : '#9CA3AF',
+                }}
+              />
+              <Text
+                className={`text-sm font-semibold ${
+                  enabled ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                }`}>
+                {enabled ? 'On' : 'Off'}
+              </Text>
+              <Switch
+                value={enabled}
+                disabled={!canEnable && !enabled}
+                onValueChange={(v) => toggleEnabled.mutate(v)}
+                trackColor={{ false: '#D1D5DB', true: colors.primary }}
+                thumbColor="#ffffff"
+                ios_backgroundColor="#D1D5DB"
+              />
+            </View>
           </View>
         </View>
 
