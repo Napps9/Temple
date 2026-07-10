@@ -35,19 +35,27 @@ Runbook: `docs/auth-email-setup.md`. Concretely:
 - [ ] Confirm `EXPO_PUBLIC_SUPABASE_URL` / `..._ANON_KEY` on Vercel point
       at the same project you're editing
 
+> This is the one Tier 1 item the edge-function **Secrets** page does not
+> cover — Site URL + SMTP live under **Authentication → settings**, not
+> Edge Functions → Secrets. Keys being set is not the same as auth email
+> working; this remains the top blocker until the Site URL is fixed.
+
 ### [ ] 2. Turn on Stripe (payments)
 
 Without this, gyms can't connect their Stripe or charge members —
 memberships, store, and the whole billing story are dead. Runbook:
 `docs/stripe-setup.md`.
-- [ ] Enable Connect on Temple's platform Stripe account; register the
-      `stripe-connect-callback` redirect URI
-- [ ] Set `STRIPE_SECRET_KEY` + `STRIPE_CONNECT_CLIENT_ID` as Supabase
-      edge-function secrets
-- [ ] Do it in **test mode** first, then swap to live keys before taking
-      real money
-- [ ] Decide the Stripe webhook is registered/live so renewals + store
+- [x] Set `STRIPE_SECRET_KEY` + `STRIPE_CONNECT_CLIENT_ID` as Supabase
+      edge-function secrets (in hosted)
+- [x] `STRIPE_WEBHOOK_SECRET` set — webhook wired so renewals + store
       orders settle (`stripe-webhook`)
+- [ ] Confirm Connect is enabled on Temple's platform account and the
+      `stripe-connect-callback` redirect URI is registered (the
+      `CLIENT_ID` implies Connect is on — just verify the redirect)
+- [ ] Confirm whether these are **test** or **live** keys — do a test-mode
+      end-to-end before swapping to live and taking real money
+- [ ] Run one real Connect onboarding + a member checkout to confirm the
+      whole flow settles
 
 ### [ ] 3. Turn on Resend (all outbound email)
 
@@ -55,8 +63,10 @@ Until `RESEND_API_KEY` + `RESEND_FROM_EMAIL` are set, campaigns,
 staff/member **invite emails**, and store **receipts** all silently
 simulate or degrade to "code created, not emailed." Runbook:
 `docs/resend-setup.md`.
-- [ ] Set `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (e.g.
-      `updates@support.jointemple.io`) on the edge functions
+- [x] Set `RESEND_API_KEY` + `RESEND_FROM_EMAIL` on the edge functions
+      (in hosted)
+- [ ] Confirm `RESEND_FROM_EMAIL` uses a **verified** sending domain in
+      Resend (e.g. `updates@support.jointemple.io`)
 - [ ] Verify a real campaign send shows `delivered`, not `simulated`
 - [ ] Verify an emailed staff invite actually arrives
 
