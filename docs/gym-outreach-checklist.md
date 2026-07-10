@@ -40,22 +40,28 @@ Runbook: `docs/auth-email-setup.md`. Concretely:
 > Edge Functions → Secrets. Keys being set is not the same as auth email
 > working; this remains the top blocker until the Site URL is fixed.
 
-### [ ] 2. Turn on Stripe (payments)
+### [x] 2. Turn on Stripe (payments) — verified end-to-end
 
-Without this, gyms can't connect their Stripe or charge members —
-memberships, store, and the whole billing story are dead. Runbook:
-`docs/stripe-setup.md`.
+Runbook: `docs/stripe-setup.md`.
 - [x] Set `STRIPE_SECRET_KEY` + `STRIPE_CONNECT_CLIENT_ID` as Supabase
       edge-function secrets (in hosted)
 - [x] `STRIPE_WEBHOOK_SECRET` set — webhook wired so renewals + store
       orders settle (`stripe-webhook`)
-- [ ] Confirm Connect is enabled on Temple's platform account and the
-      `stripe-connect-callback` redirect URI is registered (the
-      `CLIENT_ID` implies Connect is on — just verify the redirect)
-- [ ] Confirm whether these are **test** or **live** keys — do a test-mode
-      end-to-end before swapping to live and taking real money
-- [ ] Run one real Connect onboarding + a member checkout to confirm the
-      whole flow settles
+- [x] Connect confirmed enabled, with the `stripe-connect-callback`
+      redirect URI correctly registered.
+- [x] Ran a real Connect onboarding (gym "Dolly Box") through the live
+      app, then a real member checkout (£10/mo unlimited plan, test
+      card) — membership went **ACTIVE**, payment history shows
+      **PAID**, webhook fired correctly. Whole flow proven working with
+      the secrets currently live in production — no config was changed.
+- [ ] Still open: confirm whether the currently-live keys are Stripe
+      **test** or **live** mode (unconfirmed — deliberately left
+      untouched to avoid disrupting production). The platform's own
+      live account ("Temple Software LTD") has payments/payouts paused
+      pending a business-verification review (~2-3 days from 10 Jul);
+      swap to live keys once that clears, then repeat this same
+      onboarding + checkout test once with real (small, refundable)
+      values before telling gyms it's ready.
 
 ### [ ] 3. Turn on Resend (all outbound email)
 
