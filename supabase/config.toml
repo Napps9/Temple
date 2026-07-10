@@ -136,3 +136,11 @@ verify_jwt = false
 # link carried in each automated email.
 [functions.send-email-automations]
 verify_jwt = false
+
+# Lead-to-coach notification worker. Called best-effort by the public
+# /lead/<slug> capture form, which is anonymous — there is no JWT to verify.
+# It only drains an already-decided queue (written by security-definer RPCs)
+# to the assigned coach's own address and returns counts, so no per-caller
+# authorisation applies.
+[functions.send-lead-notifications]
+verify_jwt = false
