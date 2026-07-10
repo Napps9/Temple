@@ -1,11 +1,3 @@
-> **DRAFT — pending solicitor review. Not legal advice.**
-> AI-drafted starting point for a UK GDPR Data Processing Agreement between
-> Temple (processor) and a gym (controller), grounded in the platform's
-> actual data-protection design (`CLAUDE.md` health-data section,
-> `docs/feature-inventory.md`, and a data-flow review of the codebase).
-> Review, correct, and sign off before use. Placeholders in `[brackets]`
-> need real values — see `docs/legal/README.md`.
-
 # Temple — Data Processing Agreement
 
 **Last updated: 10 July 2026**
@@ -111,11 +103,11 @@ The Gym gives general authorisation for Temple to engage the sub-processors
 listed in **Annex B** (currently Supabase, Stripe, Resend, Vercel, and — for
 optional features — Anthropic and Pexels). Temple imposes data-protection
 terms on each no less protective than this DPA and remains liable for their
-performance. Temple will give the Gym at least **[30] days' notice** before
-adding or replacing a sub-processor [via **[email / a status page — confirm
-the mechanism]**]; the Gym may object on reasonable data-protection grounds
-within that period, and if the parties cannot resolve the objection the Gym
-may terminate the affected service.
+performance. Temple will give the Gym at least **30 days' notice** before
+adding or replacing a sub-processor (by email to the Gym's registered admin
+contact); the Gym may object on reasonable data-protection grounds within
+that period, and if the parties cannot resolve the objection the Gym may
+terminate the affected service.
 
 ## 8. Breach, DPIA, assistance
 
@@ -137,7 +129,7 @@ confidentiality, security, frequency, and notice conditions.
 ## 10. Return or deletion
 
 On termination, or on the Gym's request, Temple will delete or return the
-Gym's personal data and delete existing copies within **[30/60] days**,
+Gym's personal data and delete existing copies within **30 days**,
 except to the extent law requires retention. Deletion cascades from the gym
 record across tenant data as implemented in the platform.
 
@@ -181,8 +173,20 @@ Liability under this DPA is subject to the limitations in the Terms.
 
 ## Annex C — technical and organisational measures
 
-The measures in §6, plus [confirm any additions: backups, encryption at
-rest, access-review cadence, incident response, staff training].
+The measures in §6, plus:
+
+- **Tenant isolation** — Row-Level Security on every table; privileged writes
+  only via authorised server-side routines.
+- **Encryption** — in transit (TLS); at rest for the database and storage, as
+  provided by the managed Supabase platform.
+- **Access control** — authentication with hashed passwords; role- and
+  capability-based authorisation; health-data access recorded in an audit log.
+- **Retention** — scheduled purges of health data and (after 6 years) waiver
+  signatures.
+- **Monitoring & response** — an automated security monitor
+  (`security_alerts`) and a documented breach-response runbook
+  (`breach-response.md`).
+- **Backups** — managed database backups provided by the Supabase platform.
 
 ---
 

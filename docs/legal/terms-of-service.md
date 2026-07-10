@@ -1,11 +1,3 @@
-> **DRAFT — pending solicitor review. Not legal advice.**
-> This document is an AI-drafted starting point for Temple's legal counsel.
-> It reflects how the product actually works today (see
-> `docs/feature-inventory.md`) so a solicitor has accurate facts to work
-> from, but it must be reviewed, corrected, and signed off before it
-> governs any real customer. Placeholders in `[brackets]` need real values —
-> see `docs/legal/README.md` for the full fill-in checklist.
-
 # Temple — Terms of Service
 
 **Last updated: 10 July 2026**
@@ -27,7 +19,7 @@ of that business).
 
 The operating entity is **Temple Software Ltd**, a company registered in
 England and Wales (company no. **15867522**), registered office
-[registered office — to be confirmed].
+49 Deeside Road, London SW17 0PH.
 
 ## 1. The service
 
@@ -147,7 +139,7 @@ without obligation.
 
 ## 10. Term and termination
 
-Either party may terminate as set out here [notice period to be confirmed].
+Either party may terminate for convenience on **30 days' written notice**.
 A consumer Individual User may also close their account at any time and
 exercise any cancellation right under Section 3. On termination we will make
 your data available for export for a reasonable window and then delete it in
@@ -208,7 +200,7 @@ shows the current version.
 These Terms are governed by the laws of **England and Wales**, and the
 courts of England and Wales have exclusive jurisdiction. If you are a
 consumer resident elsewhere in the UK, you may also bring proceedings in your
-local courts. [Confirm for any target markets outside the UK.]
+local courts.
 
 ## 16. Contact and complaints
 

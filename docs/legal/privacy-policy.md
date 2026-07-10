@@ -1,10 +1,3 @@
-> **DRAFT — pending solicitor review. Not legal advice.**
-> AI-drafted starting point for Temple's legal counsel, grounded in how the
-> product actually works (`docs/feature-inventory.md`, the health-data /
-> GDPR section of `CLAUDE.md`, and a data-flow review of the codebase).
-> Review, correct, and sign off before publishing. Placeholders in
-> `[brackets]` need real values — see `docs/legal/README.md`.
-
 # Temple — Privacy Policy
 
 **Last updated: 10 July 2026**
@@ -24,7 +17,7 @@ If you are a gym member, contact your gym about its use of your data.
 ## 1. Who we are
 
 Temple Software Ltd, company no. 15867522, registered in England and Wales,
-registered office [registered office — to be confirmed]. Data protection
+registered office 49 Deeside Road, London SW17 0PH. Data protection
 contact: **privacy@jointemple.io**.
 
 ## 2. Data we control, and why
@@ -77,7 +70,7 @@ DPA (`dpa.md`).
 We keep account data for as long as your account is active and for a
 reasonable period afterwards to meet legal, tax, and dispute-resolution
 needs, then delete or anonymise it. Billing records are kept for the period
-required by tax law [confirm — typically 6 years]. Member health data handled
+required by tax law (typically 6 years). Member health data handled
 on a gym's behalf follows the gym's settings and our built-in rules —
 including erasure when a member leaves and an automatic sweep of health data
 more than three months after a membership ends.

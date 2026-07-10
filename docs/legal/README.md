@@ -11,9 +11,11 @@ Documents in this folder:
 - `dpia.md` — Data Protection Impact Assessment (health data + minors)
 
 They were reviewed against UK best practice (UK GDPR, Data Protection Act
-2018, PECR, ICO guidance, standard UK SaaS terms). **They are drafts, not
-legal advice** — a UK-qualified solicitor should review them before they
-govern any paying customer.
+2018, PECR, ICO guidance, standard UK SaaS terms). **They have not been
+reviewed by a UK-qualified solicitor** — that's a deliberate, informed
+decision to publish without one for now; get a one-off review of the ToS
++ DPA (the two that most need it — liability, IP, indemnity) when you can.
+Not legal advice.
 
 The rendered in-app versions of the Terms and Privacy Policy (shown at
 `/terms` and `/privacy`) live in `src/lib/legal.ts` and mirror these — keep
@@ -36,9 +38,9 @@ the two in sync when you change the legal position.
 - [x] **Claims sweep** — softened international-transfer and breach wording to
       what we can actually back.
 
-## Before you publish — still to fill in
+## Filled in
 
-- [ ] **Registered office** address (the one remaining entity `[bracket]`).
+- [x] **Registered office** — 49 Deeside Road, London SW17 0PH.
 - [x] **Effective date** — set to **10 July 2026** on ToS, Privacy, DPA.
 - [x] **Privacy contact** — `privacy@jointemple.io` un-bracketed in the docs
       (the mailbox itself still needs creating — checklist Tier 1 item 4;
@@ -46,19 +48,31 @@ the two in sync when you change the legal position.
 - [x] **Sub-processor Annex (DPA Annex B)** — locations + transfer mechanisms
       filled (Supabase = project region; US vendors on UK IDTA / EU SCCs / DPF;
       Pexels = no personal data), each marked "confirm on vendor DPA".
+- [x] **Annex C — technical and organisational measures** — filled with the
+      product's actual controls (RLS, encryption, access control, retention,
+      monitoring, backups).
+- [x] **Sub-processor change mechanism + notice period** — 30 days, by email
+      to the gym's registered admin contact (DPA §7).
+- [x] **Deletion window** — 30 days (DPA §10).
+- [x] **Termination notice** — 30 days' written notice (ToS §10).
 - [x] **Breach-response contacts** filled (internal lead + security/privacy
       inbox).
+- [x] **DRAFT banners dropped** — `docs/legal/*.md` and the in-app `/terms` +
+      `/privacy` screens (`src/lib/legal.ts`) no longer show a draft/pending
+      notice. This is a real decision, not just tidy-up: **no solicitor has
+      reviewed these** — see the note above.
+
+## Before you publish — still open
+
 - [ ] **Payment terms** — renewal, price-change notice, and (for any paid
       individual/consumer tier) the cancellation/refund mechanics.
-- [ ] **Sub-processor change mechanism + notice period** (DPA §7 — still `[30]`).
-- [ ] **Deletion window** (DPA §10 — still drafted as `[30/60]` days; confirm).
 - [ ] Publish the Terms + Privacy Policy on the `jointemple.io` marketing site
       too, if you want them there as well as the in-app `/terms` `/privacy`.
 
 ## Still outstanding — needs a person, not drafting
 
-- [ ] **Solicitor review + sign-off** of all documents (still open — the docs
-      keep their "pending solicitor review" banner until this happens).
+- [ ] **Solicitor review** of ToS + DPA — recommended, not done. No banner
+      enforces this anymore, so it's on you to schedule it.
 - [x] **Complete + sign off the DPIA** (`dpia.md`) — scored, residual risk
       Low–Medium, director signature 2026-07-10 (two tracked residual actions).
 - [x] **Complete + sign off the lawful-basis register**

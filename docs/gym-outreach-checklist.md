@@ -124,12 +124,14 @@ Left for you (policy/config, not code):
 - [x] **Sign off the DPIA + lawful-basis register** — signed off
       2026-07-10 (director); two tracked residual actions remain (breach-alert
       email A1, transfer mechanisms A2), review 2027-07-10.
-- [~] **Fill the legal-doc placeholders and drop the DRAFT banner** —
-      done: effective date (10 Jul 2026), `privacy@` contact, DPA Annex B
-      (sub-processor locations/transfer mechanisms), breach contacts.
-      Still open: **registered office address** (only remaining `[bracket]`),
-      the DPA `[30]`-day change notice + `[30/60]`-day deletion window, and
-      the DRAFT banner stays until a solicitor review (you have none yet).
+- [x] **Fill the legal-doc placeholders and drop the DRAFT banner** —
+      registered office (49 Deeside Road, London SW17 0PH), effective date
+      (10 Jul 2026), `privacy@` contact, DPA Annex B, the 30-day
+      change-notice + deletion window, and Annex C measures all filled;
+      DRAFT banners dropped in `docs/legal/` and the in-app `/terms` +
+      `/privacy` screens. **These docs have not been reviewed by a
+      solicitor** — you chose to publish without one; get a one-off review
+      of the ToS + DPA when you can afford it.
 - [ ] **Create + monitor the contact inboxes** the legal docs reference
       (`privacy@`, `security@`) — see Tier 1 item 4 — then confirm the
       real addresses in the docs.

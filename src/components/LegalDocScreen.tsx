@@ -23,12 +23,6 @@ export function LegalDocScreen({ doc }: { doc: LegalDoc }) {
           </Text>
         </View>
 
-        <View className="rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 p-3">
-          <Text className="text-amber-700 dark:text-amber-300 text-xs">
-            {doc.draftNotice}
-          </Text>
-        </View>
-
         {doc.intro.map((p, i) => (
           <Text key={`intro-${i}`} className="text-gray-600 dark:text-gray-300 leading-6">
             {p}

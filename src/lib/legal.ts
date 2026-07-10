@@ -9,21 +9,14 @@ export type LegalSection = { heading: string; body: string[] };
 export type LegalDoc = {
   title: string;
   updated: string;
-  // Shown in a callout at the top — these are pre-launch drafts.
-  draftNotice: string;
   intro: string[];
   sections: LegalSection[];
   contact: string;
 };
 
-const DRAFT_NOTICE =
-  'Draft pending review by our legal counsel. We are sharing it early for ' +
-  'transparency; the final version may change.';
-
 export const TERMS_OF_SERVICE: LegalDoc = {
   title: 'Terms of Service',
-  updated: 'July 2026',
-  draftNotice: DRAFT_NOTICE,
+  updated: '10 July 2026',
   intro: [
     'These terms apply to two kinds of user: a gym or fitness business that ' +
       'runs its business on Temple, and an individual who creates their own ' +
@@ -121,8 +114,7 @@ export const TERMS_OF_SERVICE: LegalDoc = {
 
 export const PRIVACY_POLICY: LegalDoc = {
   title: 'Privacy Policy',
-  updated: 'July 2026',
-  draftNotice: DRAFT_NOTICE,
+  updated: '10 July 2026',
   intro: [
     'This policy explains how Temple Software Ltd (company no. 15867522) ' +
       'handles the personal data we control — mainly the account data of gym ' +
