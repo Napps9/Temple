@@ -50,19 +50,24 @@ function html(body: string, status = 200): Response {
 
 const UNSUB_PLACEHOLDER = '{{unsubscribe_url}}';
 
+type EmailContent = {
+  subject: string;
+  preheader: string;
+  from_name: string | null;
+  compiled_html: string | null;
+  compiled_text: string | null;
+};
+
 type Run = {
   id: string;
   gym_id: string;
   lead_id: string | null;
   recipient_email: string;
   recipient_name: string | null;
-  automation: {
-    subject: string;
-    preheader: string;
-    from_name: string | null;
-    compiled_html: string | null;
-    compiled_text: string | null;
-  } | null;
+  // The primary email (step_id null) reads from the automation; a follow-up
+  // step run reads from the step. Whichever is set wins.
+  automation: EmailContent | null;
+  step: EmailContent | null;
 };
 
 Deno.serve(async (req: Request) => {
@@ -137,7 +142,7 @@ Deno.serve(async (req: Request) => {
   let query = service
     .from('email_automation_runs')
     .select(
-      'id, gym_id, lead_id, recipient_email, recipient_name, automation:email_automations!automation_id(subject, preheader, from_name, compiled_html, compiled_text)',
+      'id, gym_id, lead_id, recipient_email, recipient_name, automation:email_automations!automation_id(subject, preheader, from_name, compiled_html, compiled_text), step:email_automation_steps!step_id(subject, preheader, from_name, compiled_html, compiled_text)',
     )
     .eq('status', 'queued');
   if (gymScope) query = query.eq('gym_id', gymScope);
@@ -184,8 +189,9 @@ Deno.serve(async (req: Request) => {
   async function deliver(r: Run) {
     const nowIso = new Date().toISOString();
     const sender = senderByGym.get(r.gym_id);
-    const compiled = r.automation?.compiled_html;
-    if (!r.recipient_email || !r.automation || !compiled) {
+    const content = r.step ?? r.automation;
+    const compiled = content?.compiled_html;
+    if (!r.recipient_email || !content || !compiled) {
       await service
         .from('email_automation_runs')
         .update({ status: 'skipped', error: 'Missing recipient or compiled body' })
@@ -196,7 +202,7 @@ Deno.serve(async (req: Request) => {
 
     const unsubUrl = `${unsubBase}?run=${r.id}`;
     const bodyHtml = compiled.split(UNSUB_PLACEHOLDER).join(unsubUrl);
-    const bodyText = (r.automation.compiled_text ?? '').split(UNSUB_PLACEHOLDER).join(unsubUrl);
+    const bodyText = (content.compiled_text ?? '').split(UNSUB_PLACEHOLDER).join(unsubUrl);
     const live = Boolean(RESEND_API_KEY && sender?.fromAddress);
 
     if (!live) {
@@ -217,9 +223,9 @@ Deno.serve(async (req: Request) => {
           'Idempotency-Key': `auto:${r.id}`,
         },
         body: JSON.stringify({
-          from: `${r.automation.from_name || sender!.fromName} <${sender!.fromAddress}>`,
+          from: `${content.from_name || sender!.fromName} <${sender!.fromAddress}>`,
           to: [r.recipient_email],
-          subject: r.automation.subject || '(no subject)',
+          subject: content.subject || '(no subject)',
           html: bodyHtml,
           text: bodyText || undefined,
           reply_to: sender!.replyTo,

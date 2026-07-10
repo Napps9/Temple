@@ -14,6 +14,7 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import {
   coerceDocument,
   documentWarnings,
+  starterDocument,
   type EmailDocument,
 } from '@/lib/email/blocks';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
@@ -41,6 +42,8 @@ type AutomationRow = {
   delay_minutes: number;
   params: { inactive_days?: number; cold_hours?: number } | null;
   conditions: AutomationConditions | null;
+  send_hour: number | null;
+  send_days: number[] | null;
   topic_id: string | null;
   subject: string;
   preheader: string;
@@ -100,6 +103,32 @@ function storageToKnob(row: AutomationRow): number {
 type Topic = { id: string; label: string };
 type Option = { id: string; label: string };
 
+type StepRow = {
+  id: string;
+  step_index: number;
+  delay_minutes: number;
+  send_hour: number | null;
+  send_days: number[] | null;
+  subject: string;
+  preheader: string;
+  from_name: string | null;
+  design: unknown;
+  compiled_html: string | null;
+};
+
+// A follow-up email in the sequence. delay_minutes is measured from the
+// trigger anchor (same clock as the primary), stored in days in the UI.
+type StepState = {
+  id: string;
+  delayDays: number;
+  sendHour: number | null;
+  sendDays: number[];
+  subject: string;
+  preheader: string;
+  fromName: string;
+  doc: EmailDocument;
+};
+
 function ConditionChips({
   label,
   hint,
@@ -141,6 +170,96 @@ function toggleId(id: string, set: (fn: (prev: string[]) => string[]) => void) {
   set((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 }
 
+// ISO weekday numbers (1=Mon..7=Sun) — the storage the send-slot helper reads.
+const WEEKDAYS: { n: number; label: string }[] = [
+  { n: 1, label: 'Mon' },
+  { n: 2, label: 'Tue' },
+  { n: 3, label: 'Wed' },
+  { n: 4, label: 'Thu' },
+  { n: 5, label: 'Fri' },
+  { n: 6, label: 'Sat' },
+  { n: 7, label: 'Sun' },
+];
+
+function formatHour(h: number): string {
+  const am = h < 12;
+  const twelve = h % 12 === 0 ? 12 : h % 12;
+  return `${twelve}${am ? 'am' : 'pm'}`;
+}
+
+// "Send as soon as due" vs a fixed local hour on chosen weekdays. hour === null
+// means as-soon-as-due; days empty means any day.
+function SendTimeControls({
+  hour,
+  days,
+  onHour,
+  onDays,
+}: {
+  hour: number | null;
+  days: number[];
+  onHour: (h: number | null) => void;
+  onDays: (fn: (prev: number[]) => number[]) => void;
+}) {
+  return (
+    <View className="gap-2">
+      <View className="flex-row items-center justify-between gap-3">
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+            Send at a set time
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Otherwise it goes out as soon as the wait is up.
+          </Text>
+        </View>
+        <Switch
+          accessibilityLabel="Send at a set time"
+          value={hour !== null}
+          onValueChange={(v) => onHour(v ? 9 : null)}
+        />
+      </View>
+      {hour !== null ? (
+        <View className="gap-2">
+          <View className="flex-row flex-wrap gap-1.5">
+            {Array.from({ length: 24 }, (_, h) => h).map((h) => {
+              const sel = hour === h;
+              return (
+                <Pressable
+                  key={h}
+                  onPress={() => onHour(h)}
+                  className={`px-2.5 py-1 rounded-full border ${
+                    sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Text className="text-xs text-gray-700 dark:text-gray-200">{formatHour(h)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View className="flex-row flex-wrap gap-1.5">
+            {WEEKDAYS.map((d) => {
+              const sel = days.includes(d.n);
+              return (
+                <Pressable
+                  key={d.n}
+                  onPress={() => onDays((prev) => (prev.includes(d.n) ? prev.filter((x) => x !== d.n) : [...prev, d.n]))}
+                  className={`px-2.5 py-1 rounded-full border ${
+                    sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Text className="text-xs text-gray-700 dark:text-gray-200">{d.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            {days.length === 0
+              ? 'Any day, in your gym’s timezone.'
+              : 'Only on the chosen days, in your gym’s timezone.'}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function AutomationEditor() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: membership } = useGymMembership();
@@ -163,7 +282,7 @@ export default function AutomationEditor() {
       const { data, error } = await supabase
         .from('email_automations')
         .select(
-          'id, gym_id, name, enabled, trigger_type, delay_minutes, params, conditions, topic_id, subject, preheader, from_name, design, compiled_html',
+          'id, gym_id, name, enabled, trigger_type, delay_minutes, params, conditions, send_hour, send_days, topic_id, subject, preheader, from_name, design, compiled_html',
         )
         .eq('id', id!)
         .single();
@@ -233,6 +352,22 @@ export default function AutomationEditor() {
     },
   });
 
+  const stepRows = useQuery({
+    queryKey: ['email-automation-steps', id],
+    enabled: !!id && canManageComms === true,
+    queryFn: async (): Promise<StepRow[]> => {
+      const { data, error } = await supabase
+        .from('email_automation_steps')
+        .select(
+          'id, step_index, delay_minutes, send_hour, send_days, subject, preheader, from_name, design, compiled_html',
+        )
+        .eq('automation_id', id!)
+        .order('step_index');
+      if (error) throw error;
+      return (data ?? []) as StepRow[];
+    },
+  });
+
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<TriggerType>('member_joined');
   const [knob, setKnob] = useState('3');
@@ -240,6 +375,11 @@ export default function AutomationEditor() {
   const [planIds, setPlanIds] = useState<string[]>([]);
   const [classTypeIds, setClassTypeIds] = useState<string[]>([]);
   const [sourceIds, setSourceIds] = useState<string[]>([]);
+  const [sendHour, setSendHour] = useState<number | null>(null);
+  const [sendDays, setSendDays] = useState<number[]>([]);
+  const [steps, setSteps] = useState<StepState[]>([]);
+  // Which email the design mode edits: null = the primary email, else a step id.
+  const [editingStep, setEditingStep] = useState<string | null>(null);
   const [subject, setSubject] = useState('');
   const [preheader, setPreheader] = useState('');
   const [fromName, setFromName] = useState('');
@@ -261,12 +401,33 @@ export default function AutomationEditor() {
     setPlanIds(a.conditions?.plan_ids ?? []);
     setClassTypeIds(a.conditions?.class_type_ids ?? []);
     setSourceIds(a.conditions?.lead_source_ids ?? []);
+    setSendHour(a.send_hour);
+    setSendDays(a.send_days ?? []);
     setSubject(a.subject);
     setPreheader(a.preheader);
     setFromName(a.from_name ?? '');
     setDoc(coerceDocument(a.design, brandSeed));
     loaded.current = true;
   }, [automation.data, brandSeed]);
+
+  // Load follow-up steps once, mirroring the primary's one-shot load.
+  const stepsLoaded = useRef(false);
+  useEffect(() => {
+    if (stepsLoaded.current || !stepRows.data) return;
+    setSteps(
+      stepRows.data.map((s) => ({
+        id: s.id,
+        delayDays: Math.max(0, Math.round(s.delay_minutes / 1440)),
+        sendHour: s.send_hour,
+        sendDays: s.send_days ?? [],
+        subject: s.subject,
+        preheader: s.preheader,
+        fromName: s.from_name ?? '',
+        doc: coerceDocument(s.design, brandSeed),
+      })),
+    );
+    stepsLoaded.current = true;
+  }, [stepRows.data, brandSeed]);
 
   const enabled = automation.data?.enabled ?? false;
   const warnings = doc ? documentWarnings(doc) : ['Loading'];
@@ -300,6 +461,8 @@ export default function AutomationEditor() {
       delay_minutes,
       params,
       conditions: buildConditions() as unknown as Json,
+      send_hour: sendHour,
+      send_days: sendHour === null || sendDays.length === 0 ? null : sendDays,
       topic_id: topicId,
       subject,
       preheader,
@@ -342,7 +505,108 @@ export default function AutomationEditor() {
     }, 1200);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, trigger, knob, topicId, planIds, classTypeIds, sourceIds, subject, preheader, fromName, doc]);
+  }, [name, trigger, knob, topicId, planIds, classTypeIds, sourceIds, sendHour, sendDays, subject, preheader, fromName, doc]);
+
+  function updateStep(stepId: string, patch: Partial<StepState>) {
+    setSteps((prev) => prev.map((s) => (s.id === stepId ? { ...s, ...patch } : s)));
+  }
+
+  function stepPatch(s: StepState) {
+    return {
+      delay_minutes: Math.max(0, Math.round(s.delayDays)) * 1440,
+      send_hour: s.sendHour,
+      send_days: s.sendHour === null || s.sendDays.length === 0 ? null : s.sendDays,
+      subject: s.subject,
+      preheader: s.preheader,
+      from_name: s.fromName.trim() || null,
+      design: s.doc as unknown as Json,
+      compiled_html: renderEmailHtml(s.doc, { preheader: s.preheader }),
+      compiled_text: renderEmailText(s.doc, { preheader: s.preheader }),
+    };
+  }
+
+  // Debounced autosave of every follow-up step. Re-saving all of them on any
+  // change keeps this simple; the set is tiny.
+  useEffect(() => {
+    if (!stepsLoaded.current) return;
+    setJustSaved(false);
+    const timer = setTimeout(() => {
+      steps.forEach((s) => {
+        supabase
+          .from('email_automation_steps')
+          .update(stepPatch(s))
+          .eq('id', s.id)
+          .then(({ error: e }) => {
+            if (e) setError(errorMessage(e, 'Could not save a follow-up'));
+          });
+      });
+    }, 1200);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [steps]);
+
+  const addStep = useMutation({
+    mutationFn: async (): Promise<StepRow> => {
+      const doc0 = starterDocument(brandSeed, {
+        gymName: brand.gymName,
+        logoUrl: brand.logoUrl,
+      });
+      const { data, error: e } = await supabase
+        .from('email_automation_steps')
+        .insert({
+          automation_id: id!,
+          gym_id: membership!.gymId,
+          step_index: steps.length,
+          delay_minutes: 3 * 1440,
+          subject: '',
+          design: doc0 as unknown as Json,
+          compiled_html: renderEmailHtml(doc0),
+          compiled_text: renderEmailText(doc0),
+        })
+        .select(
+          'id, step_index, delay_minutes, send_hour, send_days, subject, preheader, from_name, design, compiled_html',
+        )
+        .single();
+      if (e || !data) throw e ?? new Error('No step');
+      return data as StepRow;
+    },
+    onSuccess: (row) => {
+      setSteps((prev) => [
+        ...prev,
+        {
+          id: row.id,
+          delayDays: 3,
+          sendHour: null,
+          sendDays: [],
+          subject: '',
+          preheader: '',
+          fromName: '',
+          doc: coerceDocument(row.design, brandSeed),
+        },
+      ]);
+      queryClient.invalidateQueries({ queryKey: ['email-automation-steps', id] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not add a follow-up')),
+  });
+
+  const deleteStep = useMutation({
+    mutationFn: async (stepId: string) => {
+      const { error: e } = await supabase
+        .from('email_automation_steps')
+        .delete()
+        .eq('id', stepId);
+      if (e) throw e;
+    },
+    onSuccess: (_d, stepId) => {
+      setSteps((prev) => prev.filter((s) => s.id !== stepId));
+      if (editingStep === stepId) {
+        setEditingStep(null);
+        setMode('setup');
+      }
+      queryClient.invalidateQueries({ queryKey: ['email-automation-steps', id] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not remove the follow-up')),
+  });
 
   const toggleEnabled = useMutation({
     mutationFn: async (next: boolean) => {
@@ -385,6 +649,32 @@ export default function AutomationEditor() {
     );
   }
 
+  // The design mode edits whichever email is active — the primary or a step.
+  const activeStepIndex = editingStep ? steps.findIndex((s) => s.id === editingStep) : -1;
+  const activeStep = activeStepIndex >= 0 ? steps[activeStepIndex] : null;
+  const activeDoc = activeStep ? activeStep.doc : doc;
+  const setActiveDoc = (d: EmailDocument) => {
+    if (activeStep) updateStep(activeStep.id, { doc: d });
+    else setDoc(d);
+  };
+  const activePreviewHtml = activeStep
+    ? renderEmailHtml(activeStep.doc, { preheader: activeStep.preheader, unsubscribeUrl: '#' })
+    : previewHtml;
+  const activeLabel = activeStep ? `Follow-up ${activeStepIndex + 1}` : 'Main email';
+
+  async function saveActiveNow() {
+    if (activeStep) {
+      const { error: e } = await supabase
+        .from('email_automation_steps')
+        .update(stepPatch(activeStep))
+        .eq('id', activeStep.id);
+      if (e) setError(errorMessage(e, 'Could not save a follow-up'));
+      else setJustSaved(true);
+    } else {
+      await saveNow();
+    }
+  }
+
   if (mode === 'design') {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
@@ -400,11 +690,11 @@ export default function AutomationEditor() {
               </Text>
             </Pressable>
             <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
-              Design email
+              {activeLabel}
             </Text>
             <Button
               variant="secondary"
-              onPress={saveNow}
+              onPress={saveActiveNow}
               loading={save.isPending}
               success={justSaved}>
               Save
@@ -427,12 +717,12 @@ export default function AutomationEditor() {
           </View>
           {showPreview && Platform.OS === 'web' ? (
             <ScrollView className="flex-1" contentContainerClassName="pb-4 px-4">
-              <HtmlPreview html={previewHtml} />
+              <HtmlPreview html={activePreviewHtml} />
             </ScrollView>
           ) : (
             <EmailEditor
-              document={doc}
-              onChange={setDoc}
+              document={activeDoc}
+              onChange={setActiveDoc}
               brand={brandSeed}
               gymId={membership.gymId}
             />
@@ -581,6 +871,15 @@ export default function AutomationEditor() {
           />
           <Input label="From name (optional)" value={fromName} onChangeText={setFromName} placeholder={brand.gymName} />
 
+          <View className="border-t border-gray-100 dark:border-gray-800 pt-3">
+            <SendTimeControls
+              hour={sendHour}
+              days={sendDays}
+              onHour={setSendHour}
+              onDays={setSendDays}
+            />
+          </View>
+
           {trigger !== 'lead_cold' && (topics.data?.length ?? 0) > 0 ? (
             <View className="gap-1.5">
               <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">Topic</Text>
@@ -614,7 +913,10 @@ export default function AutomationEditor() {
         </View>
 
         <Pressable
-          onPress={() => setMode('design')}
+          onPress={() => {
+            setEditingStep(null);
+            setMode('design');
+          }}
           className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
             <Ionicons name="brush-outline" size={18} color={colors.iconSecondary} />
@@ -630,6 +932,80 @@ export default function AutomationEditor() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </Pressable>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <View className="gap-1">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Follow-up emails
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Send more emails later in the same sequence. Each one’s wait is
+              measured from the trigger, not the email before it.
+            </Text>
+          </View>
+
+          {steps.map((s, i) => (
+            <View
+              key={s.id}
+              className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-3">
+              <View className="flex-row items-center justify-between gap-2">
+                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  Follow-up {i + 1}
+                </Text>
+                <Pressable
+                  onPress={() => deleteStep.mutate(s.id)}
+                  hitSlop={6}
+                  className="active:opacity-70">
+                  <Ionicons name="trash-outline" size={18} color={colors.iconSecondary} />
+                </Pressable>
+              </View>
+              <View className="flex-row items-center gap-3">
+                <View className="w-24">
+                  <Input
+                    label="Wait"
+                    value={String(s.delayDays)}
+                    onChangeText={(v) => updateStep(s.id, { delayDays: Number(v) || 0 })}
+                    keyboardType="number-pad"
+                  />
+                </View>
+                <Text className="text-gray-500 dark:text-gray-400 text-sm flex-1 pt-5">
+                  days after the trigger
+                </Text>
+              </View>
+              <Input
+                label="Subject"
+                value={s.subject}
+                onChangeText={(v) => updateStep(s.id, { subject: v })}
+                placeholder="Following up"
+              />
+              <SendTimeControls
+                hour={s.sendHour}
+                days={s.sendDays}
+                onHour={(h) => updateStep(s.id, { sendHour: h })}
+                onDays={(fn) => updateStep(s.id, { sendDays: fn(s.sendDays) })}
+              />
+              <Pressable
+                onPress={() => {
+                  setEditingStep(s.id);
+                  setMode('design');
+                }}
+                className="flex-row items-center gap-2 active:opacity-70">
+                <Ionicons name="brush-outline" size={16} color={colors.iconSecondary} />
+                <Text className="text-primary text-sm font-medium">
+                  Design this email · {s.doc.blocks.length} block
+                  {s.doc.blocks.length === 1 ? '' : 's'}
+                </Text>
+              </Pressable>
+            </View>
+          ))}
+
+          <Button
+            variant="secondary"
+            onPress={() => addStep.mutate()}
+            loading={addStep.isPending}>
+            Add a follow-up
+          </Button>
+        </View>
 
         {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
 

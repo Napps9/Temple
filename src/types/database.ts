@@ -2423,6 +2423,8 @@ export type Database = {
           delay_minutes: number;
           params: Json;
           conditions: Json;
+          send_hour: number | null;
+          send_days: number[] | null;
           topic_id: string | null;
           subject: string;
           preheader: string;
@@ -2448,6 +2450,8 @@ export type Database = {
           delay_minutes?: number;
           params?: Json;
           conditions?: Json;
+          send_hour?: number | null;
+          send_days?: number[] | null;
           topic_id?: string | null;
           subject?: string;
           preheader?: string;
@@ -2471,6 +2475,8 @@ export type Database = {
           delay_minutes: number;
           params: Json;
           conditions: Json;
+          send_hour: number | null;
+          send_days: number[] | null;
           topic_id: string | null;
           subject: string;
           preheader: string;
@@ -2483,11 +2489,62 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      email_automation_steps: {
+        Row: {
+          id: string;
+          automation_id: string;
+          gym_id: string;
+          step_index: number;
+          delay_minutes: number;
+          send_hour: number | null;
+          send_days: number[] | null;
+          subject: string;
+          preheader: string;
+          from_name: string | null;
+          design: Json;
+          compiled_html: string | null;
+          compiled_text: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          automation_id: string;
+          gym_id: string;
+          step_index?: number;
+          delay_minutes?: number;
+          send_hour?: number | null;
+          send_days?: number[] | null;
+          subject?: string;
+          preheader?: string;
+          from_name?: string | null;
+          design?: Json;
+          compiled_html?: string | null;
+          compiled_text?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          step_index: number;
+          delay_minutes: number;
+          send_hour: number | null;
+          send_days: number[] | null;
+          subject: string;
+          preheader: string;
+          from_name: string | null;
+          design: Json;
+          compiled_html: string | null;
+          compiled_text: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       email_automation_runs: {
         Row: {
           id: string;
           gym_id: string;
           automation_id: string;
+          step_id: string | null;
           subject_profile_id: string | null;
           lead_id: string | null;
           recipient_email: string;
@@ -2503,6 +2560,7 @@ export type Database = {
           id?: string;
           gym_id: string;
           automation_id: string;
+          step_id?: string | null;
           subject_profile_id?: string | null;
           lead_id?: string | null;
           recipient_email: string;

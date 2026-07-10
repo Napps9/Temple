@@ -858,6 +858,21 @@ everyone (the default), so existing automations are unchanged. Owners pick
 these in the editor's "Only send to" card; cross-tenant ids are inert because
 every predicate is gym-scoped.
 
+An automation can also be a **sequence**: the automation row is the primary
+email, and `email_automation_steps` (0119) holds follow-ups, each with its own
+`delay_minutes` (measured from the trigger anchor, same clock as the primary),
+body, and send-time. The sweep cross-joins the primary + each step per subject
+via `_automation_emails`; `email_automation_runs.step_id` records which email a
+run is (null = primary, content read from the automation; set = a step, read
+from the step). The primary's idempotency key is unchanged (only steps get a
+`:step:<id>` segment) so a running automation never re-sends its primary. Each
+email also carries optional **send-time** controls (`send_hour` 0-23 +
+`send_days` ISO weekdays): `_automation_send_slot` rolls the due moment forward
+to the next matching hour/weekday in the gym's timezone, so "3 days after
+joining, at 9am on a weekday" is expressible; a null `send_hour` keeps the
+send-as-soon-as-due default. Owners add follow-ups and set send-time in the
+editor; each follow-up has its own block-designed body.
+
 There is no event bus, so the engine is a `pg_cron` sweep
 (`dispatch-email-automations`, every 15 min, 0117): `enqueue_due_automation_runs`
 inserts `email_automation_runs` (the ledger + queue, once-only via a unique
