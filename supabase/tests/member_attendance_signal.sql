@@ -19,8 +19,10 @@ declare
   v_ct      uuid;
   v_s       uuid;
   v_days    int;
-  v_recent  int[] := array[2, 9];                 -- < 14d: recent only
-  v_base    int[] := array[20, 30, 40, 50, 60];   -- 14..84d: baseline window
+  -- One recent visit vs a fuller baseline => a genuine drop (cadence 0.5).
+  -- Baseline days are all > 28 so they never double-count in bookings_28d.
+  v_recent  int[] := array[2];                     -- < 14d: recent only
+  v_base    int[] := array[30, 40, 50, 60, 70];    -- 30..70d: baseline only
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   perform _test_mk_membership(v_gym, v_coach, 'coach');
@@ -65,8 +67,8 @@ select is(
   (select bookings_28d::int from public.v_member_attendance_signal
    where gym_id = current_setting('test.gym')::uuid
      and profile_id = current_setting('test.decay')::uuid),
-  2,
-  'decaying member: 2 attended sessions in the last 28 days');
+  1,
+  'decaying member: 1 attended session in the last 28 days');
 select is(
   (select baseline_weekly from public.v_member_attendance_signal
    where gym_id = current_setting('test.gym')::uuid
@@ -77,8 +79,8 @@ select is(
   (select cadence_ratio from public.v_member_attendance_signal
    where gym_id = current_setting('test.gym')::uuid
      and profile_id = current_setting('test.decay')::uuid),
-  1.0::numeric,
-  'decaying member: cadence ratio computes against the baseline');
+  0.5::numeric,
+  'decaying member: cadence of 0.5 vs their baseline (a real drop)');
 
 -- 4-5. A member with no baseline history reads NULL cadence, not zero.
 select ok(
