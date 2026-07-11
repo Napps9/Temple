@@ -156,8 +156,41 @@ Left for you (policy/config, not code):
       whether the website builder add-on (`website_builder_enabled`, flipped
       manually by you after an invoice — there's no self-serve billing for
       it) has a price + a way to invoice it.
-- [ ] **Marketing/landing site** — confirm `jointemple.io` (apex) is live
-      and sells the product; `app.jointemple.io` is the app.
+- [x] **Marketing/landing site** — done, live at `jointemple.io` (apex),
+      auto-deploying from a separate repo's `main`. Built from real
+      research (25 owner/member conversations, an 11-platform competitor
+      pricing study): home, `/features` + 7 deep-dive pages, `/switching`,
+      `/pricing` (verified competitor rates, monthly auto-refresh +
+      email), `/about`, `/book-a-demo`, full SEO/OG/sitemap. `app.jointemple.io`
+      remains the product app.
+  - [x] Legal footer links + DRAFT-banner placeholders — already resolved
+        earlier this session (registered office, effective date filled,
+        banners dropped); no action needed despite what the site's own
+        wrap-up note said.
+  - [ ] **Demo inbox** — confirm `nick@jointemple.io` (the `book-a-demo`
+        mailto target) is watched daily; optionally add a `demo@` alias
+        the same way `support@`/`privacy@`/`security@` were added
+        (Admin console → Users → nick → Alternative emails).
+  - [ ] **Google Search Console** — add the `jointemple.io` property
+        (verification TXT already exists from the Workspace setup) and
+        submit `https://jointemple.io/sitemap.xml`.
+  - [ ] **Analytics decision** — none wired in yet. Pick a cookieless
+        option (Vercel Analytics or Plausible) to stay consent-banner-free,
+        or explicitly decide to skip it for now.
+  - [ ] **Phone QA pass** — browse every page on a real phone in both
+        themes; share the link into a chat app to check the social-card
+        preview renders.
+  - [ ] **Fact-check the About page** — founder story, "since 2014" /
+        "ten years coaching," and the signature are live; confirm every
+        word is accurate.
+  - [ ] **Named testimonials** — everything on-site is anonymised
+        today; 2-3 owners/members willing to be quoted by name + gym
+        would be the biggest social-proof upgrade available.
+  - [ ] Housekeeping: delete the stale `claude/temple-marketing-website-o231ss`
+        branch on GitHub (Branches page → bin icon) — cosmetic only.
+  - Backlog, not urgent: a "For your members" page, real app screenshots
+    replacing the CSS mockups (demo-gym seeder would help here), a
+    launch post/case study.
 - [ ] **Dry-run a real migration.** Importers exist for Mindbody /
       PushPress / Glofox / Wodify / spreadsheet (members, Stripe subs, and
       workout history). Run a realistic CSV through
