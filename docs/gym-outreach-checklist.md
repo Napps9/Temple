@@ -16,29 +16,21 @@ mail until these are done.
 
 ## Tier 1 — hard blockers (a gym cannot function without these)
 
-### [ ] 1. Fix auth email so signups actually complete
-
-**This is the single most important item.** Today Supabase Auth's
-**Site URL** is still `http://localhost:3000`, so every confirmation
-link points at localhost and shows `otp_expired`. That means **no new
-member or owner can confirm their email and get into the app** — it
-breaks the very first step of every signup.
+### [x] 1. Fix auth email so signups actually complete — verified end-to-end
 
 Runbook: `docs/auth-email-setup.md`. Concretely:
-- [ ] Verify a Temple sending domain in Resend (`support.jointemple.io`)
-- [ ] Point Supabase Auth at Resend SMTP (`smtp.resend.com`, sender
-      `noreply@support.jointemple.io`)
-- [ ] **Set Site URL to `https://app.jointemple.io`** and add
-      `https://app.jointemple.io/**` to Redirect URLs
-- [ ] Raise the auth email rate limit off the dev default (~30/hour)
-- [ ] (optional) Brand the confirm-signup template
-- [ ] Confirm `EXPO_PUBLIC_SUPABASE_URL` / `..._ANON_KEY` on Vercel point
-      at the same project you're editing
-
-> This is the one Tier 1 item the edge-function **Secrets** page does not
-> cover — Site URL + SMTP live under **Authentication → settings**, not
-> Edge Functions → Secrets. Keys being set is not the same as auth email
-> working; this remains the top blocker until the Site URL is fixed.
+- [x] Resend sending domain verified (`jointemple.io`, apex)
+- [x] Supabase Auth pointed at Resend SMTP, sender `noreply@jointemple.io`
+- [x] **Site URL is `https://app.jointemple.io`**, Redirect URLs include
+      `https://app.jointemple.io/**`
+- [x] Auth email rate limit at 30/hour (fine at this scale)
+- [x] Vercel's `EXPO_PUBLIC_SUPABASE_URL` confirmed pointing at the same
+      project (matches `app.jointemple.io` in Vercel's domains)
+- [x] **Real test:** signed up with a fresh address, received the
+      confirmation email from `Temple <noreply@jointemple.io>` within
+      seconds, clicked through, landed signed in on `app.jointemple.io`.
+- [ ] (optional, not done) Brand the confirm-signup template beyond the
+      default — cosmetic, not blocking.
 
 ### [x] 2. Turn on Stripe (payments) — verified end-to-end
 
