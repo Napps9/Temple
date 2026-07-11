@@ -79,21 +79,22 @@ simulate or degrade to "code created, not emailed." Runbook:
 > Note: items 1 and 3 share the same Resend account + verified domain, so
 > do the domain verification once and both benefit.
 
-### [ ] 4. Set up company email mailboxes on the domain
+### [x] 4. Set up company email mailboxes on the domain — done
 
-Items 1 and 3 verify the domain for **sending**; you still need real
-**receiving** mailboxes for humans and for the role addresses the app and
-legal docs already point at. Set these up (Google Workspace / Fastmail /
-etc.) on the company domain:
-- [ ] Founder / staff mailboxes — e.g. `nick@jointemple.io`
-- [ ] `support@jointemple.io` — member/gym support (already the Resend
-      sending subdomain)
-- [ ] **`privacy@jointemple.io`** — monitored; the Privacy Policy, Terms
-      and DPA all direct data-subject and GDPR requests here
-- [ ] **`security@jointemple.io`** — monitored; breach-response inbox
-      (`docs/legal/breach-response.md`) and where the security monitor's
-      alerts should land
-- [ ] `noreply@` / `updates@` — transactional + campaign senders
+Google Workspace (Business Starter) set up on `jointemple.io`: domain
+verified, MX activated, SPF-safe DKIM added (Google's own selector, no
+conflict with Resend's), no conflicts with the existing Resend
+sending records.
+- [x] `nick@jointemple.io` — real mailbox, Workspace admin
+- [x] `support@jointemple.io` — alias on `nick@`
+- [x] **`privacy@jointemple.io`** — alias on `nick@`; monitored, the
+      Privacy Policy/Terms/DPA all direct data-subject and GDPR
+      requests here
+- [x] **`security@jointemple.io`** — alias on `nick@`; monitored,
+      breach-response inbox (`docs/legal/breach-response.md`) and
+      where the security monitor's alerts should land
+- [x] `noreply@` / sending addresses — already covered by the existing
+      Resend setup (send-only, no mailbox needed)
 
 > Domain check: every existing doc and the app use **`jointemple.io`**
 > (`app.jointemple.io`, `support.jointemple.io`, `privacy@jointemple.io`).
@@ -138,9 +139,10 @@ Left for you (policy/config, not code):
       `/privacy` screens. **These docs have not been reviewed by a
       solicitor** — you chose to publish without one; get a one-off review
       of the ToS + DPA when you can afford it.
-- [ ] **Create + monitor the contact inboxes** the legal docs reference
-      (`privacy@`, `security@`) — see Tier 1 item 4 — then confirm the
-      real addresses in the docs.
+- [x] **Create + monitor the contact inboxes** the legal docs reference
+      (`privacy@`, `security@`) — done, see Tier 1 item 4. Real addresses
+      already match what's in the docs (`privacy@jointemple.io`,
+      `security@jointemple.io`) — no doc changes needed.
 - [ ] **Make breach alerts actually email** — set the `security-alert`
       function's shared secret + the monitor's GUCs in hosted; until then
       alerts record silently in `security_alerts`.
