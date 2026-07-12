@@ -116,14 +116,23 @@ type ProgressRow = {
   target: number;
 };
 
+// Collapsed on a fresh app start so the nudge sits quietly, but once the
+// owner opens it we keep it open across navigation. Tapping a step pushes
+// to its page whose BackLink does router.replace('/management'), which
+// fully remounts this card — local state alone would collapse it again and
+// drop the owner back onto a closed card, hiding the list they were working
+// through. Session-only (module scope), like list-scroll-position.
+let checklistOpen = false;
+
 export function GymSetupChecklist() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const role = useRole();
-  // Collapsed by default so the nudge sits quietly at the top of every
-  // Manage tab — the header + progress bar still show how far along the
-  // gym is; the owner expands to work through the steps.
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(checklistOpen);
+  const setOpen = (next: boolean) => {
+    checklistOpen = next;
+    setOpenState(next);
+  };
 
   const progress = useQuery({
     queryKey: ['gym-setup-progress', membership?.gymId],
@@ -160,7 +169,7 @@ export function GymSetupChecklist() {
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
       <Pressable
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => setOpen(!open)}
         className="flex-row items-center gap-3 active:opacity-70">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
           <Ionicons name="rocket-outline" size={22} color={colors.primary} />
