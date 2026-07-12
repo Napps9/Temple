@@ -72,8 +72,10 @@ simulate or degrade to "code created, not emailed." Runbook:
 `docs/resend-setup.md`.
 - [x] Set `RESEND_API_KEY` + `RESEND_FROM_EMAIL` on the edge functions
       (in hosted)
-- [ ] Confirm `RESEND_FROM_EMAIL` uses a **verified** sending domain in
-      Resend (e.g. `updates@support.jointemple.io`)
+- [x] Confirm `RESEND_FROM_EMAIL` uses a **verified** sending domain in
+      Resend — already true: Comms/invites reuse the same account +
+      domain (`jointemple.io`) verified for Auth SMTP in Tier 1 item 1,
+      per `docs/resend-setup.md`'s note that the two share one domain.
 - [ ] Verify a real campaign send shows `delivered`, not `simulated`
 - [ ] Verify an emailed staff invite actually arrives
 
@@ -147,8 +149,9 @@ Left for you (policy/config, not code):
 - [ ] **Make breach alerts actually email** — set the `security-alert`
       function's shared secret + the monitor's GUCs in hosted; until then
       alerts record silently in `security_alerts`.
-- [ ] **(per gym, optional) Under-18 members** — decide whether to enable
-      `allow_minors` (off by default); it captures DoB + guardian details.
+- [x] **(per gym, optional) Under-18 members** — not a platform decision;
+      `allow_minors` is a self-serve per-gym toggle (off by default) each
+      gym owner sets in their own settings. Nothing for you to decide here.
 
 ---
 
