@@ -12,6 +12,15 @@ Ordered by "can a gym actually use this without it." Tier 1 is
 non-negotiable; a new gym literally cannot onboard, get paid, or send
 mail until these are done.
 
+> **Production reset (2026-07-12):** all users, gyms and billing events
+> wiped clean via SQL (`delete from billing_events; delete from gyms;
+> delete from auth.users;` — in that order, to clear a check-constraint
+> and an FK block). No real accounts existed yet, so nothing was lost.
+> The "Dolly Box" test gym used to verify Stripe/auth earlier no longer
+> exists — the verification itself still stands, but don't go looking
+> for that data. The platform is a genuine blank slate for the demo-gym
+> work below.
+
 ---
 
 ## Tier 1 — hard blockers (a gym cannot function without these)
