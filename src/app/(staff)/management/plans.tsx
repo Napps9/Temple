@@ -316,6 +316,7 @@ export function PlansPanel() {
               credit_count: creditCount,
               monthly_price_cents: monthlyPriceCents,
               notice_period_days: noticePeriodDays,
+              period_length: r.kind === 'credit_period' ? '30 days' : null,
             })
             .eq('plan_id', r.serverId);
           if (error) throw error;
@@ -497,35 +498,94 @@ export function PlansPanel() {
                   placeholder="Unlimited monthly"
                 />
                 <View className="gap-1">
-                  <Text className="text-gray-700 dark:text-gray-200 text-sm">Kind</Text>
+                  <Text className="text-gray-700 dark:text-gray-200 text-sm">Type</Text>
                   <View className="flex-row gap-2 flex-wrap">
-                    {(['unlimited', 'credit_period', 'credit_pack'] as PlanKind[]).map(
-                      (k) => (
+                    {(
+                      [
+                        { key: 'membership', label: 'Membership' },
+                        { key: 'session_pack', label: 'Session pack' },
+                      ] as const
+                    ).map((t) => {
+                      const active =
+                        t.key === 'session_pack'
+                          ? r.kind === 'credit_pack'
+                          : r.kind !== 'credit_pack';
+                      return (
                         <Pressable
-                          key={k}
-                          onPress={() => update(idx, { kind: k })}
+                          key={t.key}
+                          onPress={() => {
+                            if (active) return;
+                            update(idx, {
+                              kind: t.key === 'session_pack' ? 'credit_pack' : 'unlimited',
+                            });
+                          }}
                           className={`px-3 py-1.5 rounded-md border ${
-                            r.kind === k
+                            active
                               ? 'border-primary bg-primary/10'
                               : 'border-gray-200 dark:border-gray-700'
                           }`}>
                           <Text
                             className={
-                              r.kind === k
+                              active
                                 ? 'text-primary text-xs uppercase tracking-widest'
                                 : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
                             }>
-                            {k.replace('_', ' ')}
+                            {t.label}
                           </Text>
                         </Pressable>
-                      ),
-                    )}
+                      );
+                    })}
                   </View>
+                  {r.kind === 'credit_pack' ? (
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                      A fixed bundle of sessions. They don&apos;t expire.
+                    </Text>
+                  ) : null}
                 </View>
+                {r.kind !== 'credit_pack' ? (
+                  <View className="gap-1">
+                    <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                      Membership type
+                    </Text>
+                    <View className="flex-row gap-2 flex-wrap">
+                      {(
+                        [
+                          { key: 'unlimited' as const, label: 'Unlimited' },
+                          {
+                            key: 'credit_period' as const,
+                            label: 'Limited per period',
+                          },
+                        ]
+                      ).map((t) => (
+                        <Pressable
+                          key={t.key}
+                          onPress={() => update(idx, { kind: t.key })}
+                          className={`px-3 py-1.5 rounded-md border ${
+                            r.kind === t.key
+                              ? 'border-primary bg-primary/10'
+                              : 'border-gray-200 dark:border-gray-700'
+                          }`}>
+                          <Text
+                            className={
+                              r.kind === t.key
+                                ? 'text-primary text-xs uppercase tracking-widest'
+                                : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                            }>
+                            {t.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
                 {r.kind !== 'unlimited' ? (
                   <View className="gap-1">
                     <Input
-                      label="Credits per period"
+                      label={
+                        r.kind === 'credit_pack'
+                          ? 'Number of sessions'
+                          : 'Classes per period'
+                      }
                       value={r.creditCount}
                       onChangeText={(v) => update(idx, { creditCount: v })}
                       keyboardType="number-pad"
