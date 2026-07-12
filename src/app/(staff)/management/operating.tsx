@@ -16,7 +16,6 @@ import { useCan } from '@/lib/useCan';
 import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
-import { useSavedFlag } from '@/lib/useSavedFlag';
 
 // A short, common-case currency list for the manual override. Stripe can
 // set any ISO code on connect (the RPC accepts any three-letter code);
@@ -57,7 +56,13 @@ export function OperatingDefaultsPanel() {
   const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  const [saved, markSaved] = useSavedFlag();
+  // The saved tick holds until the form no longer matches what was last
+  // saved. Rather than a timed flash, we snapshot the saved state and
+  // derive `saved` by comparison — so any edit (or a revert back to the
+  // saved values) re-derives and the tick clears the moment something
+  // changes. Survives the post-save refetch: round-tripped values are
+  // equal, so reseeding the draft doesn't drop the tick.
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
   const currentDiscipline = useGymDiscipline();
   const [discipline, setDiscipline] = useState<Discipline | null>(null);
@@ -104,6 +109,9 @@ export function OperatingDefaultsPanel() {
           : null,
       });
   }, [cfg.data]);
+
+  const currentSnapshot = JSON.stringify({ draft, discipline, currency, allowMinors });
+  const saved = savedSnapshot !== null && savedSnapshot === currentSnapshot;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -156,7 +164,7 @@ export function OperatingDefaultsPanel() {
     },
     onSuccess: () => {
       setError(null);
-      markSaved();
+      setSavedSnapshot(JSON.stringify({ draft, discipline, currency, allowMinors }));
       queryClient.invalidateQueries({ queryKey: ['gym-operating-defaults'] });
       queryClient.invalidateQueries({ queryKey: ['gym-discipline'] });
       queryClient.invalidateQueries({ queryKey: ['gym-currency'] });
