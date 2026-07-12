@@ -152,10 +152,12 @@ Left for you (policy/config, not code):
         Stripe objects** (connect a test-mode account so checkout demos)
         and **no waiver/PAR-Q** (publish one in-app so the booking gate
         is visible).
-- [ ] **Decide Temple's pricing** — what you charge gyms per month, and
-      whether the website builder add-on (`website_builder_enabled`, flipped
-      manually by you after an invoice — there's no self-serve billing for
-      it) has a price + a way to invoice it.
+- [x] **Decide Temple's pricing** — **£200/month**, matching what the
+      marketing site's stat strip and pricing page already commit to.
+  - [ ] Still open: whether the website builder add-on
+        (`website_builder_enabled`, flipped manually by you after an
+        invoice — no self-serve billing for it) is included in the £200,
+        or priced separately.
 - [x] **Marketing/landing site** — done, live at `jointemple.io` (apex,
       canonical; `www` 308-redirects to it, SSL valid). Repo
       `napps9/temple-website`, trunk (`main`) auto-deploys to Vercel.
@@ -178,22 +180,14 @@ Left for you (policy/config, not code):
   - [x] **Google Search Console** — verified, sitemap submitted.
   - [x] **Analytics** — Vercel Web Analytics wired in, cookieless (no
         consent-banner obligation triggered).
-  - [ ] **Refresh the WhatsApp/OG share-card cache** — the OG image was
-        redesigned (light-mode share card); Facebook Sharing Debugger →
-        paste `https://jointemple.io` → "Scrape Again" to bust the old
-        cached preview. Two minutes.
-  - [ ] **Phone QA pass** — browse every page on a real phone in both
-        themes; share the link into a chat app to confirm the *new*
-        social-card renders (do this after the cache refresh above).
-  - [ ] **Fact-check the About page** — founder story, "since 2014" /
-        "ten years coaching," and the signature are live; confirm every
-        word is accurate.
-  - [ ] **Named testimonials** — still anonymised (real 2025 CrossFit
-        Stags & Does survey quotes, no names). 2-3 owners/members willing
-        to be quoted by name + gym would be the biggest social-proof
-        upgrade available.
-  - [ ] Housekeeping: delete the stale `claude/temple-marketing-website-o231ss`
-        branch on GitHub (Branches page → bin icon) — cosmetic only.
+  - [x] ~~Refresh the WhatsApp/OG share-card cache~~ — decided not
+        needed.
+  - [x] **Phone QA pass** — done, happy with mobile.
+  - [x] **Fact-check the About page** — done.
+  - [x] ~~Named testimonials~~ — decided against; staying anonymised
+        (real 2025 CrossFit Stags & Does survey quotes, no names).
+  - [x] Housekeeping: stale `claude/temple-marketing-website-o231ss`
+        branch deleted.
   - Backlog, not urgent: a "For your members" page, real app screenshots
     replacing the CSS mockups (demo-gym seeder would help here), a
     launch post/case study.
