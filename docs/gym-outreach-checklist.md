@@ -165,10 +165,15 @@ Left for you (policy/config, not code):
         products. Seeded gym display name came through lowercase
         ("redline hyrox") — rename to "Redline Hyrox" via Manage →
         Settings before demoing.
-  - [ ] Known seeder gaps to fill by hand on **each** gym before a demo:
-        it seeds **no Stripe objects** (connect a test-mode account so
-        checkout demos) and **no waiver/PAR-Q** (publish one in-app so
-        the booking gate is visible).
+  - [x] **Good Life Crossfit** seeder gaps filled: Stripe connected
+        (test mode, `acct_1TsP4bRMTyih4ZgW`), a waiver uploaded +
+        signed, a member invited and signed up. Worth a quick recheck
+        that the waiver signature actually stuck — a fix landed on
+        `main` right around this ("wait for gate refetch before
+        navigating, so first sign sticks") that this test may have
+        hit.
+  - [ ] **Redline Hyrox** still needs the same: connect Stripe (test
+        mode) + publish a waiver/PAR-Q.
 - [x] **Decide Temple's pricing** — **£200/month, all-inclusive**,
       matching what the marketing site's stat strip and pricing page
       already commit to. The website builder add-on
