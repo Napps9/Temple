@@ -154,13 +154,21 @@ Left for you (policy/config, not code):
 
 ## Tier 3 — sales & demo readiness
 
-- [ ] **Stand up a hosted demo gym** for sales calls. The seeder exists
-      (`docs/demo-gym.md`, GitHub Action → "Demo gym" → seed). Decide
-      CrossFit vs Hyrox as your showcase.
-  - [ ] Known seeder gaps to fill by hand before a demo: it seeds **no
-        Stripe objects** (connect a test-mode account so checkout demos)
-        and **no waiver/PAR-Q** (publish one in-app so the booking gate
-        is visible).
+- [x] **Stand up hosted demo gyms** — both seeded (production was reset
+      clean first, see the note above).
+  - [x] **Good Life Crossfit** — slug `demo-good-life`, owner
+        `owner@demo-good-life.temple.test` / `TempleDemo1!`. 43 accounts,
+        850 bookings, 352 tracked workouts, published website.
+  - [x] **Redline Hyrox** — slug `demo-redline-hyrox`, owner
+        `owner@demo-redline-hyrox.temple.test` / `TempleDemo1!`. 43
+        accounts, 713 bookings, 6 Hyrox races/144 splits, 4 store
+        products. Seeded gym display name came through lowercase
+        ("redline hyrox") — rename to "Redline Hyrox" via Manage →
+        Settings before demoing.
+  - [ ] Known seeder gaps to fill by hand on **each** gym before a demo:
+        it seeds **no Stripe objects** (connect a test-mode account so
+        checkout demos) and **no waiver/PAR-Q** (publish one in-app so
+        the booking gate is visible).
 - [x] **Decide Temple's pricing** — **£200/month, all-inclusive**,
       matching what the marketing site's stat strip and pricing page
       already commit to. The website builder add-on
