@@ -37,8 +37,12 @@ a complete IDS.
 *Config to make it email (else it records silently):* enable `pg_net`
 (migration 0112 does), set `SECURITY_ALERT_SECRET` + `RESEND_API_KEY` +
 `RESEND_FROM_EMAIL` + `SECURITY_ALERT_EMAIL` on the `security-alert` function,
-and set the `app.security_alert_url` / `app.security_alert_secret` Postgres
-settings to the function URL + the same secret.
+and store the same secret in Supabase Vault under the name
+`security_alert_secret` — `select vault.create_secret('<value>',
+'security_alert_secret');` in the SQL editor. (Migration 0121: hosted
+Supabase blocks `ALTER DATABASE`/`ALTER ROLE` for custom GUCs, so the
+webhook URL is hardcoded in `run_security_monitor()` and the secret is read
+from Vault instead of a GUC.)
 
 ### Also relied on
 
