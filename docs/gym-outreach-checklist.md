@@ -156,36 +156,42 @@ Left for you (policy/config, not code):
       whether the website builder add-on (`website_builder_enabled`, flipped
       manually by you after an invoice — there's no self-serve billing for
       it) has a price + a way to invoice it.
-- [x] **Marketing/landing site** — done, live at `jointemple.io` (apex),
-      auto-deploying from a separate repo's `main`. Built from real
-      research (25 owner/member conversations, an 11-platform competitor
-      pricing study): home, `/features` + 7 deep-dive pages, `/switching`,
-      `/pricing` (verified competitor rates, monthly auto-refresh +
-      email), `/about`, `/book-a-demo`, full SEO/OG/sitemap. `app.jointemple.io`
-      remains the product app.
+- [x] **Marketing/landing site** — done, live at `jointemple.io` (apex,
+      canonical; `www` 308-redirects to it, SSL valid). Repo
+      `napps9/temple-website`, trunk (`main`) auto-deploys to Vercel.
+      Built from real research (25 owner/member conversations, an
+      11-platform competitor pricing study): home, `/features` + 7
+      deep-dive pages, `/switching`, `/pricing` (verified competitor
+      rates, monthly auto-refresh + email), `/about`, `/for-members`,
+      `/book-a-demo`, theme-aware light/dark design, full SEO/OG/sitemap.
+      `app.jointemple.io` remains the product app. DNS confirmed not to
+      have disturbed the Google Workspace / Resend email records set up
+      earlier this session.
   - [x] Legal footer links + DRAFT-banner placeholders — already resolved
         earlier this session (registered office, effective date filled,
         banners dropped); no action needed despite what the site's own
         wrap-up note said.
-  - [ ] **Demo inbox** — confirm `nick@jointemple.io` (the `book-a-demo`
-        mailto target) is watched daily; optionally add a `demo@` alias
-        the same way `support@`/`privacy@`/`security@` were added
-        (Admin console → Users → nick → Alternative emails).
-  - [ ] **Google Search Console** — add the `jointemple.io` property
-        (verification TXT already exists from the Workspace setup) and
-        submit `https://jointemple.io/sitemap.xml`.
-  - [ ] **Analytics decision** — none wired in yet. Pick a cookieless
-        option (Vercel Analytics or Plausible) to stay consent-banner-free,
-        or explicitly decide to skip it for now.
+  - [x] **Demo inbox** — decided: `nick@jointemple.io` is the
+        `book-a-demo` mailto target, footer uses `support@`; no separate
+        `demo@` alias. Confirm the `nick@` mailbox is actually watched
+        daily (process, not config — nothing left to build).
+  - [x] **Google Search Console** — verified, sitemap submitted.
+  - [x] **Analytics** — Vercel Web Analytics wired in, cookieless (no
+        consent-banner obligation triggered).
+  - [ ] **Refresh the WhatsApp/OG share-card cache** — the OG image was
+        redesigned (light-mode share card); Facebook Sharing Debugger →
+        paste `https://jointemple.io` → "Scrape Again" to bust the old
+        cached preview. Two minutes.
   - [ ] **Phone QA pass** — browse every page on a real phone in both
-        themes; share the link into a chat app to check the social-card
-        preview renders.
+        themes; share the link into a chat app to confirm the *new*
+        social-card renders (do this after the cache refresh above).
   - [ ] **Fact-check the About page** — founder story, "since 2014" /
         "ten years coaching," and the signature are live; confirm every
         word is accurate.
-  - [ ] **Named testimonials** — everything on-site is anonymised
-        today; 2-3 owners/members willing to be quoted by name + gym
-        would be the biggest social-proof upgrade available.
+  - [ ] **Named testimonials** — still anonymised (real 2025 CrossFit
+        Stags & Does survey quotes, no names). 2-3 owners/members willing
+        to be quoted by name + gym would be the biggest social-proof
+        upgrade available.
   - [ ] Housekeeping: delete the stale `claude/temple-marketing-website-o231ss`
         branch on GitHub (Branches page → bin icon) — cosmetic only.
   - Backlog, not urgent: a "For your members" page, real app screenshots
