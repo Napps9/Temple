@@ -68,11 +68,22 @@ export default function WaiverForm() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ['waiver-state'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
-      queryClient.invalidateQueries({ queryKey: ['dependent-screening'] });
+      // Wait for the gate queries to refetch BEFORE navigating. The entry
+      // gate (index.tsx) and /family re-check these on mount; the signed
+      // state must be in cache first. A fire-and-forget invalidate left
+      // the gate reading the stale pre-signature value (needs_waiver:
+      // true) and bounced the member straight back to an empty waiver —
+      // so the first submit looked like it failed and they had to sign
+      // again. refetchType 'all' is required because these queries are
+      // unmounted (inactive) while this screen is open, so the default
+      // active-only refetch would skip them.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['waiver-state'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['gym-membership'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['dependent-screening'], refetchType: 'all' }),
+      ]);
       if (subject) {
         router.replace('/family' as never);
       } else {
