@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRef, useState } from 'react';
+import { Modal, Pressable, Text, TextInput, View } from 'react-native';
+
+import { useThemeColors } from '@/lib/theme';
 
 // A number + unit input for the duration / window settings on the gym
 // settings page. The underlying columns store a single fixed unit
@@ -170,39 +173,101 @@ export function DurationField({
       {blurb ? (
         <Text className="text-gray-500 dark:text-gray-400 text-xs">{blurb}</Text>
       ) : null}
-      <TextInput
-        value={amount}
-        onChangeText={changeAmount}
-        keyboardType="number-pad"
-        placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
-      />
-      {/* Unit toggle on its own row — a segmented control. Stacking under
-          the input keeps all units visible on narrow mobile widths,
-          where row layouts clipped 'weeks' off the edge. */}
-      <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-        {units.map((u) => {
-          const on = u === unit;
-          return (
-            <Pressable
-              key={u}
-              onPress={() => changeUnit(u)}
-              className={`flex-1 py-2 rounded-md items-center ${
-                on ? 'bg-white dark:bg-gray-700' : ''
-              }`}>
-              <Text
-                className={`text-xs ${
-                  on
-                    ? 'text-gray-900 dark:text-gray-50 font-medium'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
-                {UNIT_LABEL[u]}
-              </Text>
-            </Pressable>
-          );
-        })}
+      {/* Number on the left, unit dropdown on the right. The compact
+          trigger (current unit + chevron) sidesteps the mobile clipping
+          the old inline segmented control had with 'weeks'. */}
+      <View className="flex-row items-center gap-2">
+        <TextInput
+          value={amount}
+          onChangeText={changeAmount}
+          keyboardType="number-pad"
+          placeholder={placeholder}
+          placeholderTextColor="#9CA3AF"
+          className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+        />
+        <UnitDropdown units={units} unit={unit} onChange={changeUnit} />
       </View>
     </View>
+  );
+}
+
+function UnitDropdown({
+  units,
+  unit,
+  onChange,
+}: {
+  units: DurationUnit[];
+  unit: DurationUnit;
+  onChange: (u: DurationUnit) => void;
+}) {
+  const colors = useThemeColors();
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<View>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(
+    null,
+  );
+
+  function openMenu() {
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setPos({ top: y + height + 4, left: x, width });
+      setOpen(true);
+    });
+  }
+
+  return (
+    <>
+      <Pressable
+        ref={triggerRef}
+        onPress={openMenu}
+        className="w-24 flex-row items-center justify-between gap-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 active:opacity-70">
+        <Text className="text-gray-900 dark:text-gray-50 text-base">
+          {UNIT_LABEL[unit]}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+      </Pressable>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}>
+        <Pressable
+          className="flex-1"
+          onPress={() => setOpen(false)}
+          accessibilityLabel="Close unit menu"
+        />
+        {pos ? (
+          <View
+            style={{ position: 'absolute', top: pos.top, left: pos.left, width: pos.width }}
+            className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-pop p-1">
+            {units.map((u) => {
+              const on = u === unit;
+              return (
+                <Pressable
+                  key={u}
+                  onPress={() => {
+                    onChange(u);
+                    setOpen(false);
+                  }}
+                  className={`flex-row items-center justify-between rounded-md px-3 py-2 active:opacity-70 ${
+                    on ? 'bg-primary/10' : ''
+                  }`}>
+                  <Text
+                    className={`text-sm ${
+                      on
+                        ? 'text-gray-900 dark:text-gray-50 font-medium'
+                        : 'text-gray-700 dark:text-gray-200'
+                    }`}>
+                    {UNIT_LABEL[u]}
+                  </Text>
+                  {on ? (
+                    <Ionicons name="checkmark" size={16} color={colors.primary} />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </Modal>
+    </>
   );
 }
