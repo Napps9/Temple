@@ -6,6 +6,7 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { ClassTypePicker } from '@/components/ClassTypePicker';
 import { DatePicker } from '@/components/DatePicker';
+import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import {
   EMPTY_RECURRENCE,
@@ -340,28 +341,25 @@ export function CreateClassModal({
               {recurring ? (
                 <RecurrenceEditor value={recurrence} onChange={setRecurrence} />
               ) : (
-                <View className="flex-row gap-3">
-                  <View className="flex-1">
-                    <Input
-                      label="Duration (min)"
-                      value={recurrence.durationMinutes}
-                      onChangeText={(v) =>
-                        setRecurrence({ ...recurrence, durationMinutes: v })
-                      }
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Input
-                      label="Capacity"
-                      value={recurrence.capacity}
-                      onChangeText={(v) =>
-                        setRecurrence({ ...recurrence, capacity: v })
-                      }
-                      keyboardType="numeric"
-                    />
-                  </View>
-                </View>
+                <>
+                  <DurationField
+                    label="Duration"
+                    value={recurrence.durationMinutes}
+                    onChange={(v) =>
+                      setRecurrence({ ...recurrence, durationMinutes: v })
+                    }
+                    base="minutes"
+                    units={['minutes', 'hours']}
+                  />
+                  <Input
+                    label="Capacity"
+                    value={recurrence.capacity}
+                    onChangeText={(v) =>
+                      setRecurrence({ ...recurrence, capacity: v })
+                    }
+                    keyboardType="numeric"
+                  />
+                </>
               )}
 
               <Input

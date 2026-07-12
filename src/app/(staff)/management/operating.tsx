@@ -295,16 +295,39 @@ export function OperatingDefaultsPanel() {
           value={draft.default_class_capacity}
           onChange={num('default_class_capacity')}
         />
-        <NumField
-          label="Default class duration (minutes)"
-          value={draft.default_class_minutes}
-          onChange={num('default_class_minutes')}
+        <DurationField
+          label="Default class duration"
+          value={String(draft.default_class_minutes)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    default_class_minutes: v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="minutes"
+          units={['minutes', 'hours']}
         />
-        <NumField
-          label="Class materialisation horizon (weeks)"
+        <DurationField
+          label="Class materialisation horizon"
           blurb="How far ahead recurring schedules turn into bookable sessions."
-          value={draft.materialisation_horizon_weeks}
-          onChange={num('materialisation_horizon_weeks')}
+          value={String(draft.materialisation_horizon_weeks)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    materialisation_horizon_weeks:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="weeks"
+          units={['weeks', 'months']}
         />
       </Section>
 

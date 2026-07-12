@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ColorSwatchPicker, PALETTE } from '@/components/ColorSwatchPicker';
+import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -152,12 +153,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
       </View>
 
       {usesThreshold ? (
-        <Input
-          label="Threshold (days)"
+        <DurationField
+          label="Threshold"
           value={thresholdDays}
-          onChangeText={setThresholdDays}
+          onChange={setThresholdDays}
+          base="days"
+          units={['days', 'weeks', 'months']}
           placeholder="7"
-          keyboardType="number-pad"
         />
       ) : null}
 

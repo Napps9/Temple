@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 
 import { useThemeColors } from '@/lib/theme';
@@ -28,7 +28,7 @@ export type DurationUnit =
 // The base unit the backing column uses. Allowed unit sets omit any
 // option smaller than the base — booking_window_hours_ahead is stored
 // in hours and can't express sub-hour values, for instance.
-export type DurationBase = 'minutes' | 'hours' | 'days' | 'months';
+export type DurationBase = 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
 
 const MIN_PER: Record<DurationUnit, number> = {
   minutes: 1,
@@ -52,6 +52,7 @@ const BASE_MINUTES: Record<DurationBase, number> = {
   minutes: 1,
   hours: 60,
   days: 1440,
+  weeks: 10080,
   months: 43200,
 };
 
@@ -74,6 +75,22 @@ function pickUnit(
   return units[0];
 }
 
+// Derive the editable amount + unit from a stored base value: pick the
+// most natural unit and express the value in it (2880 min stored → "2
+// days"). A blank/zero value keeps the smallest allowed unit.
+function computeSeed(
+  value: string,
+  base: DurationBase,
+  units: DurationUnit[],
+): { amount: string; unit: DurationUnit } {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n) || n <= 0) {
+    return { amount: value.trim() === '' ? '' : value, unit: units[0] };
+  }
+  const u = pickUnit(n, base, units);
+  return { amount: String((n * baseMinutes(base)) / MIN_PER[u]), unit: u };
+}
+
 // Largest-to-smallest unit list each base can render in. Bases never
 // render a smaller unit than themselves (a value stored in days has no
 // sub-day precision available).
@@ -81,6 +98,7 @@ const FORMAT_UNITS: Record<DurationBase, DurationUnit[]> = {
   minutes: ['years', 'months', 'weeks', 'days', 'hours', 'minutes'],
   hours:   ['years', 'months', 'weeks', 'days', 'hours'],
   days:    ['years', 'months', 'weeks', 'days'],
+  weeks:   ['years', 'months', 'weeks'],
   months:  ['years', 'months'],
 };
 
@@ -117,21 +135,28 @@ export function DurationField({
   units: DurationUnit[];
   placeholder?: string;
 }) {
-  // Seeded once. Both editors mount this only after their data has
-  // loaded (Operating defaults gates on the draft; the class-type
-  // override mounts on demand), so there's no late value to resync.
-  const seed = (() => {
-    const n = parseInt(value, 10);
-    if (!Number.isFinite(n) || n <= 0) {
-      return { amount: value.trim() === '' ? '' : value, unit: units[0] };
-    }
-    const u = pickUnit(n, base, units);
-    return { amount: String((n * baseMinutes(base)) / MIN_PER[u]), unit: u };
-  })();
+  const seed = computeSeed(value, base, units);
   const [amount, setAmount] = useState<string>(seed.amount);
   const [unit, setUnit] = useState<DurationUnit>(seed.unit);
 
+  // Reseed from an externally-changing value — but only until the user
+  // first touches the field. This lets an editor that seeds asynchronously
+  // (e.g. a class-duration default arriving from the gym config a tick
+  // after mount) land on the right unit, while a field the user is editing
+  // is fully theirs: once they type or pick a unit, parent echoes are
+  // ignored so the display is never reformatted mid-edit.
+  const interacted = useRef(false);
+  useEffect(() => {
+    if (interacted.current) return;
+    const next = computeSeed(value, base, units);
+    setAmount(next.amount);
+    setUnit(next.unit);
+    // base/units are fixed per mounted field; only `value` drives a reseed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
   function emit(nextAmount: string, nextUnit: DurationUnit) {
+    interacted.current = true;
     const trimmed = nextAmount.trim();
     if (trimmed === '') {
       onChange('');

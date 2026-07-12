@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
+import { DurationField } from './DurationField';
 import { Input } from './Input';
 import { useThemeColors } from '@/lib/theme';
 
@@ -126,24 +127,19 @@ export function RecurrenceEditor({
         </View>
       </View>
 
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Input
-            label="Duration (min)"
-            value={value.durationMinutes}
-            onChangeText={(v) => onChange({ ...value, durationMinutes: v })}
-            keyboardType="numeric"
-          />
-        </View>
-        <View className="flex-1">
-          <Input
-            label="Capacity"
-            value={value.capacity}
-            onChangeText={(v) => onChange({ ...value, capacity: v })}
-            keyboardType="numeric"
-          />
-        </View>
-      </View>
+      <DurationField
+        label="Duration"
+        value={value.durationMinutes}
+        onChange={(v) => onChange({ ...value, durationMinutes: v })}
+        base="minutes"
+        units={['minutes', 'hours']}
+      />
+      <Input
+        label="Capacity"
+        value={value.capacity}
+        onChangeText={(v) => onChange({ ...value, capacity: v })}
+        keyboardType="numeric"
+      />
 
       {!value.indefinite ? (
         <Input

@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
-import { Input } from '@/components/Input';
+import { DurationField } from '@/components/DurationField';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -98,7 +98,10 @@ export default function LeadAutomationSettings() {
 
   const [strategy, setStrategy] = useState<Strategy>('round_robin');
   const [defaultCoach, setDefaultCoach] = useState<string | null>(null);
-  const [retention, setRetention] = useState('365');
+  // null until the setting loads — DurationField seeds its unit once at
+  // mount, so it must not mount on the placeholder '365' and then be stuck
+  // when the real value arrives a tick later.
+  const [retention, setRetention] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -108,8 +111,9 @@ export default function LeadAutomationSettings() {
     }
   }, [rule.data]);
   useEffect(() => {
-    if (gymSettings.data) setRetention(String(gymSettings.data.lead_retention_days));
-  }, [gymSettings.data]);
+    if (gymSettings.data && retention === null)
+      setRetention(String(gymSettings.data.lead_retention_days));
+  }, [gymSettings.data, retention]);
 
   const saveRule = useMutation({
     mutationFn: async () => {
@@ -129,8 +133,8 @@ export default function LeadAutomationSettings() {
 
   const saveRetention = useMutation({
     mutationFn: async () => {
-      const days = parseInt(retention, 10);
-      if (!Number.isFinite(days)) throw new Error('Enter a number of days');
+      const days = parseInt(retention ?? '', 10);
+      if (!Number.isFinite(days)) throw new Error('Enter a retention window');
       const { error: e } = await supabase.rpc('set_gym_lead_retention', {
         p_gym_id: membership!.gymId,
         p_days: days,
@@ -261,16 +265,19 @@ export default function LeadAutomationSettings() {
             Data retention
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Leads that never convert are deleted after this many days. Converted
+            Leads that never convert are deleted after this window. Converted
             leads become members and are kept.
           </Text>
-          <Input
-            label="Days"
-            value={retention}
-            onChangeText={setRetention}
-            keyboardType="number-pad"
-            placeholder="365"
-          />
+          {retention !== null ? (
+            <DurationField
+              label="Delete after"
+              value={retention}
+              onChange={setRetention}
+              base="days"
+              units={['days', 'weeks', 'months']}
+              placeholder="365"
+            />
+          ) : null}
           <Button onPress={() => saveRetention.mutate()} loading={saveRetention.isPending}>
             Save retention
           </Button>
