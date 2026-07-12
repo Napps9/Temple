@@ -172,6 +172,16 @@ Left for you (policy/config, not code):
         `main` right around this ("wait for gate refetch before
         navigating, so first sign sticks") that this test may have
         hit.
+  - [x] **Good Life Crossfit plan purchase verified end-to-end** —
+        created/edited the "8 Classes / Month" plan (`credit_period`
+        kind — the exact path a bug in the Plans screen's UPDATE query
+        broke, missing `period_length` and throwing
+        `membership_plans_check`) and completed a real member
+        checkout: Stripe payment received, membership shows
+        **ACTIVE**, 8 credits, correct renewal date. Confirms both the
+        Plans fix (commit `fb96319`, CI green) and Good Life
+        Crossfit's Stripe Connect checkout flow work live, not just in
+        tests.
   - [ ] **Redline Hyrox** still needs the same: connect Stripe (test
         mode) + publish a waiver/PAR-Q.
 - [x] **Decide Temple's pricing** — **£200/month, all-inclusive**,
