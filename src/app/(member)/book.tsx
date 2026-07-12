@@ -7,6 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
+import { MemberGetStartedChecklist } from '@/components/MemberGetStartedChecklist';
 import { PostClassLogPrompt } from '@/components/PostClassLogPrompt';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
@@ -353,6 +354,7 @@ export default function Book() {
       recommendedSessionId={recommendation.data?.id ?? null}
       headerSlot={
         <View className="gap-2">
+          <MemberGetStartedChecklist />
           <PostClassLogPrompt />
           <RecommendedClassCard />
           <NextClassCard />

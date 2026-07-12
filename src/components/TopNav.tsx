@@ -13,10 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from './Avatar';
 import { GymLogo } from './GymLogo';
-import { MemberGetStartedChecklist } from './MemberGetStartedChecklist';
 import { useMyProfile, useSession } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
-import { useMemberOnboarding } from '@/lib/useMemberOnboarding';
 import { useNotificationCount } from '@/lib/notifications';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
@@ -53,7 +51,6 @@ export function TopNav({
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
   const notifCount = useNotificationCount();
-  const onboarding = useMemberOnboarding();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -196,15 +193,9 @@ export function TopNav({
             onAccount ? '' : 'border-transparent'
           }`}>
           <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={30} />
-          {/* Unread messages win the dot; otherwise a brand-tinted dot
-              hints the get-started checklist is waiting inside. */}
+          {/* Unread messages surface a dot while the menu is closed. */}
           {notifCount > 0 ? (
             <View className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-slate-100 dark:border-gray-950" />
-          ) : onboarding ? (
-            <View
-              style={{ backgroundColor: brand.primaryColor }}
-              className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-100 dark:border-gray-950"
-            />
           ) : null}
         </Pressable>
         </View>
@@ -238,14 +229,6 @@ export function TopNav({
                 {displayName}
               </Text>
             </View>
-
-            {onboarding ? (
-              <View className="pb-1 pt-0.5">
-                <MemberGetStartedChecklist
-                  onNavigate={() => setMenuOpen(false)}
-                />
-              </View>
-            ) : null}
 
             <View className="h-px bg-gray-100 dark:bg-gray-800 my-1.5" />
 

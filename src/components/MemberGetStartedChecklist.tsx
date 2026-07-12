@@ -11,14 +11,11 @@ import {
 import { useSetOnboardingFlag } from '@/lib/useOnboardingFlags';
 import { useThemeColors } from '@/lib/theme';
 
-// New-member onboarding nudge. Lives inside the account menu now (under
-// the profile picture); the avatar carries a dot while it's unfinished so
-// members still notice it. Each step is derived from live data and the
-// whole thing disappears once every *required* step is done. Members
-// only — the underlying hook returns null for staff.
-//
-// onNavigate fires after any tap that leaves the checklist (a step, or
-// "Skip"), so the host can close the menu it sits in.
+// New-member onboarding nudge, pinned to the top of the Book screen so a
+// first-time member can't miss how to get a membership. Expanded by
+// default; each step is derived from live data and the whole thing
+// disappears once every *required* step is done. Members only — the
+// underlying hook returns null for staff.
 
 function routeFor(key: OnboardingStepKey): string {
   switch (key) {
@@ -35,15 +32,11 @@ function routeFor(key: OnboardingStepKey): string {
   }
 }
 
-export function MemberGetStartedChecklist({
-  onNavigate,
-}: {
-  onNavigate?: () => void;
-}) {
+export function MemberGetStartedChecklist() {
   const colors = useThemeColors();
   const setFlag = useSetOnboardingFlag();
   const onboarding = useMemberOnboarding();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   if (!onboarding) return null;
   const { gymName, steps, requiredDone, requiredTotal } = onboarding;
@@ -51,12 +44,10 @@ export function MemberGetStartedChecklist({
   const runStep = (key: OnboardingStepKey) => {
     if (key === 'programming') setFlag('programming_peeked');
     router.push(routeFor(key) as never);
-    onNavigate?.();
   };
 
   const dismiss = () => {
     setFlag('getstarted_dismissed');
-    onNavigate?.();
   };
 
   return (
