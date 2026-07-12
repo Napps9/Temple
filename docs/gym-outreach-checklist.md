@@ -152,12 +152,12 @@ Left for you (policy/config, not code):
         Stripe objects** (connect a test-mode account so checkout demos)
         and **no waiver/PAR-Q** (publish one in-app so the booking gate
         is visible).
-- [x] **Decide Temple's pricing** — **£200/month**, matching what the
-      marketing site's stat strip and pricing page already commit to.
-  - [ ] Still open: whether the website builder add-on
-        (`website_builder_enabled`, flipped manually by you after an
-        invoice — no self-serve billing for it) is included in the £200,
-        or priced separately.
+- [x] **Decide Temple's pricing** — **£200/month, all-inclusive**,
+      matching what the marketing site's stat strip and pricing page
+      already commit to. The website builder add-on
+      (`website_builder_enabled`, flipped manually by you after an
+      invoice — no self-serve billing for it) is **included**, not
+      priced separately.
 - [x] **Marketing/landing site** — done, live at `jointemple.io` (apex,
       canonical; `www` 308-redirects to it, SSL valid). Repo
       `napps9/temple-website`, trunk (`main`) auto-deploys to Vercel.
