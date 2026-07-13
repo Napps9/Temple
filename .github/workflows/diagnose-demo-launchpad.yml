@@ -38,6 +38,18 @@ jobs:
             sleep 2
           done
 
+      - name: Curl a pre-existing tenant (demo-ironworks) for comparison
+        run: |
+          echo "--- demo-ironworks (existed long before demo-launchpad) ---"
+          curl -sD - -o /tmp/body_ironworks.html "https://app.jointemple.io/site/demo-ironworks" | grep -Ei "^(HTTP|cache-control|age|x-vercel-cache|x-matched-path)"
+          echo "body (first 300 chars):"
+          head -c 300 /tmp/body_ironworks.html
+          echo ""
+          echo "--- demo-launchpad root without trailing path, and with explicit empty page ---"
+          curl -sD - -o /tmp/body_root.html "https://app.jointemple.io/site/demo-launchpad/" | grep -Ei "^(HTTP|x-vercel-cache|x-matched-path)"
+          head -c 200 /tmp/body_root.html
+          echo ""
+
       - name: Curl the credentials endpoint
         run: |
           curl -sD - "https://app.jointemple.io/api/demo-credentials" -H "Origin: https://jointemple.io" | head -c 2000
