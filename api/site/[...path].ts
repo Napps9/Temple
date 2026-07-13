@@ -36,9 +36,27 @@ function notFoundHtml(): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Page not found</title><meta name="robots" content="noindex"></head><body style="font-family:-apple-system,sans-serif;text-align:center;padding:80px 20px;color:#334155;"><h1>This page isn't available.</h1><p>The site you're looking for may not be published yet.</p></body></html>`;
 }
 
+// req.query.path is meant to be populated automatically for this
+// catch-all route, but has been observed coming back empty when the
+// request arrives via the /site/:path* -> /api/site/:path* rewrite in
+// vercel.json (confirmed in production: every /site/<slug> request,
+// including tenants that long predate this comment, returned 400).
+// Parsing the segments directly from the actual invoked URL sidesteps
+// whatever is breaking Vercel's automatic query population, without
+// removing it — req.query.path is tried first so this is a no-op if
+// that mechanism is ever working correctly again.
+function segmentsFromUrl(url: string | undefined): string[] {
+  if (!url) return [];
+  const pathname = url.split('?')[0];
+  const stripped = pathname.replace(/^\/api\/site\/?/, '');
+  if (!stripped) return [];
+  return stripped.split('/').filter(Boolean).map((s) => decodeURIComponent(s));
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const pathParam = req.query.path;
-  const segments = Array.isArray(pathParam) ? pathParam : pathParam ? [pathParam] : [];
+  const querySegments = Array.isArray(pathParam) ? pathParam : pathParam ? [pathParam] : [];
+  const segments = querySegments.length > 0 ? querySegments : segmentsFromUrl(req.url);
   const slug = segments[0];
   // /site/<slug>[/<page-slug>] only — a third segment (or none) has
   // nothing to resolve to.
