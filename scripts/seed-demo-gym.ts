@@ -295,6 +295,11 @@ async function main(): Promise<void> {
       teardown: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       yes: { type: 'boolean', default: false },
+      // Undefined by default — buildDemoPlan falls back to the shared
+      // DEMO_PASSWORD constant, so every existing call site is
+      // unaffected. Used by the demo-marketing-rotate workflow to mint
+      // a fresh password on every nightly reseed of demo-launchpad.
+      password: { type: 'string' },
     },
   });
 
@@ -322,6 +327,7 @@ async function main(): Promise<void> {
         tz: values.tz!,
         seed: Number(values.seed),
         now: new Date(),
+        password: values.password,
       });
 
   if (plan && values['dry-run']) {
