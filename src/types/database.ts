@@ -2918,6 +2918,36 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      demo_marketing_credentials: {
+        Row: {
+          slug: string;
+          gym_name: string;
+          owner_email: string;
+          owner_password: string;
+          member_email: string;
+          member_password: string;
+          rotated_at: string;
+        };
+        Insert: {
+          slug: string;
+          gym_name: string;
+          owner_email: string;
+          owner_password: string;
+          member_email: string;
+          member_password: string;
+          rotated_at?: string;
+        };
+        Update: Partial<{
+          slug: string;
+          gym_name: string;
+          owner_email: string;
+          owner_password: string;
+          member_email: string;
+          member_password: string;
+          rotated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       v_member_cohort: {
@@ -3664,6 +3694,18 @@ export type Database = {
           profile_id: string;
           full_name: string | null;
           avatar_url: string | null;
+        }[];
+      };
+      demo_marketing_credentials: {
+        Args: Record<string, never>;
+        Returns: {
+          slug: string;
+          gym_name: string;
+          owner_email: string;
+          owner_password: string;
+          member_email: string;
+          member_password: string;
+          rotated_at: string;
         }[];
       };
       gym_slug_for_domain: {

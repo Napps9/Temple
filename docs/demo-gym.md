@@ -140,6 +140,36 @@ upsert; recovery from any failed state is teardown + re-seed.
 | `--teardown` | | Remove the gym and its demo accounts |
 | `--yes` | | Required for any non-local target |
 
+## Public marketing demo (`demo-launchpad`)
+
+A third, separate tenant — `demo-launchpad` — backs the "Launch your gym"
+section on the marketing site (jointemple.io), which iframes its real,
+published site and offers sign-in CTAs into the real app. Deliberately
+its own slug, never `demo-ironworks`/`demo-hyrox`:
+
+- Those two are internal QA fixtures with a stable, documented password
+  (`TempleDemo1!`) engineers rely on. Public homepage traffic and the
+  rotation job below must never touch them, and vice versa.
+- It's reseeded nightly by `.github/workflows/demo-marketing-rotate.yml`
+  (`workflow_dispatch` with **no slug input** — the slug is hardcoded —
+  so this job structurally cannot touch any other tenant). Reseeding
+  rather than just rotating the password: the tenant is embedded
+  read-write on a public page (a live lead-capture form, sign-in-able
+  owner/member accounts that can book, DM, edit copy), so the real risk
+  is visitor-driven data mutation, not just credential exposure.
+- Its current login is published to `demo_marketing_credentials`
+  (migration `0122_demo_marketing_credentials.sql`) via
+  `scripts/publish-demo-credentials.ts`, and served read-only to the
+  marketing site by `api/demo-credentials.ts`.
+- One-time bootstrap (same as any other hosted seed):
+  ```bash
+  npx tsx scripts/seed-demo-gym.ts --slug demo-launchpad --name "Launchpad CrossFit" --discipline crossfit --yes
+  npx tsx scripts/publish-demo-credentials.ts --slug demo-launchpad --gym-name "Launchpad CrossFit" --password TempleDemo1!
+  ```
+  (or trigger `demo-gym.yml` with `slug=demo-launchpad`, then run
+  `publish-demo-credentials.ts` once by hand — the nightly rotation
+  takes over from there.)
+
 ## Known limits
 
 - No Stripe objects are seeded — checkout, Connect and store payment

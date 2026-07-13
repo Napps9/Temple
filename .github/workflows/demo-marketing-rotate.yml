@@ -1,0 +1,66 @@
+name: Demo marketing rotate
+
+# Nightly teardown + reseed of the PUBLIC marketing demo tenant
+# (demo-launchpad, embedded on jointemple.io's "Launch your gym"
+# section). Deliberately NOT the same job as demo-gym.yml: that
+# workflow takes an arbitrary slug input for internal QA use
+# (demo-ironworks/demo-hyrox); this one hardcodes its slug as an env
+# var with no workflow input at all, so there is no path — accidental
+# or otherwise — from a run of THIS workflow to any other tenant.
+#
+# Why reseed rather than just rotate the password: this tenant is
+# embedded read-write on a public homepage (the iframed site has a
+# live lead-capture form; the owner/member logins can book, cancel,
+# DM, edit copy). The real risk is visitor-driven data mutation, not
+# just credential exposure — a password swap alone wouldn't clear
+# spam left in a DM thread or the lead form. Reseeding fixes both in
+# one job, reusing already-tested seeder code rather than new
+# one-off logic. See docs/demo-gym.md and scripts/seed-demo-gym.ts.
+#
+# Needs the same SUPABASE_SERVICE_ROLE_KEY + SUPABASE_PROJECT_REF repo
+# secrets as demo-gym.yml — no new secret provisioning.
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 03:00 UTC daily — low-traffic window
+  workflow_dispatch: {} # manual re-run — deliberately no inputs
+
+env:
+  DO_NOT_TRACK: '1'
+  SLUG: demo-launchpad
+  GYM_NAME: Launchpad CrossFit
+
+jobs:
+  demo-marketing-rotate:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: demo-marketing-rotate
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: '0'
+      - name: Rotate demo-launchpad
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY repo secret is not set — add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          NEW_PASSWORD="$(node -e "
+            const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+            const bytes = require('crypto').randomBytes(16);
+            console.log(Array.from(bytes, b => chars[b % chars.length]).join(''));
+          ")"
+
+          npx tsx scripts/seed-demo-gym.ts --teardown --slug "$SLUG" --yes
+          npx tsx scripts/seed-demo-gym.ts --slug "$SLUG" --name "$GYM_NAME" --discipline crossfit --password "$NEW_PASSWORD" --yes
+          npx tsx scripts/publish-demo-credentials.ts --slug "$SLUG" --gym-name "$GYM_NAME" --password "$NEW_PASSWORD"

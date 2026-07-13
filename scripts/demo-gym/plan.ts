@@ -76,6 +76,11 @@ export type DemoConfig = {
   // reshapes class types, training history, races, store copy and the
   // website into the Hyrox flavour; see the isHyrox branches below.
   discipline?: 'crossfit' | 'hyrox';
+  // Overrides DEMO_PASSWORD for every account in the plan. Undefined by
+  // every existing call site (and plan.test.ts's fixtures), so behaviour
+  // there is unchanged. Exists for the public marketing demo tenant's
+  // nightly rotation job, which mints a fresh password on every reseed.
+  password?: string;
 };
 
 export type DemoUser = {
@@ -878,7 +883,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
 
   return {
     config,
-    password: DEMO_PASSWORD,
+    password: config.password ?? DEMO_PASSWORD,
     emailDomain,
     users,
     gym,
