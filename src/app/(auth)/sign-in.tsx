@@ -1,5 +1,5 @@
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -28,6 +28,33 @@ export default function SignInScreen() {
   const [recoverable, setRecoverable] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
+
+  // Web only: the marketing site's homepage demo embeds this screen in
+  // an iframe and can postMessage a demo account into it so a visitor
+  // doesn't have to retype what's already shown on that page. This only
+  // ever prefills — it never submits — so a real click on "Sign in"
+  // below is still required. contentWindow.postMessage is the one
+  // cross-origin capability the marketing site actually has here (it
+  // cannot reach into this page's DOM directly), so this listener is
+  // the other half of that channel. Origin-checked so only the
+  // marketing site can trigger it.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    function onMessage(event: MessageEvent) {
+      if (
+        event.origin !== 'https://jointemple.io' &&
+        event.origin !== 'https://www.jointemple.io'
+      ) {
+        return;
+      }
+      const data = event.data as { type?: string; email?: string; password?: string } | undefined;
+      if (data?.type !== 'temple-demo-autofill') return;
+      if (typeof data.email === 'string') setEmail(data.email);
+      if (typeof data.password === 'string') setPassword(data.password);
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   async function onSubmit() {
     setError(null);
