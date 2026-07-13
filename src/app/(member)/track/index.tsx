@@ -311,6 +311,13 @@ function Stat({
   );
 }
 
+// Flat, recessed shell shared by the four utility tiles — deliberately
+// not the elevated white shadow-card the movement tiles use below, so
+// this row reads as navigation/tools rather than more of the same
+// pinned-movements content.
+const TOOL_TILE_CLASS =
+  'bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200/70 dark:border-gray-700/50 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70';
+
 // Group-tile shape (slate background, rounded icon, accent blob).
 function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   const colors = useThemeColors();
@@ -322,7 +329,7 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -349,7 +356,7 @@ function LeaderboardsTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -383,7 +390,7 @@ function InjuryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -424,7 +431,7 @@ function LibraryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/movements' as never)}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -508,12 +515,15 @@ function deriveTiles(
   return out;
 }
 
-// The member's pinned movements & groups, rendered from their favourites
-// (which default to the gym discipline's catalog), alongside the four
-// fixed utility tiles (Journal, Leaderboards, Library, Injury) — all in
-// one shared TileGrid so the utility tiles read as the same kind of
-// thing as the movement tiles, and the grid reflows as a whole instead
-// of stranding whitespace next to a separately-stacked utility rail.
+// The member's pinned movements & groups, rendered from their
+// favourites (which default to the gym discipline's catalog), below a
+// fixed row of the four utility tiles (Journal, Leaderboards, Library,
+// Injury). Each gets its own heading and grid — Tools uses a fixed
+// 2/4-column layout (right for exactly four tiles; TileGrid's 3-column
+// tier would strand two empty cells at that count) and a flatter,
+// recessed tile shell, so the row reads as navigation rather than more
+// pinned-movement content. Movements keeps TileGrid's 2/3/4 reflow,
+// which suits its variable, often-larger count.
 function MyMovementsCard({
   discipline,
   recentByGroup,
@@ -531,55 +541,84 @@ function MyMovementsCard({
   );
 
   return (
-    <View className="gap-3">
-      <View className="flex-row items-center gap-3">
-        <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-          <Ionicons name="barbell-outline" size={22} color={colors.primary} />
+    <View className="gap-5">
+      <View className="gap-3">
+        <View className="flex-row items-center gap-3">
+          <View className="w-11 h-11 rounded-full bg-gray-500/15 items-center justify-center">
+            <Ionicons name="grid-outline" size={22} color="#6B7280" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Tools
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Journal, leaderboards, the library &amp; injuries.
+            </Text>
+          </View>
         </View>
-        <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            Movements
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Your pinned movements &amp; groups — edit in the Library.
-          </Text>
+
+        <View className="flex-row flex-wrap -m-1">
+          <View className="w-1/2 md:w-1/4 p-1">
+            <JournalEntryTile workoutCount={journalCount} />
+          </View>
+          <View className="w-1/2 md:w-1/4 p-1">
+            <LeaderboardsTile />
+          </View>
+          <View className="w-1/2 md:w-1/4 p-1">
+            <LibraryTile />
+          </View>
+          <View className="w-1/2 md:w-1/4 p-1">
+            <InjuryTile />
+          </View>
         </View>
       </View>
 
-      <TileGrid>
-        <JournalEntryTile workoutCount={journalCount} />
-        <LeaderboardsTile />
-        <LibraryTile />
-        <InjuryTile />
-        {favTiles.map((t) =>
-          t.kind === 'group' ? (
-            <GroupTile
-              key={`g:${t.group.key}`}
-              name={t.group.name}
-              count={t.count}
-              icon={t.group.icon as IoniconName}
-              accent={t.group.accent}
-              recentCount={recentByGroup[t.group.key] ?? 0}
-              onPress={() =>
-                router.push(`/track/group/${t.group.key}` as never)
-              }
-            />
-          ) : (
-            <FavMovementTile
-              key={`m:${t.movement.key}`}
-              group={t.group}
-              movement={t.movement}
-            />
-          ),
-        )}
-      </TileGrid>
+      <View className="gap-3">
+        <View className="flex-row items-center gap-3">
+          <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+            <Ionicons name="barbell-outline" size={22} color={colors.primary} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Movements
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Your pinned movements &amp; groups — edit in the Library.
+            </Text>
+          </View>
+        </View>
 
-      {favTiles.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          Nothing pinned yet. Star movements or groups in the Library to pin
-          them here.
-        </Text>
-      ) : null}
+        {favTiles.length > 0 ? (
+          <TileGrid>
+            {favTiles.map((t) =>
+              t.kind === 'group' ? (
+                <GroupTile
+                  key={`g:${t.group.key}`}
+                  name={t.group.name}
+                  count={t.count}
+                  icon={t.group.icon as IoniconName}
+                  accent={t.group.accent}
+                  recentCount={recentByGroup[t.group.key] ?? 0}
+                  onPress={() =>
+                    router.push(`/track/group/${t.group.key}` as never)
+                  }
+                />
+              ) : (
+                <FavMovementTile
+                  key={`m:${t.movement.key}`}
+                  group={t.group}
+                  movement={t.movement}
+                />
+              ),
+            )}
+          </TileGrid>
+        ) : (
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            Nothing pinned yet. Star movements or groups in the Library to pin
+            them here.
+          </Text>
+        )}
+      </View>
     </View>
   );
 }
