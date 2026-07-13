@@ -214,70 +214,53 @@ export default function TrackHome() {
           </View>
         ) : null}
 
-        {/* Desktop dashboard: a summary rail (consistency + journal +
-            leaderboards) beside the wide movements grid. On mobile the
-            same blocks stack in order — the rail width and column flip only
-            engage at lg, so phones are unchanged. */}
+        {/* Desktop dashboard: a compact heatmap rail beside the tile grid,
+            which now carries Journal/Leaderboards/Library/Injury as its
+            first four tiles alongside the movement groups — one grid
+            reflowing together rather than two mismatched columns. On
+            mobile the blocks stack in order; the rail width and column
+            flip only engage at lg. */}
         <View className="gap-4 lg:flex-row lg:items-start">
-          <View className="gap-4 lg:w-80">
-            {(recentWorkouts.data?.size ?? 0) > 0 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
-                <View className="flex-row gap-2">
-                  <Stat
-                    icon="flame"
-                    tint="#F59E0B"
-                    value={streak}
-                    label={streak === 1 ? 'day in a row' : 'days in a row'}
-                  />
-                  <Stat
-                    icon="calendar"
-                    tint={colors.primary}
-                    value={weeks}
-                    label={weeks === 1 ? 'week in a row' : 'weeks in a row'}
-                  />
-                  <Stat
-                    icon="barbell"
-                    tint="#10B981"
-                    value={monthSessions}
-                    label="this month"
-                  />
-                </View>
-                <View className="gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                    Last 12 weeks
-                  </Text>
-                  <WorkoutHeatmap
-                    loggedDays={recentWorkouts.data ?? new Set()}
-                    anchor={new Date()}
-                    primaryColor={colors.primary}
-                  />
-                </View>
+          {(recentWorkouts.data?.size ?? 0) > 0 ? (
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card lg:w-80">
+              <View className="flex-row gap-2">
+                <Stat
+                  icon="flame"
+                  tint="#F59E0B"
+                  value={streak}
+                  label={streak === 1 ? 'day in a row' : 'days in a row'}
+                />
+                <Stat
+                  icon="calendar"
+                  tint={colors.primary}
+                  value={weeks}
+                  label={weeks === 1 ? 'week in a row' : 'weeks in a row'}
+                />
+                <Stat
+                  icon="barbell"
+                  tint="#10B981"
+                  value={monthSessions}
+                  label="this month"
+                />
               </View>
-            ) : null}
-
-            {/* Utility tiles (Journal, Leaderboards, Movement Library,
-                Injury): a 2-up grid on mobile, stacked in the rail on
-                desktop. */}
-            <View className="flex-row flex-wrap -m-1 lg:flex-col lg:m-0 lg:gap-2">
-              <View className="w-1/2 p-1 lg:w-full lg:p-0">
-                <JournalEntryTile workoutCount={journalCount.data ?? 0} />
-              </View>
-              <View className="w-1/2 p-1 lg:w-full lg:p-0">
-                <LeaderboardsTile />
-              </View>
-              <View className="w-1/2 p-1 lg:w-full lg:p-0">
-                <LibraryTile />
-              </View>
-              <View className="w-1/2 p-1 lg:w-full lg:p-0">
-                <InjuryTile />
+              <View className="gap-2">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  Last 12 weeks
+                </Text>
+                <WorkoutHeatmap
+                  loggedDays={recentWorkouts.data ?? new Set()}
+                  anchor={new Date()}
+                  primaryColor={colors.primary}
+                />
               </View>
             </View>
-          </View>
+          ) : null}
 
           <View className="lg:flex-1">
             <MyMovementsCard
               discipline={discipline}
               recentByGroup={recentByGroup}
+              journalCount={journalCount.data ?? 0}
             />
           </View>
         </View>
@@ -526,15 +509,19 @@ function deriveTiles(
 }
 
 // The member's pinned movements & groups, rendered from their favourites
-// (which default to the gym discipline's catalog). Library + Injury are
-// fixed tiles so the customisation entry point and the injury tracker are
-// always reachable.
+// (which default to the gym discipline's catalog), alongside the four
+// fixed utility tiles (Journal, Leaderboards, Library, Injury) — all in
+// one shared TileGrid so the utility tiles read as the same kind of
+// thing as the movement tiles, and the grid reflows as a whole instead
+// of stranding whitespace next to a separately-stacked utility rail.
 function MyMovementsCard({
   discipline,
   recentByGroup,
+  journalCount,
 }: {
   discipline: Discipline;
   recentByGroup: Record<string, number>;
+  journalCount: number;
 }) {
   const colors = useThemeColors();
   const fav = useMovementFavourites(discipline);
@@ -559,36 +546,40 @@ function MyMovementsCard({
         </View>
       </View>
 
+      <TileGrid>
+        <JournalEntryTile workoutCount={journalCount} />
+        <LeaderboardsTile />
+        <LibraryTile />
+        <InjuryTile />
+        {favTiles.map((t) =>
+          t.kind === 'group' ? (
+            <GroupTile
+              key={`g:${t.group.key}`}
+              name={t.group.name}
+              count={t.count}
+              icon={t.group.icon as IoniconName}
+              accent={t.group.accent}
+              recentCount={recentByGroup[t.group.key] ?? 0}
+              onPress={() =>
+                router.push(`/track/group/${t.group.key}` as never)
+              }
+            />
+          ) : (
+            <FavMovementTile
+              key={`m:${t.movement.key}`}
+              group={t.group}
+              movement={t.movement}
+            />
+          ),
+        )}
+      </TileGrid>
+
       {favTiles.length === 0 ? (
         <Text className="text-gray-500 dark:text-gray-400 text-sm">
           Nothing pinned yet. Star movements or groups in the Library to pin
           them here.
         </Text>
-      ) : (
-        <TileGrid>
-          {favTiles.map((t) =>
-            t.kind === 'group' ? (
-              <GroupTile
-                key={`g:${t.group.key}`}
-                name={t.group.name}
-                count={t.count}
-                icon={t.group.icon as IoniconName}
-                accent={t.group.accent}
-                recentCount={recentByGroup[t.group.key] ?? 0}
-                onPress={() =>
-                  router.push(`/track/group/${t.group.key}` as never)
-                }
-              />
-            ) : (
-              <FavMovementTile
-                key={`m:${t.movement.key}`}
-                group={t.group}
-                movement={t.movement}
-              />
-            ),
-          )}
-        </TileGrid>
-      )}
+      ) : null}
     </View>
   );
 }
