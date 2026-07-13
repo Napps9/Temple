@@ -311,12 +311,13 @@ function Stat({
   );
 }
 
-// Flat, recessed shell shared by the four utility tiles — deliberately
-// not the elevated white shadow-card the movement tiles use below, so
-// this row reads as navigation/tools rather than more of the same
-// pinned-movements content.
+// Same elevated white shadow-card shell the movement tiles use — kept
+// identical so this row doesn't read as washed-out or lower-priority —
+// plus a colored top edge in the tile's own accent so the row still
+// reads as a distinct kind of tile (navigation/tools) rather than more
+// pinned-movement content.
 const TOOL_TILE_CLASS =
-  'bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200/70 dark:border-gray-700/50 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70';
+  'bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70 border-t-4';
 
 // Group-tile shape (slate background, rounded icon, accent blob).
 function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
@@ -329,6 +330,7 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
+      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
@@ -356,6 +358,7 @@ function LeaderboardsTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
+      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
@@ -390,6 +393,7 @@ function InjuryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
+      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
@@ -431,6 +435,7 @@ function LibraryTile() {
   return (
     <Pressable
       onPress={() => router.push('/track/movements' as never)}
+      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
       <View
         style={{ backgroundColor: accent }}
@@ -520,10 +525,11 @@ function deriveTiles(
 // fixed row of the four utility tiles (Journal, Leaderboards, Library,
 // Injury). Each gets its own heading and grid — Tools uses a fixed
 // 2/4-column layout (right for exactly four tiles; TileGrid's 3-column
-// tier would strand two empty cells at that count) and a flatter,
-// recessed tile shell, so the row reads as navigation rather than more
-// pinned-movement content. Movements keeps TileGrid's 2/3/4 reflow,
-// which suits its variable, often-larger count.
+// tier would strand two empty cells at that count) and a colored top
+// edge per tile, so the row reads as its own distinct kind of tile
+// without losing the movement tiles' elevated card weight. Movements
+// keeps TileGrid's 2/3/4 reflow, which suits its variable, often-larger
+// count.
 function MyMovementsCard({
   discipline,
   recentByGroup,
