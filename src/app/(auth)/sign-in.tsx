@@ -1,5 +1,5 @@
 import { Link, router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +16,18 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { resendConfirmation, signIn } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 
+// Keep in sync with FEATURE_DEMO_TARGETS in the marketing site repo.
+// The origin check below is what stops anyone but the marketing site
+// from triggering this at all; this allowlist is defense-in-depth on
+// top of that, so even a sender bug can't redirect a demo sign-in
+// anywhere but a screen we've actually chosen to demo.
+const DEMO_REDIRECT_ALLOWLIST = new Set([
+  '/track',
+  '/programming',
+  '/management/billing',
+  '/management/branding',
+]);
+
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,6 +40,10 @@ export default function SignInScreen() {
   const [recoverable, setRecoverable] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
+  // Set by the message listener below when the marketing site names a
+  // specific screen (e.g. a feature page's "see it live" link) — read
+  // once, on successful sign-in, in onSubmit.
+  const demoRedirectRef = useRef<string | null>(null);
 
   // Web only: the marketing site's homepage demo embeds this screen in
   // an iframe and can postMessage a demo account into it so a visitor
@@ -47,10 +63,15 @@ export default function SignInScreen() {
       ) {
         return;
       }
-      const data = event.data as { type?: string; email?: string; password?: string } | undefined;
+      const data = event.data as
+        | { type?: string; email?: string; password?: string; redirect?: string }
+        | undefined;
       if (data?.type !== 'temple-demo-autofill') return;
       if (typeof data.email === 'string') setEmail(data.email);
       if (typeof data.password === 'string') setPassword(data.password);
+      if (typeof data.redirect === 'string' && DEMO_REDIRECT_ALLOWLIST.has(data.redirect)) {
+        demoRedirectRef.current = data.redirect;
+      }
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -65,8 +86,9 @@ export default function SignInScreen() {
       await signIn(email, password);
       // Navigate explicitly — the (auth) layout redirect only fires for
       // users WITH a membership, so a gymless account would otherwise sit
-      // here. Root index routes by role / membership.
-      router.replace('/' as never);
+      // here. Root index routes by role / membership. A demo redirect
+      // (see the message listener above) takes priority when present.
+      router.replace((demoRedirectRef.current ?? '/') as never);
     } catch (e) {
       const msg = errorMessage(e, 'Sign-in failed');
       setError(msg);
