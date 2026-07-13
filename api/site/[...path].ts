@@ -45,12 +45,21 @@ function notFoundHtml(): string {
 // whatever is breaking Vercel's automatic query population, without
 // removing it — req.query.path is tried first so this is a no-op if
 // that mechanism is ever working correctly again.
+//
+// req.url's exact shape here has been observed to vary (sometimes the
+// pre-rewrite /site/<slug> path, sometimes the post-rewrite
+// /api/site/<slug> path) — stripping only a fixed "/api/site/" prefix
+// left the wrong segment as the slug when req.url turned out to still
+// be the pre-rewrite path. Stripping any leading "api"/"site" tokens
+// (in whatever combination is actually present) is robust to both.
 function segmentsFromUrl(url: string | undefined): string[] {
   if (!url) return [];
   const pathname = url.split('?')[0];
-  const stripped = pathname.replace(/^\/api\/site\/?/, '');
-  if (!stripped) return [];
-  return stripped.split('/').filter(Boolean).map((s) => decodeURIComponent(s));
+  const parts = pathname.split('/').filter(Boolean).map((s) => decodeURIComponent(s));
+  while (parts.length && (parts[0] === 'api' || parts[0] === 'site')) {
+    parts.shift();
+  }
+  return parts;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
