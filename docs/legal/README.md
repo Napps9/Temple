@@ -61,13 +61,22 @@ the two in sync when you change the legal position.
       `/privacy` screens (`src/lib/legal.ts`) no longer show a draft/pending
       notice. This is a real decision, not just tidy-up: **no solicitor has
       reviewed these** — see the note above.
+- [x] **Payment terms (ToS §3, §5.2)** — Temple invoices gyms directly (no
+      in-app billing for the Temple subscription itself), **7-day** payment
+      terms, subscription renews each billing period, **30 days'** notice of
+      any price change; the Individual-User consumer cancellation/refund
+      mechanics (14-day right, same-method refund, deduction only for
+      service already supplied) are drafted and dormant until a paid solo
+      tier launches. Mirrored briefly in `src/lib/legal.ts`.
 
 ## Before you publish — still open
 
-- [ ] **Payment terms** — renewal, price-change notice, and (for any paid
-      individual/consumer tier) the cancellation/refund mechanics.
-- [ ] Publish the Terms + Privacy Policy on the `jointemple.io` marketing site
-      too, if you want them there as well as the in-app `/terms` `/privacy`.
+- [x] ~~Publish the Terms + Privacy Policy on the `jointemple.io` marketing
+      site too~~ — not a gap: the marketing site's footer and cookie banner
+      already link out to the in-app `/terms` `/privacy` (`APP_URL` in
+      `Temple-Website/lib/site.ts`) rather than duplicating the content.
+      Revisit only if you specifically want standalone copies on the
+      marketing domain.
 
 ## Still outstanding — needs a person, not drafting
 

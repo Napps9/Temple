@@ -77,7 +77,8 @@ export const TERMS_OF_SERVICE: LegalDoc = {
           'record and takes no cut of your members’ payments — you ' +
           'keep 100%, less Stripe’s own fees. Fees for your Temple ' +
           'subscription and paid add-ons are as agreed at sign-up or by ' +
-          'invoice.',
+          'invoice, payable within 7 days; we’ll give you at least 30 days’ ' +
+          'notice of any price change.',
       ],
     },
     {

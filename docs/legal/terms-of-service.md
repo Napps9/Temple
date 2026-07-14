@@ -62,8 +62,15 @@ athlete or a gym member using Temple for personal, not business, purposes):
 - For any **paid** subscription you buy directly from Temple, you have a
   14-day right to cancel from the day the contract is made, unless you have
   asked us to start the service within that period and it is fully performed.
-  [Confirm the cancellation and refund mechanics for any paid Individual
-  User tier before launch. Solo tracking is currently free during beta.]
+  To cancel, tell us before the 14 days end — using the cancellation option
+  in your account, or by emailing **privacy@jointemple.io** — you don't need
+  to give a reason. If you asked us to start the service during the 14 days
+  and then cancel before it's fully performed, we may deduct a reasonable
+  amount for the service already supplied up to that point. Otherwise we
+  will refund what you paid within 14 days of being told you've cancelled,
+  using the same payment method you used to pay, at no extra cost to you.
+  Solo training is currently **free during beta**; this section applies once
+  and if a paid Individual User tier launches.
 - Note that memberships and class purchases you make **with a gym** are a
   contract between you and that gym (charged on the gym's own Stripe
   account), not with Temple — raise refunds and cancellations for those with
@@ -99,8 +106,15 @@ chargebacks, and disputes with its members.
 ### 5.2 What you pay Temple
 Fees for a Temple subscription and any paid add-ons (for example the website
 builder) are as agreed at sign-up or by separate invoice. Unless stated
-otherwise, fees are exclusive of VAT. [Payment terms, renewal, and
-price-change notice to be confirmed.]
+otherwise, fees are exclusive of VAT. We invoice you directly for these
+fees — we do not charge them through the platform or hold your card
+details for this purpose — and each invoice is payable within **7 days**
+of the invoice date. Your subscription renews automatically each billing
+period unless you terminate under Section 10. We will give you at least
+**30 days'** written notice of any price change, taking effect from your
+next renewal — never applied retroactively to a period you've already been
+invoiced for. If an invoice is not paid when due, Section 8 (Suspension)
+applies.
 
 ## 6. Acceptable use
 
