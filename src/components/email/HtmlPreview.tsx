@@ -11,6 +11,11 @@ export function HtmlPreview({
 }: {
   html: string;
   height?: number | string;
+  editable?: boolean;
+  syncKey?: number;
+  onFieldChange?: (path: string, value: string) => void;
+  selectedBlockId?: string | null;
+  onCanvasSelect?: (blockId: string | null) => void;
 }) {
   const colors = useThemeColors();
   return (

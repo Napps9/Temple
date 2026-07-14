@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useState, type ComponentProps } from 'react';
 import {
   Platform,
   Pressable,
@@ -15,7 +15,9 @@ import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { BRAND_THEME_LIST, composeThemeWithBrand } from '@/lib/brand-themes';
+import { isFieldEditable, parseFieldPath } from '@/lib/email/canvas-sync';
 import { renderEmailHtml } from '@/lib/email/render';
 import {
   BLOCK_ICONS,
@@ -473,19 +475,31 @@ export function EmailEditor({
 
   const selected = document.blocks.find((b) => b.id === selectedId) ?? null;
 
-  // Debounced live-preview HTML — re-rendering the iframe on every keystroke
-  // would flicker and drop scroll position, so settle edits first (the
-  // website builder avoids canvas reloads mid-word for the same reason).
-  const [previewHtml, setPreviewHtml] = useState(() =>
-    renderEmailHtml(document, { unsubscribeUrl: '#' }),
-  );
-  useEffect(() => {
-    const t = setTimeout(
-      () => setPreviewHtml(renderEmailHtml(document, { unsubscribeUrl: '#' })),
-      250,
-    );
-    return () => clearTimeout(t);
-  }, [document]);
+  // Bumped only by side-panel edits (add/remove/reorder, inspector
+  // patches, theme apply) — never by canvas keystrokes — so the
+  // debounced, syncKey-keyed effect in HtmlPreview.web.tsx can never
+  // reload the iframe mid-keystroke. Mirrors website.tsx's
+  // structuralVersion / handlePanelChange / handleCanvasFieldChange.
+  const [structuralVersion, setStructuralVersion] = useState(0);
+  const debouncedSyncKey = useDebouncedValue(structuralVersion, 350);
+  const previewHtml = renderEmailHtml(document, { unsubscribeUrl: '#', editable: true });
+
+  function handleChange(next: EmailDocument) {
+    onChange(next);
+    setStructuralVersion((v) => v + 1);
+  }
+
+  // Canvas keystrokes: write straight into document state without ever
+  // touching structuralVersion, so they can never trigger an iframe
+  // reload — see HtmlPreview.web.tsx's syncKey-keyed effect.
+  function handleCanvasFieldChange(path: string, value: string) {
+    const parsed = parseFieldPath(path);
+    if (!parsed) return;
+    const block = document.blocks.find((b) => b.id === parsed.blockId);
+    if (!block || !isFieldEditable(block.type, parsed.field)) return;
+    const patch: Record<string, string> = { [parsed.field]: value };
+    onChange(updateBlock<EmailBlock>(document, block.id, patch as Partial<EmailBlock>));
+  }
 
   function addBlock(type: EmailBlockType) {
     // Seed from the document's live settings, not the raw gym-brand
@@ -499,7 +513,7 @@ export function EmailEditor({
     };
     const block = createBlock(type, seed);
     if (block.type === 'button') block.radius = document.settings.buttonRadius;
-    onChange(appendBlock(document, block));
+    handleChange(appendBlock(document, block));
     setSelectedId(block.id);
   }
 
@@ -530,7 +544,7 @@ export function EmailEditor({
       const { data: pub } = supabase.storage.from('email-assets').getPublicUrl(path);
       // Set the image first — it's uploaded and public now, so a failure
       // to write the (best-effort) library row must not lose it.
-      onChange(updateBlock<ImageBlock>(document, selected.id, { src: pub.publicUrl }));
+      handleChange(updateBlock<ImageBlock>(document, selected.id, { src: pub.publicUrl }));
       // Track the asset so a future library view can list / reuse it.
       await supabase
         .from('email_assets')
@@ -618,7 +632,7 @@ export function EmailEditor({
                   <View className="gap-3 p-3 border border-t-0 border-primary/30 rounded-b-lg">
                     <BlockInspector
                       block={block}
-                      onPatch={(patch) => onChange(updateBlock(document, block.id, patch))}
+                      onPatch={(patch) => handleChange(updateBlock(document, block.id, patch))}
                       onUploadImage={uploadImageForSelected}
                       uploading={uploading}
                     />
@@ -630,23 +644,23 @@ export function EmailEditor({
                     <View className="flex-row items-center justify-end gap-1.5">
                       <IconBtn
                         icon="arrow-up"
-                        onPress={() => onChange(moveBlock(document, block.id, 'up'))}
+                        onPress={() => handleChange(moveBlock(document, block.id, 'up'))}
                         disabled={idx === 0}
                       />
                       <IconBtn
                         icon="arrow-down"
-                        onPress={() => onChange(moveBlock(document, block.id, 'down'))}
+                        onPress={() => handleChange(moveBlock(document, block.id, 'down'))}
                         disabled={idx === document.blocks.length - 1}
                       />
                       <IconBtn
                         icon="copy-outline"
-                        onPress={() => onChange(duplicateBlock(document, block.id))}
+                        onPress={() => handleChange(duplicateBlock(document, block.id))}
                       />
                       <IconBtn
                         icon="trash-outline"
                         danger
                         onPress={() => {
-                          onChange(removeBlock(document, block.id));
+                          handleChange(removeBlock(document, block.id));
                           setSelectedId(null);
                         }}
                       />
@@ -666,7 +680,7 @@ export function EmailEditor({
       <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
         Email style
       </Text>
-      <SettingsInspector document={document} onChange={onChange} brand={brand} />
+      <SettingsInspector document={document} onChange={handleChange} brand={brand} />
     </View>
   );
 
@@ -678,9 +692,10 @@ export function EmailEditor({
     </>
   );
 
-  // Wide web pairs the editor rail with a live read-only preview, like the
-  // website builder's split view; narrow stacks the rail (the caller offers
-  // a Preview toggle).
+  // Wide web pairs the editor rail with a live, click-to-edit preview —
+  // like the website builder's split view — so heading/text/button-label
+  // edits can happen straight in the canvas, not just the sidebar; narrow
+  // stacks the rail (the caller offers a read-only Preview toggle).
   if (Platform.OS === 'web' && width >= 1280) {
     return (
       <View className="flex-1 flex-row">
@@ -690,7 +705,15 @@ export function EmailEditor({
           </ScrollView>
         </View>
         <View className="flex-1 p-3">
-          <HtmlPreview html={previewHtml} height="100%" />
+          <HtmlPreview
+            html={previewHtml}
+            height="100%"
+            editable
+            syncKey={debouncedSyncKey}
+            onFieldChange={handleCanvasFieldChange}
+            selectedBlockId={selectedId}
+            onCanvasSelect={setSelectedId}
+          />
         </View>
       </View>
     );

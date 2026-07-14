@@ -121,6 +121,52 @@ describe('renderEmailHtml', () => {
     );
     expect(html).toContain(BRAND_THEMES.ringside.palette.background);
   });
+
+  describe('editable canvas', () => {
+    it('adds no data-field/contenteditable markers or bridge script by default', () => {
+      let doc = emptyDocument(brand);
+      doc = appendBlock(doc, createBlock('heading', brand));
+      const html = renderEmailHtml(doc);
+      expect(html).not.toContain('data-field');
+      expect(html).not.toContain('contenteditable');
+      expect(html).not.toContain('temple-email-canvas');
+    });
+
+    it('marks heading/text/button labels editable, but not colour/link/image fields', () => {
+      let doc = emptyDocument(brand);
+      const h = createBlock('heading', brand) as HeadingBlock;
+      doc = appendBlock(doc, h);
+      const t = createBlock('text', brand) as TextBlock;
+      doc = appendBlock(doc, t);
+      const btn = createBlock('button', brand) as ButtonBlock;
+      doc = appendBlock(doc, btn);
+      const img = createBlock('image', brand) as ImageBlock;
+      img.src = 'https://cdn.example.com/a.png';
+      doc = appendBlock(doc, img);
+      const html = renderEmailHtml(doc, { unsubscribeUrl: '#', editable: true });
+      expect(html).toContain(`data-field="${h.id}:text"`);
+      expect(html).toContain(`data-field="${t.id}:text"`);
+      expect(html).toContain(`data-field="${btn.id}:text"`);
+      expect(html).not.toContain(`data-field="${img.id}`);
+      expect(html).toContain('contenteditable="true"');
+    });
+
+    it('includes the canvas bridge script and highlight styles only when editable', () => {
+      const html = renderEmailHtml(emptyDocument(brand), { editable: true });
+      expect(html).toContain('temple-email-canvas');
+      expect(html).toContain('tp-email-selected');
+    });
+
+    it('still escapes author text inside editable fields', () => {
+      let doc = emptyDocument(brand);
+      const t = createBlock('text', brand) as TextBlock;
+      t.text = '<script>alert(1)</script>';
+      doc = appendBlock(doc, t);
+      const html = renderEmailHtml(doc, { editable: true });
+      expect(html).not.toContain('<script>alert(1)</script>');
+      expect(html).toContain('&lt;script&gt;');
+    });
+  });
 });
 
 describe('renderEmailText', () => {
