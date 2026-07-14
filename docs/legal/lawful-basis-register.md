@@ -80,3 +80,9 @@ Annex B for locations and transfer mechanisms.
 **Reviewed & signed off by:** Nick — Director, Temple Software Ltd (company
 no. 15867522)  **Date:** 2026-07-10  **Next review:** 2027-07-10 or on
 material change
+
+**Correction, 2026-07-14:** Item 2's Art. 6 basis entry corrected — Temple
+invoices gym subscriptions directly, not via Stripe (Stripe was never
+accurate here; it only processes the separate gym-to-member payments under
+Connect). No change to the underlying lawful basis (Contract) or to any
+other item. Re-affirmed by: Nick — Director, Temple Software Ltd.
