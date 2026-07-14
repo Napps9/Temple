@@ -26,7 +26,7 @@ contact: **privacy@jointemple.io**.
 | --- | --- | --- |
 | Account identity — name, email, password (hashed), gym role | Create and operate your account; authenticate you | Contract |
 | Usage and log data | Security, debugging, keeping the service reliable | Legitimate interests (see below) |
-| Billing data for **your Temple subscription** | Take payment for the platform | Contract |
+| Billing data for **your Temple subscription** (contact and invoice details) | Invoice you for the platform | Contract |
 | Support correspondence | Answer your queries | Legitimate interests |
 | Marketing to prospective/existing gyms | Tell you about Temple | Consent or legitimate interests; electronic marketing also complies with **PECR** |
 
@@ -45,7 +45,8 @@ only as needed to provide their piece:
 
 - **Supabase** — database, authentication, and file storage.
 - **Stripe** — payments. Gyms charge members on their own connected Stripe
-  accounts; Stripe also processes billing for Temple subscriptions.
+  accounts. Temple does not use Stripe, or any other automated processor, to
+  bill gyms for their own Temple subscription — that's invoiced directly.
 - **Resend** — transactional and campaign email delivery.
 - **Vercel** — application hosting and delivery.
 - **Anthropic** — AI assistance for optional features (e.g. import column
@@ -53,9 +54,6 @@ only as needed to provide their piece:
   member rows, and only if enabled.
 - **Pexels** — stock-photo search for the website builder; receives only a
   staff search query, **no member data** (optional).
-
-[Confirm the full, current list and each provider's role and processing
-location before publishing.]
 
 ## 4. International transfers
 

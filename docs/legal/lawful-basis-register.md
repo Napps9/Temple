@@ -22,7 +22,7 @@
 | # | Processing | Data | Art. 6 basis | Notes |
 |---|---|---|---|---|
 | 1 | Create & operate accounts, authenticate | Name, email, hashed password, gym role | **Contract** | Necessary to provide the service. |
-| 2 | Take payment for Temple subscriptions | Billing metadata | **Contract** | Stripe processes card data. |
+| 2 | Invoice Temple subscriptions | Billing metadata | **Contract** | Invoiced directly; no card or payment processor involved. |
 | 3 | Security, debugging, reliability | Usage & log data | **Legitimate interests** | LIA needed (see below). |
 | 4 | Support | Correspondence | **Legitimate interests** | LIA needed. |
 | 5 | Marketing to gyms | Contact details | **Consent / legitimate interests** | Also PECR for electronic marketing. LIA if LI. |
