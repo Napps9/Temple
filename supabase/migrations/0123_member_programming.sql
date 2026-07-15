@@ -160,8 +160,31 @@ create policy member_programming_access_staff_select on public.member_programmin
   for select using (public.effective_can(gym_id, 'can_program_members'));
 
 -- ============================================================================
--- 5. Entitlement predicate.
+-- 5. Helpers + entitlement predicate.
 -- ============================================================================
+
+-- Policies below need "is the TARGET member still in the gym", but a
+-- policy subquery runs under the caller's own RLS, and gym_memberships
+-- is only self/owner/admin-readable — a coach's WITH CHECK would see
+-- nothing and refuse every write. Definer, so the check sees the row.
+create or replace function public.membership_is_active(
+  p_gym_id     uuid,
+  p_profile_id uuid
+) returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.gym_memberships gm
+    where gm.gym_id = p_gym_id
+      and gm.profile_id = p_profile_id
+      and gm.left_at is null
+  );
+$$;
+
+grant execute on function public.membership_is_active(uuid, uuid) to authenticated;
 
 -- Absent access row = free. The plan-subscription status set matches
 -- is_active_relationship (0015) / the client's CURRENT_SUB_STATUSES:
@@ -233,12 +256,7 @@ alter table public.member_programming enable row level security;
 create policy member_programming_self_select on public.member_programming
   for select using (
     profile_id = auth.uid()
-    and exists (
-      select 1 from public.gym_memberships gm
-      where gm.gym_id = member_programming.gym_id
-        and gm.profile_id = auth.uid()
-        and gm.left_at is null
-    )
+    and public.membership_is_active(gym_id, profile_id)
     and public.has_individual_programming_access(gym_id, profile_id)
   );
 
@@ -249,12 +267,7 @@ create policy member_programming_staff_all on public.member_programming
   using (public.effective_can(gym_id, 'can_program_members'))
   with check (
     public.effective_can(gym_id, 'can_program_members')
-    and exists (
-      select 1 from public.gym_memberships gm
-      where gm.gym_id = member_programming.gym_id
-        and gm.profile_id = member_programming.profile_id
-        and gm.left_at is null
-    )
+    and public.membership_is_active(gym_id, profile_id)
   );
 
 -- ============================================================================
@@ -281,12 +294,7 @@ alter table public.member_programming_files enable row level security;
 create policy member_programming_files_self_select on public.member_programming_files
   for select using (
     profile_id = auth.uid()
-    and exists (
-      select 1 from public.gym_memberships gm
-      where gm.gym_id = member_programming_files.gym_id
-        and gm.profile_id = auth.uid()
-        and gm.left_at is null
-    )
+    and public.membership_is_active(gym_id, profile_id)
     and public.has_individual_programming_access(gym_id, profile_id)
   );
 
@@ -295,12 +303,7 @@ create policy member_programming_files_staff_all on public.member_programming_fi
   using (public.effective_can(gym_id, 'can_program_members'))
   with check (
     public.effective_can(gym_id, 'can_program_members')
-    and exists (
-      select 1 from public.gym_memberships gm
-      where gm.gym_id = member_programming_files.gym_id
-        and gm.profile_id = member_programming_files.profile_id
-        and gm.left_at is null
-    )
+    and public.membership_is_active(gym_id, profile_id)
   );
 
 -- ============================================================================
