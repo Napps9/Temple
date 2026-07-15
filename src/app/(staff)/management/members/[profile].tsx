@@ -406,6 +406,7 @@ export default function MemberDetailScreen() {
                 programme PDFs, and set whether access is free or paid.
               </Text>
               <ChipButton
+                className="self-start"
                 tone="neutral"
                 label="Open programming"
                 icon="barbell-outline"

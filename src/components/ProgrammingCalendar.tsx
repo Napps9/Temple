@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
@@ -335,9 +336,21 @@ export function ProgrammingCalendar({
             </Pressable>
           </View>
           <View className="flex-1 flex-row justify-end">
-            {headerAction ?? null}
+            {/* Beside the date on md+; a two-chip headerAction has no
+                room here on phone widths, so it moves to its own row
+                below instead (same hidden md:flex / md:hidden split as
+                ClassesCalendar's month header). */}
+            <View className="hidden md:flex md:flex-row md:gap-2">
+              {headerAction ?? null}
+            </View>
           </View>
         </View>
+
+        {headerAction ? (
+          <View className="md:hidden flex-row flex-wrap justify-center gap-2 pb-4 -mt-1">
+            {headerAction}
+          </View>
+        ) : null}
 
         <View className="flex-row gap-2 md:gap-3 md:justify-center pb-4">
           {weekDays.map((d) => {
@@ -754,29 +767,29 @@ function LockedProgrammingCard({
         {access.product_name ? ` — ${access.product_name}` : ''}. Unlock it to
         see your training here.
       </Text>
-      <View className="flex-row flex-wrap gap-2">
-        {buyLabel && access.product_active ? (
-          <ChipButton
-            tone="filled"
-            label={checkout.isPending ? 'Opening checkout…' : buyLabel}
-            icon="cart-outline"
-            onPress={() => {
-              setError(null);
-              checkout.mutate([{ product_id: access.product_id!, quantity: 1 }], {
-                onError: (e) =>
-                  setError(errorMessage(e, 'Could not start checkout')),
-              });
-            }}
-          />
-        ) : null}
-        {access.plan_upgrade_available ? (
-          <ChipButton
-            label="View memberships"
-            icon="card-outline"
-            onPress={() => router.push('/membership' as never)}
-          />
-        ) : null}
-      </View>
+      {buyLabel && access.product_active ? (
+        <Button
+          variant="primary"
+          icon="cart-outline"
+          loading={checkout.isPending}
+          onPress={() => {
+            setError(null);
+            checkout.mutate([{ product_id: access.product_id!, quantity: 1 }], {
+              onError: (e) =>
+                setError(errorMessage(e, 'Could not start checkout')),
+            });
+          }}>
+          {buyLabel}
+        </Button>
+      ) : null}
+      {access.plan_upgrade_available ? (
+        <ChipButton
+          className="self-start"
+          label="View memberships"
+          icon="card-outline"
+          onPress={() => router.push('/membership' as never)}
+        />
+      ) : null}
       {!buyLabel && !access.plan_upgrade_available ? (
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           Ask at the front desk about access.
