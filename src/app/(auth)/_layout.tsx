@@ -1,14 +1,27 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, usePathname } from 'expo-router';
 
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 
 export default function AuthLayout() {
+  const pathname = usePathname();
   const session = useSession();
   const { data: membership, isLoading } = useGymMembership();
   const canAccessStaff = useCan('can_access_staff_area');
 
-  if (session && !isLoading && membership && canAccessStaff !== undefined) {
+  // /reset-password establishes a real (recovery) session the moment the
+  // emailed link is opened, so an existing member with a membership would
+  // otherwise get redirected straight past the "choose a new password"
+  // form by this same check before they ever see it.
+  const isResettingPassword = pathname === '/reset-password';
+
+  if (
+    !isResettingPassword &&
+    session &&
+    !isLoading &&
+    membership &&
+    canAccessStaff !== undefined
+  ) {
     return <Redirect href={canAccessStaff ? '/classes' : '/book'} />;
   }
 

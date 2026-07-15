@@ -175,6 +175,23 @@ export function confirmRedirectTo(): string | undefined {
     : undefined;
 }
 
+// Where Supabase redirects after the user clicks the password-reset link
+// — the app screen that turns the recovery token into a session and lets
+// them set a new password. Same native fallback as confirmRedirectTo:
+// undefined defers to the project Site URL.
+function resetRedirectTo(): string | undefined {
+  return typeof window !== 'undefined'
+    ? `${window.location.origin}/reset-password`
+    : undefined;
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: resetRedirectTo(),
+  });
+  if (error) throw error;
+}
+
 export type AcceptInviteResult =
   | { status: 'accepted' }
   | { status: 'pending_confirmation'; email: string };

@@ -156,6 +156,11 @@ export default function SignInScreen() {
               textContentType="password"
               autoComplete="current-password"
             />
+            <Link href="/forgot-password" asChild>
+              <Pressable hitSlop={8} accessibilityRole="button" className="self-end">
+                <Text className="text-primary text-sm">Forgot password?</Text>
+              </Pressable>
+            </Link>
           </View>
 
           {error ? (

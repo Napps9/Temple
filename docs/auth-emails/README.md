@@ -66,6 +66,11 @@ and **Redirect URLs** include `https://app.jointemple.io` so the
 - Sign up a throwaway account → the **Confirm your email address** email
   should arrive from `noreply@jointemple.io`, Temple-branded.
 - Change your email in Account → the **Change email** email should arrive.
+- From `/sign-in`, tap **Forgot password?** → the **Reset your Temple
+  password** email should arrive; clicking it should land on
+  `/reset-password` with a form to set a new password (not bounce you
+  into the app if you're already a member — see the note in
+  `src/app/(auth)/_layout.tsx`).
 
 ---
 
@@ -73,9 +78,10 @@ and **Redirect URLs** include `https://app.jointemple.io` so the
 
 - These are the *company* (Temple) templates. Gym campaign emails are a
   separate system (the gym's own domain + the in-app builder).
-- The active flows today are **confirm signup** and **change email**.
-  Reset-password and magic-link templates are included for when those
-  flows are enabled (reset-password needs a `resetPasswordForEmail` flow
-  wired in the app — not built yet).
+- The active flows today are **confirm signup**, **change email**, and
+  **reset password** (`/forgot-password` requests the email via
+  `resetPasswordForEmail`; `/reset-password` is where the emailed link
+  lands and sets the new password). Magic-link is still unused — its
+  template is included for whenever that flow gets built.
 - Keep these files in sync with `email-layout.ts` if the brand chrome
   changes.
