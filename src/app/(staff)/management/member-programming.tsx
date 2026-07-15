@@ -339,7 +339,7 @@ function IndividualsList() {
   });
 
   const cohort = useQuery({
-    queryKey: ['members-cohort', membership?.gymId],
+    queryKey: ['programming-candidates', membership?.gymId],
     enabled: !!membership?.gymId,
     queryFn: async (): Promise<SearchRow[]> => {
       const { data, error } = await supabase

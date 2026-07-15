@@ -282,7 +282,7 @@ export function MembersList() {
                           {m.profiles?.full_name ?? 'Member'}
                         </Text>
                         <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                          Joined {m.joined_at.slice(0, 10)}
+                          Joined {m.joined_at ? m.joined_at.slice(0, 10) : '—'}
                         </Text>
                       </View>
                       <CohortBadges
