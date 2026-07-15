@@ -67,13 +67,27 @@ Runbook: `docs/stripe-setup.md`.
       OAuth, which was off — without it a gym could only create a brand
       new Stripe account through Connect, not sign in with an existing
       one, contradicting the documented "signs in / creates an account"
-      flow in `docs/stripe-setup.md`.
-- [ ] Still open: **repeat the real onboarding + checkout test with live
-      keys** — the £10/mo Dolly Box run above only proved the *test*-key
-      path. Do one real Connect onboarding + one small, refundable real
+      flow in `docs/stripe-setup.md`. Confirmed live OAuth actually works
+      — the account picker showed real existing Stripe accounts to sign
+      in with, proving the toggle took effect.
+- [ ] (cleanup, not blocking) Two live-mode webhook destinations exist
+      pointing at `stripe-webhook` — `brilliant-harmony-snapshot` (Snapshot
+      payload, the one that matters) and `brilliant-harmony-thin` (Thin
+      payload). `stripe-webhook`'s signature check only understands the
+      classic `t=…,v1=…` scheme that Snapshot payloads use — Thin payloads
+      sign differently and can never verify. Delete `brilliant-harmony-thin`
+      to stop the dead traffic; confirm `STRIPE_WEBHOOK_SECRET` in Supabase
+      matches `brilliant-harmony-snapshot`'s signing secret specifically.
+- [ ] Still open, **deliberately deferred**: repeat the real onboarding +
+      checkout test with live keys — the £10/mo Dolly Box run above only
+      proved the *test*-key path. Live connected accounts need real
+      identity/business verification before Stripe allows a real charge
+      (Individual business type skips the company-number requirement —
+      personal details only), which is why this is paused rather than
+      done. Do one real Connect onboarding + one small, refundable real
       member charge against the live keys, confirm the webhook delivers
-      (Stripe Dashboard → Developers → Webhooks → live endpoint → check
-      the delivery succeeded, not just 200-from-test), then refund the
+      (Stripe Dashboard → Developers → Webhooks → `brilliant-harmony-snapshot`
+      → Recent deliveries → 200, not a signature failure), then refund the
       charge. Only after this passes should gyms be told Stripe is ready.
 
 ### [ ] 3. Turn on Resend (all outbound email)
