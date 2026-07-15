@@ -55,14 +55,17 @@ Runbook: `docs/stripe-setup.md`.
       card) — membership went **ACTIVE**, payment history shows
       **PAID**, webhook fired correctly. Whole flow proven working with
       the secrets currently live in production — no config was changed.
-- [ ] Still open: confirm whether the currently-live keys are Stripe
-      **test** or **live** mode (unconfirmed — deliberately left
-      untouched to avoid disrupting production). The platform's own
-      live account ("Temple Software LTD") has payments/payouts paused
-      pending a business-verification review (~2-3 days from 10 Jul);
-      swap to live keys once that clears, then repeat this same
-      onboarding + checkout test once with real (small, refundable)
-      values before telling gyms it's ready.
+- [x] Business-verification review cleared — Stripe emailed confirmation
+      (2026-07-15) that "Temple Software LTD is approved to create live
+      accounts and charges."
+- [ ] Still open: the platform's Supabase edge-function secrets
+      (`STRIPE_SECRET_KEY`, `STRIPE_CONNECT_CLIENT_ID`,
+      `STRIPE_WEBHOOK_SECRET`) are still on **test** values. Now that
+      the review has cleared: grab the live-mode secret key + Connect
+      OAuth client ID, register the live-mode redirect URI, set up a
+      live-mode webhook endpoint, swap all three secrets to live, then
+      repeat this same onboarding + checkout test once with real
+      (small, refundable) values before telling gyms it's ready.
 
 ### [ ] 3. Turn on Resend (all outbound email)
 
