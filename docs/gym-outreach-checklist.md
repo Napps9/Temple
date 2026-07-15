@@ -58,14 +58,23 @@ Runbook: `docs/stripe-setup.md`.
 - [x] Business-verification review cleared — Stripe emailed confirmation
       (2026-07-15) that "Temple Software LTD is approved to create live
       accounts and charges."
-- [ ] Still open: the platform's Supabase edge-function secrets
-      (`STRIPE_SECRET_KEY`, `STRIPE_CONNECT_CLIENT_ID`,
-      `STRIPE_WEBHOOK_SECRET`) are still on **test** values. Now that
-      the review has cleared: grab the live-mode secret key + Connect
-      OAuth client ID, register the live-mode redirect URI, set up a
-      live-mode webhook endpoint, swap all three secrets to live, then
-      repeat this same onboarding + checkout test once with real
-      (small, refundable) values before telling gyms it's ready.
+- [x] Swapped to live (2026-07-15): `STRIPE_SECRET_KEY`,
+      `STRIPE_CONNECT_CLIENT_ID` (`ca_UjVXQbUmKQECK3kEvinEJ0Gz5oeFr4PU`),
+      and `STRIPE_WEBHOOK_SECRET` all updated to live values in Supabase.
+      Live-mode redirect URI confirmed already registered (shared across
+      test/live in Stripe's Connect OAuth settings). Also turned on
+      **"OAuth for Stripe Dashboard accounts"** in Connect → Settings →
+      OAuth, which was off — without it a gym could only create a brand
+      new Stripe account through Connect, not sign in with an existing
+      one, contradicting the documented "signs in / creates an account"
+      flow in `docs/stripe-setup.md`.
+- [ ] Still open: **repeat the real onboarding + checkout test with live
+      keys** — the £10/mo Dolly Box run above only proved the *test*-key
+      path. Do one real Connect onboarding + one small, refundable real
+      member charge against the live keys, confirm the webhook delivers
+      (Stripe Dashboard → Developers → Webhooks → live endpoint → check
+      the delivery succeeded, not just 200-from-test), then refund the
+      charge. Only after this passes should gyms be told Stripe is ready.
 
 ### [ ] 3. Turn on Resend (all outbound email)
 
