@@ -337,13 +337,20 @@ async function callClaudeForMapping(
     'profile — the value kind, how full the column is (fill_rate 0-1) and how ' +
     'repetitive it is (distinct_ratio 0-1). You never see raw values. Assign ' +
     'every column to the single best Temple field, or "ignore" when nothing ' +
-    'fits (phone, address, internal IDs — Temple has no field for those). Each ' +
-    'single-valued field (email, first_name, last_name, full_name, ' +
-    'date_of_birth, plan_start, plan_end, credits_remaining, imported_status, ' +
-    'unsubscribed, notes) may be used at most once. Prefer full_name only when ' +
-    'one column holds the whole name; use first_name + last_name when split. A ' +
+    'fits (address, internal IDs — Temple has no field for those). Each ' +
+    'single-valued field (email, first_name, last_name, full_name, phone, ' +
+    'date_of_birth, plan_start, plan_end, next_bill_date, credits_remaining, ' +
+    'imported_status, unsubscribed, notes) may be used at most once. ' +
+    'emergency_contact is the one exception — a source export sometimes splits ' +
+    'it into separate name and number columns, and both should map there (the ' +
+    'client concatenates them). next_bill_date is the renewal/next-charge date ' +
+    'for an ongoing membership — distinct from plan_end, which is when a ' +
+    'membership or pass actually ends; an active recurring plan usually has ' +
+    'next_bill_date filled and plan_end blank. Prefer full_name only when one ' +
+    'column holds the whole name; use first_name + last_name when split. A ' +
     'high distinct_ratio text column is likely a name, email or notes; a low ' +
-    'distinct_ratio text column is likely a plan, status or tags.';
+    'distinct_ratio text column is likely a plan, status or tags; a column of ' +
+    'digit strings 7+ characters long is likely a phone number.';
 
   const toolSchema = {
     type: 'object',

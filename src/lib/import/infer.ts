@@ -201,10 +201,13 @@ export type ColumnMappingResult = {
 
 const TEMPLE_FIELD_KEYS = Object.keys(TEMPLE_FIELD_LABELS) as TempleField[];
 // Fields that name a single member attribute — at most one column each.
+// emergency_contact is deliberately excluded: a source export sometimes
+// splits it into separate name/number columns, and buildImportRow
+// concatenates both when the owner maps them there.
 const SINGLE_USE_FIELDS: Set<TempleField> = new Set([
-  'email', 'first_name', 'last_name', 'full_name', 'date_of_birth',
-  'plan_start', 'plan_end', 'credits_remaining', 'imported_status',
-  'unsubscribed', 'notes',
+  'email', 'first_name', 'last_name', 'full_name', 'phone', 'date_of_birth',
+  'plan_start', 'plan_end', 'next_bill_date', 'credits_remaining',
+  'imported_status', 'unsubscribed', 'notes',
 ]);
 
 function isTempleField(v: unknown): v is TempleField {
