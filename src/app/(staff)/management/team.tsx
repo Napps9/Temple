@@ -64,6 +64,7 @@ const CAPABILITY_GROUPS: CapabilityGroup[] = [
     title: 'Classes & attendance',
     caps: [
       { value: 'can_edit_classes', label: 'Edit classes', description: 'Create, edit, and reschedule class sessions.' },
+      { value: 'can_program_members', label: 'Program individuals', description: 'Write personal programming for a single member and configure its access.' },
       { value: 'can_check_in_member', label: 'Check in members', description: 'Mark bookings as attended at class time.' },
       { value: 'can_issue_override', label: 'Issue overrides', description: 'Book a member into a class outside normal rules.' },
       { value: 'can_issue_comp_grant', label: 'Issue comp grants', description: 'Hand out free credits or class access.' },

@@ -1,23 +1,38 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
-import { ProgrammingModal } from '@/components/ProgrammingModal';
+import {
+  ProgrammingModal,
+  type ProgrammingTarget,
+} from '@/components/ProgrammingModal';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
-import { useGymMembership } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
+import { formatMoney } from '@/lib/coach-earnings';
+import { errorMessage } from '@/lib/errors';
+import {
+  useMemberProgrammingFiles,
+  useMyProgrammingAccess,
+  useOpenProgrammingFile,
+  type MemberProgrammingFile,
+  type MyProgrammingAccess,
+} from '@/lib/member-programming';
 import {
   formatLabel,
   parseSections,
   type Section,
 } from '@/lib/programming';
+import { useStartStoreCheckout } from '@/lib/store';
+import { intervalSuffix } from '@/lib/store-format';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -99,13 +114,23 @@ function fmtDayShort(d: Date) {
 export function ProgrammingCalendar({
   mode,
   headerAction,
+  memberScope,
+  topBar,
 }: {
   mode: 'manage' | 'view';
   // Optional control rendered beside the month header (right-aligned
   // on desktop, its own row on mobile) — staff use it for Analysis.
   headerAction?: React.ReactNode;
+  // Scopes the calendar to ONE member's individual programming (the
+  // staff member-programming screen). Class sessions/programming stop
+  // being fetched; each day is that member's personal card instead.
+  memberScope?: { profileId: string; name: string };
+  // Rendered above the date header, inside the Screen — the member
+  // scope uses it for its BackLink + identity row.
+  topBar?: React.ReactNode;
 }) {
   const colors = useThemeColors();
+  const session = useSession();
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
@@ -122,7 +147,7 @@ export function ProgrammingCalendar({
     return startOfDay(new Date());
   });
   const [openFor, setOpenFor] = useState<{
-    classType: DayClassType;
+    target: ProgrammingTarget;
     date: Date;
   } | null>(null);
   const [recordingDate, setRecordingDate] = useState<Date | null>(null);
@@ -140,7 +165,7 @@ export function ProgrammingCalendar({
 
   const sessionsQuery = useQuery({
     queryKey: ['class-sessions-month', membership?.gymId, monthKey],
-    enabled: !!membership?.gymId,
+    enabled: !!membership?.gymId && !memberScope,
     queryFn: async () => {
       const start = addDays(startOfMonth(date), -7);
       const end = addDays(startOfMonth(addMonths(date, 1)), 7);
@@ -159,7 +184,7 @@ export function ProgrammingCalendar({
 
   const programmingMonthQuery = useQuery({
     queryKey: ['class-programming-month', membership?.gymId, monthKey],
-    enabled: !!membership?.gymId,
+    enabled: !!membership?.gymId && !memberScope,
     queryFn: async () => {
       const start = fmtDateLocal(addDays(startOfMonth(date), -7));
       const end = fmtDateLocal(addDays(startOfMonth(addMonths(date, 1)), 7));
@@ -175,6 +200,47 @@ export function ProgrammingCalendar({
       })) as ProgrammingRow[];
     },
   });
+
+  // Individual programming: the scoped member's rows on the staff
+  // screen, or the signed-in member's own on the view tab. The explicit
+  // profile filter matters — staff RLS would otherwise hand a coach
+  // every member's rows.
+  const personalProfileId =
+    memberScope?.profileId ??
+    (mode === 'view' ? session?.user?.id : undefined);
+  const personalMonthQuery = useQuery({
+    queryKey: [
+      'member-programming-month',
+      membership?.gymId,
+      personalProfileId,
+      monthKey,
+    ],
+    enabled: !!membership?.gymId && !!personalProfileId,
+    queryFn: async () => {
+      const start = fmtDateLocal(addDays(startOfMonth(date), -7));
+      const end = fmtDateLocal(addDays(startOfMonth(addMonths(date, 1)), 7));
+      const { data, error } = await supabase
+        .from('member_programming')
+        .select('id, date, sections')
+        .eq('gym_id', membership!.gymId)
+        .eq('profile_id', personalProfileId!)
+        .gte('date', start)
+        .lt('date', end);
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        id: row.id as string,
+        date: row.date as string,
+        sections: parseSections(row.sections),
+      }));
+    },
+  });
+
+  const memberView = mode === 'view' && !memberScope;
+  const filesQuery = useMemberProgrammingFiles(
+    memberView || memberScope ? membership?.gymId : undefined,
+    personalProfileId,
+  );
+  const accessQuery = useMyProgrammingAccess(membership?.gymId, memberView);
 
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -212,9 +278,23 @@ export function ProgrammingCalendar({
       .map((p) => [p.class_type_id, { id: p.id, sections: p.sections }]),
   );
 
+  const personalDay =
+    (personalMonthQuery.data ?? []).find((p) => p.date === dateStr) ?? null;
+  const personalFiles = filesQuery.data ?? [];
+  const access = accessQuery.data ?? null;
+  // RLS already hides rows from a locked-out member; has_programming
+  // (computed server-side) is what lets the locked card exist anyway.
+  const personalLocked =
+    memberView && !!access && access.has_programming && !access.entitled;
+  const showPersonalCard =
+    memberView &&
+    !personalLocked &&
+    ((personalDay?.sections.length ?? 0) > 0 || personalFiles.length > 0);
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="w-full max-w-5xl mx-auto px-2">
+        {topBar ?? null}
         {/* Same date header as the Book calendar: Today jump, the selected
             day with day-stepping arrows, and a tap-to-open month grid. */}
         <View className="flex-row items-center pt-3 pb-4">
@@ -298,50 +378,94 @@ export function ProgrammingCalendar({
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2 gap-3">
-          {mode === 'view' && dayTypes.length > 0 ? (
-            <Pressable
-              onPress={() => setRecordingDate(date)}
-              className="bg-primary active:bg-primary-dark rounded-xl p-3 flex-row items-center gap-3">
-              <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
-                <Ionicons name="add" size={20} color="#FFFFFF" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-white font-semibold text-sm">
-                  Record results
-                </Text>
-                <Text className="text-white/80 text-xs">
-                  Log how today's session went.
-                </Text>
-              </View>
-            </Pressable>
-          ) : null}
-          {dayTypes.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                No classes scheduled for this day.
-              </Text>
-            </View>
+          {memberScope ? (
+            <PersonalCard
+              title={memberScope.name}
+              sections={personalDay?.sections ?? []}
+              files={personalFiles}
+              mode={mode}
+              onEdit={() =>
+                setOpenFor({
+                  target: {
+                    kind: 'member',
+                    profileId: memberScope.profileId,
+                    name: memberScope.name,
+                  },
+                  date,
+                })
+              }
+            />
           ) : (
-            dayTypes.map((t) => {
-              const prog = programmingByTypeId.get(t.id);
-              return (
-                <ClassTypeCard
-                  key={t.id}
-                  classType={t}
-                  programmingId={prog?.id ?? null}
-                  sections={prog?.sections ?? []}
-                  mode={mode}
-                  onEdit={() => setOpenFor({ classType: t, date })}
+            <>
+              {mode === 'view' &&
+              (dayTypes.length > 0 ||
+                (personalDay?.sections.length ?? 0) > 0) ? (
+                <Pressable
+                  onPress={() => setRecordingDate(date)}
+                  className="bg-primary active:bg-primary-dark rounded-xl p-3 flex-row items-center gap-3">
+                  <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
+                    <Ionicons name="add" size={20} color="#FFFFFF" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white font-semibold text-sm">
+                      Record results
+                    </Text>
+                    <Text className="text-white/80 text-xs">
+                      Log how today's session went.
+                    </Text>
+                  </View>
+                </Pressable>
+              ) : null}
+              {personalLocked && access ? (
+                <LockedProgrammingCard
+                  access={access}
+                  gymId={membership?.gymId}
                 />
-              );
-            })
+              ) : null}
+              {showPersonalCard ? (
+                <PersonalCard
+                  title="Individual programming"
+                  sections={personalDay?.sections ?? []}
+                  files={personalFiles}
+                  mode="view"
+                />
+              ) : null}
+              {dayTypes.length === 0 ? (
+                !personalLocked && !showPersonalCard ? (
+                  <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      No classes scheduled for this day.
+                    </Text>
+                  </View>
+                ) : null
+              ) : (
+                dayTypes.map((t) => {
+                  const prog = programmingByTypeId.get(t.id);
+                  return (
+                    <ClassTypeCard
+                      key={t.id}
+                      classType={t}
+                      programmingId={prog?.id ?? null}
+                      sections={prog?.sections ?? []}
+                      mode={mode}
+                      onEdit={() =>
+                        setOpenFor({
+                          target: { kind: 'classType', classType: t },
+                          date,
+                        })
+                      }
+                    />
+                  );
+                })
+              )}
+            </>
           )}
         </View>
       </ScrollView>
 
       <ProgrammingModal
         visible={openFor !== null}
-        classType={openFor?.classType ?? null}
+        target={openFor?.target ?? null}
         date={openFor?.date ?? null}
         onClose={() => setOpenFor(null)}
       />
@@ -478,5 +602,195 @@ function ClassTypeCard({
         onClose={() => setLeaderboardOpenFor(null)}
       />
     </>
+  );
+}
+
+// The individual-programming analogue of ClassTypeCard — same shell,
+// brand-coloured dot, no leaderboards, plus the programme PDFs.
+function PersonalCard({
+  title,
+  sections,
+  files,
+  mode,
+  onEdit,
+}: {
+  title: string;
+  sections: Section[];
+  files: MemberProgrammingFile[];
+  mode: 'manage' | 'view';
+  onEdit?: () => void;
+}) {
+  const colors = useThemeColors();
+  const openFile = useOpenProgrammingFile();
+
+  const header = (
+    <View className="flex-row items-center gap-3">
+      <View
+        style={{ backgroundColor: colors.primary }}
+        className="w-3 h-3 rounded-full"
+      />
+      <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        {title}
+      </Text>
+      {mode === 'manage' ? (
+        <ChipButton
+          label={sections.length === 0 ? 'Add' : 'Edit'}
+          icon={sections.length === 0 ? 'add' : 'create-outline'}
+        />
+      ) : null}
+    </View>
+  );
+
+  const body =
+    sections.length === 0 ? (
+      <Text className="text-gray-400 dark:text-gray-500 text-sm">
+        {mode === 'manage'
+          ? 'No programming yet — tap to add.'
+          : 'Nothing programmed for this day.'}
+      </Text>
+    ) : (
+      <View className="gap-3">
+        {sections.map((s, idx) => (
+          <View key={idx} className="gap-1">
+            <View className="flex-row items-center gap-2">
+              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+                {s.title}
+              </Text>
+              <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
+                <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-semibold uppercase tracking-wider">
+                  {formatLabel(s.section_format)}
+                </Text>
+              </View>
+            </View>
+            <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
+          </View>
+        ))}
+      </View>
+    );
+
+  const filesFooter =
+    files.length === 0 ? null : (
+      <View className="gap-1.5 border-t border-gray-100 dark:border-gray-800 pt-3">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">
+          Programme documents
+        </Text>
+        {files.map((f) => (
+          <Pressable
+            key={f.id}
+            onPress={() => openFile.mutate(f.file_path)}
+            className="flex-row items-center gap-2 py-1 active:opacity-70">
+            <Ionicons
+              name="document-text-outline"
+              size={16}
+              color={colors.iconSecondary}
+            />
+            <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+              {f.title}
+            </Text>
+            <Ionicons name="open-outline" size={14} color={colors.iconTertiary} />
+          </Pressable>
+        ))}
+      </View>
+    );
+
+  if (mode === 'manage') {
+    return (
+      <Pressable
+        onPress={onEdit}
+        className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+        {header}
+        {body}
+        {filesFooter}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      {header}
+      {body}
+      {filesFooter}
+    </View>
+  );
+}
+
+// Shown instead of the personal card when the coach has written a
+// programme but the member's access is paid and unpaid-for.
+function LockedProgrammingCard({
+  access,
+  gymId,
+}: {
+  access: MyProgrammingAccess;
+  gymId: string | undefined;
+}) {
+  const colors = useThemeColors();
+  const currency = useGymCurrency();
+  const checkout = useStartStoreCheckout(gymId);
+  const [error, setError] = useState<string | null>(null);
+
+  const buyLabel =
+    access.product_id && access.product_price_cents != null
+      ? `Unlock — ${formatMoney(access.product_price_cents, currency)}${
+          access.product_recurring
+            ? intervalSuffix(access.product_recurring_interval ?? 'month')
+            : ''
+        }`
+      : null;
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="flex-row items-center gap-3">
+        <View
+          style={{ backgroundColor: colors.primary }}
+          className="w-3 h-3 rounded-full"
+        />
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+          Individual programming
+        </Text>
+        <Ionicons name="lock-closed" size={16} color={colors.iconSecondary} />
+      </View>
+      <Text className="text-gray-700 dark:text-gray-200 text-sm">
+        Your coach has written you a personal programme
+        {access.product_name ? ` — ${access.product_name}` : ''}. Unlock it to
+        see your training here.
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
+        {buyLabel && access.product_active ? (
+          <ChipButton
+            tone="filled"
+            label={checkout.isPending ? 'Opening checkout…' : buyLabel}
+            icon="cart-outline"
+            onPress={() => {
+              setError(null);
+              checkout.mutate([{ product_id: access.product_id!, quantity: 1 }], {
+                onError: (e) =>
+                  setError(errorMessage(e, 'Could not start checkout')),
+              });
+            }}
+          />
+        ) : null}
+        {access.plan_upgrade_available ? (
+          <ChipButton
+            label="View memberships"
+            icon="card-outline"
+            onPress={() => router.push('/membership' as never)}
+          />
+        ) : null}
+      </View>
+      {!buyLabel && !access.plan_upgrade_available ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Ask at the front desk about access.
+        </Text>
+      ) : null}
+      {buyLabel && !access.product_active ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          This programme's product isn't available right now — ask at the
+          front desk.
+        </Text>
+      ) : null}
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+    </View>
   );
 }

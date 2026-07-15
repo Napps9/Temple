@@ -39,6 +39,12 @@ type ProgrammingRow = {
   sections: Section[];
 };
 
+// The editor writes either a class type's day (the whiteboard) or one
+// member's day (individual programming) — same drafts, different row.
+export type ProgrammingTarget =
+  | { kind: 'classType'; classType: { id: string; name: string; color: string } }
+  | { kind: 'member'; profileId: string; name: string };
+
 function fmtDateLocal(d: Date) {
   return `${d.getFullYear()}-${(d.getMonth() + 1)
     .toString()
@@ -76,12 +82,12 @@ function sectionToDraft(s: Section): SectionDraft {
 
 export function ProgrammingModal({
   visible,
-  classType,
+  target,
   date,
   onClose,
 }: {
   visible: boolean;
-  classType: { id: string; name: string; color: string } | null;
+  target: ProgrammingTarget | null;
   date: Date | null;
   onClose: () => void;
 }) {
@@ -99,15 +105,33 @@ export function ProgrammingModal({
   const dateStr = date ? fmtDateLocal(date) : null;
 
   const programming = useQuery({
-    queryKey: ['class-programming', membership?.gymId, classType?.id, dateStr],
-    enabled: !!membership?.gymId && !!classType?.id && !!dateStr && visible,
+    queryKey:
+      target?.kind === 'member'
+        ? ['member-programming', membership?.gymId, target.profileId, dateStr]
+        : [
+            'class-programming',
+            membership?.gymId,
+            target?.kind === 'classType' ? target.classType.id : null,
+            dateStr,
+          ],
+    enabled: !!membership?.gymId && !!target && !!dateStr && visible,
     queryFn: async (): Promise<ProgrammingRow | null> => {
-      const { data, error } = await supabase
-        .from('class_programming')
-        .select('id, sections')
-        .eq('class_type_id', classType!.id)
-        .eq('date', dateStr!)
-        .maybeSingle();
+      const query =
+        target!.kind === 'member'
+          ? supabase
+              .from('member_programming')
+              .select('id, sections')
+              .eq('gym_id', membership!.gymId)
+              .eq('profile_id', target!.profileId)
+              .eq('date', dateStr!)
+              .maybeSingle()
+          : supabase
+              .from('class_programming')
+              .select('id, sections')
+              .eq('class_type_id', target!.classType.id)
+              .eq('date', dateStr!)
+              .maybeSingle();
+      const { data, error } = await query;
       if (error) throw error;
       if (!data) return null;
       return { id: data.id, sections: parseSections(data.sections) };
@@ -132,7 +156,7 @@ export function ProgrammingModal({
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!membership || !session || !classType || !dateStr) {
+      if (!membership || !session || !target || !dateStr) {
         throw new Error('Missing context');
       }
       // Drop fully empty drafts (no category, no body) silently.
@@ -161,21 +185,47 @@ export function ProgrammingModal({
           section_format: d.section_format,
           title,
           body,
-          leaderboard_enabled: d.leaderboard_enabled,
+          // Leaderboards rank a class session's loggers — meaningless
+          // for a programme written for one person.
+          leaderboard_enabled:
+            target.kind === 'member' ? false : d.leaderboard_enabled,
         });
       }
-      if (cleaned.length === 0) {
+      if (target.kind === 'member') {
+        if (cleaned.length === 0) {
+          const { error } = await supabase
+            .from('member_programming')
+            .delete()
+            .eq('gym_id', membership.gymId)
+            .eq('profile_id', target.profileId)
+            .eq('date', dateStr);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('member_programming').upsert(
+            {
+              gym_id: membership.gymId,
+              profile_id: target.profileId,
+              date: dateStr,
+              sections: cleaned,
+              author_id: session.user.id,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'gym_id,profile_id,date' },
+          );
+          if (error) throw error;
+        }
+      } else if (cleaned.length === 0) {
         const { error } = await supabase
           .from('class_programming')
           .delete()
-          .eq('class_type_id', classType.id)
+          .eq('class_type_id', target.classType.id)
           .eq('date', dateStr);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('class_programming').upsert(
           {
             gym_id: membership.gymId,
-            class_type_id: classType.id,
+            class_type_id: target.classType.id,
             date: dateStr,
             sections: cleaned,
             author_id: session.user.id,
@@ -189,8 +239,17 @@ export function ProgrammingModal({
     onSuccess: () => {
       setError(null);
       markSaved();
-      queryClient.invalidateQueries({ queryKey: ['class-programming'] });
-      queryClient.invalidateQueries({ queryKey: ['class-programming-month'] });
+      if (target?.kind === 'member') {
+        queryClient.invalidateQueries({ queryKey: ['member-programming'] });
+        queryClient.invalidateQueries({ queryKey: ['member-programming-month'] });
+        queryClient.invalidateQueries({ queryKey: ['programmed-members'] });
+        queryClient.invalidateQueries({
+          queryKey: ['record-workout-member-programming'],
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['class-programming'] });
+        queryClient.invalidateQueries({ queryKey: ['class-programming-month'] });
+      }
       setTimeout(() => close(), 600);
     },
     onError: (e) => setError(errorMessage(e, 'Could not save programming')),
@@ -241,20 +300,28 @@ export function ProgrammingModal({
         <Pressable
           onPress={() => {}}
           className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[90vh]">
-          {!classType || !date ? (
+          {!target || !date ? (
             <View className="py-6 items-center">
               <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
             </View>
           ) : (
             <>
               <View className="gap-2">
-                <View
-                  style={{ backgroundColor: classType.color }}
-                  className="self-start rounded-full px-3 py-1">
-                  <Text className="text-white text-xs font-semibold">
-                    {classType.name}
-                  </Text>
-                </View>
+                {target.kind === 'classType' ? (
+                  <View
+                    style={{ backgroundColor: target.classType.color }}
+                    className="self-start rounded-full px-3 py-1">
+                    <Text className="text-white text-xs font-semibold">
+                      {target.classType.name}
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="self-start rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                    <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold">
+                      {target.name}
+                    </Text>
+                  </View>
+                )}
                 <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
                   {fmtLongDate(date)}
                 </Text>
@@ -273,6 +340,7 @@ export function ProgrammingModal({
                       <DraftCard
                         key={idx}
                         draft={d}
+                        showLeaderboard={target.kind === 'classType'}
                         onUpdate={(next) => updateDraft(idx, next)}
                         onPickCategory={() =>
                           setPickerOpenFor({ idx, kind: 'category' })
@@ -341,12 +409,14 @@ export function ProgrammingModal({
 
 function DraftCard({
   draft,
+  showLeaderboard,
   onUpdate,
   onPickCategory,
   onPickFormat,
   onRemove,
 }: {
   draft: SectionDraft;
+  showLeaderboard: boolean;
   onUpdate: (next: Partial<SectionDraft>) => void;
   onPickCategory: () => void;
   onPickFormat: () => void;
@@ -406,25 +476,27 @@ function DraftCard({
         autoCapitalize="sentences"
       />
 
-      <Pressable
-        onPress={() =>
-          onUpdate({ leaderboard_enabled: !draft.leaderboard_enabled })
-        }
-        className="flex-row items-center gap-3 active:opacity-70">
-        <Ionicons
-          name={draft.leaderboard_enabled ? 'checkbox' : 'square-outline'}
-          size={20}
-          color={draft.leaderboard_enabled ? colors.primary : colors.iconTertiary}
-        />
-        <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
-            Add to leaderboard
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Members who log this section will be ranked against each other.
-          </Text>
-        </View>
-      </Pressable>
+      {showLeaderboard ? (
+        <Pressable
+          onPress={() =>
+            onUpdate({ leaderboard_enabled: !draft.leaderboard_enabled })
+          }
+          className="flex-row items-center gap-3 active:opacity-70">
+          <Ionicons
+            name={draft.leaderboard_enabled ? 'checkbox' : 'square-outline'}
+            size={20}
+            color={draft.leaderboard_enabled ? colors.primary : colors.iconTertiary}
+          />
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+              Add to leaderboard
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Members who log this section will be ranked against each other.
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

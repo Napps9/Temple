@@ -308,6 +308,26 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Programming view** — read-only calendar of what's been programmed
   for the member's eligible class types each day; the same surface
   the recorder pre-fills from.
+- **Individual programming (member side)** — when a coach has written
+  a personal programme for the member, an "Individual programming"
+  card renders in the same day list as the class-type cards (same
+  shell, brand-coloured dot; present only when the member actually has
+  one — no card, no trace otherwise). It shows that day's personal
+  sections plus a "Programme documents" footer listing any uploaded
+  PDFs (opened via a short-lived signed URL on the private
+  `member-programming-files` bucket). Access is per member: **free**
+  (default) or **paid** — unlocked by an active/one-off purchase of a
+  linked store product **or** a current subscription to any plan
+  flagged `includes_individual_programming`. Locked members see a
+  persistent locked card ("your coach has written you a personal
+  programme") with an Unlock button into the store's Stripe checkout
+  and/or a View-memberships link; RLS hides the rows themselves
+  (`has_individual_programming_access` in the self-select policy), and
+  `my_programming_access` is what tells the locked card a programme
+  exists at all. The recorder offers a "Your programme" pre-fill chip
+  for the day's personal sections (`tracked_workout_sections.
+  source_member_programming_id` links the log back; personal sections
+  never enter class leaderboards).
 
 ---
 
@@ -325,6 +345,37 @@ The staff area shows up when `can_access_staff_area` is on.
   leaderboard for the For Time / AMRAP section of the day.
 - **Inline auto-titling** — title auto-fills from the category and
   re-fills on category change *only* when it still matches.
+- **Individual programming (staff side)** [`can_program_members`,
+  owner + admin + coach by default] — write a personal programme for
+  ONE member on a calendar, using the same week-strip calendar +
+  section editor as class programming (`member_programming`: one row
+  per gym × member × date, same `Section[]` jsonb shape; leaderboard
+  toggle hidden — leaderboards are class-session concepts). **Two
+  entry points, one editor**: an "Individuals" chip on the staff
+  Programming page opens `/management/member-programming` (members
+  with a programme + a search to start one — no setup step, the first
+  save materialises it), and a "Programming" card on the member's
+  profile deep-links to the same member-scoped calendar. From there a
+  **Documents** chip uploads/removes programme PDFs (private storage
+  bucket, rows in `member_programming_files`), and an access chip
+  (Free/Paid) opens the access modal: free, or paid with an optional
+  linked store product (picker reads the member catalogue via
+  `list_store_products`, so coaches don't need `can_manage_store`) —
+  written through the `set_member_programming_access` RPC. A hint in
+  the modal notes that flagged membership plans always unlock.
+  Removed members: existing rows stay staff-visible, new writes are
+  refused (RLS WITH CHECK on `left_at`).
+- **Programming-only plans (PT memberships)** — `membership_plans.kind
+  = 'programming_only'`: a recurring plan that sells individual
+  programming and **cannot book classes** (the booking-entitlement
+  predicates only admit unlimited or credit kinds, so it's excluded by
+  construction; the class-detail "membership required" upsell filters
+  it out). It always carries `includes_individual_programming` (CHECK-
+  enforced); any other kind can also tick the flag in the plans editor
+  ("Unlimited + individualised programming"). Subscribers still count
+  as active/paying for cohorts, and checkout/change/cancel ride the
+  existing Stripe rails (every non-credit_pack kind is subscription
+  mode).
 - **Programming Analysis page** — 12-week injury heat map across the
   gym body + per-movement member trends (from both direct PR logs and
   section-tagged workout results) + the Programming Balance block:

@@ -495,7 +495,7 @@ function renderSchedule(b: ScheduleBlock, ctx: SiteRenderContext): string {
 function fmtPlanPrice(p: PublicPlan, currency: string): string {
   if (p.monthlyPriceCents == null) return 'Contact us';
   const price = formatMoney(p.monthlyPriceCents, currency);
-  if (p.kind === 'unlimited') return `${price}<span style="font-size:14px;font-weight:400;color:var(--muted-text);">/month</span>`;
+  if (p.kind === 'unlimited' || p.kind === 'programming_only') return `${price}<span style="font-size:14px;font-weight:400;color:var(--muted-text);">/month</span>`;
   if (p.kind === 'credit_pack') return price;
   return `${price}<span style="font-size:14px;font-weight:400;color:var(--muted-text);">/period</span>`;
 }

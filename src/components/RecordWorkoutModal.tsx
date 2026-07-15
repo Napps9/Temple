@@ -72,6 +72,7 @@ type SectionDraft = {
   entries: SectionEntryDraft[];
   // PR 3 additions:
   source_programming_id: string | null;
+  source_member_programming_id: string | null;
   source_section_index: number | null;
   movement_tags: MovementTagDraft[];
 };
@@ -99,6 +100,7 @@ function emptyDraft(): SectionDraft {
     free_text_result: '',
     entries: [],
     source_programming_id: null,
+    source_member_programming_id: null,
     source_section_index: null,
     movement_tags: [],
   };
@@ -107,10 +109,12 @@ function emptyDraft(): SectionDraft {
 function draftFromProgrammedSection(args: {
   section: Section;
   format: SectionFormatKey;
-  programmingId: string;
+  programmingId: string | null;
+  memberProgrammingId?: string | null;
   sectionIndex: number;
 }): SectionDraft {
-  const { section, format, programmingId, sectionIndex } = args;
+  const { section, format, programmingId, memberProgrammingId, sectionIndex } =
+    args;
   const shape = FORMAT_SHAPES[format];
   const entries =
     shape.kind === 'entries_only'
@@ -137,6 +141,7 @@ function draftFromProgrammedSection(args: {
     free_text_result: '',
     entries,
     source_programming_id: programmingId,
+    source_member_programming_id: memberProgrammingId ?? null,
     source_section_index: sectionIndex,
     movement_tags: detected,
   };
@@ -255,6 +260,48 @@ export function RecordWorkoutModal({
       return out;
     },
   });
+
+  // The member's own individual programming for the date. The profile
+  // filter is load-bearing, not an optimisation: a coach recording
+  // their own workout passes the staff RLS policy, which would
+  // otherwise hand them every member's rows for the day. For members,
+  // RLS additionally hides rows when paid access isn't active — an
+  // unentitled member simply gets no chip.
+  const memberProgrammingQuery = useQuery({
+    queryKey: ['record-workout-member-programming', membership?.gymId, date],
+    enabled: !!membership?.gymId && !!session?.user.id && !!date && visible,
+    queryFn: async (): Promise<{ id: string; sections: Section[] } | null> => {
+      const { data, error: err } = await supabase
+        .from('member_programming')
+        .select('id, sections')
+        .eq('gym_id', membership!.gymId)
+        .eq('profile_id', session!.user.id)
+        .eq('date', date)
+        .maybeSingle();
+      if (err) throw err;
+      if (!data) return null;
+      return { id: data.id, sections: parseSections(data.sections) };
+    },
+  });
+  const myProgramme = memberProgrammingQuery.data ?? null;
+
+  function prefillFromMemberProgramming() {
+    if (!myProgramme || myProgramme.sections.length === 0) return;
+    const newDrafts: SectionDraft[] = myProgramme.sections.map(
+      (section, i) =>
+        draftFromProgrammedSection({
+          section,
+          format: section.section_format,
+          programmingId: null,
+          memberProgrammingId: myProgramme.id,
+          sectionIndex: i,
+        }),
+    );
+    setDrafts((cur) => {
+      if (cur.length === 1 && isEmptyDraft(cur[0])) return newDrafts;
+      return [...cur, ...newDrafts];
+    });
+  }
 
   const programmingByClassType = useMemo(() => {
     const map = new Map<
@@ -618,12 +665,26 @@ export function RecordWorkoutModal({
               placeholder="Morning session"
               autoCapitalize="sentences"
             />
-            {programmingByClassType.length > 0 ? (
+            {programmingByClassType.length > 0 ||
+            (myProgramme?.sections.length ?? 0) > 0 ? (
               <View className="gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3">
                 <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest">
                   Pre-fill from today's programming
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
+                  {(myProgramme?.sections.length ?? 0) > 0 ? (
+                    <Pressable
+                      onPress={prefillFromMemberProgramming}
+                      className="flex-row items-center gap-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-1.5 active:opacity-70">
+                      <Ionicons name="person" size={10} color={colors.primary} />
+                      <Text className="text-gray-900 dark:text-gray-50 text-xs font-medium">
+                        Your programme
+                      </Text>
+                      <Text className="text-gray-500 dark:text-gray-400 text-[10px]">
+                        {myProgramme!.sections.length}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                   {programmingByClassType.map((g) => (
                     <Pressable
                       key={g.class_type_id}
@@ -1801,6 +1862,7 @@ function buildSectionInsert(args: {
     profile_id: profileId,
     workout_id: workoutId,
     source_programming_id: draft.source_programming_id,
+    source_member_programming_id: draft.source_member_programming_id,
     source_section_index: draft.source_section_index,
     section_category: draft.section_category!,
     section_format: format,

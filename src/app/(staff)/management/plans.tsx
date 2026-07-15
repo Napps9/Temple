@@ -20,7 +20,7 @@ import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
 
-type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
+type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack' | 'programming_only';
 
 type ServerPlan = {
   plan_id: string;
@@ -29,6 +29,7 @@ type ServerPlan = {
   credit_count: number | null;
   monthly_price_cents: number | null;
   notice_period_days: number | null;
+  includes_individual_programming: boolean;
   archived_at: string | null;
 };
 
@@ -48,9 +49,16 @@ type EditablePlan = {
   coverageMode: 'all' | 'specific';
   classTypeIds: string[];
   serverClassTypeIds: string[];
+  includesProgramming: boolean;
   archivedAt: string | null;
   serverSnapshot: ServerPlan | null;
 };
+
+// programming_only sells nothing but individual programming, so the
+// flag is implied; other kinds carry the checkbox's value.
+function effectiveIncludesProgramming(r: EditablePlan): boolean {
+  return r.kind === 'programming_only' ? true : r.includesProgramming;
+}
 
 // Prices are stored in minor units (pence) but entered in pounds — nobody
 // thinks in pence. Convert at the edges: pence -> pounds for display,
@@ -78,6 +86,7 @@ function fromServer(p: ServerPlan, classTypeIds: string[]): EditablePlan {
     coverageMode: classTypeIds.length > 0 ? 'specific' : 'all',
     classTypeIds,
     serverClassTypeIds: classTypeIds,
+    includesProgramming: p.includes_individual_programming,
     archivedAt: p.archived_at,
     serverSnapshot: p,
   };
@@ -95,7 +104,8 @@ function rowDiffers(r: EditablePlan): boolean {
     r.kind !== s.kind ||
     cc !== s.credit_count ||
     mpc !== s.monthly_price_cents ||
-    npd !== s.notice_period_days
+    npd !== s.notice_period_days ||
+    effectiveIncludesProgramming(r) !== s.includes_individual_programming
   );
 }
 
@@ -141,7 +151,7 @@ export function PlansPanel() {
       const { data, error } = await supabase
         .from('membership_plans')
         .select(
-          'plan_id, name, kind, credit_count, monthly_price_cents, notice_period_days, archived_at',
+          'plan_id, name, kind, credit_count, monthly_price_cents, notice_period_days, includes_individual_programming, archived_at',
         )
         .order('name');
       if (error) throw error;
@@ -258,11 +268,12 @@ export function PlansPanel() {
         const monthlyPriceCents = poundsToCents(r.monthlyPrice);
         const noticePeriodDays =
           r.noticePeriodDays.trim() === '' ? null : parseInt(r.noticePeriodDays, 10);
-        if (r.kind !== 'unlimited' && (creditCount === null || isNaN(creditCount))) {
+        const creditKind = r.kind === 'credit_period' || r.kind === 'credit_pack';
+        if (creditKind && (creditCount === null || isNaN(creditCount))) {
           throw new Error(`${name}: credit count required for ${r.kind}`);
         }
-        if (r.kind === 'unlimited' && creditCount !== null) {
-          throw new Error(`${name}: unlimited plans cannot have a credit count`);
+        if (!creditKind && creditCount !== null) {
+          throw new Error(`${name}: this plan kind cannot have a credit count`);
         }
         if (r.monthlyPrice.trim() !== '' && monthlyPriceCents === null) {
           throw new Error(`${name}: invalid price`);
@@ -271,9 +282,20 @@ export function PlansPanel() {
           throw new Error(`${name}: invalid notice period`);
         }
 
+        // A programming-only plan books nothing, so it carries no
+        // class-type allowlist regardless of what the editor held
+        // before the kind switch.
         const desiredCoverage =
-          r.coverageMode === 'specific' ? r.classTypeIds : [];
-        if (r.coverageMode === 'specific' && desiredCoverage.length === 0) {
+          r.kind === 'programming_only'
+            ? []
+            : r.coverageMode === 'specific'
+              ? r.classTypeIds
+              : [];
+        if (
+          r.kind !== 'programming_only' &&
+          r.coverageMode === 'specific' &&
+          desiredCoverage.length === 0
+        ) {
           throw new Error(
             `${name}: pick at least one class type, or choose All classes`,
           );
@@ -288,6 +310,7 @@ export function PlansPanel() {
             credit_count: number | null;
             monthly_price_cents: number | null;
             notice_period_days: number | null;
+            includes_individual_programming: boolean;
             period_length?: string;
           } = {
             gym_id: membership.gymId,
@@ -296,6 +319,7 @@ export function PlansPanel() {
             credit_count: creditCount,
             monthly_price_cents: monthlyPriceCents,
             notice_period_days: noticePeriodDays,
+            includes_individual_programming: effectiveIncludesProgramming(r),
           };
           if (r.kind === 'credit_period') {
             payload.period_length = '30 days';
@@ -316,6 +340,7 @@ export function PlansPanel() {
               credit_count: creditCount,
               monthly_price_cents: monthlyPriceCents,
               notice_period_days: noticePeriodDays,
+              includes_individual_programming: effectiveIncludesProgramming(r),
               period_length: r.kind === 'credit_period' ? '30 days' : null,
             })
             .eq('plan_id', r.serverId);
@@ -397,6 +422,7 @@ export function PlansPanel() {
         coverageMode: 'all',
         classTypeIds: [],
         serverClassTypeIds: [],
+        includesProgramming: false,
         archivedAt: null,
         serverSnapshot: null,
       },
@@ -504,19 +530,27 @@ export function PlansPanel() {
                       [
                         { key: 'membership', label: 'Membership' },
                         { key: 'session_pack', label: 'Session pack' },
+                        { key: 'programming', label: 'Individual programming' },
                       ] as const
                     ).map((t) => {
                       const active =
                         t.key === 'session_pack'
                           ? r.kind === 'credit_pack'
-                          : r.kind !== 'credit_pack';
+                          : t.key === 'programming'
+                            ? r.kind === 'programming_only'
+                            : r.kind === 'unlimited' || r.kind === 'credit_period';
                       return (
                         <Pressable
                           key={t.key}
                           onPress={() => {
                             if (active) return;
                             update(idx, {
-                              kind: t.key === 'session_pack' ? 'credit_pack' : 'unlimited',
+                              kind:
+                                t.key === 'session_pack'
+                                  ? 'credit_pack'
+                                  : t.key === 'programming'
+                                    ? 'programming_only'
+                                    : 'unlimited',
                             });
                           }}
                           className={`px-3 py-1.5 rounded-md border ${
@@ -541,8 +575,15 @@ export function PlansPanel() {
                       A fixed bundle of sessions. They don&apos;t expire.
                     </Text>
                   ) : null}
+                  {r.kind === 'programming_only' ? (
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                      A personal-training style membership: the member gets the
+                      individual programming a coach writes for them. It does
+                      not book classes.
+                    </Text>
+                  ) : null}
                 </View>
-                {r.kind !== 'credit_pack' ? (
+                {r.kind !== 'credit_pack' && r.kind !== 'programming_only' ? (
                   <View className="gap-1">
                     <Text className="text-gray-700 dark:text-gray-200 text-sm">
                       Membership type
@@ -578,7 +619,7 @@ export function PlansPanel() {
                     </View>
                   </View>
                 ) : null}
-                {r.kind !== 'unlimited' ? (
+                {r.kind === 'credit_period' || r.kind === 'credit_pack' ? (
                   <View className="gap-1">
                     <Input
                       label={
@@ -626,6 +667,43 @@ export function PlansPanel() {
                   />
                 ) : null}
 
+                {r.kind === 'programming_only' ? (
+                  <View className="flex-row items-center gap-3">
+                    <Ionicons name="checkbox" size={20} color={colors.primary} />
+                    <View className="flex-1">
+                      <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                        Includes individualized programming
+                      </Text>
+                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                        Always on for this plan type — it&apos;s what the plan
+                        sells.
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={() =>
+                      update(idx, { includesProgramming: !r.includesProgramming })
+                    }
+                    className="flex-row items-center gap-3 active:opacity-70">
+                    <Ionicons
+                      name={r.includesProgramming ? 'checkbox' : 'square-outline'}
+                      size={20}
+                      color={r.includesProgramming ? colors.primary : colors.iconTertiary}
+                    />
+                    <View className="flex-1">
+                      <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                        Includes individualized programming
+                      </Text>
+                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                        Members on this plan can view any personal programme a
+                        coach writes for them, without buying it separately.
+                      </Text>
+                    </View>
+                  </Pressable>
+                )}
+
+                {r.kind === 'programming_only' ? null : (
                 <View className="gap-2">
                   <Text className="text-gray-700 dark:text-gray-200 text-sm">
                     Classes this plan covers
@@ -696,6 +774,7 @@ export function PlansPanel() {
                     </View>
                   )}
                 </View>
+                )}
 
                 {r.serverId && canArchive ? (
                   <View className="flex-row gap-2 justify-end flex-wrap">

@@ -14,7 +14,11 @@ export type PlanSubState =
   | 'cancelled'
   | 'refunded_retained';
 
-export type MembershipPlanKind = 'unlimited' | 'credit_period' | 'credit_pack';
+export type MembershipPlanKind =
+  | 'unlimited'
+  | 'credit_period'
+  | 'credit_pack'
+  | 'programming_only';
 
 export type StaffAlertKind = 'parq_flag' | 'injury_new' | 'injury_update';
 
@@ -1335,6 +1339,93 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      member_programming: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          date: string;
+          sections: Json;
+          author_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          date: string;
+          sections?: Json;
+          author_id: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          date: string;
+          sections: Json;
+          author_id: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      member_programming_access: {
+        Row: {
+          gym_id: string;
+          profile_id: string;
+          mode: 'free' | 'paid';
+          store_product_id: string | null;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          profile_id: string;
+          mode?: 'free' | 'paid';
+          store_product_id?: string | null;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          profile_id: string;
+          mode: 'free' | 'paid';
+          store_product_id: string | null;
+          updated_by: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      member_programming_files: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          title: string;
+          file_path: string;
+          uploaded_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          title: string;
+          file_path: string;
+          uploaded_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          title: string;
+          file_path: string;
+          uploaded_by: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       membership_plans: {
         Row: {
           plan_id: string;
@@ -1346,6 +1437,7 @@ export type Database = {
           monthly_price_cents: number | null;
           notice_period_days: number | null;
           stripe_price_id: string | null;
+          includes_individual_programming: boolean;
           archived_at: string | null;
           created_at: string;
         };
@@ -1359,6 +1451,7 @@ export type Database = {
           monthly_price_cents?: number | null;
           notice_period_days?: number | null;
           stripe_price_id?: string | null;
+          includes_individual_programming?: boolean;
           archived_at?: string | null;
           created_at?: string;
         };
@@ -1372,6 +1465,7 @@ export type Database = {
           monthly_price_cents: number | null;
           notice_period_days: number | null;
           stripe_price_id: string | null;
+          includes_individual_programming: boolean;
           archived_at: string | null;
           created_at: string;
         }>;
@@ -1957,6 +2051,7 @@ export type Database = {
           profile_id: string;
           workout_id: string;
           source_programming_id: string | null;
+          source_member_programming_id: string | null;
           source_section_index: number | null;
           section_category: string;
           section_format: string;
@@ -1979,6 +2074,7 @@ export type Database = {
           profile_id: string;
           workout_id: string;
           source_programming_id?: string | null;
+          source_member_programming_id?: string | null;
           source_section_index?: number | null;
           section_category: string;
           section_format: string;
@@ -2001,6 +2097,7 @@ export type Database = {
           profile_id: string;
           workout_id: string;
           source_programming_id: string | null;
+          source_member_programming_id: string | null;
           source_section_index: number | null;
           section_category: string;
           section_format: string;
@@ -4108,6 +4205,19 @@ export type Database = {
           unsubscribed: number;
         }[];
       };
+      list_programmed_members: {
+        Args: { p_gym_id: string };
+        Returns: {
+          profile_id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+          mode: 'free' | 'paid';
+          days_total: number;
+          upcoming_days: number;
+          last_date: string | null;
+          files_total: number;
+        }[];
+      };
       list_store_products: {
         Args: { p_gym_id: string };
         Returns: {
@@ -4123,6 +4233,30 @@ export type Database = {
           recurring: boolean;
           recurring_interval: string | null;
         }[];
+      };
+      my_programming_access: {
+        Args: { p_gym_id: string };
+        Returns: {
+          entitled: boolean;
+          mode: 'free' | 'paid';
+          has_programming: boolean;
+          product_id: string | null;
+          product_name: string | null;
+          product_price_cents: number | null;
+          product_recurring: boolean;
+          product_recurring_interval: string | null;
+          product_active: boolean;
+          plan_upgrade_available: boolean;
+        }[];
+      };
+      set_member_programming_access: {
+        Args: {
+          p_gym_id: string;
+          p_profile_id: string;
+          p_mode: 'free' | 'paid';
+          p_store_product_id?: string | null;
+        };
+        Returns: null;
       };
       set_store_settings: {
         Args: {

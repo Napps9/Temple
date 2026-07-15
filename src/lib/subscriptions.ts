@@ -261,6 +261,8 @@ export function planKindLabel(plan: {
   credit_count: number | null;
 }): string {
   if (plan.kind === 'unlimited') return 'Unlimited classes';
+  if (plan.kind === 'programming_only')
+    return 'Individualised programming — no class booking';
   if (plan.kind === 'credit_period')
     return `${plan.credit_count ?? 0} classes each month`;
   return `${plan.credit_count ?? 0}-class pack`;

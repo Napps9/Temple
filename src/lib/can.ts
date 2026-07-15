@@ -39,7 +39,8 @@ export type Capability =
   | 'can_manage_comms'
   | 'can_manage_store'
   | 'can_see_store_revenue'
-  | 'can_manage_website';
+  | 'can_manage_website'
+  | 'can_program_members';
 
 const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_access_staff_area: { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
@@ -81,6 +82,7 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_manage_store:       { owner: true, admin: true,  coach: false, staff: false, member: false },
   can_see_store_revenue:  { owner: true, admin: true,  coach: false, staff: false, member: false },
   can_manage_website:     { owner: true, admin: true,  coach: false, staff: false, member: false },
+  can_program_members:    { owner: true, admin: true,  coach: true,  staff: false, member: false },
 };
 
 export const RoleOrder: GymRole[] = ['owner', 'admin', 'coach', 'staff', 'member'];

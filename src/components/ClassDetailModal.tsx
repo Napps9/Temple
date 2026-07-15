@@ -760,7 +760,11 @@ export function ClassDetailModal({
 
               {mode === 'book' && needMembership ? (
                 <BookMembershipPrompt
-                  plans={plansQuery.data ?? []}
+                  plans={(plansQuery.data ?? []).filter(
+                    // A programming-only plan can't book classes, so it
+                    // isn't an answer to "membership required to book".
+                    (p) => p.kind !== 'programming_only',
+                  )}
                   canSelfCheckout={selfCheckoutQuery.data ?? true}
                   checkout={checkout}
                   onBack={() => setNeedMembership(false)}

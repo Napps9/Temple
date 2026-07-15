@@ -263,6 +263,8 @@ export default function MemberDetailScreen() {
     onError: (e) => setError(errorMessage(e, 'Could not restore member')),
   });
 
+  const canProgram = useCan('can_program_members') ?? false;
+
   if (canManageTags === false) {
     return <Redirect href="/management" />;
   }
@@ -395,6 +397,28 @@ export default function MemberDetailScreen() {
             <Text className="text-gray-500 dark:text-gray-400 text-sm">No plans.</Text>
           )}
         </Section>
+
+        {canProgram && !isRemoved ? (
+          <Section title="Programming">
+            <View className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-2">
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Write a personal programme on this member's calendar, upload
+                programme PDFs, and set whether access is free or paid.
+              </Text>
+              <ChipButton
+                tone="neutral"
+                label="Open programming"
+                icon="barbell-outline"
+                onPress={() =>
+                  router.push({
+                    pathname: '/management/member-programming',
+                    params: { profile: profileId },
+                  })
+                }
+              />
+            </View>
+          </Section>
+        ) : null}
 
         {gymMembership.data &&
         gymMembership.data.role !== 'member' &&
