@@ -12,20 +12,28 @@ function checkoutOrigin(): string {
 
 // Starts a Stripe Checkout for a plan via the stripe-checkout edge
 // function and sends the browser to the returned URL. Shared by the
-// Membership page and the in-booking purchase prompt. mutate(planId).
+// Membership page and the in-booking purchase prompt.
+// mutate({ planId, legacySubscriptionId? }) — pass legacySubscriptionId
+// when converting an imported/legacy plan onto real billing so the
+// webhook updates that row in place instead of inserting a duplicate.
 export function useStartCheckout(
   gymId: string | undefined,
   opts?: { successPath?: string },
 ) {
   return useMutation({
-    mutationFn: async (planId: string) => {
+    mutationFn: async (
+      args: string | { planId: string; legacySubscriptionId?: string },
+    ) => {
       if (!gymId) throw new Error('No gym');
+      const { planId, legacySubscriptionId } =
+        typeof args === 'string' ? { planId: args, legacySubscriptionId: undefined } : args;
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
           gym_id: gymId,
           plan_id: planId,
           origin: checkoutOrigin(),
           success_path: opts?.successPath,
+          legacy_subscription_id: legacySubscriptionId,
         },
       });
       if (error) {
@@ -73,6 +81,13 @@ export type MySubscription = {
   cancelled_at: string | null;
   created_at: string;
   price_cents: number | null;
+  // True for a plan carried over from a member import with no live
+  // Stripe billing behind it yet (see 0124) — Temple bypasses billing
+  // on purpose so a migrated member isn't double-charged against
+  // whatever their old system still has running, but it also means
+  // nothing is actually renewing this until they (or staff) move it
+  // onto real billing.
+  imported_legacy: boolean;
   membership_plans: {
     name: string;
     kind: MembershipPlanKind;
@@ -128,7 +143,7 @@ export function useMySubscriptions(
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
+          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, imported_legacy, membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
         )
         .eq('gym_id', gymId!)
         .eq('profile_id', profileId!)

@@ -73,6 +73,19 @@ describe('autoDetect', () => {
       null,
     ]);
   });
+  it('matches a WodBoard-style export with phone, emergency contact and next bill date', () => {
+    expect(
+      autoDetect(['Mobile Number', 'Emergency Contact Name', 'Next Bill Date']),
+    ).toEqual(['phone', 'emergency_contact', 'next_bill_date']);
+  });
+  it("doesn't double-assign a second emergency-contact-shaped column", () => {
+    // A source export split into Name + Number: only the first
+    // auto-maps (the field's already used); the owner maps the second
+    // by hand, and buildImportRow concatenates once they do.
+    expect(
+      autoDetect(['Emergency Contact Name', 'Emergency Contact Number']),
+    ).toEqual(['emergency_contact', null]);
+  });
 });
 
 describe('toIsoDate', () => {
@@ -89,6 +102,12 @@ describe('toIsoDate', () => {
   it('flips YYYY-DD-MM when the month slot is > 12', () => {
     // Specific failure that showed up in the import preview.
     expect(toIsoDate('1992-16-03')).toBe('1992-03-16');
+  });
+  it('flips a DD/MM/YYYY slash date when the month slot is > 12', () => {
+    // A real value from a WodBoard export (UK gym, day-first dates) —
+    // previously dropped entirely as "month 15".
+    expect(toIsoDate('15/11/2026')).toBe('2026-11-15');
+    expect(toIsoDate('17/05/2024')).toBe('2024-05-17');
   });
   it('rejects YYYY-MM-DD with an out-of-range day', () => {
     expect(toIsoDate('1992-03-32')).toBe(null);
@@ -133,6 +152,29 @@ describe('buildImportRow', () => {
     expect(
       buildImportRow(headers, mapping, ['a@b.c', '', '', '', '', '', '']),
     ).toEqual({ email: 'a@b.c' });
+  });
+
+  it('parses next_bill_date as a date like plan_start/plan_end', () => {
+    const hs = ['Email', 'Next Bill Date'];
+    const out = buildImportRow(hs, autoDetect(hs), ['a@b.c', '15/11/2026']);
+    expect(out.next_bill_date).toBe('2026-11-15');
+  });
+
+  it('concatenates two columns mapped to emergency_contact rather than overwriting', () => {
+    const hs = ['Email', 'Emergency Contact Name', 'Emergency Contact Number'];
+    // Second column doesn't auto-map (see autoDetect test) — map it by
+    // hand, as the owner would in the review step.
+    const map = autoDetect(hs).map((f) =>
+      f === null ? 'emergency_contact' : f,
+    );
+    const out = buildImportRow(hs, map, ['a@b.c', 'Grace Hopper', '07700900123']);
+    expect(out.emergency_contact).toBe('Grace Hopper — 07700900123');
+  });
+
+  it('drops an unparseable next_bill_date rather than throwing', () => {
+    const hs = ['Email', 'Next Bill Date'];
+    const out = buildImportRow(hs, autoDetect(hs), ['a@b.c', 'whenever']);
+    expect(out.next_bill_date).toBeUndefined();
   });
 });
 

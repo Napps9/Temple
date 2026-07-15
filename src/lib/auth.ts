@@ -145,11 +145,15 @@ export function useMyProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url')
+        .select('full_name, avatar_url, phone')
         .eq('id', session!.user.id)
         .single();
       if (error) throw error;
-      return data as { full_name: string | null; avatar_url: string | null };
+      return data as {
+        full_name: string | null;
+        avatar_url: string | null;
+        phone: string | null;
+      };
     },
   });
 }

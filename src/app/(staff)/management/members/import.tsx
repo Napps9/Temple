@@ -132,6 +132,25 @@ export default function ImportMembersScreen() {
     },
   });
 
+  // Surfaces unlinked rows from a PRIOR import session — the "Linking
+  // progress" panel only exists while the wizard's local phase state is
+  // still 'handover', so a staffer who navigates away and comes back
+  // days later previously had no way to see who never signed up.
+  const unclaimedStats = useQuery({
+    queryKey: ['pending-members-stats', membership?.gymId],
+    enabled: !!membership?.gymId && phase === 'upload',
+    queryFn: async () => {
+      const { data, error: e } = await supabase.rpc('pending_members_stats', {
+        p_gym_id: membership!.gymId,
+      });
+      if (e) throw e;
+      const row = (data ?? [])[0] as
+        | { pending: number; invited: number; linked: number; skipped: number; total: number }
+        | undefined;
+      return row ?? { pending: 0, invited: 0, linked: 0, skipped: 0, total: 0 };
+    },
+  });
+
   const parsed = useMemo(() => (csvText ? parseCsv(csvText) : []), [csvText]);
   const headers = parsed[0] ?? [];
   const rows = parsed.slice(1).filter((r) => r.some((c) => c.length > 0));
@@ -405,6 +424,18 @@ export default function ImportMembersScreen() {
             link to their data when they sign up at your join link.
           </Text>
         </View>
+
+        {phase === 'upload' &&
+        unclaimedStats.data &&
+        unclaimedStats.data.pending + unclaimedStats.data.invited > 0 ? (
+          <UnclaimedImportsBanner
+            gymId={membership?.gymId ?? null}
+            stats={unclaimedStats.data}
+            onSent={() =>
+              queryClient.invalidateQueries({ queryKey: ['pending-members-stats'] })
+            }
+          />
+        ) : null}
 
         {phase === 'upload' ? (
           <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
@@ -1112,6 +1143,72 @@ function FieldPicker({
   );
 }
 
+// Persistent nudge for members left over from an earlier import who
+// still haven't signed up — visible any time the owner reopens this
+// screen, not just right after a fresh import.
+function UnclaimedImportsBanner({
+  gymId,
+  stats,
+  onSent,
+}: {
+  gymId: string | null;
+  stats: { pending: number; invited: number; linked: number; total: number };
+  onSent: () => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const send = useMutation({
+    mutationFn: async () => {
+      if (!gymId) throw new Error('Missing context');
+      const { data, error: e } = await supabase.functions.invoke(
+        'send-member-join-invites',
+        {
+          body: {
+            gym_id: gymId,
+            origin: Platform.OS === 'web' ? window.location.origin : undefined,
+          },
+        },
+      );
+      if (e) throw e;
+      return data as { sent: number; failed: number };
+    },
+    onSuccess: () => {
+      setError(null);
+      onSent();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not send invites')),
+  });
+
+  return (
+    <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+      <Text className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+        {stats.pending + stats.invited} member
+        {stats.pending + stats.invited === 1 ? '' : 's'} from a previous
+        import {stats.pending + stats.invited === 1 ? "hasn't" : "haven't"}{' '}
+        signed up yet
+      </Text>
+      <Text className="text-amber-700/80 dark:text-amber-300/80 text-xs">
+        {stats.pending} never invited, {stats.invited} invited and still
+        waiting.
+      </Text>
+      <Button
+        variant="secondary"
+        onPress={() => send.mutate()}
+        loading={send.isPending}>
+        Send join invites
+      </Button>
+      {send.data ? (
+        <Text className="text-amber-700/80 dark:text-amber-300/80 text-xs">
+          Sent {send.data.sent}
+          {send.data.failed > 0 ? `, ${send.data.failed} failed` : ''}.
+        </Text>
+      ) : null}
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 function HandoverPanel({
   gymId,
   gymName,
@@ -1211,6 +1308,41 @@ function HandoverPanel({
     },
     onError: (e) =>
       setCampaignError(errorMessage(e, 'Could not create the campaign')),
+  });
+
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const sendJoinInvites = useMutation({
+    mutationFn: async () => {
+      if (!gymId) throw new Error('Missing context');
+      const { data, error } = await supabase.functions.invoke(
+        'send-member-join-invites',
+        {
+          body: {
+            gym_id: gymId,
+            origin: Platform.OS === 'web' ? window.location.origin : undefined,
+          },
+        },
+      );
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = String(body.error);
+          } catch {
+            // not JSON — keep the generic message
+          }
+        }
+        throw new Error(msg);
+      }
+      return data as { sent: number; failed: number };
+    },
+    onSuccess: () => {
+      setInviteError(null);
+      queryClient.invalidateQueries({ queryKey: ['pending-members-stats'] });
+    },
+    onError: (e) => setInviteError(errorMessage(e, 'Could not send invites')),
   });
 
   function downloadPerMemberCsv() {
@@ -1316,6 +1448,38 @@ function HandoverPanel({
         {campaignError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">
             {campaignError}
+          </Text>
+        ) : null}
+      </View>
+
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="gap-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            Or just send the join link now
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            One click, no campaign editor — a short email with their join
+            link goes out immediately to everyone still waiting to sign up.
+          </Text>
+        </View>
+        <Button
+          variant="secondary"
+          onPress={() => sendJoinInvites.mutate()}
+          loading={sendJoinInvites.isPending}>
+          Send join invites
+        </Button>
+        {sendJoinInvites.data ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Sent {sendJoinInvites.data.sent}
+            {sendJoinInvites.data.failed > 0
+              ? `, ${sendJoinInvites.data.failed} failed`
+              : ''}
+            .
+          </Text>
+        ) : null}
+        {inviteError ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">
+            {inviteError}
           </Text>
         ) : null}
       </View>

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -40,6 +40,8 @@ export function AccountScreen() {
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -88,6 +90,21 @@ export function AccountScreen() {
   const pendingEmail = (session?.user as { new_email?: string } | undefined)
     ?.new_email;
 
+  const myEmergencyContact = useQuery({
+    queryKey: ['my-emergency-contact', membership?.gymId, session?.user.id],
+    enabled: !!membership?.gymId && !!session?.user.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select('emergency_contact')
+        .eq('gym_id', membership!.gymId)
+        .eq('profile_id', session!.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.emergency_contact ?? null) as string | null;
+    },
+  });
+
   useEffect(() => {
     if (profile?.full_name) setFullName(profile.full_name);
   }, [profile?.full_name]);
@@ -96,21 +113,36 @@ export function AccountScreen() {
     if (session?.user.email) setEmail(session.user.email);
   }, [session?.user.email]);
 
+  useEffect(() => {
+    if (profile?.phone) setPhone(profile.phone);
+  }, [profile?.phone]);
+
+  useEffect(() => {
+    if (myEmergencyContact.data) setEmergencyContact(myEmergencyContact.data);
+  }, [myEmergencyContact.data]);
+
   const saveDetails = useMutation({
     mutationFn: async () => {
       if (!session) throw new Error('Not signed in');
       const name = fullName.trim();
       const nextEmail = email.trim();
+      const nextPhone = phone.trim();
+      const nextContact = emergencyContact.trim();
       if (!name) throw new Error('Name is required');
       if (!nextEmail) throw new Error('Email is required');
 
       const nameChanged = name !== (profile?.full_name ?? '');
       const emailChanged = nextEmail !== session.user.email;
+      const phoneChanged = nextPhone !== (profile?.phone ?? '');
+      const contactChanged = nextContact !== (myEmergencyContact.data ?? '');
 
-      if (nameChanged) {
+      if (nameChanged || phoneChanged) {
         const { error } = await supabase
           .from('profiles')
-          .update({ full_name: name })
+          .update({
+            ...(nameChanged ? { full_name: name } : {}),
+            ...(phoneChanged ? { phone: nextPhone || null } : {}),
+          })
           .eq('id', session.user.id);
         if (error) throw error;
       }
@@ -118,11 +150,22 @@ export function AccountScreen() {
         const { error } = await supabase.auth.updateUser({ email: nextEmail });
         if (error) throw error;
       }
-      return { emailChanged, anyChanged: nameChanged || emailChanged };
+      if (contactChanged && membership) {
+        const { error } = await supabase.rpc('update_my_emergency_contact', {
+          p_gym_id: membership.gymId,
+          p_contact: nextContact,
+        });
+        if (error) throw error;
+      }
+      return {
+        emailChanged,
+        anyChanged: nameChanged || emailChanged || phoneChanged || contactChanged,
+      };
     },
     onSuccess: ({ emailChanged, anyChanged }) => {
       setDetailsError(null);
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['my-emergency-contact'] });
       if (emailChanged) {
         setDetailsMessage(
           'Check your new email for a confirmation link before the change takes effect.',
@@ -252,6 +295,22 @@ export function AccountScreen() {
             textContentType="emailAddress"
             autoComplete="email"
           />
+          <Input
+            label="Mobile number"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
+            autoComplete="tel"
+          />
+          {membership ? (
+            <Input
+              label="Emergency contact"
+              value={emergencyContact}
+              onChangeText={setEmergencyContact}
+              placeholder="Name and phone number"
+            />
+          ) : null}
           {pendingEmail ? (
             <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 gap-2">
               <Text className="text-amber-700 dark:text-amber-300 text-sm">

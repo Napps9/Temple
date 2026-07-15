@@ -60,6 +60,7 @@ type SubRow = {
   period_resets_at: string | null;
   cancelled_at: string | null;
   created_at: string;
+  imported_legacy: boolean;
   membership_plans: {
     name: string;
     kind: string;
@@ -192,7 +193,7 @@ export default function MemberDetailScreen() {
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, status, credit_balance, price_cents, paid_period_end, period_resets_at, cancelled_at, created_at, membership_plans(name, kind, notice_period_days)',
+          'id, status, credit_balance, price_cents, paid_period_end, period_resets_at, cancelled_at, created_at, imported_legacy, membership_plans(name, kind, notice_period_days)',
         )
         .eq('gym_id', membership!.gymId)
         .eq('profile_id', profileId!)
@@ -365,9 +366,18 @@ export default function MemberDetailScreen() {
               <View
                 key={s.id}
                 className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                  {s.membership_plans?.name ?? 'Plan'}
-                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    {s.membership_plans?.name ?? 'Plan'}
+                  </Text>
+                  {s.imported_legacy && s.status === 'active' ? (
+                    <View className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5">
+                      <Text className="text-[10px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                        Not yet billed
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
                   {s.status}
                   {s.price_cents !== null ? ` · £${(s.price_cents / 100).toFixed(2)}/mo` : ''}

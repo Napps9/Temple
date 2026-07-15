@@ -3,7 +3,7 @@
 -- is found, and only fires when a match is found.
 
 begin;
-select plan(13);
+select plan(16);
 
 \ir _helpers.psql
 
@@ -21,10 +21,12 @@ begin
   -- is fine for the fixture; the import RPC is exercised separately.
   insert into public.pending_members
     (gym_id, email, full_name, plan_name, plan_end,
-     credits_remaining, tags, unsubscribed, status, created_by)
+     credits_remaining, tags, unsubscribed, status, created_by,
+     phone, emergency_contact)
   values
     (v_gym, 'ADA@example.com', 'Ada Lovelace', 'Gold Monthly',
-     '2099-01-01', 12, ARRAY['VIP','Founders'], true, 'pending', v_owner)
+     '2099-01-01', 12, ARRAY['VIP','Founders'], true, 'pending', v_owner,
+     '07700900123', 'Grace Hopper — 07700900124')
   returning id into v_pend;
   perform set_config('test.pend', v_pend::text, true);
 end $$;
@@ -94,6 +96,21 @@ select is(
       and lower(email) = 'ada@example.com'),
   1,
   'unsubscribed=true on the pending row populates the suppression list'
+);
+
+select is(
+  (select phone from public.profiles
+    where id = current_setting('test.ada')::uuid),
+  '07700900123',
+  'pending.phone is written onto the new profile'
+);
+
+select is(
+  (select emergency_contact from public.gym_memberships
+    where profile_id = current_setting('test.ada')::uuid
+      and gym_id = current_setting('test.gym')::uuid),
+  'Grace Hopper — 07700900124',
+  'pending.emergency_contact is written onto the new membership'
 );
 
 select is(
@@ -210,6 +227,46 @@ select is(
       and gym_id = current_setting('test.gym3')::uuid),
   '2099-06-01',
   'paid_period_end = pending.plan_end so existing booking gate handles lapse'
+);
+
+-- 5. An active recurring membership's real CSV export leaves Membership
+--    End Date blank (it's ongoing) but carries a Next Bill Date — that
+--    should fill paid_period_end so the plan doesn't silently vanish
+--    from renewal-risk reporting, without needing plan_end at all.
+do $$
+declare
+  v_gym3   uuid := current_setting('test.gym3')::uuid;
+  v_owner3 uuid;
+  v_plan2  uuid;
+  v_pend3  uuid;
+begin
+  select profile_id into v_owner3
+    from public.gym_memberships
+    where gym_id = v_gym3 and role = 'owner';
+
+  insert into public.membership_plans (gym_id, name, kind)
+    values (v_gym3, 'Monthly Unlimited', 'unlimited')
+    returning plan_id into v_plan2;
+
+  insert into public.pending_members
+    (gym_id, email, full_name, plan_name, next_bill_date,
+     linked_membership_plan_id, status, created_by)
+  values
+    (v_gym3, 'mia@example.com', 'Mia Grant',
+     'Monthly Unlimited', '2099-08-15', v_plan2, 'pending', v_owner3)
+  returning id into v_pend3;
+
+  perform set_config('test.mia', _test_mk_user('mia@example.com')::text, true);
+  perform _test_mk_membership(
+    current_setting('test.gym3')::uuid, current_setting('test.mia')::uuid, 'member');
+end $$;
+
+select is(
+  (select paid_period_end::date::text from public.plan_subscriptions
+    where profile_id = current_setting('test.mia')::uuid
+      and gym_id = current_setting('test.gym3')::uuid),
+  '2099-08-15',
+  'paid_period_end falls back to pending.next_bill_date when plan_end is blank'
 );
 
 select * from finish();

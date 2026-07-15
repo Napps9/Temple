@@ -11,9 +11,12 @@ export type TempleField =
   | 'last_name'
   | 'full_name'
   | 'date_of_birth'
+  | 'phone'
+  | 'emergency_contact'
   | 'plan_name'
   | 'plan_start'
   | 'plan_end'
+  | 'next_bill_date'
   | 'credits_remaining'
   | 'imported_status'
   | 'tags'
@@ -26,9 +29,12 @@ export const TEMPLE_FIELD_LABELS: Record<TempleField, string> = {
   last_name: 'Last name',
   full_name: 'Full name (single column)',
   date_of_birth: 'Date of birth',
+  phone: 'Mobile / phone number',
+  emergency_contact: 'Emergency contact',
   plan_name: 'Plan / Membership',
   plan_start: 'Plan start date',
   plan_end: 'Plan end date',
+  next_bill_date: 'Next bill date',
   credits_remaining: 'Credits / sessions remaining',
   imported_status: 'Source status',
   tags: 'Tags',
@@ -55,6 +61,18 @@ const FIELD_HEADERS: Record<TempleField, string[]> = {
   ],
   date_of_birth: [
     'dob', 'date of birth', 'birthday', 'birth date', 'birthdate',
+  ],
+  phone: [
+    'phone', 'mobile', 'mobile number', 'mobile phone', 'cell',
+    'cell phone', 'phone number', 'telephone', 'contact number',
+  ],
+  emergency_contact: [
+    'emergency contact', 'emergency contact name', 'emergency contact number',
+    'emergency', 'next of kin', 'in case of emergency', 'ice contact',
+  ],
+  next_bill_date: [
+    'next bill date', 'next billing date', 'next payment', 'next payment date',
+    'next charge', 'next charge date', 'nextbilldate',
   ],
   plan_name: [
     'plan', 'membership', 'membership plan', 'membership type',
@@ -244,11 +262,20 @@ export function buildImportRow(
       }
       case 'date_of_birth':
       case 'plan_start':
-      case 'plan_end': {
+      case 'plan_end':
+      case 'next_bill_date': {
         const iso = toIsoDate(value);
         if (iso) out[field] = iso;
         break;
       }
+      case 'emergency_contact':
+        // Source CRMs often split this into separate name/number
+        // columns; Temple has one free-text field, so concatenate
+        // rather than let the second mapped column overwrite the first.
+        out.emergency_contact = out.emergency_contact
+          ? `${out.emergency_contact} — ${value}`
+          : value;
+        break;
       default:
         out[field] = value;
     }
@@ -272,8 +299,11 @@ export function buildImportRow(
 }
 
 // Accepts ISO (YYYY-MM-DD), YYYY-DD-MM (legacy CSV exports that flipped
-// month and day), the two common US slash formats, and the dotted
-// European form. Anything that doesn't look like a date returns null —
+// month and day), M/D/Y and D/M/Y slash formats (auto-flipped the same
+// way when the month slot is unambiguously out of range), and the
+// dotted European form. When both slots could be either day or month,
+// M/D/Y is the tie-break — that ambiguity is unresolvable from the
+// string alone. Anything that doesn't look like a date returns null —
 // the import row is skipped on that field rather than blowing up the
 // whole batch in Postgres.
 export function toIsoDate(s: string): string | null {
@@ -297,10 +327,19 @@ export function toIsoDate(s: string): string | null {
   }
   m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (m) {
-    // US convention M/D/Y. Two-digit year → 2000s.
-    const mo = +m[1], d = +m[2];
+    // US convention M/D/Y, but flip like the ISO branch above when the
+    // "month" slot is > 12 and the "day" slot isn't — most CSV exports
+    // from UK/EU gyms write DD/MM/YYYY, so 15/11/2026 (a real value
+    // from a WodBoard export) would otherwise be silently dropped as
+    // "month 15".
+    let mo = +m[1], d = +m[2];
     let y = +m[3];
     if (y < 100) y += 2000;
+    if (mo > 12 && d <= 12) {
+      const tmp = mo;
+      mo = d;
+      d = tmp;
+    }
     if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
     return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   }

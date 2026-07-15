@@ -1502,6 +1502,7 @@ export type Database = {
           cancelled_at: string | null;
           price_cents: number | null;
           priority: number;
+          imported_legacy: boolean;
           created_at: string;
         };
         Insert: {
@@ -1519,6 +1520,7 @@ export type Database = {
           cancelled_at?: string | null;
           price_cents?: number | null;
           priority?: number;
+          imported_legacy?: boolean;
           created_at?: string;
         };
         Update: Partial<{
@@ -1536,6 +1538,7 @@ export type Database = {
           cancelled_at: string | null;
           price_cents: number | null;
           priority: number;
+          imported_legacy: boolean;
           created_at: string;
         }>;
         Relationships: [];
@@ -3082,6 +3085,9 @@ export type Database = {
           linked_at: string | null;
           linked_profile_id: string | null;
           linked_membership_plan_id: string | null;
+          phone: string | null;
+          emergency_contact: string | null;
+          next_bill_date: string | null;
         };
         Insert: {
           id?: string;
@@ -3103,6 +3109,9 @@ export type Database = {
           linked_at?: string | null;
           linked_profile_id?: string | null;
           linked_membership_plan_id?: string | null;
+          phone?: string | null;
+          emergency_contact?: string | null;
+          next_bill_date?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -3124,6 +3133,9 @@ export type Database = {
           linked_at: string | null;
           linked_profile_id: string | null;
           linked_membership_plan_id: string | null;
+          phone: string | null;
+          emergency_contact: string | null;
+          next_bill_date: string | null;
         }>;
         Relationships: [];
       };
@@ -4028,6 +4040,10 @@ export type Database = {
       };
       set_member_booking_requirement: {
         Args: { p_gym_id: string; p_profile_id: string; p_value: boolean | null };
+        Returns: undefined;
+      };
+      update_my_emergency_contact: {
+        Args: { p_gym_id: string; p_contact: string | null };
         Returns: undefined;
       };
       class_type_has_dependents: {

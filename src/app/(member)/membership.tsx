@@ -157,11 +157,23 @@ function NoticePeriodBar({
   );
 }
 
-function CurrentSubCard({ sub }: { sub: MySubscription }) {
+function CurrentSubCard({
+  sub,
+  onContinueBilling,
+  continuingBilling,
+}: {
+  sub: MySubscription;
+  onContinueBilling?: () => void;
+  continuingBilling?: boolean;
+}) {
   const plan = sub.membership_plans;
   const kind = plan?.kind ?? 'unlimited';
   const isCredit = kind !== 'unlimited';
   const cancelling = sub.status === 'cancelled_at_period_end';
+  // A one-off credit pack has no ongoing renewal to "continue" — only
+  // unlimited / credit_period (recurring) legacy plans get the prompt.
+  const needsBilling =
+    sub.imported_legacy && sub.status === 'active' && kind !== 'credit_pack';
   // The snapshotted price the member actually pays (grandfathered), falling
   // back to the plan's current price if it predates the snapshot column.
   const priceCents = sub.price_cents ?? plan?.monthly_price_cents ?? null;
@@ -225,6 +237,26 @@ function CurrentSubCard({ sub }: { sub: MySubscription }) {
             priceLabel={priceLabel}
           />
         </>
+      ) : null}
+
+      {needsBilling ? (
+        <View className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 gap-2">
+          <Text className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+            Carried over from your old gym — not yet billed through Temple
+          </Text>
+          <Text className="text-amber-700/80 dark:text-amber-300/80 text-xs">
+            You keep access under this plan, but nothing will renew it
+            automatically until you add a payment method.
+          </Text>
+          {onContinueBilling ? (
+            <Button
+              icon="card-outline"
+              loading={continuingBilling}
+              onPress={onContinueBilling}>
+              Add payment method to continue
+            </Button>
+          ) : null}
+        </View>
       ) : null}
     </View>
   );
@@ -365,6 +397,11 @@ function MembershipActions({
   const [confirm, setConfirm] = useState(false);
   // Already winding down — the card shows "Access until"; nothing to do.
   if (sub.status === 'cancelled_at_period_end') return null;
+  // No Stripe subscription behind this row yet — cancel/switch would
+  // hit stripe-modify-subscription's "not a recurring subscription"
+  // dead end. The card's own "add payment method" CTA is the only
+  // action available until then.
+  if (sub.imported_legacy) return null;
 
   if (pending) {
     const label =
@@ -543,7 +580,24 @@ export default function MembershipScreen() {
               Your membership
             </Text>
             {currentSubs.map((s) => (
-              <CurrentSubCard key={s.id} sub={s} />
+              <CurrentSubCard
+                key={s.id}
+                sub={s}
+                continuingBilling={
+                  checkout.isPending &&
+                  typeof checkout.variables === 'object' &&
+                  checkout.variables?.legacySubscriptionId === s.id
+                }
+                onContinueBilling={
+                  s.imported_legacy
+                    ? () =>
+                        checkout.mutate({
+                          planId: s.plan_id,
+                          legacySubscriptionId: s.id,
+                        })
+                    : undefined
+                }
+              />
             ))}
             {recurringSub ? (
               <MembershipActions
@@ -666,6 +720,14 @@ export default function MembershipScreen() {
                     // Recurring plan + an existing membership = switch in place
                     // (no second subscription), governed by the gym's policy.
                     if (recurringSub) {
+                      if (recurringSub.imported_legacy) {
+                        return (
+                          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                            Add a payment method to your current plan above
+                            before switching.
+                          </Text>
+                        );
+                      }
                       if (pendingForSub) {
                         return (
                           <Text className="text-gray-400 dark:text-gray-500 text-xs">

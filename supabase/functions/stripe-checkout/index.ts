@@ -74,6 +74,7 @@ Deno.serve(async (req: Request) => {
     plan_id?: string;
     origin?: string;
     success_path?: string;
+    legacy_subscription_id?: string;
   };
   try {
     body = await req.json();
@@ -83,6 +84,7 @@ Deno.serve(async (req: Request) => {
   const gymId = body.gym_id;
   const planId = body.plan_id;
   const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
+  const legacySubscriptionId = body.legacy_subscription_id;
   // Optional client return path. Must be relative (leading slash, no
   // scheme) so it can't be turned into an open redirect; defaults to the
   // membership landing the app root already handles.
@@ -133,6 +135,28 @@ Deno.serve(async (req: Request) => {
     .eq('gym_id', gymId)
     .maybeSingle();
   if (!plan || plan.archived_at) return json({ error: 'Plan not found' }, 404);
+
+  // Continuing a legacy import onto real billing: verify the row is
+  // actually this caller's own unbilled legacy subscription for this
+  // plan before minting metadata that tells the webhook to convert it
+  // in place instead of inserting a second, duplicate row.
+  let legacySubId: string | null = null;
+  if (legacySubscriptionId) {
+    const { data: legacy } = await service
+      .from('plan_subscriptions')
+      .select('id')
+      .eq('id', legacySubscriptionId)
+      .eq('gym_id', gymId)
+      .eq('profile_id', user.id)
+      .eq('plan_id', planId)
+      .eq('imported_legacy', true)
+      .eq('status', 'active')
+      .maybeSingle();
+    if (!legacy) {
+      return json({ error: 'That legacy membership could not be found' }, 404);
+    }
+    legacySubId = legacy.id as string;
+  }
 
   // Credit packs are a one-off purchase; everything else bills monthly.
   const recurring = plan.kind !== 'credit_pack';
@@ -204,12 +228,14 @@ Deno.serve(async (req: Request) => {
       'metadata[plan_id]': planId,
       'metadata[profile_id]': user.id,
     };
+    if (legacySubId) sessionParams['metadata[legacy_subscription_id]'] = legacySubId;
     const metaPrefix = recurring
       ? 'subscription_data[metadata]'
       : 'payment_intent_data[metadata]';
     sessionParams[`${metaPrefix}[gym_id]`] = gymId;
     sessionParams[`${metaPrefix}[plan_id]`] = planId;
     sessionParams[`${metaPrefix}[profile_id]`] = user.id;
+    if (legacySubId) sessionParams[`${metaPrefix}[legacy_subscription_id]`] = legacySubId;
 
     const session = await stripe(
       'checkout/sessions',

@@ -557,7 +557,16 @@ Deno.serve(async (req: Request) => {
         paid_period_end: paidPeriodEnd,
         stripe_subscription_id: subId,
         stripe_customer_id: customerId,
+        imported_legacy: false,
       };
+
+      // A member converting an imported/legacy plan onto real billing:
+      // stripe-checkout verified this row is their own unbilled legacy
+      // subscription for this exact plan and minted the id into
+      // metadata, so update it in place rather than insert a second
+      // row — otherwise the member ends up with two "active" rows for
+      // the same plan (the untouched legacy one plus a new live one).
+      const legacySubscriptionId = meta.legacy_subscription_id as string | undefined;
 
       // One row per Stripe subscription; credit packs (no sub) insert fresh
       // so repeat purchases stack as separate credit pools.
@@ -566,7 +575,16 @@ Deno.serve(async (req: Request) => {
       // whose subscription silently never lands. Throwing reaches the
       // outer catch → 500 → Stripe retries (billing_events is idempotent).
       let planSubId: string | null = null;
-      if (subId) {
+      if (legacySubscriptionId) {
+        const { data: updated, error: upErr } = await service
+          .from('plan_subscriptions')
+          .update(row)
+          .eq('id', legacySubscriptionId)
+          .select('id')
+          .maybeSingle();
+        if (upErr) throw upErr;
+        planSubId = updated?.id ?? legacySubscriptionId;
+      } else if (subId) {
         const { data: existing } = await service
           .from('plan_subscriptions')
           .select('id')

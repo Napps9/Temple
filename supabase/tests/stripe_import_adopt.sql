@@ -7,7 +7,7 @@
 --     subscription, unchanged from 0076.
 
 begin;
-select plan(5);
+select plan(7);
 
 \ir _helpers.psql
 
@@ -60,6 +60,12 @@ select is(
   'cus_x',
   'the connected-account customer is cached in gym_stripe_customers'
 );
+select is(
+  (select imported_legacy from public.plan_subscriptions
+     where profile_id = (select id from auth.users where email = 'member@imp.test')),
+  false,
+  'an adopted (real Stripe sub) import is not flagged imported_legacy — it already bills live'
+);
 
 -- A CSV-style import (no Stripe ids) still works as before.
 do $$
@@ -82,6 +88,12 @@ select is(
      where profile_id = (select id from auth.users where email = 'csv@imp.test')),
   null,
   'a CSV import (no Stripe ids) still creates a null-Stripe subscription'
+);
+select is(
+  (select imported_legacy from public.plan_subscriptions
+     where profile_id = (select id from auth.users where email = 'csv@imp.test')),
+  true,
+  'a CSV-only import (no adopted Stripe sub) is flagged imported_legacy — nothing bills it yet'
 );
 
 select * from finish();

@@ -663,24 +663,36 @@ spreadsheet); the column mapper pre-fills via an AI pass — `infer-import`
 in `map_columns` mode reads each column's header plus a privacy-safe
 profile (value kind, fill rate, distinct ratio; never raw cell values)
 and maps it to a Temple field, falling back to the alias heuristic
-(`autoDetect`) when the AI key is unset or the call fails. The preview
-counts staged vs. skipped rows, and commit writes them into
-`pending_members`. A trigger on `gym_memberships`
-insert links the pending row when the matching email signs up via
-`/join/<slug>` — applying the imported plan metadata onto the
-membership, copying tags into `member_tags`, and propagating "no
-marketing" into the Comms Suite `email_unsubscribes` list. The
-handover screen shows the gym's join URL + QR, a one-click per-member
-CSV (email, name, join URL) the owner can blast from their existing
-newsletter tool, and an opt-in "Send the welcome email from Temple"
-button that creates a campaign with
+(`autoDetect`) when the AI key is unset or the call fails. Mappable
+fields cover name/email/DOB, **phone**, a single free-text
+**emergency contact** (concatenated when a source export splits it
+into separate name/number columns), plan name/start/end, **next bill
+date** (the fallback source for `paid_period_end` when plan-end is
+blank — the normal case for an ongoing recurring membership), credits
+remaining, tags, unsubscribed and notes. The preview counts staged
+vs. skipped rows, and commit writes them into `pending_members`. A
+trigger on `gym_memberships` insert links the pending row when the
+matching email signs up via `/join/<slug>` — applying the imported
+plan metadata onto the membership, writing phone onto the profile and
+the emergency contact onto the membership, copying tags into
+`member_tags`, and propagating "no marketing" into the Comms Suite
+`email_unsubscribes` list. The handover screen shows the gym's join
+URL + QR, a one-click per-member CSV (email, name, join URL) the
+owner can blast from their existing newsletter tool, an opt-in "Send
+the welcome email from Temple" button that creates a campaign with
 `audience.kind = 'pending_members'` and lands the owner in the editor
-to preview before send. A live linking-progress counter ticks up
-while members sign up. Plan-name → membership_plan mapping happens in
-the Review step below — a CSV plan name that case-insensitively
-matches a plan the gym already has is pre-selected to "Map to
-existing" (flagged "Matched by name") rather than defaulting to
-create a duplicate.
+to preview before send, and a "Send join invites" button
+(`send-member-join-invites` edge function) that immediately emails
+every still-`pending` row a branded join-link email and flips it to
+`invited` — no campaign editor required. That "N members haven't
+signed up yet" summary persists outside the wizard session too: any
+time the owner reopens the import screen with unclaimed rows left
+over from an earlier import, a banner offers the same one-click send.
+A live linking-progress counter ticks up while members sign up.
+Plan-name → membership_plan mapping happens in the Review step below
+— a CSV plan name that case-insensitively matches a plan the gym
+already has is pre-selected to "Map to existing" (flagged "Matched by
+name") rather than defaulting to create a duplicate.
 
 ### Member-import Review step (AI-assisted plan + tag inference)
 
@@ -717,14 +729,34 @@ stamped per row, and posts every plan / tag decision (`input`,
 every time an owner reviews, so the next gym's import gets a sharper
 prefill.
 
-The `apply_pending_member_data` trigger (extended in 0076) auto-
-creates a `plan_subscription` on signup when
+The `apply_pending_member_data` trigger (extended in 0076, then 0124)
+auto-creates a `plan_subscription` on signup when
 `pending_members.linked_membership_plan_id` is set: `status='active'`,
 `credit_balance` = `imported_credits_remaining` (for credit-based
-plans), `paid_period_end` = `imported_plan_end`,
+plans), `paid_period_end` = `imported_plan_end` falling back to
+`next_bill_date` when the plan is ongoing (no end date), and
 `stripe_subscription_id` `NULL` — Temple billing is bypassed for the
-imported continuation. When `paid_period_end` lapses, the existing
-booking gate naturally refuses the next booking; no new lapse code.
+imported continuation so a migrated member can't be double-charged
+against whatever their old system still has running. When
+`paid_period_end` lapses, the existing booking gate naturally refuses
+the next booking; no new lapse code.
+
+**Legacy billing continuation (0124).** A CSV-only import (no adopted
+Stripe subscription, see below) is flagged `imported_legacy = true` on
+the `plan_subscription` row. The member's `/membership` page renders
+this distinctly for recurring plans (`unlimited` / `credit_period` —
+one-off credit packs have no renewal to continue): an amber "carried
+over from your old gym — not yet billed through Temple" card with an
+"Add payment method to continue" button, and the normal switch/cancel
+actions are hidden for that row (they'd otherwise hit
+`stripe-modify-subscription`'s "not a recurring subscription" error,
+since there's no real Stripe subscription behind it yet). The button
+calls `stripe-checkout` with the existing `plan_subscriptions.id` as
+`legacy_subscription_id`; `stripe-webhook`'s `checkout.session.completed`
+handler updates that row in place (and flips `imported_legacy` back to
+false) instead of inserting a second row, so the member ends up with
+one subscription, now really billed. Staff see a "Not yet billed"
+badge next to the plan on the member's profile.
 
 ### Workout-history import
 
