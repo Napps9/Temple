@@ -499,6 +499,12 @@ export function PlansPanel() {
           />
         ) : null}
 
+        {activeRows.length > 0 && canCreate ? (
+          <Button variant="secondary" icon="add" onPress={addRow}>
+            Add plan
+          </Button>
+        ) : null}
+
         <View className="gap-3">
           {activeRows.map((r) => {
             const idx = rows.indexOf(r);
@@ -798,12 +804,6 @@ export function PlansPanel() {
             );
           })}
         </View>
-
-        {activeRows.length > 0 && canCreate ? (
-          <Button variant="secondary" icon="add" onPress={addRow}>
-            Add plan
-          </Button>
-        ) : null}
 
         {saveError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{saveError}</Text>
