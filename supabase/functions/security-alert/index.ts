@@ -1,25 +1,42 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+
 import { templeEmailHtml } from '../_shared/email-layout.ts';
 
 // Ops security-alert notifier. Called by the security-monitor pg_cron job
 // (via pg_net) when new security_alerts rows appear — see migration 0111.
 // The DB caller has no user JWT, so verify_jwt=false; a shared secret header
-// is the auth. Emails a fixed Temple ops address via Resend. Degrades to 503
-// (recorded, not emailed) when unconfigured — never a hard dependency.
+// is the auth. The secret is single-sourced in Vault (name
+// 'security_alert_secret') and verified via the security_alert_secret_matches
+// RPC (0126) — no env-var copy to drift out of sync. Emails the Temple ops
+// inbox via Resend; degrades to 503 (recorded, not emailed) when unconfigured.
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response('method not allowed', { status: 405 });
   }
 
-  const secret = Deno.env.get('SECURITY_ALERT_SECRET');
-  if (!secret || req.headers.get('x-security-secret') !== secret) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceKey) {
+    return new Response('not configured', { status: 503 });
+  }
+
+  const provided = req.headers.get('x-security-secret') ?? '';
+  const service = createClient(supabaseUrl, serviceKey);
+  const { data: matches, error: verifyErr } = await service.rpc(
+    'security_alert_secret_matches',
+    { p_provided: provided },
+  );
+  if (verifyErr || matches !== true) {
     return new Response('unauthorized', { status: 401 });
   }
 
   const apiKey = Deno.env.get('RESEND_API_KEY');
   const from = Deno.env.get('RESEND_FROM_EMAIL');
-  const to = Deno.env.get('SECURITY_ALERT_EMAIL');
-  if (!apiKey || !from || !to) {
-    return new Response('not configured', { status: 503 });
+  // Single-tenant ops alert — the breach-response inbox (checklist Tier 1.4)
+  // is the default when SECURITY_ALERT_EMAIL isn't set explicitly.
+  const to = Deno.env.get('SECURITY_ALERT_EMAIL') ?? 'security@jointemple.io';
+  if (!apiKey || !from) {
+    return new Response('email not configured', { status: 503 });
   }
 
   let count = 0;

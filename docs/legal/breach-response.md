@@ -34,15 +34,40 @@ are present but misconfigured; and it depends on Supabase's internal auth-log
 shape for signal 3. It is a tripwire for specific, likely failure modes — not
 a complete IDS.
 
-*Config to make it email (else it records silently):* enable `pg_net`
-(migration 0112 does), set `SECURITY_ALERT_SECRET` + `RESEND_API_KEY` +
-`RESEND_FROM_EMAIL` + `SECURITY_ALERT_EMAIL` on the `security-alert` function,
-and store the same secret in Supabase Vault under the name
-`security_alert_secret` — `select vault.create_secret('<value>',
-'security_alert_secret');` in the SQL editor. (Migration 0121: hosted
-Supabase blocks `ALTER DATABASE`/`ALTER ROLE` for custom GUCs, so the
-webhook URL is hardcoded in `run_security_monitor()` and the secret is read
-from Vault instead of a GUC.)
+*Config to make it email (else it records silently):* `pg_net` is enabled by
+migration 0112; `RESEND_API_KEY` + `RESEND_FROM_EMAIL` are already set for all
+Temple mail. The only thing to set is **one** secret in Supabase Vault under
+the name `security_alert_secret`. Since 0126 that value is single-source:
+`run_security_monitor()` signs the notify with it and the `security-alert`
+function verifies the header against the *same* Vault row via
+`security_alert_secret_matches()` — there is **no** `SECURITY_ALERT_SECRET`
+env var to keep in sync any more (mirroring the two, and letting them drift,
+is what silently disabled this before). `SECURITY_ALERT_EMAIL` is optional and
+defaults to `security@jointemple.io`. (Migration 0121: hosted Supabase blocks
+`ALTER DATABASE`/`ALTER ROLE` for custom GUCs, so the webhook URL is hardcoded
+in `run_security_monitor()` and the secret lives in Vault.)
+
+Set (or replace a placeholder) with a real random value and verify, in the
+SQL editor:
+
+```sql
+-- 1. Set the single Vault secret (delete any placeholder first).
+delete from vault.secrets where name = 'security_alert_secret';
+select vault.create_secret(gen_random_uuid()::text, 'security_alert_secret');
+
+-- 2. Fire a real test alert email to the ops inbox to confirm the whole chain.
+select net.http_post(
+  url := 'https://ujkovhbfniaodkmvfqxo.supabase.co/functions/v1/security-alert',
+  headers := jsonb_build_object(
+    'Content-Type', 'application/json',
+    'x-security-secret',
+      (select decrypted_secret from vault.decrypted_secrets
+        where name = 'security_alert_secret')),
+  body := jsonb_build_object('new_alerts', 1));
+```
+
+If the email lands, breach alerts are live. (No email + a 401 in the function
+logs means the Vault secret read failed; a 503 means `RESEND_*` isn't set.)
 
 ### Also relied on
 

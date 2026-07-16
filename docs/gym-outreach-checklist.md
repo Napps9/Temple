@@ -183,16 +183,15 @@ Left for you (policy/config, not code):
       (`privacy@`, `security@`) — done, see Tier 1 item 4. Real addresses
       already match what's in the docs (`privacy@jointemple.io`,
       `security@jointemple.io`) — no doc changes needed.
-- [ ] **(deprioritized) Make breach alerts actually email** — not blocking:
-      detection already works and records to `security_alerts` every 15 min
-      regardless (`select * from security_alerts order by created_at desc;`
-      in the SQL editor), and a failed notify never breaks anything —
-      `pg_net` is fire-and-forget, so it can't throw. Live email needs the
-      Vault secret (`security_alert_secret`) and the `security-alert`
-      function's `SECURITY_ALERT_SECRET` set to the *same* real random
-      value — currently mismatched (the Vault one was accidentally set to
-      literal placeholder text), so the notify silently no-ops. Revisit
-      when convenient; see `docs/legal/breach-response.md`.
+- [ ] **Make breach alerts actually email** — code done (2026-07-16); one
+      config step left. Detection already records to `security_alerts` every
+      15 min regardless. The old blocker — the Vault secret and a mirrored
+      `SECURITY_ALERT_SECRET` env var had to match by hand and drifted to
+      placeholder text — is now designed out: `0126` makes the secret
+      **single-source in Vault**, verified by `security_alert_secret_matches()`
+      (no env-var copy to sync), and `SECURITY_ALERT_EMAIL` defaults to
+      `security@jointemple.io`. **To enable:** set one real Vault secret and
+      fire the test POST — exact SQL in `docs/legal/breach-response.md`.
 - [x] **(per gym, optional) Under-18 members** — not a platform decision;
       `allow_minors` is a self-serve per-gym toggle (off by default) each
       gym owner sets in their own settings. Nothing for you to decide here.
