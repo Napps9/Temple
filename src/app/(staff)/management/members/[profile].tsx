@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
@@ -273,6 +273,20 @@ export default function MemberDetailScreen() {
 
   if (canManageTags === false) {
     return <Redirect href="/management" />;
+  }
+
+  // On a deep-link / refresh straight to this route, useGymMembership hasn't
+  // resolved yet (and canManageTags is still undefined, so the guard above
+  // doesn't fire). The render below dereferences membership.gymId directly,
+  // so hold here until it's loaded rather than crash.
+  if (!membership) {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator />
+        </View>
+      </Screen>
+    );
   }
 
   const isRemoved = gymMembership.data?.left_at !== null && gymMembership.data?.left_at !== undefined;
