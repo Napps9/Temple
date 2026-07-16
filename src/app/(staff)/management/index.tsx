@@ -2212,8 +2212,13 @@ function MembersTab() {
             Bring data across
           </Text>
           <ManagementCard
+            title="Import from Stripe"
+            description="Already charging members on Stripe? Start here — each member's live subscription is adopted (no re-entering cards, no double-billing). Then bring everyone else across by CSV."
+            href="/management/members/import-stripe"
+          />
+          <ManagementCard
             title="Import members"
-            description="Drop in a CSV from Mindbody, PushPress, Glofox, Wodify or a spreadsheet — members link to their data when they sign up."
+            description="Drop in a CSV from Mindbody, PushPress, Glofox, Wodify or a spreadsheet — members link to their data when they sign up. Anyone who already pays you on Stripe is flagged so you don't double-bill them."
             href="/management/members/import"
           />
           <ManagementCard

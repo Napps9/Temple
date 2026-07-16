@@ -853,6 +853,20 @@ imports (no Stripe ids) are unchanged — they still create a null-Stripe
 subscription. Customers with no email, and one-off (non-subscription)
 buyers, are skipped (the no-email count is surfaced in the preview).
 
+**Sequencing + double-bill guard.** Because both importers upsert
+`pending_members` on `(gym_id, lower(email))`, the same email in both
+merges into one row (Stripe ids fill in / survive) — but a member with a
+live Stripe subscription brought in via the **CSV** path lands as unbilled
+legacy and would be double-charged if they later add a card. So the CSV
+importer now cross-checks each email against the connected account's live
+subscribers (via `stripe-import`) and, by default, **skips the overlap**
+(owner can override), surfacing it in the preview counts; it also shows an
+"Import from Stripe first" banner while Stripe is connected. The
+management "Bring data across" hub lists **Import from Stripe** ahead of
+the CSV importer. The overlap check only runs for owners (the `stripe-import`
+read is owner-gated), and fails open on any error so a Stripe blip never
+blocks a CSV import.
+
 ### Campaign topic picker
 
 [`can_manage_comms`] Reachable from the campaign editor

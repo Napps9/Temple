@@ -38,6 +38,7 @@ import {
   type PlanKind,
   type ReviewedPlan,
 } from '@/lib/import/infer';
+import type { StripePreview } from '@/lib/import/stripe';
 import { supabase } from '@/lib/supabase';
 import { useThemePreference, useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
@@ -103,6 +104,7 @@ export default function ImportMembersScreen() {
   );
   const [tagsKeep, setTagsKeep] = useState<Set<string>>(new Set());
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [excludeStripeOverlap, setExcludeStripeOverlap] = useState(true);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [mappingSource, setMappingSource] = useState<'ai' | 'fallback' | null>(
     null,
@@ -205,6 +207,69 @@ export default function ImportMembersScreen() {
       )
       .filter((r) => typeof r.email === 'string' && (r.email as string).length > 0);
   }, [rows, headers, mapping, phase]);
+
+  // Overlap guard. Members who already subscribe on the gym's connected
+  // Stripe account must come across via the Stripe importer (which adopts
+  // their live subscription) — not this CSV path, which would stage them
+  // as unbilled "legacy" and set up a double charge if they later add a
+  // card. We pull the connected account's subscribers and skip any CSV row
+  // whose email matches, unless the owner overrides.
+  const stripeConnected = useQuery({
+    queryKey: ['gym-stripe-account', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error: e } = await supabase
+        .from('gym_stripe_accounts')
+        .select('stripe_account_id')
+        .eq('gym_id', membership!.gymId)
+        .maybeSingle();
+      if (e) throw e;
+      return !!data?.stripe_account_id;
+    },
+  });
+
+  const stripePreview = useQuery({
+    queryKey: ['stripe-import-preview', membership?.gymId],
+    enabled:
+      !!membership?.gymId &&
+      stripeConnected.data === true &&
+      (phase === 'review' || phase === 'preview'),
+    staleTime: 5 * 60_000,
+    retry: false,
+    queryFn: async (): Promise<StripePreview | null> => {
+      const { data, error: e } = await supabase.functions.invoke('stripe-import', {
+        body: { gym_id: membership!.gymId },
+      });
+      if (e) return null; // can't check (not owner / transient) → fail open
+      return data as StripePreview;
+    },
+  });
+
+  const stripeSubscriberEmails = useMemo(
+    () =>
+      new Set(
+        (stripePreview.data?.members ?? []).map((m) => m.email.trim().toLowerCase()),
+      ),
+    [stripePreview.data],
+  );
+
+  const overlapEmails = useMemo(() => {
+    if (stripeSubscriberEmails.size === 0) return new Set<string>();
+    const set = new Set<string>();
+    for (const r of importRows) {
+      const e = String(r.email ?? '').trim().toLowerCase();
+      if (e && stripeSubscriberEmails.has(e)) set.add(e);
+    }
+    return set;
+  }, [importRows, stripeSubscriberEmails]);
+
+  const overlapCount = overlapEmails.size;
+  const excludedCount = excludeStripeOverlap
+    ? importRows.filter((r) =>
+        overlapEmails.has(String(r.email ?? '').trim().toLowerCase()),
+      ).length
+    : 0;
+  const stagedCount = importRows.length - excludedCount;
 
   // Trigger inference on entering the Review step. We memoise on the
   // mapped rows + the column mapping so a back-and-forth between Map
@@ -353,6 +418,11 @@ export default function ImportMembersScreen() {
         )
         .filter(
           (r) => typeof r.email === 'string' && (r.email as string).length > 0,
+        )
+        .filter(
+          (r) =>
+            !excludeStripeOverlap ||
+            !overlapEmails.has(String(r.email).trim().toLowerCase()),
         );
 
       // 3. Stage the rows.
@@ -424,6 +494,37 @@ export default function ImportMembersScreen() {
             link to their data when they sign up at your join link.
           </Text>
         </View>
+
+        {stripeConnected.data === true &&
+        (phase === 'upload' || phase === 'map' || phase === 'review') ? (
+          <View className="bg-primary/5 border border-primary/20 rounded-xl p-4 gap-2">
+            <View className="flex-row items-center gap-2">
+              <Ionicons
+                name="information-circle-outline"
+                size={18}
+                color={colors.primary}
+              />
+              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+                Already charging members on Stripe? Import them from Stripe first
+              </Text>
+            </View>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+              Members with a live Stripe subscription should come across via the
+              Stripe importer — their subscription is adopted, with no
+              re-entering cards and no double-billing. This CSV import is for
+              everyone else; we'll flag any overlap before you commit.
+            </Text>
+            <ChipButton
+              className="self-start"
+              label="Import from Stripe"
+              icon="cloud-download-outline"
+              tone="primary"
+              onPress={() =>
+                router.push('/management/members/import-stripe' as never)
+              }
+            />
+          </View>
+        ) : null}
 
         {phase === 'upload' &&
         unclaimedStats.data &&
@@ -633,9 +734,44 @@ export default function ImportMembersScreen() {
               Preview
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              {importRows.length} ready to stage · {rows.length - importRows.length}{' '}
+              {stagedCount} ready to stage · {rows.length - importRows.length}{' '}
               skipped (missing email)
+              {excludedCount > 0 ? ` · ${excludedCount} skipped (already on Stripe)` : ''}
             </Text>
+
+            {overlapCount > 0 ? (
+              <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg p-3 gap-2">
+                <Text className="text-amber-800 dark:text-amber-200 font-semibold text-sm">
+                  {overlapCount} {overlapCount === 1 ? 'member' : 'members'} already
+                  subscribe through your Stripe account
+                </Text>
+                <Text className="text-amber-700 dark:text-amber-300 text-xs">
+                  Importing them here stages them as unbilled legacy members — and
+                  if they add a card later, they'd be charged twice. Import them
+                  from Stripe instead so their live subscription is adopted.
+                </Text>
+                <View className="flex-row items-center gap-2 flex-wrap">
+                  <ChipButton
+                    label={
+                      excludeStripeOverlap
+                        ? `Skipping these ${overlapCount}`
+                        : `Include these ${overlapCount}`
+                    }
+                    icon={excludeStripeOverlap ? 'checkmark-circle' : 'alert-circle-outline'}
+                    tone={excludeStripeOverlap ? 'primary' : 'amber'}
+                    onPress={() => setExcludeStripeOverlap((v) => !v)}
+                  />
+                  <ChipButton
+                    label="Import from Stripe"
+                    icon="cloud-download-outline"
+                    tone="neutral"
+                    onPress={() =>
+                      router.push('/management/members/import-stripe' as never)
+                    }
+                  />
+                </View>
+              </View>
+            ) : null}
             <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
               {importRows.slice(0, 5).map((r, i) => (
                 <View key={i} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
@@ -665,8 +801,13 @@ export default function ImportMembersScreen() {
               <Button
                 onPress={() => commit.mutate()}
                 loading={commit.isPending}
-                disabled={importRows.length === 0}>
-                Import {importRows.length} members
+                disabled={
+                  stagedCount === 0 ||
+                  (stripeConnected.data === true && stripePreview.isLoading)
+                }>
+                {stripeConnected.data === true && stripePreview.isLoading
+                  ? 'Checking Stripe…'
+                  : `Import ${stagedCount} members`}
               </Button>
             </View>
             {error ? (
