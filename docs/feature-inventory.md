@@ -581,7 +581,11 @@ The Manage page presents a tab strip:
   verified sending domain or the platform `RESEND_FROM`) whose access line
   varies by mode — ended / ends at period end / carries on. Best-effort and
   idempotent (`Idempotency-Key: refund:<id>`); only fires when money
-  actually moved, and a Resend hiccup never fails the refund.
+  actually moved, and a Resend hiccup never fails the refund. A refunded
+  plan carries a rose **Refunded** badge (+ the amount and date on the detail
+  line) on the member's staff detail screen — driven by the `kind='refund'`
+  `billing_events`, so an end-now refund reads as refunded rather than an
+  indistinguishable plain `cancelled`.
 - **Require a membership to book** [owner] — Billing toggle
   (`gyms.require_membership_to_book`, RPC `set_require_membership_to_book`).
   When on, members need an active membership/credits to book; staff are

@@ -128,6 +128,7 @@ export function RefundDialog({
     onSuccess: () => {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['member-detail-subs'] });
+      queryClient.invalidateQueries({ queryKey: ['member-detail-refunds'] });
       queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
       onDone();
     },

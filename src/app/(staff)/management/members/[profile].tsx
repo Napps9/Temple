@@ -208,6 +208,38 @@ export default function MemberDetailScreen() {
     },
   });
 
+  // Refund events for this member's plans — a plan refunded via
+  // "end now" lands as plain `cancelled`, indistinguishable from an
+  // un-refunded cancellation without this. Keyed by plan_subscription_id,
+  // summing amount for the rare partial/multiple refund.
+  const refunds = useQuery({
+    queryKey: ['member-detail-refunds', membership?.gymId, profileId],
+    enabled: !!membership?.gymId && !!profileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('billing_events')
+        .select('plan_subscription_id, amount_cents, occurred_at')
+        .eq('gym_id', membership!.gymId)
+        .eq('member_id', profileId!)
+        .eq('kind', 'refund');
+      if (error) throw error;
+      const map = new Map<string, { cents: number; at: string }>();
+      for (const r of (data ?? []) as {
+        plan_subscription_id: string | null;
+        amount_cents: number;
+        occurred_at: string;
+      }[]) {
+        if (!r.plan_subscription_id) continue;
+        const prev = map.get(r.plan_subscription_id);
+        map.set(r.plan_subscription_id, {
+          cents: (prev?.cents ?? 0) + r.amount_cents,
+          at: prev && prev.at > r.occurred_at ? prev.at : r.occurred_at,
+        });
+      }
+      return map;
+    },
+  });
+
   const comps = useQuery({
     queryKey: ['member-detail-comps', membership?.gymId, profileId],
     enabled: !!membership?.gymId && !!profileId,
@@ -381,7 +413,9 @@ export default function MemberDetailScreen() {
 
         <Section title="Plans">
           {subs.data && subs.data.length > 0 ? (
-            subs.data.map((s) => (
+            subs.data.map((s) => {
+              const refund = refunds.data?.get(s.id) ?? null;
+              return (
               <View
                 key={s.id}
                 className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-1">
@@ -389,6 +423,13 @@ export default function MemberDetailScreen() {
                   <Text className="text-gray-900 dark:text-gray-50 font-medium">
                     {s.membership_plans?.name ?? 'Plan'}
                   </Text>
+                  {refund ? (
+                    <View className="rounded-full border border-rose-500/40 bg-rose-500/10 px-2 py-0.5">
+                      <Text className="text-[10px] font-semibold uppercase tracking-widest text-rose-700 dark:text-rose-400">
+                        Refunded
+                      </Text>
+                    </View>
+                  ) : null}
                   {s.imported_legacy && s.status === 'active' ? (
                     <View className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5">
                       <Text className="text-[10px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400">
@@ -416,6 +457,9 @@ export default function MemberDetailScreen() {
                     s.cancelled_at
                       ? `cancelled ${formatDate(s.cancelled_at)}`
                       : null,
+                    refund
+                      ? `refunded £${(refund.cents / 100).toFixed(2)} on ${formatDate(refund.at)}`
+                      : null,
                   ]
                     .filter(Boolean)
                     .join(' · ') || `started ${formatDate(s.created_at)}`}
@@ -432,7 +476,8 @@ export default function MemberDetailScreen() {
                   />
                 ) : null}
               </View>
-            ))
+              );
+            })
           ) : (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">No plans.</Text>
           )}
