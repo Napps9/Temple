@@ -111,6 +111,8 @@ jobs:
           deploy infer-import
           deploy send-invite
           deploy send-member-join-invites
+          deploy send-lead-notifications
+          deploy send-email-automations
           deploy stripe-connect-start
           deploy stripe-connect-callback
           deploy stripe-checkout
