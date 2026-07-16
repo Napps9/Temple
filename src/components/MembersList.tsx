@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
@@ -53,12 +54,32 @@ type CompRow = {
   credits_remaining: number | null;
 };
 
+type PendingRow = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  plan_name: string | null;
+  credits_remaining: number | null;
+  tags: string[];
+  status: 'pending' | 'invited' | 'linked' | 'skipped';
+  created_at: string;
+};
+
+type ListItem =
+  | { kind: 'member'; key: string; name: string; row: CohortRow }
+  | { kind: 'pending'; key: string; name: string; row: PendingRow };
+
 export function MembersList() {
   const { data: membership } = useGymMembership();
   const { filter, search, setFilter, setSearch } = useMembersFilter(membership?.gymId);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
 
   const canRemove = useCan('can_archive_members') ?? false;
+  // Imported members live in pending_members (RLS-gated on
+  // can_manage_staff, the same gate as the import surface). Staff who
+  // can manage tags but not staff simply see none — the query returns
+  // empty under RLS and the section stays hidden.
+  const canManageStaff = useCan('can_manage_staff') ?? false;
 
   const cohortQuery = useQuery({
     queryKey: ['members-cohort', membership?.gymId],
@@ -75,6 +96,20 @@ export function MembersList() {
         .eq('gym_id', membership!.gymId);
       if (error) throw error;
       return (data ?? []) as unknown as CohortRow[];
+    },
+  });
+
+  const pendingQuery = useQuery({
+    queryKey: ['members-pending', membership?.gymId],
+    enabled: !!membership?.gymId && canManageStaff,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pending_members')
+        .select('id, email, full_name, plan_name, credits_remaining, tags, status, created_at')
+        .eq('gym_id', membership!.gymId)
+        .in('status', ['pending', 'invited']);
+      if (error) throw error;
+      return (data ?? []) as PendingRow[];
     },
   });
 
@@ -194,26 +229,53 @@ export function MembersList() {
     return map;
   }, [compsQuery.data]);
 
-  const filtered = useMemo(() => {
-    const rows = cohortQuery.data ?? [];
+  const items = useMemo<ListItem[]>(() => {
     const q = search.trim().toLowerCase();
-    return rows
-      .filter((r) => {
-        if (filter === 'intro' && !r.is_intro) return false;
-        if (filter === 'expiring' && !r.is_expiring_soon) return false;
-        if (filter === 'expired' && !r.is_expired) return false;
-        if (filter === 'active' && !r.is_active) return false;
-        if (filter === 'managed' && !r.profiles?.managed) return false;
-        if (q.length > 0) {
-          const name = r.profiles?.full_name?.toLowerCase() ?? '';
-          return name.includes(q);
-        }
-        return true;
-      })
-      .sort((a, b) =>
-        (a.profiles?.full_name ?? '').localeCompare(b.profiles?.full_name ?? ''),
-      );
-  }, [cohortQuery.data, filter, search]);
+    const showMembers = filter !== 'imported';
+    const showPending = filter === 'all' || filter === 'imported';
+
+    const memberItems: ListItem[] = showMembers
+      ? (cohortQuery.data ?? [])
+          .filter((r) => {
+            if (filter === 'intro' && !r.is_intro) return false;
+            if (filter === 'expiring' && !r.is_expiring_soon) return false;
+            if (filter === 'expired' && !r.is_expired) return false;
+            if (filter === 'active' && !r.is_active) return false;
+            if (filter === 'managed' && !r.profiles?.managed) return false;
+            if (q.length > 0) {
+              return (r.profiles?.full_name?.toLowerCase() ?? '').includes(q);
+            }
+            return true;
+          })
+          .map((r) => ({
+            kind: 'member' as const,
+            key: `m:${r.profile_id}`,
+            name: r.profiles?.full_name ?? '',
+            row: r,
+          }))
+      : [];
+
+    const pendingItems: ListItem[] = showPending
+      ? (pendingQuery.data ?? [])
+          .filter((r) => {
+            if (q.length === 0) return true;
+            return (
+              (r.full_name?.toLowerCase() ?? '').includes(q) ||
+              r.email.toLowerCase().includes(q)
+            );
+          })
+          .map((r) => ({
+            kind: 'pending' as const,
+            key: `p:${r.id}`,
+            name: r.full_name ?? r.email,
+            row: r,
+          }))
+      : [];
+
+    return [...memberItems, ...pendingItems].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [cohortQuery.data, pendingQuery.data, filter, search]);
 
   return (
     <View className="gap-4">
@@ -242,6 +304,13 @@ export function MembersList() {
           active={filter === 'managed'}
           onPress={() => setFilter('managed')}
         />
+        {canManageStaff ? (
+          <FilterChip
+            label="Imported"
+            active={filter === 'imported'}
+            onPress={() => setFilter('imported')}
+          />
+        ) : null}
       </View>
 
       {cohortQuery.error ? (
@@ -249,14 +318,39 @@ export function MembersList() {
           {errorMessage(cohortQuery.error, 'Could not load members')}
         </Text>
       ) : null}
+      {pendingQuery.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(pendingQuery.error, 'Could not load imported members')}
+        </Text>
+      ) : null}
+      {canManageStaff && (pendingQuery.data?.length ?? 0) > 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {pendingQuery.data!.length} imported{' '}
+          {pendingQuery.data!.length === 1 ? 'member hasn’t' : 'members haven’t'}{' '}
+          signed up yet — they show below with an Imported badge. Send a join
+          invite to bring them in.
+        </Text>
+      ) : null}
 
       <View className="gap-2">
-        {cohortQuery.isLoading ? (
+        {cohortQuery.isLoading || pendingQuery.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <Text className="text-gray-500 dark:text-gray-400 text-sm">No members match.</Text>
         ) : (
-          filtered.map((m) => {
+          items.map((it) => {
+            if (it.kind === 'pending') {
+              return (
+                <PendingMemberCard
+                  key={it.key}
+                  row={it.row}
+                  gymId={membership?.gymId ?? null}
+                  canSend={canManageStaff}
+                  onSent={() => pendingQuery.refetch()}
+                />
+              );
+            }
+            const m = it.row;
             const subs = subsByMember.get(m.profile_id) ?? [];
             const comps = compsByMember.get(m.profile_id) ?? [];
             const tags = tagsByMember.get(m.profile_id) ?? [];
@@ -449,6 +543,117 @@ function PlanChip({
         {status !== 'active' ? ` · ${status.replace(/_/g, ' ')}` : ''}
         {creditBalance !== null ? ` · ${creditBalance} cr` : ''}
       </Text>
+    </View>
+  );
+}
+
+// An imported row that hasn't been claimed yet. It has no profile, so
+// there's no detail page to link to — the one action is sending the
+// join invite (the same send-member-join-invites edge function the
+// import handover uses, scoped to this single row). On a successful
+// send the server flips the row to 'invited'; we refetch so the card
+// re-renders in its "waiting" state.
+function PendingMemberCard({
+  row,
+  gymId,
+  canSend,
+  onSent,
+}: {
+  row: PendingRow;
+  gymId: string | null;
+  canSend: boolean;
+  onSent: () => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const send = useMutation({
+    mutationFn: async () => {
+      if (!gymId) throw new Error('Missing gym');
+      const { data, error: e } = await supabase.functions.invoke(
+        'send-member-join-invites',
+        {
+          body: {
+            gym_id: gymId,
+            pending_member_ids: [row.id],
+            origin: Platform.OS === 'web' ? window.location.origin : undefined,
+          },
+        },
+      );
+      if (e) throw e;
+      return data as { sent: number; failed: number };
+    },
+    onSuccess: (d) => {
+      if (d.sent === 0) {
+        setError('Could not send — the email address may be undeliverable.');
+        return;
+      }
+      setError(null);
+      onSent();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not send invite')),
+  });
+
+  const invited = row.status === 'invited';
+  const planLabel = row.plan_name
+    ? `${row.plan_name}${
+        row.credits_remaining !== null ? ` · ${row.credits_remaining} cr` : ''
+      }`
+    : null;
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+      <View className="flex-row items-center gap-3">
+        <Avatar name={row.full_name} size={36} />
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            {row.full_name ?? row.email}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Imported {row.created_at ? row.created_at.slice(0, 10) : '—'} · not
+            signed up
+          </Text>
+        </View>
+        <Badge label={invited ? 'Invited' : 'Imported'} color="#F59E0B" />
+      </View>
+      {planLabel ? (
+        <View className="flex-row flex-wrap gap-1">
+          <View className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
+            <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
+              {planLabel}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+      {row.tags.length > 0 ? (
+        <View className="flex-row flex-wrap gap-1">
+          {row.tags.map((t, i) => (
+            <View
+              key={`t-${i}`}
+              className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
+              <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
+                {t}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {canSend && !invited ? (
+        <View className="self-end items-end gap-1">
+          <ChipButton
+            label={send.isPending ? 'Sending…' : 'Send invite'}
+            icon="mail-outline"
+            tone="primary"
+            onPress={() => send.mutate()}
+            disabled={send.isPending || (send.data?.sent ?? 0) > 0}
+          />
+          {error ? (
+            <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+          ) : null}
+        </View>
+      ) : invited ? (
+        <Text className="self-end text-gray-400 dark:text-gray-500 text-xs">
+          Invite sent · waiting for sign-up
+        </Text>
+      ) : null}
     </View>
   );
 }

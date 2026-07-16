@@ -7,7 +7,8 @@ export type MembersFilter =
   | 'expiring'
   | 'expired'
   | 'active'
-  | 'managed';
+  | 'managed'
+  | 'imported';
 
 export type MembersFilterState = {
   filter: MembersFilter;
@@ -33,7 +34,8 @@ export function parseMembersFilter(raw: string | null | undefined): MembersFilte
       parsed.filter === 'expiring' ||
       parsed.filter === 'expired' ||
       parsed.filter === 'active' ||
-      parsed.filter === 'managed'
+      parsed.filter === 'managed' ||
+      parsed.filter === 'imported'
         ? parsed.filter
         : 'all';
     const search = typeof parsed.search === 'string' ? parsed.search : '';

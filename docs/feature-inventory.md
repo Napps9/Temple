@@ -475,10 +475,20 @@ The Manage page presents a tab strip:
   (Copy / Share, with archived state when public signup is off),
   searchable + filterable member list with PAR-Q badge, Injury badge,
   cohort badges (Intro / Active / Paying / Expiring / Expired), plan
-  chips, tag chips; **Export members CSV**; **Tag rules** editor. The
-  Members screen (`/management/members`) also hosts **member invites**
-  [`can_invite`] — email a member, generate a code + QR, or use the
-  front-desk walk-in QR (same card UI as staff invites on Team).
+  chips, tag chips; **Export members CSV**; **Tag rules** editor.
+  **Imported members** [`can_manage_staff`] that haven't signed up yet
+  (`pending_members` rows, status `pending`/`invited`) are surfaced
+  inline in the list, interleaved by name with live members, each
+  carrying an amber **Imported** / **Invited** badge, their imported
+  plan + credits + tags, and a per-member **Send invite** action
+  (`send-member-join-invites` scoped to that one row, which flips it to
+  `invited`); an **Imported** filter chip isolates them, and a caption
+  above the list counts how many haven't signed up. `invited` rows show
+  "waiting for sign-up" with no re-send (the edge function only targets
+  `pending`). The Members screen (`/management/members`) also hosts
+  **member invites** [`can_invite`] — email a member, generate a code +
+  QR, or use the front-desk walk-in QR (same card UI as staff invites
+  on Team).
 - **Team** [`can_manage_staff`] — staff roster with inline open-task
   + open-cover-request counts; per-coach earnings + class-type
   qualifications; SOPs card; Invite codes card (one-time codes to
