@@ -27,6 +27,7 @@ import {
   type TempleField,
 } from '@/lib/import/columns';
 import { parseCsv } from '@/lib/import/csv';
+import { isLikelyDuplicate } from '@/lib/import/dedup';
 import {
   buildCorrectionRows,
   centsToPounds,
@@ -67,6 +68,18 @@ type ImportResult = {
   skipped: number;
 };
 
+// A CSV row that fuzzy-matches an existing person under a different email
+// — either a live Stripe subscriber (double-bill risk) or an
+// already-staged pending member (duplicate row).
+type FuzzyMatch = {
+  rowEmail: string;
+  rowName: string;
+  reason: 'stripe' | 'existing-import';
+  matchedName: string;
+  matchedEmail: string;
+  confidence: 'name' | 'name+dob';
+};
+
 const FIELD_OPTIONS: { key: TempleField | 'ignore'; label: string }[] = [
   { key: 'ignore', label: 'Ignore' },
   ...(Object.entries(TEMPLE_FIELD_LABELS).map(([key, label]) => ({
@@ -105,6 +118,13 @@ export default function ImportMembersScreen() {
   const [tagsKeep, setTagsKeep] = useState<Set<string>>(new Set());
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [excludeStripeOverlap, setExcludeStripeOverlap] = useState(true);
+  // Emails the owner has chosen to skip after reviewing a fuzzy (name /
+  // name+DOB) duplicate hit. Keyed by the CSV row's own email, which is
+  // the commit filter's join key. Default off — a name match alone can be
+  // two different people, so we surface for review rather than auto-drop.
+  const [excludedFuzzyEmails, setExcludedFuzzyEmails] = useState<Set<string>>(
+    new Set(),
+  );
   const [mappingLoading, setMappingLoading] = useState(false);
   const [mappingSource, setMappingSource] = useState<'ai' | 'fallback' | null>(
     null,
@@ -264,12 +284,103 @@ export default function ImportMembersScreen() {
   }, [importRows, stripeSubscriberEmails]);
 
   const overlapCount = overlapEmails.size;
+
+  // Cross-email duplicate guard. The Stripe overlap above joins on email;
+  // a member whose Stripe/CSV emails differ slips past it. We fetch the
+  // gym's already-staged pending members (which carry DOB from earlier
+  // imports) and fuzzy-match every CSV row by name — and by DOB where both
+  // sides have one — against them and against the Stripe subscribers.
+  // Rows already caught by the exact-email overlap are excluded so we don't
+  // flag the same person twice.
+  const pendingMembers = useQuery({
+    queryKey: ['pending-members-dedup', membership?.gymId],
+    enabled:
+      !!membership?.gymId && (phase === 'review' || phase === 'preview'),
+    queryFn: async () => {
+      const { data, error: e } = await supabase
+        .from('pending_members')
+        .select('email, full_name, date_of_birth, status')
+        .eq('gym_id', membership!.gymId)
+        .in('status', ['pending', 'invited', 'linked']);
+      if (e) throw e;
+      return (data ?? []) as {
+        email: string;
+        full_name: string | null;
+        date_of_birth: string | null;
+        status: string;
+      }[];
+    },
+  });
+
+  const fuzzyMatches = useMemo<FuzzyMatch[]>(() => {
+    const stripeMembers = stripePreview.data?.members ?? [];
+    const pending = pendingMembers.data ?? [];
+    if (stripeMembers.length === 0 && pending.length === 0) return [];
+    const out: FuzzyMatch[] = [];
+    for (const r of importRows) {
+      const rowEmail = String(r.email ?? '').trim().toLowerCase();
+      if (!rowEmail || overlapEmails.has(rowEmail)) continue;
+      const rowName = r.full_name ? String(r.full_name) : '';
+      if (!rowName) continue;
+      const rowDob =
+        typeof r.date_of_birth === 'string' ? r.date_of_birth : null;
+      const person = { name: rowName, dob: rowDob };
+
+      // Stripe subscribers have a name but no DOB → name-only match, which
+      // flags a possible double-bill under a different email.
+      let hit: FuzzyMatch | null = null;
+      for (const s of stripeMembers) {
+        const sEmail = s.email.trim().toLowerCase();
+        if (sEmail === rowEmail) continue;
+        if (isLikelyDuplicate(person, { name: s.name }).match) {
+          hit = {
+            rowEmail,
+            rowName,
+            reason: 'stripe',
+            matchedName: s.name ?? '',
+            matchedEmail: sEmail,
+            confidence: 'name',
+          };
+          break;
+        }
+      }
+      // Already-staged members carry DOB, so this match is stronger: a hit
+      // means a second pending row for someone already imported.
+      if (!hit) {
+        for (const p of pending) {
+          const pEmail = (p.email ?? '').trim().toLowerCase();
+          if (pEmail === rowEmail) continue;
+          const res = isLikelyDuplicate(person, {
+            name: p.full_name,
+            dob: p.date_of_birth,
+          });
+          if (res.match) {
+            hit = {
+              rowEmail,
+              rowName,
+              reason: 'existing-import',
+              matchedName: p.full_name ?? '',
+              matchedEmail: pEmail,
+              confidence: res.confidence,
+            };
+            break;
+          }
+        }
+      }
+      if (hit) out.push(hit);
+    }
+    return out;
+  }, [importRows, stripePreview.data, pendingMembers.data, overlapEmails]);
+
   const excludedCount = excludeStripeOverlap
     ? importRows.filter((r) =>
         overlapEmails.has(String(r.email ?? '').trim().toLowerCase()),
       ).length
     : 0;
-  const stagedCount = importRows.length - excludedCount;
+  const fuzzyExcludedCount = importRows.filter((r) =>
+    excludedFuzzyEmails.has(String(r.email ?? '').trim().toLowerCase()),
+  ).length;
+  const stagedCount = importRows.length - excludedCount - fuzzyExcludedCount;
 
   // Trigger inference on entering the Review step. We memoise on the
   // mapped rows + the column mapping so a back-and-forth between Map
@@ -349,6 +460,15 @@ export default function ImportMembersScreen() {
     });
   }
 
+  function toggleFuzzyExclude(email: string) {
+    setExcludedFuzzyEmails((curr) => {
+      const next = new Set(curr);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+  }
+
   // Commit: insert new membership_plans, stamp linked_membership_plan_id
   // onto every row that mapped to a plan, call import_pending_members,
   // and finally record the corrections (accepted + overridden) into
@@ -423,6 +543,10 @@ export default function ImportMembersScreen() {
           (r) =>
             !excludeStripeOverlap ||
             !overlapEmails.has(String(r.email).trim().toLowerCase()),
+        )
+        .filter(
+          (r) =>
+            !excludedFuzzyEmails.has(String(r.email).trim().toLowerCase()),
         );
 
       // 3. Stage the rows.
@@ -737,6 +861,9 @@ export default function ImportMembersScreen() {
               {stagedCount} ready to stage · {rows.length - importRows.length}{' '}
               skipped (missing email)
               {excludedCount > 0 ? ` · ${excludedCount} skipped (already on Stripe)` : ''}
+              {fuzzyExcludedCount > 0
+                ? ` · ${fuzzyExcludedCount} skipped (possible duplicate)`
+                : ''}
             </Text>
 
             {overlapCount > 0 ? (
@@ -771,6 +898,14 @@ export default function ImportMembersScreen() {
                   />
                 </View>
               </View>
+            ) : null}
+
+            {fuzzyMatches.length > 0 ? (
+              <FuzzyDuplicatesCallout
+                matches={fuzzyMatches}
+                excluded={excludedFuzzyEmails}
+                onToggle={toggleFuzzyExclude}
+              />
             ) : null}
             <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
               {importRows.slice(0, 5).map((r, i) => (
@@ -1281,6 +1416,71 @@ function FieldPicker({
     <Text className="text-gray-700 dark:text-gray-200 text-xs">
       {FIELD_OPTIONS.find((o) => o.key === value)?.label ?? '?'}
     </Text>
+  );
+}
+
+// Reviewable list of cross-email fuzzy hits shown at preview. Each row is
+// individually toggleable (default keep) — a name-only match can be a
+// coincidence, so we never auto-drop; the owner ticks the ones to skip.
+function FuzzyDuplicatesCallout({
+  matches,
+  excluded,
+  onToggle,
+}: {
+  matches: FuzzyMatch[];
+  excluded: Set<string>;
+  onToggle: (email: string) => void;
+}) {
+  const stripeCount = matches.filter((m) => m.reason === 'stripe').length;
+  return (
+    <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg p-3 gap-2">
+      <Text className="text-amber-800 dark:text-amber-200 font-semibold text-sm">
+        {matches.length} possible{' '}
+        {matches.length === 1 ? 'duplicate' : 'duplicates'} under a different
+        email
+      </Text>
+      <Text className="text-amber-700 dark:text-amber-300 text-xs">
+        These rows share a name with someone you already have — likely the same
+        person with a second email that slipped past the email match.
+        {stripeCount > 0
+          ? ' The ones already on Stripe would be double-billed if staged here.'
+          : ''}{' '}
+        A name match alone can be a coincidence, so review each before skipping.
+      </Text>
+      <View className="gap-1.5">
+        {matches.map((m) => {
+          const off = excluded.has(m.rowEmail);
+          return (
+            <Pressable
+              key={m.rowEmail}
+              onPress={() => onToggle(m.rowEmail)}
+              className="flex-row items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-white/60 dark:bg-black/10 px-2.5 py-2">
+              <Ionicons
+                name={off ? 'checkbox' : 'square-outline'}
+                size={18}
+                color={off ? '#B45309' : '#D97706'}
+              />
+              <View className="flex-1">
+                <Text className="text-amber-900 dark:text-amber-100 text-sm">
+                  {m.rowName || '(no name)'} · {m.rowEmail}
+                </Text>
+                <Text className="text-amber-700 dark:text-amber-300 text-[11px]">
+                  {m.reason === 'stripe'
+                    ? `Matches a Stripe subscriber (${m.matchedEmail})`
+                    : `Matches an imported member (${m.matchedEmail})`}
+                  {m.confidence === 'name+dob'
+                    ? ' — same name and date of birth'
+                    : ' — same name'}
+                </Text>
+              </View>
+              <Text className="text-amber-700 dark:text-amber-300 text-[11px] font-semibold uppercase tracking-wide pt-0.5">
+                {off ? 'Skipping' : 'Keep'}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 

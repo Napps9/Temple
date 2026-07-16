@@ -867,6 +867,21 @@ the CSV importer. The overlap check only runs for owners (the `stripe-import`
 read is owner-gated), and fails open on any error so a Stripe blip never
 blocks a CSV import.
 
+**Cross-email fuzzy duplicates.** The overlap guard joins on email, so a
+member whose Stripe/CSV emails differ slips past it. `src/lib/import/dedup.ts`
+(pure, unit-tested) fuzzy-matches people by normalised name (diacritics
+stripped, tolerant of an added middle name/initial) and, where both sides
+have one, date of birth. At preview the wizard matches every CSV row —
+skipping those already caught by the exact-email overlap — against the
+connected account's Stripe subscribers (name-only, since Stripe carries no
+DOB → flags a possible double-bill under a second email) and against the
+gym's already-staged `pending_members` (name+DOB, so a hit means a second
+row for someone already imported). Hits surface in an amber **"possible
+duplicates"** callout with a per-row skip toggle. Default is keep, not
+drop — a name-only match can be a coincidence, so the owner reviews and
+ticks the ones to skip; skipped rows leave the commit and show in the
+preview counts.
+
 ### Campaign topic picker
 
 [`can_manage_comms`] Reachable from the campaign editor
