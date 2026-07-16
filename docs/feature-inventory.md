@@ -525,7 +525,13 @@ The Manage page presents a tab strip:
   green). **Disconnect** best-effort OAuth-deauthorizes then always
   clears the row (service role — mirrors sending-domain / custom-domain,
   so a gym can never get stuck on a dead link); **Reconnect** clears then
-  re-runs the OAuth start.
+  re-runs the OAuth start. The shared health check lives in
+  `src/lib/stripe-health.ts` (type + query key + fetch) so billing and
+  plans reuse one cached result. The **Plans** screen gates plan creation
+  on this health, not row-existence — a broken/unreachable connection
+  shows a "needs attention → Fix in Billing" banner and blocks creating
+  new plans (optimistic while the check loads/errors, so a transient blip
+  never over-blocks).
   **Currency follows the connected account**: `stripe-connect-callback`
   reads the Stripe account's `default_currency` and stores it on
   `gyms.currency`, so every price / revenue / payout figure renders in

@@ -17,21 +17,10 @@ import {
 } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import { estimateElsewhereMarkup } from '@/lib/payment-savings';
+import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useThemeColors } from '@/lib/theme';
-
-type StripeHealth =
-  | { connected: false }
-  | { connected: true; reachable: false; accountId: string; error?: string }
-  | {
-      connected: true;
-      reachable: true;
-      accountId: string;
-      chargesEnabled: boolean;
-      payoutsEnabled: boolean;
-      detailsSubmitted: boolean;
-    };
 
 // Phase 1 of Stripe billing: connect the gym's own Stripe (Connect
 // Standard, via OAuth) so it can charge members directly. Charges,
@@ -70,16 +59,10 @@ export default function BillingScreen() {
   // account id" — it can be revoked or unreachable. Ask Stripe for the
   // real state so the UI can't claim "connected" when payments are broken.
   const health = useQuery({
-    queryKey: ['gym-stripe-health', membership?.gymId],
+    queryKey: stripeHealthQueryKey(membership?.gymId),
     enabled: !!membership?.gymId && !!account.data?.stripe_account_id,
     staleTime: 60_000,
-    queryFn: async (): Promise<StripeHealth> => {
-      const { data, error: e } = await supabase.functions.invoke('stripe-account', {
-        body: { gym_id: membership!.gymId, action: 'status' },
-      });
-      if (e) throw e;
-      return data as StripeHealth;
-    },
+    queryFn: () => fetchStripeHealth(membership!.gymId),
   });
 
   const disconnect = useMutation({

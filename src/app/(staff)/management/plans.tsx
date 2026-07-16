@@ -15,6 +15,7 @@ import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
+import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -141,8 +142,33 @@ export function PlansPanel() {
       return !!data?.stripe_account_id;
     },
   });
-  const stripeConnected = stripeAccount.data ?? null;
-  const canCreate = stripeConnected === true;
+
+  // Only a positively-verified-healthy connection lets you create plans that
+  // can actually charge. A row existing isn't enough — it can be revoked or
+  // point at an unreachable account. We stay optimistic while the check
+  // loads or errors, so a transient blip never blocks plan management beyond
+  // the old row-based gate; we only block when Stripe positively says the
+  // connection is broken.
+  const stripeHealth = useQuery({
+    queryKey: stripeHealthQueryKey(membership?.gymId),
+    enabled: !!membership?.gymId && stripeAccount.data === true,
+    staleTime: 60_000,
+    queryFn: () => fetchStripeHealth(membership!.gymId),
+  });
+
+  const stripeGate: 'loading' | 'unconnected' | 'attention' | 'ready' =
+    stripeAccount.isLoading
+      ? 'loading'
+      : stripeAccount.data !== true
+        ? 'unconnected'
+        : stripeHealth.isLoading
+          ? 'loading'
+          : !stripeHealth.data || !stripeHealth.data.connected
+            ? 'ready'
+            : stripeHealth.data.reachable && stripeHealth.data.chargesEnabled
+              ? 'ready'
+              : 'attention';
+  const canCreate = stripeGate === 'ready';
 
   const plans = useQuery({
     queryKey: ['membership-plans', membership?.gymId],
@@ -439,24 +465,26 @@ export function PlansPanel() {
 
   return (
     <View className="gap-4">
-        {stripeConnected === false ? (
+        {stripeGate === 'unconnected' || stripeGate === 'attention' ? (
           <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-4 gap-3">
             <View className="flex-row items-center gap-2">
               <Ionicons name="card-outline" size={18} color="#D97706" />
               <Text className="flex-1 text-amber-800 dark:text-amber-200 font-semibold">
-                Connect Stripe to sell memberships
+                {stripeGate === 'attention'
+                  ? 'Your Stripe connection needs attention'
+                  : 'Connect Stripe to sell memberships'}
               </Text>
             </View>
             <Text className="text-amber-700 dark:text-amber-300 text-sm">
-              Members are charged on your own Stripe account, so you need to
-              connect it before creating plans. You can still edit existing
-              plans below.
+              {stripeGate === 'attention'
+                ? "Members are charged on your own Stripe account, but yours can't take payments right now. Fix it in Billing before creating plans — you can still edit existing plans below."
+                : 'Members are charged on your own Stripe account, so you need to connect it before creating plans. You can still edit existing plans below.'}
             </Text>
             <Button
               variant="secondary"
               icon="link-outline"
               onPress={() => router.push('/management/billing' as never)}>
-              Connect Stripe
+              {stripeGate === 'attention' ? 'Fix in Billing' : 'Connect Stripe'}
             </Button>
           </View>
         ) : null}
@@ -489,7 +517,9 @@ export function PlansPanel() {
           />
         ) : null}
 
-        {activeRows.length === 0 && stripeConnected !== false ? (
+        {activeRows.length === 0 &&
+        stripeGate !== 'unconnected' &&
+        stripeGate !== 'attention' ? (
           <EmptyState
             icon="pricetags-outline"
             title="No plans yet"
