@@ -343,12 +343,12 @@ Deno.serve(async (req: Request) => {
       | null;
     if (!ps) return json({ error: 'Subscription not found' }, 404);
 
-    // Refunds move money, so they use the money capability (owner-only by
-    // default, grantable per-gym) — the same gate as revenue and billing,
-    // not the broader can_assign_plan that coaches/staff hold.
+    // Refunds have their own capability (owner-only by default, grantable
+    // per-role in Team → role permissions) — independent of can_see_money, so
+    // an owner can let a coach issue refunds without exposing revenue.
     const { data: canRefund } = await caller.rpc('effective_can', {
       p_gym_id: ps.gym_id,
-      p_capability: 'can_see_money',
+      p_capability: 'can_refund',
     });
     if (!canRefund) return json({ error: 'Not allowed' }, 403);
 

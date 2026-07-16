@@ -568,7 +568,7 @@ The Manage page presents a tab strip:
   change + row update run together in the `stripe-modify-subscription`
   edge function under the service role. Credit packs and one-off class
   buys are untouched.
-- **Refunds** [`can_see_money`] — a **Refund** action on each plan in a
+- **Refunds** [`can_refund`] — a **Refund** action on each plan in a
   member's staff detail screen (`members/[profile]`). Opens a dialog with
   four modes, each previewing its amount live (`src/lib/refunds.ts`, pure +
   unit-tested; pro-rata = credits-remaining ratio for packs, days-remaining
@@ -578,7 +578,7 @@ The Manage page presents a tab strip:
   **full refund end-now**, and **refund + keep** (goodwill; full or a
   custom amount, access and renewals untouched → sub goes
   `refunded_retained`). The `stripe-refund` edge function
-  (`can_see_money`-gated — owner-only by default, matching every other money surface) recomputes the amount server-side, refunds the
+  (`can_refund`-gated — its own capability, owner-only by default but grantable per-role in Team → role permissions, independent of `can_see_money`) recomputes the amount server-side, refunds the
   most recent settled charge on the gym's connected account
   (`POST /v1/refunds`, Stripe-Account header), cancels the Stripe
   subscription per mode, updates `plan_subscriptions`, and records a

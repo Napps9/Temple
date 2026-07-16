@@ -110,7 +110,7 @@ export default function MemberDetailScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const canManageTags = useCan('can_manage_tags');
-  const canRefund = useCan('can_see_money') ?? false;
+  const canRefund = useCan('can_refund') ?? false;
   const canRemove = useCan('can_archive_members') ?? false;
   const canSeeHealth = useCan('can_see_health_flag') ?? false;
 
