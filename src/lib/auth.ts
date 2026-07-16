@@ -206,29 +206,37 @@ export async function acceptInvite(
   password: string,
   fullName: string,
 ): Promise<AcceptInviteResult> {
-  // The on_auth_user_created trigger (0042) creates the profiles row
-  // server-side from raw_user_meta_data.full_name, so the client never
-  // writes to profiles directly — avoids the post-signUp RLS rejection
-  // when the session hasn't propagated to the client's JWT yet.
-  //
-  // The invite code is also stashed in metadata so that when email
-  // confirmation is on (signUp returns no session), we can re-apply the
-  // invite after the user confirms and signs in — otherwise they'd land
-  // gymless on the athlete home with no way to bind the invite. Mirrors
-  // the pending_join_slug handling in joinGymWithSignup.
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: confirmRedirectTo(),
-      data: { full_name: fullName, pending_invite_code: code },
-    },
+  const trimmedEmail = email.trim().toLowerCase();
+
+  // Invited users have already proved they own the address by clicking the
+  // link we emailed there, so we skip the (globally-on) email-confirmation
+  // step: the accept-invite edge function creates the account pre-confirmed
+  // via the admin API — gated on a valid, unused invite code — and we sign
+  // straight in. on_auth_user_created (0042) builds the profiles row from the
+  // full_name metadata, then accept_invite binds the membership.
+  const { error } = await supabase.functions.invoke('accept-invite', {
+    body: { code, email: trimmedEmail, password, full_name: fullName },
   });
-  if (error) throw error;
-  const resolved = await ensureSessionAfterSignUp(email, password, data.session);
-  if (resolved.status === 'pending_confirmation') {
-    return { status: 'pending_confirmation', email };
+  if (error) {
+    const ctx = (error as { context?: Response }).context;
+    let msg = error.message;
+    if (ctx && typeof ctx.json === 'function') {
+      try {
+        const b = await ctx.json();
+        if (b?.error) msg = String(b.error);
+      } catch {
+        // not JSON — keep the generic message
+      }
+    }
+    throw new Error(msg);
   }
+
+  const { error: signInErr } = await supabase.auth.signInWithPassword({
+    email: trimmedEmail,
+    password,
+  });
+  if (signInErr) throw signInErr;
+
   const { error: rpcError } = await supabase.rpc('accept_invite', { invite_code: code });
   if (rpcError) throw rpcError;
   await clearPendingInviteMetadata();
