@@ -110,6 +110,7 @@ jobs:
           deploy sending-domain
           deploy infer-import
           deploy send-invite
+          deploy send-member-join-invites
           deploy stripe-connect-start
           deploy stripe-connect-callback
           deploy stripe-checkout
