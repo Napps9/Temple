@@ -70,14 +70,16 @@ Runbook: `docs/stripe-setup.md`.
       flow in `docs/stripe-setup.md`. Confirmed live OAuth actually works
       — the account picker showed real existing Stripe accounts to sign
       in with, proving the toggle took effect.
-- [ ] (cleanup, not blocking) Two live-mode webhook destinations exist
-      pointing at `stripe-webhook` — `brilliant-harmony-snapshot` (Snapshot
-      payload, the one that matters) and `brilliant-harmony-thin` (Thin
-      payload). `stripe-webhook`'s signature check only understands the
-      classic `t=…,v1=…` scheme that Snapshot payloads use — Thin payloads
-      sign differently and can never verify. Delete `brilliant-harmony-thin`
-      to stop the dead traffic; confirm `STRIPE_WEBHOOK_SECRET` in Supabase
-      matches `brilliant-harmony-snapshot`'s signing secret specifically.
+- [x] (cleanup) Webhook destinations tidied (2026-07-16).
+      `brilliant-harmony-thin` (Thin payload — `stripe-webhook`'s signature
+      check only understands the classic `t=…,v1=…` Snapshot scheme, so it
+      could never verify) deleted. `brilliant-harmony-snapshot` confirmed
+      the live destination: Active, URL `…/functions/v1/stripe-webhook`,
+      **Events from: Connected accounts**, API version `2026-05-27.dahlia`
+      (the version the function is written against), 18/18 deliveries
+      succeeded with **0 failed** — which itself proves
+      `STRIPE_WEBHOOK_SECRET` in Supabase matches this endpoint's signing
+      secret (a mismatch returns 400 before any handling).
 - [ ] Still open, **deliberately deferred**: repeat the real onboarding +
       checkout test with live keys — the £10/mo Dolly Box run above only
       proved the *test*-key path. Live connected accounts need real
