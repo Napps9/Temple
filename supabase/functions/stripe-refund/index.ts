@@ -22,6 +22,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -155,6 +157,116 @@ async function stripePost(
   return data as Record<string, unknown>;
 }
 
+function money(cents: number): string {
+  return `£${(cents / 100).toFixed(2)}`;
+}
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getUTCFullYear()}`;
+}
+
+// Best-effort "you've been refunded" email to the member. Never throws — a
+// Resend hiccup must not turn a completed refund into a failure. From-address
+// resolution mirrors the store-receipt sender (gym's verified domain, else
+// the platform RESEND_FROM).
+// deno-lint-ignore no-explicit-any
+async function sendRefundEmail(
+  service: any,
+  args: {
+    gymId: string;
+    profileId: string;
+    planName: string;
+    refundCents: number;
+    access: 'revoke_now' | 'until_period_end' | 'unchanged';
+    periodEnd: string | null;
+    refundId: string;
+  },
+  env: { resendKey?: string; resendFrom?: string },
+): Promise<void> {
+  try {
+    if (!env.resendKey) return;
+    const { data: userRes } = await service.auth.admin.getUserById(args.profileId);
+    const email: string | undefined = userRes?.user?.email;
+    if (!email) return;
+
+    const [{ data: profile }, { data: gym }, { data: settings }, { data: domain }] =
+      await Promise.all([
+        service.from('profiles').select('full_name').eq('id', args.profileId).maybeSingle(),
+        service.from('gyms').select('name').eq('id', args.gymId).maybeSingle(),
+        service
+          .from('gym_comms_settings')
+          .select('from_name, reply_to')
+          .eq('gym_id', args.gymId)
+          .maybeSingle(),
+        service
+          .from('gym_sending_domains')
+          .select('domain, from_local, status')
+          .eq('gym_id', args.gymId)
+          .maybeSingle(),
+      ]);
+
+    const fromAddress =
+      domain?.status === 'verified' && domain.domain
+        ? `${domain.from_local}@${domain.domain}`
+        : env.resendFrom;
+    if (!fromAddress) return;
+
+    const gymName = (gym?.name as string) ?? 'your gym';
+    const fromName = (settings?.from_name as string) || gymName;
+    const firstName =
+      ((profile?.full_name as string) ?? '').trim().split(/\s+/)[0] || 'there';
+
+    const accessLine =
+      args.access === 'revoke_now'
+        ? `Your <strong>${escapeHtml(args.planName)}</strong> membership has now ended.`
+        : args.access === 'until_period_end'
+          ? `Your <strong>${escapeHtml(args.planName)}</strong> membership stays active until ${escapeHtml(fmtDate(args.periodEnd))}, then ends.`
+          : `Your <strong>${escapeHtml(args.planName)}</strong> membership carries on as normal — nothing else changes.`;
+    const accessText =
+      args.access === 'revoke_now'
+        ? `Your ${args.planName} membership has now ended.`
+        : args.access === 'until_period_end'
+          ? `Your ${args.planName} membership stays active until ${fmtDate(args.periodEnd)}, then ends.`
+          : `Your ${args.planName} membership carries on as normal.`;
+
+    const html = templeEmailHtml({
+      title: 'You’ve been refunded',
+      preheader: `${gymName} has refunded ${money(args.refundCents)}.`,
+      bodyHtml: `<p style="margin:0 0 16px;">Hi ${escapeHtml(firstName)},</p>
+        <p style="margin:0 0 16px;"><strong>${escapeHtml(gymName)}</strong> has refunded <strong>${money(args.refundCents)}</strong> to your original payment method. It can take a few days to appear on your statement, depending on your bank.</p>
+        <p style="margin:0 0 16px;">${accessLine}</p>
+        <p style="margin:0;">Any questions, just reply to this email.</p>`,
+      footerNote: `Sent by ${gymName} via Temple.`,
+    });
+    const text =
+      `Hi ${firstName},\n\n${gymName} has refunded ${money(args.refundCents)} to your original payment method (it can take a few days to appear).\n\n${accessText}\n\nQuestions? Just reply to this email.`;
+
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.resendKey}`,
+        'content-type': 'application/json',
+        'Idempotency-Key': `refund:${args.refundId}`,
+      },
+      body: JSON.stringify({
+        from: `${fromName} <${fromAddress}>`,
+        to: [email],
+        subject: `Your refund from ${gymName}`,
+        html,
+        text,
+        reply_to: settings?.reply_to || undefined,
+      }),
+    });
+  } catch (_e) {
+    // best-effort — the refund already succeeded
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -163,6 +275,9 @@ Deno.serve(async (req: Request) => {
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
   const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+  // Optional — the member notification simply doesn't send without them.
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+  const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL');
   if (!SUPABASE_URL || !SERVICE_KEY || !ANON_KEY) {
     return json({ error: 'Function is not configured' }, 500);
   }
@@ -172,6 +287,7 @@ Deno.serve(async (req: Request) => {
     plan_subscription_id?: string;
     mode?: RefundMode;
     custom_cents?: number | null;
+    notify_member?: boolean;
   };
   try {
     body = await req.json();
@@ -203,7 +319,7 @@ Deno.serve(async (req: Request) => {
     const { data: psRow } = await service
       .from('plan_subscriptions')
       .select(
-        'id, gym_id, profile_id, plan_id, status, credit_balance, paid_period_end, stripe_subscription_id, created_at, membership_plans(kind, credit_count)',
+        'id, gym_id, profile_id, plan_id, status, credit_balance, paid_period_end, stripe_subscription_id, created_at, membership_plans(name, kind, credit_count)',
       )
       .eq('id', psId)
       .maybeSingle();
@@ -218,7 +334,11 @@ Deno.serve(async (req: Request) => {
           paid_period_end: string | null;
           stripe_subscription_id: string | null;
           created_at: string;
-          membership_plans: { kind: string; credit_count: number | null } | null;
+          membership_plans: {
+            name: string;
+            kind: string;
+            credit_count: number | null;
+          } | null;
         }
       | null;
     if (!ps) return json({ error: 'Subscription not found' }, 404);
@@ -345,6 +465,23 @@ Deno.serve(async (req: Request) => {
           payload: { mode, refund_id: refundId, source_charge_cents: chargeCents },
         },
         { onConflict: 'provider,provider_event_id', ignoreDuplicates: true },
+      );
+    }
+
+    // 5. Tell the member — only when the owner asked and money actually moved.
+    if (body.notify_member && outcome.refundCents > 0 && refundId) {
+      await sendRefundEmail(
+        service,
+        {
+          gymId: ps.gym_id,
+          profileId: ps.profile_id,
+          planName: ps.membership_plans?.name ?? 'membership',
+          refundCents: outcome.refundCents,
+          access: outcome.access,
+          periodEnd: ps.paid_period_end,
+          refundId,
+        },
+        { resendKey: RESEND_API_KEY, resendFrom: RESEND_FROM },
       );
     }
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, Switch, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/lib/errors';
@@ -57,6 +57,7 @@ export function RefundDialog({
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<RefundMode>('prorata_revoke');
   const [customPounds, setCustomPounds] = useState('');
+  const [notify, setNotify] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // The payment we'd refund against — the most recent settled charge for
@@ -106,6 +107,7 @@ export function RefundDialog({
           plan_subscription_id: sub.id,
           mode: selected,
           custom_cents: selected === 'keep' ? customCents : null,
+          notify_member: notify,
         },
       });
       if (e) {
@@ -204,6 +206,23 @@ export function RefundDialog({
                   />
                 </View>
               ) : null}
+
+              <View className="flex-row items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2.5">
+                <View className="flex-1">
+                  <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                    Email the member
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    Send a note telling them they’ve been refunded and what
+                    happens to their access.
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel="Email the member about this refund"
+                  value={notify}
+                  onValueChange={setNotify}
+                />
+              </View>
 
               {error ? (
                 <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>

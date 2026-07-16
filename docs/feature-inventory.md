@@ -576,7 +576,12 @@ The Manage page presents a tab strip:
   (`POST /v1/refunds`, Stripe-Account header), cancels the Stripe
   subscription per mode, updates `plan_subscriptions`, and records a
   `billing_events` `kind='refund'` row (excluded from revenue by
-  `is_revenue_event`).
+  `is_revenue_event`). An **"Email the member" toggle** (default on) sends
+  the member a branded refund email (`templeEmailHtml`, from the gym's
+  verified sending domain or the platform `RESEND_FROM`) whose access line
+  varies by mode — ended / ends at period end / carries on. Best-effort and
+  idempotent (`Idempotency-Key: refund:<id>`); only fires when money
+  actually moved, and a Resend hiccup never fails the refund.
 - **Require a membership to book** [owner] — Billing toggle
   (`gyms.require_membership_to_book`, RPC `set_require_membership_to_book`).
   When on, members need an active membership/credits to book; staff are
