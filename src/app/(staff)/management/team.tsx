@@ -120,6 +120,7 @@ export default function TeamScreen() {
           initialRole="coach"
         />
         {callerRole === 'owner' ? <RolePermissionsLauncher /> : null}
+        {callerRole === 'owner' ? <MemberPermissionsLauncher /> : null}
       </ScrollView>
     </Screen>
   );
@@ -315,12 +316,306 @@ function RolePermissionsSection() {
   );
 }
 
+// ============================================================================
+// Individual permissions — owner-only editor for gym_member_capabilities.
+// Sits above the per-role layer: whatever's set here for one person wins
+// over their role's config (Ed gets refunds, Charlotte doesn't).
+// ============================================================================
+
+function MemberPermissionsLauncher() {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <View className="mt-2">
+        <Button variant="secondary" onPress={() => setOpen(true)}>
+          Configure individual permissions
+        </Button>
+      </View>
+    );
+  }
+  return (
+    <View className="gap-3">
+      <MemberPermissionsSection />
+      <View className="self-start">
+        <Button variant="ghost" onPress={() => setOpen(false)}>
+          Hide individual permissions
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+type StaffRosterRow = {
+  profile_id: string;
+  role: GymRole;
+  profiles: { full_name: string | null } | null;
+};
+
+function MemberPermissionsSection() {
+  const session = useSession();
+  const { data: membership } = useGymMembership();
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<StaffRosterRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const roster = useQuery({
+    queryKey: ['staff-roster', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<StaffRosterRow[]> => {
+      const { data, error } = await supabase
+        .from('gym_memberships')
+        .select('profile_id, role, profiles!profile_id(full_name)')
+        .eq('gym_id', membership!.gymId)
+        .in('role', ['admin', 'coach', 'staff'])
+        .is('left_at', null);
+      if (error) throw error;
+      return (data ?? []) as unknown as StaffRosterRow[];
+    },
+  });
+
+  // Role overrides supply the baseline the per-person toggles start from —
+  // shared cache with the role editor above.
+  const roleOverrides = useQuery({
+    queryKey: ['role-capabilities-owner', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<OverrideRow[]> => {
+      const { data, error } = await supabase
+        .from('gym_role_capabilities')
+        .select('role, capability, enabled')
+        .eq('gym_id', membership!.gymId);
+      if (error) throw error;
+      return (data ?? []) as OverrideRow[];
+    },
+  });
+
+  const memberOverrides = useQuery({
+    queryKey: [
+      'member-capabilities-owner',
+      membership?.gymId,
+      selected?.profile_id,
+    ],
+    enabled: !!membership?.gymId && !!selected?.profile_id,
+    queryFn: async (): Promise<{ capability: string; enabled: boolean }[]> => {
+      const { data, error } = await supabase
+        .from('gym_member_capabilities')
+        .select('capability, enabled')
+        .eq('gym_id', membership!.gymId)
+        .eq('profile_id', selected!.profile_id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const roleOverrideMap = new Map<string, boolean>();
+  for (const row of roleOverrides.data ?? []) {
+    roleOverrideMap.set(`${row.role}:${row.capability}`, row.enabled);
+  }
+  const memberOverrideMap = new Map<string, boolean>();
+  for (const row of memberOverrides.data ?? []) {
+    memberOverrideMap.set(row.capability, row.enabled);
+  }
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['member-capabilities-owner'] });
+    // The edited person's own useCan mirror (and the owner's, harmlessly).
+    queryClient.invalidateQueries({ queryKey: ['member-capabilities'] });
+  };
+
+  const setCap = useMutation({
+    mutationFn: async (args: { capability: Capability; enabled: boolean }) => {
+      if (!membership || !session?.user.id || !selected) {
+        throw new Error('No teammate selected');
+      }
+      const { error } = await supabase.from('gym_member_capabilities').upsert(
+        {
+          gym_id: membership.gymId,
+          profile_id: selected.profile_id,
+          capability: args.capability,
+          enabled: args.enabled,
+          updated_by: session.user.id,
+        },
+        { onConflict: 'gym_id,profile_id,capability' },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setError(null);
+      invalidate();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not save permission')),
+  });
+
+  const clearCap = useMutation({
+    mutationFn: async (capability: Capability) => {
+      if (!membership || !selected) throw new Error('No teammate selected');
+      const { error } = await supabase
+        .from('gym_member_capabilities')
+        .delete()
+        .eq('gym_id', membership.gymId)
+        .eq('profile_id', selected.profile_id)
+        .eq('capability', capability);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setError(null);
+      invalidate();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not reset permission')),
+  });
+
+  const resetMember = useMutation({
+    mutationFn: async () => {
+      if (!membership || !selected) throw new Error('No teammate selected');
+      const { error } = await supabase
+        .from('gym_member_capabilities')
+        .delete()
+        .eq('gym_id', membership.gymId)
+        .eq('profile_id', selected.profile_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setError(null);
+      invalidate();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not reset permissions')),
+  });
+
+  const busy = setCap.isPending || clearCap.isPending || resetMember.isPending;
+
+  if (!selected) {
+    const rows = roster.data ?? [];
+    return (
+      <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+        <View className="gap-2">
+          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            Individual permissions
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            Give one teammate more (or less) than their role allows. Anything
+            set here overrides their role — everyone else on that role is
+            unaffected. Pick a teammate to configure.
+          </Text>
+        </View>
+        {roster.isLoading ? (
+          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        ) : rows.length === 0 ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            No coaches or staff yet. Invite a teammate above first.
+          </Text>
+        ) : (
+          <View className="bg-white dark:bg-gray-900 rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+            {rows.map((r) => (
+              <Pressable
+                key={r.profile_id}
+                onPress={() => setSelected(r)}
+                className="flex-row items-center justify-between gap-3 p-4">
+                <View className="gap-0.5">
+                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    {r.profiles?.full_name ?? 'Unnamed teammate'}
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs capitalize">
+                    {r.role}
+                  </Text>
+                </View>
+                <Text className="text-primary text-sm">Configure</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+      <View className="gap-2">
+        <ChipButton
+          tone="neutral"
+          className="self-start"
+          label="All teammates"
+          icon="chevron-back"
+          onPress={() => setSelected(null)}
+        />
+        <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          {selected.profiles?.full_name ?? 'Unnamed teammate'}
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          A blue dot marks a capability set for this person specifically. Toggle
+          to override their <Text className="capitalize">{selected.role}</Text>{' '}
+          role; clear it to fall back to the role.
+        </Text>
+      </View>
+
+      {roleOverrides.isLoading || memberOverrides.isLoading ? (
+        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+      ) : (
+        <View className="gap-4">
+          {CAPABILITY_GROUPS.map((group) => (
+            <View key={group.title} className="gap-2">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                {group.title}
+              </Text>
+              <View className="bg-white dark:bg-gray-900 rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+                {group.caps.map((c) => {
+                  const memberValue = memberOverrideMap.get(c.value);
+                  const isOverridden = memberValue !== undefined;
+                  const roleValue = roleOverrideMap.get(
+                    `${selected.role}:${c.value}`,
+                  );
+                  const baseline =
+                    roleValue !== undefined
+                      ? roleValue
+                      : can(selected.role, c.value);
+                  const effective = isOverridden ? memberValue : baseline;
+                  return (
+                    <CapabilityRow
+                      key={c.value}
+                      label={c.label}
+                      description={c.description}
+                      enabled={effective}
+                      isOverridden={isOverridden}
+                      onToggle={() =>
+                        setCap.mutate({
+                          capability: c.value,
+                          enabled: !effective,
+                        })
+                      }
+                      onClear={
+                        isOverridden ? () => clearCap.mutate(c.value) : undefined
+                      }
+                      disabled={busy}
+                    />
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+
+      <ChipButton
+        tone="neutral"
+        className="self-start"
+        label="Reset to role defaults"
+        icon="refresh"
+        onPress={() => resetMember.mutate()}
+        disabled={busy}
+      />
+    </View>
+  );
+}
+
 function CapabilityRow({
   label,
   description,
   enabled,
   isOverridden,
   onToggle,
+  onClear,
   disabled,
 }: {
   label: string;
@@ -328,30 +623,39 @@ function CapabilityRow({
   enabled: boolean;
   isOverridden: boolean;
   onToggle: () => void;
+  // Only the per-member editor passes this — clears the person-specific
+  // pin so the capability inherits from their role again.
+  onClear?: () => void;
   disabled: boolean;
 }) {
   return (
-    <Pressable
-      onPress={onToggle}
-      disabled={disabled}
-      className={`flex-row items-center justify-between gap-3 p-4 ${
-        disabled ? 'opacity-60' : ''
-      }`}>
-      <View className="flex-1 gap-0.5">
-        <View className="flex-row items-center gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 font-medium">{label}</Text>
-          {isOverridden ? (
-            <View className="w-1.5 h-1.5 rounded-full bg-primary" />
-          ) : null}
+    <View
+      className={`flex-row items-center gap-2 p-4 ${disabled ? 'opacity-60' : ''}`}>
+      <Pressable
+        onPress={onToggle}
+        disabled={disabled}
+        className="flex-1 flex-row items-center justify-between gap-3">
+        <View className="flex-1 gap-0.5">
+          <View className="flex-row items-center gap-2">
+            <Text className="text-gray-900 dark:text-gray-50 font-medium">{label}</Text>
+            {isOverridden ? (
+              <View className="w-1.5 h-1.5 rounded-full bg-primary" />
+            ) : null}
+          </View>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">{description}</Text>
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">{description}</Text>
-      </View>
-      <View
-        className={`w-11 h-6 rounded-full justify-center px-0.5 ${
-          enabled ? 'bg-primary items-end' : 'bg-gray-300 dark:bg-gray-700 items-start'
-        }`}>
-        <View className="w-5 h-5 rounded-full bg-white" />
-      </View>
-    </Pressable>
+        <View
+          className={`w-11 h-6 rounded-full justify-center px-0.5 ${
+            enabled ? 'bg-primary items-end' : 'bg-gray-300 dark:bg-gray-700 items-start'
+          }`}>
+          <View className="w-5 h-5 rounded-full bg-white" />
+        </View>
+      </Pressable>
+      {onClear ? (
+        <Pressable onPress={onClear} disabled={disabled} hitSlop={8}>
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">Clear</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }

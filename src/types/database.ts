@@ -1711,6 +1711,33 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_member_capabilities: {
+        Row: {
+          gym_id: string;
+          profile_id: string;
+          capability: string;
+          enabled: boolean;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          profile_id: string;
+          capability: string;
+          enabled: boolean;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          profile_id: string;
+          capability: string;
+          enabled: boolean;
+          updated_by: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       gym_insight_targets: {
         Row: {
           gym_id: string;

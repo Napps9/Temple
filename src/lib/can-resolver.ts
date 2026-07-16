@@ -7,6 +7,14 @@ export type OverrideRow = {
   enabled: boolean;
 };
 
+// A per-person override for the current user, resolved above the per-role
+// layer (see 0127). No role column — it applies to this profile whatever
+// their role.
+export type MemberOverrideRow = {
+  capability: string;
+  enabled: boolean;
+};
+
 export type CanState = {
   // True while the supabase session is still being read out of storage
   // for the first time. This is distinct from "no session" (signed
@@ -18,6 +26,8 @@ export type CanState = {
   role: GymRole | null;
   overridesLoading: boolean;
   overrides: OverrideRow[] | undefined;
+  memberOverridesLoading: boolean;
+  memberOverrides: MemberOverrideRow[] | undefined;
 };
 
 // Pure capability resolver — the brain of useCan. Lives in its own
@@ -47,7 +57,12 @@ export function computeCan(
   // still loading.
   if (state.role === 'owner') return true;
   if (state.role === 'member') return false;
-  if (state.overridesLoading) return undefined;
+  if (state.overridesLoading || state.memberOverridesLoading) return undefined;
+  // Per-person override wins over the role override and the default.
+  const memberOverride = state.memberOverrides?.find(
+    (o) => o.capability === capability,
+  );
+  if (memberOverride) return memberOverride.enabled;
   const override = state.overrides?.find(
     (o) => o.role === state.role && o.capability === capability,
   );

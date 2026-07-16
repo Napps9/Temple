@@ -9,6 +9,8 @@ const baseState: CanState = {
   role: null,
   overridesLoading: false,
   overrides: [],
+  memberOverridesLoading: false,
+  memberOverrides: [],
 };
 
 describe('computeCan', () => {
@@ -158,6 +160,90 @@ describe('computeCan', () => {
         ],
       }),
     ).toBe(false); // coach default for can_invite
+  });
+
+  it('returns undefined for non-owner/non-member while member overrides are loading', () => {
+    expect(
+      computeCan('can_refund', {
+        ...baseState,
+        role: 'coach',
+        memberOverridesLoading: true,
+        memberOverrides: undefined,
+      }),
+    ).toBeUndefined();
+  });
+
+  it('honors a per-member override that enables a default-off capability', () => {
+    // Ed the full-time coach gets can_refund, which coaches lack by default.
+    expect(
+      computeCan('can_refund', {
+        ...baseState,
+        role: 'coach',
+        memberOverrides: [{ capability: 'can_refund', enabled: true }],
+      }),
+    ).toBe(true);
+  });
+
+  it('honors a per-member override that disables a default-on capability', () => {
+    expect(
+      computeCan('can_claim_cover', {
+        ...baseState,
+        role: 'coach',
+        memberOverrides: [{ capability: 'can_claim_cover', enabled: false }],
+      }),
+    ).toBe(false);
+  });
+
+  it('lets a per-member override beat a per-role override (Charlotte denied money her role allows)', () => {
+    // The role override grants coaches can_see_money; the per-person
+    // override takes it away from this specific coach.
+    expect(
+      computeCan('can_see_money', {
+        ...baseState,
+        role: 'coach',
+        overrides: [
+          { role: 'coach', capability: 'can_see_money', enabled: true },
+        ],
+        memberOverrides: [{ capability: 'can_see_money', enabled: false }],
+      }),
+    ).toBe(false);
+  });
+
+  it('lets a per-member allow beat a per-role deny', () => {
+    expect(
+      computeCan('can_see_money', {
+        ...baseState,
+        role: 'coach',
+        overrides: [
+          { role: 'coach', capability: 'can_see_money', enabled: false },
+        ],
+        memberOverrides: [{ capability: 'can_see_money', enabled: true }],
+      }),
+    ).toBe(true);
+  });
+
+  it('falls through to the role override when no member override matches the capability', () => {
+    // A member override for a different capability must not leak.
+    expect(
+      computeCan('can_see_money', {
+        ...baseState,
+        role: 'coach',
+        overrides: [
+          { role: 'coach', capability: 'can_see_money', enabled: true },
+        ],
+        memberOverrides: [{ capability: 'can_refund', enabled: true }],
+      }),
+    ).toBe(true);
+  });
+
+  it('never gates an owner on member overrides', () => {
+    expect(
+      computeCan('can_refund', {
+        ...baseState,
+        role: 'owner',
+        memberOverrides: [{ capability: 'can_refund', enabled: false }],
+      }),
+    ).toBe(true);
   });
 
   it('session-pending wins over a present role (paranoia: mid-flight invalidation)', () => {

@@ -578,7 +578,7 @@ The Manage page presents a tab strip:
   **full refund end-now**, and **refund + keep** (goodwill; full or a
   custom amount, access and renewals untouched → sub goes
   `refunded_retained`). The `stripe-refund` edge function
-  (`can_refund`-gated — its own capability, owner-only by default but grantable per-role in Team → role permissions, independent of `can_see_money`) recomputes the amount server-side, refunds the
+  (`can_refund`-gated — its own capability, owner-only by default but grantable per-role or per-teammate in Team → permissions, independent of `can_see_money`) recomputes the amount server-side, refunds the
   most recent settled charge on the gym's connected account
   (`POST /v1/refunds`, Stripe-Account header), cancels the Stripe
   subscription per mode, updates `plan_subscriptions`, and records a
@@ -1378,7 +1378,12 @@ actions are owner-only by policy:
   componentStack + route + try-again.
 - **Capability matrix** — every staff feature is gated by a single
   capability key; owners can override default mappings per role
-  (`gym_role_capabilities` table).
+  (`gym_role_capabilities` table) and, above that, per individual
+  teammate (`gym_member_capabilities` table). Per-person overrides win
+  over the role config, so one full-time coach can see revenue and
+  issue refunds while a part-timer on the same role gets neither.
+  Both editors live on Team (owner-only); `effective_can` resolves
+  member override → role override → role default.
 - **Soft delete + restore** — archive / restore semantics on class
   types, plans and members; hard delete is owner-only and blocked
   when dependent rows exist.
