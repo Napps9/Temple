@@ -95,9 +95,12 @@ Runbook: `docs/stripe-setup.md`.
       so it proves the webhook delivered, verified and returned 200, and
       `billing_live` is now on for the gym. Gyms can be told Stripe is
       ready.
-    - Housekeeping: refund the £1 test charge in Stripe → Payments (one-off
-      credit pack, no subscription to cancel), and optionally clear the
-      test membership row from Good Life if keeping it pristine for demos.
+    - Housekeeping: the £1 test charge was **left un-refunded by choice** —
+      it sits in the gym's own standalone sole-trader Stripe balance (a
+      separate login from the Temple platform account), so it's the owner's
+      own money, not lost, and refunding blocks nothing. Optionally clear
+      the test membership row from Good Life if keeping it pristine for
+      demos.
 
 ### [ ] 3. Turn on Resend (all outbound email)
 
