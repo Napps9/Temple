@@ -42,6 +42,31 @@ describe('parseCsv', () => {
       ['1', '2'],
     ]);
   });
+  it('reads semicolon-delimited files (EU Excel default)', () => {
+    expect(parseCsv('Email;First Name;Plan\njane@x.com;Jane;Unlimited')).toEqual([
+      ['Email', 'First Name', 'Plan'],
+      ['jane@x.com', 'Jane', 'Unlimited'],
+    ]);
+  });
+  it('reads tab-delimited files', () => {
+    expect(parseCsv('Email\tName\njane@x.com\tJane Doe')).toEqual([
+      ['Email', 'Name'],
+      ['jane@x.com', 'Jane Doe'],
+    ]);
+  });
+  it('prefers comma on a tie so normal CSV is unaffected', () => {
+    // A comma value AND a semicolon in the header: comma still wins.
+    expect(parseCsv('Email,Plan;Notes\na@b.com,Gold;hi')).toEqual([
+      ['Email', 'Plan;Notes'],
+      ['a@b.com', 'Gold;hi'],
+    ]);
+  });
+  it('keeps a semicolon inside a comma-delimited quoted cell', () => {
+    expect(parseCsv('Email,Plan\na@b.com,"Gold; premium"')).toEqual([
+      ['Email', 'Plan'],
+      ['a@b.com', 'Gold; premium'],
+    ]);
+  });
 });
 
 describe('joinName', () => {

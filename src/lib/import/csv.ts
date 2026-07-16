@@ -10,12 +10,39 @@
 
 export type CsvRow = string[];
 
+// Field separators we know how to read. Excel in a EU/UK locale exports
+// with ';' by default (comma is the decimal mark there), and some tools
+// hand back tab-separated files — both would otherwise parse as a single
+// unsplit column and silently break the whole import.
+const DELIMITERS = [',', ';', '\t'] as const;
+
+// Pick the separator by counting candidates in the header line. Comma wins
+// ties (it's the format's namesake and the overwhelming default) — we only
+// switch away from it when another candidate is strictly more frequent.
+function detectDelimiter(input: string): string {
+  const header = input.split(/\r?\n/, 1)[0] ?? '';
+  let best = ',';
+  let bestCount = 0;
+  for (const d of DELIMITERS) {
+    let count = 0;
+    for (let i = 0; i < header.length; i += 1) {
+      if (header[i] === d) count += 1;
+    }
+    if (count > bestCount) {
+      best = d;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
 export function parseCsv(input: string): CsvRow[] {
   if (input.charCodeAt(0) === 0xfeff) {
     // Strip UTF-8 BOM that Excel-on-Windows likes to prefix.
     input = input.slice(1);
   }
 
+  const delim = detectDelimiter(input);
   const rows: CsvRow[] = [];
   let row: CsvRow = [];
   let cell = '';
@@ -47,7 +74,7 @@ export function parseCsv(input: string): CsvRow[] {
       i += 1;
       continue;
     }
-    if (ch === ',') {
+    if (ch === delim) {
       row.push(cell);
       cell = '';
       i += 1;

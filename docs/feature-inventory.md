@@ -692,7 +692,13 @@ health-data purge; converted leads are kept as members.
 across" → Import members (`/management/members/import`), and surfaced
 as an optional checklist step on the setup card. Drop a CSV from a
 previous platform (Mindbody, PushPress, Glofox, Wodify or a
-spreadsheet); the column mapper pre-fills via an AI pass — `infer-import`
+spreadsheet). The parser sniffs the delimiter from the header line, so
+comma, **semicolon** (EU/UK Excel's default) and tab exports all read
+correctly instead of collapsing to one unsplit column; date fields
+accept ISO (dash/slash/dot), day- or month-first slash forms, spelled-out
+months ("15 Jan 2024", "Jan 15, 2024") and bare Excel serials, and a
+surname-first "Smith, John" full-name column is stored natural-order. The
+column mapper pre-fills via an AI pass — `infer-import`
 in `map_columns` mode reads each column's header plus a privacy-safe
 profile (value kind, fill rate, distinct ratio; never raw cell values)
 and maps it to a Temple field, falling back to the alias heuristic

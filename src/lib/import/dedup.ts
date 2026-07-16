@@ -8,10 +8,17 @@
 // Pure + dependency-free so it unit-tests cleanly.
 
 // Lowercase, strip accents, drop anything that isn't a letter or space,
-// collapse whitespace. "José  Núñez-Smith" -> "jose nunez smith".
+// collapse whitespace. "José  Núñez-Smith" -> "jose nunez smith". A single
+// comma is read as surname-first ("Smith, John" -> "john smith") so a
+// name stored that way still matches its natural-order twin.
 export function normalizeName(name: string | null | undefined): string {
   if (!name) return '';
-  return name
+  let n = name;
+  const parts = n.split(',');
+  if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
+    n = `${parts[1].trim()} ${parts[0].trim()}`;
+  }
+  return n
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()

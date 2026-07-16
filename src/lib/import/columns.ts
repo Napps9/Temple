@@ -214,6 +214,19 @@ export function columnHints(headers: string[], rows: string[][]): ColumnHint[] {
 // `tagsDrop`: case-insensitive set of tag values the owner has chosen
 // to drop in the review step; those tags are removed from the row's
 // staged `tags` array.
+// "Smith, John" → "John Smith". Mindbody and several older CRMs export the
+// member name surname-first; store it natural-order so it displays right and
+// matches the dedup normaliser. Only a single comma triggers the swap — a
+// value with more (or an empty side) is left untouched.
+function reorderSurnameFirst(name: string): string {
+  const parts = name.split(',');
+  if (parts.length !== 2) return name;
+  const last = parts[0].trim();
+  const first = parts[1].trim();
+  if (!last || !first) return name;
+  return `${first} ${last}`;
+}
+
 export function buildImportRow(
   headers: string[],
   mapping: (TempleField | null)[],
@@ -244,7 +257,7 @@ export function buildImportRow(
         last = value;
         break;
       case 'full_name':
-        out.full_name = value;
+        out.full_name = reorderSurnameFirst(value);
         break;
       case 'tags':
         out.tags = value
@@ -298,21 +311,60 @@ export function buildImportRow(
   return out;
 }
 
-// Accepts ISO (YYYY-MM-DD), YYYY-DD-MM (legacy CSV exports that flipped
-// month and day), M/D/Y and D/M/Y slash formats (auto-flipped the same
-// way when the month slot is unambiguously out of range), and the
-// dotted European form. When both slots could be either day or month,
-// M/D/Y is the tie-break — that ambiguity is unresolvable from the
-// string alone. Anything that doesn't look like a date returns null —
+const MONTH_NAMES: Record<string, number> = {
+  jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4,
+  april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11,
+  november: 11, dec: 12, december: 12,
+};
+
+// Named-month forms: "15 Jan 2024", "15 January 2024", "Jan 15, 2024",
+// "January 15 2024", "15-Jan-2024". Positional: whichever side of the
+// month token holds the day. Two-digit years map to 20xx.
+function fromNamedMonth(v: string): string | null {
+  const parts = v
+    .toLowerCase()
+    .replace(/,/g, ' ')
+    .split(/[\s-]+/)
+    .filter(Boolean);
+  if (parts.length !== 3) return null;
+  const mi = parts.findIndex((p) => MONTH_NAMES[p] !== undefined);
+  let dayStr: string;
+  let yearStr: string;
+  if (mi === 0) {
+    dayStr = parts[1];
+    yearStr = parts[2];
+  } else if (mi === 1) {
+    dayStr = parts[0];
+    yearStr = parts[2];
+  } else {
+    return null;
+  }
+  const mo = MONTH_NAMES[parts[mi]];
+  const d = Number(dayStr);
+  let y = Number(yearStr);
+  if (!Number.isInteger(d) || !Number.isInteger(y)) return null;
+  if (y < 100) y += 2000;
+  if (d < 1 || d > 31 || y < 1900 || y > 2100) return null;
+  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+// Accepts ISO (YYYY-MM-DD, also '/'- or '.'-separated), YYYY-DD-MM (legacy
+// CSV exports that flipped month and day), M/D/Y and D/M/Y slash formats
+// (auto-flipped the same way when the month slot is unambiguously out of
+// range), the dotted European form, spelled-out months ("15 Jan 2024"),
+// and bare Excel serial day-numbers. When both slots could be either day
+// or month, M/D/Y is the tie-break — that ambiguity is unresolvable from
+// the string alone. Anything that doesn't look like a date returns null —
 // the import row is skipped on that field rather than blowing up the
 // whole batch in Postgres.
 export function toIsoDate(s: string): string | null {
   const v = s.trim();
   if (!v) return null;
-  // YYYY-MM-DD (or YYYY-DD-MM). If the "month" slot is > 12 and the
-  // "day" slot ≤ 12, the parts are flipped — common when a CSV was
-  // built with a UK locale that writes the day first.
-  let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  // YYYY-MM-DD (or YYYY-DD-MM), also with '/' or '.' separators. If the
+  // "month" slot is > 12 and the "day" slot ≤ 12, the parts are flipped —
+  // common when a CSV was built with a UK locale that writes the day first.
+  let m = v.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
   if (m) {
     const y = +m[1];
     let mo = +m[2];
@@ -351,6 +403,18 @@ export function toIsoDate(s: string): string | null {
     if (y < 100) y += 2000;
     if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
     return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  const named = fromNamedMonth(v);
+  if (named) return named;
+  // Bare Excel serial date (days since 1899-12-30). Only a 5-digit number in
+  // a sane modern window is treated this way, so a stray id/count in a date
+  // column doesn't get read as a date. 20000≈1954, 60000≈2064.
+  if (/^\d{5}$/.test(v)) {
+    const serial = Number(v);
+    if (serial >= 20000 && serial <= 60000) {
+      const dt = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+      return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+    }
   }
   return null;
 }

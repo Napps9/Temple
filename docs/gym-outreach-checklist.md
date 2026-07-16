@@ -264,6 +264,17 @@ Left for you (policy/config, not code):
       workout history). Run a realistic CSV through
       `/management/members/import` end-to-end so the first onboarding call
       isn't the first time you've seen a real export.
+    - Hardened ahead of the dry-run (2026-07-16) after probing the pure
+      import helpers with real-export shapes: the CSV parser now sniffs the
+      delimiter (comma / **semicolon** — EU-UK Excel's default — / tab)
+      instead of collapsing a non-comma file into one column;
+      `toIsoDate` accepts slash/dot ISO, spelled-out months and Excel
+      serials on top of the existing formats; surname-first "Smith, John"
+      names are stored natural-order and match the cross-email dedup. All
+      covered by unit tests. Still worth running one **real** gym export
+      through the live app — the value of this item is seeing genuine
+      messiness (encoding, stray columns, plan-name chaos), not the code
+      paths, which are now tested.
 
 ---
 

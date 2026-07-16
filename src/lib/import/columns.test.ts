@@ -114,8 +114,30 @@ describe('toIsoDate', () => {
     // Ambiguous: month > 12 AND day > 12 — can't safely flip, return null.
     expect(toIsoDate('1992-13-13')).toBe(null);
   });
+  it('parses slash- and dot-separated ISO (YYYY/MM/DD)', () => {
+    expect(toIsoDate('2024/01/15')).toBe('2024-01-15');
+    expect(toIsoDate('2024.01.15')).toBe('2024-01-15');
+  });
+  it('parses spelled-out months, day- or month-first', () => {
+    expect(toIsoDate('15 Jan 2024')).toBe('2024-01-15');
+    expect(toIsoDate('15 January 2024')).toBe('2024-01-15');
+    expect(toIsoDate('Jan 15, 2024')).toBe('2024-01-15');
+    expect(toIsoDate('January 15 2024')).toBe('2024-01-15');
+    expect(toIsoDate('15-Jan-2024')).toBe('2024-01-15');
+    expect(toIsoDate('1 Sep 99')).toBe('2099-09-01');
+  });
+  it('parses a bare Excel serial date in a sane window', () => {
+    expect(toIsoDate('45000')).toBe('2023-03-15');
+  });
+  it('leaves a year-only or out-of-window number alone', () => {
+    // "2024" is a plausible year but not a full date, and it's below the
+    // Excel-serial window — must not be mis-read as a serial.
+    expect(toIsoDate('2024')).toBe(null);
+    expect(toIsoDate('100')).toBe(null);
+  });
   it('returns null for nonsense', () => {
     expect(toIsoDate('whenever')).toBe(null);
+    expect(toIsoDate('15 Foo 2024')).toBe(null);
   });
 });
 
@@ -175,6 +197,22 @@ describe('buildImportRow', () => {
     const hs = ['Email', 'Next Bill Date'];
     const out = buildImportRow(hs, autoDetect(hs), ['a@b.c', 'whenever']);
     expect(out.next_bill_date).toBeUndefined();
+  });
+
+  it('reorders a surname-first full name to natural order', () => {
+    const hs = ['Email', 'Name'];
+    const out = buildImportRow(hs, autoDetect(hs), ['a@b.c', 'Smith, John']);
+    expect(out.full_name).toBe('John Smith');
+  });
+  it('leaves a full name with no comma untouched', () => {
+    const hs = ['Email', 'Name'];
+    expect(
+      buildImportRow(hs, autoDetect(hs), ['a@b.c', 'John Smith Jr']).full_name,
+    ).toBe('John Smith Jr');
+    // More than one comma is ambiguous — leave it as the source had it.
+    expect(
+      buildImportRow(hs, autoDetect(hs), ['a@b.c', 'Smith, John, Jr']).full_name,
+    ).toBe('Smith, John, Jr');
   });
 });
 

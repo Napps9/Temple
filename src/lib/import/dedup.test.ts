@@ -19,6 +19,14 @@ describe('normalizeName', () => {
     expect(normalizeName("Mary-Jane   O'Brien")).toBe('mary jane o brien');
   });
 
+  it('reads a single comma as surname-first', () => {
+    expect(normalizeName('Smith, John')).toBe('john smith');
+    expect(normalizeName('Núñez, José')).toBe('jose nunez');
+  });
+  it('leaves a name with no comma (or an empty side) as-is', () => {
+    expect(normalizeName('John Smith')).toBe('john smith');
+    expect(normalizeName('Smith,')).toBe('smith');
+  });
   it('returns empty string for null/undefined/empty', () => {
     expect(normalizeName(null)).toBe('');
     expect(normalizeName(undefined)).toBe('');
@@ -49,6 +57,10 @@ describe('namesMatch', () => {
     expect(namesMatch('John Smith', 'Jane Smith')).toBe(false);
   });
 
+  it('matches surname-first against natural order', () => {
+    expect(namesMatch('Smith, John', 'John Smith')).toBe(true);
+    expect(namesMatch('Smith, John A', 'John Smith')).toBe(true);
+  });
   it('requires exact match for single-token names', () => {
     expect(namesMatch('John', 'John')).toBe(true);
     expect(namesMatch('John', 'John Smith')).toBe(false);
