@@ -26,4 +26,12 @@ describe('formatDate', () => {
   it('returns the raw string when it cannot be parsed', () => {
     expect(formatDate('not a date')).toBe('not a date');
   });
+
+  // The imported-member editor's date fields render this exact value as
+  // the DatePicker's DD/MM/YYYY helper line (DatePicker uses formatDate).
+  it('renders the imported-member date fields as DD/MM/YYYY', () => {
+    expect(formatDate('1991-09-06')).toBe('06/09/1991'); // date of birth
+    expect(formatDate('2026-03-03')).toBe('03/03/2026'); // plan start
+    expect(formatDate('')).toBe(''); // empty -> DatePicker shows "DD/MM/YYYY"
+  });
 });

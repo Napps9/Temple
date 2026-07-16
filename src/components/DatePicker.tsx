@@ -1,6 +1,7 @@
 import { createElement } from 'react';
 import { Platform, Text, TextInput, View } from 'react-native';
 
+import { formatDate } from '@/lib/format-date';
 import { useThemePreference } from '@/lib/theme';
 
 type Props = {
@@ -14,16 +15,6 @@ type Props = {
 };
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-// Display an ISO date as DD/MM/YYYY for the helper label. Empty input
-// returns empty string; malformed input returns the original so the
-// user can see what they typed.
-function isoToDdmmyyyy(iso: string): string {
-  if (!iso) return '';
-  if (!ISO_DATE_RE.test(iso)) return iso;
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
 
 // Cross-platform date picker. On web the browser's <input type="date">
 // gives a native calendar UI and returns ISO YYYY-MM-DD (which is what
@@ -45,7 +36,7 @@ export function DatePicker({
   max,
 }: Props) {
   const { scheme } = useThemePreference();
-  const display = isoToDdmmyyyy(value);
+  const display = formatDate(value);
 
   return (
     <View className="gap-1.5">
