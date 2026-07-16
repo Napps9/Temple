@@ -33,6 +33,22 @@ const FONT =
 // foreground <img>; alt="Temple" degrades gracefully if images are off.
 const LOGO_URL = 'https://app.jointemple.io/email/temple-lockup.png';
 
+// Premium "copy & paste this link" fallback, shown under the primary
+// CTA for the rare client that strips the button (and to reassure
+// people who'd rather see where a link goes). Email clients can't run
+// clipboard JS, so this is a select-and-copy monospace field with a
+// clipboard cue — not a functional button — styled in the brand cream
+// so it reads as intentional chrome rather than a raw pasted URL.
+export function linkFallbackHtml(url: string): string {
+  const safe = escapeHtml(url);
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 2px;">
+    <tr><td style="padding:0 0 9px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8A8681;text-transform:uppercase;">&#128203;&nbsp;Copy &amp; paste this link into your browser</td></tr>
+    <tr><td style="background:#F7F5F0;border:1px solid #E4DFD4;border-radius:10px;padding:13px 15px;">
+      <a href="${url}" style="font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:12px;line-height:1.6;color:#3B6BA5;text-decoration:none;word-break:break-all;">${safe}</a>
+    </td></tr>
+  </table>`;
+}
+
 export function templeEmailHtml(opts: {
   // Card heading.
   title: string;

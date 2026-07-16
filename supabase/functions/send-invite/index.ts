@@ -11,7 +11,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+import { escapeHtml, linkFallbackHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -41,10 +41,7 @@ function inviteHtml(gymName: string, role: string, link: string): string {
         You've been invited to join <strong>${g}</strong> on Temple as a ${r}.
         Tap below to set up your account — it only takes a minute.
       </p>
-      <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#64748b;">
-        Or paste this link into your browser:<br>
-        <a href="${link}" style="color:#3B6BA5;word-break:break-all;">${link}</a>
-      </p>`,
+      ${linkFallbackHtml(link)}`,
     button: { label: 'Accept invite', url: link },
     footerNote: "If you weren't expecting this invite, you can safely ignore this email.",
   });

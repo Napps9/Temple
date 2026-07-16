@@ -15,7 +15,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+import { escapeHtml, linkFallbackHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -42,10 +42,7 @@ function inviteHtml(gymName: string, joinUrl: string, firstName: string | null):
         to claim your account — your plan and history carry over
         automatically.
       </p>
-      <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#64748b;">
-        Or paste this link into your browser:<br>
-        <a href="${joinUrl}" style="color:#3B6BA5;word-break:break-all;">${joinUrl}</a>
-      </p>`,
+      ${linkFallbackHtml(joinUrl)}`,
     button: { label: 'Claim your account', url: joinUrl },
     footerNote: "If you weren't expecting this, you can safely ignore this email.",
   });
