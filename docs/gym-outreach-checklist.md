@@ -40,6 +40,17 @@ Runbook: `docs/auth-email-setup.md`. Concretely:
       seconds, clicked through, landed signed in on `app.jointemple.io`.
 - [ ] (optional, not done) Brand the confirm-signup template beyond the
       default — cosmetic, not blocking.
+- [ ] **Before onboarding batches: raise the auth email rate limit.**
+      Confirmed 2026-07-16 that the **30/hour** cap silently drops signup
+      confirmation emails once tripped — a run of test signups blew through
+      it and confirmations stopped arriving (while Resend-API mail — invites,
+      receipts — kept working, since those aren't auth-rate-limited). Fix:
+      **Authentication → Rate Limits → "Rate limit for sending emails"** →
+      raise well above 30 (≈150/hour). This is a real launch risk: a gym
+      whose members self-sign-up via the join link in a short window would
+      hit the same cap, so size it for onboarding **before** pitching.
+      (Invited staff no longer count against it — accept-invite creates
+      pre-confirmed accounts as of 2026-07-16.)
 
 ### [x] 2. Turn on Stripe (payments) — verified end-to-end
 
