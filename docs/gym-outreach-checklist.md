@@ -80,17 +80,24 @@ Runbook: `docs/stripe-setup.md`.
       succeeded with **0 failed** — which itself proves
       `STRIPE_WEBHOOK_SECRET` in Supabase matches this endpoint's signing
       secret (a mismatch returns 400 before any handling).
-- [ ] Still open, **deliberately deferred**: repeat the real onboarding +
-      checkout test with live keys — the £10/mo Dolly Box run above only
-      proved the *test*-key path. Live connected accounts need real
-      identity/business verification before Stripe allows a real charge
-      (Individual business type skips the company-number requirement —
-      personal details only), which is why this is paused rather than
-      done. Do one real Connect onboarding + one small, refundable real
-      member charge against the live keys, confirm the webhook delivers
-      (Stripe Dashboard → Developers → Webhooks → `brilliant-harmony-snapshot`
-      → Recent deliveries → 200, not a signature failure), then refund the
-      charge. Only after this passes should gyms be told Stripe is ready.
+- [x] **Live-key end-to-end proven (2026-07-16).** The previously deferred
+      real-money test is done. A live sole-trader account
+      (`acct_1TtnxkRHw1LVxbDD`) was connected to Good Life Crossfit — the
+      billing card reached the genuine `ready` state (health check reports
+      reachable **and** charges-enabled; a live platform key can't even
+      reach a test account, so this confirms a real live account). A real
+      member then checked out a £1 credit pack with a **real card** — the
+      card was debited £1.00 (statement descriptor "CROSSFIT GOOD LIFE")
+      and the membership went **ACTIVE** with the credit granted. Confirmed
+      in `billing_events`: a `stripe`/`checkout`/`100`/`GBP` row at
+      14:47:27 UTC — that row is written only by the
+      `checkout.session.completed` handler *after* the signature verifies,
+      so it proves the webhook delivered, verified and returned 200, and
+      `billing_live` is now on for the gym. Gyms can be told Stripe is
+      ready.
+    - Housekeeping: refund the £1 test charge in Stripe → Payments (one-off
+      credit pack, no subscription to cancel), and optionally clear the
+      test membership row from Good Life if keeping it pristine for demos.
 
 ### [ ] 3. Turn on Resend (all outbound email)
 
