@@ -515,6 +515,17 @@ The Manage page presents a tab strip:
   subscription-recording webhook are built (`stripe-checkout` /
   `stripe-webhook`). Needs `STRIPE_SECRET_KEY`
   + `STRIPE_CONNECT_CLIENT_ID` secrets — see `docs/stripe-setup.md`.
+  **Connection health + disconnect/reconnect** (`stripe-account` edge
+  function, owner-only): the billing screen no longer trusts a
+  `gym_stripe_accounts` row to mean "connected" — it asks Stripe
+  (`accounts.retrieve`) whether the account is actually reachable by the
+  platform key and `charges_enabled`, and shows **Connected / Finish
+  setup / Needs attention** accordingly (a revoked grant or a
+  wrong-account/mode key surfaces as "needs attention" instead of a false
+  green). **Disconnect** best-effort OAuth-deauthorizes then always
+  clears the row (service role — mirrors sending-domain / custom-domain,
+  so a gym can never get stuck on a dead link); **Reconnect** clears then
+  re-runs the OAuth start.
   **Currency follows the connected account**: `stripe-connect-callback`
   reads the Stripe account's `default_currency` and stores it on
   `gyms.currency`, so every price / revenue / payout figure renders in

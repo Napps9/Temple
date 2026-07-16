@@ -115,6 +115,7 @@ jobs:
           deploy send-email-automations
           deploy stripe-connect-start
           deploy stripe-connect-callback
+          deploy stripe-account
           deploy stripe-checkout
           deploy stripe-import
           deploy stripe-modify-subscription

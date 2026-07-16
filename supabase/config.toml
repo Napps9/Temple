@@ -100,6 +100,11 @@ verify_jwt = true
 [functions.stripe-connect-callback]
 verify_jwt = false
 
+# Owner-only Connect account health check + disconnect (asks Stripe whether
+# the connected account is actually reachable / charges-enabled).
+[functions.stripe-account]
+verify_jwt = true
+
 # Member checkout — opens a Stripe Checkout session (direct charge) for a
 # plan on the gym's connected account. Signed-in member caller.
 [functions.stripe-checkout]

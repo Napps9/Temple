@@ -6,6 +6,7 @@ import { Platform, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
@@ -20,6 +21,18 @@ import { supabase } from '@/lib/supabase';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useThemeColors } from '@/lib/theme';
 
+type StripeHealth =
+  | { connected: false }
+  | { connected: true; reachable: false; accountId: string; error?: string }
+  | {
+      connected: true;
+      reachable: true;
+      accountId: string;
+      chargesEnabled: boolean;
+      payoutsEnabled: boolean;
+      detailsSubmitted: boolean;
+    };
+
 // Phase 1 of Stripe billing: connect the gym's own Stripe (Connect
 // Standard, via OAuth) so it can charge members directly. Charges,
 // subscriptions, and webhooks come in later phases — this screen is the
@@ -31,6 +44,7 @@ export default function BillingScreen() {
   const params = useLocalSearchParams<{ stripe?: string }>();
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const currency = useGymCurrency();
   const [volumeInput, setVolumeInput] = useState(() => centsToRateInput(500_000));
   const volumeCents = parseRateToCents(volumeInput) ?? 0;
@@ -51,6 +65,40 @@ export default function BillingScreen() {
   });
 
   const queryClient = useQueryClient();
+
+  // Existence of a gym_stripe_accounts row only means "we once stored an
+  // account id" — it can be revoked or unreachable. Ask Stripe for the
+  // real state so the UI can't claim "connected" when payments are broken.
+  const health = useQuery({
+    queryKey: ['gym-stripe-health', membership?.gymId],
+    enabled: !!membership?.gymId && !!account.data?.stripe_account_id,
+    staleTime: 60_000,
+    queryFn: async (): Promise<StripeHealth> => {
+      const { data, error: e } = await supabase.functions.invoke('stripe-account', {
+        body: { gym_id: membership!.gymId, action: 'status' },
+      });
+      if (e) throw e;
+      return data as StripeHealth;
+    },
+  });
+
+  const disconnect = useMutation({
+    mutationFn: async () => {
+      if (!membership) throw new Error('No gym');
+      const { error: e } = await supabase.functions.invoke('stripe-account', {
+        body: { gym_id: membership.gymId, action: 'disconnect' },
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setConfirmDisconnect(false);
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['gym-stripe-account'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-stripe-health'] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not disconnect Stripe')),
+  });
+
   const selfCheckout = useQuery({
     queryKey: ['gym-self-checkout', membership?.gymId],
     enabled: !!membership?.gymId,
@@ -131,7 +179,38 @@ export default function BillingScreen() {
     }
   }
 
+  // Reconnect = clear the stale/broken link, then start a fresh OAuth. Runs
+  // when the saved account can't take payments (revoked, wrong account/mode,
+  // or onboarding never finished).
+  async function reconnect() {
+    setError(null);
+    try {
+      await disconnect.mutateAsync();
+    } catch {
+      return; // disconnect surfaced the error
+    }
+    await connect();
+  }
+
   const connected = !!account.data?.stripe_account_id;
+  const h = health.data;
+  // A broken/revoked account returns a 200 with reachable:false, so it's
+  // caught below. If the check itself can't run (health.isError → no data),
+  // fall back to the optimistic "connected" display rather than a stuck
+  // "Checking…" — the payment attempt will still surface any real error.
+  const stripeState: 'loading' | 'ready' | 'unfinished' | 'broken' =
+    health.isLoading
+      ? 'loading'
+      : !h || !h.connected
+        ? 'ready'
+        : h.reachable && h.chargesEnabled
+          ? 'ready'
+          : h.reachable
+            ? 'unfinished'
+            : 'broken';
+  const stripeAccountId =
+    h && h.connected ? h.accountId : account.data?.stripe_account_id;
+  const stripeError = h && h.connected && !h.reachable ? h.error : undefined;
 
   if (role && role !== 'owner') {
     return (
@@ -220,16 +299,105 @@ export default function BillingScreen() {
           ) : connected ? (
             <>
               <View className="flex-row items-center gap-2">
-                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                <Ionicons
+                  name={stripeState === 'ready' ? 'checkmark-circle' : 'alert-circle'}
+                  size={20}
+                  color={
+                    stripeState === 'broken'
+                      ? '#DC2626'
+                      : stripeState === 'unfinished'
+                        ? '#D97706'
+                        : '#10B981'
+                  }
+                />
                 <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
-                  Connected to Stripe
+                  {stripeState === 'unfinished'
+                    ? 'Finish your Stripe setup'
+                    : stripeState === 'broken'
+                      ? 'Stripe connection needs attention'
+                      : 'Connected to Stripe'}
                 </Text>
+                {stripeState === 'loading' ? (
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                    Checking…
+                  </Text>
+                ) : null}
               </View>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Member payments run through your own Stripe account
-                (`{account.data?.stripe_account_id}`) — set up your plans
-                below and members can subscribe and check out immediately.
-              </Text>
+
+              {stripeState === 'ready' ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  Member payments run through your own Stripe account
+                  (`{stripeAccountId}`) — plans below are live and members can
+                  subscribe and check out immediately.
+                </Text>
+              ) : stripeState === 'unfinished' ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  Your account (`{stripeAccountId}`) is connected but can't take
+                  payments yet — finish onboarding in your Stripe dashboard and
+                  this clears on its own.
+                </Text>
+              ) : stripeState === 'broken' ? (
+                <>
+                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    The saved account (`{stripeAccountId}`) can't be reached with
+                    your current Stripe key — the link was revoked, or it
+                    belongs to a different Stripe account or mode. Reconnect to
+                    fix it.
+                  </Text>
+                  {stripeError ? (
+                    <Text className="text-red-500 dark:text-red-400 text-xs">
+                      {stripeError}
+                    </Text>
+                  ) : null}
+                </>
+              ) : null}
+
+              {error ? (
+                <Text className="text-red-500 dark:text-red-400 text-sm">
+                  {error}
+                </Text>
+              ) : null}
+
+              {confirmDisconnect ? (
+                <View className="gap-2">
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    Disconnect Stripe? Members can't pay until you reconnect —
+                    your saved plans stay.
+                  </Text>
+                  <View className="flex-row gap-2">
+                    <ChipButton
+                      label="Cancel"
+                      icon="close-outline"
+                      tone="neutral"
+                      onPress={() => setConfirmDisconnect(false)}
+                    />
+                    <Button
+                      variant="destructive"
+                      loading={disconnect.isPending}
+                      onPress={() => disconnect.mutate()}>
+                      Disconnect
+                    </Button>
+                  </View>
+                </View>
+              ) : (
+                <View className="flex-row gap-2 items-center">
+                  {stripeState === 'unfinished' || stripeState === 'broken' ? (
+                    <Button
+                      variant="secondary"
+                      icon="refresh-outline"
+                      loading={connecting || disconnect.isPending}
+                      onPress={reconnect}>
+                      Reconnect
+                    </Button>
+                  ) : null}
+                  <ChipButton
+                    label="Disconnect"
+                    icon="unlink-outline"
+                    tone="red"
+                    onPress={() => setConfirmDisconnect(true)}
+                  />
+                </View>
+              )}
             </>
           ) : (
             <>
