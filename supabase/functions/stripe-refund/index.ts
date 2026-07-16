@@ -343,11 +343,14 @@ Deno.serve(async (req: Request) => {
       | null;
     if (!ps) return json({ error: 'Subscription not found' }, 404);
 
-    // Staff authorisation — same gate the rest of billing uses.
-    const { data: canAssign } = await caller.rpc('user_can_assign_plan', {
-      target_gym_id: ps.gym_id,
+    // Refunds move money, so they use the money capability (owner-only by
+    // default, grantable per-gym) — the same gate as revenue and billing,
+    // not the broader can_assign_plan that coaches/staff hold.
+    const { data: canRefund } = await caller.rpc('effective_can', {
+      p_gym_id: ps.gym_id,
+      p_capability: 'can_see_money',
     });
-    if (!canAssign) return json({ error: 'Not allowed' }, 403);
+    if (!canRefund) return json({ error: 'Not allowed' }, 403);
 
     if (ps.status === 'refunded_retained' || ps.status === 'cancelled') {
       return json({ error: 'This subscription has already been refunded or cancelled' }, 409);
