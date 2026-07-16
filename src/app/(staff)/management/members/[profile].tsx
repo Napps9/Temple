@@ -9,6 +9,7 @@ import { Avatar } from '@/components/Avatar';
 import { BackLink } from '@/components/BackLink';
 import { ChipButton } from '@/components/ChipButton';
 import { MemberTagChip } from '@/components/MemberTagChip';
+import { RefundDialog } from '@/components/RefundDialog';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -65,6 +66,7 @@ type SubRow = {
   membership_plans: {
     name: string;
     kind: string;
+    credit_count: number | null;
     notice_period_days: number | null;
   } | null;
 };
@@ -104,9 +106,11 @@ export default function MemberDetailScreen() {
   const profileId = params.profile;
   const queryClient = useQueryClient();
   const [showRemove, setShowRemove] = useState(false);
+  const [refundSub, setRefundSub] = useState<SubRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canManageTags = useCan('can_manage_tags');
+  const canRefund = useCan('can_assign_plan') ?? false;
   const canRemove = useCan('can_archive_members') ?? false;
   const canSeeHealth = useCan('can_see_health_flag') ?? false;
 
@@ -194,7 +198,7 @@ export default function MemberDetailScreen() {
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, status, credit_balance, price_cents, paid_period_end, period_resets_at, cancelled_at, created_at, imported_legacy, membership_plans(name, kind, notice_period_days)',
+          'id, status, credit_balance, price_cents, paid_period_end, period_resets_at, cancelled_at, created_at, imported_legacy, membership_plans(name, kind, credit_count, notice_period_days)',
         )
         .eq('gym_id', membership!.gymId)
         .eq('profile_id', profileId!)
@@ -402,6 +406,17 @@ export default function MemberDetailScreen() {
                     .filter(Boolean)
                     .join(' · ') || `started ${formatDate(s.created_at)}`}
                 </Text>
+                {canRefund &&
+                !isRemoved &&
+                !['cancelled', 'refunded_retained', 'lapsed'].includes(s.status) ? (
+                  <ChipButton
+                    className="self-start mt-1"
+                    tone="red"
+                    label="Refund"
+                    icon="arrow-undo-outline"
+                    onPress={() => setRefundSub(s)}
+                  />
+                ) : null}
               </View>
             ))
           ) : (
@@ -533,6 +548,22 @@ export default function MemberDetailScreen() {
           memberName={profile.data?.full_name ?? 'this member'}
           onClose={() => setShowRemove(false)}
           onRemoved={() => router.back()}
+        />
+      ) : null}
+
+      {refundSub ? (
+        <RefundDialog
+          visible={refundSub !== null}
+          sub={{
+            id: refundSub.id,
+            planName: refundSub.membership_plans?.name ?? 'Plan',
+            planKind: refundSub.membership_plans?.kind ?? 'unlimited',
+            creditBalance: refundSub.credit_balance,
+            creditCount: refundSub.membership_plans?.credit_count ?? null,
+            paidPeriodEnd: refundSub.paid_period_end,
+          }}
+          onClose={() => setRefundSub(null)}
+          onDone={() => setRefundSub(null)}
         />
       ) : null}
     </Screen>

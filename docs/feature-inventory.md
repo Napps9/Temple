@@ -561,6 +561,22 @@ The Manage page presents a tab strip:
   change + row update run together in the `stripe-modify-subscription`
   edge function under the service role. Credit packs and one-off class
   buys are untouched.
+- **Refunds** [`can_assign_plan`] — a **Refund** action on each plan in a
+  member's staff detail screen (`members/[profile]`). Opens a dialog with
+  four modes, each previewing its amount live (`src/lib/refunds.ts`, pure +
+  unit-tested; pro-rata = credits-remaining ratio for packs, days-remaining
+  ratio for time-based plans):
+  **pro-rata + end now** (refund the unused slice, cut access, stop
+  renewals — the default), **full refund keep-to-period-end**,
+  **full refund end-now**, and **refund + keep** (goodwill; full or a
+  custom amount, access and renewals untouched → sub goes
+  `refunded_retained`). The `stripe-refund` edge function
+  (`can_assign_plan`-gated) recomputes the amount server-side, refunds the
+  most recent settled charge on the gym's connected account
+  (`POST /v1/refunds`, Stripe-Account header), cancels the Stripe
+  subscription per mode, updates `plan_subscriptions`, and records a
+  `billing_events` `kind='refund'` row (excluded from revenue by
+  `is_revenue_event`).
 - **Require a membership to book** [owner] — Billing toggle
   (`gyms.require_membership_to_book`, RPC `set_require_membership_to_book`).
   When on, members need an active membership/credits to book; staff are
