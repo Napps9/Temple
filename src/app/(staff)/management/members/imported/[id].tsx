@@ -7,10 +7,12 @@ import { Avatar } from '@/components/Avatar';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { formatDate } from '@/lib/format-date';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
@@ -274,7 +276,7 @@ export default function ImportedMemberDetailScreen() {
                   {form.full_name || row.email}
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Imported {row.created_at.slice(0, 10)} · not signed up
+                  Imported {formatDate(row.created_at)} · not signed up
                   {row.imported_status ? ` · was "${row.imported_status}"` : ''}
                 </Text>
               </View>
@@ -328,13 +330,11 @@ export default function ImportedMemberDetailScreen() {
                 placeholder="07123 456789"
                 keyboardType="phone-pad"
               />
-              <Input
-                label="Date of birth (YYYY-MM-DD)"
+              <DatePicker
+                label="Date of birth"
                 value={form.date_of_birth}
-                onChangeText={(v) => setForm({ ...form, date_of_birth: v })}
+                onChange={(v) => setForm({ ...form, date_of_birth: v })}
                 error={fieldErrors.date_of_birth}
-                placeholder="1990-05-01"
-                autoCapitalize="none"
               />
               <Input
                 label="Emergency contact"
@@ -362,29 +362,23 @@ export default function ImportedMemberDetailScreen() {
                 placeholder="Leave blank for unlimited plans"
                 keyboardType="number-pad"
               />
-              <Input
-                label="Plan start (YYYY-MM-DD)"
+              <DatePicker
+                label="Plan start"
                 value={form.plan_start}
-                onChangeText={(v) => setForm({ ...form, plan_start: v })}
+                onChange={(v) => setForm({ ...form, plan_start: v })}
                 error={fieldErrors.plan_start}
-                placeholder="2025-01-01"
-                autoCapitalize="none"
               />
-              <Input
-                label="Plan end (YYYY-MM-DD)"
+              <DatePicker
+                label="Plan end (leave blank for ongoing plans)"
                 value={form.plan_end}
-                onChangeText={(v) => setForm({ ...form, plan_end: v })}
+                onChange={(v) => setForm({ ...form, plan_end: v })}
                 error={fieldErrors.plan_end}
-                placeholder="Leave blank for ongoing plans"
-                autoCapitalize="none"
               />
-              <Input
-                label="Next bill date (YYYY-MM-DD)"
+              <DatePicker
+                label="Next bill date"
                 value={form.next_bill_date}
-                onChangeText={(v) => setForm({ ...form, next_bill_date: v })}
+                onChange={(v) => setForm({ ...form, next_bill_date: v })}
                 error={fieldErrors.next_bill_date}
-                placeholder="2026-01-01"
-                autoCapitalize="none"
               />
             </View>
 

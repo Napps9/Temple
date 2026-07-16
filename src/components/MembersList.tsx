@@ -11,6 +11,7 @@ import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { formatDate } from '@/lib/format-date';
 import { useMembersFilter } from '@/lib/members-filter';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -376,7 +377,7 @@ export function MembersList() {
                           {m.profiles?.full_name ?? 'Member'}
                         </Text>
                         <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                          Joined {m.joined_at ? m.joined_at.slice(0, 10) : '—'}
+                          Joined {m.joined_at ? formatDate(m.joined_at) : '—'}
                         </Text>
                       </View>
                       <CohortBadges
@@ -615,7 +616,7 @@ function PendingMemberCard({
                 {row.full_name ?? row.email}
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                Imported {row.created_at ? row.created_at.slice(0, 10) : '—'} · not
+                Imported {row.created_at ? formatDate(row.created_at) : '—'} · not
                 signed up
               </Text>
             </View>

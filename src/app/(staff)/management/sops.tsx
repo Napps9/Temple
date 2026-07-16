@@ -8,6 +8,7 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -243,7 +244,7 @@ export default function SopsScreen() {
                   </Text>
                 ) : null}
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Updated {d.updated_at.slice(0, 10)}
+                  Updated {formatDate(d.updated_at)}
                 </Text>
               </Pressable>
             ))}

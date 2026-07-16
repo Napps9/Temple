@@ -9,6 +9,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
 import { injuryTitle } from '@/lib/injuries';
 import {
@@ -756,7 +757,7 @@ function AlertsTab({ gymId }: { gymId: string }) {
                 {a.subject?.full_name ?? 'Member'} {copy.title}
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                {new Date(a.created_at).toLocaleDateString()}
+                {formatDate(a.created_at)}
               </Text>
             </View>
             <Text className="text-gray-700 dark:text-gray-200 text-sm">

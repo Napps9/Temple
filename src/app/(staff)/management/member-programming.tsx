@@ -17,6 +17,7 @@ import {
 import { ProgrammingCalendar } from '@/components/ProgrammingCalendar';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
 import {
   MEMBER_PROGRAMMING_BUCKET,
@@ -261,7 +262,7 @@ function DocumentsModal({
                       {f.title}
                     </Text>
                     <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                      Added {f.created_at.slice(0, 10)}
+                      Added {formatDate(f.created_at)}
                     </Text>
                   </Pressable>
                   <Pressable

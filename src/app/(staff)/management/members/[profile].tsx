@@ -13,6 +13,7 @@ import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { formatDate } from '@/lib/format-date';
 import {
   daysAgo,
   injuryTitle,
@@ -294,9 +295,9 @@ export default function MemberDetailScreen() {
             ) : null}
             {gymMembership.data ? (
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Joined {gymMembership.data.created_at.slice(0, 10)}
+                Joined {formatDate(gymMembership.data.created_at)}
                 {isRemoved
-                  ? ` · Removed ${gymMembership.data.left_at?.slice(0, 10)}`
+                  ? ` · Removed ${formatDate(gymMembership.data.left_at)}`
                   : ''}
               </Text>
             ) : null}
@@ -386,20 +387,20 @@ export default function MemberDetailScreen() {
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
                   {[
                     s.paid_period_end
-                      ? `paid through ${s.paid_period_end.slice(0, 10)}`
+                      ? `paid through ${formatDate(s.paid_period_end)}`
                       : null,
                     s.period_resets_at
-                      ? `next payment ${s.period_resets_at.slice(0, 10)}`
+                      ? `next payment ${formatDate(s.period_resets_at)}`
                       : null,
                     s.membership_plans?.notice_period_days != null
                       ? `${s.membership_plans.notice_period_days}-day notice period`
                       : null,
                     s.cancelled_at
-                      ? `cancelled ${s.cancelled_at.slice(0, 10)}`
+                      ? `cancelled ${formatDate(s.cancelled_at)}`
                       : null,
                   ]
                     .filter(Boolean)
-                    .join(' · ') || `started ${s.created_at.slice(0, 10)}`}
+                    .join(' · ') || `started ${formatDate(s.created_at)}`}
                 </Text>
               </View>
             ))
@@ -471,7 +472,7 @@ export default function MemberDetailScreen() {
                   {c.revoked_at ? ' (revoked)' : ''}
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  {c.starts_at.slice(0, 10)} → {c.ends_at.slice(0, 10)}
+                  {formatDate(c.starts_at)} → {formatDate(c.ends_at)}
                   {c.credits_remaining !== null
                     ? ` · ${c.credits_remaining}/${c.credits_total} credits`
                     : ''}
@@ -667,7 +668,7 @@ function InjuriesSection({
                     <Text
                       key={i}
                       className="text-gray-500 dark:text-gray-400 text-xs">
-                      {u.created_at.slice(0, 10)} · pain {u.pain_level}/10
+                      {formatDate(u.created_at)} · pain {u.pain_level}/10
                       {u.feeling ? ` · ${u.feeling}` : ''}
                       {u.note ? ` — ${u.note}` : ''}
                     </Text>
@@ -754,7 +755,7 @@ function ParqHistorySection({
           <View className="flex-row items-center justify-between">
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
               v{latest.data.parq_questionnaires?.version ?? '—'} ·{' '}
-              {latest.data.completed_at.slice(0, 10)}
+              {formatDate(latest.data.completed_at)}
             </Text>
             {latest.data.has_flag ? (
               <View className="bg-red-600 rounded-full px-2 py-0.5">

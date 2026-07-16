@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { SessionPickerModal } from '@/components/SessionPickerModal';
 import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -200,7 +201,7 @@ export default function CoverScreen() {
                 className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
                 <View className="flex-row justify-between items-center">
                   <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                    {r.range_start.slice(0, 10)} → {r.range_end.slice(0, 10)}
+                    {formatDate(r.range_start)} → {formatDate(r.range_end)}
                   </Text>
                   <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase">
                     {r.status}
