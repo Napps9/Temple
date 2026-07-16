@@ -92,8 +92,12 @@ jobs:
         # Bundling fetches deps from esm.sh, which intermittently returns a
         # Cloudflare 522 and fails an otherwise-fine deploy. Retry each
         # function a few times with backoff so a transient CDN blip doesn't
-        # red the run.
+        # red the run. Crucially, a function that still fails after retries
+        # does NOT abort the run — otherwise one flaky early function (e.g.
+        # a 522 on `track`) blocks every function after it from deploying.
+        # We attempt them all, tally failures, and fail the step at the end.
         run: |
+          failed=""
           deploy() {
             for attempt in 1 2 3; do
               if supabase functions deploy "$1"; then
@@ -103,7 +107,8 @@ jobs:
               sleep $((attempt * 10))
             done
             echo "::error::deploy $1 failed after 3 attempts"
-            return 1
+            failed="$failed $1"
+            return 0
           }
           deploy send-campaign
           deploy track
@@ -125,3 +130,7 @@ jobs:
           deploy custom-domain
           deploy stock-photos
           deploy security-alert
+          if [ -n "$failed" ]; then
+            echo "::error::edge functions failed to deploy:$failed"
+            exit 1
+          fi
