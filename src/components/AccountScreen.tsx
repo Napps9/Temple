@@ -246,6 +246,45 @@ export function AccountScreen() {
 
         <LeaderboardPrivacyCard />
 
+        {membership && session ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Family
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Add children you look after and book their classes.
+            </Text>
+            <ChipButton
+              tone="neutral"
+              className="self-start"
+              label="Manage children"
+              icon="people-outline"
+              onPress={() => router.push('/family' as never)}
+            />
+          </View>
+        ) : null}
+
+        {membership && session ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Communication preferences
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Choose which topics you hear from this gym about — newsletter,
+              programming, promos, billing.
+            </Text>
+            <Link href="/email-preferences" asChild>
+              <ChipButton
+                tone="neutral"
+                className="self-start"
+                label="Manage email preferences"
+                icon="mail-outline"
+                iconSide="right"
+              />
+            </Link>
+          </View>
+        ) : null}
+
         </View>
         <View className="gap-6 lg:flex-1">
 
@@ -381,48 +420,13 @@ export function AccountScreen() {
         </View>
 
         {membership && session ? (
-          <View className="mt-4 gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-              Communication preferences
-            </Text>
-            <Link href="/email-preferences" asChild>
-              <ChipButton
-                tone="neutral"
-                className="self-start"
-                label="Manage email preferences"
-                icon="mail-outline"
-                iconSide="right"
-              />
-            </Link>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Choose which topics you hear from this gym about — newsletter,
-              programming, promos, billing.
-            </Text>
-          </View>
-        ) : null}
-
-        {membership && session ? (
-          <View className="mt-4 gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-              Family
-            </Text>
-            <ChipButton
-              tone="neutral"
-              className="self-start"
-              label="Manage children"
-              icon="people-outline"
-              onPress={() => router.push('/family' as never)}
-            />
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Add children you look after and book their classes.
-            </Text>
-          </View>
-        ) : null}
-
-        {membership && session ? (
-          <View className="mt-4 gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               Health data & consent
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Permanently deletes your PAR-Q answers and any injuries you've
+              logged. You'll be asked to consent again before training.
             </Text>
             <ChipButton
               tone="amber"
@@ -442,15 +446,18 @@ export function AccountScreen() {
                 {withdrawError}
               </Text>
             ) : null}
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Permanently deletes your PAR-Q answers and any injuries you've
-              logged. You'll be asked to consent again before training.
-            </Text>
           </View>
         ) : null}
 
         {role && role !== 'owner' && membership && session ? (
-          <View className="mt-4 gap-2">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              Leave this gym
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Cancels any active subscriptions, removes your access, and
+              erases your health data (PAR-Q + injuries).
+            </Text>
             <ChipButton
               tone="red"
               className="self-start"
@@ -458,10 +465,6 @@ export function AccountScreen() {
               icon="log-out-outline"
               onPress={() => setShowLeave(true)}
             />
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Cancels any active subscriptions, removes your access, and
-              erases your health data (PAR-Q + injuries).
-            </Text>
           </View>
         ) : null}
 
