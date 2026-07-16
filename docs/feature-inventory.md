@@ -764,9 +764,16 @@ plans), `paid_period_end` = `imported_plan_end` falling back to
 `next_bill_date` when the plan is ongoing (no end date), and
 `stripe_subscription_id` `NULL` — Temple billing is bypassed for the
 imported continuation so a migrated member can't be double-charged
-against whatever their old system still has running. When
-`paid_period_end` lapses, the existing booking gate naturally refuses
-the next booking; no new lapse code.
+against whatever their old system still has running. Because there's
+no Stripe subscription behind an `imported_legacy` row, it never
+receives a webhook to fail a charge or cancel it, so `status` would
+otherwise sit at `'active'` forever regardless of `paid_period_end`.
+`expire_unbilled_legacy_subscriptions()` (0125), run daily via
+`pg_cron`, closes that gap: once `paid_period_end` passes on an
+`imported_legacy`, non-`credit_pack` row still at `status='active'`, it
+flips to `'lapsed'` — the same terminal-for-booking state a real failed
+renewal lands in — so the booking gate then refuses the next booking
+with no changes needed there.
 
 **Legacy billing continuation (0124).** A CSV-only import (no adopted
 Stripe subscription, see below) is flagged `imported_legacy = true` on
