@@ -12,7 +12,6 @@ import { CoachEarningsCard } from './CoachEarningsCard';
 import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
 import { LeaderboardPrivacyCard } from './LeaderboardPrivacyCard';
-import { MembershipCard } from './MembershipCard';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
 import { Screen } from './Screen';
 import {
@@ -23,7 +22,6 @@ import {
   useSignOut,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
-import { useGymStoreConfig } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -34,7 +32,6 @@ export function AccountScreen() {
   const role = useRole();
   const { data: membership } = useGymMembership();
   const { data: profile } = useMyProfile();
-  const storeConfig = useGymStoreConfig(membership?.gymId);
   const signOut = useSignOut();
   const queryClient = useQueryClient();
 
@@ -245,32 +242,9 @@ export function AccountScreen() {
 
         {role === 'coach' || role === 'owner' ? <CoachEarningsCard /> : null}
 
-        {role === 'member' ? <MembershipCard /> : null}
-
         <GymShareCard />
 
         <LeaderboardPrivacyCard />
-
-        {membership && session && storeConfig.data?.store_enabled ? (
-          <View className="gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-              Store
-            </Text>
-            <Link href="/store" asChild>
-              <ChipButton
-                tone="neutral"
-                className="self-start"
-                label="Visit the store"
-                icon="bag-handle-outline"
-                iconSide="right"
-              />
-            </Link>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Buy merch, programmes and tickets from{' '}
-              {membership.gymName ?? 'your gym'}.
-            </Text>
-          </View>
-        ) : null}
 
         </View>
         <View className="gap-6 lg:flex-1">

@@ -13,9 +13,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from './Avatar';
 import { GymLogo } from './GymLogo';
-import { useMyProfile, useSession } from '@/lib/auth';
+import { useGymMembership, useMyProfile, useSession } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
 import { useNotificationCount } from '@/lib/notifications';
+import { useGymStoreConfig } from '@/lib/store';
+import { CURRENT_SUB_STATUSES, useGymPlans, useMySubscriptions } from '@/lib/subscriptions';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
@@ -47,12 +49,32 @@ export function TopNav({
   const brand = useGymBrand();
   const session = useSession();
   const { data: profile } = useMyProfile();
+  const { data: membership } = useGymMembership();
   const { scheme, set } = useThemePreference();
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
   const notifCount = useNotificationCount();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Membership + store are member-only concepts — only query them for the
+  // member top bar so the staff nav doesn't pay for unused fetches.
+  const storeGymId = variant === 'member' ? membership?.gymId : undefined;
+  const storeConfig = useGymStoreConfig(storeGymId);
+  const plans = useGymPlans(storeGymId);
+  const subs = useMySubscriptions(storeGymId, session?.user.id);
+  const hasCurrentSub = (subs.data ?? []).some((s) =>
+    CURRENT_SUB_STATUSES.has(s.status),
+  );
+  const showMembership =
+    variant === 'member' &&
+    !!membership &&
+    ((plans.data?.length ?? 0) > 0 || hasCurrentSub);
+  const showStore =
+    variant === 'member' &&
+    !!membership &&
+    !!session &&
+    !!storeConfig.data?.store_enabled;
 
   const gymName = brand.gymName;
 
@@ -263,6 +285,30 @@ export function TopNav({
                 router.push(accountHref as never);
               }}
             />
+            {showMembership ? (
+              <MenuRow
+                icon="card-outline"
+                label="Membership"
+                iconColor={colors.iconPrimary}
+                onPress={() => {
+                  haptic.tap();
+                  setMenuOpen(false);
+                  router.push('/membership' as never);
+                }}
+              />
+            ) : null}
+            {showStore ? (
+              <MenuRow
+                icon="bag-handle-outline"
+                label="Store"
+                iconColor={colors.iconPrimary}
+                onPress={() => {
+                  haptic.tap();
+                  setMenuOpen(false);
+                  router.push('/store' as never);
+                }}
+              />
+            ) : null}
           </ScrollView>
         </View>
       </Modal>
