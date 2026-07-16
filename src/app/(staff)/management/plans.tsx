@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
@@ -18,7 +18,6 @@ import { errorMessage } from '@/lib/errors';
 import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
-import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
 
 type PlanKind = 'unlimited' | 'credit_period' | 'credit_pack' | 'programming_only';
@@ -39,6 +38,10 @@ type ClassTypeLite = { id: string; name: string; color: string };
 type EditablePlan = {
   serverId: string | null;
   localId: string;
+  // Bumped on every "Undo changes" reset so a stale DurationField (which
+  // stops following prop updates once the user has typed into it) can be
+  // forced to remount and re-seed from the restored value.
+  resetNonce: number;
   name: string;
   kind: PlanKind;
   creditCount: string;
@@ -75,10 +78,15 @@ function poundsToCents(pounds: string): number | null {
   return Math.round(n * 100);
 }
 
-function fromServer(p: ServerPlan, classTypeIds: string[]): EditablePlan {
+function fromServer(
+  p: ServerPlan,
+  classTypeIds: string[],
+  resetNonce = 0,
+): EditablePlan {
   return {
     serverId: p.plan_id,
     localId: p.plan_id,
+    resetNonce,
     name: p.name,
     kind: p.kind,
     creditCount: p.credit_count?.toString() ?? '',
@@ -110,6 +118,25 @@ function rowDiffers(r: EditablePlan): boolean {
   );
 }
 
+// rowDiffers only covers the plan's own columns — coverage lives in a
+// separate join table, so a coverage-only edit (e.g. switching to
+// Specific classes) needs its own comparison to count as dirty.
+function coverageDiffers(r: EditablePlan): boolean {
+  const desired =
+    r.kind === 'programming_only'
+      ? []
+      : r.coverageMode === 'specific'
+        ? r.classTypeIds
+        : [];
+  const desiredSet = new Set(desired);
+  const currentSet = new Set(r.serverClassTypeIds);
+  if (desiredSet.size !== currentSet.size) return true;
+  for (const id of desiredSet) {
+    if (!currentSet.has(id)) return true;
+  }
+  return false;
+}
+
 export function PlansPanel() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
@@ -117,8 +144,15 @@ export function PlansPanel() {
   const [rows, setRows] = useState<EditablePlan[]>([]);
   const [showArchived, setShowArchived] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saved, markSaved] = useSavedFlag();
+  // Per-plan save errors and success flashes, keyed by localId, so each
+  // card reports its own outcome instead of one message for the page.
+  const [saveErrors, setSaveErrors] = useState<Record<string, string>>({});
+  const [savedLocalId, setSavedLocalId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!savedLocalId) return;
+    const id = setTimeout(() => setSavedLocalId(null), 2500);
+    return () => clearTimeout(id);
+  }, [savedLocalId]);
 
   const canEdit = useCan('can_manage_plans');
   const canArchive = useCan('can_archive_plans') ?? false;
@@ -237,14 +271,21 @@ export function PlansPanel() {
     },
   });
 
-  // Seed once plans land; re-seed when coverage resolves so existing rows
-  // pick up their allowlist. Coverage defaults to 'all' until it loads, so
-  // the editor renders without waiting on the second query.
+  // Seed once plans + coverage have both landed, and never again: each
+  // plan now saves independently, and re-seeding from every refetch this
+  // triggers would blow away whatever the user is mid-typing in any other
+  // still-unsaved card. Waiting on coverage.isLoading (rather than
+  // coverage.data itself) means the first seed already carries the
+  // allowlist instead of defaulting to 'all' and never catching up.
+  const seededRef = useRef(false);
   useEffect(() => {
+    if (seededRef.current) return;
     if (!plans.data) return;
+    if (coverage.isLoading) return;
     const cov = coverage.data ?? new Map<string, string[]>();
     setRows(plans.data.map((p) => fromServer(p, cov.get(p.plan_id) ?? [])));
-  }, [plans.data, coverage.data]);
+    seededRef.current = true;
+  }, [plans.data, coverage.data, coverage.isLoading]);
 
   const archive = useMutation({
     mutationFn: async (planId: string) => {
@@ -282,133 +323,160 @@ export function PlansPanel() {
     onError: (e) => setActionError(errorMessage(e, 'Could not delete plan')),
   });
 
+  // Saves exactly the one plan card that called it — each card owns its
+  // own dirty state, Save button and error message now, rather than one
+  // shared submit for every row on the page.
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (r: EditablePlan) => {
       if (!membership) throw new Error('No gym');
-      for (const r of rows) {
-        if (r.archivedAt) continue;
-        const name = r.name.trim();
-        if (!name) throw new Error('Each plan needs a name');
-        const creditCount =
-          r.creditCount.trim() === '' ? null : parseInt(r.creditCount, 10);
-        const monthlyPriceCents = poundsToCents(r.monthlyPrice);
-        const noticePeriodDays =
-          r.noticePeriodDays.trim() === '' ? null : parseInt(r.noticePeriodDays, 10);
-        const creditKind = r.kind === 'credit_period' || r.kind === 'credit_pack';
-        if (creditKind && (creditCount === null || isNaN(creditCount))) {
-          throw new Error(`${name}: credit count required for ${r.kind}`);
-        }
-        if (!creditKind && creditCount !== null) {
-          throw new Error(`${name}: this plan kind cannot have a credit count`);
-        }
-        if (r.monthlyPrice.trim() !== '' && monthlyPriceCents === null) {
-          throw new Error(`${name}: invalid price`);
-        }
-        if (noticePeriodDays !== null && (isNaN(noticePeriodDays) || noticePeriodDays < 0)) {
-          throw new Error(`${name}: invalid notice period`);
-        }
+      const name = r.name.trim();
+      if (!name) throw new Error('This plan needs a name');
+      const creditCount =
+        r.creditCount.trim() === '' ? null : parseInt(r.creditCount, 10);
+      const monthlyPriceCents = poundsToCents(r.monthlyPrice);
+      const noticePeriodDays =
+        r.noticePeriodDays.trim() === '' ? null : parseInt(r.noticePeriodDays, 10);
+      const creditKind = r.kind === 'credit_period' || r.kind === 'credit_pack';
+      if (creditKind && (creditCount === null || isNaN(creditCount))) {
+        throw new Error(`Credit count required for ${r.kind}`);
+      }
+      if (!creditKind && creditCount !== null) {
+        throw new Error('This plan kind cannot have a credit count');
+      }
+      if (r.monthlyPrice.trim() !== '' && monthlyPriceCents === null) {
+        throw new Error('Invalid price');
+      }
+      if (noticePeriodDays !== null && (isNaN(noticePeriodDays) || noticePeriodDays < 0)) {
+        throw new Error('Invalid notice period');
+      }
 
-        // A programming-only plan books nothing, so it carries no
-        // class-type allowlist regardless of what the editor held
-        // before the kind switch.
-        const desiredCoverage =
-          r.kind === 'programming_only'
-            ? []
-            : r.coverageMode === 'specific'
-              ? r.classTypeIds
-              : [];
-        if (
-          r.kind !== 'programming_only' &&
-          r.coverageMode === 'specific' &&
-          desiredCoverage.length === 0
-        ) {
-          throw new Error(
-            `${name}: pick at least one class type, or choose All classes`,
-          );
-        }
+      // A programming-only plan books nothing, so it carries no
+      // class-type allowlist regardless of what the editor held
+      // before the kind switch.
+      const desiredCoverage =
+        r.kind === 'programming_only'
+          ? []
+          : r.coverageMode === 'specific'
+            ? r.classTypeIds
+            : [];
+      if (
+        r.kind !== 'programming_only' &&
+        r.coverageMode === 'specific' &&
+        desiredCoverage.length === 0
+      ) {
+        throw new Error('Pick at least one class type, or choose All classes');
+      }
 
-        let planId = r.serverId;
-        if (r.serverId === null) {
-          const payload: {
-            gym_id: string;
-            name: string;
-            kind: PlanKind;
-            credit_count: number | null;
-            monthly_price_cents: number | null;
-            notice_period_days: number | null;
-            includes_individual_programming: boolean;
-            period_length?: string;
-          } = {
-            gym_id: membership.gymId,
+      let planId = r.serverId;
+      if (r.serverId === null) {
+        const payload: {
+          gym_id: string;
+          name: string;
+          kind: PlanKind;
+          credit_count: number | null;
+          monthly_price_cents: number | null;
+          notice_period_days: number | null;
+          includes_individual_programming: boolean;
+          period_length?: string;
+        } = {
+          gym_id: membership.gymId,
+          name,
+          kind: r.kind,
+          credit_count: creditCount,
+          monthly_price_cents: monthlyPriceCents,
+          notice_period_days: noticePeriodDays,
+          includes_individual_programming: effectiveIncludesProgramming(r),
+        };
+        if (r.kind === 'credit_period') {
+          payload.period_length = '30 days';
+        }
+        const { data: inserted, error } = await supabase
+          .from('membership_plans')
+          .insert(payload)
+          .select('plan_id')
+          .single();
+        if (error) throw error;
+        planId = (inserted as { plan_id: string }).plan_id;
+      } else if (rowDiffers(r)) {
+        const { error } = await supabase
+          .from('membership_plans')
+          .update({
             name,
             kind: r.kind,
             credit_count: creditCount,
             monthly_price_cents: monthlyPriceCents,
             notice_period_days: noticePeriodDays,
             includes_individual_programming: effectiveIncludesProgramming(r),
-          };
-          if (r.kind === 'credit_period') {
-            payload.period_length = '30 days';
-          }
-          const { data: inserted, error } = await supabase
-            .from('membership_plans')
-            .insert(payload)
-            .select('plan_id')
-            .single();
-          if (error) throw error;
-          planId = (inserted as { plan_id: string }).plan_id;
-        } else if (rowDiffers(r)) {
+            period_length: r.kind === 'credit_period' ? '30 days' : null,
+          })
+          .eq('plan_id', r.serverId);
+        if (error) throw error;
+      }
+
+      // Reconcile the class-type allowlist (same owner gate as the plan
+      // write). Empty desired set = covers all classes.
+      if (planId) {
+        const pid = planId;
+        const desiredSet = new Set(desiredCoverage);
+        const currentSet = new Set(r.serverClassTypeIds);
+        const toRemove = r.serverClassTypeIds.filter((id) => !desiredSet.has(id));
+        const toAdd = desiredCoverage.filter((id) => !currentSet.has(id));
+        if (toRemove.length > 0) {
           const { error } = await supabase
-            .from('membership_plans')
-            .update({
-              name,
-              kind: r.kind,
-              credit_count: creditCount,
-              monthly_price_cents: monthlyPriceCents,
-              notice_period_days: noticePeriodDays,
-              includes_individual_programming: effectiveIncludesProgramming(r),
-              period_length: r.kind === 'credit_period' ? '30 days' : null,
-            })
-            .eq('plan_id', r.serverId);
+            .from('plan_class_types')
+            .delete()
+            .eq('plan_id', pid)
+            .in('class_type_id', toRemove);
           if (error) throw error;
         }
-
-        // Reconcile the class-type allowlist (same owner gate as the plan
-        // write). Empty desired set = covers all classes.
-        if (planId) {
-          const pid = planId;
-          const desiredSet = new Set(desiredCoverage);
-          const currentSet = new Set(r.serverClassTypeIds);
-          const toRemove = r.serverClassTypeIds.filter(
-            (id) => !desiredSet.has(id),
-          );
-          const toAdd = desiredCoverage.filter((id) => !currentSet.has(id));
-          if (toRemove.length > 0) {
-            const { error } = await supabase
-              .from('plan_class_types')
-              .delete()
-              .eq('plan_id', pid)
-              .in('class_type_id', toRemove);
-            if (error) throw error;
-          }
-          if (toAdd.length > 0) {
-            const { error } = await supabase
-              .from('plan_class_types')
-              .insert(
-                toAdd.map((class_type_id) => ({ plan_id: pid, class_type_id })),
-              );
-            if (error) throw error;
-          }
+        if (toAdd.length > 0) {
+          const { error } = await supabase
+            .from('plan_class_types')
+            .insert(toAdd.map((class_type_id) => ({ plan_id: pid, class_type_id })));
+          if (error) throw error;
         }
       }
+
+      const snapshot: ServerPlan = {
+        plan_id: planId!,
+        name,
+        kind: r.kind,
+        credit_count: creditCount,
+        monthly_price_cents: monthlyPriceCents,
+        notice_period_days: noticePeriodDays,
+        includes_individual_programming: effectiveIncludesProgramming(r),
+        archived_at: r.archivedAt,
+      };
+      return { localId: r.localId, snapshot, desiredCoverage };
     },
-    onSuccess: () => {
-      setSaveError(null);
-      markSaved();
+    onSuccess: ({ localId, snapshot, desiredCoverage }) => {
+      setSaveErrors((curr) => {
+        if (!(localId in curr)) return curr;
+        const next = { ...curr };
+        delete next[localId];
+        return next;
+      });
+      setSavedLocalId(localId);
+      // Patch just this row locally instead of re-seeding from a refetch —
+      // a refetch-driven reseed would also overwrite any other card's
+      // still-unsaved edits.
+      setRows((curr) =>
+        curr.map((row) =>
+          row.localId === localId
+            ? {
+                ...row,
+                serverId: snapshot.plan_id,
+                serverSnapshot: snapshot,
+                serverClassTypeIds: desiredCoverage,
+              }
+            : row,
+        ),
+      );
       queryClient.invalidateQueries({ queryKey: ['membership-plans'] });
-      queryClient.invalidateQueries({ queryKey: ['plan-coverage'] });
     },
-    onError: (e) => setSaveError(errorMessage(e, 'Save failed')),
+    onError: (e, r) => {
+      setSaveErrors((curr) => ({ ...curr, [r.localId]: errorMessage(e, 'Save failed') }));
+    },
   });
 
   if (canEdit === false) {
@@ -434,12 +502,14 @@ export function PlansPanel() {
     );
   }
 
+  // New plans land right under the "Add plan" CTA, not at the bottom of
+  // whatever list of existing plans the gym already has.
   function addRow() {
-    setRows([
-      ...rows,
+    setRows((curr) => [
       {
         serverId: null,
         localId: `new-${Math.random().toString(36).slice(2, 8)}`,
+        resetNonce: 0,
         name: '',
         kind: 'unlimited',
         creditCount: '',
@@ -452,7 +522,32 @@ export function PlansPanel() {
         archivedAt: null,
         serverSnapshot: null,
       },
+      ...curr,
     ]);
+  }
+
+  // A brand-new, never-saved card is discarded outright; an existing plan
+  // reverts its editable fields back to its last-saved snapshot.
+  function undoRow(target: EditablePlan) {
+    setSaveErrors((curr) => {
+      if (!(target.localId in curr)) return curr;
+      const next = { ...curr };
+      delete next[target.localId];
+      return next;
+    });
+    if (target.serverId === null) {
+      setRows((curr) => curr.filter((r) => r.localId !== target.localId));
+      return;
+    }
+    if (!target.serverSnapshot) return;
+    const clean = fromServer(
+      target.serverSnapshot,
+      target.serverClassTypeIds,
+      target.resetNonce + 1,
+    );
+    setRows((curr) =>
+      curr.map((r) => (r.localId === target.localId ? clean : r)),
+    );
   }
 
   function hasDeps(id: string | null): boolean {
@@ -549,6 +644,11 @@ export function PlansPanel() {
               r.serverSnapshot &&
               r.creditCount.trim() !==
                 (r.serverSnapshot.credit_count?.toString() ?? '');
+            const dirty =
+              r.serverId === null || rowDiffers(r) || coverageDiffers(r);
+            const rowSaving = save.isPending && save.variables?.localId === r.localId;
+            const rowError = saveErrors[r.localId];
+            const rowSaved = savedLocalId === r.localId;
             return (
               <View
                 key={r.localId}
@@ -693,6 +793,7 @@ export function PlansPanel() {
                 </View>
                 {r.kind !== 'credit_pack' ? (
                   <DurationField
+                    key={`${r.localId}:${r.resetNonce}`}
                     label="Notice period"
                     blurb="How much notice a member gives to cancel — drives their cancel-by date. Leave blank for none."
                     value={r.noticePeriodDays}
@@ -812,6 +913,31 @@ export function PlansPanel() {
                 </View>
                 )}
 
+                {rowError ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                    {rowError}
+                  </Text>
+                ) : null}
+
+                {dirty ? (
+                  <View className="gap-2">
+                    <Button
+                      onPress={() => save.mutate(r)}
+                      loading={rowSaving}
+                      success={rowSaved}>
+                      Save changes
+                    </Button>
+                    <ChipButton
+                      className="self-start"
+                      tone="neutral"
+                      icon="arrow-undo-outline"
+                      label={r.serverId === null ? 'Discard new plan' : 'Undo changes'}
+                      onPress={() => undoRow(r)}
+                      disabled={rowSaving}
+                    />
+                  </View>
+                ) : null}
+
                 {r.serverId && canArchive ? (
                   <View className="flex-row gap-2 justify-end flex-wrap">
                     <ActionButton
@@ -835,20 +961,8 @@ export function PlansPanel() {
           })}
         </View>
 
-        {saveError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{saveError}</Text>
-        ) : null}
         {actionError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{actionError}</Text>
-        ) : null}
-
-        {activeRows.length > 0 ? (
-          <Button
-            onPress={() => save.mutate()}
-            loading={save.isPending}
-            success={saved}>
-            Save changes
-          </Button>
         ) : null}
 
         {archivedRows.length > 0 ? (
