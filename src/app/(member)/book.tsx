@@ -10,6 +10,7 @@ import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { MemberGetStartedChecklist } from '@/components/MemberGetStartedChecklist';
 import { PostClassLogPrompt } from '@/components/PostClassLogPrompt';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { invalidateBookingCaches } from '@/lib/bookings';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import {
@@ -207,11 +208,7 @@ function RecommendedClassCard() {
     onSuccess: () => {
       haptic.success();
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ['my-next-booking'] });
-      queryClient.invalidateQueries({ queryKey: ['my-future-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['my-future-bookings-set'] });
-      queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['recommended-class'] });
+      invalidateBookingCaches(queryClient);
     },
     onError: (e) => {
       if (isWaiverRequiredError(e)) {

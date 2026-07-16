@@ -11,6 +11,7 @@ import { CheckInButton } from '@/components/CheckInButton';
 import { ChipButton } from '@/components/ChipButton';
 import { StaffBookingSheet } from '@/components/StaffBookingSheet';
 import { useSession } from '@/lib/auth';
+import { invalidateBookingCaches } from '@/lib/bookings';
 import {
   errorMessage,
   isMembershipRequiredError,
@@ -274,7 +275,7 @@ export function ClassDetailModal({
       setError(null);
       setConfirming(null);
       setChosenEntitlement(null);
-      queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
+      invalidateBookingCaches(queryClient);
     },
     onError: (e) => {
       if (isWaiverRequiredError(e)) {
@@ -316,9 +317,7 @@ export function ClassDetailModal({
       haptic.warning();
       setError(null);
       setConfirming(null);
-      queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
-      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['my-next-booking'] });
+      invalidateBookingCaches(queryClient);
     },
     onError: (e) => {
       haptic.error();
