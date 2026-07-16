@@ -485,7 +485,13 @@ The Manage page presents a tab strip:
   `invited`); an **Imported** filter chip isolates them, and a caption
   above the list counts how many haven't signed up. `invited` rows show
   "waiting for sign-up" with no re-send (the edge function only targets
-  `pending`). The Members screen (`/management/members`) also hosts
+  `pending`). Tapping an imported card opens a **detail/edit page**
+  (`/management/members/imported/<id>`) where staff review and correct
+  the staged account before inviting — name, email, phone, DOB,
+  emergency contact, plan/credits/dates, tags, notes and a "do not
+  email" toggle, saved with a direct RLS-gated `pending_members` update;
+  the page also **sends the invite** (auto-saving edits first) and can
+  **delete** the staged row (e.g. to clear junk from a test import). The Members screen (`/management/members`) also hosts
   **member invites** [`can_invite`] — email a member, generate a code +
   QR, or use the front-desk walk-in QR (same card UI as staff invites
   on Team).

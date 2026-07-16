@@ -601,41 +601,50 @@ function PendingMemberCard({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-      <View className="flex-row items-center gap-3">
-        <Avatar name={row.full_name} size={36} />
-        <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            {row.full_name ?? row.email}
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Imported {row.created_at ? row.created_at.slice(0, 10) : '—'} · not
-            signed up
-          </Text>
-        </View>
-        <Badge label={invited ? 'Invited' : 'Imported'} color="#F59E0B" />
-      </View>
-      {planLabel ? (
-        <View className="flex-row flex-wrap gap-1">
-          <View className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
-            <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
-              {planLabel}
-            </Text>
-          </View>
-        </View>
-      ) : null}
-      {row.tags.length > 0 ? (
-        <View className="flex-row flex-wrap gap-1">
-          {row.tags.map((t, i) => (
-            <View
-              key={`t-${i}`}
-              className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
-              <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
-                {t}
+      <Link
+        href={{
+          pathname: '/management/members/imported/[id]',
+          params: { id: row.id },
+        }}
+        asChild>
+        <Pressable className="gap-2">
+          <View className="flex-row items-center gap-3">
+            <Avatar name={row.full_name} size={36} />
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                {row.full_name ?? row.email}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Imported {row.created_at ? row.created_at.slice(0, 10) : '—'} · not
+                signed up
               </Text>
             </View>
-          ))}
-        </View>
-      ) : null}
+            <Badge label={invited ? 'Invited' : 'Imported'} color="#F59E0B" />
+          </View>
+          {planLabel ? (
+            <View className="flex-row flex-wrap gap-1">
+              <View className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
+                <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
+                  {planLabel}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+          {row.tags.length > 0 ? (
+            <View className="flex-row flex-wrap gap-1">
+              {row.tags.map((t, i) => (
+                <View
+                  key={`t-${i}`}
+                  className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
+                  <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
+                    {t}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </Pressable>
+      </Link>
       {canSend && !invited ? (
         <View className="self-end items-end gap-1">
           <ChipButton
