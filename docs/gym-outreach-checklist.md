@@ -241,8 +241,17 @@ Left for you (policy/config, not code):
         Plans fix (commit `fb96319`, CI green) and Good Life
         Crossfit's Stripe Connect checkout flow work live, not just in
         tests.
-  - [ ] **Redline Hyrox** still needs the same: connect Stripe (test
-        mode) + publish a waiver/PAR-Q.
+  - [x] **Redline Hyrox** finished (2026-07-16): display name renamed to
+        "Redline Hyrox" (was seeded lowercase), a liability waiver
+        published (V1, gate armed), and Stripe connected — green "ready
+        to take payments". Note: connected via the **live** account
+        `acct_1TtnxkRHw1LVxbDD` (the same one Good Life uses and the £1
+        live-proof ran through), because the platform is on live keys so
+        Connect OAuth only offers live accounts — test-mode connect isn't
+        available through the app anymore. So both demo gyms share that
+        one live Stripe account, and a completed demo checkout is real
+        money (show the flow, don't complete a real charge unless you'll
+        refund it).
 - [x] **Decide Temple's pricing** — **£200/month, all-inclusive**,
       matching what the marketing site's stat strip and pricing page
       already commit to. The website builder add-on
