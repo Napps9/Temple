@@ -182,11 +182,15 @@ export default function ImportStripeScreen() {
 
       // A price already imported (same stripe_price_id) is reused, not
       // duplicated — so a re-run, or a retry after a partial failure,
-      // doesn't stack up copies of the same plan.
+      // doesn't stack up copies of the same plan. A DB partial unique
+      // index (0130) enforces this too; the check just keeps the reuse
+      // graceful instead of hitting a unique-violation. Non-archived
+      // only, matching the index scope.
       const { data: existing } = await supabase
         .from('membership_plans')
         .select('plan_id, stripe_price_id')
         .eq('gym_id', membership.gymId)
+        .is('archived_at', null)
         .not('stripe_price_id', 'is', null);
       const existingByPrice = new Map(
         (existing ?? []).map((p) => [p.stripe_price_id as string, p.plan_id]),
