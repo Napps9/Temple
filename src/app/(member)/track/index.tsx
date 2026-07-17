@@ -184,6 +184,8 @@ export default function TrackHome() {
           </Pressable>
         </View>
 
+        {journalCount.data === 0 ? <TrackHowItWorks /> : null}
+
         {(logNudge.data?.length ?? 0) > 0 ? (
           <View className="bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 gap-2">
             <View className="flex-row items-center gap-2">
@@ -307,6 +309,77 @@ function Stat({
       <Text className="text-gray-500 dark:text-gray-400 text-xs leading-4">
         {label}
       </Text>
+    </View>
+  );
+}
+
+// First-run orientation: a member with nothing logged yet lands on a
+// wall of similar-looking tiles with no sense of how they connect. This
+// lays out the flow in one line each and is gated by TrackHome on the
+// journal count, so it vanishes the moment they log their first session
+// and regulars never see it.
+function TrackHowItWorks() {
+  const colors = useThemeColors();
+  const steps: { icon: IoniconName; tint: string; title: string; desc: string }[] = [
+    {
+      icon: 'add-circle-outline',
+      tint: colors.primary,
+      title: 'Record',
+      desc: "Tap Record to log today's workout or an old PR.",
+    },
+    {
+      icon: 'book-outline',
+      tint: colors.primary,
+      title: 'Journal',
+      desc: 'Every session you log lands here as your history.',
+    },
+    {
+      icon: 'trending-up-outline',
+      tint: '#10B981',
+      title: 'Movements',
+      desc: 'PRs and best times build up under each movement you train.',
+    },
+    {
+      icon: 'trophy-outline',
+      tint: '#F59E0B',
+      title: 'Leaderboards',
+      desc: 'See how your lifts and times stack up against the gym.',
+    },
+  ];
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card border border-primary/20">
+      <View className="flex-row items-center gap-3">
+        <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
+          <Ionicons name="compass-outline" size={22} color={colors.primary} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            How Track works
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Your workouts, PRs and progress — all in one place.
+          </Text>
+        </View>
+      </View>
+      <View className="gap-3">
+        {steps.map((s) => (
+          <View key={s.title} className="flex-row items-start gap-3">
+            <View
+              style={{ backgroundColor: `${s.tint}26` }}
+              className="w-8 h-8 rounded-full items-center justify-center">
+              <Ionicons name={s.icon} size={16} color={s.tint} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                {s.title}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {s.desc}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
