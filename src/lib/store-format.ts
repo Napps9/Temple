@@ -30,3 +30,19 @@ export function productSoldOut(p: {
 export function intervalSuffix(interval: string): string {
   return interval === 'week' ? '/wk' : interval === 'year' ? '/yr' : '/mo';
 }
+
+// The ordered gallery for a product, as a clean string[]. image_urls is the
+// source of truth (first = cover); image_url is the legacy single-image
+// column, used as a fallback for any product saved before the gallery
+// existed. Blanks are dropped so a stray '' never renders an empty frame.
+export function productImages(p: {
+  image_urls?: string[] | null;
+  image_url?: string | null;
+}): string[] {
+  const gallery = (p.image_urls ?? []).map((u) => u?.trim()).filter(
+    (u): u is string => !!u,
+  );
+  if (gallery.length > 0) return gallery;
+  const cover = p.image_url?.trim();
+  return cover ? [cover] : [];
+}

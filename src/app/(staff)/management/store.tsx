@@ -9,6 +9,7 @@ import { Image, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { DraggableImageStrip } from '@/components/DraggableImageStrip';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
@@ -18,6 +19,7 @@ import {
   formatPriceInput,
   intervalSuffix,
   parsePriceToCents,
+  productImages,
   productSoldOut,
   useAdminStoreProducts,
   useCancelStoreSubscription,
@@ -38,6 +40,8 @@ type Tab = 'products' | 'orders' | 'subscriptions' | 'settings';
 
 const randomSuffix = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const MAX_IMAGES = 8;
 
 export default function StoreManageScreen() {
   const canManageStore = useCan('can_manage_store');
@@ -101,7 +105,7 @@ type Draft = {
   description: string;
   kind: 'physical' | 'digital';
   price: string;
-  image_url: string | null;
+  image_urls: string[];
   track_inventory: boolean;
   stock: string;
   digital_asset_path: string | null;
@@ -116,7 +120,7 @@ function blankDraft(): Draft {
     description: '',
     kind: 'physical',
     price: '',
-    image_url: null,
+    image_urls: [],
     track_inventory: true,
     stock: '0',
     digital_asset_path: null,
@@ -133,7 +137,7 @@ function draftFrom(p: AdminProduct): Draft {
     description: p.description ?? '',
     kind: p.kind,
     price: formatPriceInput(p.price_cents),
-    image_url: p.image_url,
+    image_urls: productImages(p),
     track_inventory: p.track_inventory,
     stock: p.stock_quantity != null ? String(p.stock_quantity) : '0',
     digital_asset_path: p.digital_asset_path,
@@ -191,9 +195,9 @@ function ProductsTab() {
             key={p.id}
             onPress={() => setEditing(draftFrom(p))}
             className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
-            {p.image_url ? (
+            {productImages(p)[0] ? (
               <Image
-                source={{ uri: p.image_url }}
+                source={{ uri: productImages(p)[0] }}
                 className="w-12 h-12 rounded-lg"
               />
             ) : (
@@ -266,25 +270,37 @@ function ProductEditor({
   const pickImage = useMutation({
     mutationFn: async () => {
       if (!gymId) throw new Error('No gym');
+      const remaining = MAX_IMAGES - d.image_urls.length;
+      if (remaining <= 0) throw new Error(`Up to ${MAX_IMAGES} photos per item`);
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) throw new Error('Photo library permission denied');
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
+        allowsMultipleSelection: true,
+        selectionLimit: remaining,
       });
       if (res.canceled || res.assets.length === 0) return;
-      const asset = res.assets[0];
-      const blob = await (await fetch(asset.uri)).blob();
-      const ext = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
-      const path = `${gymId}/images/${randomSuffix()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('store-product-images')
-        .upload(path, blob, { contentType: asset.mimeType ?? `image/${ext}` });
-      if (upErr) throw upErr;
-      const { data } = supabase.storage
-        .from('store-product-images')
-        .getPublicUrl(path);
-      set({ image_url: data.publicUrl });
+      const urls: string[] = [];
+      for (const asset of res.assets.slice(0, remaining)) {
+        const blob = await (await fetch(asset.uri)).blob();
+        const ext = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
+        const path = `${gymId}/images/${randomSuffix()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('store-product-images')
+          .upload(path, blob, { contentType: asset.mimeType ?? `image/${ext}` });
+        if (upErr) throw upErr;
+        const { data } = supabase.storage
+          .from('store-product-images')
+          .getPublicUrl(path);
+        urls.push(data.publicUrl);
+      }
+      if (urls.length > 0) {
+        setD((cur) => ({
+          ...cur,
+          image_urls: [...cur.image_urls, ...urls].slice(0, MAX_IMAGES),
+        }));
+      }
     },
     onError: (e) => setError(errorMessage(e, 'Could not upload image')),
   });
@@ -343,7 +359,11 @@ function ProductEditor({
         description: d.description.trim() || null,
         kind,
         price_cents: priceCents,
-        image_url: d.image_url,
+        image_urls: d.image_urls,
+        // Keep the legacy single-image column as the cover so the Stripe
+        // checkout line item and list thumbnails (both read image_url) stay
+        // in step with the gallery's first photo.
+        image_url: d.image_urls[0] ?? null,
         track_inventory: tracks,
         stock_quantity: stock,
         digital_asset_path: kind === 'digital' ? d.digital_asset_path : null,
@@ -526,33 +546,20 @@ function ProductEditor({
 
         <View className="gap-2">
           <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-            Photo
+            Photos
           </Text>
-          <View className="flex-row items-center gap-3">
-            {d.image_url ? (
-              <Image
-                source={{ uri: d.image_url }}
-                className="w-16 h-16 rounded-lg"
-              />
-            ) : (
-              <View className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
-                <Ionicons name="image-outline" size={22} color={colors.iconTertiary} />
-              </View>
-            )}
-            <ChipButton
-              tone="neutral"
-              label={
-                pickImage.isPending
-                  ? 'Uploading…'
-                  : d.image_url
-                    ? 'Change photo'
-                    : 'Upload photo'
-              }
-              icon="camera-outline"
-              onPress={() => pickImage.mutate()}
-              disabled={pickImage.isPending}
-            />
-          </View>
+          <DraggableImageStrip
+            images={d.image_urls}
+            onChange={(next) => set({ image_urls: next })}
+            onAdd={() => pickImage.mutate()}
+            uploading={pickImage.isPending}
+            max={MAX_IMAGES}
+          />
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            {pickImage.isPending
+              ? 'Uploading…'
+              : 'The first photo is the cover. Long-press a photo to drag and reorder.'}
+          </Text>
         </View>
 
         {d.kind === 'digital' ? (

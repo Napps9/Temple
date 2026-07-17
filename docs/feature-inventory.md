@@ -138,8 +138,10 @@ downloads in-app and via a 7-day signed link in the receipt email) — and
 rental, or a **physical subscription box** shipped every cycle.
 
 - **Member side** (`/store`, linked from Account when the store is on) —
-  branded product grid with photo, price, stock ("3 left") and a **Sold
-  out** state once a tracked item hits zero. Buy opens Stripe Checkout on
+  branded product grid; each item shows a swipeable photo gallery (dots
+  when there's more than one) that opens a **full-screen viewer** on tap —
+  swipe between images, pinch or double-tap to zoom. Plus price, stock
+  ("3 left") and a **Sold out** state once a tracked item hits zero. Buy opens Stripe Checkout on
   the gym's connected account (direct charge, no platform fee — the same
   rails as memberships). `/purchases` lists past orders with their lines,
   totals, shipping status and re-downloadable digital goods.
@@ -154,8 +156,9 @@ rental, or a **physical subscription box** shipped every cycle.
   ship — so cycles flow through receipts, purchases, fulfilment and revenue.
   Staff see active subscribers, and can cancel, on a **Subscriptions** tab.
 - **Staff side** (Manage → Store) [`can_manage_store`] — add / price /
-  hide / remove products, mark one recurring, upload a photo and (for
-  digital) the download file, set stock; an orders queue with the buyer,
+  hide / remove products, mark one recurring, upload up to 8 photos (drag
+  to reorder; the first is the cover) and (for digital) the download file,
+  set stock; an orders queue with the buyer,
   items, shipping address and a **Mark shipped / done** action; a **Sales
   this month** tile [`can_see_store_revenue`].
 - **Owner settings** — switch the store on and set the shipping fee
@@ -164,7 +167,9 @@ rental, or a **physical subscription box** shipped every cycle.
   revenue from the Team → role-permissions editor.
 - **Under the hood (0085–0087)** — `store_products` / `store_orders` /
   `store_order_items` / `store_digital_deliveries` / `store_subscriptions`,
-  all `gym_id`-RLS; the member catalogue reads through `list_store_products`
+  all `gym_id`-RLS; products carry an ordered `image_urls` gallery (0134,
+  capped at 8; `image_url` kept as the cover for Stripe + thumbnails); the
+  member catalogue reads through `list_store_products`
   (which hides the asset path so the deliverable can't leak).
   `store-checkout` builds the session (one-off payment, or subscription mode
   on a cached recurring Price, collecting an address for a box), validating

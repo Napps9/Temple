@@ -5,12 +5,14 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ImageGalleryModal } from '@/components/ImageGalleryModal';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import {
   intervalSuffix,
+  productImages,
   useGymStoreConfig,
   useMyStoreSubscriptions,
   useStartStoreCheckout,
@@ -139,6 +141,79 @@ export default function StoreScreen() {
   );
 }
 
+// Product photos: a single cover, or a swipeable carousel with dots when
+// there's more than one. Tapping any image opens the full-screen gallery.
+function ProductImages({
+  images,
+  onOpen,
+}: {
+  images: string[];
+  onOpen: (index: number) => void;
+}) {
+  const [w, setW] = useState(0);
+  const [page, setPage] = useState(0);
+
+  if (images.length === 0) return null;
+  if (images.length === 1) {
+    return (
+      <Pressable
+        onPress={() => onOpen(0)}
+        accessibilityRole="imagebutton"
+        accessibilityLabel="View photo">
+        <Image
+          source={{ uri: images[0] }}
+          className="w-full h-44"
+          resizeMode="cover"
+        />
+      </Pressable>
+    );
+  }
+
+  return (
+    <View
+      className="relative"
+      onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          if (w <= 0) return;
+          const p = Math.round(e.nativeEvent.contentOffset.x / w);
+          if (p !== page) setPage(p);
+        }}>
+        {images.map((uri, i) => (
+          <Pressable
+            key={`${uri}-${i}`}
+            onPress={() => onOpen(i)}
+            style={{ width: w }}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`View photo ${i + 1} of ${images.length}`}>
+            <Image
+              source={{ uri }}
+              style={{ width: w, height: 176 }}
+              resizeMode="cover"
+            />
+          </Pressable>
+        ))}
+      </ScrollView>
+      <View
+        pointerEvents="none"
+        className="absolute bottom-2 left-0 right-0 flex-row justify-center gap-1.5">
+        {images.map((_, i) => (
+          <View
+            key={i}
+            className={`w-1.5 h-1.5 rounded-full ${
+              i === page ? 'bg-white' : 'bg-white/50'
+            }`}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function maxQuantityFor(p: StoreProduct): number {
   if (p.sold_out) return 0;
   if (p.track_inventory) return Math.min(p.stock_quantity ?? 1, 99);
@@ -163,6 +238,9 @@ function ProductCard({
   const colors = useThemeColors();
   const max = maxQuantityFor(product);
   const [qty, setQty] = useState(1);
+  const images = productImages(product);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryStart, setGalleryStart] = useState(0);
   const clamped = Math.min(qty, Math.max(1, max));
   const priceLabel = product.recurring
     ? `${formatMoney(product.price_cents, currency)}${intervalSuffix(
@@ -179,13 +257,19 @@ function ProductCard({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-card">
-      {product.image_url ? (
-        <Image
-          source={{ uri: product.image_url }}
-          className="w-full h-44"
-          resizeMode="cover"
-        />
-      ) : null}
+      <ProductImages
+        images={images}
+        onOpen={(i) => {
+          setGalleryStart(i);
+          setGalleryOpen(true);
+        }}
+      />
+      <ImageGalleryModal
+        visible={galleryOpen}
+        images={images}
+        initialIndex={galleryStart}
+        onClose={() => setGalleryOpen(false)}
+      />
       <View className="p-4 gap-2">
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">

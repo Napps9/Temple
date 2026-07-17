@@ -3,7 +3,7 @@
 -- authorisation, and owner-only store settings.
 
 begin;
-select plan(18);
+select plan(21);
 
 \ir _helpers.psql
 
@@ -166,6 +166,35 @@ select throws_ok(
   null,
   'Not allowed',
   'a coach cannot read the staff order queue');
+
+-- 19-21. Product image galleries (0134). Admin manages the store, so the
+-- gallery is written through the same RLS-gated update path staff use.
+do $$ begin perform _test_act_as(current_setting('test.admin')::uuid); end $$;
+
+select is(
+  (select image_urls from public.store_products
+   where id = current_setting('test.phys')::uuid),
+  '{}'::text[],
+  'a product with no photos has an empty gallery by default');
+
+update public.store_products
+  set image_urls = array['https://img/a.jpg', 'https://img/b.jpg'],
+      image_url  = 'https://img/a.jpg'
+  where id = current_setting('test.phys')::uuid;
+
+select is(
+  (select image_urls from public.list_store_products(current_setting('test.gym')::uuid)
+   where name = 'Water bottle'),
+  array['https://img/a.jpg', 'https://img/b.jpg'],
+  'the member catalogue returns the ordered image gallery');
+
+select throws_ok(
+  format($$ update public.store_products
+    set image_urls = array['1','2','3','4','5','6','7','8','9']
+    where id = %L::uuid $$, current_setting('test.phys')),
+  '23514',
+  null,
+  'a gallery of more than 8 photos is rejected by the check constraint');
 
 select * from finish();
 rollback;

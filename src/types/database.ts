@@ -3175,6 +3175,7 @@ export type Database = {
           kind: StoreProductKind;
           price_cents: number;
           image_url: string | null;
+          image_urls: string[];
           track_inventory: boolean;
           stock_quantity: number | null;
           digital_asset_path: string | null;
@@ -3195,6 +3196,7 @@ export type Database = {
           kind: StoreProductKind;
           price_cents: number;
           image_url?: string | null;
+          image_urls?: string[];
           track_inventory?: boolean;
           stock_quantity?: number | null;
           digital_asset_path?: string | null;
@@ -3213,6 +3215,7 @@ export type Database = {
           kind: StoreProductKind;
           price_cents: number;
           image_url: string | null;
+          image_urls: string[];
           track_inventory: boolean;
           stock_quantity: number | null;
           digital_asset_path: string | null;
@@ -4290,6 +4293,7 @@ export type Database = {
           kind: StoreProductKind;
           price_cents: number;
           image_url: string | null;
+          image_urls: string[];
           track_inventory: boolean;
           stock_quantity: number | null;
           sold_out: boolean;

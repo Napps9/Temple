@@ -4,6 +4,7 @@ import {
   formatPriceInput,
   intervalSuffix,
   parsePriceToCents,
+  productImages,
   productSoldOut,
 } from './store-format';
 
@@ -60,5 +61,30 @@ describe('intervalSuffix', () => {
     expect(intervalSuffix('week')).toBe('/wk');
     expect(intervalSuffix('year')).toBe('/yr');
     expect(intervalSuffix('whatever')).toBe('/mo');
+  });
+});
+
+describe('productImages', () => {
+  it('uses the ordered gallery when present', () => {
+    expect(
+      productImages({ image_urls: ['a', 'b', 'c'], image_url: 'a' }),
+    ).toEqual(['a', 'b', 'c']);
+  });
+
+  it('falls back to the legacy cover when the gallery is empty', () => {
+    expect(productImages({ image_urls: [], image_url: 'cover' })).toEqual([
+      'cover',
+    ]);
+    expect(
+      productImages({ image_urls: null, image_url: 'cover' }),
+    ).toEqual(['cover']);
+  });
+
+  it('drops blanks and trims, and returns [] when there is nothing', () => {
+    expect(
+      productImages({ image_urls: [' a ', '', '  '], image_url: null }),
+    ).toEqual(['a']);
+    expect(productImages({ image_urls: [], image_url: '  ' })).toEqual([]);
+    expect(productImages({})).toEqual([]);
   });
 });

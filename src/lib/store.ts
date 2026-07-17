@@ -14,6 +14,7 @@ export {
   formatPriceInput,
   intervalSuffix,
   parsePriceToCents,
+  productImages,
   productSoldOut,
 } from '@/lib/store-format';
 
@@ -54,6 +55,7 @@ export type StoreProduct = {
   kind: StoreProductKind;
   price_cents: number;
   image_url: string | null;
+  image_urls: string[];
   track_inventory: boolean;
   stock_quantity: number | null;
   sold_out: boolean;
@@ -244,6 +246,7 @@ export type AdminProduct = {
   kind: StoreProductKind;
   price_cents: number;
   image_url: string | null;
+  image_urls: string[];
   track_inventory: boolean;
   stock_quantity: number | null;
   digital_asset_path: string | null;
@@ -261,7 +264,7 @@ export function useAdminStoreProducts(gymId: string | undefined) {
       const { data, error } = await supabase
         .from('store_products')
         .select(
-          'id, name, description, kind, price_cents, image_url, track_inventory, stock_quantity, digital_asset_path, active, archived_at, recurring, recurring_interval',
+          'id, name, description, kind, price_cents, image_url, image_urls, track_inventory, stock_quantity, digital_asset_path, active, archived_at, recurring, recurring_interval',
         )
         .eq('gym_id', gymId!)
         .is('archived_at', null)
