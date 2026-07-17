@@ -622,6 +622,7 @@ export function RecordWorkoutModal({
       setError(null);
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['tracked-journal'] });
+      queryClient.invalidateQueries({ queryKey: ['tracked-journal-count'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-movement'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-group'] });
       setTimeout(() => close(), 600);
