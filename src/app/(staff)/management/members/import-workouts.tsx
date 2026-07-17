@@ -14,9 +14,15 @@ import {
   autoDetect,
   buildResults,
   looksLikeScoredResults,
+  movementVocab,
   WORKOUT_FIELD_LABELS,
   type WorkoutField,
 } from '@/lib/import/workout-columns';
+import {
+  overridesFrom,
+  resolveMovements,
+  type MovementResolution,
+} from '@/lib/import/resolve-movements';
 import { supabase } from '@/lib/supabase';
 import { useThemePreference, useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
@@ -57,6 +63,10 @@ const FIELD_OPTIONS: { key: WorkoutField | 'ignore'; label: string }[] = [
   }))),
 ];
 
+const MOVEMENT_NAME_BY_KEY = new Map(
+  movementVocab().map((v) => [v.key, v.name]),
+);
+
 export default function ImportWorkoutsScreen() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
@@ -69,6 +79,11 @@ export default function ImportWorkoutsScreen() {
   const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
+  // AI movement resolution: suggestions returned, which the owner has
+  // accepted, and the applied override map buildResults re-resolves with.
+  const [aiResolutions, setAiResolutions] = useState<MovementResolution[]>([]);
+  const [accepted, setAccepted] = useState<Set<string>>(new Set());
+  const [overrides, setOverrides] = useState<Map<string, string>>(new Map());
 
   const parsed = useMemo(() => (csvText ? parseCsv(csvText) : []), [csvText]);
   const headers = parsed[0] ?? [];
@@ -90,8 +105,9 @@ export default function ImportWorkoutsScreen() {
       headers,
       mapping.map((m) => (m === 'ignore' ? null : m)) as (WorkoutField | null)[],
       rows,
+      overrides,
     );
-  }, [rows, headers, mapping, phase]);
+  }, [rows, headers, mapping, phase, overrides]);
 
   const readyCount = built.weighted.length + built.sections.length;
 
@@ -106,10 +122,38 @@ export default function ImportWorkoutsScreen() {
       const p = parseCsv(text);
       const auto = autoDetect(p[0] ?? [], p.slice(1));
       setMapping(auto.map((f) => f ?? 'ignore'));
+      setOverrides(new Map());
+      setAiResolutions([]);
+      setAccepted(new Set());
       setPhase('map');
     };
     reader.onerror = () => setError("Couldn't read that file.");
     reader.readAsText(file);
+  }
+
+  const resolve = useMutation({
+    mutationFn: async (): Promise<MovementResolution[]> => {
+      if (!membership) return [];
+      return resolveMovements(
+        membership.gymId,
+        built.misses.map((m) => m.value),
+      );
+    },
+    onSuccess: (res) => {
+      setAiResolutions(res);
+      setAccepted(new Set(res.map((r) => r.name)));
+    },
+  });
+
+  function applyMatches() {
+    const chosen = aiResolutions.filter((r) => accepted.has(r.name));
+    setOverrides((prev) => {
+      const next = new Map(prev);
+      for (const [k, v] of overridesFrom(chosen)) next.set(k, v);
+      return next;
+    });
+    setAiResolutions([]);
+    setAccepted(new Set());
   }
 
   const commit = useMutation({
@@ -403,17 +447,72 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.misses.length > 0 ? (
-              <View className="gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+              <View className="gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
                 <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
                   Unknown movements (dropped)
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
                   {dedupeMisses(built.misses.map((m) => m.value)).join(', ')}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Rename these in the CSV to match the vocab (e.g. "back squat",
-                  "deadlift", "overhead squat") and re-import.
+                {resolve.isSuccess && (resolve.data?.length ?? 0) === 0 ? (
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    AI couldn’t confidently match these — rename them in the CSV
+                    (e.g. “back squat”) and re-import.
+                  </Text>
+                ) : aiResolutions.length === 0 ? (
+                  <>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      Rename these in the CSV to match the vocab, or let AI match
+                      them for you.
+                    </Text>
+                    <Button
+                      variant="secondary"
+                      onPress={() => resolve.mutate()}
+                      loading={resolve.isPending}>
+                      Match with AI
+                    </Button>
+                  </>
+                ) : null}
+              </View>
+            ) : null}
+
+            {aiResolutions.length > 0 ? (
+              <View className="gap-2 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3">
+                <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                  AI matches — tick the ones to apply
                 </Text>
+                {aiResolutions.map((r) => {
+                  const on = accepted.has(r.name);
+                  return (
+                    <Pressable
+                      key={r.name}
+                      onPress={() =>
+                        setAccepted((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(r.name)) next.delete(r.name);
+                          else next.add(r.name);
+                          return next;
+                        })
+                      }
+                      className="flex-row items-center gap-2 active:opacity-70">
+                      <Ionicons
+                        name={on ? 'checkbox' : 'square-outline'}
+                        size={18}
+                        color={on ? colors.primary : colors.iconTertiary}
+                      />
+                      <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm">
+                        {r.name} → {MOVEMENT_NAME_BY_KEY.get(r.key) ?? r.key}
+                        <Text className="text-gray-400 dark:text-gray-500">
+                          {'  '}
+                          ({r.confidence})
+                        </Text>
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                <Button onPress={applyMatches} disabled={accepted.size === 0}>
+                  Apply {accepted.size} match{accepted.size === 1 ? '' : 'es'}
+                </Button>
               </View>
             ) : null}
 
@@ -476,6 +575,9 @@ export default function ImportWorkoutsScreen() {
                   setCsvText('');
                   setResult(null);
                   setMapping([]);
+                  setOverrides(new Map());
+                  setAiResolutions([]);
+                  setAccepted(new Set());
                 }}>
                 Import another file
               </Button>

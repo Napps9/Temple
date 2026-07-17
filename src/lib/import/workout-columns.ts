@@ -144,10 +144,30 @@ const MOVEMENT_INDEX: Map<string, string> = (() => {
   return m;
 })();
 
-export function matchMovement(name: string): string | null {
+export function matchMovement(
+  name: string,
+  overrides?: Map<string, string>,
+): string | null {
   const n = normalise(name);
   if (!n) return null;
+  if (overrides && overrides.has(n)) return overrides.get(n) ?? null;
   return MOVEMENT_INDEX.get(n) ?? null;
+}
+
+// Shared normaliser so a caller can key an override map the same way
+// matchMovement looks it up (the AI resolver's accepted matches).
+export function normaliseMovementName(s: string): string {
+  return normalise(s);
+}
+
+// Flat {key, name} list of the movement vocabulary — the payload the AI
+// resolver needs to map messy export names onto real movement keys.
+export function movementVocab(): { key: string; name: string }[] {
+  const out: { key: string; name: string }[] = [];
+  for (const g of MOVEMENT_GROUPS) {
+    for (const mv of g.movements) out.push({ key: mv.key, name: mv.name });
+  }
+  return out;
 }
 
 // Snapshot used by the preview's "couldn't match" callout so the owner
@@ -173,6 +193,7 @@ export function buildWorkoutRows(
   headers: string[],
   mapping: (WorkoutField | null)[],
   rows: string[][],
+  overrides?: Map<string, string>,
 ): { ready: ImportWorkoutRow[]; misses: MovementMiss[]; skippedNoEmail: number; skippedNoDate: number } {
   const out: ImportWorkoutRow[] = [];
   const misses: MovementMiss[] = [];
@@ -234,7 +255,7 @@ export function buildWorkoutRows(
       skippedNoDate += 1;
       continue;
     }
-    const key = movement ? matchMovement(movement) : null;
+    const key = movement ? matchMovement(movement, overrides) : null;
     if (!key) {
       if (movement) misses.push({ value: movement, rowIndex: i });
       continue;
@@ -450,6 +471,7 @@ export function buildResults(
   headers: string[],
   mapping: (WorkoutField | null)[],
   rows: string[][],
+  overrides?: Map<string, string>,
 ): ImportResults {
   const hasScoreType = mapping.includes('score_type');
   const weightedRows: string[][] = [];
@@ -465,7 +487,20 @@ export function buildResults(
     else weightedRows.push(cells);
   }
 
-  const weighted = buildWorkoutRows(headers, mapping, weightedRows);
+  // In a results export a FOR_WEIGHT row's load sits in Score Value, not a
+  // dedicated Weight column. When no Weight column is mapped, read Score
+  // Value as the weight for the weighted bucket (sections read it directly,
+  // so they're unaffected).
+  const weightedMapping =
+    !mapping.includes('weight') && mapping.includes('score_value')
+      ? mapping.map((m) => (m === 'score_value' ? 'weight' : m))
+      : mapping;
+  const weighted = buildWorkoutRows(
+    headers,
+    weightedMapping,
+    weightedRows,
+    overrides,
+  );
   const sections = buildSectionRows(headers, mapping, sectionRows);
 
   return {

@@ -425,6 +425,115 @@ async function handleColumnMapping(
     : json({ mapping: null, source: 'fallback' });
 }
 
+// --- AI movement resolution (PII-free) -------------------------------
+// Resolve a workout export's unmatched movement / benchmark / station
+// names to Temple's movement vocabulary. Input is the DEDUPED distinct
+// names (a handful of strings) plus the vocab (key + display name) —
+// never per-member rows, and names are generic gym vocabulary, not PII.
+// Each name maps to a vocab key or 'unknown'. Client falls back to
+// leaving the names unresolved whenever this returns nothing.
+type VocabEntry = { key: string; name: string };
+
+async function callClaudeForMovements(
+  apiKey: string,
+  names: string[],
+  vocab: VocabEntry[],
+): Promise<{ name: string; key: string; confidence: string }[] | null> {
+  const vocabKeys = vocab.map((v) => v.key);
+  const systemPrompt =
+    'You map messy movement / benchmark / Hyrox-station names from a gym ' +
+    "workout export to Temple's movement vocabulary. For each input name, pick " +
+    'the single vocab key that means the same exercise, or "unknown" when none ' +
+    'genuinely matches. Named CrossFit benchmarks ("Fran", "Cindy") are NOT ' +
+    'movements — return "unknown" for those. Resolve obvious variants and ' +
+    'qualifiers: "Back Squat 1RM" is the back squat, "SkiErg 1000m" is the ski ' +
+    'erg station, "Rowing" is the row. Be conservative — a wrong match pollutes ' +
+    'a member\'s PR history, so prefer "unknown" when unsure. Set confidence ' +
+    'high/medium/low.';
+
+  const toolSchema = {
+    type: 'object',
+    properties: {
+      resolutions: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            key: { type: 'string', enum: [...vocabKeys, 'unknown'] },
+            confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+          },
+          required: ['name', 'key', 'confidence'],
+        },
+      },
+    },
+    required: ['resolutions'],
+  };
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        system: systemPrompt,
+        tools: [
+          {
+            name: 'emit_resolutions',
+            description: 'Emit the name-to-vocab-key resolutions.',
+            input_schema: toolSchema,
+          },
+        ],
+        tool_choice: { type: 'tool', name: 'emit_resolutions' },
+        messages: [{ role: 'user', content: JSON.stringify({ names, vocab }) }],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const toolUse = (data.content ?? []).find(
+      (b: { type: string }) => b.type === 'tool_use',
+    );
+    if (!toolUse) return null;
+    const parsed = toolUse.input as {
+      resolutions?: { name: string; key: string; confidence: string }[];
+    };
+    return Array.isArray(parsed.resolutions) ? parsed.resolutions : null;
+  } catch {
+    return null;
+  }
+}
+
+async function handleResolveMovements(
+  body: { names?: unknown; vocab?: unknown },
+  apiKey: string | undefined,
+): Promise<Response> {
+  const names: string[] = Array.isArray(body.names)
+    ? (body.names as unknown[]).filter((n): n is string => typeof n === 'string')
+    : [];
+  const vocab: VocabEntry[] = Array.isArray(body.vocab)
+    ? (body.vocab as VocabEntry[]).filter(
+        (v) => v && typeof v.key === 'string' && typeof v.name === 'string',
+      )
+    : [];
+  if (!apiKey || names.length === 0 || vocab.length === 0) {
+    return json({ resolutions: [], source: 'fallback' });
+  }
+  const resolutions = await callClaudeForMovements(apiKey, names, vocab);
+  // Never surface an 'unknown' mapping as a resolution — the client only
+  // wants confident matches; unresolved names stay in the miss list.
+  const kept = (resolutions ?? []).filter(
+    (r) => r.key && r.key !== 'unknown' && vocab.some((v) => v.key === r.key),
+  );
+  return resolutions
+    ? json({ resolutions: kept, source: 'ai' })
+    : json({ resolutions: [], source: 'fallback' });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -464,6 +573,11 @@ Deno.serve(async (req: Request) => {
   // AI column mapping is a separate, PII-free request shape.
   if (body.mode === 'map_columns') {
     return await handleColumnMapping(body, ANTHROPIC_API_KEY);
+  }
+
+  // AI movement resolution — also PII-free (deduped names + vocab only).
+  if (body.mode === 'resolve_movements') {
+    return await handleResolveMovements(body, ANTHROPIC_API_KEY);
   }
 
   if (!Array.isArray(body.plans)) {

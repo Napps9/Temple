@@ -7,6 +7,8 @@ import {
   classifyScoreType,
   looksLikeScoredResults,
   matchMovement,
+  movementVocab,
+  normaliseMovementName,
   parseRoundsReps,
   parseTimeToSeconds,
 } from './workout-columns';
@@ -246,5 +248,49 @@ describe('buildResults', () => {
     expect(r.sections).toHaveLength(0);
     expect(r.weighted).toHaveLength(1);
     expect(r.weighted[0]?.movement_key).toBe('back_squat');
+  });
+
+  it('applies AI overrides so a previously-missed movement resolves', () => {
+    const headers = ['Email', 'Name', 'Date', 'Score Type', 'Score Value', 'Unit'];
+    const mapping = [
+      'email',
+      'movement',
+      'date',
+      'score_type',
+      'score_value',
+      null,
+    ] as const;
+    const rows = [
+      ['izzy@x.com', 'Back Squat 1RM', '2026-07-14', 'FOR_WEIGHT', '140', 'kg'],
+    ];
+    const before = buildResults(headers, mapping as never, rows);
+    expect(before.weighted).toHaveLength(0);
+    expect(before.misses).toHaveLength(1);
+
+    const overrides = new Map([
+      [normaliseMovementName('Back Squat 1RM'), 'back_squat'],
+    ]);
+    const after = buildResults(headers, mapping as never, rows, overrides);
+    expect(after.misses).toHaveLength(0);
+    expect(after.weighted).toHaveLength(1);
+    expect(after.weighted[0]?.movement_key).toBe('back_squat');
+    expect(after.weighted[0]?.weight).toBe(140);
+  });
+});
+
+describe('matchMovement overrides + vocab', () => {
+  it('an override wins over the vocab match', () => {
+    expect(matchMovement('Back Squat 1RM')).toBeNull();
+    const overrides = new Map([
+      [normaliseMovementName('Back Squat 1RM'), 'back_squat'],
+    ]);
+    expect(matchMovement('Back Squat 1RM', overrides)).toBe('back_squat');
+  });
+
+  it('movementVocab exposes {key,name} entries for the resolver', () => {
+    const vocab = movementVocab();
+    expect(vocab.length).toBeGreaterThan(0);
+    expect(vocab.every((v) => v.key && v.name)).toBe(true);
+    expect(vocab.some((v) => v.key === 'back_squat')).toBe(true);
   });
 });
