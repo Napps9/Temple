@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -36,6 +36,7 @@ export function MemberGetStartedChecklist() {
   const colors = useThemeColors();
   const setFlag = useSetOnboardingFlag();
   const onboarding = useMemberOnboarding();
+  const pathname = usePathname();
   const [open, setOpen] = useState(true);
 
   if (!onboarding) return null;
@@ -43,7 +44,15 @@ export function MemberGetStartedChecklist() {
 
   const runStep = (key: OnboardingStepKey) => {
     if (key === 'programming') setFlag('programming_peeked');
-    router.push(routeFor(key) as never);
+    const route = routeFor(key);
+    // The nudge is pinned to the Book screen, so "Book your first class"
+    // would navigate to the page we're already on — a dead tap. Collapse
+    // instead so the schedule sitting right below is unobstructed.
+    if (pathname === route) {
+      setOpen(false);
+      return;
+    }
+    router.push(route as never);
   };
 
   const dismiss = () => {
