@@ -885,12 +885,17 @@ price (caching `stripe_price_id`) — so a gym with no subscribers yet can
 still import its plan catalogue — and stages the chosen members through
 `import_pending_members`, carrying the live
 `imported_stripe_subscription_id` / `imported_stripe_customer_id` and the
-renewal date. **A price already imported is reused, never duplicated**: the
-commit reuses the existing plan for that `stripe_price_id`, and a partial
-unique index (`membership_plans_gym_stripe_price_unique`, 0130) enforces at
-most one active plan per `(gym_id, stripe_price_id)` regardless of client
-races or re-runs. A plans-only import (no active subscribers) is a valid
-success — the plans are created and no members are staged.
+renewal date. **A plan already imported is reused, never duplicated**: the commit reuses
+the existing active plan by `stripe_price_id` first, then by name
+(case-insensitive), so two prices that share a name collapse to one plan.
+Two partial unique indexes enforce this at the DB regardless of client
+races or re-runs — `membership_plans_gym_stripe_price_unique` (0130, one
+active plan per `(gym_id, stripe_price_id)`) and
+`membership_plans_gym_name_unique` (0131, one active plan per
+`(gym_id, lower(btrim(name)))`). The manual Plans editor maps the name
+collision to a friendly "a plan named X already exists" message. A
+plans-only import (no active subscribers) is a valid success — the plans
+are created and no members are staged.
 
 When the member signs up with that email, the extended
 `apply_pending_member_data` trigger (0089) creates their working

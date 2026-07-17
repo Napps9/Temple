@@ -79,6 +79,24 @@ function poundsToCents(pounds: string): number | null {
   return Math.round(n * 100);
 }
 
+// Turn a plan-write DB error into something the owner can act on. A
+// unique-violation on the name index (0131) means another active plan
+// already carries that name.
+function planWriteError(
+  error: { code?: string; message?: string },
+  name: string,
+): Error {
+  if (
+    error.code === '23505' &&
+    (error.message ?? '').includes('membership_plans_gym_name_unique')
+  ) {
+    return new Error(
+      `A plan named “${name}” already exists. Pick a different name, or archive the other one.`,
+    );
+  }
+  return new Error(error.message ?? 'Save failed');
+}
+
 function fromServer(
   p: ServerPlan,
   classTypeIds: string[],
@@ -397,7 +415,7 @@ export function PlansPanel() {
           .insert(payload)
           .select('plan_id')
           .single();
-        if (error) throw error;
+        if (error) throw planWriteError(error, name);
         planId = (inserted as { plan_id: string }).plan_id;
       } else if (rowDiffers(r)) {
         const { error } = await supabase
@@ -412,7 +430,7 @@ export function PlansPanel() {
             period_length: r.kind === 'credit_period' ? '30 days' : null,
           })
           .eq('plan_id', r.serverId);
-        if (error) throw error;
+        if (error) throw planWriteError(error, name);
       }
 
       // Reconcile the class-type allowlist (same owner gate as the plan

@@ -180,30 +180,37 @@ export default function ImportStripeScreen() {
         }
       }
 
-      // A price already imported (same stripe_price_id) is reused, not
-      // duplicated — so a re-run, or a retry after a partial failure,
-      // doesn't stack up copies of the same plan. A DB partial unique
-      // index (0130) enforces this too; the check just keeps the reuse
-      // graceful instead of hitting a unique-violation. Non-archived
-      // only, matching the index scope.
+      // Reuse an existing active plan rather than duplicating it — by
+      // Stripe price first, then by name (case-insensitive) so two prices
+      // that share a name collapse to one plan. DB partial unique indexes
+      // (0130 price, 0131 name) enforce both; these checks just keep the
+      // reuse graceful instead of hitting a unique-violation.
       const { data: existing } = await supabase
         .from('membership_plans')
-        .select('plan_id, stripe_price_id')
+        .select('plan_id, name, stripe_price_id')
         .eq('gym_id', membership.gymId)
-        .is('archived_at', null)
-        .not('stripe_price_id', 'is', null);
-      const existingByPrice = new Map(
-        (existing ?? []).map((p) => [p.stripe_price_id as string, p.plan_id]),
-      );
+        .is('archived_at', null);
+      const existingByPrice = new Map<string, string>();
+      const planIdByName = new Map<string, string>();
+      for (const e of existing ?? []) {
+        if (e.stripe_price_id) existingByPrice.set(e.stripe_price_id, e.plan_id);
+        planIdByName.set((e.name as string).trim().toLowerCase(), e.plan_id);
+      }
 
       // Create one Temple plan per included Stripe price, caching the
       // Stripe price id so future Temple checkouts reuse it.
       const planIdByPriceId = new Map<string, string>();
       let createdPlans = 0;
       for (const p of included) {
-        const already = existingByPrice.get(p.price_id);
-        if (already) {
-          planIdByPriceId.set(p.price_id, already);
+        const byPrice = existingByPrice.get(p.price_id);
+        if (byPrice) {
+          planIdByPriceId.set(p.price_id, byPrice);
+          continue;
+        }
+        const nameKey = p.name.trim().toLowerCase();
+        const byName = planIdByName.get(nameKey);
+        if (byName) {
+          planIdByPriceId.set(p.price_id, byName);
           continue;
         }
         const { data: inserted, error: planErr } = await supabase
@@ -222,7 +229,10 @@ export default function ImportStripeScreen() {
           .select('plan_id')
           .single();
         if (planErr) throw planErr;
-        planIdByPriceId.set(p.price_id, (inserted as { plan_id: string }).plan_id);
+        const newId = (inserted as { plan_id: string }).plan_id;
+        planIdByPriceId.set(p.price_id, newId);
+        // A later included price with the same name reuses this one.
+        planIdByName.set(nameKey, newId);
         createdPlans += 1;
       }
 
