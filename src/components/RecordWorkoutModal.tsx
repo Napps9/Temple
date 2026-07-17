@@ -909,6 +909,12 @@ function SectionDraftCard({
         </View>
       ) : null}
 
+      <MovementTagList
+        tags={draft.movement_tags}
+        onAdd={onAddTag}
+        onEdit={onEditTag}
+      />
+
       <PickerButton
         label="Scoring format"
         value={
@@ -928,12 +934,6 @@ function SectionDraftCard({
           onRemoveEntry={onRemoveEntry}
         />
       ) : null}
-
-      <MovementTagList
-        tags={draft.movement_tags}
-        onAdd={onAddTag}
-        onEdit={onEditTag}
-      />
 
       <Input
         label="Notes (optional)"
@@ -1321,9 +1321,6 @@ function QuickFillBar({
             inputMode="numeric"
           />
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs pb-3">
-          of {count}
-        </Text>
       </View>
 
       <View className="gap-2">
