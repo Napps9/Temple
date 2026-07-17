@@ -251,7 +251,7 @@ export default function GetStartedScreen() {
                   outputRange: OFFSET,
                 });
                 const contentOpacity = sv.interpolate({
-                  inputRange: [0, 0.5, 2],
+                  inputRange: [0, 1, 2],
                   outputRange: [1, 0, 0],
                 });
                 return (
