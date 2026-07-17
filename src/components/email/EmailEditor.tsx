@@ -379,17 +379,39 @@ function BlockInspector({
 function SettingsInspector({
   document,
   onChange,
+  onApplyTheme,
+  onUndoTheme,
+  canUndoTheme,
   brand,
 }: {
   document: EmailDocument;
   onChange: (doc: EmailDocument) => void;
+  onApplyTheme: (theme: ReturnType<typeof composeThemeWithBrand>) => void;
+  onUndoTheme: () => void;
+  canUndoTheme: boolean;
   brand: BrandSeed;
 }) {
+  const colors = useThemeColors();
   const s = document.settings;
   return (
     <View className="gap-3">
       <View className="gap-1.5">
-        <FieldLabel>Theme</FieldLabel>
+        <View className="flex-row items-center justify-between">
+          <FieldLabel>Theme</FieldLabel>
+          {canUndoTheme ? (
+            <Pressable
+              onPress={onUndoTheme}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Undo theme change"
+              className="flex-row items-center gap-1 active:opacity-60">
+              <Ionicons name="arrow-undo-outline" size={13} color={colors.iconSecondary} />
+              <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
+                Undo
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
         <View className="flex-row flex-wrap gap-2">
           {BRAND_THEME_LIST.map((theme) => {
             const composed = composeThemeWithBrand(theme, brand.primaryColor);
@@ -397,7 +419,7 @@ function SettingsInspector({
             return (
               <Pressable
                 key={theme.id}
-                onPress={() => onChange(applyTheme(document, composed))}
+                onPress={() => onApplyTheme(composed)}
                 className={`w-20 gap-1 items-center rounded-xl p-2 border-2 ${
                   selected ? 'border-primary' : 'border-transparent'
                 }`}>
@@ -484,9 +506,32 @@ export function EmailEditor({
   const debouncedSyncKey = useDebouncedValue(structuralVersion, 350);
   const previewHtml = renderEmailHtml(document, { unsubscribeUrl: '#', editable: true });
 
-  function handleChange(next: EmailDocument) {
+  // One-level undo for the theme picker: applying a theme overwrites every
+  // colour + typography setting (and block colours), so a mis-click used to
+  // be unrecoverable. Snapshot the document just before a theme apply and
+  // let the picker offer an Undo — cleared by any other edit so it can never
+  // roll back unrelated changes.
+  const [themeSnapshot, setThemeSnapshot] = useState<EmailDocument | null>(null);
+
+  function commit(next: EmailDocument) {
     onChange(next);
     setStructuralVersion((v) => v + 1);
+  }
+
+  function handleChange(next: EmailDocument) {
+    setThemeSnapshot(null);
+    commit(next);
+  }
+
+  function applyThemeChoice(theme: ReturnType<typeof composeThemeWithBrand>) {
+    setThemeSnapshot(document);
+    commit(applyTheme(document, theme));
+  }
+
+  function undoTheme() {
+    if (!themeSnapshot) return;
+    commit(themeSnapshot);
+    setThemeSnapshot(null);
   }
 
   // Canvas keystrokes: write straight into document state without ever
@@ -498,6 +543,7 @@ export function EmailEditor({
     const block = document.blocks.find((b) => b.id === parsed.blockId);
     if (!block || !isFieldEditable(block.type, parsed.field)) return;
     const patch: Record<string, string> = { [parsed.field]: value };
+    setThemeSnapshot(null);
     onChange(updateBlock<EmailBlock>(document, block.id, patch as Partial<EmailBlock>));
   }
 
@@ -680,7 +726,14 @@ export function EmailEditor({
       <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
         Email style
       </Text>
-      <SettingsInspector document={document} onChange={handleChange} brand={brand} />
+      <SettingsInspector
+        document={document}
+        onChange={handleChange}
+        onApplyTheme={applyThemeChoice}
+        onUndoTheme={undoTheme}
+        canUndoTheme={themeSnapshot !== null}
+        brand={brand}
+      />
     </View>
   );
 
