@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -53,6 +53,12 @@ type ColourPickerTarget =
   | 'secondaryDark'
   | 'textDark';
 
+// Each card saves independently. Colours, logo and the dark set share
+// the set_gym_branding RPC, so a card's save sends the server's values
+// for the other cards' fields — it can only commit its own edits. The
+// two public-link switches save on toggle.
+type CardKey = 'colours' | 'logo' | 'dark' | 'details' | 'signup' | 'lead';
+
 export function BrandingPanel() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
@@ -92,28 +98,34 @@ export function BrandingPanel() {
   const [publicSignup, setPublicSignup] = useState(true);
   const [leadCapture, setLeadCapture] = useState(false);
   const [slugWarn, setSlugWarn] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{
+    card: CardKey;
+    message: string;
+  } | null>(null);
   const [saved, markSaved] = useSavedFlag();
   const [advancedOpen, setAdvancedOpen] = useState(false);
   // Which field's inline picker is expanded (one at a time keeps the
   // card height sane).
   const [pickerFor, setPickerFor] = useState<ColourPickerTarget | null>(null);
 
+  // Seed once. Cards save independently, so the refetch after one
+  // card's save must not reseed (and wipe) the other cards' edits.
+  const seeded = useRef(false);
   useEffect(() => {
-    if (gym.data) {
-      setName(gym.data.name);
-      setSlug(gym.data.slug);
-      setPrimary(gym.data.primary_color);
-      setSecondary(gym.data.secondary_color);
-      setTextColor(gym.data.text_color);
-      setLogoUrl(gym.data.logo_url);
-      setPrimaryDark(gym.data.primary_color_dark ?? '');
-      setSecondaryDark(gym.data.secondary_color_dark ?? '');
-      setTextColorDark(gym.data.text_color_dark ?? '');
-      setLogoUrlDark(gym.data.logo_url_dark);
-      setPublicSignup(gym.data.public_signup_enabled);
-      setLeadCapture(gym.data.public_lead_capture_enabled);
-    }
+    if (!gym.data || seeded.current) return;
+    seeded.current = true;
+    setName(gym.data.name);
+    setSlug(gym.data.slug);
+    setPrimary(gym.data.primary_color);
+    setSecondary(gym.data.secondary_color);
+    setTextColor(gym.data.text_color);
+    setLogoUrl(gym.data.logo_url);
+    setPrimaryDark(gym.data.primary_color_dark ?? '');
+    setSecondaryDark(gym.data.secondary_color_dark ?? '');
+    setTextColorDark(gym.data.text_color_dark ?? '');
+    setLogoUrlDark(gym.data.logo_url_dark);
+    setPublicSignup(gym.data.public_signup_enabled);
+    setLeadCapture(gym.data.public_lead_capture_enabled);
   }, [gym.data]);
 
   // Parameterised so the same picker + upload path serves both the
@@ -156,92 +168,166 @@ export function BrandingPanel() {
       if (vars.variant === 'dark') setLogoUrlDark(url);
       else setLogoUrl(url);
     },
-    onError: (e) => setError(errorMessage(e, 'Could not upload the logo')),
+    onError: (e, vars) =>
+      setSaveError({
+        card: vars.variant === 'dark' ? 'dark' : 'logo',
+        message: errorMessage(e, 'Could not upload the logo'),
+      }),
   });
+
+  function invalidateBrand() {
+    queryClient.invalidateQueries({ queryKey: ['gym-row'] });
+    queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
+    queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
+    queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+  }
 
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (card: CardKey) => {
       if (!membership || !gym.data) throw new Error('Missing context');
-      const p = normaliseHex(primary);
-      const s = normaliseHex(secondary);
-      const t = normaliseHex(textColor);
-      if (!p || !s || !t) {
-        throw new Error('Each colour needs to be a valid 6-character hex');
-      }
-      if (!name.trim()) throw new Error('Gym name is required');
-      const cleanedSlug = slugify(slug);
-      if (!cleanedSlug) throw new Error('Slug must contain at least one letter or digit');
 
-      // Order: name, then slug (so failures are localised), then
-      // branding bundle, then public signup.
-      if (name.trim() !== gym.data.name) {
-        const { error: e1 } = await supabase.rpc('set_gym_name', {
-          p_gym_id: membership.gymId,
-          p_name: name.trim(),
-        });
-        if (e1) throw e1;
-      }
-      if (cleanedSlug !== gym.data.slug) {
-        const { error: e2 } = await supabase.rpc('set_gym_slug', {
-          p_gym_id: membership.gymId,
-          p_slug: cleanedSlug,
-        });
-        if (e2) throw e2;
-      }
-      // Dark fields are nullable on the server — an empty input
-      // means "auto-derive from light at read time" and is stored as
-      // null. A partial-but-invalid hex blocks the save so the gym
-      // can't end up with a colour the server would reject.
-      const pd = primaryDark.trim() === '' ? null : normaliseHex(primaryDark);
-      const sd = secondaryDark.trim() === '' ? null : normaliseHex(secondaryDark);
-      const td = textColorDark.trim() === '' ? null : normaliseHex(textColorDark);
-      if (
-        (primaryDark.trim() !== '' && !pd) ||
-        (secondaryDark.trim() !== '' && !sd) ||
-        (textColorDark.trim() !== '' && !td)
-      ) {
-        throw new Error(
-          'Each dark-mode colour needs to be a valid 6-character hex (or left blank)',
-        );
+      if (card === 'details') {
+        if (!name.trim()) throw new Error('Gym name is required');
+        const cleanedSlug = slugify(slug);
+        if (!cleanedSlug) {
+          throw new Error('Slug must contain at least one letter or digit');
+        }
+        // Name first, then slug, so failures are localised.
+        if (name.trim() !== gym.data.name) {
+          const { error: e1 } = await supabase.rpc('set_gym_name', {
+            p_gym_id: membership.gymId,
+            p_name: name.trim(),
+          });
+          if (e1) throw e1;
+        }
+        if (cleanedSlug !== gym.data.slug) {
+          const { error: e2 } = await supabase.rpc('set_gym_slug', {
+            p_gym_id: membership.gymId,
+            p_slug: cleanedSlug,
+          });
+          if (e2) throw e2;
+        }
+        return;
       }
 
-      const { error: e3 } = await supabase.rpc('set_gym_branding', {
+      const payload = {
         p_gym_id: membership.gymId,
-        p_logo_url: logoUrl,
-        p_primary_color: p,
-        p_secondary_color: s,
-        p_text_color: t,
-        p_logo_url_dark: logoUrlDark,
-        p_primary_color_dark: pd,
-        p_secondary_color_dark: sd,
-        p_text_color_dark: td,
-      });
+        p_logo_url: gym.data.logo_url,
+        p_primary_color: gym.data.primary_color,
+        p_secondary_color: gym.data.secondary_color,
+        p_text_color: gym.data.text_color,
+        p_logo_url_dark: gym.data.logo_url_dark,
+        p_primary_color_dark: gym.data.primary_color_dark,
+        p_secondary_color_dark: gym.data.secondary_color_dark,
+        p_text_color_dark: gym.data.text_color_dark,
+      };
+      if (card === 'colours') {
+        const p = normaliseHex(primary);
+        const s = normaliseHex(secondary);
+        const t = normaliseHex(textColor);
+        if (!p || !s || !t) {
+          throw new Error('Each colour needs to be a valid 6-character hex');
+        }
+        payload.p_primary_color = p;
+        payload.p_secondary_color = s;
+        payload.p_text_color = t;
+      } else if (card === 'logo') {
+        payload.p_logo_url = logoUrl;
+      } else {
+        // Dark fields are nullable on the server — an empty input
+        // means "auto-derive from light at read time" and is stored as
+        // null. A partial-but-invalid hex blocks the save so the gym
+        // can't end up with a colour the server would reject.
+        const pd = primaryDark.trim() === '' ? null : normaliseHex(primaryDark);
+        const sd = secondaryDark.trim() === '' ? null : normaliseHex(secondaryDark);
+        const td = textColorDark.trim() === '' ? null : normaliseHex(textColorDark);
+        if (
+          (primaryDark.trim() !== '' && !pd) ||
+          (secondaryDark.trim() !== '' && !sd) ||
+          (textColorDark.trim() !== '' && !td)
+        ) {
+          throw new Error(
+            'Each dark-mode colour needs to be a valid 6-character hex (or left blank)',
+          );
+        }
+        payload.p_logo_url_dark = logoUrlDark;
+        payload.p_primary_color_dark = pd;
+        payload.p_secondary_color_dark = sd;
+        payload.p_text_color_dark = td;
+      }
+      const { error: e3 } = await supabase.rpc('set_gym_branding', payload);
       if (e3) throw e3;
-      if (publicSignup !== gym.data.public_signup_enabled) {
-        const { error: e4 } = await supabase.rpc('set_gym_public_signup', {
-          p_gym_id: membership.gymId,
-          p_enabled: publicSignup,
-        });
-        if (e4) throw e4;
-      }
-      if (leadCapture !== gym.data.public_lead_capture_enabled) {
-        const { error: e5 } = await supabase.rpc('set_gym_public_lead_capture', {
-          p_gym_id: membership.gymId,
-          p_enabled: leadCapture,
-        });
-        if (e5) throw e5;
-      }
     },
     onSuccess: () => {
-      setError(null);
+      setSaveError(null);
       markSaved();
-      queryClient.invalidateQueries({ queryKey: ['gym-row'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+      invalidateBrand();
     },
-    onError: (e) => setError(errorMessage(e, 'Could not save')),
+    onError: (e, card) =>
+      setSaveError({ card, message: errorMessage(e, 'Could not save') }),
   });
+
+  // The two public-link switches save on toggle — the flip is the
+  // action. On failure the switch reverts to the server state.
+  const setSignup = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!membership) throw new Error('Missing context');
+      const { error } = await supabase.rpc('set_gym_public_signup', {
+        p_gym_id: membership.gymId,
+        p_enabled: enabled,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSaveError(null);
+      invalidateBrand();
+    },
+    onError: (e) => {
+      setPublicSignup(gym.data?.public_signup_enabled ?? true);
+      setSaveError({
+        card: 'signup',
+        message: errorMessage(e, 'Could not update public signup'),
+      });
+    },
+  });
+
+  const setLead = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!membership) throw new Error('Missing context');
+      const { error } = await supabase.rpc('set_gym_public_lead_capture', {
+        p_gym_id: membership.gymId,
+        p_enabled: enabled,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSaveError(null);
+      invalidateBrand();
+    },
+    onError: (e) => {
+      setLeadCapture(gym.data?.public_lead_capture_enabled ?? false);
+      setSaveError({
+        card: 'lead',
+        message: errorMessage(e, 'Could not update the lead capture form'),
+      });
+    },
+  });
+
+  function cardSaveProps(card: CardKey) {
+    return {
+      onPress: () => save.mutate(card),
+      loading: save.isPending && save.variables === card,
+      success: saved && save.variables === card,
+    };
+  }
+
+  function cardError(card: CardKey) {
+    return saveError?.card === card ? (
+      <Text className="text-red-500 dark:text-red-400 text-sm">
+        {saveError.message}
+      </Text>
+    ) : null;
+  }
 
   if (canManageStaff === false) {
     return (
@@ -299,6 +385,8 @@ export function BrandingPanel() {
               pickerOpen={pickerFor === 'text'}
               onPick={() => setPickerFor(pickerFor === 'text' ? null : 'text')}
             />
+            {cardError('colours')}
+            <Button {...cardSaveProps('colours')}>Save</Button>
           </View>
           <View className="flex-1 mt-4 md:mt-0">
             <BrandPreview
@@ -348,6 +436,8 @@ export function BrandingPanel() {
               ) : null}
             </View>
           </View>
+          {cardError('logo')}
+          <Button {...cardSaveProps('logo')}>Save</Button>
         </View>
 
         <AdvancedBrandingCard
@@ -372,6 +462,8 @@ export function BrandingPanel() {
           uploadPending={upload.isPending}
           pickerFor={pickerFor}
           onSetPicker={setPickerFor}
+          error={saveError?.card === 'dark' ? saveError.message : null}
+          saveProps={cardSaveProps('dark')}
         />
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
@@ -400,6 +492,8 @@ export function BrandingPanel() {
               Changing the slug will break previously shared join links.
             </Text>
           ) : null}
+          {cardError('details')}
+          <Button {...cardSaveProps('details')}>Save</Button>
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
@@ -415,9 +509,13 @@ export function BrandingPanel() {
             <Switch
               accessibilityLabel="Public signup"
               value={publicSignup}
-              onValueChange={setPublicSignup}
+              onValueChange={(v) => {
+                setPublicSignup(v);
+                setSignup.mutate(v);
+              }}
             />
           </View>
+          {cardError('signup')}
           {publicSignup && cleanedSlug ? (
             <View className="gap-1">
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
@@ -452,9 +550,13 @@ export function BrandingPanel() {
             <Switch
               accessibilityLabel="Lead capture form"
               value={leadCapture}
-              onValueChange={setLeadCapture}
+              onValueChange={(v) => {
+                setLeadCapture(v);
+                setLead.mutate(v);
+              }}
             />
           </View>
+          {cardError('lead')}
           {leadCapture && cleanedSlug ? (
             <View className="gap-1">
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
@@ -474,16 +576,6 @@ export function BrandingPanel() {
             </View>
           ) : null}
         </View>
-
-        {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-        ) : null}
-        <Button
-          onPress={() => save.mutate()}
-          loading={save.isPending}
-          success={saved}>
-          Save changes
-        </Button>
     </View>
   );
 }
@@ -516,6 +608,8 @@ function AdvancedBrandingCard({
   uploadPending,
   pickerFor,
   onSetPicker,
+  error,
+  saveProps,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -536,6 +630,8 @@ function AdvancedBrandingCard({
   uploadPending: boolean;
   pickerFor: ColourPickerTarget | null;
   onSetPicker: (v: ColourPickerTarget | null) => void;
+  error: string | null;
+  saveProps: { onPress: () => void; loading: boolean; success: boolean };
 }) {
   const colors = useThemeColors();
   // Resolve what the dark-mode logo row shows. Same fallback logic
@@ -682,6 +778,13 @@ function AdvancedBrandingCard({
             Toggle the app to dark mode (top-right) after saving to see the
             full chrome render with these colours.
           </Text>
+
+          {error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {error}
+            </Text>
+          ) : null}
+          <Button {...saveProps}>Save</Button>
         </View>
       ) : null}
     </View>

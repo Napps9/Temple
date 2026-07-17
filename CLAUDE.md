@@ -139,6 +139,13 @@ Gotchas seen in this codebase:
 - **`<Button>`** for the main page action. Variants:
   `primary` / `secondary` / `ghost` / `destructive`. Pass `loading`
   for mutation pending states.
+- **Per-action saves.** Settings save per card/section — each card has
+  its own Save button (`loading` + `success` tick, error text inside
+  the card), or a lone switch saves on toggle. Never one page-level
+  "Save changes" spanning multiple cards. When several cards share one
+  RPC, a card's save sends the server's values for the other cards'
+  fields; seed drafts once (don't reseed on refetch) so saving one
+  card can't wipe or commit another card's unsaved edits.
 - **Brand colours**: use `useThemeColors().primary` for runtime icon
   tints. `bg-primary` / `text-primary` etc. work via the Tailwind
   runtime CSS variable. The five legitimate hard-coded `#2563EB`

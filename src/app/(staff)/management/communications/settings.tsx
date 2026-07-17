@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -28,31 +28,45 @@ export default function CommsSettingsScreen() {
   const [replyTo, setReplyTo] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [address, setAddress] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{
+    card: 'sender' | 'footer';
+    message: string;
+  } | null>(null);
 
+  // Seed once — the two cards save independently, so the refetch after
+  // one card's save must not reseed (and wipe) the other card's edits.
+  const seeded = useRef(false);
   useEffect(() => {
-    if (settings.data) {
-      setFromName(settings.data.from_name ?? '');
-      setReplyTo(settings.data.reply_to ?? '');
-      setBusinessName(settings.data.footer_business_name ?? '');
-      setAddress(settings.data.footer_address ?? '');
-    }
+    if (!settings.data || seeded.current) return;
+    seeded.current = true;
+    setFromName(settings.data.from_name ?? '');
+    setReplyTo(settings.data.reply_to ?? '');
+    setBusinessName(settings.data.footer_business_name ?? '');
+    setAddress(settings.data.footer_address ?? '');
   }, [settings.data]);
 
+  // Per-card save. Upsert with only that card's columns: on conflict
+  // PostgREST merges just the payload columns, so the other card's
+  // stored values are untouched.
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (card: 'sender' | 'footer') => {
       if (!membership?.gymId || !session?.user.id) throw new Error('No gym');
-      const trimmedReply = replyTo.trim();
-      if (trimmedReply && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedReply)) {
-        throw new Error('Reply-to must be a valid email address');
+      const fields: Record<string, string | null> = {};
+      if (card === 'sender') {
+        const trimmedReply = replyTo.trim();
+        if (trimmedReply && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedReply)) {
+          throw new Error('Reply-to must be a valid email address');
+        }
+        fields.from_name = fromName.trim() || null;
+        fields.reply_to = trimmedReply || null;
+      } else {
+        fields.footer_business_name = businessName.trim() || null;
+        fields.footer_address = address.trim() || null;
       }
       const { error: upErr } = await supabase.from('gym_comms_settings').upsert(
         {
           gym_id: membership.gymId,
-          from_name: fromName.trim() || null,
-          reply_to: trimmedReply || null,
-          footer_business_name: businessName.trim() || null,
-          footer_address: address.trim() || null,
+          ...fields,
           updated_by: session.user.id,
           updated_at: new Date().toISOString(),
         },
@@ -61,11 +75,12 @@ export default function CommsSettingsScreen() {
       if (upErr) throw upErr;
     },
     onSuccess: () => {
-      setError(null);
+      setSaveError(null);
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['comms-settings'] });
     },
-    onError: (e) => setError(errorMessage(e, 'Could not save settings')),
+    onError: (e, card) =>
+      setSaveError({ card, message: errorMessage(e, 'Could not save settings') }),
   });
 
   return (
@@ -102,6 +117,17 @@ export default function CommsSettingsScreen() {
             Replies from members go to this address. Leave blank to use your
             provider default.
           </Text>
+          {saveError?.card === 'sender' ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {saveError.message}
+            </Text>
+          ) : null}
+          <Button
+            onPress={() => save.mutate('sender')}
+            loading={save.isPending && save.variables === 'sender'}
+            success={saved && save.variables === 'sender'}>
+            Save
+          </Button>
         </View>
 
         <SendingDomainCard />
@@ -126,6 +152,17 @@ export default function CommsSettingsScreen() {
           <Text className="text-gray-400 dark:text-gray-500 text-xs">
             Shown in the footer alongside the unsubscribe link.
           </Text>
+          {saveError?.card === 'footer' ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">
+              {saveError.message}
+            </Text>
+          ) : null}
+          <Button
+            onPress={() => save.mutate('footer')}
+            loading={save.isPending && save.variables === 'footer'}
+            success={saved && save.variables === 'footer'}>
+            Save
+          </Button>
         </View>
 
         {sendingDomain.data?.status === 'verified' ? (
@@ -151,12 +188,6 @@ export default function CommsSettingsScreen() {
           </View>
         )}
 
-        {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-        ) : null}
-        <Button onPress={() => save.mutate()} loading={save.isPending} success={saved}>
-          Save settings
-        </Button>
       </ScrollView>
     </Screen>
   );

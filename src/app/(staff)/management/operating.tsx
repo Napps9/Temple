@@ -17,6 +17,7 @@ import { useCan } from '@/lib/useCan';
 import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
+import { useSavedFlag } from '@/lib/useSavedFlag';
 
 // A short, common-case currency list for the manual override. Stripe can
 // set any ISO code on connect (the RPC accepts any three-letter code);
@@ -48,6 +49,33 @@ type Defaults = {
   cancel_cutoff_days_before: number;
 };
 
+// Each card saves independently. The gyms columns share one RPC, so a
+// section save sends the server's values for every other section — a
+// card's Save can never commit a neighbouring card's unsaved edits.
+type SectionKey =
+  | 'discipline'
+  | 'minors'
+  | 'currency'
+  | 'week'
+  | 'class'
+  | 'memberships'
+  | 'booking'
+  | 'health'
+  | 'leads';
+
+const SECTION_FIELDS: Partial<Record<SectionKey, (keyof Defaults)[]>> = {
+  week: ['week_starts_on', 'timezone'],
+  class: ['default_class_capacity', 'default_class_minutes'],
+  memberships: ['expiring_within_days'],
+  booking: [
+    'booking_window_hours_ahead',
+    'booking_cutoff_minutes_before',
+    'cancel_cutoff_minutes_before',
+  ],
+  health: ['parq_expiry_days', 'health_retention_months'],
+  leads: ['lead_conversion_window_days'],
+};
+
 // Top-level page Settings card links to. Owners only — the underlying
 // RPC checks `user_is_owner_of`, but we mirror the gate client-side so
 // admins don't see a useless form.
@@ -55,14 +83,11 @@ export function OperatingDefaultsPanel() {
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
   const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
-  // The saved tick holds until the form no longer matches what was last
-  // saved. Rather than a timed flash, we snapshot the saved state and
-  // derive `saved` by comparison — so any edit (or a revert back to the
-  // saved values) re-derives and the tick clears the moment something
-  // changes. Survives the post-save refetch: round-tripped values are
-  // equal, so reseeding the draft doesn't drop the tick.
-  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{
+    section: SectionKey;
+    message: string;
+  } | null>(null);
+  const [saved, markSaved] = useSavedFlag();
 
   const currentDiscipline = useGymDiscipline();
   const [discipline, setDiscipline] = useState<Discipline | null>(null);
@@ -100,70 +125,91 @@ export function OperatingDefaultsPanel() {
 
   const [draft, setDraft] = useState<Defaults | null>(null);
   useEffect(() => {
-    if (cfg.data)
-      setDraft({
+    if (!cfg.data) return;
+    // Seed once. The post-save refetch must not reseed: sections save
+    // independently, so a refetch after saving one card would wipe the
+    // unsaved edits sitting in every other card.
+    setDraft(
+      (d) =>
+        d ?? {
+          ...cfg.data,
+          // Postgres returns 'HH:MM:SS'; the editor works in HH:MM.
+          cancel_cutoff_time: cfg.data.cancel_cutoff_time
+            ? cfg.data.cancel_cutoff_time.slice(0, 5)
+            : null,
+        },
+    );
+  }, [cfg.data]);
+
+  const save = useMutation({
+    mutationFn: async (section: SectionKey) => {
+      if (!membership) throw new Error('Missing context');
+
+      if (section === 'discipline') {
+        if (!discipline || discipline === currentDiscipline) return;
+        const { error: de } = await supabase.rpc('set_gym_discipline', {
+          p_gym_id: membership.gymId,
+          p_discipline: discipline,
+        });
+        if (de) throw de;
+        return;
+      }
+      if (section === 'currency') {
+        if (!currency || currency === currentCurrency) return;
+        const { error: ce } = await supabase.rpc('set_gym_currency', {
+          p_gym_id: membership.gymId,
+          p_currency: currency,
+        });
+        if (ce) throw ce;
+        return;
+      }
+      if (section === 'minors') {
+        if (allowMinors === null || allowMinors === currentAllowMinors) return;
+        const { error: me } = await supabase.rpc('set_allow_minors', {
+          p_gym_id: membership.gymId,
+          p_enabled: allowMinors,
+        });
+        if (me) throw me;
+        return;
+      }
+
+      if (!draft || !cfg.data) throw new Error('Missing context');
+      const merged: Defaults = {
         ...cfg.data,
-        // Postgres returns 'HH:MM:SS'; the editor works in HH:MM.
         cancel_cutoff_time: cfg.data.cancel_cutoff_time
           ? cfg.data.cancel_cutoff_time.slice(0, 5)
           : null,
-      });
-  }, [cfg.data]);
-
-  const currentSnapshot = JSON.stringify({ draft, discipline, currency, allowMinors });
-  const saved = savedSnapshot !== null && savedSnapshot === currentSnapshot;
-
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!membership || !draft) throw new Error('Missing context');
+      };
+      for (const field of SECTION_FIELDS[section] ?? []) {
+        (merged as Record<string, unknown>)[field] = draft[field];
+      }
       const { error: e } = await supabase.rpc('set_gym_operating_defaults', {
         p_gym_id: membership.gymId,
-        p_week_starts_on: draft.week_starts_on,
-        p_timezone: draft.timezone.trim() || 'UTC',
-        p_default_class_capacity: draft.default_class_capacity,
-        p_default_class_minutes: draft.default_class_minutes,
-        p_expiring_within_days: draft.expiring_within_days,
-        p_parq_expiry_days: draft.parq_expiry_days,
-        p_health_retention_months: draft.health_retention_months,
-        p_lead_conversion_window_days: draft.lead_conversion_window_days,
-        p_subscription_resolution: draft.subscription_resolution,
-        p_booking_window_hours_ahead: draft.booking_window_hours_ahead,
-        p_booking_cutoff_minutes_before: draft.booking_cutoff_minutes_before,
-        p_cancel_cutoff_minutes_before: draft.cancel_cutoff_minutes_before,
+        p_week_starts_on: merged.week_starts_on,
+        p_timezone: merged.timezone.trim() || 'UTC',
+        p_default_class_capacity: merged.default_class_capacity,
+        p_default_class_minutes: merged.default_class_minutes,
+        p_expiring_within_days: merged.expiring_within_days,
+        p_parq_expiry_days: merged.parq_expiry_days,
+        p_health_retention_months: merged.health_retention_months,
+        p_lead_conversion_window_days: merged.lead_conversion_window_days,
+        p_subscription_resolution: merged.subscription_resolution,
+        p_booking_window_hours_ahead: merged.booking_window_hours_ahead,
+        p_booking_cutoff_minutes_before: merged.booking_cutoff_minutes_before,
+        p_cancel_cutoff_minutes_before: merged.cancel_cutoff_minutes_before,
         // gym-level day_before mode is no longer exposed in the UI —
         // the trigger ignores it, the class-type override owns the
         // absolute cutoff now. Always send 'relative' to keep the
         // gyms row honest with the rendered state.
         p_cancel_cutoff_mode: 'relative',
         p_cancel_cutoff_time: null,
-        p_cancel_cutoff_days_before: draft.cancel_cutoff_days_before,
+        p_cancel_cutoff_days_before: merged.cancel_cutoff_days_before,
       });
       if (e) throw e;
-      if (discipline && discipline !== currentDiscipline) {
-        const { error: de } = await supabase.rpc('set_gym_discipline', {
-          p_gym_id: membership.gymId,
-          p_discipline: discipline,
-        });
-        if (de) throw de;
-      }
-      if (currency && currency !== currentCurrency) {
-        const { error: ce } = await supabase.rpc('set_gym_currency', {
-          p_gym_id: membership.gymId,
-          p_currency: currency,
-        });
-        if (ce) throw ce;
-      }
-      if (allowMinors !== null && allowMinors !== currentAllowMinors) {
-        const { error: me } = await supabase.rpc('set_allow_minors', {
-          p_gym_id: membership.gymId,
-          p_enabled: allowMinors,
-        });
-        if (me) throw me;
-      }
     },
     onSuccess: () => {
-      setError(null);
-      setSavedSnapshot(JSON.stringify({ draft, discipline, currency, allowMinors }));
+      setSaveError(null);
+      markSaved();
       queryClient.invalidateQueries({ queryKey: ['gym-operating-defaults'] });
       queryClient.invalidateQueries({ queryKey: ['gym-discipline'] });
       queryClient.invalidateQueries({ queryKey: ['gym-currency'] });
@@ -173,7 +219,8 @@ export function OperatingDefaultsPanel() {
       // ticks without a reload.
       queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
     },
-    onError: (e) => setError(errorMessage(e, 'Could not save')),
+    onError: (e, section) =>
+      setSaveError({ section, message: errorMessage(e, 'Could not save') }),
   });
 
   if (canManageStaff === false) {
@@ -197,6 +244,15 @@ export function OperatingDefaultsPanel() {
     };
   }
 
+  function sectionProps(section: SectionKey) {
+    return {
+      onSave: () => save.mutate(section),
+      saving: save.isPending && save.variables === section,
+      saved: saved && save.variables === section,
+      error: saveError?.section === section ? saveError.message : null,
+    };
+  }
+
   return (
     <View className="gap-4">
       <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -206,7 +262,7 @@ export function OperatingDefaultsPanel() {
         them to match how you run this gym.
       </Text>
 
-      <Section title="Training discipline">
+      <Section title="Training discipline" {...sectionProps('discipline')}>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           Sets the flavour of the member Track section. CrossFit shows
           the movement-group catalog (squats, olympic lifts, gymnastics…);
@@ -224,7 +280,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Members under 18">
+      <Section title="Members under 18" {...sectionProps('minors')}>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           Off by default. When on, a member whose date of birth makes them
           under 18 can join, but must provide a parent or guardian's consent
@@ -243,7 +299,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Billing currency">
+      <Section title="Billing currency" {...sectionProps('currency')}>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           The currency every price, revenue figure and payout is shown
           in. Connecting Stripe sets this automatically from your Stripe
@@ -262,7 +318,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Week & locale">
+      <Section title="Week & locale" {...sectionProps('week')}>
         <Choice
           label="Week starts on"
           options={[
@@ -287,7 +343,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Class defaults">
+      <Section title="Class defaults" {...sectionProps('class')}>
         <NumField
           label="Default class capacity"
           blurb="The number new class types start with. Each class type can override this."
@@ -312,7 +368,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Memberships">
+      <Section title="Memberships" {...sectionProps('memberships')}>
         <DurationField
           label="“Expiring soon” window"
           blurb="Used by the cohort logic + Members tab badge."
@@ -333,7 +389,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Booking windows">
+      <Section title="Booking windows" {...sectionProps('booking')}>
         <DurationField
           label="Booking opens ahead"
           blurb="The earliest a member can book a class. 0 keeps it open until the class fills; 1 week gives the classic 'books open one week ahead'."
@@ -387,7 +443,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Health screening & retention">
+      <Section title="Health screening & retention" {...sectionProps('health')}>
         <DurationField
           label="PAR-Q expiry"
           blurb="How long a PAR-Q response is valid for. Used for both the entry gate and the booking gate."
@@ -425,7 +481,7 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Leads">
+      <Section title="Leads" {...sectionProps('leads')}>
         <DurationField
           label="Lead conversion window"
           blurb="When a new member's email matches an open lead captured within this window, the lead is automatically marked converted. Older leads can still be linked manually."
@@ -445,16 +501,6 @@ export function OperatingDefaultsPanel() {
           units={['days', 'weeks', 'months']}
         />
       </Section>
-
-      {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-      ) : null}
-      <Button
-        onPress={() => save.mutate()}
-        loading={save.isPending}
-        success={saved}>
-        Save changes
-      </Button>
     </View>
   );
 }
@@ -462,9 +508,17 @@ export function OperatingDefaultsPanel() {
 function Section({
   title,
   children,
+  onSave,
+  saving,
+  saved,
+  error,
 }: {
   title: string;
   children: React.ReactNode;
+  onSave: () => void;
+  saving: boolean;
+  saved: boolean;
+  error: string | null;
 }) {
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
@@ -472,6 +526,12 @@ function Section({
         {title}
       </Text>
       {children}
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+      <Button onPress={onSave} loading={saving} success={saved}>
+        Save
+      </Button>
     </View>
   );
 }
