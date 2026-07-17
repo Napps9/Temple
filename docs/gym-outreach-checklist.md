@@ -124,8 +124,16 @@ simulate or degrade to "code created, not emailed." Runbook:
       Resend — already true: Comms/invites reuse the same account +
       domain (`jointemple.io`) verified for Auth SMTP in Tier 1 item 1,
       per `docs/resend-setup.md`'s note that the two share one domain.
-- [ ] Verify a real campaign send shows `delivered`, not `simulated`
-- [ ] Verify an emailed staff invite actually arrives
+- [x] **Real campaign send confirmed delivered (2026-07-17).** Sent a
+      "Hi world" newsletter to one real address from FORGE & FURY — the
+      campaign report shows **Emails delivered: 1** with no "Simulated
+      send" banner, and the branded email (logo + Book-a-class CTA)
+      landed in the external inbox from
+      `Forge & Fury <noreply@jointemple.io>`. Resend campaign delivery is
+      live end-to-end, not simulated.
+- [ ] Verify an emailed staff invite actually arrives (campaign path now
+      proven; invites send through the same Resend account, so this is
+      very likely fine — still worth eyeballing one)
 
 > Note: items 1 and 3 share the same Resend account + verified domain, so
 > do the domain verification once and both benefit.
@@ -339,6 +347,8 @@ site yourself, exactly as a prospect would:
 - [ ] Invite a member by email → **the invite email arrives**
 - [ ] As that member: confirm email → subscribe/pay → book a class →
       log a workout
-- [ ] Send a test campaign → confirm it delivers (not simulated)
+- [x] Send a test campaign → confirm it delivers (not simulated) —
+      **done 2026-07-17**: FORGE & FURY "Hi world" newsletter, Emails
+      delivered: 1, landed in a real inbox (see Tier 1 item 3).
 
 If all seven pass, a gym you pitch can actually run their gym on it.
