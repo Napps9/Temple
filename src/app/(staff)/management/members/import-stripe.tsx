@@ -118,6 +118,7 @@ export default function ImportStripeScreen() {
     () => new Set(plans.filter((p) => p.include).map((p) => p.price_id)),
     [plans],
   );
+  const includedCount = includedPriceIds.size;
 
   function updatePlan(priceId: string, patch: Partial<PlanReview>) {
     setPlans((cur) =>
@@ -195,7 +196,7 @@ export default function ImportStripeScreen() {
       const res = (data ?? [])[0] as
         | { inserted: number; updated: number; skipped: number }
         | undefined;
-      return { staged: rows.length, result: res };
+      return { staged: rows.length, createdPlans: included.length, result: res };
     },
     onSuccess: () => {
       setError(null);
@@ -218,9 +219,10 @@ export default function ImportStripeScreen() {
             Import from Stripe
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Bring your existing Stripe subscribers across. Their live
-            subscription is adopted by Temple — same billing, no re-charge —
-            and they can manage it in the app once they sign up.
+            Bring your Stripe plans and subscribers across. We create a Temple
+            plan for each Stripe price — including ones no one's on yet — and
+            members with a live subscription are adopted (same billing, no
+            re-charge), manageable in the app once they sign up.
           </Text>
         </View>
 
@@ -229,20 +231,22 @@ export default function ImportStripeScreen() {
             <View className="flex-row items-center gap-2">
               <Ionicons name="checkmark-circle" size={20} color="#10B981" />
               <Text className="text-gray-900 dark:text-gray-50 font-semibold text-lg">
-                {commit.data.staged} member
-                {commit.data.staged === 1 ? '' : 's'} staged
+                {commit.data.createdPlans} plan
+                {commit.data.createdPlans === 1 ? '' : 's'} imported
+                {commit.data.staged > 0
+                  ? ` · ${commit.data.staged} member${commit.data.staged === 1 ? '' : 's'} staged`
+                  : ''}
               </Text>
             </View>
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              They'll join your roster when they sign up with the email on
-              their Stripe account (share your join link or email them an
-              invite). Their subscription then appears in the app, billed as
-              normal and manageable in-app — for them and for you.
+              {commit.data.staged > 0
+                ? "Members join your roster when they sign up with the email on their Stripe account (share your join link or email them an invite). Their subscription then appears in the app, billed as normal and manageable in-app — for them and for you."
+                : 'The plans are ready to use. Assign members to them, or import subscribers later.'}
             </Text>
             <Button
               variant="secondary"
-              onPress={() => router.replace('/management/members' as never)}>
-              Back to Members
+              onPress={() => router.replace('/management/plans' as never)}>
+              Back to Plans
             </Button>
           </View>
         ) : preview.isLoading || inference.isLoading ? (
@@ -260,16 +264,16 @@ export default function ImportStripeScreen() {
               Check Stripe connection
             </Button>
           </View>
-        ) : members.length === 0 ? (
+        ) : (preview.data?.prices?.length ?? 0) === 0 ? (
           <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-2 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-              No active subscriptions found
+              No recurring plans found
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              We didn't find any active, trialing or past-due subscriptions on
+              We didn't find any active recurring prices or subscriptions on
               your connected Stripe account.
               {(preview.data?.skipped_no_email ?? 0) > 0
-                ? ` (${preview.data!.skipped_no_email} skipped with no email.)`
+                ? ` (${preview.data!.skipped_no_email} subscriber(s) skipped with no email.)`
                 : ''}
             </Text>
           </View>
@@ -280,8 +284,9 @@ export default function ImportStripeScreen() {
                 Plans
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                One Temple plan is created per Stripe price. Edit the suggested
-                names, or untick a price to skip its members.
+                One Temple plan is created per Stripe price — including prices no
+                one subscribes to yet. Edit the suggested names, or untick a
+                price to skip it.
               </Text>
               {plans.map((p) => (
                 <View
@@ -299,7 +304,9 @@ export default function ImportStripeScreen() {
                       {p.label}
                     </Text>
                     <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                      {p.count} member{p.count === 1 ? '' : 's'}
+                      {p.count === 0
+                        ? 'No subscribers yet'
+                        : `${p.count} member${p.count === 1 ? '' : 's'}`}
                     </Text>
                   </Pressable>
                   {p.include ? (
@@ -362,6 +369,14 @@ export default function ImportStripeScreen() {
               ))}
             </View>
 
+            {members.length === 0 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  No active subscribers on Stripe — you're importing the plans
+                  only. Assign members to them, or import subscribers later.
+                </Text>
+              </View>
+            ) : (
             <View className="gap-3">
               <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
                 Members ({importable.length} selected)
@@ -406,6 +421,7 @@ export default function ImportStripeScreen() {
                 })}
               </View>
             </View>
+            )}
 
             {error ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
@@ -413,9 +429,10 @@ export default function ImportStripeScreen() {
             <Button
               onPress={() => commit.mutate()}
               loading={commit.isPending}
-              disabled={importable.length === 0}>
-              Import {importable.length} member
-              {importable.length === 1 ? '' : 's'}
+              disabled={includedCount === 0}>
+              {importable.length > 0
+                ? `Import ${includedCount} plan${includedCount === 1 ? '' : 's'} · ${importable.length} member${importable.length === 1 ? '' : 's'}`
+                : `Import ${includedCount} plan${includedCount === 1 ? '' : 's'}`}
             </Button>
           </>
         )}

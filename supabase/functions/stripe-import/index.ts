@@ -1,8 +1,9 @@
-// Read a gym's existing Stripe subscriptions so the owner can bring those
-// members across to Temple. Owner-gated; reads the gym's connected
+// Read a gym's Stripe plan catalogue + existing subscriptions so the owner
+// can bring both across to Temple. Owner-gated; reads the gym's connected
 // account (the same account stripe-checkout charges on). Returns a
-// privacy-shaped preview — distinct prices + a row per subscriber — that
-// the client feeds into the existing AI-assisted import review wizard.
+// privacy-shaped preview — distinct recurring prices (including ones with
+// no current subscriber, count 0) + a row per subscriber — that the client
+// feeds into the existing AI-assisted import review wizard.
 //
 // Grandfathering: this function only READS Stripe. The import is staged
 // through import_pending_members on the client, so each member's live
@@ -102,6 +103,12 @@ Deno.serve(async (req: Request) => {
     string,
     { nickname: string | null; productId: string | null; amount: string }
   >();
+  // Amount/currency/interval for catalogue prices, keyed by price id. Lets
+  // a price with no subscriber still carry its real numbers.
+  const catalogPrice = new Map<
+    string,
+    { amount_cents: number; currency: string; interval: string | null }
+  >();
 
   // Page through subscriptions on the connected account (cap at ~2000 so a
   // runaway never hangs the function).
@@ -169,6 +176,53 @@ Deno.serve(async (req: Request) => {
     if (!startingAfter) break;
   }
 
+  // Also list active recurring prices so plans with no current subscriber
+  // can still be imported — the owner may be setting up their plan
+  // catalogue, not only migrating live members. Prices already seen on a
+  // subscription keep their metadata.
+  let priceAfter: string | undefined;
+  for (let page = 0; page < 20; page++) {
+    const url = new URL('https://api.stripe.com/v1/prices');
+    url.searchParams.set('limit', '100');
+    url.searchParams.set('active', 'true');
+    url.searchParams.set('type', 'recurring');
+    if (priceAfter) url.searchParams.set('starting_after', priceAfter);
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+        'Stripe-Account': account,
+      },
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return json({ error: `Stripe error: ${errText.slice(0, 300)}` }, 502);
+    }
+    const data = await res.json();
+    const prices: any[] = data.data ?? [];
+    for (const price of prices) {
+      const priceId = String(price.id);
+      if (!priceMeta.has(priceId)) {
+        priceMeta.set(priceId, {
+          nickname: price.nickname ? String(price.nickname) : null,
+          productId: typeof price.product === 'string' ? price.product : null,
+          amount: amountLabel(price),
+        });
+      }
+      if (!catalogPrice.has(priceId)) {
+        catalogPrice.set(priceId, {
+          amount_cents:
+            typeof price.unit_amount === 'number' ? price.unit_amount : 0,
+          currency: String(price.currency ?? 'gbp'),
+          interval: price.recurring?.interval ?? null,
+        });
+      }
+    }
+    if (!data.has_more) break;
+    priceAfter = prices[prices.length - 1]?.id;
+    if (!priceAfter) break;
+  }
+
   // Resolve product names directly. Expanding data.items.data.price.product
   // off the subscription list is 5 levels deep and Stripe caps expansion at
   // 4, so fetch each referenced product on its own instead.
@@ -199,6 +253,10 @@ Deno.serve(async (req: Request) => {
     m.label = meta.nickname ?? productName ?? meta.amount;
   }
 
+  // Every known price — catalogue prices plus any referenced by a live
+  // subscription (which may be archived and absent from the catalogue).
+  // Seed at count 0 so a price with no subscriber still surfaces; then
+  // tally subscribers.
   const priceById = new Map<
     string,
     {
@@ -210,17 +268,24 @@ Deno.serve(async (req: Request) => {
       count: number;
     }
   >();
-  for (const m of members) {
-    const existing = priceById.get(m.price_id) ?? {
-      price_id: m.price_id,
-      label: m.label,
-      amount_cents: m.amount_cents,
-      currency: m.currency,
-      interval: m.interval,
+  for (const [priceId, meta] of priceMeta) {
+    const cat = catalogPrice.get(priceId);
+    const sample = members.find((m) => m.price_id === priceId);
+    const productName = meta.productId
+      ? productNames.get(meta.productId)
+      : undefined;
+    priceById.set(priceId, {
+      price_id: priceId,
+      label: meta.nickname ?? productName ?? meta.amount,
+      amount_cents: cat?.amount_cents ?? sample?.amount_cents ?? 0,
+      currency: cat?.currency ?? sample?.currency ?? 'gbp',
+      interval: cat?.interval ?? sample?.interval ?? null,
       count: 0,
-    };
-    existing.count += 1;
-    priceById.set(m.price_id, existing);
+    });
+  }
+  for (const m of members) {
+    const existing = priceById.get(m.price_id);
+    if (existing) existing.count += 1;
   }
 
   return json({

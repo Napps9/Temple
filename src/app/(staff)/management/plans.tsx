@@ -614,7 +614,7 @@ export function PlansPanel() {
         {canCreate ? (
           <ChipButton
             className="self-start"
-            label="Import members from Stripe"
+            label="Import plans & members from Stripe"
             icon="cloud-download-outline"
             tone="primary"
             onPress={() =>
