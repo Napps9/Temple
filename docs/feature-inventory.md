@@ -167,7 +167,7 @@ rental, or a **physical subscription box** shipped every cycle.
   revenue from the Team → role-permissions editor.
 - **Under the hood (0085–0087)** — `store_products` / `store_orders` /
   `store_order_items` / `store_digital_deliveries` / `store_subscriptions`,
-  all `gym_id`-RLS; products carry an ordered `image_urls` gallery (0134,
+  all `gym_id`-RLS; products carry an ordered `image_urls` gallery (0135,
   capped at 8; `image_url` kept as the cover for Stripe + thumbnails); the
   member catalogue reads through `list_store_products`
   (which hides the asset path so the deliverable can't leak).

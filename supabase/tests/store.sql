@@ -167,7 +167,7 @@ select throws_ok(
   'Not allowed',
   'a coach cannot read the staff order queue');
 
--- 19-21. Product image galleries (0134). Admin manages the store, so the
+-- 19-21. Product image galleries (0135). Admin manages the store, so the
 -- gallery is written through the same RLS-gated update path staff use.
 do $$ begin perform _test_act_as(current_setting('test.admin')::uuid); end $$;
 
