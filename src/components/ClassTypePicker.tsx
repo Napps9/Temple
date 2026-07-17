@@ -11,6 +11,7 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useClassTypes } from '@/lib/useClassCatalog';
+import { useGymDiscipline } from '@/lib/useGymDiscipline';
 
 export type ClassType = { id: string; name: string; color: string };
 
@@ -23,6 +24,7 @@ export function ClassTypePicker({
 }) {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
+  const discipline = useGymDiscipline();
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
@@ -118,7 +120,7 @@ export function ClassTypePicker({
             label="Type name"
             value={newName}
             onChangeText={setNewName}
-            placeholder="CrossFit"
+            placeholder={discipline === 'hyrox' ? 'Hyrox' : 'CrossFit'}
             autoCapitalize="words"
           />
           <View className="gap-1.5">

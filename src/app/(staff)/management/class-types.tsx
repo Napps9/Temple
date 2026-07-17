@@ -23,6 +23,7 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import {
   useClassRecurrences,
@@ -98,6 +99,7 @@ export function ClassTypesPanel() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
+  const discipline = useGymDiscipline();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditableType[]>([]);
   const [openPickerIdx, setOpenPickerIdx] = useState<number | null>(null);
@@ -655,7 +657,7 @@ export function ClassTypesPanel() {
                       label=""
                       value={r.name}
                       onChangeText={(v) => updateRow(idx, { name: v })}
-                      placeholder="CrossFit"
+                      placeholder={discipline === 'hyrox' ? 'Hyrox' : 'CrossFit'}
                       autoCapitalize="words"
                     />
                   </View>
