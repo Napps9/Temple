@@ -990,6 +990,11 @@ surface, reachable from the **Comms** tab on Manage or
   `email-assets` bucket or take a pasted URL. The document compiles to
   responsive, table-based HTML email (plus a plain-text alternative) via
   a pure, unit-tested renderer; a web iframe shows the real render.
+  **Undo/redo** covers every edit (add/remove/reorder, inspector and
+  canvas typing, theme swaps, colour + settings tweaks); a run of
+  keystrokes coalesces into one step, the history lives above the editor
+  so it survives the Preview toggle, and Cmd/Ctrl+Z · Shift+Z · Ctrl+Y
+  drive it on web (`src/lib/email/history.ts`).
 - **Audience builder** — a mailing list from the gym's own members: all
   members, by lifecycle cohort (Intro / Active / Paying / Expiring /
   Expired), or by member tag. A live count resolves server-side, always

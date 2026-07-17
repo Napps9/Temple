@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
 import {
   Platform,
   Pressable,
@@ -56,6 +56,10 @@ const ADDABLE: EmailBlockType[] = [
   'divider',
   'spacer',
 ];
+
+// Single-field inspector edits to these coalesce into one undo step while
+// the user is typing; every other change is a discrete history entry.
+const COALESCE_FIELDS = new Set(['text', 'href', 'alt', 'src']);
 
 // ---------------------------------------------------------------------------
 // Small shared controls
@@ -379,39 +383,17 @@ function BlockInspector({
 function SettingsInspector({
   document,
   onChange,
-  onApplyTheme,
-  onUndoTheme,
-  canUndoTheme,
   brand,
 }: {
   document: EmailDocument;
   onChange: (doc: EmailDocument) => void;
-  onApplyTheme: (theme: ReturnType<typeof composeThemeWithBrand>) => void;
-  onUndoTheme: () => void;
-  canUndoTheme: boolean;
   brand: BrandSeed;
 }) {
-  const colors = useThemeColors();
   const s = document.settings;
   return (
     <View className="gap-3">
       <View className="gap-1.5">
-        <View className="flex-row items-center justify-between">
-          <FieldLabel>Theme</FieldLabel>
-          {canUndoTheme ? (
-            <Pressable
-              onPress={onUndoTheme}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityLabel="Undo theme change"
-              className="flex-row items-center gap-1 active:opacity-60">
-              <Ionicons name="arrow-undo-outline" size={13} color={colors.iconSecondary} />
-              <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
-                Undo
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <FieldLabel>Theme</FieldLabel>
         <View className="flex-row flex-wrap gap-2">
           {BRAND_THEME_LIST.map((theme) => {
             const composed = composeThemeWithBrand(theme, brand.primaryColor);
@@ -419,7 +401,7 @@ function SettingsInspector({
             return (
               <Pressable
                 key={theme.id}
-                onPress={() => onApplyTheme(composed)}
+                onPress={() => onChange(applyTheme(document, composed))}
                 className={`w-20 gap-1 items-center rounded-xl p-2 border-2 ${
                   selected ? 'border-primary' : 'border-transparent'
                 }`}>
@@ -484,7 +466,7 @@ export function EmailEditor({
   gymId,
 }: {
   document: EmailDocument;
-  onChange: (doc: EmailDocument) => void;
+  onChange: (doc: EmailDocument, opts?: { coalesceKey?: string }) => void;
   brand: BrandSeed;
   gymId: string;
 }) {
@@ -497,54 +479,63 @@ export function EmailEditor({
 
   const selected = document.blocks.find((b) => b.id === selectedId) ?? null;
 
-  // Bumped only by side-panel edits (add/remove/reorder, inspector
-  // patches, theme apply) — never by canvas keystrokes — so the
-  // debounced, syncKey-keyed effect in HtmlPreview.web.tsx can never
-  // reload the iframe mid-keystroke. Mirrors website.tsx's
-  // structuralVersion / handlePanelChange / handleCanvasFieldChange.
-  const [structuralVersion, setStructuralVersion] = useState(0);
-  const debouncedSyncKey = useDebouncedValue(structuralVersion, 350);
+  // The editable iframe reloads only when this key changes (see
+  // HtmlPreview.web.tsx). Bump it on any document change EXCEPT a canvas
+  // keystroke — those already show live in the frame, and reloading would
+  // drop the cursor mid-word. Debounced so a burst of inspector edits (or a
+  // held-down undo) reloads once. Undo/redo driven from the parent flows
+  // through here for free: the document changes with skipReload unset, so
+  // the preview refreshes to match.
+  const [syncKey, setSyncKey] = useState(0);
+  const skipReload = useRef(false);
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    if (skipReload.current) {
+      skipReload.current = false;
+      return;
+    }
+    setSyncKey((v) => v + 1);
+  }, [document]);
+  const debouncedSyncKey = useDebouncedValue(syncKey, 350);
   const previewHtml = renderEmailHtml(document, { unsubscribeUrl: '#', editable: true });
 
-  // One-level undo for the theme picker: applying a theme overwrites every
-  // colour + typography setting (and block colours), so a mis-click used to
-  // be unrecoverable. Snapshot the document just before a theme apply and
-  // let the picker offer an Undo — cleared by any other edit so it can never
-  // roll back unrelated changes.
-  const [themeSnapshot, setThemeSnapshot] = useState<EmailDocument | null>(null);
-
-  function commit(next: EmailDocument) {
-    onChange(next);
-    setStructuralVersion((v) => v + 1);
-  }
-
+  // Side-panel edits: discrete history entries (add/remove/reorder, theme,
+  // colours, settings). The parent's history snapshots the prior document.
   function handleChange(next: EmailDocument) {
-    setThemeSnapshot(null);
-    commit(next);
+    onChange(next);
   }
 
-  function applyThemeChoice(theme: ReturnType<typeof composeThemeWithBrand>) {
-    setThemeSnapshot(document);
-    commit(applyTheme(document, theme));
+  // Inspector patches to a single text-ish field carry a coalesce key so a
+  // run of keystrokes collapses to one undo step; anything else is discrete.
+  function patchBlock(blockId: string, patch: Partial<EmailBlock>) {
+    const keys = Object.keys(patch);
+    const coalesceKey =
+      keys.length === 1 && COALESCE_FIELDS.has(keys[0])
+        ? `patch:${blockId}:${keys[0]}`
+        : undefined;
+    onChange(
+      updateBlock<EmailBlock>(document, blockId, patch),
+      coalesceKey ? { coalesceKey } : undefined,
+    );
   }
 
-  function undoTheme() {
-    if (!themeSnapshot) return;
-    commit(themeSnapshot);
-    setThemeSnapshot(null);
-  }
-
-  // Canvas keystrokes: write straight into document state without ever
-  // touching structuralVersion, so they can never trigger an iframe
-  // reload — see HtmlPreview.web.tsx's syncKey-keyed effect.
+  // Canvas keystrokes write straight through without reloading the iframe
+  // (see skipReload above) and coalesce per field, so typing is one undo
+  // step rather than one-per-character.
   function handleCanvasFieldChange(path: string, value: string) {
     const parsed = parseFieldPath(path);
     if (!parsed) return;
     const block = document.blocks.find((b) => b.id === parsed.blockId);
     if (!block || !isFieldEditable(block.type, parsed.field)) return;
     const patch: Record<string, string> = { [parsed.field]: value };
-    setThemeSnapshot(null);
-    onChange(updateBlock<EmailBlock>(document, block.id, patch as Partial<EmailBlock>));
+    skipReload.current = true;
+    onChange(updateBlock<EmailBlock>(document, block.id, patch as Partial<EmailBlock>), {
+      coalesceKey: `canvas:${parsed.blockId}:${parsed.field}`,
+    });
   }
 
   function addBlock(type: EmailBlockType) {
@@ -678,7 +669,7 @@ export function EmailEditor({
                   <View className="gap-3 p-3 border border-t-0 border-primary/30 rounded-b-lg">
                     <BlockInspector
                       block={block}
-                      onPatch={(patch) => handleChange(updateBlock(document, block.id, patch))}
+                      onPatch={(patch) => patchBlock(block.id, patch)}
                       onUploadImage={uploadImageForSelected}
                       uploading={uploading}
                     />
@@ -726,14 +717,7 @@ export function EmailEditor({
       <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
         Email style
       </Text>
-      <SettingsInspector
-        document={document}
-        onChange={handleChange}
-        onApplyTheme={applyThemeChoice}
-        onUndoTheme={undoTheme}
-        canUndoTheme={themeSnapshot !== null}
-        brand={brand}
-      />
+      <SettingsInspector document={document} onChange={handleChange} brand={brand} />
     </View>
   );
 

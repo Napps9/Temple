@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { AudienceBuilder } from '@/components/email/AudienceBuilder';
@@ -30,8 +30,8 @@ import {
   coerceDocument,
   documentWarnings,
   type BrandSeed,
-  type EmailDocument,
 } from '@/lib/email/blocks';
+import { useEmailHistory } from '@/lib/email/history';
 import { renderEmailHtml } from '@/lib/email/render';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -130,9 +130,18 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   const [subject, setSubject] = useState(campaign.subject);
   const [preheader, setPreheader] = useState(campaign.preheader);
   const [fromName, setFromName] = useState(campaign.from_name ?? '');
-  const [document, setDocument] = useState<EmailDocument>(() =>
+  const history = useEmailHistory(() =>
     coerceDocument(campaign.design, brandSeed),
   );
+  const {
+    document,
+    set: setDocument,
+    reset: resetDocument,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = history;
   const [audience, setAudience] = useState<AudienceDefinition>(() =>
     normalizeAudience(campaign.audience),
   );
@@ -157,11 +166,11 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     setSubject(campaign.subject);
     setPreheader(campaign.preheader);
     setFromName(campaign.from_name ?? '');
-    setDocument(coerceDocument(campaign.design, brandSeed));
+    resetDocument(coerceDocument(campaign.design, brandSeed));
     setAudience(normalizeAudience(campaign.audience));
     setTopicId(campaign.topic_id ?? null);
     initialized.current = true;
-  }, [campaign, brandSeed]);
+  }, [campaign, brandSeed, resetDocument]);
 
   const persist = useMemo(
     () =>
@@ -218,6 +227,38 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     };
   }, [persist]);
 
+  // Cmd/Ctrl+Z / Shift+Z / Ctrl+Y drive the document history while the
+  // builder is open. Skip when the caret is in a form field so the browser's
+  // native text undo still works there; the canvas is an iframe, so its own
+  // keystrokes never reach this listener.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (mode !== 'design') return;
+    function onKey(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      if (key !== 'z' && key !== 'y') return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (key === 'y' || (key === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        redo();
+      } else if (key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mode, undo, redo]);
+
   const footer = {
     businessName: settings.data?.footer_business_name || brand.gymName,
     address: settings.data?.footer_address ?? '',
@@ -271,6 +312,20 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
               Design email
             </Text>
+            <View className="flex-row items-center gap-1">
+              <HistoryButton
+                icon="arrow-undo-outline"
+                label="Undo"
+                onPress={undo}
+                disabled={!canUndo}
+              />
+              <HistoryButton
+                icon="arrow-redo-outline"
+                label="Redo"
+                onPress={redo}
+                disabled={!canRedo}
+              />
+            </View>
             <SaveButton state={saveState} onPress={saveNow} />
             {Platform.OS === 'web' ? (
               <Pressable
@@ -451,6 +506,35 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         )}
       </ScrollView>
     </Screen>
+  );
+}
+
+// Undo/redo controls for the builder header. Icon-only to sit quietly next
+// to Save; disabled (dimmed) when there's nothing to step to.
+function HistoryButton({
+  icon,
+  label,
+  onPress,
+  disabled,
+}: {
+  icon: ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  const colors = useThemeColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className={`w-8 h-8 rounded-lg items-center justify-center active:opacity-70 ${
+        disabled ? 'opacity-30' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+      }`}>
+      <Ionicons name={icon} size={18} color={colors.iconSecondary} />
+    </Pressable>
   );
 }
 
