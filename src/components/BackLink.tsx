@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { type Href, router } from 'expo-router';
+import { type Href, router, useLocalSearchParams } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
 import { haptic } from '@/lib/haptic';
@@ -50,18 +50,29 @@ export function BackLink({
   preferBack?: boolean;
 }) {
   const colors = useThemeColors();
+  // A sub-page opened from the setup checklist carries ?backTo=setup so its
+  // back affordance returns to the checklist the owner was working through —
+  // not the page's usual "Manage" parent. Scoped to this one param, so the
+  // deliberate named-destination default (which ignores history to avoid
+  // landing on an unrelated prior screen) is untouched everywhere else.
+  const { backTo } = useLocalSearchParams<{ backTo?: string }>();
+  const toSetup = backTo === 'setup';
+  const effLabel = toSetup ? 'Setup' : label;
+  const effFallback: Href | undefined = toSetup ? '/onboarding' : fallbackHref;
+  const effPreferBack = toSetup || preferBack;
+
   function onPress() {
     haptic.selection();
-    if (preferBack) {
+    if (effPreferBack) {
       if (router.canGoBack()) {
         router.back();
         return;
       }
-      if (fallbackHref) router.replace(fallbackHref);
+      if (effFallback) router.replace(effFallback);
       return;
     }
-    if (fallbackHref) {
-      router.replace(fallbackHref);
+    if (effFallback) {
+      router.replace(effFallback);
       return;
     }
     if (router.canGoBack()) {
@@ -69,7 +80,7 @@ export function BackLink({
     }
   }
 
-  const a11yLabel = label === 'Back' ? 'Back' : `Back to ${label}`;
+  const a11yLabel = effLabel === 'Back' ? 'Back' : `Back to ${effLabel}`;
 
   if (inline) {
     return (
@@ -92,7 +103,7 @@ export function BackLink({
       accessibilityLabel={a11yLabel}
       className="flex-row items-center gap-1 self-start py-1 active:opacity-70">
       <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
-      <Text className="text-gray-500 dark:text-gray-400">{label}</Text>
+      <Text className="text-gray-500 dark:text-gray-400">{effLabel}</Text>
     </Pressable>
   );
 }
