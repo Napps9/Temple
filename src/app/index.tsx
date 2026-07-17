@@ -20,6 +20,7 @@ const REQUIRED_SETUP_KEYS = new Set([
   'settings',
   'class_type_and_schedule',
   'parq',
+  'stripe',
   'plan',
 ]);
 

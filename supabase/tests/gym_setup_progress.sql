@@ -5,7 +5,7 @@
 -- still reports them.
 
 begin;
-select plan(12);
+select plan(13);
 
 \ir _helpers.psql
 
@@ -169,14 +169,32 @@ select is(
   'members_imported flips done once a pending_members row exists'
 );
 
--- 10. All nine complete (skipping workouts_imported which requires a
+-- 9b. stripe flips done once a connected Stripe account row exists. The
+-- insert bypasses RLS (there's no owner INSERT policy — the edge function
+-- writes it with the service role), mirroring the logo update above.
+do $$
+begin
+  reset role;
+  insert into public.gym_stripe_accounts (gym_id, stripe_account_id)
+    values (current_setting('test.gym')::uuid, 'acct_setuptest');
+  perform _test_act_as(current_setting('test.owner')::uuid);
+end $$;
+
+select is(
+  (select done from public.get_gym_setup_progress(
+     current_setting('test.gym')::uuid) where step_key = 'stripe'),
+  true,
+  'stripe step flips done when a connected Stripe account exists'
+);
+
+-- 10. Eight of nine complete (skipping workouts_imported which requires a
 -- linked profile + tracked_workouts row — covered in
 -- import_member_workouts.sql).
 select is(
   (select count(*) from public.get_gym_setup_progress(
      current_setting('test.gym')::uuid) where done)::int,
-  7,
-  'seven of eight steps report done; workouts_imported needs a tracked workout'
+  8,
+  'eight of nine steps report done; workouts_imported needs a tracked workout'
 );
 
 -- 11-12. Sub-step counts on the remaining multi-part steps. logo and

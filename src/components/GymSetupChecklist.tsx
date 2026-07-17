@@ -28,6 +28,7 @@ type Step = {
     | 'settings'
     | 'class_type_and_schedule'
     | 'parq'
+    | 'stripe'
     | 'plan'
     | 'team'
     | 'members_imported'
@@ -72,6 +73,14 @@ const STEPS: Step[] = [
       'Upload a waiver to sign or build a PAR-Q — one is enough. Until you do, the booking safety gate is off.',
     href: '/management/parq',
     icon: 'medkit-outline',
+  },
+  {
+    key: 'stripe',
+    label: 'Connect payments',
+    description:
+      'Connect Stripe so members can pay you — your own account, Temple takes no cut. Needed before you can sell a plan.',
+    href: '/management/billing',
+    icon: 'wallet-outline',
   },
   {
     key: 'plan',

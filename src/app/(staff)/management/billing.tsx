@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Platform, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
@@ -30,7 +30,7 @@ export default function BillingScreen() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const role = useRole();
-  const params = useLocalSearchParams<{ stripe?: string }>();
+  const params = useLocalSearchParams<{ stripe?: string; backTo?: string }>();
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -38,6 +38,24 @@ export default function BillingScreen() {
   const [volumeInput, setVolumeInput] = useState(() => centsToRateInput(500_000));
   const volumeCents = parseRateToCents(volumeInput) ?? 0;
   const elsewhere = estimateElsewhereMarkup(volumeCents);
+
+  // Returning from Stripe's OAuth round-trip: if we came from the setup
+  // checklist, bounce back to it now the account is connected. The ?backTo
+  // param is lost across Stripe's redirect, so connect() stashed a flag.
+  useEffect(() => {
+    if (params.stripe !== 'connected' && params.stripe !== 'error') return;
+    if (typeof window === 'undefined') return;
+    let flagged = false;
+    try {
+      flagged = window.sessionStorage.getItem('temple-setup-stripe') === '1';
+      if (flagged) window.sessionStorage.removeItem('temple-setup-stripe');
+    } catch {
+      // sessionStorage unavailable — the manual back link still works
+    }
+    if (flagged && params.stripe === 'connected') {
+      router.replace('/onboarding');
+    }
+  }, [params.stripe]);
 
   const account = useQuery({
     queryKey: ['gym-stripe-account', membership?.gymId],
@@ -152,6 +170,16 @@ export default function BillingScreen() {
       const url = (data as { url?: string } | null)?.url;
       if (!url) throw new Error('Could not start the Stripe connection');
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        // Remember we came from the setup checklist so we can return there
+        // after the OAuth round-trip — ?backTo doesn't survive Stripe's
+        // redirect, so stash it where the return handler above can read it.
+        if (params.backTo === 'setup') {
+          try {
+            window.sessionStorage.setItem('temple-setup-stripe', '1');
+          } catch {
+            // sessionStorage unavailable — the manual back link still works
+          }
+        }
         window.location.href = url;
         return; // navigating away; leave the spinner up
       }

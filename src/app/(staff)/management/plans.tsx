@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -140,6 +140,7 @@ function coverageDiffers(r: EditablePlan): boolean {
 
 export function PlansPanel() {
   const colors = useThemeColors();
+  const { backTo } = useLocalSearchParams<{ backTo?: string }>();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditablePlan[]>([]);
@@ -580,7 +581,13 @@ export function PlansPanel() {
             <Button
               variant="secondary"
               icon="link-outline"
-              onPress={() => router.push('/management/billing' as never)}>
+              onPress={() =>
+                router.push(
+                  (backTo === 'setup'
+                    ? '/management/billing?backTo=setup'
+                    : '/management/billing') as never,
+                )
+              }>
               {stripeGate === 'attention' ? 'Fix in Billing' : 'Connect Stripe'}
             </Button>
           </View>
