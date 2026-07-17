@@ -180,10 +180,28 @@ export default function ImportStripeScreen() {
         }
       }
 
+      // A price already imported (same stripe_price_id) is reused, not
+      // duplicated — so a re-run, or a retry after a partial failure,
+      // doesn't stack up copies of the same plan.
+      const { data: existing } = await supabase
+        .from('membership_plans')
+        .select('plan_id, stripe_price_id')
+        .eq('gym_id', membership.gymId)
+        .not('stripe_price_id', 'is', null);
+      const existingByPrice = new Map(
+        (existing ?? []).map((p) => [p.stripe_price_id as string, p.plan_id]),
+      );
+
       // Create one Temple plan per included Stripe price, caching the
       // Stripe price id so future Temple checkouts reuse it.
       const planIdByPriceId = new Map<string, string>();
+      let createdPlans = 0;
       for (const p of included) {
+        const already = existingByPrice.get(p.price_id);
+        if (already) {
+          planIdByPriceId.set(p.price_id, already);
+          continue;
+        }
         const { data: inserted, error: planErr } = await supabase
           .from('membership_plans')
           .insert({
@@ -201,6 +219,7 @@ export default function ImportStripeScreen() {
           .single();
         if (planErr) throw planErr;
         planIdByPriceId.set(p.price_id, (inserted as { plan_id: string }).plan_id);
+        createdPlans += 1;
       }
 
       const rows = buildStripeImportRows({
@@ -208,17 +227,22 @@ export default function ImportStripeScreen() {
         selectedEmails: selected,
         planIdByPriceId,
       });
-      if (rows.length === 0) throw new Error('No members selected to import');
 
-      const { data, error: e } = await supabase.rpc('import_pending_members', {
-        p_gym_id: membership.gymId,
-        p_rows: rows as unknown as Json,
-      });
-      if (e) throw e;
-      const res = (data ?? [])[0] as
-        | { inserted: number; updated: number; skipped: number }
-        | undefined;
-      return { staged: rows.length, createdPlans: included.length, result: res };
+      // Plans-only import is valid — a gym with no active subscribers can
+      // still bring its plan catalogue across. Only stage members when
+      // there are some; an empty set is a success, not an error.
+      let res: { inserted: number; updated: number; skipped: number } | undefined;
+      if (rows.length > 0) {
+        const { data, error: e } = await supabase.rpc('import_pending_members', {
+          p_gym_id: membership.gymId,
+          p_rows: rows as unknown as Json,
+        });
+        if (e) throw e;
+        res = (data ?? [])[0] as
+          | { inserted: number; updated: number; skipped: number }
+          | undefined;
+      }
+      return { staged: rows.length, createdPlans, result: res };
     },
     onSuccess: () => {
       setError(null);
@@ -253,8 +277,9 @@ export default function ImportStripeScreen() {
             <View className="flex-row items-center gap-2">
               <Ionicons name="checkmark-circle" size={20} color="#10B981" />
               <Text className="text-gray-900 dark:text-gray-50 font-semibold text-lg">
-                {commit.data.createdPlans} plan
-                {commit.data.createdPlans === 1 ? '' : 's'} imported
+                {commit.data.createdPlans > 0
+                  ? `${commit.data.createdPlans} plan${commit.data.createdPlans === 1 ? '' : 's'} imported`
+                  : 'Plans already imported'}
                 {commit.data.staged > 0
                   ? ` · ${commit.data.staged} member${commit.data.staged === 1 ? '' : 's'} staged`
                   : ''}
