@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -13,9 +13,10 @@ import { useThemeColors } from '@/lib/theme';
 // the gym is still being stood up. Each step is derived from a
 // concrete query against the live data — when the owner uploads a
 // logo / publishes PAR-Q / adds a plan, the matching step flips done.
-// The whole card disappears once every *required* step is complete so
-// it never nags a finished gym; the team-invite step is optional so a
-// solo coach isn't kept in the nag state.
+// The card stays put until every step (required and optional) is done,
+// or the owner dismisses it — both surfaces share the
+// onboarding_dismissed_at flag — so setup is always one place away and
+// the optional steps don't vanish the moment the required ones finish.
 //
 // Admin can finish the non-plan steps but not plans
 // (`can_manage_plans` is owner-only by default), so the checklist is
@@ -154,6 +155,33 @@ export function GymSetupChecklist() {
     },
   });
 
+  const queryClient = useQueryClient();
+  const dismissed = useQuery({
+    queryKey: ['gym-onboarding-dismissed', membership?.gymId],
+    enabled: !!membership?.gymId && role === 'owner',
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase
+        .from('gyms')
+        .select('onboarding_dismissed_at')
+        .eq('id', membership!.gymId)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data?.onboarding_dismissed_at;
+    },
+  });
+  const dismiss = useMutation({
+    mutationFn: async () => {
+      if (!membership?.gymId) return;
+      const { error } = await supabase.rpc('dismiss_gym_onboarding', {
+        p_gym_id: membership.gymId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gym-onboarding-dismissed'] });
+    },
+  });
+
   const status = useMemo(() => {
     const map = new Map<Step['key'], ProgressRow>();
     for (const row of progress.data ?? []) map.set(row.step_key, row);
@@ -170,9 +198,12 @@ export function GymSetupChecklist() {
 
   if (role !== 'owner') return null;
   if (progress.isLoading || !progress.data) return null;
+  if (dismissed.data) return null;
   const requiredSteps = STEPS.filter((s) => !s.optional);
   const requiredDone = status.filter((s) => !s.optional && s.done).length;
-  if (requiredDone === requiredSteps.length) return null;
+  const requiredComplete = requiredDone === requiredSteps.length;
+  // Stay until genuinely finished (required + optional) or dismissed.
+  if (status.every((s) => s.done)) return null;
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
@@ -187,7 +218,9 @@ export function GymSetupChecklist() {
             Get your gym ready
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            {requiredDone} of {requiredSteps.length} done
+            {requiredComplete
+              ? 'You’re all set — optional extras below'
+              : `${requiredDone} of ${requiredSteps.length} done`}
           </Text>
         </View>
         <Ionicons
@@ -257,6 +290,15 @@ export function GymSetupChecklist() {
             />
           </Pressable>
         ))}
+        <Pressable
+          onPress={() => dismiss.mutate()}
+          disabled={dismiss.isPending}
+          hitSlop={8}
+          className="self-center pt-1 active:opacity-70">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            {dismiss.isPending ? 'Hiding…' : 'I’ll finish setup later'}
+          </Text>
+        </Pressable>
       </View>
       ) : null}
     </View>
