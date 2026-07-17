@@ -497,12 +497,28 @@ export default function ImportMembersScreen() {
         }
       }
 
-      // 1. Insert each non-dropped, non-existing-mapped plan.
+      // 1. Insert each non-dropped, non-existing-mapped plan. A plan whose
+      //    name already matches an active plan is reused, not re-created —
+      //    so a re-import (or importing after the Stripe import made the
+      //    plan) maps to it instead of hitting the name-unique index
+      //    (0131). Mirrors the Stripe importer's reuse-by-name.
+      const existingByName = new Map(
+        (existingPlans.data ?? []).map((ep) => [
+          ep.name.trim().toLowerCase(),
+          ep.plan_id,
+        ]),
+      );
       const planNameToId = new Map<string, string>();
       for (const p of reviewedPlans.values()) {
         if (p.drop) continue;
         if (p.existing_plan_id) {
           planNameToId.set(p.raw_name, p.existing_plan_id);
+          continue;
+        }
+        const nameKey = p.name.trim().toLowerCase();
+        const byName = existingByName.get(nameKey);
+        if (byName) {
+          planNameToId.set(p.raw_name, byName);
           continue;
         }
         const { data: inserted, error: planErr } = await supabase
@@ -518,7 +534,10 @@ export default function ImportMembersScreen() {
           .select('plan_id')
           .single();
         if (planErr) throw planErr;
-        planNameToId.set(p.raw_name, (inserted as { plan_id: string }).plan_id);
+        const newId = (inserted as { plan_id: string }).plan_id;
+        planNameToId.set(p.raw_name, newId);
+        // A later reviewed plan with the same final name reuses this one.
+        existingByName.set(nameKey, newId);
       }
 
       // 2. Re-build the import rows with the plan map + tag drops.
