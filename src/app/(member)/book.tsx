@@ -349,7 +349,7 @@ export default function Book() {
     <ClassesCalendar
       mode="book"
       recommendedSessionId={recommendation.data?.id ?? null}
-      headerSlot={
+      topSlot={
         <View className="gap-2">
           <MemberGetStartedChecklist />
           <PostClassLogPrompt />

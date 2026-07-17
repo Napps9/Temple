@@ -426,12 +426,10 @@ function ClassTypeFilterRow({
 export function ClassesCalendar({
   mode,
   topSlot,
-  headerSlot,
   recommendedSessionId,
 }: {
   mode: 'manage' | 'book';
   topSlot?: React.ReactNode;
-  headerSlot?: React.ReactNode;
   // The session id the member's "Recommended" card is pointing at (see
   // useRecommendedClass in book.tsx) — the matching agenda row gets a
   // purple border so the recommendation is visible in the day's list,
@@ -636,9 +634,6 @@ export function ClassesCalendar({
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      {headerSlot ? (
-        <View className="w-full max-w-5xl mx-auto px-2 pt-3">{headerSlot}</View>
-      ) : null}
       {compactBook ? (
         <View className="w-full max-w-5xl mx-auto px-2">
           {/* Phone Book: the date sits where the month used to — arrows
@@ -1224,13 +1219,17 @@ function DayView({
   const topSlotHeight = useRef(0);
   const didInitialScroll = useRef(false);
   const scrollToNow = useCallback(() => {
+    // Book mode renders a plain stacked list here, not the hourly grid —
+    // there's no "now" row to land on, and jumping would scroll the
+    // topSlot (onboarding checklist + bookings cards) off-screen on load.
+    if (mode !== 'manage') return;
     const now = new Date();
     const hourTarget = isSameDay(now, date) ? now.getHours() : HOURS[0];
     const y = scrollYForHour(hourTarget) + topSlotHeight.current;
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y, animated: false });
     });
-  }, [date]);
+  }, [date, mode]);
   useEffect(() => {
     didInitialScroll.current = false;
     scrollToNow();
