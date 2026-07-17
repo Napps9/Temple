@@ -326,7 +326,7 @@ export default function MemberDetailScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink preferBack fallbackHref="/management/members" />
+        <BackLink label="Members" fallbackHref="/management/members" />
 
         <View className="flex-row items-center gap-3">
           <Avatar

@@ -12,7 +12,7 @@ export function LegalDocScreen({ doc }: { doc: LegalDoc }) {
   return (
     <Screen>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Back" preferBack fallbackHref="/" />
+        <BackLink label="Back" fallbackHref="/" />
 
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">

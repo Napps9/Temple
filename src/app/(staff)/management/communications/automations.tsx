@@ -109,7 +109,7 @@ export default function AutomationsScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="py-6 px-4 gap-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink preferBack fallbackHref="/management/communications" />
+          <BackLink label="Email campaigns" fallbackHref="/management/communications" />
           <Text className="text-gray-500 dark:text-gray-400">
             You don’t have permission to manage communications.
           </Text>
@@ -122,7 +122,7 @@ export default function AutomationsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink preferBack fallbackHref="/management/communications" />
+        <BackLink label="Email campaigns" fallbackHref="/management/communications" />
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
