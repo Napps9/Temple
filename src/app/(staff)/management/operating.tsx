@@ -424,10 +424,10 @@ export function OperatingDefaultsPanel() {
         />
       </Section>
 
-      <Section title="Insights">
+      <Section title="Leads">
         <DurationField
           label="Lead conversion window"
-          blurb="The window the leads dashboard reports conversion against."
+          blurb="When a new member's email matches an open lead captured within this window, the lead is automatically marked converted. Older leads can still be linked manually."
           value={String(draft.lead_conversion_window_days)}
           onChange={(v) =>
             setDraft((d) =>
