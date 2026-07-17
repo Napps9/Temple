@@ -16,15 +16,19 @@ export type WorkoutField =
   | 'weight'
   | 'reps'
   | 'unit'
+  | 'score_type'
+  | 'score_value'
   | 'notes';
 
 export const WORKOUT_FIELD_LABELS: Record<WorkoutField, string> = {
   email: 'Member email',
   date: 'Date',
-  movement: 'Movement / exercise',
+  movement: 'Movement / workout name',
   weight: 'Weight',
   reps: 'Reps',
   unit: 'Weight unit (kg or lb)',
+  score_type: 'Score type (For Time / AMRAP…)',
+  score_value: 'Score / result',
   notes: 'Notes',
 };
 
@@ -45,6 +49,8 @@ const FIELD_HEADERS: Record<WorkoutField, string[]> = {
   ],
   reps: ['reps', 'rep', 'repetitions', 'count', 'rep count'],
   unit: ['unit', 'units', 'weight unit', 'weight units'],
+  score_type: ['score type', 'result type', 'scoring', 'scoring type'],
+  score_value: ['score value', 'score', 'result value', 'score result'],
   notes: ['notes', 'note', 'comments', 'comment', 'description'],
 };
 
@@ -244,4 +250,231 @@ export function buildWorkoutRows(
     });
   }
   return { ready: out, misses, skippedNoEmail, skippedNoDate };
+}
+
+// --- Scored WOD sections (Phase A) --------------------------------------
+// Benchmark results (Fran, Cindy, Grace…) whose score is a time or an
+// AMRAP round count, rather than a weighted movement. These land as a
+// tracked_workout_sections row (section_category 'wod') — sections are
+// title-based, so the workout name is the title and no movement vocab is
+// needed. See docs/workout-results-import-scope.md.
+
+export type ImportSectionRow = {
+  email: string;
+  date: string; // ISO YYYY-MM-DD
+  section_category: string; // 'wod' for imported benchmarks
+  section_format: 'for_time' | 'amrap';
+  title: string; // the workout / benchmark name
+  total_time_seconds: number | null;
+  total_rounds: number | null;
+  total_extra_reps: number | null;
+  notes: string | null;
+};
+
+// "3:12" -> 192, "1:05:10" -> 3910. mm:ss or h:mm:ss; null if it doesn't
+// read as a clock time (mm/ss out of range, or not colon-separated).
+export function parseTimeToSeconds(v: string): number | null {
+  const s = v.trim();
+  let m = s.match(/^(\d+):(\d{2})$/);
+  if (m) {
+    const sec = +m[2];
+    if (sec >= 60) return null;
+    return +m[1] * 60 + sec;
+  }
+  m = s.match(/^(\d+):(\d{2}):(\d{2})$/);
+  if (m) {
+    const min = +m[2];
+    const sec = +m[3];
+    if (min >= 60 || sec >= 60) return null;
+    return +m[1] * 3600 + min * 60 + sec;
+  }
+  return null;
+}
+
+// "19+7" -> { rounds: 19, extraReps: 7 }. A bare "19" -> { rounds: 19,
+// extraReps: 0 }. Null otherwise.
+export function parseRoundsReps(
+  v: string,
+): { rounds: number; extraReps: number } | null {
+  const s = v.trim();
+  let m = s.match(/^(\d+)\s*\+\s*(\d+)$/);
+  if (m) return { rounds: +m[1], extraReps: +m[2] };
+  m = s.match(/^(\d+)$/);
+  if (m) return { rounds: +m[1], extraReps: 0 };
+  return null;
+}
+
+// Which import path a row belongs to, read from its Score Type.
+// 'for_time'/'amrap' become scored sections; 'deferred' is Hyrox/race
+// data not imported yet; 'weighted' is the existing movement path. Null
+// (unrecognised type) is treated as weighted, best-effort.
+export type RowKind = 'for_time' | 'amrap' | 'weighted' | 'deferred';
+
+export function classifyScoreType(scoreType: string): RowKind | null {
+  const n = normalise(scoreType);
+  if (!n) return null;
+  if (n === 'for time' || n === 'fortime') return 'for_time';
+  if (
+    n === 'amrap' ||
+    n === 'for rounds reps' ||
+    n === 'for rounds and reps' ||
+    n === 'rounds reps' ||
+    n === 'rounds and reps'
+  ) {
+    return 'amrap';
+  }
+  if (
+    n === 'for weight' ||
+    n === 'weight' ||
+    n === 'load' ||
+    n === 'for load' ||
+    n === 'max load' ||
+    n === '1rm'
+  ) {
+    return 'weighted';
+  }
+  if (n === 'time' || n === 'total time' || n === 'total race time') {
+    return 'deferred';
+  }
+  return null;
+}
+
+// First non-empty value mapped to `field` in this row.
+function cellFor(
+  field: WorkoutField,
+  headers: string[],
+  mapping: (WorkoutField | null)[],
+  cells: string[],
+): string {
+  for (let j = 0; j < headers.length; j += 1) {
+    if (mapping[j] === field) {
+      const v = (cells[j] ?? '').trim();
+      if (v) return v;
+    }
+  }
+  return '';
+}
+
+export function buildSectionRows(
+  headers: string[],
+  mapping: (WorkoutField | null)[],
+  rows: string[][],
+): {
+  ready: ImportSectionRow[];
+  skippedNoEmail: number;
+  skippedNoDate: number;
+  skippedUnscored: number;
+} {
+  const out: ImportSectionRow[] = [];
+  let skippedNoEmail = 0;
+  let skippedNoDate = 0;
+  let skippedUnscored = 0;
+
+  for (const cells of rows) {
+    const email = cellFor('email', headers, mapping, cells).toLowerCase();
+    const dateRaw = cellFor('date', headers, mapping, cells);
+    // The workout / benchmark name is mapped to `movement` (the CSV's
+    // Event/Workout Name column); a section carries it as the title.
+    const title = cellFor('movement', headers, mapping, cells);
+    const scoreType = cellFor('score_type', headers, mapping, cells);
+    const scoreValue = cellFor('score_value', headers, mapping, cells);
+    const notes = cellFor('notes', headers, mapping, cells) || null;
+
+    if (!email) {
+      skippedNoEmail += 1;
+      continue;
+    }
+    const date = dateRaw ? toIsoDate(dateRaw) : null;
+    if (!date) {
+      skippedNoDate += 1;
+      continue;
+    }
+
+    const kind = classifyScoreType(scoreType);
+    if (kind === 'for_time') {
+      const secs = parseTimeToSeconds(scoreValue);
+      if (secs === null) {
+        skippedUnscored += 1;
+        continue;
+      }
+      out.push({
+        email,
+        date,
+        section_category: 'wod',
+        section_format: 'for_time',
+        title: title || 'Imported workout',
+        total_time_seconds: secs,
+        total_rounds: null,
+        total_extra_reps: null,
+        notes,
+      });
+    } else if (kind === 'amrap') {
+      const rr = parseRoundsReps(scoreValue);
+      if (rr === null) {
+        skippedUnscored += 1;
+        continue;
+      }
+      out.push({
+        email,
+        date,
+        section_category: 'wod',
+        section_format: 'amrap',
+        title: title || 'Imported workout',
+        total_time_seconds: null,
+        total_rounds: rr.rounds,
+        total_extra_reps: rr.extraReps,
+        notes,
+      });
+    } else {
+      skippedUnscored += 1;
+    }
+  }
+  return { ready: out, skippedNoEmail, skippedNoDate, skippedUnscored };
+}
+
+export type ImportResults = {
+  weighted: ImportWorkoutRow[];
+  sections: ImportSectionRow[];
+  misses: MovementMiss[];
+  deferred: number; // Hyrox / race rows — Phase B
+  skippedNoEmail: number;
+  skippedNoDate: number;
+  skippedUnscored: number;
+};
+
+// Split every row into the weighted-movement path, the scored-section
+// path, or the deferred (Hyrox/race) bucket — keyed off Score Type — then
+// coerce each bucket. With no Score Type column mapped, every row is
+// weighted, so a plain strength CSV behaves exactly as before.
+export function buildResults(
+  headers: string[],
+  mapping: (WorkoutField | null)[],
+  rows: string[][],
+): ImportResults {
+  const hasScoreType = mapping.includes('score_type');
+  const weightedRows: string[][] = [];
+  const sectionRows: string[][] = [];
+  let deferred = 0;
+
+  for (const cells of rows) {
+    const kind = hasScoreType
+      ? classifyScoreType(cellFor('score_type', headers, mapping, cells))
+      : 'weighted';
+    if (kind === 'for_time' || kind === 'amrap') sectionRows.push(cells);
+    else if (kind === 'deferred') deferred += 1;
+    else weightedRows.push(cells);
+  }
+
+  const weighted = buildWorkoutRows(headers, mapping, weightedRows);
+  const sections = buildSectionRows(headers, mapping, sectionRows);
+
+  return {
+    weighted: weighted.ready,
+    sections: sections.ready,
+    misses: weighted.misses,
+    deferred,
+    skippedNoEmail: weighted.skippedNoEmail + sections.skippedNoEmail,
+    skippedNoDate: weighted.skippedNoDate + sections.skippedNoDate,
+    skippedUnscored: sections.skippedUnscored,
+  };
 }

@@ -4223,6 +4223,15 @@ export type Database = {
           skipped_no_movement: number;
         }[];
       };
+      import_member_results: {
+        Args: { p_gym_id: string; p_rows: Json };
+        Returns: {
+          inserted_workouts: number;
+          inserted_sections: number;
+          skipped_no_member: number;
+          skipped_duplicate: number;
+        }[];
+      };
       pending_members_stats: {
         Args: { p_gym_id: string };
         Returns: {

@@ -12,7 +12,7 @@ import { errorMessage } from '@/lib/errors';
 import { parseCsv } from '@/lib/import/csv';
 import {
   autoDetect,
-  buildWorkoutRows,
+  buildResults,
   looksLikeScoredResults,
   WORKOUT_FIELD_LABELS,
   type WorkoutField,
@@ -25,11 +25,28 @@ import type { Json } from '@/types/database';
 
 type Phase = 'upload' | 'map' | 'preview' | 'done';
 
-type Result = {
+type WorkoutRpcResult = {
   inserted_workouts: number;
   inserted_results: number;
   skipped_no_member: number;
   skipped_no_movement: number;
+};
+
+type SectionRpcResult = {
+  inserted_workouts: number;
+  inserted_sections: number;
+  skipped_no_member: number;
+  skipped_duplicate: number;
+};
+
+// Combined across the two RPCs (weighted movements + scored sections).
+type Result = {
+  workouts: number;
+  results: number; // weighted movement results
+  sections: number; // scored benchmark sections
+  skipped_no_member: number;
+  skipped_no_movement: number;
+  skipped_duplicate: number;
 };
 
 const FIELD_OPTIONS: { key: WorkoutField | 'ignore'; label: string }[] = [
@@ -59,14 +76,24 @@ export default function ImportWorkoutsScreen() {
 
   const built = useMemo(() => {
     if (phase !== 'preview' && phase !== 'map') {
-      return { ready: [], misses: [], skippedNoEmail: 0, skippedNoDate: 0 };
+      return {
+        weighted: [],
+        sections: [],
+        misses: [],
+        deferred: 0,
+        skippedNoEmail: 0,
+        skippedNoDate: 0,
+        skippedUnscored: 0,
+      };
     }
-    return buildWorkoutRows(
+    return buildResults(
       headers,
       mapping.map((m) => (m === 'ignore' ? null : m)) as (WorkoutField | null)[],
       rows,
     );
   }, [rows, headers, mapping, phase]);
+
+  const readyCount = built.weighted.length + built.sections.length;
 
   const scoredShape = useMemo(() => looksLikeScoredResults(rows), [rows]);
 
@@ -86,20 +113,45 @@ export default function ImportWorkoutsScreen() {
   }
 
   const commit = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<Result> => {
       if (!membership) throw new Error('Missing context');
-      const { data, error: e } = await supabase.rpc('import_member_workouts', {
-        p_gym_id: membership.gymId,
-        p_rows: built.ready as unknown as Json,
-      });
-      if (e) throw e;
-      const row = (data ?? [])[0] as Result | undefined;
-      return row ?? {
-        inserted_workouts: 0,
-        inserted_results: 0,
+      const acc: Result = {
+        workouts: 0,
+        results: 0,
+        sections: 0,
         skipped_no_member: 0,
         skipped_no_movement: 0,
+        skipped_duplicate: 0,
       };
+      if (built.weighted.length > 0) {
+        const { data, error: e } = await supabase.rpc('import_member_workouts', {
+          p_gym_id: membership.gymId,
+          p_rows: built.weighted as unknown as Json,
+        });
+        if (e) throw e;
+        const row = (data ?? [])[0] as WorkoutRpcResult | undefined;
+        if (row) {
+          acc.workouts += row.inserted_workouts;
+          acc.results += row.inserted_results;
+          acc.skipped_no_member += row.skipped_no_member;
+          acc.skipped_no_movement += row.skipped_no_movement;
+        }
+      }
+      if (built.sections.length > 0) {
+        const { data, error: e } = await supabase.rpc('import_member_results', {
+          p_gym_id: membership.gymId,
+          p_rows: built.sections as unknown as Json,
+        });
+        if (e) throw e;
+        const row = (data ?? [])[0] as SectionRpcResult | undefined;
+        if (row) {
+          acc.workouts += row.inserted_workouts;
+          acc.sections += row.inserted_sections;
+          acc.skipped_no_member += row.skipped_no_member;
+          acc.skipped_duplicate += row.skipped_duplicate;
+        }
+      }
+      return acc;
     },
     onSuccess: (r) => {
       setResult(r);
@@ -120,12 +172,12 @@ export default function ImportWorkoutsScreen() {
             Import workout history
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Drop in a CSV of past workouts: one row per set. This brings in
-            weighted movements — a lift with its weight and reps — not metcon
-            times or race results. We match each row's email to an existing
-            member and group sets on the same date into one workout. Movements
-            are matched against the built-in vocab — unknowns show up below so
-            you can rename them in the CSV.
+            Drop in a CSV of past workouts: one row per result. Weighted lifts
+            (movement + weight + reps) and benchmark WODs scored For Time or
+            AMRAP both import; Hyrox and race splits are coming in a later step.
+            We match each row's email to an existing member and group results on
+            the same date into one workout. Movements are matched against the
+            built-in vocab — unknowns show up below so you can rename them.
           </Text>
         </View>
 
@@ -169,7 +221,8 @@ export default function ImportWorkoutsScreen() {
                     {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
                   <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                    Columns we look for: email, date, movement, weight, reps, unit.
+                    Columns we look for: email, date, movement, weight, reps,
+                    unit, score type, score.
                   </Text>
                 </div>
                 <input
@@ -196,7 +249,7 @@ export default function ImportWorkoutsScreen() {
               onChangeText={setCsvText}
               multiline
               numberOfLines={6}
-              placeholder="email,date,movement,weight,reps,unit"
+              placeholder="email,date,movement,weight,reps,unit,score type,score"
               placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
               autoCorrect={false}
@@ -290,21 +343,48 @@ export default function ImportWorkoutsScreen() {
               Preview
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              {built.ready.length} row{built.ready.length === 1 ? '' : 's'} ready
+              {built.weighted.length} lift{built.weighted.length === 1 ? '' : 's'}
+              {' · '}
+              {built.sections.length} benchmark
+              {built.sections.length === 1 ? '' : 's'} ready
               {built.misses.length > 0
                 ? ` · ${built.misses.length} unknown movement${built.misses.length === 1 ? '' : 's'}`
+                : ''}
+              {built.deferred > 0
+                ? ` · ${built.deferred} race/time result${built.deferred === 1 ? '' : 's'}`
                 : ''}
               {built.skippedNoEmail + built.skippedNoDate > 0
                 ? ` · ${built.skippedNoEmail + built.skippedNoDate} missing email/date`
                 : ''}
             </Text>
 
-            {scoredShape ? <ScoredResultsNotice /> : null}
-
-            {built.ready.length > 0 ? (
+            {built.sections.length > 0 ? (
               <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                {built.ready.slice(0, 6).map((r, i) => (
-                  <View key={i} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
+                {built.sections.slice(0, 6).map((s, i) => (
+                  <View key={`s${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
+                    <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                      {s.email} · {s.date} · {s.title}
+                    </Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      {s.section_format === 'for_time'
+                        ? `For time — ${clock(s.total_time_seconds)}`
+                        : `AMRAP — ${s.total_rounds ?? 0} + ${s.total_extra_reps ?? 0}`}
+                    </Text>
+                  </View>
+                ))}
+                {built.sections.length > 6 ? (
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+                    …and {built.sections.length - 6} more benchmark
+                    {built.sections.length - 6 === 1 ? '' : 's'}.
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {built.weighted.length > 0 ? (
+              <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                {built.weighted.slice(0, 6).map((r, i) => (
+                  <View key={`w${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
                     <Text className="text-gray-900 dark:text-gray-50 text-sm">
                       {r.email} · {r.date} · {r.movement_key}
                     </Text>
@@ -313,9 +393,10 @@ export default function ImportWorkoutsScreen() {
                     </Text>
                   </View>
                 ))}
-                {built.ready.length > 6 ? (
+                {built.weighted.length > 6 ? (
                   <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
-                    …and {built.ready.length - 6} more.
+                    …and {built.weighted.length - 6} more lift
+                    {built.weighted.length - 6 === 1 ? '' : 's'}.
                   </Text>
                 ) : null}
               </View>
@@ -336,6 +417,19 @@ export default function ImportWorkoutsScreen() {
               </View>
             ) : null}
 
+            {built.deferred > 0 ? (
+              <View className="gap-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                  {built.deferred} race / time result
+                  {built.deferred === 1 ? '' : 's'} not imported
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  These look like Hyrox or race splits. Race import is coming in a
+                  later step — the benchmarks and lifts above still import now.
+                </Text>
+              </View>
+            ) : null}
+
             <View className="flex-row gap-2 pt-2">
               <Button variant="secondary" onPress={() => setPhase('map')}>
                 Back
@@ -344,8 +438,8 @@ export default function ImportWorkoutsScreen() {
               <Button
                 onPress={() => commit.mutate()}
                 loading={commit.isPending}
-                disabled={built.ready.length === 0}>
-                Import {built.ready.length} result{built.ready.length === 1 ? '' : 's'}
+                disabled={readyCount === 0}>
+                Import {readyCount} result{readyCount === 1 ? '' : 's'}
               </Button>
             </View>
             {error ? (
@@ -357,13 +451,22 @@ export default function ImportWorkoutsScreen() {
         {phase === 'done' && result ? (
           <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 gap-2">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-              Imported {result.inserted_results} result
-              {result.inserted_results === 1 ? '' : 's'} across {result.inserted_workouts}{' '}
-              workout{result.inserted_workouts === 1 ? '' : 's'}
+              Imported {result.results + result.sections} result
+              {result.results + result.sections === 1 ? '' : 's'} across{' '}
+              {result.workouts} workout{result.workouts === 1 ? '' : 's'}
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              {result.skipped_no_member} skipped (email not in this gym yet) ·{' '}
-              {result.skipped_no_movement} skipped (unknown movement)
+              {result.results} lift{result.results === 1 ? '' : 's'} ·{' '}
+              {result.sections} benchmark{result.sections === 1 ? '' : 's'}
+              {result.skipped_no_member > 0
+                ? ` · ${result.skipped_no_member} skipped (email not in this gym yet)`
+                : ''}
+              {result.skipped_no_movement > 0
+                ? ` · ${result.skipped_no_movement} unknown movement`
+                : ''}
+              {result.skipped_duplicate > 0
+                ? ` · ${result.skipped_duplicate} already imported`
+                : ''}
             </Text>
             <View className="flex-row gap-2 pt-2">
               <Button
@@ -391,14 +494,21 @@ function ScoredResultsNotice() {
         This looks like scored results
       </Text>
       <Text className="text-gray-600 dark:text-gray-300 text-xs">
-        Your file has times, round scores or race splits (e.g. 3:12, 19+7).
-        This importer brings in weighted movements — a lift with its weight and
-        reps, like a 140 kg back squat. Metcon times, AMRAP scores and Hyrox
-        splits can’t be imported yet, so those rows are dropped. Only rows that
-        name a movement Temple knows, with a weight, come across.
+        Map the workout name to Movement, plus the Score type and Score columns.
+        Benchmark WODs (For Time, AMRAP) import as workout results. Weighted lifts
+        still need a movement Temple recognises, and Hyrox race splits come in a
+        later step.
       </Text>
     </View>
   );
+}
+
+// mm:ss for a benchmark time; a bare em-dash when unset.
+function clock(sec: number | null): string {
+  if (sec == null) return '—';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 function dedupeMisses(values: string[]): string[] {
