@@ -220,12 +220,37 @@ export async function acceptInvite(
   if (error) {
     const ctx = (error as { context?: Response }).context;
     let msg = error.message;
+    let errCode: string | undefined;
     if (ctx && typeof ctx.json === 'function') {
       try {
         const b = await ctx.json();
         if (b?.error) msg = String(b.error);
+        if (b?.code) errCode = String(b.code);
       } catch {
         // not JSON — keep the generic message
+      }
+    }
+    // The address already has an account — a double-submit, a first
+    // attempt that created the account but got interrupted before the
+    // membership bound, or a returning invitee. The invite code is the
+    // authorisation, so if the password they typed unlocks that account,
+    // sign them in and bind the membership rather than dead-ending them
+    // on "sign in to accept". Only a genuinely wrong password falls
+    // through to that message.
+    if (errCode === 'account_exists' || /already exists/i.test(msg)) {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (!signInErr) {
+        const { error: rpcError } = await supabase.rpc('accept_invite', {
+          invite_code: code,
+        });
+        // A consumed code here means a prior attempt already bound this
+        // account's membership — they're in, so treat it as accepted.
+        if (rpcError && !/already used/i.test(rpcError.message)) throw rpcError;
+        await clearPendingInviteMetadata();
+        return { status: 'accepted' };
       }
     }
     throw new Error(msg);
