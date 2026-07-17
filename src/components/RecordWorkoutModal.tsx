@@ -625,6 +625,10 @@ export function RecordWorkoutModal({
       queryClient.invalidateQueries({ queryKey: ['tracked-journal-count'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-movement'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-group'] });
+      // Feeds the streak tiles + 12-week heatmap, and gates whether that
+      // rail shows at all — so the first log makes it appear, not just
+      // update.
+      queryClient.invalidateQueries({ queryKey: ['workout-streak-days'] });
       setTimeout(() => close(), 600);
     },
     onError: (e) => setError(errorMessage(e, 'Could not save workout')),
