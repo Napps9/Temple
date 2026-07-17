@@ -31,12 +31,7 @@ function json(body: unknown, status = 200): Response {
 
 const KEEP_STATUSES = new Set(['active', 'trialing', 'past_due']);
 
-function priceLabel(price: any): string {
-  if (price?.nickname) return String(price.nickname);
-  const product = price?.product;
-  if (product && typeof product === 'object' && product.name) {
-    return String(product.name);
-  }
+function amountLabel(price: any): string {
   const amount = typeof price?.unit_amount === 'number' ? price.unit_amount : 0;
   const cur = (price?.currency ?? 'gbp').toUpperCase();
   return `${cur} ${(amount / 100).toFixed(2)}`;
@@ -100,6 +95,13 @@ Deno.serve(async (req: Request) => {
   }[] = [];
   let skippedNoEmail = 0;
   let startingAfter: string | undefined;
+  // Per-price label ingredients. The product name needs a separate fetch —
+  // expanding it off the subscription list is 5 levels deep, past Stripe's
+  // 4-level expansion cap.
+  const priceMeta = new Map<
+    string,
+    { nickname: string | null; productId: string | null; amount: string }
+  >();
 
   // Page through subscriptions on the connected account (cap at ~2000 so a
   // runaway never hangs the function).
@@ -108,7 +110,6 @@ Deno.serve(async (req: Request) => {
     url.searchParams.set('limit', '100');
     url.searchParams.set('status', 'all');
     url.searchParams.append('expand[]', 'data.customer');
-    url.searchParams.append('expand[]', 'data.items.data.price.product');
     if (startingAfter) url.searchParams.set('starting_after', startingAfter);
 
     const res = await fetch(url.toString(), {
@@ -135,6 +136,14 @@ Deno.serve(async (req: Request) => {
         skippedNoEmail++;
         continue;
       }
+      const priceId = String(price.id);
+      if (!priceMeta.has(priceId)) {
+        priceMeta.set(priceId, {
+          nickname: price.nickname ? String(price.nickname) : null,
+          productId: typeof price.product === 'string' ? price.product : null,
+          amount: amountLabel(price),
+        });
+      }
       members.push({
         email,
         name: cust && typeof cust === 'object' ? (cust.name ?? null) : null,
@@ -146,7 +155,7 @@ Deno.serve(async (req: Request) => {
               ? cust
               : null,
         price_id: String(price.id),
-        label: priceLabel(price),
+        label: '',
         amount_cents: typeof price.unit_amount === 'number' ? price.unit_amount : 0,
         currency: String(price.currency ?? 'gbp'),
         interval: price.recurring?.interval ?? null,
@@ -158,6 +167,36 @@ Deno.serve(async (req: Request) => {
     if (!data.has_more) break;
     startingAfter = subs[subs.length - 1]?.id;
     if (!startingAfter) break;
+  }
+
+  // Resolve product names directly. Expanding data.items.data.price.product
+  // off the subscription list is 5 levels deep and Stripe caps expansion at
+  // 4, so fetch each referenced product on its own instead.
+  const productNames = new Map<string, string>();
+  const productIds = [
+    ...new Set(
+      Array.from(priceMeta.values())
+        .map((m) => m.productId)
+        .filter((id): id is string => !!id),
+    ),
+  ];
+  for (const pid of productIds) {
+    const pres = await fetch(`https://api.stripe.com/v1/products/${pid}`, {
+      headers: {
+        Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+        'Stripe-Account': account,
+      },
+    });
+    if (pres.ok) {
+      const p = await pres.json();
+      if (p?.name) productNames.set(pid, String(p.name));
+    }
+  }
+  for (const m of members) {
+    const meta = priceMeta.get(m.price_id);
+    if (!meta) continue;
+    const productName = meta.productId ? productNames.get(meta.productId) : undefined;
+    m.label = meta.nickname ?? productName ?? meta.amount;
   }
 
   const priceById = new Map<
