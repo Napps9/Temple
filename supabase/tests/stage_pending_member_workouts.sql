@@ -20,7 +20,13 @@ begin
     values (v_gym, 'ghost@stage.test');
   perform set_config('test.gym',   v_gym::text,   true);
   perform set_config('test.owner', v_owner::text, true);
-  perform _test_act_as(v_owner);
+  -- Authorise the owner-gated import RPC via the JWT claim only — NOT
+  -- _test_act_as, which switches to the 'authenticated' role and would
+  -- block the _test_mk_user (auth.users insert) at signup below. The
+  -- import RPC is SECURITY DEFINER and only checks auth.uid().
+  perform set_config('request.jwt.claim.sub', v_owner::text, true);
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_owner)::text, true);
 end $$;
 
 -- 1. Importing a lift for the pending member stages it (not inserted, not

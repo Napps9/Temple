@@ -63,6 +63,7 @@ as $$
 declare
   v_email      text;
   v_pending    public.pending_members%rowtype;
+  v_plan       public.membership_plans%rowtype;
   v_tag        text;
   v_staged     public.pending_member_workouts%rowtype;
   v_workout_id uuid;
@@ -137,7 +138,8 @@ begin
   delete from public.pending_member_workouts
     where gym_id = new.gym_id and email = lower(v_email);
 
-  -- Imported plan / tags / suppression (unchanged).
+  -- Imported plan / tags / suppression / subscription — the 0124 logic,
+  -- carried forward verbatim (this recreation must not regress it).
   select * into v_pending
     from public.pending_members
     where gym_id = new.gym_id and lower(email) = lower(v_email)
@@ -151,14 +153,26 @@ begin
         imported_plan_start        = v_pending.plan_start,
         imported_plan_end          = v_pending.plan_end,
         imported_credits_remaining = v_pending.credits_remaining,
-        imported_at                = now()
+        imported_at                = now(),
+        emergency_contact           = coalesce(v_pending.emergency_contact, emergency_contact)
     where id = new.id;
+
+  if v_pending.phone is not null then
+    update public.profiles
+      set phone = coalesce(phone, v_pending.phone)
+      where id = new.profile_id;
+  end if;
 
   foreach v_tag in array coalesce(v_pending.tags, '{}'::text[]) loop
     if length(trim(v_tag)) > 0 then
-      insert into public.member_tags (gym_id, profile_id, label)
-        values (new.gym_id, new.profile_id, trim(v_tag))
-        on conflict (gym_id, profile_id, lower(label)) do nothing;
+      insert into public.member_tags (gym_id, profile_id, label, color, source, created_by)
+        select new.gym_id, new.profile_id, trim(v_tag), '#6B7280', 'manual', new.profile_id
+        where not exists (
+          select 1 from public.member_tags mt
+          where mt.gym_id = new.gym_id
+            and mt.profile_id = new.profile_id
+            and lower(mt.label) = lower(trim(v_tag))
+        );
     end if;
   end loop;
 
@@ -166,7 +180,45 @@ begin
     insert into public.email_unsubscribes
       (gym_id, email, profile_id, reason)
       values (v_pending.gym_id, v_pending.email, new.profile_id, 'imported')
-      on conflict (gym_id, lower(email)) do nothing;
+      on conflict (gym_id, lower(email)) where topic_id is null do nothing;
+  end if;
+
+  if v_pending.linked_membership_plan_id is not null then
+    select * into v_plan
+      from public.membership_plans
+      where plan_id = v_pending.linked_membership_plan_id;
+
+    if v_plan.plan_id is not null and v_plan.archived_at is null then
+      insert into public.plan_subscriptions (
+        gym_membership_id, profile_id, gym_id, plan_id,
+        status, credit_balance, paid_period_end,
+        stripe_subscription_id, stripe_customer_id, priority,
+        imported_legacy
+      ) values (
+        new.id, new.profile_id, new.gym_id, v_plan.plan_id,
+        'active'::public.plan_sub_state,
+        case
+          when v_plan.kind in ('credit_pack', 'credit_period')
+            then coalesce(v_pending.credits_remaining, v_plan.credit_count)
+          else null
+        end,
+        case
+          when coalesce(v_pending.plan_end, v_pending.next_bill_date) is not null
+            then coalesce(v_pending.plan_end, v_pending.next_bill_date)::timestamptz
+          else null
+        end,
+        nullif(v_pending.imported_stripe_subscription_id, ''),
+        nullif(v_pending.imported_stripe_customer_id, ''),
+        0,
+        nullif(v_pending.imported_stripe_subscription_id, '') is null
+      );
+
+      if nullif(v_pending.imported_stripe_customer_id, '') is not null then
+        insert into public.gym_stripe_customers (gym_id, profile_id, stripe_customer_id)
+          values (new.gym_id, new.profile_id, v_pending.imported_stripe_customer_id)
+          on conflict (gym_id, profile_id) do nothing;
+      end if;
+    end if;
   end if;
 
   update public.pending_members
