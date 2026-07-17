@@ -4221,6 +4221,7 @@ export type Database = {
           inserted_results: number;
           skipped_no_member: number;
           skipped_no_movement: number;
+          staged: number;
         }[];
       };
       import_member_results: {
@@ -4230,6 +4231,7 @@ export type Database = {
           inserted_sections: number;
           skipped_no_member: number;
           skipped_duplicate: number;
+          staged: number;
         }[];
       };
       import_member_hyrox_results: {
@@ -4239,6 +4241,7 @@ export type Database = {
           inserted_results: number;
           skipped_no_member: number;
           skipped_duplicate: number;
+          staged: number;
         }[];
       };
       pending_members_stats: {

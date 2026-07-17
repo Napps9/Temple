@@ -36,6 +36,7 @@ type WorkoutRpcResult = {
   inserted_results: number;
   skipped_no_member: number;
   skipped_no_movement: number;
+  staged: number;
 };
 
 type SectionRpcResult = {
@@ -43,6 +44,7 @@ type SectionRpcResult = {
   inserted_sections: number;
   skipped_no_member: number;
   skipped_duplicate: number;
+  staged: number;
 };
 
 type HyroxRpcResult = {
@@ -50,6 +52,7 @@ type HyroxRpcResult = {
   inserted_results: number;
   skipped_no_member: number;
   skipped_duplicate: number;
+  staged: number;
 };
 
 // Combined across the three RPCs (weighted movements + scored sections +
@@ -59,6 +62,7 @@ type Result = {
   results: number; // weighted movement results
   sections: number; // scored benchmark sections
   hyrox: number; // Hyrox station splits + official times
+  staged: number; // queued for pending members, applied on signup
   skipped_no_member: number;
   skipped_no_movement: number;
   skipped_duplicate: number;
@@ -121,6 +125,9 @@ export default function ImportWorkoutsScreen() {
 
   const readyCount =
     built.weighted.length + built.sections.length + built.hyrox.length;
+  const insertedCount = result
+    ? result.results + result.sections + result.hyrox
+    : 0;
 
   const scoredShape = useMemo(() => looksLikeScoredResults(rows), [rows]);
 
@@ -175,6 +182,7 @@ export default function ImportWorkoutsScreen() {
         results: 0,
         sections: 0,
         hyrox: 0,
+        staged: 0,
         skipped_no_member: 0,
         skipped_no_movement: 0,
         skipped_duplicate: 0,
@@ -191,6 +199,7 @@ export default function ImportWorkoutsScreen() {
           acc.results += row.inserted_results;
           acc.skipped_no_member += row.skipped_no_member;
           acc.skipped_no_movement += row.skipped_no_movement;
+          acc.staged += row.staged;
         }
       }
       if (built.sections.length > 0) {
@@ -205,6 +214,7 @@ export default function ImportWorkoutsScreen() {
           acc.sections += row.inserted_sections;
           acc.skipped_no_member += row.skipped_no_member;
           acc.skipped_duplicate += row.skipped_duplicate;
+          acc.staged += row.staged;
         }
       }
       if (built.hyrox.length > 0) {
@@ -219,6 +229,7 @@ export default function ImportWorkoutsScreen() {
           acc.hyrox += row.inserted_results;
           acc.skipped_no_member += row.skipped_no_member;
           acc.skipped_duplicate += row.skipped_duplicate;
+          acc.staged += row.staged;
         }
       }
       return acc;
@@ -598,27 +609,68 @@ export default function ImportWorkoutsScreen() {
         ) : null}
 
         {phase === 'done' && result ? (
-          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-              Imported {result.results + result.sections + result.hyrox} result
-              {result.results + result.sections + result.hyrox === 1 ? '' : 's'}{' '}
-              across {result.workouts} workout
-              {result.workouts === 1 ? '' : 's'}
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              {result.results} lift{result.results === 1 ? '' : 's'} ·{' '}
-              {result.sections} benchmark{result.sections === 1 ? '' : 's'} ·{' '}
-              {result.hyrox} Hyrox
-              {result.skipped_no_member > 0
-                ? ` · ${result.skipped_no_member} skipped (email not in this gym yet)`
-                : ''}
-              {result.skipped_no_movement > 0
-                ? ` · ${result.skipped_no_movement} unknown movement`
-                : ''}
-              {result.skipped_duplicate > 0
-                ? ` · ${result.skipped_duplicate} already imported`
-                : ''}
-            </Text>
+          <View
+            className={`border rounded-xl p-4 gap-2 ${
+              insertedCount > 0
+                ? 'bg-emerald-500/10 border-emerald-500/30'
+                : result.staged > 0
+                  ? 'bg-primary/10 border-primary/30'
+                  : 'bg-amber-500/10 border-amber-500/30'
+            }`}>
+            {insertedCount > 0 ? (
+              <>
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Imported {insertedCount} result{insertedCount === 1 ? '' : 's'}{' '}
+                  across {result.workouts} workout
+                  {result.workouts === 1 ? '' : 's'}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {result.results} lift{result.results === 1 ? '' : 's'} ·{' '}
+                  {result.sections} benchmark{result.sections === 1 ? '' : 's'} ·{' '}
+                  {result.hyrox} Hyrox
+                  {result.staged > 0
+                    ? ` · ${result.staged} staged for pending members`
+                    : ''}
+                  {result.skipped_no_member > 0
+                    ? ` · ${result.skipped_no_member} skipped (no matching member)`
+                    : ''}
+                  {result.skipped_no_movement > 0
+                    ? ` · ${result.skipped_no_movement} unknown movement`
+                    : ''}
+                  {result.skipped_duplicate > 0
+                    ? ` · ${result.skipped_duplicate} already imported`
+                    : ''}
+                </Text>
+              </>
+            ) : result.staged > 0 ? (
+              <>
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Staged {result.staged} result{result.staged === 1 ? '' : 's'} for
+                  members who haven’t signed up yet
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  These emails match imported (pending) members. Each member’s
+                  history lands on their Track the moment they sign up at your join
+                  link — nothing else to do.
+                  {result.skipped_no_member > 0
+                    ? ` ${result.skipped_no_member} row${result.skipped_no_member === 1 ? '' : 's'} matched no member at all.`
+                    : ''}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Nothing imported — no matching members
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {result.skipped_no_member} row
+                  {result.skipped_no_member === 1 ? '' : 's'} had an email that isn’t
+                  a member of this gym. Import your members first (Manage → Members →
+                  Import), then re-run — results for imported members are staged and
+                  appear when they sign up.
+                </Text>
+              </>
+            )}
             <View className="flex-row gap-2 pt-2">
               <Button
                 variant="secondary"
