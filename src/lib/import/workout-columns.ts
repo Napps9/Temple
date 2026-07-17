@@ -36,7 +36,8 @@ const FIELD_HEADERS: Record<WorkoutField, string[]> = {
   ],
   movement: [
     'movement', 'exercise', 'lift', 'wod', 'workout', 'movement name',
-    'exercise name',
+    'exercise name', 'workout name', 'event workout name', 'wod name',
+    'event name', 'exercise movement', 'movement exercise',
   ],
   weight: [
     'weight', 'load', 'kg', 'lb', 'lbs', 'kgs', 'value', 'weight (kg)',
@@ -51,19 +52,74 @@ function normalise(s: string): string {
   return s.toLowerCase().replace(/[\s_\-./()]+/g, ' ').trim();
 }
 
-export function autoDetect(headers: string[]): (WorkoutField | null)[] {
+const WEIGHT_UNIT_RE =
+  /^(kg|kgs|kilo|kilos|kilogram|kilograms|lb|lbs|pound|pounds)$/i;
+
+// A column literally named "Unit" reads as the weight unit in a strength
+// export, but in a scored-results export it holds "mm:ss" / "rounds+reps".
+// Only trust that header match when the sampled values actually look like
+// weight units; with no rows to judge (header-only detection) the match
+// stands, so paste/preview behaviour is unchanged.
+function looksLikeWeightUnits(colIndex: number, rows: string[][]): boolean {
+  let seen = 0;
+  let weightLike = 0;
+  for (let i = 0; i < rows.length && seen < 30; i += 1) {
+    const v = (rows[i]?.[colIndex] ?? '').trim();
+    if (!v) continue;
+    seen += 1;
+    if (WEIGHT_UNIT_RE.test(v)) weightLike += 1;
+  }
+  if (seen === 0) return true;
+  return weightLike / seen >= 0.5;
+}
+
+export function autoDetect(
+  headers: string[],
+  rows: string[][] = [],
+): (WorkoutField | null)[] {
   const used = new Set<WorkoutField>();
-  return headers.map((h) => {
+  return headers.map((h, idx) => {
     const n = normalise(h);
     for (const field of Object.keys(FIELD_HEADERS) as WorkoutField[]) {
       if (used.has(field)) continue;
-      if (FIELD_HEADERS[field].some((alias) => normalise(alias) === n)) {
-        used.add(field);
-        return field;
-      }
+      if (!FIELD_HEADERS[field].some((alias) => normalise(alias) === n)) continue;
+      if (field === 'unit' && !looksLikeWeightUnits(idx, rows)) continue;
+      used.add(field);
+      return field;
     }
     return null;
   });
+}
+
+// Times (3:12, 1:05:10), AMRAP rounds+reps (19+7), Hyrox splits and
+// FOR_TIME/AMRAP score types are the shape of a benchmark / metcon / race
+// export — which this weighted-movement importer can't represent. Detect it
+// from the values (not the headers, which vary) so the preview can say so
+// plainly instead of dropping every row as an "unknown movement".
+const SCORE_TIME_RE = /^\d{1,3}:\d{2}(:\d{2})?$/;
+const SCORE_ROUNDS_RE = /^\d+\s*\+\s*\d+$/;
+const SCORE_WORD_RE =
+  /\b(for[\s_]?time|for[\s_]?rounds?[\s_]?reps?|amrap|emom|mm:ss|h:mm:ss|hyrox)\b/i;
+
+export function looksLikeScoredResults(rows: string[][]): boolean {
+  let judged = 0;
+  let scored = 0;
+  for (let i = 0; i < rows.length && i < 200; i += 1) {
+    const cells = (rows[i] ?? []).map((c) => (c ?? '').trim());
+    if (!cells.some(Boolean)) continue;
+    judged += 1;
+    if (
+      cells.some(
+        (v) =>
+          SCORE_TIME_RE.test(v) ||
+          SCORE_ROUNDS_RE.test(v) ||
+          SCORE_WORD_RE.test(v),
+      )
+    ) {
+      scored += 1;
+    }
+  }
+  return judged > 0 && scored / judged >= 0.25;
 }
 
 // Build a flat name → key index across MOVEMENT_GROUPS. Names and

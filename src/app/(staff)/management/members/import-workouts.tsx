@@ -13,6 +13,7 @@ import { parseCsv } from '@/lib/import/csv';
 import {
   autoDetect,
   buildWorkoutRows,
+  looksLikeScoredResults,
   WORKOUT_FIELD_LABELS,
   type WorkoutField,
 } from '@/lib/import/workout-columns';
@@ -67,13 +68,16 @@ export default function ImportWorkoutsScreen() {
     );
   }, [rows, headers, mapping, phase]);
 
+  const scoredShape = useMemo(() => looksLikeScoredResults(rows), [rows]);
+
   function onFile(file: File) {
     setError(null);
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
       setCsvText(text);
-      const auto = autoDetect(parseCsv(text)[0] ?? []);
+      const p = parseCsv(text);
+      const auto = autoDetect(p[0] ?? [], p.slice(1));
       setMapping(auto.map((f) => f ?? 'ignore'));
       setPhase('map');
     };
@@ -116,10 +120,12 @@ export default function ImportWorkoutsScreen() {
             Import workout history
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Drop in a CSV of past workouts: one row per set. We match each
-            row's email to an existing member and group sets on the same date
-            into one workout. Movements are matched against the built-in
-            vocab — unknowns show up below so you can rename them in the CSV.
+            Drop in a CSV of past workouts: one row per set. This brings in
+            weighted movements — a lift with its weight and reps — not metcon
+            times or race results. We match each row's email to an existing
+            member and group sets on the same date into one workout. Movements
+            are matched against the built-in vocab — unknowns show up below so
+            you can rename them in the CSV.
           </Text>
         </View>
 
@@ -206,7 +212,7 @@ export default function ImportWorkoutsScreen() {
                   setError('Need at least a header row + one data row.');
                   return;
                 }
-                setMapping(autoDetect(headers).map((f) => f ?? 'ignore'));
+                setMapping(autoDetect(headers, rows).map((f) => f ?? 'ignore'));
                 setPhase('map');
               }}
               disabled={!csvText.trim()}>
@@ -226,6 +232,7 @@ export default function ImportWorkoutsScreen() {
                 strongly recommended.
               </Text>
             </View>
+            {scoredShape ? <ScoredResultsNotice /> : null}
             <View className="gap-2">
               {headers.map((h, i) => (
                 <View
@@ -291,6 +298,8 @@ export default function ImportWorkoutsScreen() {
                 ? ` · ${built.skippedNoEmail + built.skippedNoDate} missing email/date`
                 : ''}
             </Text>
+
+            {scoredShape ? <ScoredResultsNotice /> : null}
 
             {built.ready.length > 0 ? (
               <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
@@ -372,6 +381,23 @@ export default function ImportWorkoutsScreen() {
         ) : null}
       </ScrollView>
     </Screen>
+  );
+}
+
+function ScoredResultsNotice() {
+  return (
+    <View className="gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+      <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
+        This looks like scored results
+      </Text>
+      <Text className="text-gray-600 dark:text-gray-300 text-xs">
+        Your file has times, round scores or race splits (e.g. 3:12, 19+7).
+        This importer brings in weighted movements — a lift with its weight and
+        reps, like a 140 kg back squat. Metcon times, AMRAP scores and Hyrox
+        splits can’t be imported yet, so those rows are dropped. Only rows that
+        name a movement Temple knows, with a weight, come across.
+      </Text>
+    </View>
   );
 }
 
