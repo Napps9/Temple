@@ -9,7 +9,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import {
   centsToPounds,
   poundsToCents,
@@ -57,7 +57,7 @@ export default function ImportStripeScreen() {
       const { data, error } = await supabase.functions.invoke('stripe-import', {
         body: { gym_id: membership!.gymId },
       });
-      if (error) throw error;
+      if (error) throw new Error(await functionErrorMessage(error));
       return data as StripePreview;
     },
   });

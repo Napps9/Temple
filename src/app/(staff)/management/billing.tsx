@@ -15,7 +15,7 @@ import {
   formatMoney,
   parseRateToCents,
 } from '@/lib/coach-earnings';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import { estimateElsewhereMarkup } from '@/lib/payment-savings';
 import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
@@ -71,7 +71,7 @@ export default function BillingScreen() {
       const { error: e } = await supabase.functions.invoke('stripe-account', {
         body: { gym_id: membership.gymId, action: 'disconnect' },
       });
-      if (e) throw e;
+      if (e) throw new Error(await functionErrorMessage(e));
     },
     onSuccess: () => {
       setConfirmDisconnect(false);
@@ -148,7 +148,7 @@ export default function BillingScreen() {
         'stripe-connect-start',
         { body: { gym_id: membership.gymId, origin } },
       );
-      if (e) throw e;
+      if (e) throw new Error(await functionErrorMessage(e));
       const url = (data as { url?: string } | null)?.url;
       if (!url) throw new Error('Could not start the Stripe connection');
       if (Platform.OS === 'web' && typeof window !== 'undefined') {

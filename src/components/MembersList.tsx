@@ -10,7 +10,7 @@ import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { useGymMembership } from '@/lib/auth';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/format-date';
 import { useMembersFilter } from '@/lib/members-filter';
 import { supabase } from '@/lib/supabase';
@@ -579,7 +579,7 @@ function PendingMemberCard({
           },
         },
       );
-      if (e) throw e;
+      if (e) throw new Error(await functionErrorMessage(e));
       return data as { sent: number; failed: number };
     },
     onSuccess: (d) => {

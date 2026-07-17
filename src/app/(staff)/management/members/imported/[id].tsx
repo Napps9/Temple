@@ -11,7 +11,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/format-date';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -222,7 +222,7 @@ export default function ImportedMemberDetailScreen() {
           origin: Platform.OS === 'web' ? window.location.origin : undefined,
         },
       });
-      if (e) throw e;
+      if (e) throw new Error(await functionErrorMessage(e));
       return data as { sent: number; failed: number };
     },
     onSuccess: (d) => {

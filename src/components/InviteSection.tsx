@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { useGymMembership } from '@/lib/auth';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import type { GymRole } from '@/types/database';
 
@@ -69,7 +69,7 @@ export function InviteSection({
           origin,
         },
       });
-      if (error) throw error;
+      if (error) throw new Error(await functionErrorMessage(error));
       return data as { ok: boolean; sent: boolean; code?: string; error?: string };
     },
     onSuccess: (data) => {

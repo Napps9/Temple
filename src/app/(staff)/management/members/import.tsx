@@ -19,7 +19,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { joinUrl } from '@/lib/brand';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import {
   autoDetect,
   buildImportRow,
@@ -1509,7 +1509,7 @@ function UnclaimedImportsBanner({
           },
         },
       );
-      if (e) throw e;
+      if (e) throw new Error(await functionErrorMessage(e));
       return data as { sent: number; failed: number };
     },
     onSuccess: () => {
