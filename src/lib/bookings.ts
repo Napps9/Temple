@@ -28,6 +28,9 @@ export function invalidateBookingCaches(qc: QueryClient): void {
     ['agenda-booking-counts'],
     ['my-subscriptions'],
     ['recommended-class'],
+    // The new-member "Book your first class" step reads this count; without
+    // it the checklist item never ticks after the first booking.
+    ['member-onboarding-bookings'],
   ];
   for (const queryKey of keys) {
     void qc.invalidateQueries({ queryKey });
