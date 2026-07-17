@@ -10,6 +10,9 @@ export type StripePrice = {
   amount_cents: number;
   currency: string;
   interval: string | null;
+  // false for one-time Stripe prices — the client maps those to credit
+  // packs rather than recurring memberships.
+  recurring: boolean;
   count: number;
 };
 

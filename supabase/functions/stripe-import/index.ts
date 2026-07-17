@@ -1,9 +1,11 @@
 // Read a gym's Stripe plan catalogue + existing subscriptions so the owner
 // can bring both across to Temple. Owner-gated; reads the gym's connected
 // account (the same account stripe-checkout charges on). Returns a
-// privacy-shaped preview — distinct recurring prices (including ones with
-// no current subscriber, count 0) + a row per subscriber — that the client
-// feeds into the existing AI-assisted import review wizard.
+// privacy-shaped preview — distinct active prices (recurring and one-time,
+// including ones with no current subscriber, count 0) + a row per
+// subscriber — that the client feeds into the existing AI-assisted import
+// review wizard. One-time prices carry recurring:false so the client maps
+// them to credit packs.
 //
 // Grandfathering: this function only READS Stripe. The import is staged
 // through import_pending_members on the client, so each member's live
@@ -103,11 +105,16 @@ Deno.serve(async (req: Request) => {
     string,
     { nickname: string | null; productId: string | null; amount: string }
   >();
-  // Amount/currency/interval for catalogue prices, keyed by price id. Lets
-  // a price with no subscriber still carry its real numbers.
+  // Amount/currency/interval/recurring for catalogue prices, keyed by price
+  // id. Lets a price with no subscriber still carry its real numbers.
   const catalogPrice = new Map<
     string,
-    { amount_cents: number; currency: string; interval: string | null }
+    {
+      amount_cents: number;
+      currency: string;
+      interval: string | null;
+      recurring: boolean;
+    }
   >();
 
   // Page through subscriptions on the connected account (cap at ~2000 so a
@@ -176,16 +183,16 @@ Deno.serve(async (req: Request) => {
     if (!startingAfter) break;
   }
 
-  // Also list active recurring prices so plans with no current subscriber
-  // can still be imported — the owner may be setting up their plan
-  // catalogue, not only migrating live members. Prices already seen on a
+  // Also list active prices so plans with no current subscriber can still
+  // be imported — the owner may be setting up their plan catalogue, not
+  // only migrating live members. Both recurring and one-time prices come
+  // back (one-time → credit packs on the client). Prices already seen on a
   // subscription keep their metadata.
   let priceAfter: string | undefined;
   for (let page = 0; page < 20; page++) {
     const url = new URL('https://api.stripe.com/v1/prices');
     url.searchParams.set('limit', '100');
     url.searchParams.set('active', 'true');
-    url.searchParams.set('type', 'recurring');
     if (priceAfter) url.searchParams.set('starting_after', priceAfter);
 
     const res = await fetch(url.toString(), {
@@ -215,6 +222,7 @@ Deno.serve(async (req: Request) => {
             typeof price.unit_amount === 'number' ? price.unit_amount : 0,
           currency: String(price.currency ?? 'gbp'),
           interval: price.recurring?.interval ?? null,
+          recurring: price.type === 'recurring',
         });
       }
     }
@@ -265,6 +273,7 @@ Deno.serve(async (req: Request) => {
       amount_cents: number;
       currency: string;
       interval: string | null;
+      recurring: boolean;
       count: number;
     }
   >();
@@ -280,6 +289,9 @@ Deno.serve(async (req: Request) => {
       amount_cents: cat?.amount_cents ?? sample?.amount_cents ?? 0,
       currency: cat?.currency ?? sample?.currency ?? 'gbp',
       interval: cat?.interval ?? sample?.interval ?? null,
+      // Subscription-referenced prices absent from the catalogue are
+      // recurring by definition; catalogue prices carry their real type.
+      recurring: cat?.recurring ?? true,
       count: 0,
     });
   }

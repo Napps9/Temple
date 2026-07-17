@@ -871,14 +871,18 @@ subscribers** across and **adopts live subscriptions** — same billing, no
 re-charge, and the member (and owner) manage it in-app afterwards. The
 `stripe-import` edge function (owner-gated, read-only) pages both the
 connected account's subscriptions (active / trialing / past_due,
-email-keyed) **and its active recurring prices**, returning every distinct
-price — including ones with **no current subscriber (count 0)** — plus a
-row per subscriber. The review screen reuses the member-import AI brain
-(`runInference`) to suggest a Temple plan name / kind per Stripe price; the
-owner edits them and **ticks which prices and which members** to import.
-Commit creates one `membership_plan` per included price (caching
-`stripe_price_id`) — so a gym with no subscribers yet can still import its
-plan catalogue — and stages the chosen members through
+email-keyed) **and its active prices (recurring and one-time)**, returning
+every distinct price — including ones with **no current subscriber (count
+0)** — plus a row per subscriber. Each price carries a `recurring` flag;
+**one-time prices map to `credit_pack` plans** (off by default so unrelated
+one-off Stripe charges don't become packs), recurring prices to
+unlimited / credit_period. The review screen reuses the member-import AI
+brain (`runInference`), fed one row per subscriber plus a synthetic row per
+zero-subscriber price so every price still gets a name / kind / credit
+suggestion; the owner edits them and **ticks which prices and which
+members** to import. Commit creates one `membership_plan` per included
+price (caching `stripe_price_id`) — so a gym with no subscribers yet can
+still import its plan catalogue — and stages the chosen members through
 `import_pending_members`, carrying the live
 `imported_stripe_subscription_id` / `imported_stripe_customer_id` and the
 renewal date.

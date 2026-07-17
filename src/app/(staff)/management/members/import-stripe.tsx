@@ -31,6 +31,7 @@ type PlanReview = {
   label: string;
   amount_cents: number;
   count: number;
+  recurring: boolean;
   name: string;
   kind: PlanKind;
   creditCount: string;
@@ -71,16 +72,25 @@ export default function ImportStripeScreen() {
       (preview.data?.prices ?? []).map((p) => p.label).join('|'),
     ],
     enabled: !!preview.data && !!membership?.gymId,
-    queryFn: async () =>
-      runInference({
+    queryFn: async () => {
+      // Feed one row per subscriber, then a synthetic row for any price
+      // with no subscriber (recurring-but-empty and every one-time price)
+      // so those still get an AI name / kind / credit-count suggestion.
+      const memberRows = (preview.data?.members ?? []).map((m) => ({
+        plan_name: m.label,
+        plan_end: unixToDateIso(m.current_period_end) ?? undefined,
+        tags: [] as string[],
+      }));
+      const covered = new Set(memberRows.map((r) => r.plan_name));
+      const extraRows = (preview.data?.prices ?? [])
+        .filter((pr) => !covered.has(pr.label))
+        .map((pr) => ({ plan_name: pr.label, tags: [] as string[] }));
+      return runInference({
         gymId: membership!.gymId,
         gymCurrency: 'GBP',
-        rows: (preview.data?.members ?? []).map((m) => ({
-          plan_name: m.label,
-          plan_end: unixToDateIso(m.current_period_end) ?? undefined,
-          tags: [],
-        })),
-      }),
+        rows: [...memberRows, ...extraRows],
+      });
+    },
   });
 
   const [plans, setPlans] = useState<PlanReview[]>([]);
@@ -94,20 +104,32 @@ export default function ImportStripeScreen() {
     setPlans(
       preview.data.prices.map((pr) => {
         const sug = byLabel.get(pr.label);
+        const suggestedKind = sug?.suggested_kind ?? 'unlimited';
+        // A one-time Stripe price is a single charge → credit pack. A
+        // recurring price can't be a one-off pack, so a credit_pack
+        // suggestion there becomes the recurring credit_period.
+        const kind: PlanKind = !pr.recurring
+          ? 'credit_pack'
+          : suggestedKind === 'credit_pack'
+            ? 'credit_period'
+            : suggestedKind;
         return {
           price_id: pr.price_id,
           label: pr.label,
           amount_cents: pr.amount_cents,
           count: pr.count,
+          recurring: pr.recurring,
           name: sug?.suggested_name || pr.label,
-          kind: sug?.suggested_kind ?? 'unlimited',
+          kind,
           creditCount:
             sug && sug.suggested_credit_count != null
               ? String(sug.suggested_credit_count)
               : '',
           // The real Stripe amount wins over any AI price guess.
           monthlyPrice: centsToPounds(pr.amount_cents),
-          include: true,
+          // Recurring prices default on; one-time prices are opt-in so a
+          // gym's unrelated one-off charges don't become credit packs.
+          include: pr.recurring,
         };
       }),
     );
@@ -285,8 +307,9 @@ export default function ImportStripeScreen() {
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 One Temple plan is created per Stripe price — including prices no
-                one subscribes to yet. Edit the suggested names, or untick a
-                price to skip it.
+                one subscribes to yet. One-time prices come in as credit packs
+                and are off by default. Edit the suggested names, or tick /
+                untick a price.
               </Text>
               {plans.map((p) => (
                 <View
@@ -304,9 +327,11 @@ export default function ImportStripeScreen() {
                       {p.label}
                     </Text>
                     <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                      {p.count === 0
-                        ? 'No subscribers yet'
-                        : `${p.count} member${p.count === 1 ? '' : 's'}`}
+                      {!p.recurring
+                        ? 'One-time price'
+                        : p.count === 0
+                          ? 'No subscribers yet'
+                          : `${p.count} member${p.count === 1 ? '' : 's'}`}
                     </Text>
                   </Pressable>
                   {p.include ? (
@@ -346,7 +371,11 @@ export default function ImportStripeScreen() {
                       </View>
                       {p.kind !== 'unlimited' ? (
                         <Input
-                          label="Credits per period"
+                          label={
+                            p.kind === 'credit_pack'
+                              ? 'Credits in the pack'
+                              : 'Credits per period'
+                          }
                           value={p.creditCount}
                           onChangeText={(v) =>
                             updatePlan(p.price_id, { creditCount: v })
@@ -356,7 +385,11 @@ export default function ImportStripeScreen() {
                         />
                       ) : null}
                       <Input
-                        label="Monthly price (£)"
+                        label={
+                          p.kind === 'credit_pack'
+                            ? 'Pack price (£)'
+                            : 'Monthly price (£)'
+                        }
                         value={p.monthlyPrice}
                         onChangeText={(v) =>
                           updatePlan(p.price_id, { monthlyPrice: v })
