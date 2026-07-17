@@ -116,12 +116,11 @@ type ProgressRow = {
   target: number;
 };
 
-// Collapsed on a fresh app start so the nudge sits quietly, but once the
-// owner opens it we keep it open across navigation. Tapping a step pushes
-// to its page whose BackLink does router.replace('/management'), which
-// fully remounts this card — local state alone would collapse it again and
-// drop the owner back onto a closed card, hiding the list they were working
-// through. Session-only (module scope), like list-scroll-position.
+// Collapsed on a fresh app start so the nudge sits quietly; once the owner
+// opens it we keep it open across navigation (module scope, session-only,
+// like list-scroll-position). Tapping a step deep-links with ?backTo=setup
+// so its BackLink returns to the full-screen /onboarding checklist rather
+// than dropping the owner on Manage — the two setup surfaces stay in sync.
 let checklistOpen = false;
 
 export function GymSetupChecklist() {
@@ -203,7 +202,7 @@ export function GymSetupChecklist() {
         {status.map((step) => (
           <Pressable
             key={step.key}
-            onPress={() => router.push(step.href as never)}
+            onPress={() => router.push(`${step.href}?backTo=setup` as never)}
             className={`flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:opacity-70 ${
               step.done
                 ? 'bg-gray-50 dark:bg-gray-800/40'
