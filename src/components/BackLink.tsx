@@ -51,28 +51,32 @@ export function BackLink({
 }) {
   const colors = useThemeColors();
   // A sub-page opened from the setup checklist carries ?backTo=setup so its
-  // back affordance returns to the checklist the owner was working through —
-  // not the page's usual "Manage" parent. This just re-points the named
-  // destination at /onboarding; it deliberately does NOT switch to
-  // router.back(), which would pop to whatever unrelated screen the owner
-  // last visited (the exact failure the named-destination default avoids).
+  // back affordance returns to the checklist the owner was working through,
+  // not the page's usual parent. It re-points to /onboarding via a fixed
+  // replace and takes precedence over preferBack: /onboarding is
+  // cross-group, where router.back() pops to whatever unrelated screen the
+  // owner last visited (the exact failure the named-destination default
+  // avoids).
   const { backTo } = useLocalSearchParams<{ backTo?: string }>();
   const toSetup = backTo === 'setup';
   const effLabel = toSetup ? 'Setup' : label;
-  const effFallback: Href | undefined = toSetup ? '/onboarding' : fallbackHref;
 
   function onPress() {
     haptic.selection();
+    if (toSetup) {
+      router.replace('/onboarding');
+      return;
+    }
     if (preferBack) {
       if (router.canGoBack()) {
         router.back();
         return;
       }
-      if (effFallback) router.replace(effFallback);
+      if (fallbackHref) router.replace(fallbackHref);
       return;
     }
-    if (effFallback) {
-      router.replace(effFallback);
+    if (fallbackHref) {
+      router.replace(fallbackHref);
       return;
     }
     if (router.canGoBack()) {

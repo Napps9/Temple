@@ -547,7 +547,7 @@ export default function MembershipScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Account" fallbackHref="/account" />
+        <BackLink preferBack fallbackHref="/account" />
 
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">

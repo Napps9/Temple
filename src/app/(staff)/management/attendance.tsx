@@ -117,7 +117,7 @@ export default function AttendanceScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
+        <BackLink preferBack fallbackHref="/management" />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Attendance

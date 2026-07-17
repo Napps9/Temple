@@ -62,7 +62,7 @@ export default function NewCampaign() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="py-6 px-4 gap-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Email campaigns" fallbackHref="/management/communications" />
+        <BackLink preferBack fallbackHref="/management/communications" />
         {error ? (
           <Text className="text-red-500 dark:text-red-400">{error}</Text>
         ) : (

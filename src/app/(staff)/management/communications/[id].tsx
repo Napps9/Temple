@@ -68,7 +68,7 @@ export default function CampaignDetailScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink label="Email campaigns" fallbackHref="/management/communications" />
+          <BackLink preferBack fallbackHref="/management/communications" />
           <Text className="text-gray-500 dark:text-gray-400">
             You don't have permission to manage communications.
           </Text>
@@ -89,7 +89,7 @@ export default function CampaignDetailScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink label="Email campaigns" fallbackHref="/management/communications" />
+          <BackLink preferBack fallbackHref="/management/communications" />
           <Text className="text-red-500 dark:text-red-400">
             {errorMessage(campaign.error, 'Could not load this campaign')}
           </Text>
@@ -308,7 +308,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Email campaigns" fallbackHref="/management/communications" />
+        <BackLink preferBack fallbackHref="/management/communications" />
         <View className="gap-1">
           <View className="flex-row items-center gap-2">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
@@ -588,7 +588,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
-        <BackLink label="Email campaigns" fallbackHref="/management/communications" />
+        <BackLink preferBack fallbackHref="/management/communications" />
       <View className="gap-1">
         <View className="flex-row items-center gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">

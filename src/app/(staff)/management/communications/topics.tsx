@@ -86,7 +86,7 @@ export default function EmailTopicsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Email campaigns" fallbackHref="/management/communications" />
+        <BackLink preferBack fallbackHref="/management/communications" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Email topics
