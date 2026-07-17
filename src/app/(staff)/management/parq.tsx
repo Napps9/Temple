@@ -20,6 +20,7 @@ import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -538,6 +539,7 @@ export function ParqPanel() {
 }
 
 export default function ParqPage() {
+  useSetupAutoReturn('parq');
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">

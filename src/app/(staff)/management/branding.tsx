@@ -24,6 +24,7 @@ import { DEFAULT_BRAND, joinUrl, leadUrl, normaliseHex, slugify } from '@/lib/br
 import { contrastRatio, deriveDarkColour } from '@/lib/brand-derivation';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
@@ -237,6 +238,7 @@ export function BrandingPanel() {
       queryClient.invalidateQueries({ queryKey: ['gym-row'] });
       queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
       queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not save')),
   });
@@ -687,6 +689,7 @@ function AdvancedBrandingCard({
 }
 
 export default function BrandingPage() {
+  useSetupAutoReturn('logo');
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">

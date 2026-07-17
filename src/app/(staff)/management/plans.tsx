@@ -17,6 +17,7 @@ import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
+import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
 
@@ -473,6 +474,7 @@ export function PlansPanel() {
         ),
       );
       queryClient.invalidateQueries({ queryKey: ['membership-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
     },
     onError: (e, r) => {
       setSaveErrors((curr) => ({ ...curr, [r.localId]: errorMessage(e, 'Save failed') }));
@@ -1016,6 +1018,7 @@ export function PlansPanel() {
 }
 
 export default function PlansScreen() {
+  useSetupAutoReturn('plan');
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">

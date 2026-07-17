@@ -11,6 +11,7 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import type { Discipline } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
+import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
@@ -591,6 +592,7 @@ function Choice<T extends string>({
 }
 
 export default function OperatingDefaultsPage() {
+  useSetupAutoReturn('settings');
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">

@@ -22,6 +22,7 @@ import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useCan } from '@/lib/useCan';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -509,6 +510,7 @@ export function ClassTypesPanel() {
       queryClient.invalidateQueries({ queryKey: ['class-types'] });
       queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
       queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
       queryClient.invalidateQueries({ queryKey: ['class-programming-month'] });
     },
     onError: (e) => setError(errorMessage(e, 'Save failed')),
@@ -1003,6 +1005,7 @@ export function ClassTypesPanel() {
 }
 
 export default function ClassTypesScreen() {
+  useSetupAutoReturn('class_type_and_schedule', true);
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
