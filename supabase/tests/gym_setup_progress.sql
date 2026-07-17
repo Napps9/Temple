@@ -51,7 +51,7 @@ do $$
 begin
   perform public.set_gym_operating_defaults(
     current_setting('test.gym')::uuid,
-    'mon', 'UTC', 12, 60, 7, 365, 3, 30, 8, 'credits_first'
+    'mon', 'UTC', 12, 60, 7, 365, 3, 30, 'credits_first'
   );
 end $$;
 

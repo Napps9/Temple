@@ -38,7 +38,6 @@ type Defaults = {
   parq_expiry_days: number;
   health_retention_months: number;
   lead_conversion_window_days: number;
-  materialisation_horizon_weeks: number;
   subscription_resolution: 'credits_first' | 'newest_first' | 'highest_priority';
   booking_window_hours_ahead: number | null;
   booking_cutoff_minutes_before: number;
@@ -89,7 +88,7 @@ export function OperatingDefaultsPanel() {
       const { data, error: e } = await supabase
         .from('gyms')
         .select(
-          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, materialisation_horizon_weeks, subscription_resolution, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before',
+          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, subscription_resolution, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before',
         )
         .eq('id', membership!.gymId)
         .single();
@@ -126,7 +125,6 @@ export function OperatingDefaultsPanel() {
         p_parq_expiry_days: draft.parq_expiry_days,
         p_health_retention_months: draft.health_retention_months,
         p_lead_conversion_window_days: draft.lead_conversion_window_days,
-        p_materialisation_horizon_weeks: draft.materialisation_horizon_weeks,
         p_subscription_resolution: draft.subscription_resolution,
         p_booking_window_hours_ahead: draft.booking_window_hours_ahead,
         p_booking_cutoff_minutes_before: draft.booking_cutoff_minutes_before,
@@ -310,24 +308,6 @@ export function OperatingDefaultsPanel() {
           }
           base="minutes"
           units={['minutes', 'hours']}
-        />
-        <DurationField
-          label="Class materialisation horizon"
-          blurb="How far ahead recurring schedules turn into bookable sessions."
-          value={String(draft.materialisation_horizon_weeks)}
-          onChange={(v) =>
-            setDraft((d) =>
-              d
-                ? {
-                    ...d,
-                    materialisation_horizon_weeks:
-                      v.trim() === '' ? 0 : parseInt(v, 10),
-                  }
-                : d,
-            )
-          }
-          base="weeks"
-          units={['weeks', 'months']}
         />
       </Section>
 

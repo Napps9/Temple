@@ -3926,7 +3926,6 @@ export type Database = {
           p_parq_expiry_days: number;
           p_health_retention_months: number;
           p_lead_conversion_window_days: number;
-          p_materialisation_horizon_weeks: number;
           p_subscription_resolution:
             | 'credits_first'
             | 'newest_first'

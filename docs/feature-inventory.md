@@ -622,7 +622,7 @@ The Manage page presents a tab strip:
 - **Settings** — collapsible cards:
   - **Gym settings** [`can_manage_staff`] — training discipline
     (CrossFit / Hyrox), billing currency, week start, default
-    class capacity / duration / materialisation horizon, plan-resolution
+    class capacity / duration, plan-resolution
     order, "expiring soon" window, booking windows (open / close / free-
     cancel cutoff, each with a min/hr/day/wk unit toggle so "2 weeks" or
     "48 hours" is entered directly), PAR-Q expiry, health-data retention,
@@ -1318,7 +1318,7 @@ actions are owner-only by policy:
   soon" window, read by `v_member_cohort`), `parq_expiry_days` (read by
   `_book_class_for` + `current_parq_state`), `health_retention_months`
   (read by `purge_expired_health_data`), `lead_conversion_window_days`,
-  `materialisation_horizon_weeks`, `subscription_resolution`,
+  `subscription_resolution`,
   `booking_window_hours_ahead` (earliest a member can book; null =
   unlimited), `booking_cutoff_minutes_before` (latest a member can
   book; refused inside the window), `cancel_cutoff_minutes_before`
