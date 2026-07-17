@@ -13,6 +13,7 @@ import {
   RecurrenceEditor,
   type RecurrenceForm,
   validateRecurrence,
+  weekPosition,
 } from '@/components/RecurrenceEditor';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -447,6 +448,9 @@ function ConfirmView({
   notes: string;
   sessionCount: number;
 }) {
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const weekStartsOn = gymDefaults?.week_starts_on ?? 'mon';
+
   const [y, mo, day] = dateStr.split('-').map(Number);
   const dateObj = y && mo && day ? new Date(y, mo - 1, day) : null;
   const dateLabel = dateObj
@@ -459,7 +463,9 @@ function ConfirmView({
     : dateStr;
 
   const daysList = [...days]
-    .sort((a, b) => a - b)
+    .sort(
+      (a, b) => weekPosition(a, weekStartsOn) - weekPosition(b, weekStartsOn),
+    )
     .map((i) => DAY_NAMES[i])
     .join(', ');
 

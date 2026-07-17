@@ -701,7 +701,12 @@ export function ClassTypesPanel() {
                     numberOfLines={4}>
                     {hasSchedule
                       ? activeSchedules
-                          .map((s) => summariseRecurrence(s.form))
+                          .map((s) =>
+                            summariseRecurrence(
+                              s.form,
+                              gymDefaults?.week_starts_on ?? 'mon',
+                            ),
+                          )
                           .join('\n')
                       : 'No recurring schedule yet.'}
                   </Text>

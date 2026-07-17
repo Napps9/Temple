@@ -4,8 +4,17 @@ import { Pressable, Text, View } from 'react-native';
 import { DurationField } from './DurationField';
 import { Input } from './Input';
 import { useThemeColors } from '@/lib/theme';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
+// Indexed by JS day-of-week (0=Sun..6=Sat) — matches the stored
+// days_of_week values. Display order comes from the gym's
+// week_starts_on, not from this array.
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+// Position of a JS day-of-week within the gym's week, for ordering.
+export function weekPosition(day: number, weekStartsOn: 'mon' | 'sun'): number {
+  return weekStartsOn === 'sun' ? day : (day + 6) % 7;
+}
 
 export type RecurrenceForm = {
   days: number[];
@@ -33,6 +42,11 @@ export function RecurrenceEditor({
   onChange: (next: RecurrenceForm) => void;
 }) {
   const colors = useThemeColors();
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const weekStartsOn = gymDefaults?.week_starts_on ?? 'mon';
+  const orderedDays = Array.from({ length: 7 }, (_, i) =>
+    weekStartsOn === 'sun' ? i : (i + 1) % 7,
+  );
   const daysSet = new Set(value.days);
 
   function toggleDay(i: number) {
@@ -64,7 +78,7 @@ export function RecurrenceEditor({
           Days
         </Text>
         <View className="flex-row gap-1.5">
-          {DAY_LETTERS.map((l, i) => {
+          {orderedDays.map((i) => {
             const sel = daysSet.has(i);
             return (
               <Pressable
@@ -79,7 +93,7 @@ export function RecurrenceEditor({
                       ? 'text-white font-semibold'
                       : 'text-gray-500 dark:text-gray-400 font-medium'
                   }>
-                  {l}
+                  {DAY_LETTERS[i]}
                 </Text>
               </Pressable>
             );
@@ -196,10 +210,16 @@ export function validateRecurrence(r: RecurrenceForm): string | null {
   return null;
 }
 
-export function summariseRecurrence(r: RecurrenceForm | null): string {
+export function summariseRecurrence(
+  r: RecurrenceForm | null,
+  weekStartsOn: 'mon' | 'sun',
+): string {
   if (!r || r.days.length === 0) return 'No schedule yet.';
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const days = r.days.map((d) => dayNames[d]).join(', ');
+  const days = [...r.days]
+    .sort((a, b) => weekPosition(a, weekStartsOn) - weekPosition(b, weekStartsOn))
+    .map((d) => dayNames[d])
+    .join(', ');
   const validTimes = r.times.map((t) => t.trim()).filter((t) => TIME_RE.test(t));
   const times = validTimes.length > 0 ? validTimes.join(', ') : '—';
   const range = r.indefinite ? 'ongoing' : `for ${r.weeks} ${r.weeks === '1' ? 'week' : 'weeks'}`;

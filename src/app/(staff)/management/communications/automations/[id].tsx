@@ -22,6 +22,7 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 import type { Json } from '@/types/database';
 
@@ -200,6 +201,11 @@ function SendTimeControls({
   onHour: (h: number | null) => void;
   onDays: (fn: (prev: number[]) => number[]) => void;
 }) {
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const weekdays =
+    gymDefaults?.week_starts_on === 'sun'
+      ? [WEEKDAYS[6], ...WEEKDAYS.slice(0, 6)]
+      : WEEKDAYS;
   return (
     <View className="gap-2">
       <View className="flex-row items-center justify-between gap-3">
@@ -235,7 +241,7 @@ function SendTimeControls({
             })}
           </View>
           <View className="flex-row flex-wrap gap-1.5">
-            {WEEKDAYS.map((d) => {
+            {weekdays.map((d) => {
               const sel = days.includes(d.n);
               return (
                 <Pressable
