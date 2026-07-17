@@ -617,7 +617,13 @@ export function PlansPanel() {
             label="Import members from Stripe"
             icon="cloud-download-outline"
             tone="primary"
-            onPress={() => router.push('/management/members/import-stripe' as never)}
+            onPress={() =>
+              router.push(
+                (backTo === 'setup'
+                  ? '/management/members/import-stripe?backTo=setup'
+                  : '/management/members/import-stripe') as never,
+              )
+            }
           />
         ) : null}
 
