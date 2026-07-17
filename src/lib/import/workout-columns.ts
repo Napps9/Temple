@@ -6,6 +6,7 @@
 // rows whose movement name doesn't resolve to a vocab entry (the owner
 // can fix the CSV and try again, or accept that those rows are dropped).
 
+import { HYROX_STATIONS } from '../hyrox';
 import { MOVEMENT_GROUPS } from '../movements';
 import { toIsoDate } from './columns';
 
@@ -18,6 +19,8 @@ export type WorkoutField =
   | 'unit'
   | 'score_type'
   | 'score_value'
+  | 'discipline'
+  | 'segment'
   | 'notes';
 
 export const WORKOUT_FIELD_LABELS: Record<WorkoutField, string> = {
@@ -29,6 +32,8 @@ export const WORKOUT_FIELD_LABELS: Record<WorkoutField, string> = {
   unit: 'Weight unit (kg or lb)',
   score_type: 'Score type (For Time / AMRAP…)',
   score_value: 'Score / result',
+  discipline: 'Discipline (CrossFit / Hyrox)',
+  segment: 'Segment / station',
   notes: 'Notes',
 };
 
@@ -51,6 +56,8 @@ const FIELD_HEADERS: Record<WorkoutField, string[]> = {
   unit: ['unit', 'units', 'weight unit', 'weight units'],
   score_type: ['score type', 'result type', 'scoring', 'scoring type'],
   score_value: ['score value', 'score', 'result value', 'score result'],
+  discipline: ['discipline', 'sport', 'program', 'programme'],
+  segment: ['segment', 'station', 'segment station', 'part'],
   notes: ['notes', 'note', 'comments', 'comment', 'description'],
 };
 
@@ -453,11 +460,120 @@ export function buildSectionRows(
   return { ready: out, skippedNoEmail, skippedNoDate, skippedUnscored };
 }
 
+// --- Hyrox race results (Phase B) ---------------------------------------
+// An official-race export (Hyrox London: 8 station splits + a total time,
+// with aggregate run/roxzone rows) maps to the same tracked_movement_results
+// the app PBs Hyrox off: each station split is a station PB, the total is
+// the official Hyrox Time. The aggregate run (8×1km) and roxzone rows have
+// no clean single-segment PB home, so they're skipped. See
+// docs/workout-results-import-scope.md.
+
+export type ImportHyroxRow = {
+  email: string;
+  date: string; // ISO YYYY-MM-DD
+  movement_key: string; // a hyrox station key, or 'hyrox_time'
+  track_key: string; // the station's PB scheme (e.g. '1000m'), or 'full'
+  value_seconds: number;
+  notes: string | null;
+};
+
+const HYROX_STATION_INDEX: { key: string; scheme: string; token: string }[] =
+  HYROX_STATIONS
+    // hyrox_run is a single 1 km split; the export only carries an 8×1km
+    // aggregate, so exclude the run station from segment matching (its
+    // aggregate row is skipped below).
+    .filter((s) => s.key !== 'hyrox_run')
+    .map((s) => ({ key: s.key, scheme: s.schemeKey, token: normalise(s.name) }));
+
+type HyroxSeg =
+  | { kind: 'result'; movement_key: string; track_key: string }
+  | { kind: 'skip' } // aggregate run / roxzone — no single-segment PB home
+  | { kind: 'unknown' };
+
+export function matchHyroxSegment(segment: string): HyroxSeg {
+  const n = normalise(segment);
+  if (!n) return { kind: 'unknown' };
+  if (n.includes('total race time') || (n.includes('total') && n.includes('race'))) {
+    return { kind: 'result', movement_key: 'hyrox_time', track_key: 'full' };
+  }
+  if (n.includes('roxzone') || n.includes('transition')) return { kind: 'skip' };
+  if (n.includes('run')) return { kind: 'skip' }; // 8×1km aggregate
+  for (const s of HYROX_STATION_INDEX) {
+    if (n.includes(s.token)) {
+      return { kind: 'result', movement_key: s.key, track_key: s.scheme };
+    }
+  }
+  return { kind: 'unknown' };
+}
+
+export function buildHyroxResults(
+  headers: string[],
+  mapping: (WorkoutField | null)[],
+  rows: string[][],
+): {
+  ready: ImportHyroxRow[];
+  skippedNoEmail: number;
+  skippedNoDate: number;
+  skippedAggregate: number;
+  skippedUnknown: number;
+} {
+  const out: ImportHyroxRow[] = [];
+  let skippedNoEmail = 0;
+  let skippedNoDate = 0;
+  let skippedAggregate = 0;
+  let skippedUnknown = 0;
+
+  for (const cells of rows) {
+    const email = cellFor('email', headers, mapping, cells).toLowerCase();
+    const dateRaw = cellFor('date', headers, mapping, cells);
+    // The station sits in the Segment column; the movement column holds the
+    // race name (Hyrox London 2026), which we don't need per split.
+    const segment = cellFor('segment', headers, mapping, cells);
+    const scoreValue = cellFor('score_value', headers, mapping, cells);
+    const notes = cellFor('notes', headers, mapping, cells) || null;
+
+    if (!email) {
+      skippedNoEmail += 1;
+      continue;
+    }
+    const date = dateRaw ? toIsoDate(dateRaw) : null;
+    if (!date) {
+      skippedNoDate += 1;
+      continue;
+    }
+
+    const seg = matchHyroxSegment(segment);
+    if (seg.kind === 'skip') {
+      skippedAggregate += 1;
+      continue;
+    }
+    if (seg.kind === 'unknown') {
+      skippedUnknown += 1;
+      continue;
+    }
+    const secs = parseTimeToSeconds(scoreValue);
+    if (secs === null) {
+      skippedUnknown += 1;
+      continue;
+    }
+    out.push({
+      email,
+      date,
+      movement_key: seg.movement_key,
+      track_key: seg.track_key,
+      value_seconds: secs,
+      notes,
+    });
+  }
+  return { ready: out, skippedNoEmail, skippedNoDate, skippedAggregate, skippedUnknown };
+}
+
 export type ImportResults = {
   weighted: ImportWorkoutRow[];
   sections: ImportSectionRow[];
+  hyrox: ImportHyroxRow[];
   misses: MovementMiss[];
-  deferred: number; // Hyrox / race rows — Phase B
+  deferred: number; // Hyrox rows not imported (aggregate run/roxzone, unknown)
   skippedNoEmail: number;
   skippedNoDate: number;
   skippedUnscored: number;
@@ -476,14 +592,14 @@ export function buildResults(
   const hasScoreType = mapping.includes('score_type');
   const weightedRows: string[][] = [];
   const sectionRows: string[][] = [];
-  let deferred = 0;
+  const hyroxRows: string[][] = [];
 
   for (const cells of rows) {
     const kind = hasScoreType
       ? classifyScoreType(cellFor('score_type', headers, mapping, cells))
       : 'weighted';
     if (kind === 'for_time' || kind === 'amrap') sectionRows.push(cells);
-    else if (kind === 'deferred') deferred += 1;
+    else if (kind === 'deferred') hyroxRows.push(cells);
     else weightedRows.push(cells);
   }
 
@@ -502,14 +618,18 @@ export function buildResults(
     overrides,
   );
   const sections = buildSectionRows(headers, mapping, sectionRows);
+  const hyrox = buildHyroxResults(headers, mapping, hyroxRows);
 
   return {
     weighted: weighted.ready,
     sections: sections.ready,
+    hyrox: hyrox.ready,
     misses: weighted.misses,
-    deferred,
-    skippedNoEmail: weighted.skippedNoEmail + sections.skippedNoEmail,
-    skippedNoDate: weighted.skippedNoDate + sections.skippedNoDate,
+    deferred: hyrox.skippedAggregate + hyrox.skippedUnknown,
+    skippedNoEmail:
+      weighted.skippedNoEmail + sections.skippedNoEmail + hyrox.skippedNoEmail,
+    skippedNoDate:
+      weighted.skippedNoDate + sections.skippedNoDate + hyrox.skippedNoDate,
     skippedUnscored: sections.skippedUnscored,
   };
 }

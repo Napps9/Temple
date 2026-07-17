@@ -45,11 +45,20 @@ type SectionRpcResult = {
   skipped_duplicate: number;
 };
 
-// Combined across the two RPCs (weighted movements + scored sections).
+type HyroxRpcResult = {
+  inserted_workouts: number;
+  inserted_results: number;
+  skipped_no_member: number;
+  skipped_duplicate: number;
+};
+
+// Combined across the three RPCs (weighted movements + scored sections +
+// Hyrox/time results).
 type Result = {
   workouts: number;
   results: number; // weighted movement results
   sections: number; // scored benchmark sections
+  hyrox: number; // Hyrox station splits + official times
   skipped_no_member: number;
   skipped_no_movement: number;
   skipped_duplicate: number;
@@ -94,6 +103,7 @@ export default function ImportWorkoutsScreen() {
       return {
         weighted: [],
         sections: [],
+        hyrox: [],
         misses: [],
         deferred: 0,
         skippedNoEmail: 0,
@@ -109,7 +119,8 @@ export default function ImportWorkoutsScreen() {
     );
   }, [rows, headers, mapping, phase, overrides]);
 
-  const readyCount = built.weighted.length + built.sections.length;
+  const readyCount =
+    built.weighted.length + built.sections.length + built.hyrox.length;
 
   const scoredShape = useMemo(() => looksLikeScoredResults(rows), [rows]);
 
@@ -163,6 +174,7 @@ export default function ImportWorkoutsScreen() {
         workouts: 0,
         results: 0,
         sections: 0,
+        hyrox: 0,
         skipped_no_member: 0,
         skipped_no_movement: 0,
         skipped_duplicate: 0,
@@ -195,6 +207,20 @@ export default function ImportWorkoutsScreen() {
           acc.skipped_duplicate += row.skipped_duplicate;
         }
       }
+      if (built.hyrox.length > 0) {
+        const { data, error: e } = await supabase.rpc(
+          'import_member_hyrox_results',
+          { p_gym_id: membership.gymId, p_rows: built.hyrox as unknown as Json },
+        );
+        if (e) throw e;
+        const row = (data ?? [])[0] as HyroxRpcResult | undefined;
+        if (row) {
+          acc.workouts += row.inserted_workouts;
+          acc.hyrox += row.inserted_results;
+          acc.skipped_no_member += row.skipped_no_member;
+          acc.skipped_duplicate += row.skipped_duplicate;
+        }
+      }
       return acc;
     },
     onSuccess: (r) => {
@@ -217,11 +243,11 @@ export default function ImportWorkoutsScreen() {
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
             Drop in a CSV of past workouts: one row per result. Weighted lifts
-            (movement + weight + reps) and benchmark WODs scored For Time or
-            AMRAP both import; Hyrox and race splits are coming in a later step.
-            We match each row's email to an existing member and group results on
-            the same date into one workout. Movements are matched against the
-            built-in vocab — unknowns show up below so you can rename them.
+            (movement + weight + reps), benchmark WODs scored For Time or AMRAP,
+            and Hyrox station splits + race times all import. We match each row's
+            email to an existing member and group results on the same date into
+            one workout. Movements are matched against the built-in vocab —
+            unknowns show up below, where AI can match them for you.
           </Text>
         </View>
 
@@ -390,12 +416,14 @@ export default function ImportWorkoutsScreen() {
               {built.weighted.length} lift{built.weighted.length === 1 ? '' : 's'}
               {' · '}
               {built.sections.length} benchmark
-              {built.sections.length === 1 ? '' : 's'} ready
+              {built.sections.length === 1 ? '' : 's'}
+              {' · '}
+              {built.hyrox.length} Hyrox ready
               {built.misses.length > 0
                 ? ` · ${built.misses.length} unknown movement${built.misses.length === 1 ? '' : 's'}`
                 : ''}
               {built.deferred > 0
-                ? ` · ${built.deferred} race/time result${built.deferred === 1 ? '' : 's'}`
+                ? ` · ${built.deferred} race split${built.deferred === 1 ? '' : 's'} skipped`
                 : ''}
               {built.skippedNoEmail + built.skippedNoDate > 0
                 ? ` · ${built.skippedNoEmail + built.skippedNoDate} missing email/date`
@@ -420,6 +448,27 @@ export default function ImportWorkoutsScreen() {
                   <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
                     …and {built.sections.length - 6} more benchmark
                     {built.sections.length - 6 === 1 ? '' : 's'}.
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {built.hyrox.length > 0 ? (
+              <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                {built.hyrox.slice(0, 6).map((h, i) => (
+                  <View key={`h${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
+                    <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                      {h.email} · {h.date} · {hyroxLabel(h.movement_key)}
+                    </Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      {clock(h.value_seconds)}
+                    </Text>
+                  </View>
+                ))}
+                {built.hyrox.length > 6 ? (
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+                    …and {built.hyrox.length - 6} more Hyrox result
+                    {built.hyrox.length - 6 === 1 ? '' : 's'}.
                   </Text>
                 ) : null}
               </View>
@@ -519,12 +568,13 @@ export default function ImportWorkoutsScreen() {
             {built.deferred > 0 ? (
               <View className="gap-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                 <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
-                  {built.deferred} race / time result
-                  {built.deferred === 1 ? '' : 's'} not imported
+                  {built.deferred} aggregate row{built.deferred === 1 ? '' : 's'}{' '}
+                  skipped
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  These look like Hyrox or race splits. Race import is coming in a
-                  later step — the benchmarks and lifts above still import now.
+                  Hyrox total-run and roxzone rows are 8-segment aggregates with
+                  no single-station PB — the station splits and race time above
+                  import; these don’t.
                 </Text>
               </View>
             ) : null}
@@ -550,13 +600,15 @@ export default function ImportWorkoutsScreen() {
         {phase === 'done' && result ? (
           <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 gap-2">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-              Imported {result.results + result.sections} result
-              {result.results + result.sections === 1 ? '' : 's'} across{' '}
-              {result.workouts} workout{result.workouts === 1 ? '' : 's'}
+              Imported {result.results + result.sections + result.hyrox} result
+              {result.results + result.sections + result.hyrox === 1 ? '' : 's'}{' '}
+              across {result.workouts} workout
+              {result.workouts === 1 ? '' : 's'}
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
               {result.results} lift{result.results === 1 ? '' : 's'} ·{' '}
-              {result.sections} benchmark{result.sections === 1 ? '' : 's'}
+              {result.sections} benchmark{result.sections === 1 ? '' : 's'} ·{' '}
+              {result.hyrox} Hyrox
               {result.skipped_no_member > 0
                 ? ` · ${result.skipped_no_member} skipped (email not in this gym yet)`
                 : ''}
@@ -596,13 +648,19 @@ function ScoredResultsNotice() {
         This looks like scored results
       </Text>
       <Text className="text-gray-600 dark:text-gray-300 text-xs">
-        Map the workout name to Movement, plus the Score type and Score columns.
-        Benchmark WODs (For Time, AMRAP) import as workout results. Weighted lifts
-        still need a movement Temple recognises, and Hyrox race splits come in a
-        later step.
+        Map the workout name to Movement, plus the Score type and Score columns
+        (and Segment for Hyrox). Benchmark WODs (For Time, AMRAP) and Hyrox
+        station splits + race times import; weighted lifts need a movement
+        Temple recognises, which AI can match below.
       </Text>
     </View>
   );
+}
+
+// Readable label for an imported Hyrox result key.
+function hyroxLabel(key: string): string {
+  if (key === 'hyrox_time') return 'Official race time';
+  return key.replace(/^hyrox_/, '').replace(/_/g, ' ');
 }
 
 // mm:ss for a benchmark time; a bare em-dash when unset.

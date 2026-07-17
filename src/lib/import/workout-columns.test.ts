@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   autoDetect,
+  buildHyroxResults,
   buildResults,
   buildWorkoutRows,
   classifyScoreType,
   looksLikeScoredResults,
+  matchHyroxSegment,
   matchMovement,
   movementVocab,
   normaliseMovementName,
@@ -275,6 +277,64 @@ describe('buildResults', () => {
     expect(after.weighted).toHaveLength(1);
     expect(after.weighted[0]?.movement_key).toBe('back_squat');
     expect(after.weighted[0]?.weight).toBe(140);
+  });
+});
+
+describe('matchHyroxSegment', () => {
+  it('maps station segments to hyrox station keys', () => {
+    expect(matchHyroxSegment('SkiErg 1000m')).toEqual({
+      kind: 'result',
+      movement_key: 'hyrox_ski_erg',
+      track_key: '1000m',
+    });
+    expect(matchHyroxSegment('Wall Balls 100 reps')).toMatchObject({
+      kind: 'result',
+      movement_key: 'hyrox_wall_balls',
+    });
+    expect(matchHyroxSegment('Rowing 1000m')).toMatchObject({
+      movement_key: 'hyrox_row',
+    });
+  });
+  it('maps the total to the official Hyrox time', () => {
+    expect(matchHyroxSegment('Total Race Time')).toEqual({
+      kind: 'result',
+      movement_key: 'hyrox_time',
+      track_key: 'full',
+    });
+  });
+  it('skips the aggregate run and roxzone rows', () => {
+    expect(matchHyroxSegment('Run (8x1km total)').kind).toBe('skip');
+    expect(matchHyroxSegment('Roxzone (transitions)').kind).toBe('skip');
+  });
+  it('returns unknown for anything else', () => {
+    expect(matchHyroxSegment('Coffee break').kind).toBe('unknown');
+    expect(matchHyroxSegment('').kind).toBe('unknown');
+  });
+});
+
+describe('buildHyroxResults', () => {
+  const headers = ['Email', 'Name', 'Date', 'Segment', 'Score Type', 'Score Value'];
+  const mapping = [
+    'email',
+    'movement',
+    'date',
+    'segment',
+    'score_type',
+    'score_value',
+  ] as const;
+
+  it('imports station splits + total, skips aggregates', () => {
+    const r = buildHyroxResults(headers, mapping as never, [
+      ['a@x.com', 'Hyrox London', '2026-07-12', 'SkiErg 1000m', 'TIME', '3:58'],
+      ['a@x.com', 'Hyrox London', '2026-07-12', 'Total Race Time', 'TIME', '1:05:10'],
+      ['a@x.com', 'Hyrox London', '2026-07-12', 'Run (8x1km total)', 'TIME', '34:12'],
+    ]);
+    expect(r.ready).toHaveLength(2);
+    expect(r.skippedAggregate).toBe(1);
+    const ski = r.ready.find((x) => x.movement_key === 'hyrox_ski_erg');
+    expect(ski).toMatchObject({ track_key: '1000m', value_seconds: 238 });
+    const total = r.ready.find((x) => x.movement_key === 'hyrox_time');
+    expect(total).toMatchObject({ track_key: 'full', value_seconds: 3910 });
   });
 });
 
