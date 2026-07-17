@@ -68,6 +68,9 @@ type EditableType = {
   cancelCutoffMinutesBefore: string;
   cancelCutoffTime: string;
   cancelCutoffDaysBefore: string;
+  // Unsaved edits. A dirty row survives the server reseed so saving or
+  // archiving one card can't wipe another card's in-progress edits.
+  dirty: boolean;
 };
 
 function fmtDateLocal(d: Date) {
@@ -96,6 +99,70 @@ function recurrenceFromServer(r: RecurrenceRow): RecurrenceForm {
   };
 }
 
+// Canonical form of a schedule for change detection. Saving an
+// unchanged schedule must be a no-op: rewriting a recurrence deletes
+// its future sessions (and their bookings) before rematerialising.
+function scheduleKey(f: RecurrenceForm): string {
+  return JSON.stringify({
+    days: [...f.days].sort((a, b) => a - b),
+    times: f.times.map((t) => t.trim()).filter(Boolean),
+    dur: parseInt(f.durationMinutes, 10),
+    cap: parseInt(f.capacity, 10),
+    indefinite: f.indefinite,
+    weeks: f.indefinite ? '' : f.weeks,
+  });
+}
+
+function nullableInt(v: string): number | null {
+  const t = v.trim();
+  if (t === '') return null;
+  const n = parseInt(t, 10);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error('Booking-rule values must be non-negative whole numbers');
+  }
+  return n;
+}
+
+// Derive the three cancel-cutoff columns from the row's mode. Only
+// one of the relative override / absolute pair is populated at a
+// time; the other side goes back to null = inherit.
+function cancelCutoffFromRow(r: EditableType): {
+  cancel_cutoff_minutes_before: number | null;
+  cancel_cutoff_mode: 'day_before' | null;
+  cancel_cutoff_time: string | null;
+  cancel_cutoff_days_before: number | null;
+} {
+  if (r.cancelCutoffMode === 'relative') {
+    return {
+      cancel_cutoff_minutes_before: nullableInt(r.cancelCutoffMinutesBefore),
+      cancel_cutoff_mode: null,
+      cancel_cutoff_time: null,
+      cancel_cutoff_days_before: null,
+    };
+  }
+  if (r.cancelCutoffMode === 'day_before') {
+    const t = r.cancelCutoffTime.trim();
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) {
+      throw new Error(
+        `${r.name || 'Class type'}: cancel time must be HH:MM (24h), e.g. 21:00`,
+      );
+    }
+    const d = nullableInt(r.cancelCutoffDaysBefore);
+    return {
+      cancel_cutoff_minutes_before: null,
+      cancel_cutoff_mode: 'day_before',
+      cancel_cutoff_time: t,
+      cancel_cutoff_days_before: d ?? 1,
+    };
+  }
+  return {
+    cancel_cutoff_minutes_before: null,
+    cancel_cutoff_mode: null,
+    cancel_cutoff_time: null,
+    cancel_cutoff_days_before: null,
+  };
+}
+
 export function ClassTypesPanel() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
@@ -105,7 +172,7 @@ export function ClassTypesPanel() {
   const [rows, setRows] = useState<EditableType[]>([]);
   const [openPickerIdx, setOpenPickerIdx] = useState<number | null>(null);
   const [showArchived, setShowArchived] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{ idx: number; message: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [saved, markSaved] = useSavedFlag();
 
@@ -145,20 +212,27 @@ export function ClassTypesPanel() {
       arr.push(r);
       recsByTypeId.set(r.class_type_id, arr);
     }
-    setRows(
-      types.data.map((t) => {
+    setRows((prev) => {
+      const prevById = new Map(
+        prev.filter((r) => r.id !== null).map((r) => [r.id!, r]),
+      );
+      const fromServer = types.data!.map((t): EditableType => {
+        const existing = prevById.get(t.id);
+        // A row with unsaved edits keeps its draft — reseeding it here
+        // would throw the edits away whenever a neighbouring card saves.
+        if (existing?.dirty) return existing;
         const recs = recsByTypeId.get(t.id) ?? [];
         return {
           id: t.id,
           name: t.name,
           color: t.color,
           archivedAt: t.archived_at,
-          scheduleOpen: false,
+          scheduleOpen: existing?.scheduleOpen ?? false,
           schedules: recs.map((rec) => ({
             id: rec.id,
             form: recurrenceFromServer(rec),
           })),
-          rulesOpen: false,
+          rulesOpen: existing?.rulesOpen ?? false,
           bookingWindowHoursAhead:
             t.booking_window_hours_ahead === null
               ? ''
@@ -184,9 +258,13 @@ export function ClassTypesPanel() {
             t.cancel_cutoff_days_before === null
               ? '1'
               : String(t.cancel_cutoff_days_before),
+          dirty: false,
         };
-      }),
-    );
+      });
+      // Drafts not yet on the server always survive a reseed.
+      const drafts = prev.filter((r) => r.id === null);
+      return [...fromServer, ...drafts];
+    });
   }, [
     types.data,
     recurrences.data,
@@ -199,8 +277,13 @@ export function ClassTypesPanel() {
       const { error } = await supabase.rpc('archive_class_type', { p_id: id });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       setActionError(null);
+      // Drop any unsaved edits on the archived card so the reseed takes
+      // the server's archived state instead of the stale active draft.
+      setRows((curr) =>
+        curr.map((r) => (r.id === id ? { ...r, dirty: false } : r)),
+      );
       queryClient.invalidateQueries({ queryKey: ['class-types'] });
       queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
     },
@@ -232,156 +315,57 @@ export function ClassTypesPanel() {
     onError: (e) => setActionError(errorMessage(e, 'Could not delete')),
   });
 
+  // Saves one card: the class type row plus its schedules. Schedules
+  // whose form matches the server are skipped entirely — rewriting a
+  // recurrence deletes its future sessions (and their bookings), so an
+  // untouched schedule must never be rewritten as a side effect.
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (idx: number) => {
       if (!membership) throw new Error('No gym');
-      const { data: userResp, error: userErr } = await supabase.auth.getUser();
-      if (userErr || !userResp.user) throw userErr ?? new Error('Not signed in');
-      const userId = userResp.user.id;
+      const r = rows[idx];
+      if (!r) throw new Error('Nothing to save');
+      const name = r.name.trim();
+      if (!name) throw new Error('The type needs a name');
 
-      const server = types.data ?? [];
-      const serverById = new Map(server.map((t) => [t.id, t]));
-
-      type Rules = {
-        booking_window_hours_ahead: number | null;
-        booking_cutoff_minutes_before: number | null;
-        cancel_cutoff_minutes_before: number | null;
-        cancel_cutoff_mode: 'day_before' | null;
-        cancel_cutoff_time: string | null;
-        cancel_cutoff_days_before: number | null;
+      const rules = {
+        booking_window_hours_ahead: nullableInt(r.bookingWindowHoursAhead),
+        booking_cutoff_minutes_before: nullableInt(r.bookingCutoffMinutesBefore),
+        ...cancelCutoffFromRow(r),
       };
-      type Insert = { localIdx: number; name: string; color: string } & Rules;
-      type Update = { id: string; name: string; color: string } & Rules;
-      const inserts: Insert[] = [];
-      const updates: Update[] = [];
 
-      function nullableInt(v: string): number | null {
-        const t = v.trim();
-        if (t === '') return null;
-        const n = parseInt(t, 10);
-        if (!Number.isFinite(n) || n < 0) {
-          throw new Error('Booking-rule values must be non-negative whole numbers');
-        }
-        return n;
-      }
-
-      // Derive the three cancel-cutoff columns from the row's mode. Only
-      // one of the relative override / absolute pair is populated at a
-      // time; the other side goes back to null = inherit.
-      function cancelCutoffFromRow(r: EditableType): {
-        cancel_cutoff_minutes_before: number | null;
-        cancel_cutoff_mode: 'day_before' | null;
-        cancel_cutoff_time: string | null;
-        cancel_cutoff_days_before: number | null;
-      } {
-        if (r.cancelCutoffMode === 'relative') {
-          return {
-            cancel_cutoff_minutes_before: nullableInt(r.cancelCutoffMinutesBefore),
-            cancel_cutoff_mode: null,
-            cancel_cutoff_time: null,
-            cancel_cutoff_days_before: null,
-          };
-        }
-        if (r.cancelCutoffMode === 'day_before') {
-          const t = r.cancelCutoffTime.trim();
-          if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) {
-            throw new Error(
-              `${r.name || 'Class type'}: cancel time must be HH:MM (24h), e.g. 21:00`,
-            );
-          }
-          const d = nullableInt(r.cancelCutoffDaysBefore);
-          return {
-            cancel_cutoff_minutes_before: null,
-            cancel_cutoff_mode: 'day_before',
-            cancel_cutoff_time: t,
-            cancel_cutoff_days_before: d ?? 1,
-          };
-        }
-        return {
-          cancel_cutoff_minutes_before: null,
-          cancel_cutoff_mode: null,
-          cancel_cutoff_time: null,
-          cancel_cutoff_days_before: null,
-        };
-      }
-
-      for (let i = 0; i < rows.length; i++) {
-        const r = rows[i];
-        const name = r.name.trim();
-        const rules: Rules = {
-          booking_window_hours_ahead: nullableInt(r.bookingWindowHoursAhead),
-          booking_cutoff_minutes_before: nullableInt(r.bookingCutoffMinutesBefore),
-          ...cancelCutoffFromRow(r),
-        };
-        if (r.id === null) {
-          if (!name) throw new Error('Each type needs a name');
-          inserts.push({ localIdx: i, name, color: r.color, ...rules });
-          continue;
-        }
-        if (r.archivedAt) continue;
-        if (!name) throw new Error('Each type needs a name');
-        const sv = serverById.get(r.id);
+      let classTypeId = r.id;
+      if (classTypeId === null) {
+        const { data, error } = await supabase
+          .from('class_types')
+          .insert({ gym_id: membership.gymId, name, color: r.color, ...rules })
+          .select('id')
+          .single();
+        if (error || !data) throw error ?? new Error('Could not create type');
+        classTypeId = data.id;
+      } else {
+        const sv = (types.data ?? []).find((t) => t.id === classTypeId);
         const svTime = sv?.cancel_cutoff_time
           ? sv.cancel_cutoff_time.slice(0, 5)
           : null;
         const changed =
-          sv &&
-          (sv.name !== name ||
-            sv.color !== r.color ||
-            sv.booking_window_hours_ahead !== rules.booking_window_hours_ahead ||
-            sv.booking_cutoff_minutes_before !==
-              rules.booking_cutoff_minutes_before ||
-            sv.cancel_cutoff_minutes_before !==
-              rules.cancel_cutoff_minutes_before ||
-            sv.cancel_cutoff_mode !== rules.cancel_cutoff_mode ||
-            svTime !== rules.cancel_cutoff_time ||
-            sv.cancel_cutoff_days_before !== rules.cancel_cutoff_days_before);
+          !sv ||
+          sv.name !== name ||
+          sv.color !== r.color ||
+          sv.booking_window_hours_ahead !== rules.booking_window_hours_ahead ||
+          sv.booking_cutoff_minutes_before !==
+            rules.booking_cutoff_minutes_before ||
+          sv.cancel_cutoff_minutes_before !==
+            rules.cancel_cutoff_minutes_before ||
+          sv.cancel_cutoff_mode !== rules.cancel_cutoff_mode ||
+          svTime !== rules.cancel_cutoff_time ||
+          sv.cancel_cutoff_days_before !== rules.cancel_cutoff_days_before;
         if (changed) {
-          updates.push({ id: r.id, name, color: r.color, ...rules });
+          const { error } = await supabase
+            .from('class_types')
+            .update({ name, color: r.color, ...rules })
+            .eq('id', classTypeId);
+          if (error) throw error;
         }
-      }
-
-      const newIdByLocalIdx = new Map<number, string>();
-      if (inserts.length > 0) {
-        const { data, error } = await supabase
-          .from('class_types')
-          .insert(
-            inserts.map((i) => ({
-              gym_id: membership.gymId,
-              name: i.name,
-              color: i.color,
-              booking_window_hours_ahead: i.booking_window_hours_ahead,
-              booking_cutoff_minutes_before: i.booking_cutoff_minutes_before,
-              cancel_cutoff_minutes_before: i.cancel_cutoff_minutes_before,
-              cancel_cutoff_mode: i.cancel_cutoff_mode,
-              cancel_cutoff_time: i.cancel_cutoff_time,
-              cancel_cutoff_days_before: i.cancel_cutoff_days_before,
-            })),
-          )
-          .select('id');
-        if (error) throw error;
-        if (!data || data.length !== inserts.length) {
-          throw new Error('Insert mismatch');
-        }
-        for (let k = 0; k < inserts.length; k++) {
-          newIdByLocalIdx.set(inserts[k].localIdx, data[k].id);
-        }
-      }
-      for (const u of updates) {
-        const { error } = await supabase
-          .from('class_types')
-          .update({
-            name: u.name,
-            color: u.color,
-            booking_window_hours_ahead: u.booking_window_hours_ahead,
-            booking_cutoff_minutes_before: u.booking_cutoff_minutes_before,
-            cancel_cutoff_minutes_before: u.cancel_cutoff_minutes_before,
-            cancel_cutoff_mode: u.cancel_cutoff_mode,
-            cancel_cutoff_time: u.cancel_cutoff_time,
-            cancel_cutoff_days_before: u.cancel_cutoff_days_before,
-          })
-          .eq('id', u.id);
-        if (error) throw error;
       }
 
       async function deleteRecurrence(id: string) {
@@ -392,120 +376,136 @@ export function ClassTypesPanel() {
         if (delErr) throw delErr;
       }
 
-      for (let i = 0; i < rows.length; i++) {
-        const r = rows[i];
-        if (r.archivedAt) continue;
-        const classTypeId = r.id ?? newIdByLocalIdx.get(i);
-        if (!classTypeId) continue;
+      // Schedules removed in the editor are recurrences that exist on
+      // the server but are no longer in the draft list — delete them.
+      const serverRecs = (recurrences.data ?? []).filter(
+        (rr) => rr.class_type_id === classTypeId,
+      );
+      const keptIds = new Set(
+        r.schedules.map((s) => s.id).filter((id): id is string => !!id),
+      );
+      for (const rec of serverRecs) {
+        if (!keptIds.has(rec.id)) await deleteRecurrence(rec.id);
+      }
 
-        // Schedules removed in the editor are recurrences that exist on
-        // the server but are no longer in the draft list — delete them.
-        const keptIds = new Set(
-          r.schedules.map((s) => s.id).filter((id): id is string => !!id),
-        );
-        const serverRecIds = (recurrences.data ?? [])
-          .filter((rr) => rr.class_type_id === classTypeId)
-          .map((rr) => rr.id);
-        for (const sid of serverRecIds) {
-          if (!keptIds.has(sid)) await deleteRecurrence(sid);
+      const serverRecById = new Map(serverRecs.map((rec) => [rec.id, rec]));
+
+      for (const sched of r.schedules) {
+        const form = sched.form;
+        if (form.days.length === 0) {
+          // An emptied existing schedule is a removal; a blank new one
+          // is simply skipped.
+          if (sched.id) await deleteRecurrence(sched.id);
+          continue;
         }
 
-        for (const sched of r.schedules) {
-          const form = sched.form;
-          if (form.days.length === 0) {
-            // An emptied existing schedule is a removal; a blank new one
-            // is simply skipped.
-            if (sched.id) await deleteRecurrence(sched.id);
+        const errMsg = validateRecurrence(form);
+        if (errMsg) throw new Error(`${r.name}: ${errMsg}`);
+
+        if (sched.id) {
+          const serverRec = serverRecById.get(sched.id);
+          if (
+            serverRec &&
+            scheduleKey(recurrenceFromServer(serverRec)) === scheduleKey(form)
+          ) {
             continue;
           }
-
-          const errMsg = validateRecurrence(form);
-          if (errMsg) throw new Error(`${r.name}: ${errMsg}`);
-
-          const validTimes = form.times.map((t) => t.trim()).filter(Boolean);
-          const dur = parseInt(form.durationMinutes, 10);
-          const cap = parseInt(form.capacity, 10);
-
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const todayStr = fmtDateLocal(today);
-
-          let endsOn: string | null = null;
-          if (!form.indefinite) {
-            const w = parseInt(form.weeks, 10);
-            const endDate = new Date(today);
-            endDate.setDate(endDate.getDate() + w * 7 - 1);
-            endsOn = fmtDateLocal(endDate);
-          }
-
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-
-          let recId: string;
-          if (sched.id) {
-            const nowIso = new Date().toISOString();
-            const { error: sessDelErr } = await supabase
-              .from('class_sessions')
-              .delete()
-              .eq('recurrence_id', sched.id)
-              .gte('starts_at', nowIso);
-            if (sessDelErr) throw sessDelErr;
-
-            const { error: updErr } = await supabase
-              .from('class_recurrences')
-              .update({
-                days_of_week: form.days,
-                times: validTimes,
-                duration_minutes: dur,
-                capacity: cap,
-                ends_on: endsOn,
-                tz,
-                materialized_until: todayStr,
-              })
-              .eq('id', sched.id);
-            if (updErr) throw updErr;
-            recId = sched.id;
-          } else {
-            const { data, error: insErr } = await supabase
-              .from('class_recurrences')
-              .insert({
-                gym_id: membership.gymId,
-                class_type_id: classTypeId,
-                days_of_week: form.days,
-                times: validTimes,
-                duration_minutes: dur,
-                capacity: cap,
-                notes: null,
-                starts_on: todayStr,
-                ends_on: endsOn,
-                tz,
-                created_by: userId,
-              })
-              .select('id')
-              .single();
-            if (insErr || !data) {
-              throw insErr ?? new Error('Could not save recurrence');
-            }
-            recId = data.id;
-          }
-
-          const horizon = new Date();
-          const horizonWeeks =
-            gymDefaults?.materialisation_horizon_weeks ?? HORIZON_WEEKS_FALLBACK;
-          horizon.setDate(horizon.getDate() + horizonWeeks * 7);
-          const targetEnd =
-            endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
-
-          const { error: extErr } = await supabase.rpc('extend_recurrence', {
-            rec_id: recId,
-            until_date: targetEnd,
-          });
-          if (extErr) throw extErr;
         }
+
+        const validTimes = form.times.map((t) => t.trim()).filter(Boolean);
+        const dur = parseInt(form.durationMinutes, 10);
+        const cap = parseInt(form.capacity, 10);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = fmtDateLocal(today);
+
+        let endsOn: string | null = null;
+        if (!form.indefinite) {
+          const w = parseInt(form.weeks, 10);
+          const endDate = new Date(today);
+          endDate.setDate(endDate.getDate() + w * 7 - 1);
+          endsOn = fmtDateLocal(endDate);
+        }
+
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+        let recId: string;
+        if (sched.id) {
+          const nowIso = new Date().toISOString();
+          const { error: sessDelErr } = await supabase
+            .from('class_sessions')
+            .delete()
+            .eq('recurrence_id', sched.id)
+            .gte('starts_at', nowIso);
+          if (sessDelErr) throw sessDelErr;
+
+          const { error: updErr } = await supabase
+            .from('class_recurrences')
+            .update({
+              days_of_week: form.days,
+              times: validTimes,
+              duration_minutes: dur,
+              capacity: cap,
+              ends_on: endsOn,
+              tz,
+              materialized_until: todayStr,
+            })
+            .eq('id', sched.id);
+          if (updErr) throw updErr;
+          recId = sched.id;
+        } else {
+          const { data: userResp, error: userErr } = await supabase.auth.getUser();
+          if (userErr || !userResp.user) {
+            throw userErr ?? new Error('Not signed in');
+          }
+          const { data, error: insErr } = await supabase
+            .from('class_recurrences')
+            .insert({
+              gym_id: membership.gymId,
+              class_type_id: classTypeId,
+              days_of_week: form.days,
+              times: validTimes,
+              duration_minutes: dur,
+              capacity: cap,
+              notes: null,
+              starts_on: todayStr,
+              ends_on: endsOn,
+              tz,
+              created_by: userResp.user.id,
+            })
+            .select('id')
+            .single();
+          if (insErr || !data) {
+            throw insErr ?? new Error('Could not save recurrence');
+          }
+          recId = data.id;
+        }
+
+        const horizon = new Date();
+        const horizonWeeks =
+          gymDefaults?.materialisation_horizon_weeks ?? HORIZON_WEEKS_FALLBACK;
+        horizon.setDate(horizon.getDate() + horizonWeeks * 7);
+        const targetEnd =
+          endsOn && new Date(endsOn) < horizon ? endsOn : fmtDateLocal(horizon);
+
+        const { error: extErr } = await supabase.rpc('extend_recurrence', {
+          rec_id: recId,
+          until_date: targetEnd,
+        });
+        if (extErr) throw extErr;
       }
+
+      return { idx, classTypeId };
     },
-    onSuccess: () => {
-      setError(null);
+    onSuccess: ({ idx, classTypeId }) => {
+      setSaveError(null);
       setOpenPickerIdx(null);
+      setRows((curr) =>
+        curr.map((r, i) =>
+          i === idx ? { ...r, id: classTypeId, dirty: false } : r,
+        ),
+      );
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['class-types'] });
       queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
@@ -513,7 +513,8 @@ export function ClassTypesPanel() {
       queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
       queryClient.invalidateQueries({ queryKey: ['class-programming-month'] });
     },
-    onError: (e) => setError(errorMessage(e, 'Save failed')),
+    onError: (e, idx) =>
+      setSaveError({ idx, message: errorMessage(e, 'Save failed') }),
   });
 
   function makeDefaultForm(): RecurrenceForm {
@@ -545,12 +546,20 @@ export function ClassTypesPanel() {
         cancelCutoffMinutesBefore: '',
         cancelCutoffTime: '',
         cancelCutoffDaysBefore: '1',
+        dirty: true,
       },
     ]);
   }
 
   function updateRow(idx: number, patch: Partial<EditableType>) {
     setRows((curr) => curr.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  }
+
+  // For content edits (name, colour, rules) — anything that must not be
+  // lost to a reseed until the card is saved. UI-only state (open/closed
+  // sections) goes through updateRow so it never blocks a reseed.
+  function editRow(idx: number, patch: Partial<EditableType>) {
+    updateRow(idx, { ...patch, dirty: true });
   }
 
   // Open the schedule editor for a type, seeding a first blank schedule
@@ -578,6 +587,7 @@ export function ClassTypesPanel() {
         i === idx
           ? {
               ...r,
+              dirty: true,
               schedules: r.schedules.map((s, j) =>
                 j === sIdx ? { ...s, form } : s,
               ),
@@ -591,7 +601,11 @@ export function ClassTypesPanel() {
     setRows((curr) =>
       curr.map((r, i) =>
         i === idx
-          ? { ...r, schedules: [...r.schedules, { id: null, form: makeDefaultForm() }] }
+          ? {
+              ...r,
+              dirty: true,
+              schedules: [...r.schedules, { id: null, form: makeDefaultForm() }],
+            }
           : r,
       ),
     );
@@ -601,7 +615,11 @@ export function ClassTypesPanel() {
     setRows((curr) =>
       curr.map((r, i) =>
         i === idx
-          ? { ...r, schedules: r.schedules.filter((_, j) => j !== sIdx) }
+          ? {
+              ...r,
+              dirty: true,
+              schedules: r.schedules.filter((_, j) => j !== sIdx),
+            }
           : r,
       ),
     );
@@ -658,7 +676,7 @@ export function ClassTypesPanel() {
                     <Input
                       label=""
                       value={r.name}
-                      onChangeText={(v) => updateRow(idx, { name: v })}
+                      onChangeText={(v) => editRow(idx, { name: v })}
                       placeholder={discipline === 'hyrox' ? 'Hyrox' : 'CrossFit'}
                       autoCapitalize="words"
                     />
@@ -681,7 +699,7 @@ export function ClassTypesPanel() {
                   <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                     <ColorSwatchPicker
                       value={r.color}
-                      onChange={(c) => updateRow(idx, { color: c })}
+                      onChange={(c) => editRow(idx, { color: c })}
                       inUse={rows
                         .filter((o, i) => i !== idx && !o.archivedAt)
                         .map((o) => o.color)}
@@ -793,7 +811,7 @@ export function ClassTypesPanel() {
                       label="Booking opens ahead (blank = inherit)"
                       value={r.bookingWindowHoursAhead}
                       onChange={(v) =>
-                        updateRow(idx, { bookingWindowHoursAhead: v })
+                        editRow(idx, { bookingWindowHoursAhead: v })
                       }
                       base="hours"
                       units={['hours', 'days', 'weeks']}
@@ -803,7 +821,7 @@ export function ClassTypesPanel() {
                       label="Booking closes before start (blank = inherit)"
                       value={r.bookingCutoffMinutesBefore}
                       onChange={(v) =>
-                        updateRow(idx, { bookingCutoffMinutesBefore: v })
+                        editRow(idx, { bookingCutoffMinutesBefore: v })
                       }
                       base="minutes"
                       units={['minutes', 'hours', 'days', 'weeks']}
@@ -831,7 +849,7 @@ export function ClassTypesPanel() {
                             <Pressable
                               key={m}
                               onPress={() =>
-                                updateRow(idx, { cancelCutoffMode: m })
+                                editRow(idx, { cancelCutoffMode: m })
                               }
                               className={`flex-1 px-3 py-2 rounded-lg border ${
                                 on
@@ -855,7 +873,7 @@ export function ClassTypesPanel() {
                           label=""
                           value={r.cancelCutoffMinutesBefore}
                           onChange={(v) =>
-                            updateRow(idx, { cancelCutoffMinutesBefore: v })
+                            editRow(idx, { cancelCutoffMinutesBefore: v })
                           }
                           base="minutes"
                           units={['minutes', 'hours', 'days', 'weeks']}
@@ -872,7 +890,7 @@ export function ClassTypesPanel() {
                               <TextInput
                                 value={r.cancelCutoffTime}
                                 onChangeText={(v) =>
-                                  updateRow(idx, { cancelCutoffTime: v })
+                                  editRow(idx, { cancelCutoffTime: v })
                                 }
                                 placeholder="21:00"
                                 placeholderTextColor="#9CA3AF"
@@ -888,7 +906,7 @@ export function ClassTypesPanel() {
                               <TextInput
                                 value={r.cancelCutoffDaysBefore}
                                 onChangeText={(v) =>
-                                  updateRow(idx, { cancelCutoffDaysBefore: v })
+                                  editRow(idx, { cancelCutoffDaysBefore: v })
                                 }
                                 placeholder="1"
                                 placeholderTextColor="#9CA3AF"
@@ -924,6 +942,18 @@ export function ClassTypesPanel() {
                     ) : null}
                   </View>
                 ) : null}
+
+                {saveError?.idx === idx ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                    {saveError.message}
+                  </Text>
+                ) : null}
+                <Button
+                  onPress={() => save.mutate(idx)}
+                  loading={save.isPending && save.variables === idx}
+                  success={saved && save.variables === idx}>
+                  {isSaved ? 'Save' : 'Create type'}
+                </Button>
               </View>
             );
           })}
@@ -935,20 +965,8 @@ export function ClassTypesPanel() {
           </Button>
         ) : null}
 
-        {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-        ) : null}
         {actionError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{actionError}</Text>
-        ) : null}
-
-        {activeRows.length > 0 ? (
-          <Button
-            onPress={() => save.mutate()}
-            loading={save.isPending}
-            success={saved}>
-            Save changes
-          </Button>
         ) : null}
 
         {archivedRows.length > 0 ? (
