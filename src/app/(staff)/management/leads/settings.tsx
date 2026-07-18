@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
+import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -24,6 +25,14 @@ type GymLeadSettings = {
 };
 
 type CoachRow = { profile_id: string; full_name: string | null };
+
+type AgentSettings = {
+  enabled: boolean;
+  phone_number: string | null;
+  voice_enabled: boolean;
+  vapi_assistant_id: string | null;
+  context: string | null;
+};
 
 const STRATEGY_COPY: Record<Strategy, { title: string; blurb: string }> = {
   round_robin: {
@@ -96,8 +105,25 @@ export default function LeadAutomationSettings() {
     },
   });
 
+  const agent = useQuery({
+    queryKey: ['agent-settings', membership?.gymId],
+    enabled: !!membership?.gymId && isOwner,
+    queryFn: async (): Promise<AgentSettings | null> => {
+      const { data, error } = await supabase
+        .from('gym_agent_settings')
+        .select('enabled, phone_number, voice_enabled, vapi_assistant_id, context')
+        .eq('gym_id', membership!.gymId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as AgentSettings) ?? null;
+    },
+  });
+
   const [strategy, setStrategy] = useState<Strategy>('round_robin');
   const [defaultCoach, setDefaultCoach] = useState<string | null>(null);
+  // Seed once — a refetch after another card's save must not wipe an
+  // unsaved draft of the agent notes.
+  const [agentContext, setAgentContext] = useState<string | null>(null);
   // null until the setting loads — DurationField seeds its unit once at
   // mount, so it must not mount on the placeholder '365' and then be stuck
   // when the real value arrives a tick later.
@@ -114,6 +140,10 @@ export default function LeadAutomationSettings() {
     if (gymSettings.data && retention === null)
       setRetention(String(gymSettings.data.lead_retention_days));
   }, [gymSettings.data, retention]);
+  useEffect(() => {
+    if (!agent.isSuccess) return;
+    if (agentContext === null) setAgentContext(agent.data?.context ?? '');
+  }, [agent.isSuccess, agent.data, agentContext]);
 
   const saveRule = useMutation({
     mutationFn: async () => {
@@ -162,10 +192,57 @@ export default function LeadAutomationSettings() {
     onError: (e) => setError(errorMessage(e, 'Could not change SMS setting')),
   });
 
+  const toggleAgent = useMutation({
+    mutationFn: async (next: boolean) => {
+      const { error: e } = await supabase.rpc('set_gym_agent_enabled', {
+        p_gym_id: membership!.gymId,
+        p_enabled: next,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not change the AI front desk')),
+  });
+
+  const toggleVoice = useMutation({
+    mutationFn: async (next: boolean) => {
+      const { error: e } = await supabase.rpc('set_gym_agent_voice', {
+        p_gym_id: membership!.gymId,
+        p_enabled: next,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not change phone answering')),
+  });
+
+  const saveAgentContext = useMutation({
+    mutationFn: async () => {
+      const { error: e } = await supabase.rpc('set_gym_agent_context', {
+        p_gym_id: membership!.gymId,
+        p_context: agentContext ?? '',
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not save the agent notes')),
+  });
+
   if (membership && !isOwner) return <Redirect href="/management/leads" />;
   if (!membership) return null;
 
   const smsOn = gymSettings.data?.lead_sms_enabled ?? false;
+  const agentOn = agent.data?.enabled ?? false;
+  const agentNumber = agent.data?.phone_number ?? null;
+  const voiceOn = agent.data?.voice_enabled ?? false;
+  const voiceReady = !!agent.data?.vapi_assistant_id;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -258,6 +335,81 @@ export default function LeadAutomationSettings() {
               onValueChange={(v) => toggleSms.mutate(v)}
             />
           </View>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            AI front desk
+          </Text>
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                Answer texts automatically
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                An AI assistant replies to texts on your gym's number — it
+                answers from your real plans and schedule, captures the lead
+                and hands hot ones a signup link.
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Answer texts automatically"
+              value={agentOn}
+              onValueChange={(v) => toggleAgent.mutate(v)}
+            />
+          </View>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            {agentNumber
+              ? `Your number: ${agentNumber}`
+              : 'No number yet — Temple provisions this for you.'}
+          </Text>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                Answer phone calls too
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {voiceReady
+                  ? 'The assistant picks up calls to your number and can text the caller a signup link.'
+                  : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Contact Temple to enable voice.'}
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Answer phone calls too"
+              value={voiceOn}
+              disabled={!voiceReady}
+              onValueChange={(v) => toggleVoice.mutate(v)}
+            />
+          </View>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            What the agent knows
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Plans and the class schedule are included automatically. Add
+            anything else it should know — address, parking, intro offer,
+            what makes your gym great.
+          </Text>
+          {agentContext !== null ? (
+            <Input
+              label="Notes for the agent"
+              value={agentContext}
+              onChangeText={setAgentContext}
+              multiline
+              numberOfLines={5}
+              placeholder="We're behind the station, free parking on site. First class is free…"
+            />
+          ) : null}
+          <Button
+            onPress={() => saveAgentContext.mutate()}
+            loading={saveAgentContext.isPending}>
+            Save notes
+          </Button>
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">

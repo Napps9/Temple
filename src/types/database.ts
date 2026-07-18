@@ -445,6 +445,89 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_agent_settings: {
+        Row: {
+          gym_id: string;
+          enabled: boolean;
+          phone_number: string | null;
+          voice_enabled: boolean;
+          vapi_assistant_id: string | null;
+          context: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          enabled?: boolean;
+          phone_number?: string | null;
+          voice_enabled?: boolean;
+          vapi_assistant_id?: string | null;
+          context?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          enabled: boolean;
+          phone_number: string | null;
+          voice_enabled: boolean;
+          vapi_assistant_id: string | null;
+          context: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      agent_conversations: {
+        Row: {
+          id: string;
+          gym_id: string;
+          phone: string;
+          lead_id: string | null;
+          channel: 'sms' | 'voice';
+          status: 'active' | 'handed_off' | 'closed';
+          last_message_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          phone: string;
+          lead_id?: string | null;
+          channel: 'sms' | 'voice';
+          status?: 'active' | 'handed_off' | 'closed';
+          last_message_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          lead_id: string | null;
+          status: 'active' | 'handed_off' | 'closed';
+          last_message_at: string;
+        }>;
+        Relationships: [];
+      };
+      agent_messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          gym_id: string;
+          role: 'lead' | 'agent' | 'staff' | 'system';
+          body: string;
+          provider_sid: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          gym_id: string;
+          role: 'lead' | 'agent' | 'staff' | 'system';
+          body: string;
+          provider_sid?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          body: string;
+        }>;
+        Relationships: [];
+      };
       gym_announcements: {
         Row: {
           id: string;
@@ -3661,6 +3744,18 @@ export type Database = {
       };
       set_gym_lead_retention: {
         Args: { p_gym_id: string; p_days: number };
+        Returns: null;
+      };
+      set_gym_agent_enabled: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_gym_agent_context: {
+        Args: { p_gym_id: string; p_context: string | null };
+        Returns: null;
+      };
+      set_gym_agent_voice: {
+        Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;
       };
       is_booking_eligible: {

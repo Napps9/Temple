@@ -723,6 +723,52 @@ the assignee. GDPR retention: unconverted leads past
 `purge_expired_leads`, scheduled daily via `pg_cron` (0115) alongside the
 health-data purge; converted leads are kept as members.
 
+### AI front desk
+
+An AI agent that answers and sells memberships to inbound leads over SMS
+and phone calls on a platform-provisioned per-gym Twilio number. Setup and
+rollout runbook: `docs/ai-front-desk.md`.
+
+Inbound texts hit the `lead-agent-sms` edge function (Twilio-signature
+guarded, no JWT): it resolves the number to a gym via `gym_agent_settings`,
+dedups on MessageSid, stores the turn in `agent_conversations` /
+`agent_messages`, returns empty TwiML immediately, then finishes in
+`EdgeRuntime.waitUntil` — a Claude tool loop (`LEAD_AGENT_MODEL`, default
+`claude-sonnet-5`; static handoff reply when `ANTHROPIC_API_KEY` is unset)
+answers from live `membership_plans` + next-7-days `class_sessions` plus
+owner-written notes, and replies via the Twilio REST API. Tools:
+`capture_lead` (→ `agent_capture_lead`, internal SECURITY DEFINER — gym and
+phone derive from the conversation row, phone-dedup 30 days, auto-creates a
+per-gym "AI front desk" `lead_sources` row, `assign_lead` round-robin),
+`send_join_link` (the real `/join/<slug>` URL, only when
+`public_signup_enabled`), and `request_handoff` (→ `agent_request_handoff`:
+pauses the thread, notifies the assigned coach through
+`enqueue_lead_notifications` with a date-stamped `agent-handoff` key).
+STOP/UNSUBSCRIBE closes the thread via `agent_stop_conversation` and
+withdraws `marketing_consent` on the linked lead.
+
+Voice: a managed Vapi assistant fronts calls on the same number and hits
+`lead-agent-voice` (`x-vapi-secret` guarded) for the same tools — from a
+call, `send_join_link` texts the link and logs it into the SMS thread — and
+posts its end-of-call transcript into the `voice` conversation. Gyms
+without voice enabled point Twilio's voice webhook at the `/missed-call`
+path: a short "we're texting you" TwiML answer plus an automatic opening
+SMS.
+
+Staff surfaces [`can_assign_plan`]: Manage → Leads → Conversations lists
+every thread (AI replying / With a coach / Opted out); the thread view
+polls live, and Take over / reply / Hand back to AI go through the
+`lead-agent-staff-send` edge function (JWT + RLS-proven authorisation —
+staff replies send from the gym's number and implicitly pause the agent).
+The lead detail modal deep-links to its conversation. Owner settings live
+on Manage → Leads → Automation: enable toggle, voice toggle (disabled until
+Vapi is provisioned), and the free-text "what the agent knows" card
+(`set_gym_agent_enabled` / `set_gym_agent_voice` / `set_gym_agent_context`,
+all owner-only; `phone_number` and `vapi_assistant_id` are service-role
+only — Temple provisions them). pgTAP: `agent_front_desk_settings`,
+`agent_conversations_isolation`, `agent_capture_lead`,
+`agent_stop_consent`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

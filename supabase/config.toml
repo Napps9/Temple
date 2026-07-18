@@ -149,3 +149,17 @@ verify_jwt = false
 # authorisation applies.
 [functions.send-lead-notifications]
 verify_jwt = false
+
+# AI front desk. The SMS webhook is hit by Twilio (no JWT); the guard is
+# the X-Twilio-Signature HMAC. The voice function is hit by Vapi (guarded
+# by the x-vapi-secret header) and by Twilio's voice webhook on the
+# /missed-call path (Twilio signature again). Staff take-over requires a
+# signed-in caller and re-authorises through RLS on the conversation row.
+[functions.lead-agent-sms]
+verify_jwt = false
+
+[functions.lead-agent-voice]
+verify_jwt = false
+
+[functions.lead-agent-staff-send]
+verify_jwt = true

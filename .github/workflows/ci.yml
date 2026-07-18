@@ -132,6 +132,9 @@ jobs:
           deploy custom-domain
           deploy stock-photos
           deploy security-alert
+          deploy lead-agent-sms
+          deploy lead-agent-voice
+          deploy lead-agent-staff-send
           if [ -n "$failed" ]; then
             echo "::error::edge functions failed to deploy:$failed"
             exit 1

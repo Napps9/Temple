@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, Link } from 'expo-router';
+import { Redirect, Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -200,6 +200,13 @@ export default function LeadsScreen() {
           <View className="gap-2 items-end">
             <Button onPress={() => setAddOpen(true)}>Add lead</Button>
             <View className="flex-row gap-3">
+              <Link href="/management/leads/conversations" asChild>
+                <Pressable hitSlop={6} className="active:opacity-70">
+                  <Text className="text-primary text-xs font-medium">
+                    Conversations
+                  </Text>
+                </Pressable>
+              </Link>
               <Pressable
                 onPress={() => setSourcesOpen(true)}
                 hitSlop={6}
@@ -592,6 +599,22 @@ function LeadDetailModal({
     (n) => n.channel === 'email',
   );
 
+  const agentConversation = useQuery({
+    queryKey: ['lead-conversation', lead?.id],
+    enabled: visible && !!lead,
+    queryFn: async (): Promise<{ id: string } | null> => {
+      const { data, error: e } = await supabase
+        .from('agent_conversations')
+        .select('id')
+        .eq('lead_id', lead!.id)
+        .order('last_message_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (e) throw e;
+      return data ?? null;
+    },
+  });
+
   const setStatus = useMutation({
     mutationFn: async (next: LeadStatus) => {
       if (!lead) throw new Error('No lead selected');
@@ -939,6 +962,22 @@ function LeadDetailModal({
                       })}
                     </View>
                   </View>
+
+                  {agentConversation.data ? (
+                    <View className="flex-row">
+                      <ChipButton
+                        label="View AI conversation"
+                        icon="chatbubbles-outline"
+                        tone="neutral"
+                        onPress={() => {
+                          onClose();
+                          router.push(
+                            `/management/leads/conversation/${agentConversation.data!.id}`,
+                          );
+                        }}
+                      />
+                    </View>
+                  ) : null}
                 </>
               )}
 
