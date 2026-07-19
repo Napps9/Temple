@@ -37,7 +37,11 @@ type GymInfo = {
 };
 
 export default function JoinGymScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, name: nameParam, email: emailParam } = useLocalSearchParams<{
+    slug: string;
+    name?: string;
+    email?: string;
+  }>();
   const session = useSession();
   const queryClient = useQueryClient();
 
@@ -54,8 +58,14 @@ export default function JoinGymScreen() {
     },
   });
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  // Pre-seeded when the AI agent sends a personalised onboarding link; the
+  // member still sets their own password and personally signs the waiver + PAR-Q.
+  const [fullName, setFullName] = useState(() =>
+    typeof nameParam === 'string' ? nameParam : '',
+  );
+  const [email, setEmail] = useState(() =>
+    typeof emailParam === 'string' ? emailParam : '',
+  );
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
