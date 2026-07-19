@@ -9,6 +9,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { syncVapiAssistant } from '@/lib/agent-sync';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -482,6 +483,7 @@ function CoachModal({
         ],
       });
       if (e) throw e;
+      await syncVapiAssistant(gymId);
     },
     onSuccess: () => message && onCoached(message.id),
     onError: (e) => setError(errorMessage(e, 'Could not save the correction')),

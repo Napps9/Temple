@@ -458,6 +458,7 @@ export type Database = {
           voice_region: string | null;
           call_recording_enabled: boolean;
           call_recording_retention_days: number;
+          recording_notice_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -473,6 +474,7 @@ export type Database = {
           voice_region?: string | null;
           call_recording_enabled?: boolean;
           call_recording_retention_days?: number;
+          recording_notice_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -487,6 +489,7 @@ export type Database = {
           voice_region: string | null;
           call_recording_enabled: boolean;
           call_recording_retention_days: number;
+          recording_notice_at: string | null;
           updated_at: string;
         }>;
         Relationships: [];

@@ -25,6 +25,7 @@ export type AgentGym = {
     vapi_assistant_id: string | null;
     context: string | null;
     call_recording_enabled: boolean;
+    recording_notice_at: string | null;
   };
 };
 
@@ -38,7 +39,7 @@ export type Conversation = {
 };
 
 const AGENT_SETTINGS_SELECT =
-  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)';
+  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, recording_notice_at, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)';
 
 // deno-lint-ignore no-explicit-any
 function toAgentGym(data: any): AgentGym | null {
@@ -58,6 +59,7 @@ function toAgentGym(data: any): AgentGym | null {
       vapi_assistant_id: data.vapi_assistant_id ?? null,
       context: data.context ?? null,
       call_recording_enabled: data.call_recording_enabled !== false,
+      recording_notice_at: data.recording_notice_at ?? null,
     },
   };
 }
@@ -86,6 +88,18 @@ export async function resolveGymByAssistant(
     .from('gym_agent_settings')
     .select(AGENT_SETTINGS_SELECT)
     .eq('vapi_assistant_id', assistantId)
+    .maybeSingle();
+  return toAgentGym(data);
+}
+
+export async function resolveGymById(
+  service: Client,
+  gymId: string,
+): Promise<AgentGym | null> {
+  const { data } = await service
+    .from('gym_agent_settings')
+    .select(AGENT_SETTINGS_SELECT)
+    .eq('gym_id', gymId)
     .maybeSingle();
   return toAgentGym(data);
 }
@@ -318,8 +332,8 @@ export function buildSystemPrompt(
       ? 'You are texting. Keep every reply under 450 characters, plain text only — no markdown, no emoji. One question at a time.'
       : 'You are on a phone call. Keep answers short and conversational.';
   return [
-    `You are the friendly front-desk assistant for ${gym.name}, a gym. Today is ${today}.`,
-    'Your job: answer questions from prospects, get their name, capture them as a lead, and help keen ones join.',
+    `You are the friendly AI front-desk assistant for ${gym.name}, a gym. Today is ${today}.`,
+    "Your job: answer questions from prospects, get their name, capture them as a lead, and help keen ones join. Mention that you're the gym's AI assistant when you introduce yourself, and say so plainly if anyone asks whether they're talking to a human.",
     style,
     '',
     `Membership plans:\n${snapshot.plans}`,

@@ -29,8 +29,14 @@ supabase secrets set \
   TWILIO_ACCOUNT_SID=ACxxxxxxxx \
   TWILIO_AUTH_TOKEN=xxxxxxxx \
   VAPI_WEBHOOK_SECRET=$(openssl rand -hex 24) \
+  VAPI_API_KEY=xxxxxxxx \
   ANTHROPIC_API_KEY=sk-ant-xxxxxxxx
 ```
+
+`VAPI_API_KEY` (the private key from the Vapi dashboard) lets
+`sync-vapi-assistant` push each gym's prompt, tools, voice and greeting to
+its assistant. Without it, voice assistants must be maintained by hand and
+coaching/voice changes made in the app never reach phone calls.
 
 Optional:
 
@@ -70,26 +76,32 @@ philosophy as `send-lead-notifications`.
    on conflict (gym_id) do update set phone_number = excluded.phone_number;
    ```
 
-5. **Voice (optional).** In Vapi: create an assistant for the gym with
-   - server URL `https://<project-ref>.supabase.co/functions/v1/lead-agent-voice/tool-calls`
-     and the `x-vapi-secret` header set to `VAPI_WEBHOOK_SECRET`;
-   - end-of-call report webhook to `.../lead-agent-voice/end-of-call`
-     (same header);
-   - tools `get_gym_info`, `capture_lead {name, email?, notes?}`,
-     `send_join_link`, `request_handoff {reason}` (async: false), matching
-     the definitions in `supabase/functions/_shared/lead-agent.ts`;
-   - a system prompt mirroring `buildSystemPrompt`'s rules (answer only
-     from `get_gym_info`, capture the lead once named, never take payment,
-     hand off when unsure);
-   - import the gym's Twilio number into Vapi for inbound.
+5. **Voice (optional).** In Vapi: create a bare assistant for the gym —
+   any starter model/voice, no tools, no prompt — with
+   - server URL `https://<project-ref>.supabase.co/functions/v1/lead-agent-voice/end-of-call`
+     and the `x-vapi-secret` header set to `VAPI_WEBHOOK_SECRET`
+     (subscribed to `end-of-call-report`);
+   - `artifactPlan.recordingEnabled` on;
+   - the gym's Twilio number imported into Vapi for inbound.
 
-   Then record the assistant id and let the owner switch voice on:
+   Then record the assistant id:
 
    ```sql
    update gym_agent_settings
      set vapi_assistant_id = '<vapi-assistant-id>'
      where gym_id = '<gym-uuid>';
    ```
+
+   Everything else — system prompt (owner notes + coaching + live
+   plans/schedule), all six tools (including the close tools
+   `start_onboarding` and `enroll_member`) pointing at
+   `.../lead-agent-voice/tool-calls`, the owner's voice pick, and the
+   greeting with AI disclosure + recording notice — is pushed by the
+   `sync-vapi-assistant` edge function whenever the owner saves any agent
+   setting or coaching correction in the app. Do not hand-edit prompt,
+   tools or voice on the assistant afterwards; the next sync overwrites
+   them. After setting the assistant id, have the owner re-save any agent
+   card (or run the setup wizard) to trigger the first sync.
 
 6. **Owner flips the switch** at Manage → Leads → Automation: enable the
    front desk, write the "what the agent knows" notes (address, parking,
@@ -141,16 +153,19 @@ for now.
 - **Coaching loop.** In a conversation, *Coach this turn* on any AI message writes
   `agent_coaching_corrections` (per-gym, gated `can_review_ai_calls`). The SMS
   agent injects this gym's active rules/examples into its prompt on every future
-  call via `fetchCoachingText`. **Voice:** the Vapi assistant runs its own model,
-  so to apply coaching to calls, sync the gym's standing rules into the assistant's
-  system prompt (a `PATCH /assistant` from an ops step or a future edge action) —
-  the corrections table is the source of truth either way.
+  call via `fetchCoachingText`; each save also triggers `sync-vapi-assistant`,
+  which rebuilds the phone assistant's system prompt with the same coaching text —
+  the corrections table is the single source of truth for both channels.
 - **Voice selection.** Owners pick a regional Azure voice in settings
   (`set_gym_agent_voice_selection` stores `{provider, voiceId, region}` on
-  `gym_agent_settings`). Apply it to the gym's assistant with
-  `PATCH /assistant { voice: { provider, voiceId } }`. Add ElevenLabs voice IDs to
-  the in-app `VOICES` list (`leads/settings.tsx`) for Scottish/Welsh/Estuary
-  accents Azure doesn't cover.
+  `gym_agent_settings`); the save syncs `voice: { provider, voiceId }` to the
+  assistant. Add ElevenLabs voice IDs to the in-app `AGENT_VOICES` list
+  (`src/lib/agent-voices.ts`) for Scottish/Welsh/Estuary accents Azure doesn't
+  cover.
+- **Vapi-side copies.** Temple's recording toggle and retention window govern
+  only Temple's copy in `agent-call-recordings`. Vapi retains its own recording
+  and transcript under its defaults — turn off Vapi-side storage in the Vapi org
+  settings if the gym's policy requires a single copy.
 - **Capability.** All QC surfaces + recording RLS + the corrections write are gated
   on `can_review_ai_calls` (owner/admin by default; adjustable per gym through the
   capability-override matrix).

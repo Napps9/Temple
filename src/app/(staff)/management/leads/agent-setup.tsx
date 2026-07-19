@@ -9,6 +9,7 @@ import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -98,6 +99,7 @@ export default function AgentSetupWizard() {
         p_context: promptText ?? '',
       });
       if (e) throw e;
+      await syncVapiAssistant(membership!.gymId);
     },
     onSuccess: () => {
       setError(null);
@@ -121,6 +123,7 @@ export default function AgentSetupWizard() {
         p_region: v.region,
       });
       if (e) throw e;
+      await syncVapiAssistant(membership!.gymId);
     },
     onSuccess: () => {
       setError(null);

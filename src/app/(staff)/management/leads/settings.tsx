@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -267,6 +268,7 @@ export default function LeadAutomationSettings() {
         p_context: agentContext ?? '',
       });
       if (e) throw e;
+      await syncVapiAssistant(membership!.gymId);
     },
     onSuccess: () => {
       setError(null);
@@ -286,6 +288,7 @@ export default function LeadAutomationSettings() {
         p_region: v.region,
       });
       if (e) throw e;
+      await syncVapiAssistant(membership!.gymId);
     },
     onSuccess: () => {
       setError(null);
@@ -306,6 +309,8 @@ export default function LeadAutomationSettings() {
         p_retention_days: retentionDays,
       });
       if (e) throw e;
+      // The greeting's recording notice follows this toggle.
+      await syncVapiAssistant(membership!.gymId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
@@ -338,6 +343,7 @@ export default function LeadAutomationSettings() {
         p_active: false,
       });
       if (e) throw e;
+      await syncVapiAssistant(membership!.gymId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-rules', membership?.gymId] });

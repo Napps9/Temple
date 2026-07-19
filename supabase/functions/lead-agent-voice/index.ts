@@ -93,10 +93,14 @@ async function captureRecording(
       : typeof message?.call?.durationSeconds === 'number'
         ? Math.round(message.call.durationSeconds)
         : null;
+  // 'notice_played' only when the synced greeting actually contains the
+  // recording notice (recording_notice_at is stamped by sync-vapi-assistant);
+  // an unsynced assistant may never have told the caller.
   const consent =
     message?.artifact?.recordingConsent === false
       ? 'withdrawn'
-      : (message?.recordingConsentState ?? 'notice_played');
+      : (message?.recordingConsentState ??
+        (gym.settings.recording_notice_at ? 'notice_played' : 'unknown'));
 
   await service.from('call_recordings').insert({
     gym_id: gym.id,
