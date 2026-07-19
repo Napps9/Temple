@@ -656,8 +656,8 @@ The Manage page presents a tab strip:
 
 ### Leads
 
-[`can_assign_plan`] Reachable from Manage → Members → Leads
-(`/management/leads`). Track prospects from first contact through
+[`can_assign_plan`] Reachable from Manage → CRM
+(`/management/leads`), a top-level section. Track prospects from first contact through
 conversion. Each lead row stores name, email, phone, source (from a
 per-gym `lead_sources` vocabulary), a notes field, and a fixed status
 pipeline: `cold → contacted → intro_booked → trial_attended →

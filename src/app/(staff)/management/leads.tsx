@@ -191,7 +191,7 @@ export default function LeadsScreen() {
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-              Leads
+              CRM
             </Text>
             <Text className="text-gray-500 dark:text-gray-400">
               Track prospects from first contact through conversion.

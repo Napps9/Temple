@@ -96,13 +96,14 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'members' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
+type Category = 'insights' | 'members' | 'crm' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
   members: 'Members',
+  crm: 'CRM',
   comms: 'Email campaigns',
   website: 'Website',
   store: 'Store',
@@ -114,6 +115,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
 const CATEGORY_ICONS: Record<Category, IconName> = {
   insights: 'bar-chart-outline',
   members: 'people-outline',
+  crm: 'funnel-outline',
   comms: 'mail-outline',
   website: 'globe-outline',
   store: 'bag-handle-outline',
@@ -191,6 +193,7 @@ function ManageNav({
 const CATEGORY_ORDER: Category[] = [
   'insights',
   'members',
+  'crm',
   'comms',
   'website',
   'store',
@@ -362,7 +365,7 @@ export default function ManagementHome() {
       visible: !!canManageStaff,
     },
     {
-      category: 'members',
+      category: 'crm',
       title: 'Leads',
       description: 'Track prospects from first contact through conversion.',
       href: '/management/leads',
@@ -404,6 +407,11 @@ export default function ManagementHome() {
   function selectCategory(c: Category) {
     if (c === 'website') {
       router.push('/management/website');
+      return;
+    }
+    // CRM is a doorway to the leads/CRM page, like Website — no inline panel.
+    if (c === 'crm') {
+      router.push('/management/leads');
       return;
     }
     setActive(c);
@@ -2191,13 +2199,8 @@ function MembersTab() {
       {canAssignPlan ? (
         <View className="gap-3">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            Pipeline
+            Plan changes
           </Text>
-          <ManagementCard
-            title="Leads"
-            description="Track prospects from first contact through conversion."
-            href="/management/leads"
-          />
           <ManagementCard
             title="Membership requests"
             description="Approve or reject member requests to switch or cancel a plan."
