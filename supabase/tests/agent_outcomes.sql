@@ -54,7 +54,7 @@ do $$ begin
   perform public.agent_flag_health_mention(current_setting('test.conv')::uuid);
   perform public.agent_flag_health_mention(current_setting('test.conv')::uuid);
 end $$;
-select like(
+select alike(
   (select notes from public.leads where id = current_setting('test.lead1')::uuid),
   '%health concern%',
   'the health flag lands as a note on the lead'
