@@ -587,6 +587,7 @@ export type Database = {
           channel: 'sms' | 'voice';
           status: 'active' | 'handed_off' | 'closed';
           last_message_at: string;
+          last_message_role: string | null;
           created_at: string;
         };
         Insert: {
@@ -597,12 +598,14 @@ export type Database = {
           channel: 'sms' | 'voice';
           status?: 'active' | 'handed_off' | 'closed';
           last_message_at?: string;
+          last_message_role?: string | null;
           created_at?: string;
         };
         Update: Partial<{
           lead_id: string | null;
           status: 'active' | 'handed_off' | 'closed';
           last_message_at: string;
+          last_message_role: string | null;
         }>;
         Relationships: [];
       };

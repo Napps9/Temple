@@ -88,8 +88,20 @@ Deno.serve(async (req: Request) => {
   const fresh = await appendMessage(service, conversation, 'lead', body, MessageSid);
   if (!fresh) return twiml();
 
-  // Handed-off threads belong to a human now; closed ones opted out.
-  if (conversation.status !== 'active') return twiml();
+  // Handed-off threads belong to a human now; closed ones opted out. A
+  // reply into a handed-off thread still pings the coach (hour-throttled
+  // server-side) — before this, it landed silently.
+  if (conversation.status !== 'active') {
+    if (conversation.status === 'handed_off') {
+      EdgeRuntime.waitUntil(
+        notifyHandoffReply(service, gym.id, conversation.id, {
+          supabaseUrl: SUPABASE_URL,
+          anonKey: ANON_KEY,
+        }).catch((e) => console.error('handoff reply notify failed', e)),
+      );
+    }
+    return twiml();
+  }
 
   EdgeRuntime.waitUntil(
     reply(service, gym, conversation, {
@@ -102,6 +114,36 @@ Deno.serve(async (req: Request) => {
 
   return twiml();
 });
+
+async function notifyHandoffReply(
+  // deno-lint-ignore no-explicit-any
+  service: any,
+  gymId: string,
+  conversationId: string,
+  env: { supabaseUrl: string; anonKey: string },
+): Promise<void> {
+  const { error } = await service.rpc('agent_notify_handoff_reply', {
+    p_conversation_id: conversationId,
+  });
+  if (error) {
+    console.error('agent_notify_handoff_reply failed', error.message);
+    return;
+  }
+  // Best-effort drain so the email leaves now (mirrors request_handoff).
+  try {
+    await fetch(`${env.supabaseUrl}/functions/v1/send-lead-notifications`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        apikey: env.anonKey,
+        Authorization: `Bearer ${env.anonKey}`,
+      },
+      body: JSON.stringify({ gym_id: gymId }),
+    });
+  } catch {
+    // queue stays drainable from the owner screen
+  }
+}
 
 async function reply(
   // deno-lint-ignore no-explicit-any

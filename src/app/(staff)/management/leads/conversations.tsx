@@ -14,6 +14,7 @@ type ConversationRow = {
   channel: 'sms' | 'voice';
   status: 'active' | 'handed_off' | 'closed';
   last_message_at: string;
+  last_message_role: string | null;
   lead: { full_name: string } | null;
 };
 
@@ -33,7 +34,7 @@ export default function AgentConversationsScreen() {
     queryFn: async (): Promise<ConversationRow[]> => {
       const { data, error } = await supabase
         .from('agent_conversations')
-        .select('id, phone, channel, status, last_message_at, lead:leads!lead_id(full_name)')
+        .select('id, phone, channel, status, last_message_at, last_message_role, lead:leads!lead_id(full_name)')
         .eq('gym_id', membership!.gymId)
         .order('last_message_at', { ascending: false })
         .limit(100);
@@ -67,9 +68,15 @@ export default function AgentConversationsScreen() {
                   <Text className="text-gray-900 dark:text-gray-50 font-medium flex-1">
                     {c.lead?.full_name ?? c.phone}
                   </Text>
-                  <Text className={`text-xs font-medium ${STATUS_COPY[c.status].cls}`}>
-                    {STATUS_COPY[c.status].label}
-                  </Text>
+                  {c.status === 'handed_off' && c.last_message_role === 'lead' ? (
+                    <Text className="text-xs font-semibold text-red-600 dark:text-red-400">
+                      Waiting on you
+                    </Text>
+                  ) : (
+                    <Text className={`text-xs font-medium ${STATUS_COPY[c.status].cls}`}>
+                      {STATUS_COPY[c.status].label}
+                    </Text>
+                  )}
                 </View>
                 <View className="flex-row items-center justify-between gap-2">
                   <Text className="text-gray-500 dark:text-gray-400 text-xs">

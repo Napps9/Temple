@@ -187,7 +187,7 @@ export async function appendMessage(
   }
   await service
     .from('agent_conversations')
-    .update({ last_message_at: new Date().toISOString() })
+    .update({ last_message_at: new Date().toISOString(), last_message_role: role })
     .eq('id', conversation.id);
   return true;
 }
