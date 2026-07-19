@@ -817,6 +817,20 @@ No `linked_membership_plan_id` is set (that grants an unbilled plan, for
 imports), so a new paying member checks out normally. pgTAP:
 `agent_stage_onboarding`.
 
+**Full close via one-time link.** The `enroll_member` tool is the hands-free
+version: once the prospect commits and reads back their email, it mints a
+single-use Supabase Auth link (`generateLink` `invite`, falling back to
+`magiclink` for an already-registered email) pointing at the same pre-filled
+`/join/<slug>?email=&name=`, stages them with `agent_stage_onboarding`, and
+**emails the link only** (`sendMagicLinkEmail`, RESEND). The link is a bearer
+credential, so it is never texted — the SMS is a heads-up ("check your email")
+only; if email delivery isn't configured it degrades to texting the ordinary
+pre-filled signup link (safe, since they create their own account there). No
+password is ever generated or sent. The member still personally signs the
+waiver + PAR-Q and pays through the entry gate. Note: the link's `redirectTo`
+must be an allowed Redirect URL in the hosted Supabase Auth config for it to
+land on `/join`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data
