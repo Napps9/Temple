@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
@@ -595,9 +596,12 @@ export default function LeadAutomationSettings() {
                       {v.gender} · {v.desc}
                     </Text>
                   </View>
-                  {sel ? (
-                    <Text className="text-primary text-xs font-semibold">Selected</Text>
-                  ) : null}
+                  <View className="flex-row items-center gap-2">
+                    {sel ? (
+                      <Text className="text-primary text-xs font-semibold">Selected</Text>
+                    ) : null}
+                    <VoiceSampleButton voiceId={v.id} />
+                  </View>
                 </Pressable>
               );
             })}

@@ -9,6 +9,7 @@ import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
@@ -510,6 +511,7 @@ export default function AgentSetupWizard() {
               {suggestedVoices.map((v) => (
                 <VoiceRow
                   key={v.id}
+                  id={v.id}
                   name={v.name}
                   region={v.region}
                   gender={v.gender}
@@ -526,6 +528,7 @@ export default function AgentSetupWizard() {
               {otherVoices.map((v) => (
                 <VoiceRow
                   key={v.id}
+                  id={v.id}
                   name={v.name}
                   region={v.region}
                   gender={v.gender}
@@ -663,6 +666,7 @@ export default function AgentSetupWizard() {
 }
 
 function VoiceRow({
+  id,
   name,
   region,
   gender,
@@ -670,6 +674,7 @@ function VoiceRow({
   selected,
   onPress,
 }: {
+  id: string;
   name: string;
   region: string;
   gender: string;
@@ -694,7 +699,10 @@ function VoiceRow({
           {gender} · {desc}
         </Text>
       </View>
-      {selected ? <Text className="text-primary text-xs font-semibold">Selected</Text> : null}
+      <View className="flex-row items-center gap-2">
+        {selected ? <Text className="text-primary text-xs font-semibold">Selected</Text> : null}
+        <VoiceSampleButton voiceId={id} />
+      </View>
     </Pressable>
   );
 }
