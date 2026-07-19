@@ -32,7 +32,43 @@ type AgentSettings = {
   voice_enabled: boolean;
   vapi_assistant_id: string | null;
   context: string | null;
+  voice_provider: string | null;
+  voice_id: string | null;
+  voice_region: string | null;
+  call_recording_enabled: boolean;
+  call_recording_retention_days: number;
 };
+
+type Correction = {
+  id: string;
+  field_kind: string;
+  scope: string;
+  correction: string;
+  active: boolean;
+  created_at: string;
+};
+
+// Curated, verified Azure Neural voices by region. Provider + voiceId are what
+// the Vapi assistant is configured with; region is the display label.
+const VOICES: {
+  id: string;
+  provider: string;
+  region: string;
+  name: string;
+  gender: string;
+  desc: string;
+}[] = [
+  { id: 'en-GB-SoniaNeural', provider: 'azure', region: 'UK, RP', name: 'Sonia', gender: 'Female', desc: 'Polished, neutral' },
+  { id: 'en-GB-RyanNeural', provider: 'azure', region: 'UK, RP', name: 'Ryan', gender: 'Male', desc: 'Confident British' },
+  { id: 'en-IE-EmilyNeural', provider: 'azure', region: 'Ireland', name: 'Emily', gender: 'Female', desc: 'Soft Dublin lilt' },
+  { id: 'en-IE-ConnorNeural', provider: 'azure', region: 'Ireland', name: 'Connor', gender: 'Male', desc: 'Easygoing Irish' },
+  { id: 'en-US-AriaNeural', provider: 'azure', region: 'US', name: 'Aria', gender: 'Female', desc: 'Bright American' },
+  { id: 'en-US-GuyNeural', provider: 'azure', region: 'US', name: 'Guy', gender: 'Male', desc: 'Clean American' },
+  { id: 'en-AU-NatashaNeural', provider: 'azure', region: 'Australia', name: 'Natasha', gender: 'Female', desc: 'Upbeat Australian' },
+  { id: 'en-CA-LiamNeural', provider: 'azure', region: 'Canada', name: 'Liam', gender: 'Male', desc: 'Friendly Canadian' },
+  { id: 'en-NZ-MollyNeural', provider: 'azure', region: 'New Zealand', name: 'Molly', gender: 'Female', desc: 'Warm Kiwi' },
+  { id: 'en-ZA-LukeNeural', provider: 'azure', region: 'South Africa', name: 'Luke', gender: 'Male', desc: 'Crisp South African' },
+];
 
 const STRATEGY_COPY: Record<Strategy, { title: string; blurb: string }> = {
   round_robin: {
@@ -111,11 +147,29 @@ export default function LeadAutomationSettings() {
     queryFn: async (): Promise<AgentSettings | null> => {
       const { data, error } = await supabase
         .from('gym_agent_settings')
-        .select('enabled, phone_number, voice_enabled, vapi_assistant_id, context')
+        .select(
+          'enabled, phone_number, voice_enabled, vapi_assistant_id, context, voice_provider, voice_id, voice_region, call_recording_enabled, call_recording_retention_days',
+        )
         .eq('gym_id', membership!.gymId)
         .maybeSingle();
       if (error) throw error;
       return (data as AgentSettings) ?? null;
+    },
+  });
+
+  const rules = useQuery({
+    queryKey: ['agent-rules', membership?.gymId],
+    enabled: !!membership?.gymId && isOwner,
+    queryFn: async (): Promise<Correction[]> => {
+      const { data, error } = await supabase
+        .from('agent_coaching_corrections')
+        .select('id, field_kind, scope, correction, active, created_at')
+        .eq('gym_id', membership!.gymId)
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as Correction[];
     },
   });
 
@@ -128,6 +182,8 @@ export default function LeadAutomationSettings() {
   // mount, so it must not mount on the placeholder '365' and then be stuck
   // when the real value arrives a tick later.
   const [retention, setRetention] = useState<string | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [recRetention, setRecRetention] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -143,7 +199,10 @@ export default function LeadAutomationSettings() {
   useEffect(() => {
     if (!agent.isSuccess) return;
     if (agentContext === null) setAgentContext(agent.data?.context ?? '');
-  }, [agent.isSuccess, agent.data, agentContext]);
+    if (selectedVoice === null) setSelectedVoice(agent.data?.voice_id ?? '');
+    if (recRetention === null)
+      setRecRetention(String(agent.data?.call_recording_retention_days ?? 90));
+  }, [agent.isSuccess, agent.data, agentContext, selectedVoice, recRetention]);
 
   const saveRule = useMutation({
     mutationFn: async () => {
@@ -235,6 +294,76 @@ export default function LeadAutomationSettings() {
     onError: (e) => setError(errorMessage(e, 'Could not save the agent notes')),
   });
 
+  const saveVoice = useMutation({
+    mutationFn: async () => {
+      const v = VOICES.find((x) => x.id === selectedVoice);
+      if (!v) throw new Error('Pick a voice');
+      const { error: e } = await supabase.rpc('set_gym_agent_voice_selection', {
+        p_gym_id: membership!.gymId,
+        p_provider: v.provider,
+        p_voice_id: v.id,
+        p_region: v.region,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not save the voice')),
+  });
+
+  const toggleRecording = useMutation({
+    mutationFn: async (next: boolean) => {
+      const days = parseInt(recRetention ?? '', 10);
+      const retentionDays = Number.isFinite(days)
+        ? days
+        : (agent.data?.call_recording_retention_days ?? 90);
+      const { error: e } = await supabase.rpc('set_gym_call_recording', {
+        p_gym_id: membership!.gymId,
+        p_enabled: next,
+        p_retention_days: retentionDays,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not change recording')),
+  });
+
+  const saveRecordingRetention = useMutation({
+    mutationFn: async () => {
+      const days = parseInt(recRetention ?? '', 10);
+      if (!Number.isFinite(days)) throw new Error('Enter a retention window');
+      const { error: e } = await supabase.rpc('set_gym_call_recording', {
+        p_gym_id: membership!.gymId,
+        p_enabled: agent.data?.call_recording_enabled ?? true,
+        p_retention_days: days,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not save recording retention')),
+  });
+
+  const toggleRule = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e } = await supabase.rpc('set_agent_correction_active', {
+        p_id: id,
+        p_active: false,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-rules', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not update the rule')),
+  });
+
   if (membership && !isOwner) return <Redirect href="/management/leads" />;
   if (!membership) return null;
 
@@ -243,6 +372,8 @@ export default function LeadAutomationSettings() {
   const agentNumber = agent.data?.phone_number ?? null;
   const voiceOn = agent.data?.voice_enabled ?? false;
   const voiceReady = !!agent.data?.vapi_assistant_id;
+  const recOn = agent.data?.call_recording_enabled ?? true;
+  const currentVoice = VOICES.find((v) => v.id === (agent.data?.voice_id ?? '')) ?? null;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -388,6 +519,91 @@ export default function LeadAutomationSettings() {
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Voice
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            How the assistant sounds on calls.
+            {currentVoice ? ` Currently ${currentVoice.name} · ${currentVoice.region}.` : ''}
+          </Text>
+          <View className="gap-2">
+            {VOICES.map((v) => {
+              const sel = selectedVoice === v.id;
+              return (
+                <Pressable
+                  key={v.id}
+                  onPress={() => setSelectedVoice(v.id)}
+                  className={`flex-row items-center justify-between rounded-lg border p-3 ${
+                    sel ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <View className="flex-1">
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      {v.name}
+                      <Text className="text-gray-400 dark:text-gray-500 font-normal">
+                        {'  '}· {v.region}
+                      </Text>
+                    </Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      {v.gender} · {v.desc}
+                    </Text>
+                  </View>
+                  {sel ? (
+                    <Text className="text-primary text-xs font-semibold">Selected</Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+          <Button
+            onPress={() => saveVoice.mutate()}
+            loading={saveVoice.isPending}
+            disabled={!selectedVoice}>
+            Save voice
+          </Button>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Call recording &amp; consent
+          </Text>
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                Record calls for review
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                A short consent line plays at the start of every call. Recordings
+                let you review and coach the AI.
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Record calls for review"
+              value={recOn}
+              onValueChange={(v) => toggleRecording.mutate(v)}
+            />
+          </View>
+          {recRetention !== null ? (
+            <DurationField
+              label="Delete recordings after"
+              value={recRetention}
+              onChange={setRecRetention}
+              base="days"
+              units={['days', 'weeks', 'months']}
+              placeholder="90"
+            />
+          ) : null}
+          <Button
+            onPress={() => saveRecordingRetention.mutate()}
+            loading={saveRecordingRetention.isPending}>
+            Save retention
+          </Button>
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            Recordings are stored privately, every playback is logged, and a caller
+            who replies STOP is opted out.
+          </Text>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             What the agent knows
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
@@ -410,6 +626,42 @@ export default function LeadAutomationSettings() {
             loading={saveAgentContext.isPending}>
             Save notes
           </Button>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Coaching rules
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Rules and examples you've taught the agent from call reviews. Turn one
+            off to stop applying it on future calls.
+          </Text>
+          {(rules.data ?? []).length === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              No rules yet. Open a call in Conversations and use “Coach this turn”
+              to teach the agent.
+            </Text>
+          ) : (
+            (rules.data ?? []).map((r) => (
+              <View
+                key={r.id}
+                className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-2">
+                <Text className="text-gray-800 dark:text-gray-100 text-sm">
+                  {r.correction}
+                </Text>
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wide">
+                    {r.field_kind} · {r.scope === 'standing_rule' ? 'always' : 'example'}
+                  </Text>
+                  <Pressable onPress={() => toggleRule.mutate(r.id)} hitSlop={6}>
+                    <Text className="text-red-600 dark:text-red-400 text-xs font-semibold">
+                      Turn off
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">

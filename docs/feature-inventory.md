@@ -769,6 +769,28 @@ only — Temple provisions them). pgTAP: `agent_front_desk_settings`,
 `agent_conversations_isolation`, `agent_capture_lead`,
 `agent_stop_consent`.
 
+**Call review, coaching & voice (0137)** [`can_review_ai_calls`, owner/admin].
+Voice calls are recorded (Vapi artifact) and pulled into a private
+`agent-call-recordings` Storage bucket at `/end-of-call`; `call_recordings`
+points at the object and per-turn `secondsFromStart`/`duration` land on
+`agent_messages`. The conversation screen becomes a QC surface: web-first
+`<audio>` playback with the transcript highlighting and seeking in sync
+(native degrades to transcript-only), and every playback writes
+`agent_recording_access_log` via `log_recording_access` (admin-only read,
+mirroring `health_data_access_log`). **Coaching loop:** "Coach this turn" on
+any AI message writes `agent_coaching_corrections` via
+`record_agent_corrections` (tenancy-guarded, `can_review_ai_calls`); the agent
+loop reads this gym's active corrections back in `fetchCoachingText` and
+`buildSystemPrompt` injects them (standing rules + approved examples) into
+every future call — the per-gym analogue of `import_inference_corrections`.
+Owners manage the ruleset (turn rules off via `set_agent_correction_active`),
+pick a regional voice (`set_gym_agent_voice_selection` → `{provider, voiceId,
+region}` on `gym_agent_settings`, applied to the Vapi assistant), and control
+recording + retention (`set_gym_call_recording`, floor 30 days). Recordings
+are treated as health-grade: consent line at call start, honoured on STOP, and
+a nightly `purge_expired_agent_recordings` cron that also deletes the Storage
+object. pgTAP: `agent_qc_backend`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

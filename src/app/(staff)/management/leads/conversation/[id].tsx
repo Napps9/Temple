@@ -1,7 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
@@ -12,9 +13,11 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useThemeColors } from '@/lib/theme';
 
 type Conversation = {
   id: string;
+  gym_id: string;
   phone: string;
   channel: 'sms' | 'voice';
   status: 'active' | 'handed_off' | 'closed';
@@ -26,15 +29,101 @@ type MessageRow = {
   role: 'lead' | 'agent' | 'staff' | 'system';
   body: string;
   created_at: string;
+  seconds_from_start: number | null;
+  duration_ms: number | null;
 };
+
+type Recording = { id: string; recording_path: string; duration_seconds: number | null };
+
+type CoachKind = 'fact' | 'tone' | 'rule' | 'exemplar';
+type CoachScope = 'standing_rule' | 'example';
+
+const KIND_LABEL: Record<CoachKind, { label: string; hint: string }> = {
+  fact: { label: 'Fix the facts', hint: 'Wrong price or detail' },
+  tone: { label: 'Fix the tone', hint: 'Too pushy / passive / wordy' },
+  rule: { label: 'Add a standing rule', hint: 'Always / never do this' },
+  exemplar: { label: 'This was good', hint: 'Save as an example' },
+};
+
+function fmtClock(s: number): string {
+  const t = Math.max(0, Math.round(s));
+  return `${Math.floor(t / 60)}:${`0${t % 60}`.slice(-2)}`;
+}
+
+type AudioLike = {
+  currentTime: number;
+  duration: number;
+  paused: boolean;
+  play(): void;
+  pause(): void;
+  addEventListener(type: string, cb: () => void): void;
+  removeEventListener(type: string, cb: () => void): void;
+};
+
+// Web-only <audio> playback. RN has no built-in audio and the app ships no
+// audio dependency; call review is an owner/desktop task, so we drive an
+// HTMLAudioElement on web and degrade to transcript-only on native. The
+// element is reached through the global so the shared build needs no DOM lib.
+function useWebAudio(url: string | null) {
+  const ref = useRef<AudioLike | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const supported = Platform.OS === 'web' && !!url;
+
+  useEffect(() => {
+    if (!supported || !url) return;
+    const A = (globalThis as unknown as { Audio?: new (src: string) => AudioLike }).Audio;
+    if (!A) return;
+    const audio = new A(url);
+    ref.current = audio;
+    const onTime = () => setCurrentTime(audio.currentTime || 0);
+    const onMeta = () => setDuration(audio.duration || 0);
+    const onEnd = () => setPlaying(false);
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('loadedmetadata', onMeta);
+    audio.addEventListener('ended', onEnd);
+    return () => {
+      audio.pause();
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('loadedmetadata', onMeta);
+      audio.removeEventListener('ended', onEnd);
+      ref.current = null;
+    };
+  }, [supported, url]);
+
+  const toggle = () => {
+    const audio = ref.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play();
+      setPlaying(true);
+    } else {
+      audio.pause();
+      setPlaying(false);
+    }
+  };
+  const seek = (t: number) => {
+    const audio = ref.current;
+    if (!audio) return;
+    audio.currentTime = t;
+    setCurrentTime(t);
+  };
+
+  return { supported, playing, currentTime, duration, toggle, seek };
+}
 
 export default function AgentConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canAssignPlan = useCan('can_assign_plan');
+  const canReview = useCan('can_review_ai_calls');
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [coachFor, setCoachFor] = useState<MessageRow | null>(null);
+  const [coachedIds, setCoachedIds] = useState<Set<string>>(new Set());
 
   const conversation = useQuery({
     queryKey: ['agent-conversation', id],
@@ -42,7 +131,7 @@ export default function AgentConversationScreen() {
     queryFn: async (): Promise<Conversation | null> => {
       const { data, error: e } = await supabase
         .from('agent_conversations')
-        .select('id, phone, channel, status, lead:leads!lead_id(id, full_name)')
+        .select('id, gym_id, phone, channel, status, lead:leads!lead_id(id, full_name)')
         .eq('id', id!)
         .maybeSingle();
       if (e) throw e;
@@ -53,30 +142,89 @@ export default function AgentConversationScreen() {
   const messages = useQuery({
     queryKey: ['agent-messages', id],
     enabled: !!id && canAssignPlan === true,
-    // Polling keeps the thread live while staff watch the agent work —
-    // cheap RLS reads, no realtime plumbing.
     refetchInterval: 5000,
     queryFn: async (): Promise<MessageRow[]> => {
       const { data, error: e } = await supabase
         .from('agent_messages')
-        .select('id, role, body, created_at')
+        .select('id, role, body, created_at, seconds_from_start, duration_ms')
         .eq('conversation_id', id!)
         .order('created_at', { ascending: true })
-        .limit(200);
+        .limit(300);
       if (e) throw e;
       return (data ?? []) as MessageRow[];
     },
   });
+
+  const isVoice = conversation.data?.channel === 'voice';
+
+  const recording = useQuery({
+    queryKey: ['agent-recording', id],
+    enabled: !!id && isVoice && canReview === true,
+    queryFn: async (): Promise<Recording | null> => {
+      const { data, error: e } = await supabase
+        .from('call_recordings')
+        .select('id, recording_path, duration_seconds')
+        .eq('conversation_id', id!)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (e) throw e;
+      return (data as Recording) ?? null;
+    },
+  });
+
+  const signedUrl = useQuery({
+    queryKey: ['agent-recording-url', recording.data?.id],
+    enabled: !!recording.data?.recording_path,
+    // Signed URLs are short-lived; refetch before they lapse.
+    staleTime: 45 * 60 * 1000,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error: e } = await supabase.storage
+        .from('agent-call-recordings')
+        .createSignedUrl(recording.data!.recording_path, 3600);
+      if (e) throw e;
+      return data?.signedUrl ?? null;
+    },
+  });
+
+  // Audit every time a recording is actually opened for playback.
+  const loggedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const rec = recording.data;
+    const gymId = conversation.data?.gym_id;
+    if (!rec || !gymId || !signedUrl.data) return;
+    if (loggedRef.current === rec.id) return;
+    loggedRef.current = rec.id;
+    supabase.rpc('log_recording_access', {
+      p_gym_id: gymId,
+      p_recording: rec.id,
+      p_surface: 'call-review',
+    });
+  }, [recording.data, conversation.data?.gym_id, signedUrl.data]);
+
+  const audio = useWebAudio(signedUrl.data ?? null);
+
+  const timed = useMemo(
+    () => (messages.data ?? []).filter((m) => m.seconds_from_start != null),
+    [messages.data],
+  );
+  const activeId = useMemo(() => {
+    if (!isVoice || timed.length === 0) return null;
+    let active: string | null = null;
+    for (const m of timed) {
+      if ((m.seconds_from_start ?? 0) <= audio.currentTime + 0.001) active = m.id;
+    }
+    return active;
+  }, [isVoice, timed, audio.currentTime]);
 
   const act = useMutation({
     mutationFn: async (payload: {
       action: 'take_over' | 'send' | 'reopen';
       body?: string;
     }) => {
-      const { data, error: e } = await supabase.functions.invoke(
-        'lead-agent-staff-send',
-        { body: { conversation_id: id, ...payload } },
-      );
+      const { data, error: e } = await supabase.functions.invoke('lead-agent-staff-send', {
+        body: { conversation_id: id, ...payload },
+      });
       if (e) throw e;
       if (data?.error) throw new Error(data.error);
     },
@@ -94,6 +242,7 @@ export default function AgentConversationScreen() {
 
   const c = conversation.data;
   const status = c?.status;
+  const rows = messages.data ?? [];
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -105,7 +254,7 @@ export default function AgentConversationScreen() {
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
             {c
-              ? `${c.channel === 'voice' ? 'Phone call' : 'SMS'} · ${c.phone} · ${
+              ? `${isVoice ? 'Phone call' : 'SMS'} · ${c.phone} · ${
                   status === 'active'
                     ? 'AI replying'
                     : status === 'handed_off'
@@ -115,6 +264,43 @@ export default function AgentConversationScreen() {
               : ''}
           </Text>
         </View>
+
+        {/* Recording playback (voice, reviewers only) */}
+        {isVoice && canReview === true && recording.data ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              Call recording
+            </Text>
+            {audio.supported ? (
+              <>
+                <View className="flex-row items-center gap-3">
+                  <Pressable
+                    onPress={audio.toggle}
+                    accessibilityLabel={audio.playing ? 'Pause' : 'Play'}
+                    className="w-12 h-12 rounded-full bg-primary items-center justify-center">
+                    <Ionicons
+                      name={audio.playing ? 'pause' : 'play'}
+                      size={22}
+                      color="#FFFFFF"
+                    />
+                  </Pressable>
+                  <Text className="text-gray-600 dark:text-gray-300 text-sm">
+                    {fmtClock(audio.currentTime)} /{' '}
+                    {fmtClock(audio.duration || recording.data.duration_seconds || 0)}
+                  </Text>
+                </View>
+                <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                  The transcript below follows the audio as it plays. Tap a line to jump.
+                </Text>
+              </>
+            ) : (
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Open this call on the web app to play the recording. The transcript is
+                below either way.
+              </Text>
+            )}
+          </View>
+        ) : null}
 
         {c && status !== 'closed' ? (
           <View className="flex-row gap-2">
@@ -137,7 +323,7 @@ export default function AgentConversationScreen() {
         ) : null}
 
         <View className="gap-2">
-          {(messages.data ?? []).map((m) => {
+          {rows.map((m) => {
             if (m.role === 'system') {
               return (
                 <View key={m.id} className="px-4 py-2">
@@ -148,28 +334,45 @@ export default function AgentConversationScreen() {
               );
             }
             const fromLead = m.role === 'lead';
+            const isAgent = m.role === 'agent';
+            const active = m.id === activeId;
+            const seekable = audio.supported && m.seconds_from_start != null;
             return (
-              <View
+              <Pressable
                 key={m.id}
-                className={`max-w-[85%] rounded-xl px-3 py-2 ${
-                  fromLead
-                    ? 'self-start bg-gray-200 dark:bg-gray-800'
-                    : 'self-end bg-primary/10'
-                }`}>
+                disabled={!seekable}
+                onPress={() => seekable && audio.seek(m.seconds_from_start ?? 0)}
+                className={`max-w-[88%] rounded-xl px-3 py-2 ${
+                  fromLead ? 'self-start bg-gray-200 dark:bg-gray-800' : 'self-end bg-primary/10'
+                } ${active ? 'border border-primary' : 'border border-transparent'}`}>
                 <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
-                <Text className="text-gray-400 dark:text-gray-500 text-[10px] mt-1">
-                  {m.role === 'agent' ? 'AI · ' : m.role === 'staff' ? 'Staff · ' : ''}
-                  {new Date(m.created_at).toLocaleString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Text>
-              </View>
+                <View className="flex-row items-center justify-between mt-1 gap-3">
+                  <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+                    {m.role === 'agent' ? 'AI' : m.role === 'staff' ? 'Staff' : 'Lead'}
+                    {m.seconds_from_start != null ? ` · ${fmtClock(m.seconds_from_start)}` : ''}
+                  </Text>
+                  {isAgent && canReview === true ? (
+                    <Pressable
+                      onPress={() => setCoachFor(m)}
+                      hitSlop={6}
+                      className="flex-row items-center gap-1">
+                      <Ionicons name="school-outline" size={12} color={colors.primary} />
+                      <Text className="text-primary text-[11px] font-semibold">Coach</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+                {isAgent && coachedIds.has(m.id) ? (
+                  <View className="flex-row items-center gap-1 mt-1">
+                    <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
+                    <Text className="text-green-600 dark:text-green-400 text-[11px] font-semibold">
+                      Coached — applies to future calls
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
             );
           })}
-          {messages.isSuccess && (messages.data ?? []).length === 0 ? (
+          {messages.isSuccess && rows.length === 0 ? (
             <Text className="text-gray-500 dark:text-gray-400 text-center py-6">
               No messages yet.
             </Text>
@@ -195,8 +398,8 @@ export default function AgentConversationScreen() {
         ) : null}
         {c && status === 'closed' ? (
           <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            This person replied STOP, so the thread is closed and no more
-            texts can be sent.
+            This person replied STOP, so the thread is closed and no more texts can be
+            sent.
           </Text>
         ) : null}
 
@@ -204,6 +407,193 @@ export default function AgentConversationScreen() {
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
       </ScrollView>
+
+      <CoachModal
+        message={coachFor}
+        priorLead={priorLeadBody(rows, coachFor)}
+        gymId={c?.gym_id ?? null}
+        conversationId={id ?? null}
+        onClose={() => setCoachFor(null)}
+        onCoached={(mid) => {
+          setCoachedIds((s) => new Set(s).add(mid));
+          queryClient.invalidateQueries({ queryKey: ['agent-rules', c?.gym_id] });
+          setCoachFor(null);
+        }}
+      />
     </Screen>
+  );
+}
+
+function priorLeadBody(rows: MessageRow[], target: MessageRow | null): string | null {
+  if (!target) return null;
+  const idx = rows.findIndex((r) => r.id === target.id);
+  for (let i = idx - 1; i >= 0; i -= 1) {
+    if (rows[i].role === 'lead') return rows[i].body;
+  }
+  return null;
+}
+
+function CoachModal({
+  message,
+  priorLead,
+  gymId,
+  conversationId,
+  onClose,
+  onCoached,
+}: {
+  message: MessageRow | null;
+  priorLead: string | null;
+  gymId: string | null;
+  conversationId: string | null;
+  onClose: () => void;
+  onCoached: (messageId: string) => void;
+}) {
+  const [kind, setKind] = useState<CoachKind>('rule');
+  const [scope, setScope] = useState<CoachScope>('standing_rule');
+  const [text, setText] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (message) {
+      setKind('rule');
+      setScope('standing_rule');
+      setText('');
+      setError(null);
+    }
+  }, [message]);
+
+  const deploy = useMutation({
+    mutationFn: async () => {
+      if (!gymId || !message) throw new Error('Missing context');
+      if (!text.trim()) throw new Error('Add a correction');
+      const { error: e } = await supabase.rpc('record_agent_corrections', {
+        p_gym_id: gymId,
+        p_rows: [
+          {
+            field_kind: kind,
+            scope: kind === 'exemplar' ? 'example' : scope,
+            correction: text.trim(),
+            ai_suggestion: message.body,
+            conversation_id: conversationId,
+            message_id: message.id,
+            input_payload: priorLead ? { caller: priorLead } : null,
+            was_overridden: kind !== 'exemplar',
+          },
+        ],
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => message && onCoached(message.id),
+    onError: (e) => setError(errorMessage(e, 'Could not save the correction')),
+  });
+
+  return (
+    <Modal visible={!!message} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        className="flex-1 bg-black/50 items-center justify-center p-4">
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-5 gap-4">
+          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            Coach this turn
+          </Text>
+          <View className="gap-1">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              The AI said
+            </Text>
+            <View className="bg-primary/10 rounded-lg p-3">
+              <Text className="text-gray-800 dark:text-gray-100 text-sm">
+                {message?.body}
+              </Text>
+            </View>
+          </View>
+
+          <View className="gap-1.5">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              What needs to change?
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {(['fact', 'tone', 'rule', 'exemplar'] as CoachKind[]).map((k) => (
+                <Pressable
+                  key={k}
+                  onPress={() => setKind(k)}
+                  className={`px-3 py-1.5 rounded-full border ${
+                    kind === k
+                      ? 'border-primary bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Text
+                    className={`text-xs font-semibold ${
+                      kind === k ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                    }`}>
+                    {KIND_LABEL[k].label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              {KIND_LABEL[kind].hint}
+            </Text>
+          </View>
+
+          <Input
+            label="Your correction"
+            value={text}
+            onChangeText={setText}
+            multiline
+            placeholder={
+              kind === 'exemplar'
+                ? 'Note why this was a good reply'
+                : 'e.g. Membership is £45/mo — never quote £39 as the monthly rate'
+            }
+          />
+
+          {kind !== 'exemplar' ? (
+            <View className="flex-row gap-2">
+              {(
+                [
+                  ['standing_rule', 'Standing rule — every call'],
+                  ['example', 'Just this style of reply'],
+                ] as [CoachScope, string][]
+              ).map(([s, label]) => (
+                <Pressable
+                  key={s}
+                  onPress={() => setScope(s)}
+                  className={`flex-1 px-3 py-2 rounded-lg border ${
+                    scope === s
+                      ? 'border-primary bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Text
+                    className={`text-xs font-semibold ${
+                      scope === s ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                    }`}>
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          {error ? (
+            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          ) : null}
+
+          <View className="flex-row gap-2">
+            <View className="flex-1">
+              <Button variant="ghost" onPress={onClose}>
+                Cancel
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button onPress={() => deploy.mutate()} loading={deploy.isPending}>
+                Deploy to agent
+              </Button>
+            </View>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
