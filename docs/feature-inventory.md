@@ -665,9 +665,12 @@ converted | lost`. `record_lead` and `set_lead_status` RPCs gate
 writes; tenant RLS uses `user_can_assign_plan`. Moving to
 `converted` requires a member profile to link to (the rule is
 enforced in the RPC), so the conversion dashboard can attribute
-revenue to its source. The list page filters by status pill (Active
-/ All / per-status) and supports inline status changes via the
-detail modal. The detail modal exposes a manual "Converted" flow
+revenue to its source. The page is a **pipeline board** — a column
+per stage (Cold → Contacted → Intro booked → Trial attended, plus
+Converted/Lost under an "All stages" toggle), leads as cards; tap a
+card to open the detail modal and move it between stages. An
+owner-only **AI Sales Agent** CTA launches the setup wizard
+(`/management/leads/agent-setup`). The detail modal exposes a manual "Converted" flow
 with an inline member search for cases where auto-attribute on
 signup didn't fire. The Insights page surfaces a "Conversions by
 source" chip row alongside the lead_conversions tile so owners can
@@ -790,6 +793,17 @@ recording + retention (`set_gym_call_recording`, floor 30 days). Recordings
 are treated as health-grade: consent line at call start, honoured on STOP, and
 a nightly `purge_expired_agent_recordings` cron that also deletes the Storage
 object. pgTAP: `agent_qc_backend`.
+
+**Setup wizard (AI Sales Agent).** The CRM's "AI Sales Agent" CTA opens
+`/management/leads/agent-setup` — a stepper (welcome → prompt → voice →
+recording → go live) over the same owner RPCs. The prompt step either takes
+manual text or **generates a brief from platform data**: the
+`generate-agent-prompt` edge fn (owner/admin, `effective_can`) gathers the
+gym's plans, schedule, class types, coaches and waivers, plus a few owner
+answers (class levels, where beginners start, onboarding, location), and
+Claude drafts the agent's brief (`AGENT_PROMPT_MODEL`, default
+`claude-sonnet-5`; deterministic template fallback with no key) — saved to
+`gym_agent_settings.context` via `set_gym_agent_context`, fully editable.
 
 ### Member import
 
