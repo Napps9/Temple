@@ -43,10 +43,13 @@ Deno.serve(async (req: Request) => {
   let body: {
     gym_id?: string;
     answers?: {
+      intro_offer?: string;
       levels?: string;
       beginner_start?: string;
       onboarding?: string;
       location?: string;
+      faq?: string;
+      tone?: string;
       extra?: string;
     };
   };
@@ -154,10 +157,12 @@ Deno.serve(async (req: Request) => {
     schedule ? `Class schedule (next 7 days):\n${schedule}` : '',
     coaches ? `Coaches: ${coaches}` : '',
     waivers ? `Waivers on file: ${waivers}` : '',
+    answers.intro_offer ? `Intro offer (owner): ${answers.intro_offer}` : '',
     answers.levels ? `Class levels (owner): ${answers.levels}` : '',
     answers.beginner_start ? `Where beginners should start (owner): ${answers.beginner_start}` : '',
     answers.onboarding ? `Onboarding / waivers (owner): ${answers.onboarding}` : '',
     answers.location ? `Location & parking (owner): ${answers.location}` : '',
+    answers.faq ? `Frequently asked questions, with the owner's answers:\n${answers.faq}` : '',
     answers.extra ? `Other notes (owner): ${answers.extra}` : '',
   ]
     .filter(Boolean)
@@ -168,17 +173,27 @@ Deno.serve(async (req: Request) => {
     return json({ prompt: templateFallback(gym.name, dataBlock), mode: 'template' });
   }
 
+  const toneLine =
+    answers.tone === 'professional'
+      ? 'Register: polished and professional — courteous, precise, no slang.'
+      : answers.tone === 'high_energy'
+        ? 'Register: high-energy and upbeat — enthusiastic, punchy sentences, big on encouragement.'
+        : 'Register: warm and friendly — like the best front-desk person on their best day.';
+
   const system = [
     "You write the operating brief for a gym's AI front-desk sales agent — the instructions it follows on calls and texts with prospective members.",
-    'Write it as direct second-person instructions ("You are the front desk for …"). Warm, concise, plainspoken. No markdown headings, no preamble — just the brief, in short paragraphs and simple bullet lines.',
+    'Write it as direct second-person instructions ("You are the front desk for …"). Concise, plainspoken. No markdown headings, no preamble — just the brief, in short paragraphs and simple bullet lines.',
+    toneLine,
     'Cover, using ONLY the facts provided (never invent prices, classes, or details):',
     '- How to greet (use the gym name).',
+    '- The intro offer, and to lead with it when someone is deciding — offered once, concretely, never repeated as pressure.',
     '- The membership options and prices, and which plan a first-timer should start on.',
     '- The class schedule and which classes suit beginners vs intermediate vs advanced.',
-    '- How onboarding and waivers work.',
-    '- That it should offer to text a signup/payment link to close, and capture the prospect\'s name and number.',
+    "- The frequently asked questions and the owner's answers to them, if provided.",
+    '- That joining is fully self-serve from a link: sign up, sign the waiver and a short health form, pay — the agent closes by sending it, never by taking payment itself.',
+    "- That it should capture the prospect's name and number early, and agree a concrete next step (a class to try, a day to come in) before the conversation ends.",
     '- The coaches and the style of programming; the location and parking.',
-    "- Guardrails: offer the intro offer once; don't be pushy; never give medical or injury advice — take their number and say a coach will call back.",
+    "- Guardrails: don't be pushy; never give medical or injury advice — take their number and say a coach will call back.",
     'If a fact is missing, leave a short bracketed placeholder like [add your intro offer] rather than inventing it.',
   ].join('\n');
 
