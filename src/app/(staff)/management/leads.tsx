@@ -71,6 +71,15 @@ const STATUS_ORDER: LeadStatus[] = [
   'lost',
 ];
 
+// The live pipeline — 'converted' and 'lost' are terminal, shown only in
+// the "All stages" board.
+const ACTIVE_STATUSES: LeadStatus[] = [
+  'cold',
+  'contacted',
+  'intro_booked',
+  'trial_attended',
+];
+
 const STALE_MS = 24 * 60 * 60 * 1000;
 
 // A lead needs following up when it's still cold and has sat untouched for
@@ -100,15 +109,13 @@ export default function LeadsScreen() {
   const canAssignPlan = useCan('can_assign_plan');
   const isOwner = membership?.role === 'owner';
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<
-    LeadStatus | 'all' | 'active' | 'followup'
-  >('active');
+  const [scope, setScope] = useState<'active' | 'all'>('active');
   const [openLead, setOpenLead] = useState<LeadRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
   const leads = useQuery({
-    queryKey: ['leads', membership?.gymId, filter],
+    queryKey: ['leads', membership?.gymId, scope],
     enabled: !!membership?.gymId && canAssignPlan === true,
     queryFn: async (): Promise<LeadRow[]> => {
       let q = supabase
@@ -119,20 +126,12 @@ export default function LeadsScreen() {
         .eq('gym_id', membership!.gymId)
         .is('archived_at', null)
         .order('captured_at', { ascending: false });
-      if (filter === 'active' || filter === 'followup') {
-        q = q.in('status', [
-          'cold',
-          'contacted',
-          'intro_booked',
-          'trial_attended',
-        ] as LeadStatus[]);
-      } else if (filter !== 'all') {
-        q = q.eq('status', filter);
+      if (scope === 'active') {
+        q = q.in('status', ACTIVE_STATUSES as LeadStatus[]);
       }
       const { data, error } = await q;
       if (error) throw error;
-      const rows = (data ?? []) as unknown as LeadRow[];
-      return filter === 'followup' ? rows.filter(needsFollowUp) : rows;
+      return (data ?? []) as unknown as LeadRow[];
     },
   });
 
@@ -186,7 +185,7 @@ export default function LeadsScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-5xl md:mx-auto md:w-full">
         <BackLink label="Manage" fallbackHref="/management" />
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
@@ -228,124 +227,120 @@ export default function LeadsScreen() {
           </View>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2 shadow-card">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            Show
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row gap-2">
-              {(['active', 'followup', 'all', ...STATUS_ORDER] as const).map(
-                (k) => {
-                  const sel = filter === k;
-                  const label =
-                    k === 'active'
-                      ? 'Active'
-                      : k === 'followup'
-                      ? `Needs follow-up${
-                          followUpCount > 0 ? ` (${followUpCount})` : ''
-                        }`
-                      : k === 'all'
-                      ? 'All'
-                      : STATUS_LABELS[k];
-                  return (
-                    <Pressable
-                      key={k}
-                      onPress={() => setFilter(k as typeof filter)}
-                      className={`px-3 py-1.5 rounded-full border ${
-                        sel
-                          ? 'bg-primary border-primary'
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}>
-                      <Text
-                        className={`text-xs font-medium ${
-                          sel
-                            ? 'text-white'
-                            : 'text-gray-700 dark:text-gray-200'
-                        }`}>
-                        {label}
-                      </Text>
-                    </Pressable>
-                  );
-                },
-              )}
-            </View>
-          </ScrollView>
+        <View className="flex-row items-center gap-2">
+          {(['active', 'all'] as const).map((s) => {
+            const sel = scope === s;
+            return (
+              <Pressable
+                key={s}
+                onPress={() => setScope(s)}
+                className={`px-3 py-1.5 rounded-full border ${
+                  sel ? 'bg-primary border-primary' : 'border-gray-200 dark:border-gray-700'
+                }`}>
+                <Text
+                  className={`text-xs font-medium ${
+                    sel ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                  }`}>
+                  {s === 'active'
+                    ? `Active pipeline${followUpCount > 0 ? ` · ${followUpCount} to chase` : ''}`
+                    : 'All stages'}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {leads.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
         ) : (leads.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2">
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2 shadow-card">
             <Ionicons name="people-outline" size={32} color={colors.iconTertiary} />
             <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-              {filter === 'followup'
-                ? 'Nothing needs chasing right now. Nice.'
-                : 'No leads yet. Tap “Add lead” to capture your first prospect.'}
+              No leads yet. Tap “Add lead” to capture your first prospect.
             </Text>
           </View>
         ) : (
-          <View className="gap-2">
-            {leads.data!.map((l) => {
-              const stale = needsFollowUp(l);
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-3 pb-2">
+            {(scope === 'active' ? ACTIVE_STATUSES : STATUS_ORDER).map((status) => {
+              const items = (leads.data ?? []).filter((l) => l.status === status);
               return (
-                <Pressable
-                  key={l.id}
-                  onPress={() => setOpenLead(l)}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70 shadow-card">
-                  <View className="flex-row items-start justify-between gap-3">
-                    <View className="flex-1">
-                      <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                        {l.full_name}
-                      </Text>
-                      {l.email || l.phone ? (
-                        <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                          {[l.email, l.phone].filter(Boolean).join(' · ')}
-                        </Text>
-                      ) : null}
-                    </View>
+                <View key={status} className="w-72 gap-2">
+                  <View className="flex-row items-center gap-2 px-1">
                     <View
-                      style={{ backgroundColor: STATUS_COLORS[l.status] }}
-                      className="rounded-full px-2.5 py-0.5">
-                      <Text className="text-white text-[10px] font-semibold uppercase tracking-widest">
-                        {STATUS_LABELS[l.status]}
+                      style={{ backgroundColor: STATUS_COLORS[status] }}
+                      className="w-2.5 h-2.5 rounded-full"
+                    />
+                    <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+                      {STATUS_LABELS[status]}
+                    </Text>
+                    <Text className="text-gray-400 dark:text-gray-500 text-xs num">
+                      {items.length}
+                    </Text>
+                  </View>
+                  {items.length === 0 ? (
+                    <View className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4">
+                      <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+                        Nothing here yet
                       </Text>
                     </View>
-                  </View>
-                  <View className="flex-row items-center flex-wrap gap-2">
-                    <View className="flex-row items-center gap-1">
-                      <Ionicons
-                        name="person-circle-outline"
-                        size={14}
-                        color={colors.iconTertiary}
-                      />
-                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                        {l.assignee?.full_name ??
-                          (l.assigned_coach_id ? 'Coach' : 'Unassigned')}
-                      </Text>
-                    </View>
-                    {stale ? (
-                      <View className="bg-amber-100 dark:bg-amber-900/40 rounded px-2 py-0.5">
-                        <Text className="text-amber-700 dark:text-amber-300 text-[10px] font-semibold uppercase tracking-widest">
-                          Follow up
-                        </Text>
-                      </View>
-                    ) : null}
-                    {l.source ? (
-                      <View
-                        style={{ backgroundColor: l.source.color + '22' }}
-                        className="rounded px-2 py-0.5">
-                        <Text
-                          style={{ color: l.source.color }}
-                          className="text-[10px] font-semibold uppercase tracking-widest">
-                          {l.source.label}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </Pressable>
+                  ) : (
+                    items.map((l) => {
+                      const stale = needsFollowUp(l);
+                      return (
+                        <Pressable
+                          key={l.id}
+                          onPress={() => setOpenLead(l)}
+                          className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2 active:opacity-70 shadow-card">
+                          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                            {l.full_name}
+                          </Text>
+                          {l.email || l.phone ? (
+                            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                              {[l.email, l.phone].filter(Boolean).join(' · ')}
+                            </Text>
+                          ) : null}
+                          <View className="flex-row items-center flex-wrap gap-2">
+                            <View className="flex-row items-center gap-1">
+                              <Ionicons
+                                name="person-circle-outline"
+                                size={14}
+                                color={colors.iconTertiary}
+                              />
+                              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                                {l.assignee?.full_name ??
+                                  (l.assigned_coach_id ? 'Coach' : 'Unassigned')}
+                              </Text>
+                            </View>
+                            {stale ? (
+                              <View className="bg-amber-100 dark:bg-amber-900/40 rounded px-2 py-0.5">
+                                <Text className="text-amber-700 dark:text-amber-300 text-[10px] font-semibold uppercase tracking-widest">
+                                  Follow up
+                                </Text>
+                              </View>
+                            ) : null}
+                            {l.source ? (
+                              <View
+                                style={{ backgroundColor: l.source.color + '22' }}
+                                className="rounded px-2 py-0.5">
+                                <Text
+                                  style={{ color: l.source.color }}
+                                  className="text-[10px] font-semibold uppercase tracking-widest">
+                                  {l.source.label}
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                        </Pressable>
+                      );
+                    })
+                  )}
+                </View>
               );
             })}
-          </View>
+          </ScrollView>
         )}
       </ScrollView>
 
