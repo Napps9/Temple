@@ -227,6 +227,21 @@ export default function LeadsScreen() {
           </View>
         </View>
 
+        {isOwner ? (
+          <Link href="/management/leads/agent-setup" asChild>
+            <Pressable className="flex-row items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl p-4 active:opacity-80">
+              <Ionicons name="sparkles" size={22} color={colors.primary} />
+              <View className="flex-1">
+                <Text className="text-primary font-semibold">AI Sales Agent</Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Set up an assistant that answers and sells memberships to new leads.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+            </Pressable>
+          </Link>
+        ) : null}
+
         <View className="flex-row items-center gap-2">
           {(['active', 'all'] as const).map((s) => {
             const sel = scope === s;

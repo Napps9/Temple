@@ -163,3 +163,8 @@ verify_jwt = false
 
 [functions.lead-agent-staff-send]
 verify_jwt = true
+
+# Drafts the AI sales agent's brief from gym data + owner answers via Claude.
+# Signed-in owner/admin caller; re-checks can_review_ai_calls.
+[functions.generate-agent-prompt]
+verify_jwt = true

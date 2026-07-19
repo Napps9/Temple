@@ -135,6 +135,7 @@ jobs:
           deploy lead-agent-sms
           deploy lead-agent-voice
           deploy lead-agent-staff-send
+          deploy generate-agent-prompt
           if [ -n "$failed" ]; then
             echo "::error::edge functions failed to deploy:$failed"
             exit 1
