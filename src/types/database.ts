@@ -31,6 +31,7 @@ export type LeadStatus =
   | 'contacted'
   | 'intro_booked'
   | 'trial_attended'
+  | 'committed'
   | 'converted'
   | 'lost';
 
@@ -3300,6 +3301,7 @@ export type Database = {
           linked_at: string | null;
           linked_profile_id: string | null;
           linked_membership_plan_id: string | null;
+          agreed_plan_id: string | null;
           phone: string | null;
           emergency_contact: string | null;
           next_bill_date: string | null;
@@ -3324,6 +3326,7 @@ export type Database = {
           linked_at?: string | null;
           linked_profile_id?: string | null;
           linked_membership_plan_id?: string | null;
+          agreed_plan_id?: string | null;
           phone?: string | null;
           emergency_contact?: string | null;
           next_bill_date?: string | null;
@@ -3348,6 +3351,7 @@ export type Database = {
           linked_at: string | null;
           linked_profile_id: string | null;
           linked_membership_plan_id: string | null;
+          agreed_plan_id: string | null;
           phone: string | null;
           emergency_contact: string | null;
           next_bill_date: string | null;
@@ -3886,6 +3890,14 @@ export type Database = {
       };
       log_recording_access: {
         Args: { p_gym_id: string; p_recording: string; p_surface: string };
+        Returns: null;
+      };
+      my_agreed_plan: {
+        Args: { p_gym_id: string };
+        Returns: { plan_id: string; plan_name: string }[];
+      };
+      clear_my_agreed_plan: {
+        Args: { p_gym_id: string };
         Returns: null;
       };
       is_booking_eligible: {

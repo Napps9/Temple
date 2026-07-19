@@ -49,6 +49,7 @@ const STATUS_LABELS: Record<LeadStatus, string> = {
   contacted: 'Contacted',
   intro_booked: 'Intro booked',
   trial_attended: 'Trial attended',
+  committed: 'Committed',
   converted: 'Converted',
   lost: 'Lost',
 };
@@ -58,6 +59,7 @@ const STATUS_COLORS: Record<LeadStatus, string> = {
   contacted: '#3B82F6',
   intro_booked: '#8B5CF6',
   trial_attended: '#10B981',
+  committed: '#F59E0B',
   converted: '#059669',
   lost: '#6B7280',
 };
@@ -67,17 +69,20 @@ const STATUS_ORDER: LeadStatus[] = [
   'contacted',
   'intro_booked',
   'trial_attended',
+  'committed',
   'converted',
   'lost',
 ];
 
 // The live pipeline — 'converted' and 'lost' are terminal, shown only in
-// the "All stages" board.
+// the "All stages" board. 'committed' is the AI close: onboarding staged,
+// signup/payment still pending.
 const ACTIVE_STATUSES: LeadStatus[] = [
   'cold',
   'contacted',
   'intro_booked',
   'trial_attended',
+  'committed',
 ];
 
 const STALE_MS = 24 * 60 * 60 * 1000;

@@ -72,6 +72,43 @@ export default function JoinGymScreen() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
 
+  // One-time sign-in links die when they expire or an email scanner
+  // pre-opens them; Supabase bounces here with the reason in the URL hash.
+  // Surface it and offer a fresh link rather than a dead-end signup form
+  // (the account already exists, so signing up again would fail too).
+  const [linkExpired] = useState<boolean>(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+    const h = window.location.hash ?? '';
+    return h.includes('error_code=otp_expired') || h.includes('error=access_denied');
+  });
+  const [freshLinkNotice, setFreshLinkNotice] = useState<string | null>(null);
+  const [freshLinkLoading, setFreshLinkLoading] = useState(false);
+
+  async function sendFreshLink() {
+    if (!email.trim()) {
+      setError('Enter your email above first.');
+      return;
+    }
+    setFreshLinkLoading(true);
+    setError(null);
+    try {
+      const redirect =
+        typeof window !== 'undefined'
+          ? window.location.origin + window.location.pathname + window.location.search
+          : undefined;
+      const { error: e } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: redirect },
+      });
+      if (e) throw e;
+      setFreshLinkNotice('Sent — check your inbox for a fresh sign-in link.');
+    } catch (e) {
+      setError(errorMessage(e, 'Could not send a new link'));
+    } finally {
+      setFreshLinkLoading(false);
+    }
+  }
+
   const signupAndJoin = useMutation({
     mutationFn: async () => {
       if (!slug) throw new Error('Missing slug');
@@ -273,6 +310,28 @@ export default function JoinGymScreen() {
               </View>
             ) : (
               <View className="gap-4">
+                {linkExpired ? (
+                  <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+                    <Text className="text-amber-800 dark:text-amber-300 text-sm">
+                      That sign-in link has expired or was already used.
+                    </Text>
+                    {freshLinkNotice ? (
+                      <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                        {freshLinkNotice}
+                      </Text>
+                    ) : (
+                      <Pressable
+                        hitSlop={8}
+                        onPress={sendFreshLink}
+                        disabled={freshLinkLoading}
+                        accessibilityRole="button">
+                        <Text className="text-primary text-sm">
+                          {freshLinkLoading ? 'Sending…' : 'Email me a fresh link'}
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+                ) : null}
                 <Input
                   label="Your name"
                   value={fullName}

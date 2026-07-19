@@ -178,17 +178,23 @@ export default function SignInScreen() {
             </Text>
           ) : null}
           {recoverable && !resendNotice ? (
-            <Pressable
-              hitSlop={8}
-              onPress={resend}
-              disabled={resendLoading}
-              accessibilityRole="button">
-              <Text className="text-primary text-sm">
-                {resendLoading
-                  ? 'Sending…'
-                  : 'Didn’t get the confirmation email? Resend it'}
+            <View className="gap-2">
+              <Pressable
+                hitSlop={8}
+                onPress={resend}
+                disabled={resendLoading}
+                accessibilityRole="button">
+                <Text className="text-primary text-sm">
+                  {resendLoading
+                    ? 'Sending…'
+                    : 'Didn’t get the confirmation email? Resend it'}
+                </Text>
+              </Pressable>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Joined through an email link? You may not have a password yet —
+                use “Forgot password?” above to set one.
               </Text>
-            </Pressable>
+            </View>
           ) : null}
 
           <Button onPress={onSubmit} loading={loading}>

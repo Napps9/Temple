@@ -125,6 +125,24 @@ export default function Index() {
     },
   });
 
+  // The plan the AI front desk closed on, still unpaid. Members only —
+  // routes them to the membership page to finish, until they pay or
+  // dismiss it there.
+  const agreedPlan = useQuery({
+    queryKey: ['my-agreed-plan', membership?.gymId],
+    enabled:
+      !!session?.user.id &&
+      !!membership?.gymId &&
+      canAccessStaff === false,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase.rpc('my_agreed_plan', {
+        p_gym_id: membership!.gymId,
+      });
+      if (error) throw error;
+      return ((data ?? []) as unknown[]).length > 0;
+    },
+  });
+
   if (session === undefined) return <Loading />;
   // Accountless visitors land on the three-path picker (Join / Solo /
   // Start) rather than a sign-in form — we don't yet know which they're
@@ -173,6 +191,8 @@ export default function Index() {
       <Redirect href={`/membership?checkout=${params.checkout}${bookQ}`} />
     );
   }
+  if (agreedPlan.isLoading) return <Loading />;
+  if (agreedPlan.data) return <Redirect href="/membership" />;
   // The booking surface stays open to everyone; the membership gate (if
   // the gym requires one) is applied at the point of booking, in
   // ClassDetailModal, not by routing away from it.

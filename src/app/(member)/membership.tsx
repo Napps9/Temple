@@ -20,8 +20,10 @@ import {
   SUB_STATUS_META,
   planKindLabel,
   planPriceLabel,
+  useClearAgreedPlan,
   useGymPlans,
   useGymSelfCheckout,
+  useMyAgreedPlan,
   useMyInvoices,
   useMySubscriptions,
   useStartCheckout,
@@ -487,6 +489,8 @@ export default function MembershipScreen() {
   const canSelfCheckout = selfCheckout.data ?? true;
 
   const checkout = useStartCheckout(gymId);
+  const agreedPlan = useMyAgreedPlan(gymId);
+  const clearAgreed = useClearAgreedPlan(gymId);
   const invoices = useMyInvoices(gymId, session?.user.id);
   const policies = useMembershipPolicies(gymId);
   const changeReqs = useMyChangeRequests(gymId, session?.user.id);
@@ -571,6 +575,38 @@ export default function MembershipScreen() {
             <Text className="text-gray-600 dark:text-gray-300 text-sm">
               Checkout cancelled — you haven't been charged.
             </Text>
+          </View>
+        ) : null}
+
+        {agreedPlan.data && currentSubs.length === 0 && !awaitingActivation ? (
+          <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-3">
+            <Text className="text-amber-800 dark:text-amber-300 text-sm">
+              You picked{' '}
+              <Text className="font-semibold">{agreedPlan.data.plan_name}</Text>{' '}
+              with {membership?.gymName ?? 'the gym'}'s assistant — finish
+              setting it up here.
+            </Text>
+            {canSelfCheckout ? (
+              <Button
+                icon="card-outline"
+                loading={
+                  checkout.isPending &&
+                  checkout.variables === agreedPlan.data.plan_id
+                }
+                onPress={() => checkout.mutate(agreedPlan.data!.plan_id)}>
+                Pay for {agreedPlan.data.plan_name}
+              </Button>
+            ) : (
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Ask at the front desk to finish setting up your plan.
+              </Text>
+            )}
+            <ChipButton
+              label="Not now"
+              icon="close-outline"
+              tone="neutral"
+              onPress={() => clearAgreed.mutate()}
+            />
           </View>
         ) : null}
 
@@ -666,9 +702,18 @@ export default function MembershipScreen() {
                   className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
-                      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
-                        {plan.name}
-                      </Text>
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                          {plan.name}
+                        </Text>
+                        {agreedPlan.data?.plan_id === plan.plan_id ? (
+                          <View className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5">
+                            <Text className="text-amber-700 dark:text-amber-300 text-xs font-semibold">
+                              Your pick
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
                       <Text className="text-gray-500 dark:text-gray-400 text-sm">
                         {planKindLabel(plan)}
                       </Text>

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
@@ -236,6 +236,40 @@ export function useGymSelfCheckout(gymId: string | undefined) {
       if (error) throw error;
       return data.members_can_self_checkout;
     },
+  });
+}
+
+export type AgreedPlan = { plan_id: string; plan_name: string };
+
+// The plan the AI front desk staged for this member at close (matched on
+// their signed-in email server-side; empty once any subscription exists).
+export function useMyAgreedPlan(gymId: string | undefined) {
+  return useQuery({
+    queryKey: ['my-agreed-plan', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<AgreedPlan | null> => {
+      const { data, error } = await supabase.rpc('my_agreed_plan', {
+        p_gym_id: gymId!,
+      });
+      if (error) throw error;
+      const rows = (data ?? []) as AgreedPlan[];
+      return rows[0] ?? null;
+    },
+  });
+}
+
+export function useClearAgreedPlan(gymId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!gymId) throw new Error('No gym');
+      const { error } = await supabase.rpc('clear_my_agreed_plan', {
+        p_gym_id: gymId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['my-agreed-plan', gymId] }),
   });
 }
 
