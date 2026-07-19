@@ -2,7 +2,7 @@
 -- sweep, and owner-only limit setters.
 
 begin;
-select plan(8);
+select plan(9);
 
 \ir _helpers.psql
 
@@ -60,13 +60,18 @@ select is(
   'the per-conversation cap blocks a fourth send even to a new address'
 );
 
--- 5. The retention sweep deletes conversations past the gym window.
--- Superuser fixtures — must run before any _test_act_as (its role change
--- does not reliably reset).
+-- 5-6. The retention sweep deletes conversations past the gym window and
+-- queues their recordings for Storage-API deletion (direct storage.objects
+-- deletes are blocked by storage.protect_delete). Superuser fixtures —
+-- must run before any _test_act_as (its role change does not reliably
+-- reset).
 do $$ begin
   update public.gym_agent_settings
     set conversation_retention_days = 90
     where gym_id = current_setting('test.gym')::uuid;
+  insert into public.call_recordings (gym_id, conversation_id, recording_path)
+  values (current_setting('test.gym')::uuid, current_setting('test.conv2')::uuid,
+          'guard-gym/old-call.mp3');
   update public.agent_conversations
     set last_message_at = now() - interval '120 days'
     where id = current_setting('test.conv2')::uuid;
@@ -78,8 +83,14 @@ select is(
   0,
   'conversations older than the retention window are purged'
 );
+select is(
+  (select count(*)::int from public.agent_storage_purge_queue
+   where path = 'guard-gym/old-call.mp3'),
+  1,
+  'the purged conversation''s recording is queued for Storage-API deletion'
+);
 
--- 6. An owner saving a cap under the floor is rejected.
+-- 7. An owner saving a cap under the floor is rejected.
 do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
 select throws_like(
   $$ select set_gym_agent_limits(current_setting('test.gym')::uuid, 5, 90) $$,
@@ -87,7 +98,7 @@ select throws_like(
   'a cap under 20 is rejected'
 );
 
--- 7-8. Coach cannot set limits; the send gate is internal only.
+-- 8-9. Coach cannot set limits; the send gate is internal only.
 do $$ begin perform _test_act_as(current_setting('test.coach')::uuid); end $$;
 select throws_like(
   $$ select set_gym_agent_limits(current_setting('test.gym')::uuid, 100, 90) $$,

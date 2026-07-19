@@ -30,7 +30,17 @@ supabase secrets set \
   TWILIO_AUTH_TOKEN=xxxxxxxx \
   VAPI_WEBHOOK_SECRET=$(openssl rand -hex 24) \
   VAPI_API_KEY=xxxxxxxx \
+  PURGE_STORAGE_SECRET=$(openssl rand -hex 24) \
   ANTHROPIC_API_KEY=sk-ant-xxxxxxxx
+```
+
+`PURGE_STORAGE_SECRET` pairs with a Vault secret (same value) so the
+nightly retention sweeps can ask `purge-agent-storage` to delete recording
+files through the Storage API — direct SQL deletes from storage.objects
+are blocked by `storage.protect_delete`. In the SQL editor once:
+
+```sql
+select vault.create_secret('<the PURGE_STORAGE_SECRET value>', 'agent_storage_purge_secret');
 ```
 
 `VAPI_API_KEY` (the private key from the Vapi dashboard) lets

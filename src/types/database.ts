@@ -635,6 +635,24 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      agent_storage_purge_queue: {
+        Row: {
+          id: string;
+          bucket: string;
+          path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          bucket?: string;
+          path: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          path: string;
+        }>;
+        Relationships: [];
+      };
       agent_messages: {
         Row: {
           id: string;
