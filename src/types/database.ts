@@ -3378,6 +3378,7 @@ export type Database = {
           linked_profile_id: string | null;
           linked_membership_plan_id: string | null;
           agreed_plan_id: string | null;
+          first_session_id: string | null;
           phone: string | null;
           emergency_contact: string | null;
           next_bill_date: string | null;
@@ -3403,6 +3404,7 @@ export type Database = {
           linked_profile_id?: string | null;
           linked_membership_plan_id?: string | null;
           agreed_plan_id?: string | null;
+          first_session_id?: string | null;
           phone?: string | null;
           emergency_contact?: string | null;
           next_bill_date?: string | null;
@@ -3428,6 +3430,7 @@ export type Database = {
           linked_profile_id: string | null;
           linked_membership_plan_id: string | null;
           agreed_plan_id: string | null;
+          first_session_id: string | null;
           phone: string | null;
           emergency_contact: string | null;
           next_bill_date: string | null;
@@ -3993,6 +3996,14 @@ export type Database = {
       my_agreed_plan: {
         Args: { p_gym_id: string };
         Returns: { plan_id: string; plan_name: string }[];
+      };
+      my_staged_first_class: {
+        Args: { p_gym_id: string };
+        Returns: { session_id: string; session_name: string; starts_at: string }[];
+      };
+      clear_my_first_class: {
+        Args: { p_gym_id: string };
+        Returns: null;
       };
       clear_my_agreed_plan: {
         Args: { p_gym_id: string };

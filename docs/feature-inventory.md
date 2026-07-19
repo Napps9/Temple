@@ -884,6 +884,20 @@ fixed marker line on the lead and pings the coach (daily-deduped) — the
 tool takes no free text, so the model structurally cannot record the
 medical details (Article 9 boundary). pgTAP: `agent_outcomes`.
 
+**First class auto-booked (0149).** The close tools accept the class the
+prospect agreed to try (`first_class {name, day, time}`, resolved
+timezone-aware against the next 14 days of real sessions — fuzzy
+descriptions stage nothing rather than guessing). It stages on
+`pending_members.first_session_id`; when the member's membership
+activates after checkout, the membership screen books it as the member
+through `book_class` — every entitlement/capacity/window gate still
+applies, the agent never inserts a booking — then shows "You're booked
+into …" (or routes to the Book tab if the class filled up, clearing the
+staging either way). `my_staged_first_class` / `clear_my_first_class`
+are the member-facing RPCs. This completes the hands-free close: call →
+committed lead → one-time link → forms → pre-selected plan checkout →
+booked first class.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

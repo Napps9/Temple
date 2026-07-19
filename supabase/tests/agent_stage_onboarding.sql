@@ -3,7 +3,7 @@
 -- backfills the lead's email. Service-role only.
 
 begin;
-select plan(10);
+select plan(12);
 
 \ir _helpers.psql
 
@@ -29,6 +29,10 @@ begin
   values (v_gym, 'Unlimited', 'unlimited', 5000) returning plan_id into v_plan;
   insert into public.membership_plans (gym_id, name, kind, monthly_price_cents)
   values (v_gym_b, 'Foreign Plan', 'unlimited', 9000) returning plan_id into v_plan_b;
+  perform set_config('test.sess',
+    _test_mk_session(v_gym, v_coach, now() + interval '2 days')::text, true);
+  perform set_config('test.sess_past',
+    _test_mk_session(v_gym, v_coach, now() - interval '1 day')::text, true);
   perform set_config('test.gym',  v_gym::text,  true);
   perform set_config('test.lead', v_lead::text, true);
   perform set_config('test.conv', v_conv::text, true);
@@ -105,7 +109,32 @@ select is(
   'a cross-gym plan id is not staged'
 );
 
--- 8. Staging over an imported row clears its unbilled-plan link — a
+-- 8-9. The agreed first class stages when it is a future session of this
+-- gym; a past session is ignored and the staged one kept.
+do $$ begin
+  perform public.agent_stage_onboarding(
+    current_setting('test.conv')::uuid, 'Samuel Prospect', 'sam@example.com',
+    null, current_setting('test.sess')::uuid);
+end $$;
+select is(
+  (select first_session_id from public.pending_members
+   where gym_id = current_setting('test.gym')::uuid and lower(email) = 'sam@example.com'),
+  current_setting('test.sess')::uuid,
+  'the agreed first class is staged'
+);
+do $$ begin
+  perform public.agent_stage_onboarding(
+    current_setting('test.conv')::uuid, 'Samuel Prospect', 'sam@example.com',
+    null, current_setting('test.sess_past')::uuid);
+end $$;
+select is(
+  (select first_session_id from public.pending_members
+   where gym_id = current_setting('test.gym')::uuid and lower(email) = 'sam@example.com'),
+  current_setting('test.sess')::uuid,
+  'a past session is not staged'
+);
+
+-- 10. Staging over an imported row clears its unbilled-plan link — a
 -- returning ex-member the agent closes pays through checkout.
 do $$
 declare v_conv3 uuid;
@@ -126,7 +155,7 @@ select is(
   'agent staging clears an imported unbilled-plan link'
 );
 
--- 9. A missing/invalid email is rejected.
+-- 11. A missing/invalid email is rejected.
 select throws_like(
   format($$ select public.agent_stage_onboarding(%L::uuid, 'No Email', 'not-an-email') $$,
          current_setting('test.conv')),
@@ -134,7 +163,7 @@ select throws_like(
   'an invalid email is rejected'
 );
 
--- 10. Internal only: an authenticated caller cannot execute it.
+-- 12. Internal only: an authenticated caller cannot execute it.
 do $$ begin perform _test_act_as(current_setting('test.coach')::uuid); end $$;
 select throws_like(
   format($$ select public.agent_stage_onboarding(%L::uuid, 'X', 'x@y.com') $$,

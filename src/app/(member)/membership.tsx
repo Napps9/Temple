@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, Text, View } from 'react-native';
@@ -15,6 +16,7 @@ import {
   hasPendingCheckout,
   markPendingCheckout,
 } from '@/lib/pending-checkout';
+import { supabase } from '@/lib/supabase';
 import {
   CURRENT_SUB_STATUSES,
   SUB_STATUS_META,
@@ -492,6 +494,51 @@ export default function MembershipScreen() {
   const agreedPlan = useMyAgreedPlan(gymId);
   const clearAgreed = useClearAgreedPlan(gymId);
   const invoices = useMyInvoices(gymId, session?.user.id);
+
+  // The class the AI agent agreed on the call. Once the membership is
+  // current, book it as the member — through book_class, so every gate
+  // (entitlement, capacity, windows) still applies — and retire the
+  // staging either way: a failed auto-book routes them to pick manually,
+  // not into a retry loop on every visit.
+  const stagedClass = useQuery({
+    queryKey: ['my-first-class', gymId],
+    enabled: !!gymId && !!session,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('my_staged_first_class', {
+        p_gym_id: gymId!,
+      });
+      if (error) throw error;
+      const rows = (data ?? []) as {
+        session_id: string;
+        session_name: string;
+        starts_at: string;
+      }[];
+      return rows[0] ?? null;
+    },
+  });
+  const [firstClassResult, setFirstClassResult] = useState<
+    { ok: boolean; name: string; starts_at: string; detail?: string } | null
+  >(null);
+  const autoBookTried = useRef(false);
+  const queryClientRef = useQueryClient();
+  const bookFirst = useMutation({
+    mutationFn: async (target: { session_id: string; session_name: string; starts_at: string }) => {
+      const { error } = await supabase.rpc('book_class', {
+        session_id: target.session_id,
+      });
+      if (error) throw error;
+    },
+    onSettled: async (_data, err, target) => {
+      await supabase.rpc('clear_my_first_class', { p_gym_id: gymId! });
+      queryClientRef.invalidateQueries({ queryKey: ['my-first-class', gymId] });
+      setFirstClassResult({
+        ok: !err,
+        name: target.session_name,
+        starts_at: target.starts_at,
+        detail: err ? errorMessage(err, 'the class could not be booked') : undefined,
+      });
+    },
+  });
   const policies = useMembershipPolicies(gymId);
   const changeReqs = useMyChangeRequests(gymId, session?.user.id);
   const modify = useModifySubscription(gymId, session?.user.id);
@@ -539,6 +586,18 @@ export default function MembershipScreen() {
     pollStartRef.current !== null &&
     Date.now() - pollStartRef.current > STUCK_AFTER_MS;
 
+  useEffect(() => {
+    if (
+      currentSubs.length > 0 &&
+      stagedClass.data &&
+      !autoBookTried.current &&
+      !bookFirst.isPending
+    ) {
+      autoBookTried.current = true;
+      bookFirst.mutate(stagedClass.data);
+    }
+  }, [currentSubs.length, stagedClass.data, bookFirst]);
+
   // Carry the "just checked out" intent across a refresh / nav to Account
   // via a short-lived marker, and retire it once the subscription lands.
   useEffect(() => {
@@ -576,6 +635,38 @@ export default function MembershipScreen() {
               Checkout cancelled — you haven't been charged.
             </Text>
           </View>
+        ) : null}
+
+        {firstClassResult ? (
+          firstClassResult.ok ? (
+            <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+              <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
+                You're booked into {firstClassResult.name} on{' '}
+                {new Date(firstClassResult.starts_at).toLocaleString('en-GB', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}{' '}
+                — see you there.
+              </Text>
+            </View>
+          ) : (
+            <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+              <Text className="text-amber-800 dark:text-amber-300 text-sm">
+                We couldn't book {firstClassResult.name} automatically
+                {firstClassResult.detail ? ` — ${firstClassResult.detail}` : ''}. Pick
+                any class that suits you instead.
+              </Text>
+              <ChipButton
+                label="Open booking"
+                icon="calendar-outline"
+                tone="amber"
+                onPress={() => router.push('/book' as never)}
+              />
+            </View>
+          )
         ) : null}
 
         {agreedPlan.data && currentSubs.length === 0 && !awaitingActivation ? (
