@@ -857,6 +857,24 @@ number), `conversation_retention_days` + nightly purge age transcripts
 out, and Vapi end-of-call retries dedupe on the call id. pgTAP:
 `agent_stage_onboarding`, `agent_handoff_reply`, `agent_guardrails`.
 
+**Setup wizard v2, voice previews, interview mode (0146-0147).** The
+wizard's questions are sales-first (intro offer leads; tone pick
+friendly/professional/high-energy; most-asked-questions field; the
+platform-run onboarding question is gone), the welcome step shows live
+counts of what the brief already contains, the voice list groups the
+gym's own region first (from timezone/currency) with the top match
+preselected, "Regenerate" warns before replacing hand edits, and go-live
+is a test-drive step. Every voice row has a play button: `voice-sample`
+synthesises the clip once (Azure TTS, allow-listed ids) into the public
+`agent-voice-samples` bucket. "Teach it by talking"
+(settings, owner-only): `agent-interview/start` rings the owner via a
+Vapi outbound call — a transient interviewer assistant (in the gym's
+chosen voice) asks about the offer, beginners, parking and FAQs; the
+end-of-call transcript is distilled by Claude into a DRAFT brief stored
+on `agent_interviews`, which the owner edits and applies (or discards)
+from the settings card — a call never rewrites the live agent directly.
+pgTAP: `agent_interviews`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

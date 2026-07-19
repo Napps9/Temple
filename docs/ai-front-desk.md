@@ -43,6 +43,18 @@ are blocked by `storage.protect_delete`. In the SQL editor once:
 select vault.create_secret('<the PURGE_STORAGE_SECRET value>', 'agent_storage_purge_secret');
 ```
 
+Optional extras:
+
+- `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION` — voice previews in the
+  picker. `voice-sample` synthesises each voice's sample clip once and
+  caches it in the public `agent-voice-samples` bucket; without the key
+  the play buttons degrade to a muted icon.
+- `VAPI_INTERVIEW_NUMBER_ID` — interview mode ("Teach it by talking").
+  One outbound-capable Vapi phone number, platform-wide: buy/import a
+  number in Vapi, copy its phone number id. `agent-interview/start`
+  rings the owner from it with a transient interviewer assistant;
+  without it the card reports phone teaching isn't switched on.
+
 `VAPI_API_KEY` (the private key from the Vapi dashboard) lets
 `sync-vapi-assistant` push each gym's prompt, tools, voice and greeting to
 its assistant. Without it, voice assistants must be maintained by hand and

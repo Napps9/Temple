@@ -635,6 +635,35 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      agent_interviews: {
+        Row: {
+          id: string;
+          gym_id: string;
+          phone: string;
+          status: 'calling' | 'completed' | 'failed' | 'applied' | 'discarded';
+          transcript: string | null;
+          draft_brief: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          phone: string;
+          status?: 'calling' | 'completed' | 'failed' | 'applied' | 'discarded';
+          transcript?: string | null;
+          draft_brief?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          status: 'calling' | 'completed' | 'failed' | 'applied' | 'discarded';
+          transcript: string | null;
+          draft_brief: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       agent_storage_purge_queue: {
         Row: {
           id: string;
@@ -3933,6 +3962,10 @@ export type Database = {
           p_daily_message_cap: number;
           p_conversation_retention_days: number;
         };
+        Returns: null;
+      };
+      set_agent_interview_status: {
+        Args: { p_id: string; p_status: string };
         Returns: null;
       };
       record_agent_corrections: {

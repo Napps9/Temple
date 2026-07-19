@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -171,6 +172,9 @@ export default function LeadAutomationSettings() {
   const [recRetention, setRecRetention] = useState<string | null>(null);
   const [msgCap, setMsgCap] = useState<string | null>(null);
   const [convRetention, setConvRetention] = useState<string | null>(null);
+  const [teachPhone, setTeachPhone] = useState('');
+  const [interviewDraft, setInterviewDraft] = useState<string | null>(null);
+  const seededInterviewId = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -377,6 +381,104 @@ export default function LeadAutomationSettings() {
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not save recording retention')),
+  });
+
+  type InterviewRow = {
+    id: string;
+    status: 'calling' | 'completed' | 'failed' | 'applied' | 'discarded';
+    phone: string;
+    transcript: string | null;
+    draft_brief: string | null;
+  };
+  const latestInterview = useQuery({
+    queryKey: ['agent-interview', membership?.gymId],
+    enabled: !!membership?.gymId && isOwner,
+    refetchInterval: (q) =>
+      (q.state.data as InterviewRow | null | undefined)?.status === 'calling' ? 5000 : false,
+    queryFn: async (): Promise<InterviewRow | null> => {
+      const { data, error: e } = await supabase
+        .from('agent_interviews')
+        .select('id, status, phone, transcript, draft_brief')
+        .eq('gym_id', membership!.gymId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (e) throw e;
+      return (data as InterviewRow) ?? null;
+    },
+  });
+
+  // Seed the editable draft once per interview, not on every refetch.
+  useEffect(() => {
+    const row = latestInterview.data;
+    if (row?.status === 'completed' && row.draft_brief && seededInterviewId.current !== row.id) {
+      seededInterviewId.current = row.id;
+      setInterviewDraft(row.draft_brief);
+    }
+  }, [latestInterview.data]);
+
+  const startInterview = useMutation({
+    mutationFn: async () => {
+      const { data, error: e } = await supabase.functions.invoke('agent-interview/start', {
+        body: { gym_id: membership!.gymId, phone: teachPhone.trim() },
+      });
+      if (e) throw e;
+      if (data?.error) throw new Error(data.error);
+      if (data?.started === false) {
+        throw new Error(
+          data?.reason === 'not_configured'
+            ? "Phone teaching isn't switched on for the platform yet."
+            : 'Could not place the call — try again in a minute.',
+        );
+      }
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-interview', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not start the teaching call')),
+  });
+
+  const applyInterview = useMutation({
+    mutationFn: async () => {
+      const row = latestInterview.data;
+      if (!row || !interviewDraft?.trim()) throw new Error('Nothing to apply');
+      const { error: e1 } = await supabase.rpc('set_gym_agent_context', {
+        p_gym_id: membership!.gymId,
+        p_context: interviewDraft,
+      });
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.rpc('set_agent_interview_status', {
+        p_id: row.id,
+        p_status: 'applied',
+      });
+      if (e2) throw e2;
+      await syncVapiAssistant(membership!.gymId);
+    },
+    onSuccess: () => {
+      setError(null);
+      setAgentContext(interviewDraft);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+      queryClient.invalidateQueries({ queryKey: ['agent-interview', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not apply the update')),
+  });
+
+  const discardInterview = useMutation({
+    mutationFn: async () => {
+      const row = latestInterview.data;
+      if (!row) return;
+      const { error: e } = await supabase.rpc('set_agent_interview_status', {
+        p_id: row.id,
+        p_status: 'discarded',
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-interview', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not discard the update')),
   });
 
   const saveLimits = useMutation({
@@ -731,6 +833,95 @@ export default function LeadAutomationSettings() {
             loading={saveAgentContext.isPending}>
             Save notes
           </Button>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Teach it by talking
+          </Text>
+          {latestInterview.data?.status === 'calling' ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Calling you now at {latestInterview.data.phone} — answer and chat.
+              When the call ends, the updated brief appears here for your
+              review.
+            </Text>
+          ) : latestInterview.data?.status === 'completed' &&
+            latestInterview.data.draft_brief ? (
+            <View className="gap-3">
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Here's what your call taught the agent, merged into its brief.
+                Edit anything, then apply — nothing is live until you do.
+              </Text>
+              {interviewDraft !== null ? (
+                <Input
+                  label="Updated brief from your call"
+                  value={interviewDraft}
+                  onChangeText={setInterviewDraft}
+                  multiline
+                  numberOfLines={10}
+                />
+              ) : null}
+              <Button
+                onPress={() => applyInterview.mutate()}
+                loading={applyInterview.isPending}
+                disabled={!interviewDraft?.trim()}>
+                Apply to the agent
+              </Button>
+              <ChipButton
+                label="Discard"
+                icon="trash-outline"
+                tone="neutral"
+                onPress={() => discardInterview.mutate()}
+              />
+            </View>
+          ) : latestInterview.data?.status === 'completed' ? (
+            <View className="gap-3">
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Call captured, but automatic drafting isn't configured — copy
+                anything useful into the notes card above.
+              </Text>
+              <Text
+                className="text-gray-500 dark:text-gray-400 text-xs"
+                numberOfLines={12}>
+                {latestInterview.data.transcript ?? ''}
+              </Text>
+              <ChipButton
+                label="Dismiss"
+                icon="trash-outline"
+                tone="neutral"
+                onPress={() => discardInterview.mutate()}
+              />
+            </View>
+          ) : (
+            <View className="gap-3">
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                A five-minute phone call where the assistant interviews you —
+                your intro offer, where beginners start, parking, the questions
+                you always get. It drafts the update; you review and approve
+                before anything changes.
+              </Text>
+              {latestInterview.data?.status === 'failed' ? (
+                <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                  The last call didn't connect — check the number and try
+                  again.
+                </Text>
+              ) : null}
+              <Input
+                label="Your mobile"
+                value={teachPhone}
+                onChangeText={setTeachPhone}
+                keyboardType="phone-pad"
+                placeholder="+447700900123"
+              />
+              <Button
+                icon="call-outline"
+                onPress={() => startInterview.mutate()}
+                loading={startInterview.isPending}
+                disabled={!teachPhone.trim()}>
+                Call me now
+              </Button>
+            </View>
+          )}
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
