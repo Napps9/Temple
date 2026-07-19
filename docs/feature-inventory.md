@@ -805,6 +805,18 @@ Claude drafts the agent's brief (`AGENT_PROMPT_MODEL`, default
 `claude-sonnet-5`; deterministic template fallback with no key) — saved to
 `gym_agent_settings.context` via `set_gym_agent_context`, fully editable.
 
+**Onboarding at close (0138).** When the agent closes, the `start_onboarding`
+tool stages the member via `agent_stage_onboarding` (service-role, tenancy from
+the conversation; reuses `pending_members` keyed on `(gym, lower(email))`) and
+texts + emails a pre-filled `/join/<slug>?email=&name=` link (the join screen
+seeds those fields). The member creates their own account and **personally**
+signs the waiver and PAR-Q through the normal entry gate (`index.tsx`:
+consent → waiver → PAR-Q) — the agent never signs or answers health questions,
+which is structurally enforced (those writes are RLS-locked to `auth.uid()`).
+No `linked_membership_plan_id` is set (that grants an unbilled plan, for
+imports), so a new paying member checks out normally. pgTAP:
+`agent_stage_onboarding`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data
