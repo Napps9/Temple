@@ -875,6 +875,15 @@ on `agent_interviews`, which the owner edits and applies (or discards)
 from the settings card — a call never rewrites the live agent directly.
 pgTAP: `agent_interviews`.
 
+**Outcomes + health flag (0148).** The settings usage card now shows
+results, not just activity: agent-sourced leads captured (30d), joined
+(30d), and the attributed monthly value of those members' current
+recurring plans (`agent_outcomes`, owner-only). And when a prospect
+mentions an injury on a call, the `flag_health_mention` tool writes one
+fixed marker line on the lead and pings the coach (daily-deduped) — the
+tool takes no free text, so the model structurally cannot record the
+medical details (Article 9 boundary). pgTAP: `agent_outcomes`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

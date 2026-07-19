@@ -233,6 +233,25 @@ export default function LeadAutomationSettings() {
     },
   });
 
+  const outcomes = useQuery({
+    queryKey: ['agent-outcomes', membership?.gymId],
+    enabled: !!membership?.gymId && isOwner,
+    queryFn: async () => {
+      const { data, error: e } = await supabase.rpc('agent_outcomes', {
+        p_gym_id: membership!.gymId,
+      });
+      if (e) throw e;
+      const rows = (data ?? []) as {
+        leads_30d: number;
+        committed: number;
+        converted_30d: number;
+        attributed_monthly_cents: number;
+        currency: string;
+      }[];
+      return rows[0] ?? null;
+    },
+  });
+
   const saveRule = useMutation({
     mutationFn: async () => {
       const { error: e } = await supabase.rpc('set_lead_assignment_rule', {
@@ -781,6 +800,39 @@ export default function LeadAutomationSettings() {
               <Text className="text-gray-500 dark:text-gray-400 text-xs">Calls (7d)</Text>
             </View>
           </View>
+          <View className="flex-row gap-3">
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                {outcomes.data?.leads_30d ?? '—'}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">Leads (30d)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                {outcomes.data?.converted_30d ?? '—'}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">Joined (30d)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                {outcomes.data
+                  ? new Intl.NumberFormat('en-GB', {
+                      style: 'currency',
+                      currency: outcomes.data.currency,
+                      maximumFractionDigits: 0,
+                    }).format(outcomes.data.attributed_monthly_cents / 100)
+                  : '—'}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">Won per month</Text>
+            </View>
+          </View>
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            Bottom row counts leads the agent sourced: captured, signed up as
+            members, and the monthly value of those members' current plans.
+            {outcomes.data?.committed
+              ? ` ${outcomes.data.committed} more committed and finishing signup.`
+              : ''}
+          </Text>
           {msgCap !== null ? (
             <Input
               label="Daily message cap"

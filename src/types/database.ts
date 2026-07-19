@@ -3968,6 +3968,16 @@ export type Database = {
         Args: { p_id: string; p_status: string };
         Returns: null;
       };
+      agent_outcomes: {
+        Args: { p_gym_id: string };
+        Returns: {
+          leads_30d: number;
+          committed: number;
+          converted_30d: number;
+          attributed_monthly_cents: number;
+          currency: string;
+        }[];
+      };
       record_agent_corrections: {
         Args: { p_gym_id: string; p_rows: Json };
         Returns: null;
