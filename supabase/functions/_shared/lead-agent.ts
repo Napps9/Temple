@@ -26,6 +26,7 @@ export type AgentGym = {
     context: string | null;
     call_recording_enabled: boolean;
     recording_notice_at: string | null;
+    daily_message_cap: number;
   };
 };
 
@@ -39,7 +40,7 @@ export type Conversation = {
 };
 
 const AGENT_SETTINGS_SELECT =
-  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, recording_notice_at, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)';
+  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, recording_notice_at, daily_message_cap, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)';
 
 // deno-lint-ignore no-explicit-any
 function toAgentGym(data: any): AgentGym | null {
@@ -60,6 +61,7 @@ function toAgentGym(data: any): AgentGym | null {
       context: data.context ?? null,
       call_recording_enabled: data.call_recording_enabled !== false,
       recording_notice_at: data.recording_notice_at ?? null,
+      daily_message_cap: data.daily_message_cap ?? 200,
     },
   };
 }
@@ -470,6 +472,45 @@ export const VOICE_TOOLS: ToolDef[] = [
   REQUEST_HANDOFF,
 ];
 
+// Text the voice caller on their SMS thread — refused when that thread
+// opted out (STOP applies to the texting programme even if they phone
+// later) and logged so staff see it in the conversation.
+async function textProspect(ctx: ToolContext, message: string): Promise<boolean> {
+  if (!ctx.twilio) return false;
+  const conv = await getOrCreateConversation(
+    ctx.service,
+    ctx.gym.id,
+    ctx.conversation.phone,
+    'sms',
+  );
+  if (conv.status === 'closed') return false;
+  const sent = await sendTwilioSms(
+    ctx.twilio.accountSid,
+    ctx.twilio.authToken,
+    ctx.gym.settings.phone_number,
+    ctx.conversation.phone,
+    message,
+  );
+  if (!sent.sid) return false;
+  await appendMessage(ctx.service, conv, 'agent', message, sent.sid);
+  return true;
+}
+
+// Caps agent-triggered email (3/day per conversation and per address) —
+// the address is caller-dictated, so without this the agent is an email
+// bombardment vector. Fails closed on RPC errors.
+async function emailSendAllowed(ctx: ToolContext, email: string): Promise<boolean> {
+  const { data, error } = await ctx.service.rpc('agent_email_send_allowed', {
+    p_conversation_id: ctx.conversation.id,
+    p_email: email,
+  });
+  if (error) {
+    console.error('agent_email_send_allowed failed', error.message);
+    return false;
+  }
+  return data === true;
+}
+
 // Case-insensitive exact match against the gym's live plans; an unknown or
 // missing name stages no plan rather than blocking the close.
 async function resolveAgreedPlanId(
@@ -522,31 +563,14 @@ export async function executeTool(
       return 'Online signup is switched off for this gym — offer to hand them to a coach instead.';
     }
     const link = `${ctx.appOrigin}/join/${ctx.gym.slug}`;
-    if (ctx.channel === 'voice' && ctx.twilio) {
-      const sent = await sendTwilioSms(
-        ctx.twilio.accountSid,
-        ctx.twilio.authToken,
-        ctx.gym.settings.phone_number,
-        ctx.conversation.phone,
+    if (ctx.channel === 'voice') {
+      const texted = await textProspect(
+        ctx,
         `Great to talk! Here's the link to join ${ctx.gym.name}: ${link}`,
       );
-      if (sent.sid) {
-        const smsConv = await getOrCreateConversation(
-          ctx.service,
-          ctx.gym.id,
-          ctx.conversation.phone,
-          'sms',
-        );
-        await appendMessage(
-          ctx.service,
-          smsConv,
-          'agent',
-          `Great to talk! Here's the link to join ${ctx.gym.name}: ${link}`,
-          sent.sid,
-        );
-        return 'The signup link has been texted to them — tell them to check their messages.';
-      }
-      return 'Could not text the link. Give them the gym name and say a coach will follow up.';
+      return texted
+        ? 'The signup link has been texted to them — tell them to check their messages.'
+        : 'Could not text the link (they may have opted out of texts). Give them the gym name and say a coach will follow up.';
     }
     return `Send them this link: ${link}`;
   }
@@ -571,28 +595,19 @@ export async function executeTool(
     const params = new URLSearchParams({ email });
     if (fullName) params.set('name', fullName);
     const link = `${ctx.appOrigin}/join/${ctx.gym.slug}?${params.toString()}`;
-    const emailed = await sendOnboardingEmail(ctx.gym.name, email, link);
+    const emailed =
+      (await emailSendAllowed(ctx, email)) &&
+      (await sendOnboardingEmail(ctx.gym.name, email, link));
 
-    if (ctx.channel === 'voice' && ctx.twilio) {
-      const msg = `Welcome to ${ctx.gym.name}! Tap to join and finish your quick onboarding — membership, waiver and a short health form: ${link}`;
-      const sent = await sendTwilioSms(
-        ctx.twilio.accountSid,
-        ctx.twilio.authToken,
-        ctx.gym.settings.phone_number,
-        ctx.conversation.phone,
-        msg,
+    if (ctx.channel === 'voice') {
+      const texted = await textProspect(
+        ctx,
+        `Welcome to ${ctx.gym.name}! Tap to join and finish your quick onboarding — membership, waiver and a short health form: ${link}`,
       );
-      if (sent.sid) {
-        const smsConv = await getOrCreateConversation(
-          ctx.service,
-          ctx.gym.id,
-          ctx.conversation.phone,
-          'sms',
-        );
-        await appendMessage(ctx.service, smsConv, 'agent', msg, sent.sid);
+      if (texted) {
         return `Onboarding link texted${emailed ? ' and emailed' : ''}. Tell them to tap it to join, set a password, and sign the waiver and short health form themselves (about 2 minutes) — you can't fill those in for them.`;
       }
-      return 'Could not text the link — give them the gym name and say a coach will follow up.';
+      return 'Could not text the link (they may have opted out of texts) — give them the gym name and say a coach will follow up.';
     }
 
     // SMS channel: include the link in your reply; it's also emailed.
@@ -612,6 +627,37 @@ export async function executeTool(
     const params = new URLSearchParams({ email });
     if (fullName) params.set('name', fullName);
     const redirectTo = `${ctx.appOrigin}/join/${ctx.gym.slug}?${params.toString()}`;
+
+    // Stage so attribution + pre-fill + the agreed plan apply however the
+    // rest of the close goes.
+    const staged = await ctx.service.rpc('agent_stage_onboarding', {
+      p_conversation_id: ctx.conversation.id,
+      p_full_name: fullName || null,
+      p_email: email,
+      p_plan_id: await resolveAgreedPlanId(ctx, input?.plan),
+    });
+    if (staged.error) console.error('agent_stage_onboarding failed', staged.error.message);
+
+    // Email delivery is checked BEFORE any auth user exists: creating a
+    // passwordless user we can't email would strand them — the texted
+    // signup form rejects their "already registered" address.
+    const canEmail = !!(Deno.env.get('RESEND_API_KEY') && Deno.env.get('RESEND_FROM_EMAIL'));
+    if (!canEmail) {
+      if (ctx.channel === 'voice') {
+        const texted = await textProspect(
+          ctx,
+          `Welcome to ${ctx.gym.name}! Tap to join and finish onboarding: ${redirectTo}`,
+        );
+        return texted
+          ? "Email isn't set up, so they've been texted a signup link instead — they'll create their own account, sign the forms, and pay."
+          : 'Could not reach them by text or email — hand them to a coach to finish joining.';
+      }
+      return `Email isn't set up — send them this signup link instead: ${redirectTo} They create their own account, sign the forms, and pay.`;
+    }
+
+    if (!(await emailSendAllowed(ctx, email))) {
+      return "A sign-in link was already sent to that address — tell them to check their inbox and spam folder. If it still hasn't arrived, use request_handoff so a coach can help.";
+    }
 
     // One-time sign-in link. 'invite' provisions a new passwordless user; an
     // already-registered email falls back to a plain magic link. No password
@@ -639,61 +685,20 @@ export async function executeTool(
       return 'Could not create their sign-in link — hand them to a coach to finish joining.';
     }
 
-    // Stage so attribution + pre-fill apply when they click through and join.
-    const staged = await ctx.service.rpc('agent_stage_onboarding', {
-      p_conversation_id: ctx.conversation.id,
-      p_full_name: fullName || null,
-      p_email: email,
-      p_plan_id: await resolveAgreedPlanId(ctx, input?.plan),
-    });
-    if (staged.error) console.error('agent_stage_onboarding failed', staged.error.message);
-
     const emailed = await sendMagicLinkEmail(ctx.gym.name, email, actionLink);
     if (!emailed) {
-      // No email delivery configured. NEVER text the sign-in link — it's a
-      // bearer credential. Fall back to the ordinary pre-filled signup link,
-      // which is safe to text (they create their own account there).
-      if (ctx.twilio && ctx.gym.settings.phone_number) {
-        const fmsg = `Welcome to ${ctx.gym.name}! Tap to join and finish onboarding: ${redirectTo}`;
-        const sent = await sendTwilioSms(
-          ctx.twilio.accountSid,
-          ctx.twilio.authToken,
-          ctx.gym.settings.phone_number,
-          ctx.conversation.phone,
-          fmsg,
-        );
-        if (sent.sid) {
-          const smsConv = await getOrCreateConversation(
-            ctx.service,
-            ctx.gym.id,
-            ctx.conversation.phone,
-            'sms',
-          );
-          await appendMessage(ctx.service, smsConv, 'agent', fmsg, sent.sid);
-        }
-      }
-      return "I couldn't email a sign-in link, so I've texted them a signup link instead — they'll create their own account, sign the forms, and pay.";
+      // Transient send failure and their auth user now exists, so the plain
+      // signup form would reject the address. NEVER text the sign-in link
+      // (bearer credential); /join offers a fresh emailed link itself.
+      return "The sign-in email could not be sent just now. Tell them to open the join page and tap 'Email me a fresh link', or use request_handoff so a coach can help.";
     }
 
-    // Emailed successfully — text only a heads-up, never the link itself.
-    if (ctx.twilio && ctx.gym.settings.phone_number) {
-      const note = `Check your email — I've just sent a secure link to finish joining ${ctx.gym.name}. Tap it to sign the quick forms and pay (about 2 minutes).`;
-      const sent = await sendTwilioSms(
-        ctx.twilio.accountSid,
-        ctx.twilio.authToken,
-        ctx.gym.settings.phone_number,
-        ctx.conversation.phone,
-        note,
+    // Emailed successfully. On a call, text a heads-up — never the link.
+    if (ctx.channel === 'voice') {
+      await textProspect(
+        ctx,
+        `Check your email — I've just sent a secure link to finish joining ${ctx.gym.name}. Tap it to sign the quick forms and pay (about 2 minutes).`,
       );
-      if (sent.sid) {
-        const smsConv = await getOrCreateConversation(
-          ctx.service,
-          ctx.gym.id,
-          ctx.conversation.phone,
-          'sms',
-        );
-        await appendMessage(ctx.service, smsConv, 'agent', note, sent.sid);
-      }
     }
     return 'A one-time sign-in link is on its way to their email. Tell them to check their inbox, tap it, sign the waiver and short health form, and pay — they do those bits themselves (about 2 minutes).';
   }

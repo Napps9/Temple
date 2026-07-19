@@ -151,7 +151,11 @@ Deno.serve(async (req: Request) => {
 
     EdgeRuntime.waitUntil(
       (async () => {
-        const opener = `Sorry we missed your call! I'm ${gym.name}'s assistant — text me here and I can help with classes, prices and joining.`;
+        // No opener for a number that texted STOP — the opt-out survives
+        // them phoning us later.
+        const conversation = await getOrCreateConversation(service, gym.id, from, 'sms');
+        if (conversation.status === 'closed') return;
+        const opener = `Sorry we missed your call! I'm ${gym.name}'s AI assistant — text me here and I can help with classes, prices and joining.`;
         const sent = await sendTwilioSms(
           TWILIO_SID,
           TWILIO_TOKEN,
@@ -160,7 +164,6 @@ Deno.serve(async (req: Request) => {
           opener,
         );
         if (sent.sid) {
-          const conversation = await getOrCreateConversation(service, gym.id, from, 'sms');
           await appendMessage(service, conversation, 'agent', opener, sent.sid);
         }
       })().catch((e) => console.error('missed-call opener failed', e)),

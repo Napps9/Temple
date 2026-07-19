@@ -81,6 +81,9 @@ export default function JoinGymScreen() {
     const h = window.location.hash ?? '';
     return h.includes('error_code=otp_expired') || h.includes('error=access_denied');
   });
+  // An enroll-by-link prospect already has a (passwordless) account, so the
+  // signup form rejects their email — offer the emailed link route instead.
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [freshLinkNotice, setFreshLinkNotice] = useState<string | null>(null);
   const [freshLinkLoading, setFreshLinkLoading] = useState(false);
 
@@ -133,8 +136,13 @@ export default function JoinGymScreen() {
       await refreshMembership(queryClient);
       router.replace('/' as never);
     },
-    onError: (e) =>
-      setError(errorMessage(e, 'Could not join the gym')),
+    onError: (e) => {
+      const msg = errorMessage(e, 'Could not join the gym');
+      setError(msg);
+      if (/already (registered|exists|been registered)/i.test(msg)) {
+        setAlreadyRegistered(true);
+      }
+    },
   });
 
   async function resend() {
@@ -310,10 +318,12 @@ export default function JoinGymScreen() {
               </View>
             ) : (
               <View className="gap-4">
-                {linkExpired ? (
+                {linkExpired || alreadyRegistered ? (
                   <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
                     <Text className="text-amber-800 dark:text-amber-300 text-sm">
-                      That sign-in link has expired or was already used.
+                      {linkExpired
+                        ? 'That sign-in link has expired or was already used.'
+                        : 'This email already has an account — it may have been set up on a call with us.'}
                     </Text>
                     {freshLinkNotice ? (
                       <Text className="text-emerald-600 dark:text-emerald-400 text-sm">

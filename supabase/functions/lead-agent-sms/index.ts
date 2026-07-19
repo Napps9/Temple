@@ -103,6 +103,23 @@ Deno.serve(async (req: Request) => {
     return twiml();
   }
 
+  // Spend guardrail: past the gym's daily outbound cap the AI stops
+  // replying (bounded model + Twilio spend under a hostile or chatty
+  // texter) and the thread goes to a human instead of going silent.
+  const { count: sentToday } = await service
+    .from('agent_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('gym_id', gym.id)
+    .eq('role', 'agent')
+    .gte('created_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString());
+  if ((sentToday ?? 0) >= gym.settings.daily_message_cap) {
+    await service.rpc('agent_request_handoff', {
+      p_conversation_id: conversation.id,
+      p_reason: 'Daily message cap reached',
+    });
+    return twiml();
+  }
+
   EdgeRuntime.waitUntil(
     reply(service, gym, conversation, {
       supabaseUrl: SUPABASE_URL,

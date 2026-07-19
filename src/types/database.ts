@@ -460,6 +460,8 @@ export type Database = {
           call_recording_enabled: boolean;
           call_recording_retention_days: number;
           recording_notice_at: string | null;
+          daily_message_cap: number;
+          conversation_retention_days: number;
           created_at: string;
           updated_at: string;
         };
@@ -476,6 +478,8 @@ export type Database = {
           call_recording_enabled?: boolean;
           call_recording_retention_days?: number;
           recording_notice_at?: string | null;
+          daily_message_cap?: number;
+          conversation_retention_days?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -491,6 +495,8 @@ export type Database = {
           call_recording_enabled: boolean;
           call_recording_retention_days: number;
           recording_notice_at: string | null;
+          daily_message_cap: number;
+          conversation_retention_days: number;
           updated_at: string;
         }>;
         Relationships: [];
@@ -606,6 +612,26 @@ export type Database = {
           status: 'active' | 'handed_off' | 'closed';
           last_message_at: string;
           last_message_role: string | null;
+        }>;
+        Relationships: [];
+      };
+      agent_email_sends: {
+        Row: {
+          id: string;
+          gym_id: string;
+          conversation_id: string | null;
+          email: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          conversation_id?: string | null;
+          email: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          email: string;
         }>;
         Relationships: [];
       };
@@ -3881,6 +3907,14 @@ export type Database = {
       };
       set_gym_call_recording: {
         Args: { p_gym_id: string; p_enabled: boolean; p_retention_days: number };
+        Returns: null;
+      };
+      set_gym_agent_limits: {
+        Args: {
+          p_gym_id: string;
+          p_daily_message_cap: number;
+          p_conversation_retention_days: number;
+        };
         Returns: null;
       };
       record_agent_corrections: {

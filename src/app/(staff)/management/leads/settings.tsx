@@ -39,6 +39,8 @@ type AgentSettings = {
   voice_region: string | null;
   call_recording_enabled: boolean;
   call_recording_retention_days: number;
+  daily_message_cap: number;
+  conversation_retention_days: number;
 };
 
 type Correction = {
@@ -130,7 +132,7 @@ export default function LeadAutomationSettings() {
       const { data, error } = await supabase
         .from('gym_agent_settings')
         .select(
-          'enabled, phone_number, voice_enabled, vapi_assistant_id, context, voice_provider, voice_id, voice_region, call_recording_enabled, call_recording_retention_days',
+          'enabled, phone_number, voice_enabled, vapi_assistant_id, context, voice_provider, voice_id, voice_region, call_recording_enabled, call_recording_retention_days, daily_message_cap, conversation_retention_days',
         )
         .eq('gym_id', membership!.gymId)
         .maybeSingle();
@@ -166,6 +168,8 @@ export default function LeadAutomationSettings() {
   const [retention, setRetention] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [recRetention, setRecRetention] = useState<string | null>(null);
+  const [msgCap, setMsgCap] = useState<string | null>(null);
+  const [convRetention, setConvRetention] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -184,7 +188,45 @@ export default function LeadAutomationSettings() {
     if (selectedVoice === null) setSelectedVoice(agent.data?.voice_id ?? '');
     if (recRetention === null)
       setRecRetention(String(agent.data?.call_recording_retention_days ?? 90));
-  }, [agent.isSuccess, agent.data, agentContext, selectedVoice, recRetention]);
+    if (msgCap === null) setMsgCap(String(agent.data?.daily_message_cap ?? 200));
+    if (convRetention === null)
+      setConvRetention(String(agent.data?.conversation_retention_days ?? 365));
+  }, [agent.isSuccess, agent.data, agentContext, selectedVoice, recRetention, msgCap, convRetention]);
+
+  // Light usage read so the agent isn't a black box: outbound texts in the
+  // last 24h (what the daily cap meters) and conversations touched in 7 days.
+  const usage = useQuery({
+    queryKey: ['agent-usage', membership?.gymId],
+    enabled: !!membership?.gymId && isOwner,
+    queryFn: async () => {
+      const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+      const [sent, convs, calls] = await Promise.all([
+        supabase
+          .from('agent_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('gym_id', membership!.gymId)
+          .eq('role', 'agent')
+          .gte('created_at', dayAgo),
+        supabase
+          .from('agent_conversations')
+          .select('id', { count: 'exact', head: true })
+          .eq('gym_id', membership!.gymId)
+          .gte('last_message_at', weekAgo),
+        supabase
+          .from('agent_conversations')
+          .select('id', { count: 'exact', head: true })
+          .eq('gym_id', membership!.gymId)
+          .eq('channel', 'voice')
+          .gte('last_message_at', weekAgo),
+      ]);
+      return {
+        sentToday: sent.count ?? 0,
+        conversations7d: convs.count ?? 0,
+        calls7d: calls.count ?? 0,
+      };
+    },
+  });
 
   const saveRule = useMutation({
     mutationFn: async () => {
@@ -334,6 +376,26 @@ export default function LeadAutomationSettings() {
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not save recording retention')),
+  });
+
+  const saveLimits = useMutation({
+    mutationFn: async () => {
+      const cap = parseInt(msgCap ?? '', 10);
+      const days = parseInt(convRetention ?? '', 10);
+      if (!Number.isFinite(cap)) throw new Error('Enter a daily message cap');
+      if (!Number.isFinite(days)) throw new Error('Enter a conversation retention window');
+      const { error: e } = await supabase.rpc('set_gym_agent_limits', {
+        p_gym_id: membership!.gymId,
+        p_daily_message_cap: cap,
+        p_conversation_retention_days: days,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not save the limits')),
   });
 
   const toggleRule = useMutation({
@@ -587,6 +649,58 @@ export default function LeadAutomationSettings() {
             Recordings are stored privately, every playback is logged, and a caller
             who replies STOP is opted out.
           </Text>
+        </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Usage &amp; limits
+          </Text>
+          <View className="flex-row gap-3">
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                {usage.data?.sentToday ?? '—'}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">Texts sent (24h)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                {usage.data?.conversations7d ?? '—'}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">Threads (7d)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                {usage.data?.calls7d ?? '—'}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">Calls (7d)</Text>
+            </View>
+          </View>
+          {msgCap !== null ? (
+            <Input
+              label="Daily message cap"
+              value={msgCap}
+              onChangeText={setMsgCap}
+              keyboardType="number-pad"
+              placeholder="200"
+            />
+          ) : null}
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            Past the cap the AI stops replying for the day and hands threads to
+            a coach — it bounds what a hostile or chatty texter can cost you.
+          </Text>
+          {convRetention !== null ? (
+            <DurationField
+              label="Delete conversations after"
+              value={convRetention}
+              onChange={setConvRetention}
+              base="days"
+              units={['days', 'weeks', 'months']}
+              placeholder="365"
+            />
+          ) : null}
+          <Button onPress={() => saveLimits.mutate()} loading={saveLimits.isPending}>
+            Save limits
+          </Button>
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
