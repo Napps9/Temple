@@ -22,6 +22,7 @@ export type AgentGym = {
     voice_enabled: boolean;
     vapi_assistant_id: string | null;
     context: string | null;
+    call_recording_enabled: boolean;
   };
 };
 
@@ -41,7 +42,7 @@ export async function resolveGymByNumber(
   const { data } = await service
     .from('gym_agent_settings')
     .select(
-      'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)',
+      'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)',
     )
     .eq('phone_number', e164)
     .maybeSingle();
@@ -67,8 +68,49 @@ export async function resolveGymByNumber(
       voice_enabled: !!data.voice_enabled,
       vapi_assistant_id: data.vapi_assistant_id ?? null,
       context: data.context ?? null,
+      call_recording_enabled: data.call_recording_enabled !== false,
     },
   };
+}
+
+// Owner corrections captured from call review, injected into the system
+// prompt so the agent applies them on every future call. Per-gym (they
+// carry gym tone/policy + prospect PII) — the same look-aside idea as
+// import_inference_corrections, filtered to this tenant.
+export async function fetchCoachingText(
+  service: Client,
+  gymId: string,
+): Promise<string> {
+  const { data } = await service
+    .from('agent_coaching_corrections')
+    .select('field_kind, scope, correction, ai_suggestion, input_payload')
+    .eq('gym_id', gymId)
+    .eq('active', true)
+    .order('was_overridden', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(25);
+  const rows = (data ?? []) as {
+    field_kind: string;
+    scope: string;
+    correction: string;
+    ai_suggestion: string | null;
+    input_payload: { caller?: string } | null;
+  }[];
+  if (rows.length === 0) return '';
+
+  const rules = rows.filter((r) => r.scope === 'standing_rule').map((r) => `- ${r.correction}`);
+  const examples = rows
+    .filter((r) => r.scope === 'example')
+    .slice(0, 5)
+    .map((r) => {
+      const caller = r.input_payload?.caller;
+      return caller ? `- When a caller says "${caller}", respond like: ${r.correction}` : `- ${r.correction}`;
+    });
+
+  const blocks: string[] = [];
+  if (rules.length) blocks.push(`Standing rules from the gym owner (always follow):\n${rules.join('\n')}`);
+  if (examples.length) blocks.push(`Good replies the owner has approved:\n${examples.join('\n')}`);
+  return blocks.join('\n\n');
 }
 
 export async function getOrCreateConversation(
@@ -97,6 +139,7 @@ export async function appendMessage(
   role: 'lead' | 'agent' | 'staff' | 'system',
   body: string,
   providerSid?: string | null,
+  timing?: { secondsFromStart?: number | null; durationMs?: number | null },
 ): Promise<boolean> {
   const { error } = await service.from('agent_messages').insert({
     conversation_id: conversation.id,
@@ -104,6 +147,8 @@ export async function appendMessage(
     role,
     body,
     provider_sid: providerSid ?? null,
+    seconds_from_start: timing?.secondsFromStart ?? null,
+    duration_ms: timing?.durationMs ?? null,
   });
   if (error) {
     if (error.code === '23505') return false;
@@ -242,6 +287,7 @@ export function buildSystemPrompt(
   gym: AgentGym,
   snapshot: GymSnapshot,
   channel: 'sms' | 'voice',
+  coachingText = '',
 ): string {
   const today = new Date().toLocaleDateString('en-GB', {
     timeZone: gym.timezone,
@@ -264,6 +310,7 @@ export function buildSystemPrompt(
     `Class schedule (next 7 days):\n${snapshot.schedule}`,
     '',
     gym.settings.context ? `Gym notes from the owner:\n${gym.settings.context}\n` : '',
+    coachingText ? `${coachingText}\n` : '',
     'Rules:',
     '- Only talk about this gym. Never invent prices, offers, classes or facts not listed above or in the gym notes.',
     '- As soon as the prospect shares their name, call capture_lead. Add useful details (goals, availability) as notes.',

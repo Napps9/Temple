@@ -25,6 +25,8 @@ import {
   sendTwilioSms,
   twiml,
   validateTwilioSignature,
+  type AgentGym,
+  type Conversation,
   type ToolContext,
 } from '../_shared/lead-agent.ts';
 
@@ -34,6 +36,73 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'content-type': 'application/json' },
+  });
+}
+
+// Pull the Vapi call recording into our own private bucket
+// (agent-call-recordings) and register it in call_recordings. Vapi's default
+// storage has no guaranteed retention, so we own the copy. Field names on the
+// artifact vary across Vapi versions — probe the known shapes and no-op if the
+// recording isn't present (or the gym has recording switched off).
+async function captureRecording(
+  // deno-lint-ignore no-explicit-any
+  service: any,
+  gym: AgentGym,
+  conversation: Conversation,
+  // deno-lint-ignore no-explicit-any
+  message: any,
+): Promise<void> {
+  if (!gym.settings.call_recording_enabled) return;
+  const rec = message?.artifact?.recording ?? {};
+  const url: unknown =
+    rec?.mono?.combinedUrl ??
+    rec?.combinedUrl ??
+    rec?.mono?.url ??
+    rec?.stereoUrl ??
+    rec?.url ??
+    message?.artifact?.recordingUrl ??
+    message?.recordingUrl ??
+    message?.stereoRecordingUrl ??
+    null;
+  if (typeof url !== 'string' || !url) return;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error('recording fetch failed', res.status);
+    return;
+  }
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const ext = url.split('?')[0].toLowerCase().endsWith('.wav') ? 'wav' : 'mp3';
+  const contentType =
+    res.headers.get('content-type') || (ext === 'wav' ? 'audio/wav' : 'audio/mpeg');
+  const callId = message?.call?.id ?? crypto.randomUUID();
+  const path = `${gym.id}/${conversation.id}/${callId}.${ext}`;
+
+  const { error: upErr } = await service.storage
+    .from('agent-call-recordings')
+    .upload(path, bytes, { contentType, upsert: true });
+  if (upErr) {
+    console.error('recording upload failed', upErr.message);
+    return;
+  }
+
+  const duration =
+    typeof message?.durationSeconds === 'number'
+      ? Math.round(message.durationSeconds)
+      : typeof message?.call?.durationSeconds === 'number'
+        ? Math.round(message.call.durationSeconds)
+        : null;
+  const consent =
+    message?.artifact?.recordingConsent === false
+      ? 'withdrawn'
+      : (message?.recordingConsentState ?? 'notice_played');
+
+  await service.from('call_recordings').insert({
+    gym_id: gym.id,
+    conversation_id: conversation.id,
+    recording_path: path,
+    duration_seconds: duration,
+    consent_state: consent,
   });
 }
 
@@ -188,6 +257,12 @@ Deno.serve(async (req: Request) => {
           conversation,
           t.role === 'user' ? 'lead' : 'agent',
           String(t.message),
+          null,
+          {
+            secondsFromStart:
+              typeof t.secondsFromStart === 'number' ? t.secondsFromStart : null,
+            durationMs: typeof t.duration === 'number' ? t.duration : null,
+          },
         );
       }
     } else if (message?.transcript) {
@@ -198,6 +273,15 @@ Deno.serve(async (req: Request) => {
         `Call transcript:\n${String(message.transcript)}`,
       );
     }
+
+    // Best-effort: pull the Vapi recording into our own private bucket so
+    // owners can play calls back for QC. Never fail the webhook over it.
+    try {
+      await captureRecording(service, gym, conversation, message);
+    } catch (e) {
+      console.error('captureRecording failed', e);
+    }
+
     return json({ ok: true });
   }
 

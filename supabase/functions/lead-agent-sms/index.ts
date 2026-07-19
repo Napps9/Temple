@@ -21,6 +21,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import {
   appendMessage,
   buildSystemPrompt,
+  fetchCoachingText,
   fetchGymSnapshot,
   getOrCreateConversation,
   isStopKeyword,
@@ -128,12 +129,15 @@ async function reply(
 
   let text: string | null = null;
   if (apiKey) {
-    const snapshot = await fetchGymSnapshot(service, gym);
-    const history = await loadHistory(service, conversation.id);
+    const [snapshot, history, coaching] = await Promise.all([
+      fetchGymSnapshot(service, gym),
+      loadHistory(service, conversation.id),
+      fetchCoachingText(service, gym.id),
+    ]);
     text = await runAgentLoop({
       apiKey,
       model: Deno.env.get('LEAD_AGENT_MODEL') ?? 'claude-sonnet-5',
-      system: buildSystemPrompt(gym, snapshot, 'sms'),
+      system: buildSystemPrompt(gym, snapshot, 'sms', coaching),
       messages: history,
       tools: SMS_TOOLS,
       ctx,
