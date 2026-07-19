@@ -48,12 +48,12 @@ select is(
   'owner toggle upserts the settings row'
 );
 
--- 3. Context is capped.
+-- 3. Context is capped (raised 4000 -> 8000 in 0139).
 do $$ begin perform _test_act_as(current_setting('test.owner_a')::uuid); end $$;
 select throws_like(
-  $$ select set_gym_agent_context(current_setting('test.gym_a')::uuid, repeat('x', 4001)) $$,
-  '%4000%',
-  'agent notes above 4000 characters are rejected'
+  $$ select set_gym_agent_context(current_setting('test.gym_a')::uuid, repeat('x', 8001)) $$,
+  '%8000%',
+  'agent notes above 8000 characters are rejected'
 );
 
 -- 4. Context saves and trims.
