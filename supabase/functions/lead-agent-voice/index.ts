@@ -21,6 +21,7 @@ import {
   appendMessage,
   executeTool,
   getOrCreateConversation,
+  resolveGymByAssistant,
   resolveGymByNumber,
   sendTwilioSms,
   twiml,
@@ -179,13 +180,23 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Expected a JSON body' }, 400);
   }
   const message = body?.message ?? {};
-  const callerNumber: string | null = message?.call?.customer?.number ?? null;
+  // No customer number on a Vapi browser test — fall back to a synthetic id so
+  // get_gym_info / capture_lead still work end-to-end.
+  const callerNumber: string = message?.call?.customer?.number ?? 'web-test';
   const gymNumber: string | null =
     message?.call?.phoneNumber?.number ?? message?.phoneNumber?.number ?? null;
+  const assistantId: string | null =
+    message?.assistant?.id ??
+    message?.call?.assistantId ??
+    message?.call?.assistant?.id ??
+    null;
 
-  const gym = gymNumber ? await resolveGymByNumber(service, gymNumber) : null;
-  if (!gym || !gym.settings.enabled || !callerNumber) {
-    return json({ error: 'Unknown number' }, 404);
+  // Prefer the inbound number; fall back to the assistant id (per-gym) so the
+  // Vapi test call works before any Twilio number is provisioned.
+  let gym = gymNumber ? await resolveGymByNumber(service, gymNumber) : null;
+  if (!gym && assistantId) gym = await resolveGymByAssistant(service, assistantId);
+  if (!gym || !gym.settings.enabled) {
+    return json({ error: 'Unknown assistant or number' }, 404);
   }
 
   if (path.endsWith('/tool-calls') && message?.type === 'tool-calls') {

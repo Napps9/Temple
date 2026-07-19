@@ -35,26 +35,13 @@ export type Conversation = {
   status: 'active' | 'handed_off' | 'closed';
 };
 
-export async function resolveGymByNumber(
-  service: Client,
-  e164: string,
-): Promise<AgentGym | null> {
-  const { data } = await service
-    .from('gym_agent_settings')
-    .select(
-      'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)',
-    )
-    .eq('phone_number', e164)
-    .maybeSingle();
+const AGENT_SETTINGS_SELECT =
+  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)';
+
+// deno-lint-ignore no-explicit-any
+function toAgentGym(data: any): AgentGym | null {
   if (!data?.gyms) return null;
-  const g = data.gyms as {
-    id: string;
-    name: string;
-    slug: string;
-    currency: string | null;
-    timezone: string | null;
-    public_signup_enabled: boolean;
-  };
+  const g = data.gyms;
   return {
     id: g.id,
     name: g.name,
@@ -71,6 +58,34 @@ export async function resolveGymByNumber(
       call_recording_enabled: data.call_recording_enabled !== false,
     },
   };
+}
+
+export async function resolveGymByNumber(
+  service: Client,
+  e164: string,
+): Promise<AgentGym | null> {
+  const { data } = await service
+    .from('gym_agent_settings')
+    .select(AGENT_SETTINGS_SELECT)
+    .eq('phone_number', e164)
+    .maybeSingle();
+  return toAgentGym(data);
+}
+
+// Voice fallback: a Vapi assistant is already per-gym, so we can resolve the
+// tenant from the assistant id when there's no inbound phone number — which is
+// exactly the case for Vapi's browser "Talk to Assistant" test, letting owners
+// try the agent before any Twilio number is wired.
+export async function resolveGymByAssistant(
+  service: Client,
+  assistantId: string,
+): Promise<AgentGym | null> {
+  const { data } = await service
+    .from('gym_agent_settings')
+    .select(AGENT_SETTINGS_SELECT)
+    .eq('vapi_assistant_id', assistantId)
+    .maybeSingle();
+  return toAgentGym(data);
 }
 
 // Owner corrections captured from call review, injected into the system
