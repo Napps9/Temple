@@ -735,7 +735,9 @@ export default function LeadAutomationSettings() {
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
             Rules and examples you've taught the agent from call reviews. Turn one
-            off to stop applying it on future calls.
+            off to stop applying it on future calls. The agent applies your 25
+            most recent active rules (and 5 examples) — retire stale ones so new
+            coaching keeps landing.
           </Text>
           {(rules.data ?? []).length === 0 ? (
             <Text className="text-gray-500 dark:text-gray-400 text-sm">

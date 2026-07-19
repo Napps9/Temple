@@ -261,6 +261,19 @@ Deno.serve(async (req: Request) => {
       callerNumber,
       'voice',
     );
+    // Vapi retries this webhook; the unique provider_sid marker makes a
+    // redelivery a no-op instead of a duplicated transcript + recording.
+    const callId = message?.call?.id ? String(message.call.id) : null;
+    if (callId) {
+      const first = await appendMessage(
+        service,
+        conversation,
+        'system',
+        'Call ended',
+        `eoc:${callId}`,
+      );
+      if (!first) return json({ ok: true, duplicate: true });
+    }
     // deno-lint-ignore no-explicit-any
     const turns: any[] = message?.artifact?.messages ?? [];
     const spoken = turns.filter(

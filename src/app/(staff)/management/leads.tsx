@@ -115,6 +115,7 @@ export default function LeadsScreen() {
   const isOwner = membership?.role === 'owner';
   const queryClient = useQueryClient();
   const [scope, setScope] = useState<'active' | 'all'>('active');
+  const [search, setSearch] = useState('');
   const [openLead, setOpenLead] = useState<LeadRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
@@ -134,7 +135,10 @@ export default function LeadsScreen() {
       if (scope === 'active') {
         q = q.in('status', ACTIVE_STATUSES as LeadStatus[]);
       }
-      const { data, error } = await q;
+      // Newest 500 keeps the board responsive as the agent multiplies
+      // volume; anything older is reachable through search-by-detail on
+      // the retained rows or the members list once converted.
+      const { data, error } = await q.limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as LeadRow[];
     },
@@ -270,6 +274,14 @@ export default function LeadsScreen() {
           })}
         </View>
 
+        <Input
+          label="Search"
+          placeholder="Name, phone or email"
+          value={search}
+          onChangeText={setSearch}
+          autoCapitalize="none"
+        />
+
         {leads.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
         ) : (leads.data?.length ?? 0) === 0 ? (
@@ -285,7 +297,15 @@ export default function LeadsScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="gap-3 pb-2">
             {(scope === 'active' ? ACTIVE_STATUSES : STATUS_ORDER).map((status) => {
-              const items = (leads.data ?? []).filter((l) => l.status === status);
+              const needle = search.trim().toLowerCase();
+              const items = (leads.data ?? []).filter(
+                (l) =>
+                  l.status === status &&
+                  (!needle ||
+                    [l.full_name, l.email, l.phone].some((f) =>
+                      (f ?? '').toLowerCase().includes(needle),
+                    )),
+              );
               return (
                 <View key={status} className="w-72 gap-2">
                   <View className="flex-row items-center gap-2 px-1">

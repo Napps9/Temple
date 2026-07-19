@@ -831,6 +831,32 @@ waiver + PAR-Q and pays through the entry gate. Note: the link's `redirectTo`
 must be an allowed Redirect URL in the hosted Supabase Auth config for it to
 land on `/join`.
 
+**Voice parity via assistant sync (0140).** `sync-vapi-assistant`
+(owner/admin, `effective_can`) PATCHes the gym's Vapi assistant with the
+live system prompt (owner notes + coaching corrections), all six tools
+including the close tools, the picked voice, and a greeting that disclosed
+the AI and — when recording is on — the recording notice
+(`recording_notice_at` backs an honest `consent_state`; needs
+`VAPI_API_KEY`). Every agent-related save in the app triggers a sync, so
+the phone channel no longer drifts from SMS.
+
+**Close hardening (0141-0144).** The close records the agreed plan
+(`pending_members.agreed_plan_id`, never the unbilled
+`linked_membership_plan_id` — which agent staging now actively clears on
+imported rows) and advances the lead to the new `committed` board stage;
+`my_agreed_plan` routes the member to Membership where their pick is one
+tap from checkout ("Not now" clears it). `/join` recovers expired or
+scanner-consumed one-time links and "already registered" signups with a
+fresh emailed link. Replies into handed-off threads ping the coach
+(hour-throttled, owner fallback; "Waiting on you" badge in the inbox).
+Guardrails: agent email capped 3/day per conversation and per address
+(`agent_email_send_allowed`), per-gym `daily_message_cap` (over it the
+thread hands off instead of burning spend, usage strip on settings),
+STOP holds across channels (no voice-triggered texts to an opted-out
+number), `conversation_retention_days` + nightly purge age transcripts
+out, and Vapi end-of-call retries dedupe on the call id. pgTAP:
+`agent_stage_onboarding`, `agent_handoff_reply`, `agent_guardrails`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

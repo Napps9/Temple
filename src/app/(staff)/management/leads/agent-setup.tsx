@@ -455,6 +455,13 @@ export default function AgentSetupWizard() {
             <Button onPress={() => goLive.mutate()} loading={goLive.isPending}>
               Turn on the AI Sales Agent
             </Button>
+            {number ? (
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Take it for a spin before pointing ads at it: text {number} from
+                your own phone and ask about prices. You'll see the thread under
+                Conversations, where you can coach any reply.
+              </Text>
+            ) : null}
             <Button variant="ghost" onPress={() => setStep(3)}>
               Back
             </Button>

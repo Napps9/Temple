@@ -3,7 +3,7 @@
 -- backfills the lead's email. Service-role only.
 
 begin;
-select plan(9);
+select plan(10);
 
 \ir _helpers.psql
 
@@ -105,7 +105,28 @@ select is(
   'a cross-gym plan id is not staged'
 );
 
--- 8. A missing/invalid email is rejected.
+-- 8. Staging over an imported row clears its unbilled-plan link — a
+-- returning ex-member the agent closes pays through checkout.
+do $$
+declare v_conv3 uuid;
+begin
+  insert into public.pending_members (gym_id, email, full_name, status, linked_membership_plan_id)
+  values (current_setting('test.gym')::uuid, 'returner@example.com', 'Old Member', 'pending',
+          current_setting('test.plan')::uuid);
+  insert into public.agent_conversations (gym_id, phone, channel)
+  values (current_setting('test.gym')::uuid, '+447700900701', 'sms')
+  returning id into v_conv3;
+  perform public.agent_stage_onboarding(v_conv3, 'Old Member', 'returner@example.com',
+    current_setting('test.plan')::uuid);
+end $$;
+select is(
+  (select linked_membership_plan_id from public.pending_members
+   where gym_id = current_setting('test.gym')::uuid and lower(email) = 'returner@example.com'),
+  null,
+  'agent staging clears an imported unbilled-plan link'
+);
+
+-- 9. A missing/invalid email is rejected.
 select throws_like(
   format($$ select public.agent_stage_onboarding(%L::uuid, 'No Email', 'not-an-email') $$,
          current_setting('test.conv')),
@@ -113,7 +134,7 @@ select throws_like(
   'an invalid email is rejected'
 );
 
--- 9. Internal only: an authenticated caller cannot execute it.
+-- 10. Internal only: an authenticated caller cannot execute it.
 do $$ begin perform _test_act_as(current_setting('test.coach')::uuid); end $$;
 select throws_like(
   format($$ select public.agent_stage_onboarding(%L::uuid, 'X', 'x@y.com') $$,
