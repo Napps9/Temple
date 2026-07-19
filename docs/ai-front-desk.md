@@ -126,3 +126,31 @@ average 10-message conversation is low single-digit pence; Vapi voice is
 ~$0.05–0.15/min plus Twilio call rates. A gym doing 100 conversations a
 month runs to a few tens of pounds — priced into the plan, not metered,
 for now.
+
+## Call review, coaching & voice (0137)
+
+- **Recording capture.** On the Vapi assistant, keep `artifactPlan.recordingEnabled`
+  on and subscribe to `end-of-call-report`. `lead-agent-voice/end-of-call` pulls
+  `artifact.recording` into the private `agent-call-recordings` Storage bucket
+  and inserts `call_recordings`; per-turn `artifact.messages[].secondsFromStart`
+  land on `agent_messages` for transcript sync. Owners toggle recording + set a
+  retention window (floor 30 days) in Manage → Leads → Automation → *Call
+  recording & consent*; `purge_expired_agent_recordings` (cron `0 4 * * *`) drops
+  both the row and the Storage object. Playback is web-first (owners review on
+  desktop) and every open writes `agent_recording_access_log`.
+- **Coaching loop.** In a conversation, *Coach this turn* on any AI message writes
+  `agent_coaching_corrections` (per-gym, gated `can_review_ai_calls`). The SMS
+  agent injects this gym's active rules/examples into its prompt on every future
+  call via `fetchCoachingText`. **Voice:** the Vapi assistant runs its own model,
+  so to apply coaching to calls, sync the gym's standing rules into the assistant's
+  system prompt (a `PATCH /assistant` from an ops step or a future edge action) —
+  the corrections table is the source of truth either way.
+- **Voice selection.** Owners pick a regional Azure voice in settings
+  (`set_gym_agent_voice_selection` stores `{provider, voiceId, region}` on
+  `gym_agent_settings`). Apply it to the gym's assistant with
+  `PATCH /assistant { voice: { provider, voiceId } }`. Add ElevenLabs voice IDs to
+  the in-app `VOICES` list (`leads/settings.tsx`) for Scottish/Welsh/Estuary
+  accents Azure doesn't cover.
+- **Capability.** All QC surfaces + recording RLS + the corrections write are gated
+  on `can_review_ai_calls` (owner/admin by default; adjustable per gym through the
+  capability-override matrix).
