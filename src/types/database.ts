@@ -453,6 +453,11 @@ export type Database = {
           voice_enabled: boolean;
           vapi_assistant_id: string | null;
           context: string | null;
+          voice_provider: string | null;
+          voice_id: string | null;
+          voice_region: string | null;
+          call_recording_enabled: boolean;
+          call_recording_retention_days: number;
           created_at: string;
           updated_at: string;
         };
@@ -463,6 +468,11 @@ export type Database = {
           voice_enabled?: boolean;
           vapi_assistant_id?: string | null;
           context?: string | null;
+          voice_provider?: string | null;
+          voice_id?: string | null;
+          voice_region?: string | null;
+          call_recording_enabled?: boolean;
+          call_recording_retention_days?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -472,7 +482,95 @@ export type Database = {
           voice_enabled: boolean;
           vapi_assistant_id: string | null;
           context: string | null;
+          voice_provider: string | null;
+          voice_id: string | null;
+          voice_region: string | null;
+          call_recording_enabled: boolean;
+          call_recording_retention_days: number;
           updated_at: string;
+        }>;
+        Relationships: [];
+      };
+      call_recordings: {
+        Row: {
+          id: string;
+          gym_id: string;
+          conversation_id: string;
+          recording_path: string;
+          duration_seconds: number | null;
+          consent_state: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          conversation_id: string;
+          recording_path: string;
+          duration_seconds?: number | null;
+          consent_state?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          duration_seconds: number | null;
+          consent_state: string | null;
+        }>;
+        Relationships: [];
+      };
+      agent_coaching_corrections: {
+        Row: {
+          id: string;
+          gym_id: string;
+          conversation_id: string | null;
+          message_id: string | null;
+          field_kind: 'fact' | 'tone' | 'rule' | 'exemplar';
+          scope: 'example' | 'standing_rule';
+          input_payload: Json | null;
+          ai_suggestion: string | null;
+          correction: string;
+          was_overridden: boolean;
+          active: boolean;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          conversation_id?: string | null;
+          message_id?: string | null;
+          field_kind: 'fact' | 'tone' | 'rule' | 'exemplar';
+          scope: 'example' | 'standing_rule';
+          input_payload?: Json | null;
+          ai_suggestion?: string | null;
+          correction: string;
+          was_overridden?: boolean;
+          active?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          active: boolean;
+        }>;
+        Relationships: [];
+      };
+      agent_recording_access_log: {
+        Row: {
+          id: string;
+          gym_id: string;
+          actor_id: string | null;
+          recording_id: string | null;
+          surface: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          actor_id?: string | null;
+          recording_id?: string | null;
+          surface?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          surface: string | null;
         }>;
         Relationships: [];
       };
@@ -512,6 +610,8 @@ export type Database = {
           role: 'lead' | 'agent' | 'staff' | 'system';
           body: string;
           provider_sid: string | null;
+          seconds_from_start: number | null;
+          duration_ms: number | null;
           created_at: string;
         };
         Insert: {
@@ -521,6 +621,8 @@ export type Database = {
           role: 'lead' | 'agent' | 'staff' | 'system';
           body: string;
           provider_sid?: string | null;
+          seconds_from_start?: number | null;
+          duration_ms?: number | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -3756,6 +3858,31 @@ export type Database = {
       };
       set_gym_agent_voice: {
         Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_gym_agent_voice_selection: {
+        Args: {
+          p_gym_id: string;
+          p_provider: string | null;
+          p_voice_id: string | null;
+          p_region: string | null;
+        };
+        Returns: null;
+      };
+      set_gym_call_recording: {
+        Args: { p_gym_id: string; p_enabled: boolean; p_retention_days: number };
+        Returns: null;
+      };
+      record_agent_corrections: {
+        Args: { p_gym_id: string; p_rows: Json };
+        Returns: null;
+      };
+      set_agent_correction_active: {
+        Args: { p_id: string; p_active: boolean };
+        Returns: null;
+      };
+      log_recording_access: {
+        Args: { p_gym_id: string; p_recording: string; p_surface: string };
         Returns: null;
       };
       is_booking_eligible: {
