@@ -192,3 +192,36 @@ for now.
 - **Capability.** All QC surfaces + recording RLS + the corrections write are gated
   on `can_review_ai_calls` (owner/admin by default; adjustable per gym through the
   capability-override matrix).
+- **Highlight-to-comment (web only).** Selecting a phrase inside an AI bubble in
+  the conversation review screen pauses playback and opens an inline comment
+  form anchored to that excerpt, calling the same `record_agent_corrections`
+  RPC as *Coach this turn* with `ai_suggestion` set to the selected text rather
+  than the full message. Native has no text-selection API, so it keeps the
+  original tap-the-bubble modal flow.
+
+## In-app browser voice calls ("Talk to your AI")
+
+A second Vapi integration, entirely client-side and separate from the
+telephony flow above — do not confuse `EXPO_PUBLIC_VAPI_KEY` (public, used
+here) with `VAPI_API_KEY` (private, used server-side by `sync-vapi-assistant`).
+
+- The `@vapi-ai/web` SDK calls a gym's existing Vapi assistant directly from
+  the browser (`new Vapi(publicKey).start(assistantId)`) — no phone number,
+  no Twilio, no new edge function. `lead-agent-voice`'s
+  `resolveGymByAssistant` fallback (originally built for Vapi's own
+  dashboard test tool) resolves the gym from the assistant id with no
+  inbound number, which is exactly this case.
+- `src/components/TalkToAssistant.tsx` / `.web.tsx` — Metro's platform-
+  extension resolution keeps `@vapi-ai/web`'s WebRTC internals out of the
+  native bundle entirely (a runtime `Platform.OS` check alone isn't enough
+  here, since importing the package would still execute browser-only code
+  at module load on native).
+- Placements: the CRM dashboard (docked panel over a dimmed pipeline), the
+  setup wizard's go-live step (primary action), and the top of Automation's
+  AI Front Desk section (compact inline row).
+- Calls persist through the normal `agent_conversations` pipeline under the
+  synthetic `phone='web-test'` row (one upserted thread per gym, reviewable
+  under Conversations) — they just never create a `leads` row.
+- Needs `EXPO_PUBLIC_VAPI_KEY` (Vapi dashboard → API Keys → public key) in
+  `.env.local` and the Vercel project's env vars — not something this
+  session's Supabase/Vercel access can set; see `.env.example`.

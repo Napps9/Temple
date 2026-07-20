@@ -792,7 +792,13 @@ region}` on `gym_agent_settings`, applied to the Vapi assistant), and control
 recording + retention (`set_gym_call_recording`, floor 30 days). Recordings
 are treated as health-grade: consent line at call start, honoured on STOP, and
 a nightly `purge_expired_agent_recordings` cron that also deletes the Storage
-object. pgTAP: `agent_qc_backend`.
+object. **Highlight-to-comment (web only):** selecting a phrase inside an AI
+bubble auto-pauses playback and surfaces an inline "Comment on ..." popover
+anchored under that turn, reusing the same kind/scope fields and
+`record_agent_corrections` call as "Coach this turn" but with
+`ai_suggestion` set to the exact excerpt rather than the whole message;
+native keeps the original tap-the-bubble flow (`window.getSelection` has no
+native equivalent). pgTAP: `agent_qc_backend`.
 
 **Setup wizard (AI Sales Agent).** The CRM's "AI Sales Agent" CTA opens
 `/management/leads/agent-setup` — a stepper (welcome → prompt → voice →
@@ -940,6 +946,40 @@ stays dark for auto-provisioned gyms until phase 3. The live end-to-end
 path is gated on Temple's UK Twilio regulatory bundle (multi-day
 approval); see `docs/ai-front-desk-provisioning.md`. pgTAP:
 `front_desk_provisioning`.
+
+**Talk to your AI — in-app browser voice calls.** A second, client-side
+Vapi integration, distinct from the server-side telephony one above: the
+`@vapi-ai/web` SDK opens a live browser call straight to a gym's existing
+Vapi assistant using a public key (`EXPO_PUBLIC_VAPI_KEY`, safe client-side,
+never confused with the private `VAPI_API_KEY` edge-function secret). No
+phone number and no new edge function needed — `lead-agent-voice`'s
+`resolveGymByAssistant` fallback already resolves the gym from the
+assistant id alone, which is exactly the no-phone-number browser-call case.
+The shared `TalkToAssistant` component (`.web.tsx`/native-fallback split,
+so `@vapi-ai/web`'s WebRTC internals never reach the native bundle) drives
+a ready → connecting → live → ended flow with a live transcript, and
+appears in three places: a hero card on the CRM dashboard (docked,
+floating over a dimmed pipeline rather than navigating away), the setup
+wizard's go-live step (primary action, text-yourself testing demoted to a
+secondary link), and the top of Automation's AI Front Desk section.
+Browser calls flow through the existing `agent_conversations` pipeline
+like any other call (upserted under the synthetic `phone='web-test'` row)
+so a test is reviewable afterward under Conversations — it just never
+creates a lead or touches the pipeline. A gym's first genuine (non-`web-
+test`) conversation surfaces a one-time, session-dismissible milestone
+banner on the dashboard — derived from `agent_conversations` having
+exactly one such row, no new column, matching this codebase's existing
+preference (0039) for deriving "first time" state rather than persisting
+a flag. The wizard's go-live step also got: a simulated 3-step
+provisioning checklist (client-side only — `provision-front-desk` has no
+real progress signal to instrument) instead of a bare spinner, "your
+progress was saved" copy on a failed-retry so resuming doesn't read as
+starting over, and a brand-coloured "You're live" moment with the number
+and a copy button before returning to the CRM. Automation settings'
+twelve cards are grouped under plain (non-collapsible) section labels —
+Lead Assignment, AI Front Desk, Usage & Data, Knowledge & Coaching,
+Danger Zone — with the destructive "turn off & release number" card
+moved out of the everyday flow into Danger Zone at the bottom.
 
 ### Member import
 

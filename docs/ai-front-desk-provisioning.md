@@ -78,18 +78,27 @@ can then clean up the partial state, or the owner can just retry.
 
 - **Setup wizard, step 5** (`agent-setup.tsx`): branches on
   `front_desk_entitled` / `phone_number` / `provision_status` — not
-  entitled (contact Temple), ready (a "Set up my number" button that
-  calls `provision-front-desk`), failed (same button, relabelled "Try
-  again" — safe thanks to the resumability above), or live (the existing
-  test-and-go-live flow, unchanged).
+  entitled (contact Temple), provisioning (a simulated 3-step checklist —
+  `provision-front-desk` has no real progress signal, so this is a
+  client-side timer, not a poll), failed (a "Try again" button, plus
+  "your progress was saved" copy so a retry doesn't read as starting
+  over — safe thanks to the resumability above), or live: "Talk to it
+  now" (the in-app browser call, see `docs/ai-front-desk.md`) as the
+  primary action, text-yourself testing demoted to a secondary link, and
+  a "You're live" moment (brand-coloured, the number plus a copy button)
+  on go-live before returning to the CRM.
 - **Automation settings** (`settings.tsx`): the same entry point inline
   in the "AI front desk" card for a gym that skipped straight past the
-  wizard, plus a destructive "Turn off & release number" card (only
-  shown once a number exists) that confirms via `ConfirmDialog` and
-  calls `deprovision-front-desk`.
+  wizard, plus a destructive "Turn off & release number" card in a
+  Danger Zone section at the bottom (only shown once a number exists)
+  that confirms via `ConfirmDialog` and calls `deprovision-front-desk`.
 - Both screens share `provisionFrontDesk` / `deprovisionFrontDesk` /
   `provisionErrorMessage` from `src/lib/agent-sync.ts`, alongside the
   existing best-effort `syncVapiAssistant`.
+- "Talk to it now" needs `vapi_assistant_id` (set the moment
+  provisioning creates the assistant, before the number is even bought)
+  and `EXPO_PUBLIC_VAPI_KEY` — see `docs/ai-front-desk.md`'s browser
+  voice call section.
 
 ## `deprovision-front-desk` (churn / owner turn-off)
 
