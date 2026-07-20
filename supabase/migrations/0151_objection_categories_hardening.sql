@@ -19,7 +19,10 @@
 
 begin;
 
-create or replace function public.agent_record_objection(
+-- Renaming p_reason -> p_category is a parameter-name change, which
+-- CREATE OR REPLACE rejects (SQLSTATE 42P13) — drop first (same signature).
+drop function if exists public.agent_record_objection(uuid, text, text);
+create function public.agent_record_objection(
   p_conversation_id uuid,
   p_category        text,
   p_intent          text
@@ -84,6 +87,11 @@ begin
   end if;
 end;
 $$;
+-- DROP dropped the grants with it — restore the service-role-only posture.
+revoke execute on function public.agent_record_objection(uuid, text, text)
+  from public, anon, authenticated;
+grant execute on function public.agent_record_objection(uuid, text, text)
+  to service_role;
 
 create or replace function public.flag_stale_leads()
 returns integer
