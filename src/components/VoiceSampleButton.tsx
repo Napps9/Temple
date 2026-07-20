@@ -83,16 +83,9 @@ export function VoiceSampleButton({ voiceId }: { voiceId: string }) {
     }
   }
 
-  if (state === 'unavailable') {
-    return (
-      <Ionicons
-        name="volume-mute-outline"
-        size={18}
-        color={colors.iconTertiary}
-        accessibilityLabel="No preview available"
-      />
-    );
-  }
+  // No preview source (no ELEVENLABS_API_KEY) — render nothing rather than a
+  // mute icon on every row, which reads as broken.
+  if (state === 'unavailable') return null;
   return (
     <Pressable
       onPress={toggle}

@@ -864,9 +864,12 @@ platform-run onboarding question is gone), the welcome step shows live
 counts of what the brief already contains, the voice list groups the
 gym's own region first (from timezone/currency) with the top match
 preselected, "Regenerate" warns before replacing hand edits, and go-live
-is a test-drive step. Every voice row has a play button: `voice-sample`
-synthesises the clip once (Azure TTS, allow-listed ids) into the public
-`agent-voice-samples` bucket. "Teach it by talking"
+is a test-drive step. The voice catalogue is ElevenLabs (Vapi provider
+`11labs`, rendered through Vapi's bundled access — no per-gym key). Each
+voice row can have a play button: with an `ELEVENLABS_API_KEY` set,
+`voice-sample` synthesises the clip once (ElevenLabs TTS, allow-listed
+ids) into the public `agent-voice-samples` bucket; without it the buttons
+are hidden. "Teach it by talking"
 (settings, owner-only): `agent-interview/start` rings the owner via a
 Vapi outbound call — a transient interviewer assistant (in the gym's
 chosen voice) asks about the offer, beginners, parking and FAQs; the

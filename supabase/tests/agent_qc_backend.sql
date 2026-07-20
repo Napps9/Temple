@@ -62,7 +62,7 @@ select ok(
 
 -- 4. Voice selection is owner-only.
 select throws_like(
-  $$ select set_gym_agent_voice_selection(current_setting('test.gym')::uuid, 'azure', 'en-GB-SoniaNeural', 'UK, RP') $$,
+  $$ select set_gym_agent_voice_selection(current_setting('test.gym')::uuid, '11labs', 'JBFqnCBsd6RMkjVDRZzb', 'UK, RP') $$,
   '%owner%',
   'a coach cannot change the voice selection'
 );
@@ -70,12 +70,12 @@ select throws_like(
 -- 5. Owner sets a voice.
 do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
 do $$ begin
-  perform set_gym_agent_voice_selection(current_setting('test.gym')::uuid, 'azure', 'en-GB-SoniaNeural', 'UK, RP');
+  perform set_gym_agent_voice_selection(current_setting('test.gym')::uuid, '11labs', 'JBFqnCBsd6RMkjVDRZzb', 'UK, RP');
 end $$;
 reset role;
 select is(
   (select voice_id from public.gym_agent_settings where gym_id = current_setting('test.gym')::uuid),
-  'en-GB-SoniaNeural',
+  'JBFqnCBsd6RMkjVDRZzb',
   'owner voice selection persists'
 );
 

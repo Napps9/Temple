@@ -153,8 +153,9 @@ export default function AgentSetupWizard() {
   // No saved voice yet: preselect the first suggested one so the fast path
   // through this step is a single tap.
   useEffect(() => {
-    if (selectedVoice === '' && suggestedVoices.length > 0 && gymInfo.isSuccess) {
-      setSelectedVoice(suggestedVoices[0].id);
+    const first = suggestedVoices[0] ?? AGENT_VOICES[0];
+    if (selectedVoice === '' && first && gymInfo.isSuccess) {
+      setSelectedVoice(first.id);
     }
   }, [selectedVoice, gymInfo.isSuccess, suggestedVoices]);
 
@@ -504,40 +505,48 @@ export default function AgentSetupWizard() {
               How the assistant sounds on calls. Change it any time — texts are
               unaffected.
             </Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-              Suggested for your gym
-            </Text>
-            <View className="gap-2">
-              {suggestedVoices.map((v) => (
-                <VoiceRow
-                  key={v.id}
-                  id={v.id}
-                  name={v.name}
-                  region={v.region}
-                  gender={v.gender}
-                  desc={v.desc}
-                  selected={selectedVoice === v.id}
-                  onPress={() => setSelectedVoice(v.id)}
-                />
-              ))}
-            </View>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-              More voices &amp; accents
-            </Text>
-            <View className="gap-2">
-              {otherVoices.map((v) => (
-                <VoiceRow
-                  key={v.id}
-                  id={v.id}
-                  name={v.name}
-                  region={v.region}
-                  gender={v.gender}
-                  desc={v.desc}
-                  selected={selectedVoice === v.id}
-                  onPress={() => setSelectedVoice(v.id)}
-                />
-              ))}
-            </View>
+            {suggestedVoices.length > 0 ? (
+              <>
+                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  Suggested for your gym
+                </Text>
+                <View className="gap-2">
+                  {suggestedVoices.map((v) => (
+                    <VoiceRow
+                      key={v.id}
+                      id={v.id}
+                      name={v.name}
+                      region={v.region}
+                      gender={v.gender}
+                      desc={v.desc}
+                      selected={selectedVoice === v.id}
+                      onPress={() => setSelectedVoice(v.id)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
+            {otherVoices.length > 0 ? (
+              <>
+                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  {suggestedVoices.length > 0 ? 'More voices & accents' : 'Choose a voice'}
+                </Text>
+                <View className="gap-2">
+                  {otherVoices.map((v) => (
+                    <VoiceRow
+                      key={v.id}
+                      id={v.id}
+                      name={v.name}
+                      region={v.region}
+                      gender={v.gender}
+                      desc={v.desc}
+                      selected={selectedVoice === v.id}
+                      onPress={() => setSelectedVoice(v.id)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
             <View className="flex-row gap-2">
               <View className="flex-1">
                 <Button variant="ghost" onPress={() => setStep(1)}>

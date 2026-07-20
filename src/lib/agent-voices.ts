@@ -7,18 +7,17 @@ export type AgentVoice = {
   desc: string;
 };
 
-// Curated, verified Azure Neural voices by region. provider + id are what the
-// Vapi assistant is configured with; region is the display label. Shared by
-// the AI-agent setup wizard and the automation settings screen.
+// Curated ElevenLabs voices (Vapi provider "11labs"). provider + id are what the
+// Vapi assistant is configured with; region is the display label and drives the
+// "suggested for your gym" split in the setup wizard. Shared by the AI-agent
+// setup wizard and the automation settings screen. The ids are ElevenLabs
+// premade voice ids — Vapi renders them through its bundled ElevenLabs access.
 export const AGENT_VOICES: AgentVoice[] = [
-  { id: 'en-GB-SoniaNeural', provider: 'azure', region: 'UK, RP', name: 'Sonia', gender: 'Female', desc: 'Polished, neutral' },
-  { id: 'en-GB-RyanNeural', provider: 'azure', region: 'UK, RP', name: 'Ryan', gender: 'Male', desc: 'Confident British' },
-  { id: 'en-IE-EmilyNeural', provider: 'azure', region: 'Ireland', name: 'Emily', gender: 'Female', desc: 'Soft Dublin lilt' },
-  { id: 'en-IE-ConnorNeural', provider: 'azure', region: 'Ireland', name: 'Connor', gender: 'Male', desc: 'Easygoing Irish' },
-  { id: 'en-US-AriaNeural', provider: 'azure', region: 'US', name: 'Aria', gender: 'Female', desc: 'Bright American' },
-  { id: 'en-US-GuyNeural', provider: 'azure', region: 'US', name: 'Guy', gender: 'Male', desc: 'Clean American' },
-  { id: 'en-AU-NatashaNeural', provider: 'azure', region: 'Australia', name: 'Natasha', gender: 'Female', desc: 'Upbeat Australian' },
-  { id: 'en-CA-LiamNeural', provider: 'azure', region: 'Canada', name: 'Liam', gender: 'Male', desc: 'Friendly Canadian' },
-  { id: 'en-NZ-MollyNeural', provider: 'azure', region: 'New Zealand', name: 'Molly', gender: 'Female', desc: 'Warm Kiwi' },
-  { id: 'en-ZA-LukeNeural', provider: 'azure', region: 'South Africa', name: 'Luke', gender: 'Male', desc: 'Crisp South African' },
+  { id: 'JBFqnCBsd6RMkjVDRZzb', provider: '11labs', region: 'UK, RP', name: 'George', gender: 'Male', desc: 'Warm, reassuring' },
+  { id: 'Xb7hH8MSUJpSbSDYk0k2', provider: '11labs', region: 'UK, RP', name: 'Alice', gender: 'Female', desc: 'Clear, friendly' },
+  { id: 'pFZP5JQG7iQjIQuC4Bku', provider: '11labs', region: 'UK, RP', name: 'Lily', gender: 'Female', desc: 'Warm, natural' },
+  { id: 'onwK4e9ZLuTAKqWW03F9', provider: '11labs', region: 'UK, RP', name: 'Daniel', gender: 'Male', desc: 'Calm, authoritative' },
+  { id: '21m00Tcm4TlvDq8ikWAM', provider: '11labs', region: 'US', name: 'Rachel', gender: 'Female', desc: 'Calm, professional' },
+  { id: 'nPczCjzI2devNBz1zQrb', provider: '11labs', region: 'US', name: 'Brian', gender: 'Male', desc: 'Deep, steady' },
+  { id: 'IKne3meq5aSn9XLyUdCD', provider: '11labs', region: 'Australia', name: 'Charlie', gender: 'Male', desc: 'Relaxed, conversational' },
 ];

@@ -45,10 +45,11 @@ select vault.create_secret('<the PURGE_STORAGE_SECRET value>', 'agent_storage_pu
 
 Optional extras:
 
-- `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION` — voice previews in the
-  picker. `voice-sample` synthesises each voice's sample clip once and
-  caches it in the public `agent-voice-samples` bucket; without the key
-  the play buttons degrade to a muted icon.
+- `ELEVENLABS_API_KEY` — voice previews in the picker. `voice-sample`
+  synthesises each voice's sample clip once (ElevenLabs TTS) and caches
+  it in the public `agent-voice-samples` bucket; without the key the play
+  buttons are hidden. The live call voice does NOT need this key — Vapi
+  renders the ElevenLabs voices through its bundled access.
 - `VAPI_INTERVIEW_NUMBER_ID` — interview mode ("Teach it by talking").
   One outbound-capable Vapi phone number, platform-wide: buy/import a
   number in Vapi, copy its phone number id. `agent-interview/start`
@@ -178,12 +179,12 @@ for now.
   call via `fetchCoachingText`; each save also triggers `sync-vapi-assistant`,
   which rebuilds the phone assistant's system prompt with the same coaching text —
   the corrections table is the single source of truth for both channels.
-- **Voice selection.** Owners pick a regional Azure voice in settings
+- **Voice selection.** Owners pick a regional ElevenLabs voice in settings
   (`set_gym_agent_voice_selection` stores `{provider, voiceId, region}` on
-  `gym_agent_settings`); the save syncs `voice: { provider, voiceId }` to the
-  assistant. Add ElevenLabs voice IDs to the in-app `AGENT_VOICES` list
-  (`src/lib/agent-voices.ts`) for Scottish/Welsh/Estuary accents Azure doesn't
-  cover.
+  `gym_agent_settings`); the save syncs `voice: { provider: '11labs', voiceId }`
+  to the assistant. The catalogue lives in `src/lib/agent-voices.ts` — add
+  ElevenLabs premade voice IDs there (`region` drives the wizard's
+  suggested-for-your-gym split).
 - **Vapi-side copies.** Temple's recording toggle and retention window govern
   only Temple's copy in `agent-call-recordings`. Vapi retains its own recording
   and transcript under its defaults — turn off Vapi-side storage in the Vapi org

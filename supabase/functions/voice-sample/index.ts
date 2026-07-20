@@ -7,8 +7,9 @@
 // allow-listed, so this cannot be used as a general TTS proxy.
 //
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
-// Optional: AZURE_SPEECH_KEY, AZURE_SPEECH_REGION (absent -> url: null and
-// the picker simply shows no play buttons)
+// Optional: ELEVENLABS_API_KEY (absent -> url: null and the picker simply
+// shows no play buttons). The live call voice runs through Vapi's bundled
+// ElevenLabs access and needs no key here; this key is only for in-app previews.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
@@ -25,18 +26,15 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// Mirrors AGENT_VOICES in src/lib/agent-voices.ts.
+// Mirrors AGENT_VOICES in src/lib/agent-voices.ts (ElevenLabs voice ids).
 const VOICE_IDS = new Set([
-  'en-GB-SoniaNeural',
-  'en-GB-RyanNeural',
-  'en-IE-EmilyNeural',
-  'en-IE-ConnorNeural',
-  'en-US-AriaNeural',
-  'en-US-GuyNeural',
-  'en-AU-NatashaNeural',
-  'en-CA-LiamNeural',
-  'en-NZ-MollyNeural',
-  'en-ZA-LukeNeural',
+  'JBFqnCBsd6RMkjVDRZzb',
+  'Xb7hH8MSUJpSbSDYk0k2',
+  'pFZP5JQG7iQjIQuC4Bku',
+  'onwK4e9ZLuTAKqWW03F9',
+  '21m00Tcm4TlvDq8ikWAM',
+  'nPczCjzI2devNBz1zQrb',
+  'IKne3meq5aSn9XLyUdCD',
 ]);
 
 const SAMPLE_LINE =
@@ -79,30 +77,20 @@ Deno.serve(async (req: Request) => {
     return json({ url: publicUrl });
   }
 
-  const AZURE_KEY = Deno.env.get('AZURE_SPEECH_KEY');
-  const AZURE_REGION = Deno.env.get('AZURE_SPEECH_REGION');
-  if (!AZURE_KEY || !AZURE_REGION) return json({ url: null, reason: 'not_configured' });
+  const EL_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+  if (!EL_KEY) return json({ url: null, reason: 'not_configured' });
 
-  const locale = voiceId.split('-').slice(0, 2).join('-');
-  const ssml =
-    `<speak version='1.0' xml:lang='${locale}'>` +
-    `<voice name='${voiceId}'>${SAMPLE_LINE}</voice></speak>`;
-
-  const res = await fetch(
-    `https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`,
-    {
-      method: 'POST',
-      headers: {
-        'Ocp-Apim-Subscription-Key': AZURE_KEY,
-        'Content-Type': 'application/ssml+xml',
-        'X-Microsoft-OutputFormat': 'audio-16khz-64kbitrate-mono-mp3',
-        'User-Agent': 'temple-voice-sample',
-      },
-      body: ssml,
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': EL_KEY,
+      'content-type': 'application/json',
+      accept: 'audio/mpeg',
     },
-  );
+    body: JSON.stringify({ text: SAMPLE_LINE, model_id: 'eleven_turbo_v2_5' }),
+  });
   if (!res.ok) {
-    console.error('azure tts failed', res.status, (await res.text()).slice(0, 200));
+    console.error('elevenlabs tts failed', res.status, (await res.text()).slice(0, 200));
     return json({ url: null, reason: 'synthesis_failed' });
   }
   const bytes = new Uint8Array(await res.arrayBuffer());
