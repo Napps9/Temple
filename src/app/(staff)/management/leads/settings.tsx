@@ -6,11 +6,12 @@ import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
-import { syncVapiAssistant } from '@/lib/agent-sync';
+import { deprovisionFrontDesk, provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -43,6 +44,8 @@ type AgentSettings = {
   call_recording_retention_days: number;
   daily_message_cap: number;
   conversation_retention_days: number;
+  front_desk_entitled: boolean;
+  provision_status: string;
 };
 
 type Correction = {
@@ -134,7 +137,7 @@ export default function LeadAutomationSettings() {
       const { data, error } = await supabase
         .from('gym_agent_settings')
         .select(
-          'enabled, phone_number, voice_enabled, vapi_assistant_id, context, voice_provider, voice_id, voice_region, call_recording_enabled, call_recording_retention_days, daily_message_cap, conversation_retention_days',
+          'enabled, phone_number, voice_enabled, vapi_assistant_id, context, voice_provider, voice_id, voice_region, call_recording_enabled, call_recording_retention_days, daily_message_cap, conversation_retention_days, front_desk_entitled, provision_status',
         )
         .eq('gym_id', membership!.gymId)
         .maybeSingle();
@@ -176,6 +179,7 @@ export default function LeadAutomationSettings() {
   const [interviewDraft, setInterviewDraft] = useState<string | null>(null);
   const seededInterviewId = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmTurnOff, setConfirmTurnOff] = useState(false);
 
   useEffect(() => {
     if (rule.data) {
@@ -325,6 +329,29 @@ export default function LeadAutomationSettings() {
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not change phone answering')),
+  });
+
+  const provision = useMutation({
+    mutationFn: async () => {
+      await provisionFrontDesk(membership!.gymId);
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, "Couldn't set up your number")),
+  });
+
+  const turnOff = useMutation({
+    mutationFn: async () => {
+      await deprovisionFrontDesk(membership!.gymId);
+    },
+    onSuccess: () => {
+      setConfirmTurnOff(false);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    // No setError — this runs inside a full-screen Modal, so the page's
+    // bottom error line would be invisible. ConfirmDialog renders its own.
   });
 
   const saveAgentContext = useMutation({
@@ -543,6 +570,8 @@ export default function LeadAutomationSettings() {
   const agentNumber = agent.data?.phone_number ?? null;
   const voiceOn = agent.data?.voice_enabled ?? false;
   const voiceReady = !!agent.data?.vapi_assistant_id;
+  const frontDeskEntitled = agent.data?.front_desk_entitled ?? false;
+  const provisionFailed = agent.data?.provision_status === 'failed';
   const recOn = agent.data?.call_recording_enabled ?? true;
   const currentVoice = VOICES.find((v) => v.id === (agent.data?.voice_id ?? '')) ?? null;
 
@@ -660,11 +689,30 @@ export default function LeadAutomationSettings() {
               onValueChange={(v) => toggleAgent.mutate(v)}
             />
           </View>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            {agentNumber
-              ? `Your number: ${agentNumber}`
-              : 'No number yet — Temple provisions this for you.'}
-          </Text>
+          {agentNumber ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Your number: {agentNumber}
+            </Text>
+          ) : frontDeskEntitled ? (
+            <View className="gap-2">
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {provisionFailed
+                  ? "Setting up your number didn't finish — it's safe to try again."
+                  : 'No number yet — set one up to start answering leads.'}
+              </Text>
+              <Button
+                variant="secondary"
+                onPress={() => provision.mutate()}
+                loading={provision.isPending}>
+                {provisionFailed ? 'Try again' : 'Set up my number'}
+              </Button>
+            </View>
+          ) : (
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              No number yet — phone & text isn't on your plan. Contact Temple
+              to turn it on.
+            </Text>
+          )}
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
@@ -676,7 +724,7 @@ export default function LeadAutomationSettings() {
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
                 {voiceReady
                   ? 'The assistant picks up calls to your number and can text the caller a signup link.'
-                  : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Contact Temple to enable voice.'}
+                  : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Set up your number above to enable it.'}
               </Text>
             </View>
             <Switch
@@ -687,6 +735,33 @@ export default function LeadAutomationSettings() {
             />
           </View>
         </View>
+
+        {agentNumber ? (
+          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+              Turn off the AI front desk
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Releases your number ({agentNumber}) and deletes the AI
+              assistant. Calls and texts stop working immediately — this
+              can't be undone from here.
+            </Text>
+            <Button variant="destructive" onPress={() => setConfirmTurnOff(true)}>
+              Turn off &amp; release number
+            </Button>
+          </View>
+        ) : null}
+
+        <ConfirmDialog
+          visible={confirmTurnOff}
+          title="Turn off the AI front desk?"
+          body={`This releases ${agentNumber ?? 'your number'} back to Temple's pool — it may be reassigned to another gym — and deletes the AI assistant. Calls and texts to this number stop working immediately.`}
+          confirmLabel="Turn off & release number"
+          pending={turnOff.isPending}
+          onConfirm={() => turnOff.mutate()}
+          onCancel={() => setConfirmTurnOff(false)}
+          error={turnOff.error ? errorMessage(turnOff.error, "Couldn't turn off the AI front desk") : null}
+        />
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">

@@ -81,7 +81,7 @@ Deno.serve(async (req: Request) => {
 
   if (VAPI_KEY && row.vapi_phone_number_id) {
     await tryDelete('vapi number delete', () =>
-      fetch(`https://api.vapi.ai/phone-number/${row.vapi_phone_number_id}`, {
+      fetch(`https://api.vapi.ai/phone-numbers/${row.vapi_phone_number_id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${VAPI_KEY}` },
       }),

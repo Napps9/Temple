@@ -920,6 +920,27 @@ are the member-facing RPCs. This completes the hands-free close: call →
 committed lead → one-time link → forms → pre-selected plan checkout →
 booked first class.
 
+**Self-serve front-desk provisioning, phase 1 voice (0152).** A gym owner
+can turn the AI front desk on without ever touching Vapi or Twilio —
+Temple owns both accounts and provisions per gym on demand. Gated on an
+operator-set `front_desk_entitled` flag (`set_gym_front_desk_entitled`,
+service-role only — no platform billing yet, so this is the manual "is
+this gym paying" switch; a future billing webhook flips the same flag).
+`provision-front-desk` buys a GB local voice number under Temple's
+regulatory bundle, creates the gym's Vapi assistant, imports the number
+onto it, and syncs prompt/tools/voice — resumable step-by-step, so
+retrying a `failed` run never buys a second number or assistant.
+`deprovision-front-desk` tears it down (churn or the owner turning it
+off). Entry points: the setup wizard's go-live step and the Automation
+settings "AI front desk" card both show a "Set up my number" button when
+entitled-but-not-provisioned; settings also has a destructive "Turn off &
+release number" card (`ConfirmDialog`-gated) once a number exists.
+Voice-only for now (a UK local number can't take SMS) — the SMS agent
+stays dark for auto-provisioned gyms until phase 3. The live end-to-end
+path is gated on Temple's UK Twilio regulatory bundle (multi-day
+approval); see `docs/ai-front-desk-provisioning.md`. pgTAP:
+`front_desk_provisioning`.
+
 ### Member import
 
 [`can_manage_staff`] Reachable from Manage → Members → "Bring data

@@ -10,7 +10,7 @@ import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
-import { syncVapiAssistant } from '@/lib/agent-sync';
+import { provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -26,6 +26,8 @@ type AgentSettings = {
   voice_id: string | null;
   call_recording_enabled: boolean;
   call_recording_retention_days: number;
+  front_desk_entitled: boolean;
+  provision_status: string;
 };
 
 type Tone = 'friendly' | 'professional' | 'high_energy';
@@ -88,7 +90,7 @@ export default function AgentSetupWizard() {
       const { data, error: e } = await supabase
         .from('gym_agent_settings')
         .select(
-          'enabled, phone_number, voice_enabled, vapi_assistant_id, context, voice_id, call_recording_enabled, call_recording_retention_days',
+          'enabled, phone_number, voice_enabled, vapi_assistant_id, context, voice_id, call_recording_enabled, call_recording_retention_days, front_desk_entitled, provision_status',
         )
         .eq('gym_id', membership!.gymId)
         .maybeSingle();
@@ -239,6 +241,17 @@ export default function AgentSetupWizard() {
     onError: (e) => setError(errorMessage(e, 'Could not save recording settings')),
   });
 
+  const provision = useMutation({
+    mutationFn: async () => {
+      await provisionFrontDesk(membership!.gymId);
+    },
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, "Couldn't set up your number")),
+  });
+
   const goLive = useMutation({
     mutationFn: async () => {
       const { error: e1 } = await supabase.rpc('set_gym_agent_voice', {
@@ -265,6 +278,8 @@ export default function AgentSetupWizard() {
 
   const number = agent.data?.phone_number ?? null;
   const voiceReady = !!agent.data?.vapi_assistant_id;
+  const frontDeskEntitled = agent.data?.front_desk_entitled ?? false;
+  const provisionFailed = agent.data?.provision_status === 'failed';
   const currentVoice = AGENT_VOICES.find((v) => v.id === selectedVoice) ?? null;
   const editedSinceGenerate =
     !!promptText?.trim() && promptText !== lastGenerated.current;
@@ -624,42 +639,74 @@ export default function AgentSetupWizard() {
                 k="Recording"
                 v={recOn === false ? 'Off' : 'On, with caller notice'}
               />
-              <SummaryRow k="Number" v={number ?? 'Provisioning'} />
-            </View>
-            {number ? (
-              <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                  Take it for a spin first
-                </Text>
-                <Text className="text-primary text-lg font-semibold">{number}</Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Text it from your own phone — ask about prices, say you want to
-                  join. The thread appears under Conversations, where you can
-                  coach any reply before real leads ever see it.
-                </Text>
-              </View>
-            ) : null}
-            <View className="flex-row items-center justify-between gap-3 pt-1">
-              <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                  Answer phone calls too
-                </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  {voiceReady
-                    ? 'Picks up calls, not just texts.'
-                    : 'Voice isn\'t provisioned yet — texts work now; missed calls get a "text us back" reply.'}
-                </Text>
-              </View>
-              <Switch
-                accessibilityLabel="Answer phone calls too"
-                value={!!answerCalls && voiceReady}
-                disabled={!voiceReady}
-                onValueChange={setAnswerCalls}
+              <SummaryRow
+                k="Number"
+                v={number ?? (frontDeskEntitled ? 'Not set up yet' : 'Not on your plan')}
               />
             </View>
-            <Button onPress={() => goLive.mutate()} loading={goLive.isPending}>
-              Turn on the AI Sales Agent
-            </Button>
+
+            {number ? (
+              <>
+                <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-1">
+                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    Take it for a spin first
+                  </Text>
+                  <Text className="text-primary text-lg font-semibold">{number}</Text>
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    Text it from your own phone — ask about prices, say you want
+                    to join. The thread appears under Conversations, where you
+                    can coach any reply before real leads ever see it.
+                  </Text>
+                </View>
+                <View className="flex-row items-center justify-between gap-3 pt-1">
+                  <View className="flex-1">
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      Answer phone calls too
+                    </Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      {voiceReady
+                        ? 'Picks up calls, not just texts.'
+                        : 'Voice isn\'t provisioned yet — texts work now; missed calls get a "text us back" reply.'}
+                    </Text>
+                  </View>
+                  <Switch
+                    accessibilityLabel="Answer phone calls too"
+                    value={!!answerCalls && voiceReady}
+                    disabled={!voiceReady}
+                    onValueChange={setAnswerCalls}
+                  />
+                </View>
+                <Button onPress={() => goLive.mutate()} loading={goLive.isPending}>
+                  Turn on the AI Sales Agent
+                </Button>
+              </>
+            ) : frontDeskEntitled ? (
+              <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-2">
+                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  {provisionFailed ? 'Something went wrong' : 'Ready to go live'}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {provisionFailed
+                    ? "We couldn't finish setting up your number. It's safe to try again — nothing gets bought twice."
+                    : 'Temple sets up a real phone number for texts and calls, in a few seconds.'}
+                </Text>
+                <Button onPress={() => provision.mutate()} loading={provision.isPending}>
+                  {provisionFailed ? 'Try again' : 'Set up my number'}
+                </Button>
+              </View>
+            ) : (
+              <View className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  Not on your plan yet
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Answering calls and texts needs phone &amp; text access —
+                  contact Temple to turn it on, then come back and go live in
+                  one tap.
+                </Text>
+              </View>
+            )}
+
             <Button variant="ghost" onPress={() => setStep(3)}>
               Back
             </Button>

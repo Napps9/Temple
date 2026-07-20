@@ -7,9 +7,10 @@
 //
 // Owner/admin caller (re-checks effective_can(can_review_ai_calls)); then works
 // under the service role. Gated on the operator-set front_desk_entitled flag —
-// provisioning is a billed act. Idempotent: a gym already 'live' returns its
-// number; provider ids are persisted step-by-step so a mid-way failure leaves
-// enough state for deprovision to clean up.
+// provisioning is a billed act. Idempotent and resumable: a gym already 'live'
+// returns its number; each external step is skipped if its provider id is
+// already on the row, so retrying a 'failed' run resumes from the first
+// incomplete step instead of buying a second number or assistant.
 //
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY,
 //   VAPI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
@@ -77,14 +78,24 @@ Deno.serve(async (req: Request) => {
     )
     .eq('gym_id', gymId)
     .maybeSingle();
+  type Row = {
+    front_desk_entitled: boolean;
+    provision_status: string;
+    phone_number: string | null;
+    vapi_assistant_id: string | null;
+    twilio_number_sid: string | null;
+    vapi_phone_number_id: string | null;
+    gyms: { name?: string } | null;
+  };
+  const r = row as Row | null;
 
-  if (!row || row.front_desk_entitled !== true) {
+  if (!r || r.front_desk_entitled !== true) {
     return json({ provisioned: false, reason: 'not_entitled' });
   }
-  if (row.provision_status === 'live' && row.phone_number) {
-    return json({ provisioned: true, number: row.phone_number, already: true });
+  if (r.provision_status === 'live' && r.phone_number) {
+    return json({ provisioned: true, number: r.phone_number, already: true });
   }
-  const gymName = (row.gyms as { name?: string } | null)?.name ?? 'the gym';
+  const gymName = r.gyms?.name ?? 'the gym';
 
   const twAuth = `Basic ${btoa(`${TW_SID}:${TW_TOKEN}`)}`;
   const twBase = `https://api.twilio.com/2010-04-01/Accounts/${TW_SID}`;
@@ -106,109 +117,140 @@ Deno.serve(async (req: Request) => {
     .update({ provision_status: 'provisioning', updated_at: new Date().toISOString() })
     .eq('gym_id', gymId);
 
-  // 1. Find an available GB local voice number.
-  let candidate: string;
-  try {
-    const res = await fetch(
-      `${twBase}/AvailablePhoneNumbers/GB/Local.json?VoiceEnabled=true&PageSize=5`,
-      { headers: { Authorization: twAuth } },
-    );
-    if (!res.ok) return await fail(`twilio_search_${res.status}`);
-    const data = await res.json();
-    candidate = data?.available_phone_numbers?.[0]?.phone_number ?? '';
-    if (!candidate) return await fail('no_numbers_available');
-  } catch (e) {
-    return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
-  }
-
-  // 2. Buy it under Temple's regulatory bundle + emergency address. Persist the
-  //    SID before anything else so a later failure is recoverable by deprovision.
+  // 1+2. Find and buy a GB local voice number under Temple's regulatory bundle
+  //      + emergency address. Skipped on resume if a previous run already
+  //      bought one — retrying a failed run must never buy a second number.
   let number: string;
-  try {
-    const form = new URLSearchParams({
-      PhoneNumber: candidate,
-      BundleSid: TW_BUNDLE,
-      AddressSid: TW_ADDRESS,
-      FriendlyName: `Temple — ${gymName}`,
-      SmsUrl: `${SUPABASE_URL}/functions/v1/lead-agent-sms`,
-      SmsMethod: 'POST',
-    });
-    const res = await fetch(`${twBase}/IncomingPhoneNumbers.json`, {
-      method: 'POST',
-      headers: { Authorization: twAuth, 'content-type': 'application/x-www-form-urlencoded' },
-      body: form.toString(),
-    });
-    if (!res.ok) {
-      console.error('twilio buy failed', res.status, (await res.text()).slice(0, 300));
-      return await fail(`twilio_buy_${res.status}`);
+  if (r.twilio_number_sid && r.phone_number) {
+    number = r.phone_number;
+  } else if (r.twilio_number_sid) {
+    // A SID was persisted but not the number itself (shouldn't happen from
+    // this function going forward — it stores both atomically — but resuming
+    // safely means never re-buying just because one field is missing).
+    try {
+      const res = await fetch(`${twBase}/IncomingPhoneNumbers/${r.twilio_number_sid}.json`, {
+        headers: { Authorization: twAuth },
+      });
+      if (!res.ok) return await fail(`twilio_lookup_${res.status}`);
+      number = (await res.json()).phone_number;
+      await service
+        .from('gym_agent_settings')
+        .update({ phone_number: number, updated_at: new Date().toISOString() })
+        .eq('gym_id', gymId);
+    } catch (e) {
+      return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
     }
-    const data = await res.json();
-    number = data.phone_number;
-    await service
-      .from('gym_agent_settings')
-      .update({ twilio_number_sid: data.sid, updated_at: new Date().toISOString() })
-      .eq('gym_id', gymId);
-  } catch (e) {
-    return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
+  } else {
+    let candidate: string;
+    try {
+      const res = await fetch(
+        `${twBase}/AvailablePhoneNumbers/GB/Local.json?VoiceEnabled=true&PageSize=5`,
+        { headers: { Authorization: twAuth } },
+      );
+      if (!res.ok) return await fail(`twilio_search_${res.status}`);
+      const data = await res.json();
+      candidate = data?.available_phone_numbers?.[0]?.phone_number ?? '';
+      if (!candidate) return await fail('no_numbers_available');
+    } catch (e) {
+      return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
+    }
+
+    try {
+      const form = new URLSearchParams({
+        PhoneNumber: candidate,
+        BundleSid: TW_BUNDLE,
+        AddressSid: TW_ADDRESS,
+        FriendlyName: `Temple — ${gymName}`,
+        SmsUrl: `${SUPABASE_URL}/functions/v1/lead-agent-sms`,
+        SmsMethod: 'POST',
+      });
+      const res = await fetch(`${twBase}/IncomingPhoneNumbers.json`, {
+        method: 'POST',
+        headers: { Authorization: twAuth, 'content-type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      });
+      if (!res.ok) {
+        console.error('twilio buy failed', res.status, (await res.text()).slice(0, 300));
+        return await fail(`twilio_buy_${res.status}`);
+      }
+      const data = await res.json();
+      number = data.phone_number;
+      // Persist the SID and the number together — never one without the
+      // other, or a resume can't tell "bought" from "half-bought".
+      await service
+        .from('gym_agent_settings')
+        .update({
+          twilio_number_sid: data.sid,
+          phone_number: number,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('gym_id', gymId);
+    } catch (e) {
+      return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
+    }
   }
 
   // 3. Create the gym's Vapi assistant (placeholder config; sync fills it).
+  //    Skipped on resume if one already exists.
   let assistantId: string;
-  try {
-    const res = await fetch('https://api.vapi.ai/assistant', {
-      method: 'POST',
-      headers: vapiHeaders,
-      body: JSON.stringify({
-        name: `${gymName} — front desk`,
-        firstMessage: 'Just a moment.',
-        model: {
-          provider: 'openai',
-          model: 'gpt-4o',
-          messages: [{ role: 'system', content: 'Populated by sync-vapi-assistant.' }],
-        },
-      }),
-    });
-    if (!res.ok) {
-      console.error('vapi assistant create failed', res.status, (await res.text()).slice(0, 300));
-      return await fail(`vapi_assistant_${res.status}`);
+  if (r.vapi_assistant_id) {
+    assistantId = r.vapi_assistant_id;
+  } else {
+    try {
+      const res = await fetch('https://api.vapi.ai/assistant', {
+        method: 'POST',
+        headers: vapiHeaders,
+        body: JSON.stringify({
+          name: `${gymName} — front desk`,
+          firstMessage: 'Just a moment.',
+          model: {
+            provider: 'openai',
+            model: 'gpt-4o',
+            messages: [{ role: 'system', content: 'Populated by sync-vapi-assistant.' }],
+          },
+        }),
+      });
+      if (!res.ok) {
+        console.error('vapi assistant create failed', res.status, (await res.text()).slice(0, 300));
+        return await fail(`vapi_assistant_${res.status}`);
+      }
+      assistantId = (await res.json()).id;
+      await service
+        .from('gym_agent_settings')
+        .update({ vapi_assistant_id: assistantId, updated_at: new Date().toISOString() })
+        .eq('gym_id', gymId);
+    } catch (e) {
+      return await fail(`vapi_unreachable: ${String(e).slice(0, 100)}`);
     }
-    assistantId = (await res.json()).id;
-    await service
-      .from('gym_agent_settings')
-      .update({ vapi_assistant_id: assistantId, updated_at: new Date().toISOString() })
-      .eq('gym_id', gymId);
-  } catch (e) {
-    return await fail(`vapi_unreachable: ${String(e).slice(0, 100)}`);
   }
 
   // 4. Import the Twilio number onto the assistant so Vapi owns inbound voice.
-  //    NOTE: confirm Vapi's phone-number import field names against the live API
-  //    on the first real run — Vapi has shipped both /phone-number and
-  //    /phone-numbers/import variants.
-  try {
-    const res = await fetch('https://api.vapi.ai/phone-number', {
-      method: 'POST',
-      headers: vapiHeaders,
-      body: JSON.stringify({
-        provider: 'twilio',
-        number,
-        twilioAccountSid: TW_SID,
-        twilioAuthToken: TW_TOKEN,
-        assistantId,
-        name: `${gymName} — front desk`,
-      }),
-    });
-    if (!res.ok) {
-      console.error('vapi number import failed', res.status, (await res.text()).slice(0, 300));
-      return await fail(`vapi_import_${res.status}`);
+  //    Skipped on resume if already imported.
+  if (!r.vapi_phone_number_id) {
+    try {
+      const res = await fetch('https://api.vapi.ai/phone-numbers/import', {
+        method: 'POST',
+        headers: vapiHeaders,
+        body: JSON.stringify({
+          twilioPhoneNumber: number,
+          twilioAccountSid: TW_SID,
+          twilioAuthToken: TW_TOKEN,
+          assistantId,
+          name: `${gymName} — front desk`,
+        }),
+      });
+      if (!res.ok) {
+        console.error('vapi number import failed', res.status, (await res.text()).slice(0, 300));
+        return await fail(`vapi_import_${res.status}`);
+      }
+      const vapiNumberId = (await res.json()).id;
+      await service
+        .from('gym_agent_settings')
+        .update({ vapi_phone_number_id: vapiNumberId, updated_at: new Date().toISOString() })
+        .eq('gym_id', gymId);
+    } catch (e) {
+      return await fail(`vapi_unreachable: ${String(e).slice(0, 100)}`);
     }
-    const vapiNumberId = (await res.json()).id;
-    await service
-      .from('gym_agent_settings')
-      .update({ vapi_phone_number_id: vapiNumberId, updated_at: new Date().toISOString() })
-      .eq('gym_id', gymId);
-  } catch (e) {
-    return await fail(`vapi_unreachable: ${String(e).slice(0, 100)}`);
   }
 
   // 5. Populate the assistant (prompt + tools + voice) via the existing sync,
