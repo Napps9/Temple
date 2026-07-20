@@ -46,6 +46,23 @@ const KIND_LABEL: Record<CoachKind, { label: string; hint: string }> = {
   exemplar: { label: 'This was good', hint: 'Save as an example' },
 };
 
+const MESSAGE_ID_PREFIX = 'msg-';
+
+// Walks up from a selection's anchor node to the nearest bubble carrying
+// a `msg-<id>` nativeID (set on the agent Pressable below — nativeID is
+// the one RN prop guaranteed to become a real DOM id on web, unlike
+// react-native-web's untyped dataSet extension). Web only, DOM nodes
+// don't exist on native.
+function closestMessageId(node: Node | null): string | null {
+  let el: HTMLElement | null =
+    node instanceof HTMLElement ? node : (node?.parentElement ?? null);
+  while (el) {
+    if (el.id?.startsWith(MESSAGE_ID_PREFIX)) return el.id.slice(MESSAGE_ID_PREFIX.length);
+    el = el.parentElement;
+  }
+  return null;
+}
+
 function fmtClock(s: number): string {
   const t = Math.max(0, Math.round(s));
   return `${Math.floor(t / 60)}:${`0${t % 60}`.slice(-2)}`;
@@ -125,6 +142,13 @@ export default function AgentConversationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [coachFor, setCoachFor] = useState<MessageRow | null>(null);
   const [coachedIds, setCoachedIds] = useState<Set<string>>(new Set());
+  // Highlight-to-comment (web only): drag a phrase inside an agent bubble
+  // to flag just that excerpt, instead of coaching the whole turn.
+  const [selectedText, setSelectedText] = useState<{ messageId: string; text: string } | null>(
+    null,
+  );
+  const [inlineCoachFor, setInlineCoachFor] = useState<MessageRow | null>(null);
+  const transcriptRef = useRef<View>(null);
 
   const conversation = useQuery({
     queryKey: ['agent-conversation', id],
@@ -204,6 +228,44 @@ export default function AgentConversationScreen() {
   }, [recording.data, conversation.data?.gym_id, signedUrl.data]);
 
   const audio = useWebAudio(signedUrl.data ?? null);
+  // Read via a ref inside the selectionchange listener below so that
+  // listener doesn't need to be torn down and re-attached every render
+  // just because useWebAudio returns a new object each time.
+  const audioRef = useRef(audio);
+  audioRef.current = audio;
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    function onSelectionChange() {
+      const sel = document.getSelection();
+      const text = sel?.toString().trim() ?? '';
+      const container = transcriptRef.current as unknown as HTMLElement | null;
+      if (
+        !sel ||
+        sel.isCollapsed ||
+        !text ||
+        !container ||
+        !sel.anchorNode ||
+        !sel.focusNode ||
+        !container.contains(sel.anchorNode) ||
+        !container.contains(sel.focusNode)
+      ) {
+        setSelectedText(null);
+        return;
+      }
+      const messageId = closestMessageId(sel.anchorNode);
+      if (!messageId || messageId !== closestMessageId(sel.focusNode)) {
+        // No bubble found, or the drag crossed between two bubbles —
+        // only single-turn excerpts are supported.
+        setSelectedText(null);
+        return;
+      }
+      setSelectedText({ messageId, text });
+      if (audioRef.current.playing) audioRef.current.toggle();
+    }
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => document.removeEventListener('selectionchange', onSelectionChange);
+  }, []);
 
   const timed = useMemo(
     () => (messages.data ?? []).filter((m) => m.seconds_from_start != null),
@@ -323,7 +385,7 @@ export default function AgentConversationScreen() {
           </View>
         ) : null}
 
-        <View className="gap-2">
+        <View className="gap-2" ref={transcriptRef}>
           {rows.map((m) => {
             if (m.role === 'system') {
               return (
@@ -339,38 +401,75 @@ export default function AgentConversationScreen() {
             const active = m.id === activeId;
             const seekable = audio.supported && m.seconds_from_start != null;
             return (
-              <Pressable
-                key={m.id}
-                disabled={!seekable}
-                onPress={() => seekable && audio.seek(m.seconds_from_start ?? 0)}
-                className={`max-w-[88%] rounded-xl px-3 py-2 ${
-                  fromLead ? 'self-start bg-gray-200 dark:bg-gray-800' : 'self-end bg-primary/10'
-                } ${active ? 'border border-primary' : 'border border-transparent'}`}>
-                <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
-                <View className="flex-row items-center justify-between mt-1 gap-3">
-                  <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
-                    {m.role === 'agent' ? 'AI' : m.role === 'staff' ? 'Staff' : 'Lead'}
-                    {m.seconds_from_start != null ? ` · ${fmtClock(m.seconds_from_start)}` : ''}
-                  </Text>
-                  {isAgent && canReview === true ? (
-                    <Pressable
-                      onPress={() => setCoachFor(m)}
-                      hitSlop={6}
-                      className="flex-row items-center gap-1">
-                      <Ionicons name="school-outline" size={12} color={colors.primary} />
-                      <Text className="text-primary text-[11px] font-semibold">Coach</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-                {isAgent && coachedIds.has(m.id) ? (
-                  <View className="flex-row items-center gap-1 mt-1">
-                    <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
-                    <Text className="text-green-600 dark:text-green-400 text-[11px] font-semibold">
-                      Coached — applies to future calls
+              <View key={m.id} className={`gap-1 ${fromLead ? 'items-start' : 'items-end'}`}>
+                <Pressable
+                  disabled={!seekable}
+                  onPress={() => seekable && audio.seek(m.seconds_from_start ?? 0)}
+                  // nativeID -> DOM id, so the web-only selection listener
+                  // can tell which turn a highlighted phrase is in.
+                  nativeID={isAgent ? `${MESSAGE_ID_PREFIX}${m.id}` : undefined}
+                  className={`max-w-[88%] rounded-xl px-3 py-2 ${
+                    fromLead ? 'self-start bg-gray-200 dark:bg-gray-800' : 'self-end bg-primary/10'
+                  } ${active ? 'border border-primary' : 'border border-transparent'}`}>
+                  <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
+                  <View className="flex-row items-center justify-between mt-1 gap-3">
+                    <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+                      {m.role === 'agent' ? 'AI' : m.role === 'staff' ? 'Staff' : 'Lead'}
+                      {m.seconds_from_start != null ? ` · ${fmtClock(m.seconds_from_start)}` : ''}
                     </Text>
+                    {isAgent && canReview === true ? (
+                      <Pressable
+                        onPress={() => setCoachFor(m)}
+                        hitSlop={6}
+                        className="flex-row items-center gap-1">
+                        <Ionicons name="school-outline" size={12} color={colors.primary} />
+                        <Text className="text-primary text-[11px] font-semibold">Coach</Text>
+                      </Pressable>
+                    ) : null}
                   </View>
+                  {isAgent && coachedIds.has(m.id) ? (
+                    <View className="flex-row items-center gap-1 mt-1">
+                      <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
+                      <Text className="text-green-600 dark:text-green-400 text-[11px] font-semibold">
+                        Coached — applies to future calls
+                      </Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+
+                {isAgent &&
+                canReview === true &&
+                selectedText?.messageId === m.id &&
+                inlineCoachFor?.id !== m.id ? (
+                  <Pressable
+                    onPress={() => {
+                      setInlineCoachFor(m);
+                      if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+                    }}
+                    className="flex-row items-center gap-1 bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
+                    <Ionicons name="chatbox-ellipses-outline" size={11} color={colors.primary} />
+                    <Text className="text-primary text-[11px] font-semibold">
+                      Comment on "{selectedText.text.length > 40 ? `${selectedText.text.slice(0, 40)}…` : selectedText.text}"
+                    </Text>
+                  </Pressable>
                 ) : null}
-              </Pressable>
+
+                {isAgent && inlineCoachFor?.id === m.id ? (
+                  <InlineCoachForm
+                    message={m}
+                    excerpt={selectedText?.messageId === m.id ? selectedText.text : m.body}
+                    gymId={conversation.data?.gym_id ?? null}
+                    conversationId={id ?? null}
+                    onClose={() => setInlineCoachFor(null)}
+                    onCoached={(mid) => {
+                      setCoachedIds((s) => new Set(s).add(mid));
+                      setInlineCoachFor(null);
+                      setSelectedText(null);
+                      queryClient.invalidateQueries({ queryKey: ['agent-rules', conversation.data?.gym_id] });
+                    }}
+                  />
+                ) : null}
+              </View>
             );
           })}
           {messages.isSuccess && rows.length === 0 ? (
@@ -597,5 +696,132 @@ function CoachModal({
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+// The highlight-to-comment counterpart to CoachModal above: same fields
+// and the same record_agent_corrections call, but anchored inline under
+// the exact phrase that was flagged (ai_suggestion = the excerpt, not
+// the whole message) instead of a centered modal over the transcript.
+function InlineCoachForm({
+  message,
+  excerpt,
+  gymId,
+  conversationId,
+  onClose,
+  onCoached,
+}: {
+  message: MessageRow;
+  excerpt: string;
+  gymId: string | null;
+  conversationId: string | null;
+  onClose: () => void;
+  onCoached: (messageId: string) => void;
+}) {
+  const [kind, setKind] = useState<CoachKind>('fact');
+  const [scope, setScope] = useState<CoachScope>('standing_rule');
+  const [text, setText] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const deploy = useMutation({
+    mutationFn: async () => {
+      if (!gymId) throw new Error('Missing context');
+      if (!text.trim()) throw new Error('Add a correction');
+      const { error: e } = await supabase.rpc('record_agent_corrections', {
+        p_gym_id: gymId,
+        p_rows: [
+          {
+            field_kind: kind,
+            scope: kind === 'exemplar' ? 'example' : scope,
+            correction: text.trim(),
+            ai_suggestion: excerpt,
+            conversation_id: conversationId,
+            message_id: message.id,
+            input_payload: null,
+            was_overridden: kind !== 'exemplar',
+          },
+        ],
+      });
+      if (e) throw e;
+      await syncVapiAssistant(gymId);
+    },
+    onSuccess: () => onCoached(message.id),
+    onError: (e) => setError(errorMessage(e, 'Could not save the correction')),
+  });
+
+  return (
+    <View className="w-full max-w-[86%] bg-white dark:bg-gray-900 rounded-xl p-3 gap-2.5 shadow-card border border-primary/20">
+      <View className="bg-primary/5 rounded-lg px-3 py-2 border-l-2 border-primary">
+        <Text className="text-gray-600 dark:text-gray-300 text-xs italic">"{excerpt}"</Text>
+      </View>
+
+      <View className="flex-row flex-wrap gap-1.5">
+        {(['fact', 'tone', 'rule', 'exemplar'] as CoachKind[]).map((k) => (
+          <Pressable
+            key={k}
+            onPress={() => setKind(k)}
+            className={`px-2.5 py-1 rounded-full border ${
+              kind === k ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+            }`}>
+            <Text
+              className={`text-[11px] font-semibold ${
+                kind === k ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+              }`}>
+              {KIND_LABEL[k].label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Input
+        label="Your correction"
+        value={text}
+        onChangeText={setText}
+        multiline
+        placeholder={
+          kind === 'exemplar' ? 'Note why this was a good reply' : 'What should it say instead?'
+        }
+      />
+
+      {kind !== 'exemplar' ? (
+        <View className="flex-row gap-2">
+          {(
+            [
+              ['standing_rule', 'Standing rule'],
+              ['example', 'Just this style'],
+            ] as [CoachScope, string][]
+          ).map(([s, label]) => (
+            <Pressable
+              key={s}
+              onPress={() => setScope(s)}
+              className={`flex-1 px-2.5 py-1.5 rounded-lg border ${
+                scope === s ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+              }`}>
+              <Text
+                className={`text-[11px] font-semibold text-center ${
+                  scope === s ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                }`}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
+      {error ? <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text> : null}
+
+      <View className="flex-row gap-2">
+        <View className="flex-1">
+          <Button variant="ghost" onPress={onClose}>
+            Cancel
+          </Button>
+        </View>
+        <View className="flex-1">
+          <Button onPress={() => deploy.mutate()} loading={deploy.isPending}>
+            Deploy to agent
+          </Button>
+        </View>
+      </View>
+    </View>
   );
 }
