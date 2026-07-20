@@ -9,11 +9,13 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
+import { useGymBrand } from '@/lib/useGymBrand';
 import type { LeadStatus } from '@/types/database';
 
 type LeadRow = {
@@ -114,6 +116,7 @@ async function drainLeadEmails(gymId: string) {
 
 export default function LeadsScreen() {
   const colors = useThemeColors();
+  const brand = useGymBrand();
   const { data: membership } = useGymMembership();
   const canAssignPlan = useCan('can_assign_plan');
   const isOwner = membership?.role === 'owner';
@@ -123,6 +126,39 @@ export default function LeadsScreen() {
   const [openLead, setOpenLead] = useState<LeadRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [callOpen, setCallOpen] = useState(false);
+  const [milestoneDismissed, setMilestoneDismissed] = useState(false);
+
+  const agentSettings = useQuery({
+    queryKey: ['agent-settings-brief', membership?.gymId],
+    enabled: !!membership?.gymId && isOwner,
+    queryFn: async (): Promise<{ vapi_assistant_id: string | null }> => {
+      const { data, error } = await supabase
+        .from('gym_agent_settings')
+        .select('vapi_assistant_id')
+        .eq('gym_id', membership!.gymId)
+        .maybeSingle();
+      if (error) throw error;
+      return { vapi_assistant_id: data?.vapi_assistant_id ?? null };
+    },
+  });
+
+  // "First real lead" needs no stored flag — a real conversation is any
+  // agent_conversations row that isn't the synthetic browser-test thread
+  // (phone='web-test'), so this is exactly 1 the moment it happens.
+  const firstRealLead = useQuery({
+    queryKey: ['agent-first-real-lead', membership?.gymId],
+    enabled: !!membership?.gymId && canAssignPlan === true,
+    queryFn: async (): Promise<boolean> => {
+      const { count, error } = await supabase
+        .from('agent_conversations')
+        .select('id', { count: 'exact', head: true })
+        .eq('gym_id', membership!.gymId)
+        .neq('phone', 'web-test');
+      if (error) throw error;
+      return count === 1;
+    },
+  });
 
   const leads = useQuery({
     queryKey: ['leads', membership?.gymId, scope],
@@ -240,7 +276,29 @@ export default function LeadsScreen() {
           </View>
         </View>
 
-        {isOwner ? (
+        {isOwner && agentSettings.data?.vapi_assistant_id ? (
+          <Pressable
+            onPress={() => setCallOpen(true)}
+            className="flex-row items-center gap-4 rounded-2xl p-4 active:opacity-90"
+            style={{ backgroundColor: colors.primary }}>
+            <View className="w-11 h-11 rounded-xl items-center justify-center bg-white/20">
+              <Ionicons name="mic" size={20} color="#FFFFFF" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white font-semibold text-[15px]">
+                Hear how it sounds right now
+              </Text>
+              <Text className="text-white/85 text-xs mt-0.5">
+                No phone needed — talk to your AI right here in the browser.
+              </Text>
+            </View>
+            <View className="bg-white rounded-lg px-3 py-2">
+              <Text className="font-semibold text-xs" style={{ color: colors.primary }}>
+                Start talking
+              </Text>
+            </View>
+          </Pressable>
+        ) : isOwner ? (
           <Link href="/management/leads/agent-setup" asChild>
             <Pressable className="flex-row items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl p-4 active:opacity-80">
               <Ionicons name="sparkles" size={22} color={colors.primary} />
@@ -253,6 +311,26 @@ export default function LeadsScreen() {
               <Ionicons name="chevron-forward" size={18} color={colors.primary} />
             </Pressable>
           </Link>
+        ) : null}
+
+        {firstRealLead.data && !milestoneDismissed ? (
+          <View className="flex-row items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300/50 dark:border-amber-700/40 rounded-xl px-4 py-3">
+            <View className="w-8 h-8 rounded-full items-center justify-center bg-amber-400">
+              <Ionicons name="sparkles" size={15} color="#3A2C05" />
+            </View>
+            <Text className="flex-1 text-gray-800 dark:text-gray-100 text-xs leading-5">
+              <Text className="font-semibold">Your AI just had its first real conversation</Text>{' '}
+              with a prospect.
+            </Text>
+            <Link href="/management/leads/conversations" asChild>
+              <Pressable hitSlop={6}>
+                <Text className="text-primary text-xs font-semibold">Review →</Text>
+              </Pressable>
+            </Link>
+            <Pressable onPress={() => setMilestoneDismissed(true)} hitSlop={6}>
+              <Ionicons name="close" size={14} color={colors.iconTertiary} />
+            </Pressable>
+          </View>
         ) : null}
 
         <View className="flex-row items-center gap-2">
@@ -428,6 +506,14 @@ export default function LeadsScreen() {
           queryClient.invalidateQueries({ queryKey: ['leads'] });
         }}
       />
+      {callOpen ? (
+        <TalkToAssistant
+          assistantId={agentSettings.data?.vapi_assistant_id ?? null}
+          gymName={brand.gymName}
+          presentation="docked"
+          onRequestClose={() => setCallOpen(false)}
+        />
+      ) : null}
     </Screen>
   );
 }

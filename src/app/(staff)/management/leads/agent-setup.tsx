@@ -9,13 +9,17 @@ import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
+import { contrastRatio } from '@/lib/brand-derivation';
+import { copyToClipboard } from '@/lib/clipboard';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
+import { useGymBrand } from '@/lib/useGymBrand';
 
 type AgentSettings = {
   enabled: boolean;
@@ -59,6 +63,7 @@ function suggestedRegion(tz: string | null, currency: string | null): string {
 
 export default function AgentSetupWizard() {
   const colors = useThemeColors();
+  const brand = useGymBrand();
   const { data: membership } = useGymMembership();
   const isOwner = membership?.role === 'owner';
   const queryClient = useQueryClient();
@@ -79,6 +84,14 @@ export default function AgentSetupWizard() {
   const [recOn, setRecOn] = useState<boolean | null>(null);
   const [recRetention, setRecRetention] = useState<string | null>(null);
   const [answerCalls, setAnswerCalls] = useState<boolean | null>(null);
+  const [showTextTest, setShowTextTest] = useState(false);
+  const [justWentLive, setJustWentLive] = useState(false);
+  // provision-front-desk is one synchronous call (buy number, create
+  // assistant, import number) with no progress signal of its own — this
+  // just advances a 3-item checklist on a timer so the wait isn't a dead
+  // spinner. It caps at the last item until the real request resolves.
+  const [provisionStep, setProvisionStep] = useState(0);
+  const provisionTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   // What the last generate produced — so "Regenerate" can warn before it
   // replaces a brief the owner has since edited by hand.
   const lastGenerated = useRef<string | null>(null);
@@ -250,7 +263,22 @@ export default function AgentSetupWizard() {
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
     },
     onError: (e) => setError(errorMessage(e, "Couldn't set up your number")),
+    onSettled: () => {
+      if (provisionTimer.current) {
+        clearInterval(provisionTimer.current);
+        provisionTimer.current = null;
+      }
+    },
   });
+
+  function startProvisioning() {
+    setProvisionStep(0);
+    if (provisionTimer.current) clearInterval(provisionTimer.current);
+    provisionTimer.current = setInterval(() => {
+      setProvisionStep((s) => (s < 2 ? s + 1 : s));
+    }, 3500);
+    provision.mutate();
+  }
 
   const goLive = useMutation({
     mutationFn: async () => {
@@ -268,7 +296,7 @@ export default function AgentSetupWizard() {
     onSuccess: () => {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
-      router.replace('/management/leads');
+      setJustWentLive(true);
     },
     onError: (e) => setError(errorMessage(e, 'Could not turn on the agent')),
   });
@@ -624,7 +652,14 @@ export default function AgentSetupWizard() {
         ) : null}
 
         {/* STEP 4 — Test & go live */}
-        {step === 4 ? (
+        {step === 4 && justWentLive ? (
+          <LiveHero
+            gymName={brand.gymName}
+            number={number}
+            primaryColor={colors.primary}
+            onDone={() => router.replace('/management/leads')}
+          />
+        ) : step === 4 ? (
           <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
             <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
               Test it, then turn it on
@@ -647,17 +682,27 @@ export default function AgentSetupWizard() {
 
             {number ? (
               <>
-                <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-1">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                    Take it for a spin first
+                <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} />
+
+                <Pressable onPress={() => setShowTextTest((s) => !s)} className="py-1">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs text-center underline">
+                    {showTextTest ? 'Hide' : 'or text it from your own phone instead'}
                   </Text>
-                  <Text className="text-primary text-lg font-semibold">{number}</Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                    Text it from your own phone — ask about prices, say you want
-                    to join. The thread appears under Conversations, where you
-                    can coach any reply before real leads ever see it.
-                  </Text>
-                </View>
+                </Pressable>
+                {showTextTest ? (
+                  <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-1">
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      Take it for a spin
+                    </Text>
+                    <Text className="text-primary text-lg font-semibold">{number}</Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      Text it from your own phone — ask about prices, say you want
+                      to join. The thread appears under Conversations, where you
+                      can coach any reply before real leads ever see it.
+                    </Text>
+                  </View>
+                ) : null}
+
                 <View className="flex-row items-center justify-between gap-3 pt-1">
                   <View className="flex-1">
                     <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -680,6 +725,8 @@ export default function AgentSetupWizard() {
                   Turn on the AI Sales Agent
                 </Button>
               </>
+            ) : frontDeskEntitled && provision.isPending ? (
+              <ProvisioningChecklist step={provisionStep} resuming={provisionFailed} />
             ) : frontDeskEntitled ? (
               <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-2">
                 <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -687,10 +734,10 @@ export default function AgentSetupWizard() {
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
                   {provisionFailed
-                    ? "We couldn't finish setting up your number. It's safe to try again — nothing gets bought twice."
+                    ? "We couldn't finish setting up your number. It's safe to try again — your progress was saved, so this won't buy a second number."
                     : 'Temple sets up a real phone number for texts and calls, in a few seconds.'}
                 </Text>
-                <Button onPress={() => provision.mutate()} loading={provision.isPending}>
+                <Button onPress={startProvisioning} loading={provision.isPending}>
                   {provisionFailed ? 'Try again' : 'Set up my number'}
                 </Button>
               </View>
@@ -768,6 +815,131 @@ function SummaryRow({ k, v }: { k: string; v: string }) {
     <View className="flex-row items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2.5">
       <Text className="text-gray-500 dark:text-gray-400 text-sm">{k}</Text>
       <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">{v}</Text>
+    </View>
+  );
+}
+
+const PROVISION_STEPS = ['Bought your number', 'Setting up your assistant', 'Connecting the two'];
+
+function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boolean }) {
+  return (
+    <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        {resuming ? 'Picking up where we left off' : 'Setting up your number'}
+      </Text>
+      <View className="gap-2">
+        {PROVISION_STEPS.map((label, i) => (
+          <View key={label} className="flex-row items-center gap-2.5">
+            <View
+              className={`w-5 h-5 rounded-full items-center justify-center ${
+                i < step
+                  ? 'bg-green-500/15'
+                  : i === step
+                    ? 'bg-primary/15'
+                    : 'bg-gray-100 dark:bg-gray-800'
+              }`}>
+              {i < step ? (
+                <Ionicons name="checkmark" size={12} color="#16A34A" />
+              ) : (
+                <View
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    i === step ? 'bg-primary' : 'bg-gray-400 dark:bg-gray-600'
+                  }`}
+                />
+              )}
+            </View>
+            <Text
+              className={`text-xs ${
+                i === step
+                  ? 'text-gray-900 dark:text-gray-50 font-medium'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}>
+              {label}
+              {i === step ? '…' : ''}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <Text className="text-gray-400 dark:text-gray-500 text-[11px] text-center">
+        {resuming
+          ? 'Your progress was saved — this won\'t buy a second number'
+          : 'Usually under a minute'}
+      </Text>
+    </View>
+  );
+}
+
+function LiveHero({
+  gymName,
+  number,
+  primaryColor,
+  onDone,
+}: {
+  gymName: string;
+  number: string | null;
+  primaryColor: string;
+  onDone: () => void;
+}) {
+  // Same brand-fill contrast pick as Button.tsx's primary variant — the
+  // fill is the gym's own colour, so white text isn't guaranteed to read.
+  const ink =
+    contrastRatio(primaryColor, '#FFFFFF') >= contrastRatio(primaryColor, '#111827')
+      ? '#FFFFFF'
+      : '#111827';
+  const tint = (opacity: string) => (ink === '#FFFFFF' ? `rgba(255,255,255,${opacity})` : `rgba(17,24,39,${opacity})`);
+
+  return (
+    <View className="rounded-xl p-5 gap-4 items-center" style={{ backgroundColor: primaryColor }}>
+      <View
+        className="w-14 h-14 rounded-full items-center justify-center"
+        style={{ backgroundColor: tint('0.2'), borderWidth: 1, borderColor: tint('0.3') }}>
+        <Ionicons name="checkmark" size={26} color={ink} />
+      </View>
+      <View className="gap-1 items-center">
+        <Text className="text-2xl font-bold" style={{ color: ink }}>
+          You're live
+        </Text>
+        <Text className="text-sm text-center" style={{ color: tint('0.85') }}>
+          {gymName}'s AI is now answering calls and texts.
+        </Text>
+      </View>
+      {number ? (
+        <View
+          className="flex-row items-center justify-between gap-3 rounded-lg px-4 py-3 self-stretch"
+          style={{ backgroundColor: tint('0.15') }}>
+          <Text className="text-lg font-semibold" style={{ color: ink }}>
+            {number}
+          </Text>
+          <Pressable onPress={() => copyToClipboard(number)} hitSlop={6}>
+            <Text className="font-semibold text-xs" style={{ color: ink }}>
+              Copy
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+      <View className="flex-row gap-2">
+        <View
+          className="rounded-full px-3 py-1.5"
+          style={{ backgroundColor: tint('0.15'), borderWidth: 1, borderColor: tint('0.25') }}>
+          <Text className="text-xs font-medium" style={{ color: ink }}>
+            Add to website
+          </Text>
+        </View>
+        <View
+          className="rounded-full px-3 py-1.5"
+          style={{ backgroundColor: tint('0.15'), borderWidth: 1, borderColor: tint('0.25') }}>
+          <Text className="text-xs font-medium" style={{ color: ink }}>
+            Add to Google listing
+          </Text>
+        </View>
+      </View>
+      <Pressable
+        onPress={onDone}
+        className="bg-white rounded-lg px-6 py-3 self-stretch items-center">
+        <Text className="font-semibold" style={{ color: primaryColor }}>
+          Done
+        </Text>
+      </Pressable>
     </View>
   );
 }
