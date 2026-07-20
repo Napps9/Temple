@@ -44,6 +44,19 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 
 `.env.local` is gitignored — never commit it.
 
+## Optional: in-app "talk to your AI" voice calls
+
+The CRM dashboard, setup wizard, and Automation settings can open a live
+browser voice call with a gym's AI assistant (no phone number needed).
+This needs Vapi's **public** key (`dashboard.vapi.ai → API Keys`, not the
+private key used server-side):
+
+```env
+EXPO_PUBLIC_VAPI_KEY=<public-key>
+```
+
+Without it, those entry points show as unavailable rather than failing.
+
 ## Migration flow
 
 1. Author SQL in `supabase/migrations/NNNN_description.sql`.

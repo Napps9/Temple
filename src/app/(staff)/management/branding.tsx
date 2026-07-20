@@ -22,6 +22,7 @@ import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { DEFAULT_BRAND, joinUrl, leadUrl, normaliseHex, slugify } from '@/lib/brand';
 import { contrastRatio, deriveDarkColour } from '@/lib/brand-derivation';
+import { copyToClipboard } from '@/lib/clipboard';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
@@ -809,12 +810,6 @@ export default function BrandingPage() {
       </ScrollView>
     </Screen>
   );
-}
-
-function copyToClipboard(text: string) {
-  if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-    navigator.clipboard?.writeText(text);
-  }
 }
 
 // Buttons pick white or near-black ink for their label depending on
