@@ -351,7 +351,7 @@ export default function LeadsScreen() {
                               <Ionicons
                                 name="chatbubble-ellipses-outline"
                                 size={12}
-                                color="#B45309"
+                                color="#D97706"
                               />
                               <Text
                                 className="text-amber-700 dark:text-amber-300 text-xs flex-1"
@@ -723,6 +723,21 @@ function LeadDetailModal({
     onError: (e) => setError(errorMessage(e, 'Could not nudge the coach')),
   });
 
+  const clearFollowUp = useMutation({
+    mutationFn: async () => {
+      if (!lead) throw new Error('No lead selected');
+      const { error: e } = await supabase.rpc('clear_lead_follow_up', {
+        p_lead_id: lead.id,
+      });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      onChanged();
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not clear the follow-up')),
+  });
+
   const retry = useMutation({
     mutationFn: async (id: string) => {
       const { error: e } = await supabase.rpc('requeue_lead_notification', {
@@ -836,6 +851,35 @@ function LeadDetailModal({
                   <Text className="text-gray-700 dark:text-gray-200 text-sm">
                     {lead.notes}
                   </Text>
+                </View>
+              ) : null}
+
+              {lead.objection || lead.follow_up_at ? (
+                <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg p-3 gap-2">
+                  {lead.objection ? (
+                    <Text className="text-amber-800 dark:text-amber-200 text-sm">
+                      Concern raised:{' '}
+                      <Text className="font-semibold">{lead.objection}</Text>
+                    </Text>
+                  ) : null}
+                  {lead.follow_up_at ? (
+                    <Text className="text-amber-700 dark:text-amber-300 text-xs">
+                      {new Date(lead.follow_up_at).getTime() <= Date.now()
+                        ? 'Due to follow up now.'
+                        : `Follow up from ${new Date(lead.follow_up_at).toLocaleDateString(
+                            'en-GB',
+                            { day: 'numeric', month: 'short' },
+                          )}.`}
+                    </Text>
+                  ) : null}
+                  {lead.follow_up_at ? (
+                    <ChipButton
+                      label="Mark followed up"
+                      icon="checkmark-done-outline"
+                      tone="amber"
+                      onPress={() => clearFollowUp.mutate()}
+                    />
+                  ) : null}
                 </View>
               ) : null}
 

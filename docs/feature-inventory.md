@@ -889,15 +889,19 @@ works hesitations instead of only staying helpful: a prompt rule tells it
 to acknowledge a concern, answer with one concrete fact (the intro offer or
 the right class), and offer a low-pressure next step, then call
 `log_objection` with the reason and where they landed
-(considering/deferred/declined). `agent_record_objection` stores the reason
-on `leads.objection` (shown on the board card) and sets `leads.follow_up_at`
+(considering/deferred/declined). `agent_record_objection` stores a fixed
+**category** label (price/time/location/nerves/comparing/not_ready/other —
+never free text, so no health detail or injected prose can land in this
+un-erased lead field; 0151) on `leads.objection` (shown on the board card and
+the lead detail) and sets `leads.follow_up_at`
 — the cold signal: a deferral schedules a chase in 3 days, a decline flags
 it due now and pings a coach (never auto-`lost` — that stays a human call).
 `flag_stale_leads` (cron 05:15) flags any un-converted lead with no edit and
 no inbound message for 7 days and notifies its coach; `set_lead_status`
-clears the flag when staff act; the board's "to chase" count and per-card
-"Follow up" badge now read from `follow_up_at`. pgTAP:
-`lead_objection_and_cold`.
+clears the flag when staff act (as does `clear_lead_follow_up` from the lead
+detail's "Mark followed up"); the sweep skips opted-out (closed-conversation)
+leads and terminal ones; the board's "to chase" count and per-card "Follow up"
+badge read from `follow_up_at`. pgTAP: `lead_objection_and_cold`.
 
 **First class auto-booked (0149).** The close tools accept the class the
 prospect agreed to try (`first_class {name, day, time}`, resolved

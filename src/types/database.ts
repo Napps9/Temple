@@ -4003,6 +4003,10 @@ export type Database = {
         Args: { p_gym_id: string };
         Returns: { plan_id: string; plan_name: string }[];
       };
+      clear_lead_follow_up: {
+        Args: { p_lead_id: string };
+        Returns: null;
+      };
       my_staged_first_class: {
         Args: { p_gym_id: string };
         Returns: { session_id: string; session_name: string; starts_at: string }[];

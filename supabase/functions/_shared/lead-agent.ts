@@ -348,7 +348,7 @@ export function buildSystemPrompt(
     '- Only talk about this gym. Never invent prices, offers, classes or facts not listed above or in the gym notes.',
     '- As soon as the prospect shares their name, call capture_lead. Add useful details (goals, availability) as notes.',
     '- When someone wants to join or asks how to sign up, use send_join_link.',
-    "- If they hesitate or raise a concern (too expensive, no time, nervous, comparing gyms, wanting to think it over), don't let it drop: acknowledge it honestly, answer with one concrete fact — the intro offer, a beginner-friendly class, or the plan that fits their budget — and offer one low-pressure next step like a free intro or a look around. Offer the intro offer once; never be pushy. Call log_objection with the concern and whether they're still considering, want time, or aren't keen. If they're not ready, be gracious and leave the door open.",
+    "- If they hesitate or raise a concern (too expensive, no time, nervous, comparing gyms, wanting to think it over), don't let it drop: acknowledge it honestly, answer with one concrete fact — the intro offer, a beginner-friendly class, or the plan that fits their budget — and offer one low-pressure next step like a free intro or a look around. Offer the intro offer once; never be pushy. Call log_objection with the closest category and whether they're still considering, want time, or aren't keen (use flag_health_mention, not log_objection, for anything about an injury or health). If they're not ready, be gracious and leave the door open.",
     '- When they commit to joining, agree which plan they want and which class they will come to first (from the schedule), then ask for their email and read it back to confirm, then use enroll_member with the exact plan name and the first class. It emails them a one-time sign-in link (to their inbox only — never texted). Tell them to tap it, then personally sign the waiver and a short health form and pay for their plan — you cannot do those steps for them. (Use start_onboarding instead only if they would rather set a password and sign themselves up.)',
     '- If they mention an injury or health condition in passing, call flag_health_mention (never write their medical details into notes or anywhere else) and keep helping — reassure them a coach will tailor their first session. If they ask for medical guidance, call request_handoff instead.',
     '- If you are unsure, if they ask for a human, or for anything about existing memberships, cancellations or refunds, call request_handoff.',
@@ -467,14 +467,15 @@ const FLAG_HEALTH_MENTION: ToolDef = {
 const LOG_OBJECTION: ToolDef = {
   name: 'log_objection',
   description:
-    "Record a concern or hesitation the prospect raised (price, timing, nerves, comparing gyms, wanting to think it over) and where they landed. Do NOT use for medical concerns — that's flag_health_mention. Keep handling the concern yourself; this just makes sure a coach can follow up.",
+    "Record which kind of concern the prospect raised and where they landed, so a coach can follow up. Pick the closest category — do NOT write free text. Do NOT use this for anything medical or an injury; that's flag_health_mention.",
   input_schema: {
     type: 'object',
     properties: {
-      reason: {
+      category: {
         type: 'string',
+        enum: ['price', 'time', 'location', 'nerves', 'comparing', 'not_ready', 'other'],
         description:
-          "The concern in a few words, e.g. 'price too high', 'no time midweek', 'comparing with another gym'",
+          'price = cost; time = scheduling; location = distance/parking; nerves = nervous or unsure it suits them; comparing = weighing another gym; not_ready = not now; other = anything else',
       },
       intent: {
         type: 'string',
@@ -483,7 +484,7 @@ const LOG_OBJECTION: ToolDef = {
           'considering = still talking it through; deferred = wants time / will decide later; declined = not keen right now',
       },
     },
-    required: ['reason', 'intent'],
+    required: ['category', 'intent'],
   },
 };
 
@@ -825,9 +826,10 @@ export async function executeTool(
   }
 
   if (name === 'log_objection') {
+    const categories = ['price', 'time', 'location', 'nerves', 'comparing', 'not_ready', 'other'];
     const { error } = await ctx.service.rpc('agent_record_objection', {
       p_conversation_id: ctx.conversation.id,
-      p_reason: String(input?.reason ?? '').slice(0, 300),
+      p_category: categories.includes(String(input?.category)) ? String(input.category) : 'other',
       p_intent: ['considering', 'deferred', 'declined'].includes(String(input?.intent))
         ? String(input.intent)
         : 'considering',
