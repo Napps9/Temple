@@ -168,3 +168,22 @@ verify_jwt = true
 # Signed-in owner/admin caller; re-checks can_review_ai_calls.
 [functions.generate-agent-prompt]
 verify_jwt = true
+
+# Pushes prompt/tools/voice/greeting to the gym's Vapi assistant.
+# Signed-in owner/admin caller (re-checks can_review_ai_calls).
+[functions.sync-vapi-assistant]
+verify_jwt = true
+
+# Synthesises/caches a voice sample clip. Signed-in caller.
+[functions.voice-sample]
+verify_jwt = true
+
+# /start is a signed-in owner (checks can_review_ai_calls in code); but
+# /end-of-call is Vapi's webhook with no Supabase JWT — so JWT off, the
+# code guards each path (effective_can / x-vapi-secret) itself.
+[functions.agent-interview]
+verify_jwt = false
+
+# Called by pg_net from the retention sweeps with x-purge-secret, no JWT.
+[functions.purge-agent-storage]
+verify_jwt = false

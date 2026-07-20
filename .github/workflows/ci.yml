@@ -110,32 +110,16 @@ jobs:
             failed="$failed $1"
             return 0
           }
-          deploy send-campaign
-          deploy track
-          deploy sending-domain
-          deploy infer-import
-          deploy send-invite
-          deploy accept-invite
-          deploy send-member-join-invites
-          deploy send-lead-notifications
-          deploy send-email-automations
-          deploy stripe-connect-start
-          deploy stripe-connect-callback
-          deploy stripe-account
-          deploy stripe-checkout
-          deploy stripe-import
-          deploy stripe-modify-subscription
-          deploy stripe-refund
-          deploy stripe-webhook
-          deploy store-checkout
-          deploy store-cancel-subscription
-          deploy custom-domain
-          deploy stock-photos
-          deploy security-alert
-          deploy lead-agent-sms
-          deploy lead-agent-voice
-          deploy lead-agent-staff-send
-          deploy generate-agent-prompt
+          # Deploy every function directory (bar the shared module) rather
+          # than a hand-maintained list — a new function silently missing
+          # from the list is how sync-vapi-assistant/voice-sample/
+          # agent-interview shipped undeployed. Per-function verify_jwt is
+          # still read from supabase/config.toml.
+          for dir in supabase/functions/*/; do
+            name="$(basename "$dir")"
+            [ "$name" = "_shared" ] && continue
+            deploy "$name"
+          done
           if [ -n "$failed" ]; then
             echo "::error::edge functions failed to deploy:$failed"
             exit 1
