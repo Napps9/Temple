@@ -3,6 +3,8 @@ import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
@@ -10,12 +12,14 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { deprovisionFrontDesk, provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useGymBrand } from '@/lib/useGymBrand';
 
 type Strategy = 'round_robin' | 'single_default' | 'manual';
 
@@ -74,8 +78,23 @@ const STRATEGY_COPY: Record<Strategy, { title: string; blurb: string }> = {
   },
 };
 
+// Plain grouping label, not a collapsible accordion — every card stays
+// visible, this just gives the scroll a scannable shape instead of 12
+// undifferentiated cards in a row.
+function SectionHeader({ label, danger }: { label: string; danger?: boolean }) {
+  return (
+    <View className="flex-row items-center gap-2 px-0.5 pt-1">
+      <View className={`w-1 h-3.5 rounded-full ${danger ? 'bg-red-500' : 'bg-primary'}`} />
+      <Text className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 export default function LeadAutomationSettings() {
   const { data: membership } = useGymMembership();
+  const brand = useGymBrand();
   const queryClient = useQueryClient();
   const isOwner = membership?.role === 'owner';
 
@@ -180,6 +199,7 @@ export default function LeadAutomationSettings() {
   const seededInterviewId = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmTurnOff, setConfirmTurnOff] = useState(false);
+  const [talkOpen, setTalkOpen] = useState(false);
 
   useEffect(() => {
     if (rule.data) {
@@ -589,6 +609,8 @@ export default function LeadAutomationSettings() {
           </Text>
         </View>
 
+        <SectionHeader label="Lead Assignment" />
+
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             When a lead comes in
@@ -668,10 +690,27 @@ export default function LeadAutomationSettings() {
           </View>
         </View>
 
+        <SectionHeader label="AI Front Desk" />
+
+        {agentNumber && voiceReady ? (
+          <Pressable
+            onPress={() => setTalkOpen((v) => !v)}
+            className="flex-row items-center gap-3 bg-primary/10 border border-primary/25 rounded-xl px-3.5 py-3 active:opacity-80">
+            <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
+              <Ionicons name="mic" size={15} color="#FFFFFF" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">Talk to it</Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">Check how it sounds, anytime</Text>
+            </View>
+            <Text className="text-primary text-xs font-semibold">
+              {talkOpen ? 'Hide' : 'Start →'}
+            </Text>
+          </Pressable>
+        ) : null}
+        {talkOpen ? <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} /> : null}
+
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            AI front desk
-          </Text>
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -735,33 +774,6 @@ export default function LeadAutomationSettings() {
             />
           </View>
         </View>
-
-        {agentNumber ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
-              Turn off the AI front desk
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              Releases your number ({agentNumber}) and deletes the AI
-              assistant. Calls and texts stop working immediately — this
-              can't be undone from here.
-            </Text>
-            <Button variant="destructive" onPress={() => setConfirmTurnOff(true)}>
-              Turn off &amp; release number
-            </Button>
-          </View>
-        ) : null}
-
-        <ConfirmDialog
-          visible={confirmTurnOff}
-          title="Turn off the AI front desk?"
-          body={`This releases ${agentNumber ?? 'your number'} back to Temple's pool — it may be reassigned to another gym — and deletes the AI assistant. Calls and texts to this number stop working immediately.`}
-          confirmLabel="Turn off & release number"
-          pending={turnOff.isPending}
-          onConfirm={() => turnOff.mutate()}
-          onCancel={() => setConfirmTurnOff(false)}
-          error={turnOff.error ? errorMessage(turnOff.error, "Couldn't turn off the AI front desk") : null}
-        />
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
@@ -851,6 +863,8 @@ export default function LeadAutomationSettings() {
           </Text>
         </View>
 
+        <SectionHeader label="Usage &amp; Data" />
+
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             Usage &amp; limits
@@ -935,6 +949,31 @@ export default function LeadAutomationSettings() {
             Save limits
           </Button>
         </View>
+
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Data retention
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Leads that never convert are deleted after this window. Converted
+            leads become members and are kept.
+          </Text>
+          {retention !== null ? (
+            <DurationField
+              label="Delete after"
+              value={retention}
+              onChange={setRetention}
+              base="days"
+              units={['days', 'weeks', 'months']}
+              placeholder="365"
+            />
+          ) : null}
+          <Button onPress={() => saveRetention.mutate()} loading={saveRetention.isPending}>
+            Save retention
+          </Button>
+        </View>
+
+        <SectionHeader label="Knowledge &amp; Coaching" />
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
@@ -1089,28 +1128,35 @@ export default function LeadAutomationSettings() {
           )}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            Data retention
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Leads that never convert are deleted after this window. Converted
-            leads become members and are kept.
-          </Text>
-          {retention !== null ? (
-            <DurationField
-              label="Delete after"
-              value={retention}
-              onChange={setRetention}
-              base="days"
-              units={['days', 'weeks', 'months']}
-              placeholder="365"
-            />
-          ) : null}
-          <Button onPress={() => saveRetention.mutate()} loading={saveRetention.isPending}>
-            Save retention
-          </Button>
-        </View>
+        {agentNumber ? (
+          <>
+            <SectionHeader label="Danger Zone" danger />
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card border border-red-200 dark:border-red-900/40">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                Turn off the AI front desk
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Releases your number ({agentNumber}) and deletes the AI
+                assistant. Calls and texts stop working immediately — this
+                can't be undone from here.
+              </Text>
+              <Button variant="destructive" onPress={() => setConfirmTurnOff(true)}>
+                Turn off &amp; release number
+              </Button>
+            </View>
+          </>
+        ) : null}
+
+        <ConfirmDialog
+          visible={confirmTurnOff}
+          title="Turn off the AI front desk?"
+          body={`This releases ${agentNumber ?? 'your number'} back to Temple's pool — it may be reassigned to another gym — and deletes the AI assistant. Calls and texts to this number stop working immediately.`}
+          confirmLabel="Turn off & release number"
+          pending={turnOff.isPending}
+          onConfirm={() => turnOff.mutate()}
+          onCancel={() => setConfirmTurnOff(false)}
+          error={turnOff.error ? errorMessage(turnOff.error, "Couldn't turn off the AI front desk") : null}
+        />
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
