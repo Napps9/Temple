@@ -468,6 +468,11 @@ export type Database = {
           recording_notice_at: string | null;
           daily_message_cap: number;
           conversation_retention_days: number;
+          twilio_number_sid: string | null;
+          vapi_phone_number_id: string | null;
+          provisioned_at: string | null;
+          front_desk_entitled: boolean;
+          provision_status: string;
           created_at: string;
           updated_at: string;
         };
@@ -486,6 +491,11 @@ export type Database = {
           recording_notice_at?: string | null;
           daily_message_cap?: number;
           conversation_retention_days?: number;
+          twilio_number_sid?: string | null;
+          vapi_phone_number_id?: string | null;
+          provisioned_at?: string | null;
+          front_desk_entitled?: boolean;
+          provision_status?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -503,6 +513,11 @@ export type Database = {
           recording_notice_at: string | null;
           daily_message_cap: number;
           conversation_retention_days: number;
+          twilio_number_sid: string | null;
+          vapi_phone_number_id: string | null;
+          provisioned_at: string | null;
+          front_desk_entitled: boolean;
+          provision_status: string;
           updated_at: string;
         }>;
         Relationships: [];

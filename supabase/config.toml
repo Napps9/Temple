@@ -187,3 +187,13 @@ verify_jwt = false
 # Called by pg_net from the retention sweeps with x-purge-secret, no JWT.
 [functions.purge-agent-storage]
 verify_jwt = false
+
+# Self-serve provisioning of a gym's phone number + Vapi assistant on Temple's
+# platform accounts (Twilio + Vapi). Signed-in owner/admin (re-checks
+# can_review_ai_calls); gated on the operator-set front_desk_entitled flag.
+[functions.provision-front-desk]
+verify_jwt = true
+
+# Tears the above down on churn / turn-off. Same owner/admin gate.
+[functions.deprovision-front-desk]
+verify_jwt = true
