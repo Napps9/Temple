@@ -24,6 +24,8 @@ type LeadRow = {
   status: LeadStatus;
   source_id: string | null;
   notes: string | null;
+  objection: string | null;
+  follow_up_at: string | null;
   captured_at: string;
   assigned_coach_id: string | null;
   assigned_at: string | null;
@@ -87,9 +89,11 @@ const ACTIVE_STATUSES: LeadStatus[] = [
 
 const STALE_MS = 24 * 60 * 60 * 1000;
 
-// A lead needs following up when it's still cold and has sat untouched for
-// more than a day (or was never assigned to anyone).
+// A lead needs following up when a chase date has come due (set by the agent
+// on a deferral/decline, or by the nightly stale sweep), or — before either
+// fires — when it's still cold and has sat untouched for over a day.
 function needsFollowUp(l: LeadRow): boolean {
+  if (l.follow_up_at) return new Date(l.follow_up_at).getTime() <= Date.now();
   if (l.status !== 'cold') return false;
   const since = l.assigned_at ?? l.captured_at;
   return Date.now() - new Date(since).getTime() > STALE_MS;
@@ -127,7 +131,7 @@ export default function LeadsScreen() {
       let q = supabase
         .from('leads')
         .select(
-          'id, full_name, email, phone, status, source_id, notes, captured_at, assigned_coach_id, assigned_at, marketing_consent, converted_profile_id, source:lead_sources!source_id(label, color), assignee:profiles!assigned_coach_id(full_name)',
+          'id, full_name, email, phone, status, source_id, notes, objection, follow_up_at, captured_at, assigned_coach_id, assigned_at, marketing_consent, converted_profile_id, source:lead_sources!source_id(label, color), assignee:profiles!assigned_coach_id(full_name)',
         )
         .eq('gym_id', membership!.gymId)
         .is('archived_at', null)
@@ -341,6 +345,20 @@ export default function LeadsScreen() {
                             <Text className="text-gray-500 dark:text-gray-400 text-xs">
                               {[l.email, l.phone].filter(Boolean).join(' · ')}
                             </Text>
+                          ) : null}
+                          {l.objection ? (
+                            <View className="flex-row items-center gap-1">
+                              <Ionicons
+                                name="chatbubble-ellipses-outline"
+                                size={12}
+                                color="#B45309"
+                              />
+                              <Text
+                                className="text-amber-700 dark:text-amber-300 text-xs flex-1"
+                                numberOfLines={1}>
+                                {l.objection}
+                              </Text>
+                            </View>
                           ) : null}
                           <View className="flex-row items-center flex-wrap gap-2">
                             <View className="flex-row items-center gap-1">

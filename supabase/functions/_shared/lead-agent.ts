@@ -348,6 +348,7 @@ export function buildSystemPrompt(
     '- Only talk about this gym. Never invent prices, offers, classes or facts not listed above or in the gym notes.',
     '- As soon as the prospect shares their name, call capture_lead. Add useful details (goals, availability) as notes.',
     '- When someone wants to join or asks how to sign up, use send_join_link.',
+    "- If they hesitate or raise a concern (too expensive, no time, nervous, comparing gyms, wanting to think it over), don't let it drop: acknowledge it honestly, answer with one concrete fact — the intro offer, a beginner-friendly class, or the plan that fits their budget — and offer one low-pressure next step like a free intro or a look around. Offer the intro offer once; never be pushy. Call log_objection with the concern and whether they're still considering, want time, or aren't keen. If they're not ready, be gracious and leave the door open.",
     '- When they commit to joining, agree which plan they want and which class they will come to first (from the schedule), then ask for their email and read it back to confirm, then use enroll_member with the exact plan name and the first class. It emails them a one-time sign-in link (to their inbox only — never texted). Tell them to tap it, then personally sign the waiver and a short health form and pay for their plan — you cannot do those steps for them. (Use start_onboarding instead only if they would rather set a password and sign themselves up.)',
     '- If they mention an injury or health condition in passing, call flag_health_mention (never write their medical details into notes or anywhere else) and keep helping — reassure them a coach will tailor their first session. If they ask for medical guidance, call request_handoff instead.',
     '- If you are unsure, if they ask for a human, or for anything about existing memberships, cancellations or refunds, call request_handoff.',
@@ -463,6 +464,29 @@ const FLAG_HEALTH_MENTION: ToolDef = {
   input_schema: { type: 'object', properties: {} },
 };
 
+const LOG_OBJECTION: ToolDef = {
+  name: 'log_objection',
+  description:
+    "Record a concern or hesitation the prospect raised (price, timing, nerves, comparing gyms, wanting to think it over) and where they landed. Do NOT use for medical concerns — that's flag_health_mention. Keep handling the concern yourself; this just makes sure a coach can follow up.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      reason: {
+        type: 'string',
+        description:
+          "The concern in a few words, e.g. 'price too high', 'no time midweek', 'comparing with another gym'",
+      },
+      intent: {
+        type: 'string',
+        enum: ['considering', 'deferred', 'declined'],
+        description:
+          'considering = still talking it through; deferred = wants time / will decide later; declined = not keen right now',
+      },
+    },
+    required: ['reason', 'intent'],
+  },
+};
+
 const REQUEST_HANDOFF: ToolDef = {
   name: 'request_handoff',
   description:
@@ -489,6 +513,7 @@ export const SMS_TOOLS: ToolDef[] = [
   SEND_JOIN_LINK,
   START_ONBOARDING,
   ENROLL_MEMBER,
+  LOG_OBJECTION,
   FLAG_HEALTH_MENTION,
   REQUEST_HANDOFF,
 ];
@@ -498,6 +523,7 @@ export const VOICE_TOOLS: ToolDef[] = [
   SEND_JOIN_LINK,
   START_ONBOARDING,
   ENROLL_MEMBER,
+  LOG_OBJECTION,
   FLAG_HEALTH_MENTION,
   REQUEST_HANDOFF,
 ];
@@ -796,6 +822,18 @@ export async function executeTool(
     });
     if (error) return `Could not flag it: ${error.message}`;
     return 'Flagged — a coach will check in with them before their first session. Keep your advice general (no medical guidance) and reassure them the coach will tailor things.';
+  }
+
+  if (name === 'log_objection') {
+    const { error } = await ctx.service.rpc('agent_record_objection', {
+      p_conversation_id: ctx.conversation.id,
+      p_reason: String(input?.reason ?? '').slice(0, 300),
+      p_intent: ['considering', 'deferred', 'declined'].includes(String(input?.intent))
+        ? String(input.intent)
+        : 'considering',
+    });
+    if (error) return `Could not note it: ${error.message}`;
+    return 'Noted for a coach. Keep working with them: acknowledge the concern, give one concrete reason it is worth it (the intro offer or the right class for them), and offer a low-pressure next step. Do not push if they are not ready — leave the door open.';
   }
 
   if (name === 'request_handoff') {

@@ -323,6 +323,8 @@ export type Database = {
           source_id: string | null;
           status: LeadStatus;
           notes: string | null;
+          objection: string | null;
+          follow_up_at: string | null;
           captured_at: string;
           captured_by: string | null;
           assigned_coach_id: string | null;
@@ -346,6 +348,8 @@ export type Database = {
           source_id?: string | null;
           status?: LeadStatus;
           notes?: string | null;
+          objection?: string | null;
+          follow_up_at?: string | null;
           captured_at?: string;
           captured_by?: string | null;
           assigned_coach_id?: string | null;
@@ -369,6 +373,8 @@ export type Database = {
           source_id: string | null;
           status: LeadStatus;
           notes: string | null;
+          objection: string | null;
+          follow_up_at: string | null;
           captured_at: string;
           captured_by: string | null;
           assigned_coach_id: string | null;

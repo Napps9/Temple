@@ -884,6 +884,21 @@ fixed marker line on the lead and pings the coach (daily-deduped) — the
 tool takes no free text, so the model structurally cannot record the
 medical details (Article 9 boundary). pgTAP: `agent_outcomes`.
 
+**Objection handling + cold-lead signal (0150).** The agent now actively
+works hesitations instead of only staying helpful: a prompt rule tells it
+to acknowledge a concern, answer with one concrete fact (the intro offer or
+the right class), and offer a low-pressure next step, then call
+`log_objection` with the reason and where they landed
+(considering/deferred/declined). `agent_record_objection` stores the reason
+on `leads.objection` (shown on the board card) and sets `leads.follow_up_at`
+— the cold signal: a deferral schedules a chase in 3 days, a decline flags
+it due now and pings a coach (never auto-`lost` — that stays a human call).
+`flag_stale_leads` (cron 05:15) flags any un-converted lead with no edit and
+no inbound message for 7 days and notifies its coach; `set_lead_status`
+clears the flag when staff act; the board's "to chase" count and per-card
+"Follow up" badge now read from `follow_up_at`. pgTAP:
+`lead_objection_and_cold`.
+
 **First class auto-booked (0149).** The close tools accept the class the
 prospect agreed to try (`first_class {name, day, time}`, resolved
 timezone-aware against the next 14 days of real sessions — fuzzy
