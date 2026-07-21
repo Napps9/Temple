@@ -783,7 +783,7 @@ export default function WebsiteManageScreen() {
   // script, byte-identical to what /api/site/[...path] actually ships. Only
   // computed while previewing, since it's not needed on every keystroke.
   const trueDocumentHtml = showPreview
-    ? renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: false })
+    ? renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: false, previewNav: true })
     : null;
   const warnings = allPageWarnings(document);
   // Only blocks the *publish* direction — an already-live site must
@@ -940,7 +940,14 @@ export default function WebsiteManageScreen() {
 
         {showPreview && Platform.OS === 'web' ? (
           <View className="flex-1">
-            <SiteHtmlPreview html={trueDocumentHtml ?? ''} height="100%" />
+            <SiteHtmlPreview
+              html={trueDocumentHtml ?? ''}
+              height="100%"
+              onNavigatePage={(slug) => {
+                const target = document.pages.find((p) => p.slug === slug);
+                if (target) selectPage(target.id);
+              }}
+            />
           </View>
         ) : isSplitView ? (
           <View className="flex-1 flex-row">

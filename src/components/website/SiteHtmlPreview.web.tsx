@@ -13,11 +13,13 @@ type CanvasMessage =
 // iframe — same renderer that ships to /api/site/[...path], so what an
 // owner sees here is what a visitor sees.
 //
-// Two modes:
-// - Read-only (default, `editable` unset): `sandbox="allow-same-origin"`,
-//   no scripts, `srcDoc` reloads the iframe on every `html` change.
-// - Editable: `sandbox="allow-same-origin allow-scripts"` — required
-//   for the in-frame bridge script (site-render.ts's
+// Two modes, both `sandbox="allow-same-origin allow-scripts"` since a
+// nav-link click needs to run and post back in either one (see
+// site-render.ts's previewNav/CANVAS_BRIDGE_SCRIPT):
+// - Read-only (default, `editable` unset): `srcDoc` reloads the iframe
+//   on every `html` change. The caller decides whether the rendered
+//   HTML embeds nav interception (`previewNav`) or nothing at all.
+// - Editable: required for the in-frame bridge script (site-render.ts's
 //   CANVAS_BRIDGE_SCRIPT) to report contentEditable keystrokes back
 //   here. The iframe becomes uncontrolled and only ever reloads on
 //   `syncKey` changing (a debounced counter bumped by non-canvas
@@ -54,7 +56,9 @@ export function SiteHtmlPreview({
   }, [editable, syncKey]);
 
   useEffect(() => {
-    if (!editable) return;
+    // Not gated on `editable` — the read-only preview needs `nav-page`
+    // messages too. Harmless when the caller didn't ask the renderer for
+    // any script (site-render.ts's previewNav): nothing ever posts here.
     function handleMessage(e: MessageEvent) {
       if (e.source !== iframeRef.current?.contentWindow) return;
       const msg = e.data as CanvasMessage | undefined;
@@ -70,7 +74,7 @@ export function SiteHtmlPreview({
     }
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [editable, onFieldChange, onCanvasSelect, onNavigatePage]);
+  }, [onFieldChange, onCanvasSelect, onNavigatePage]);
 
   useEffect(() => {
     if (!editable) return;
@@ -89,7 +93,15 @@ export function SiteHtmlPreview({
   } as const;
 
   if (!editable) {
-    return <iframe title="Site preview" srcDoc={html} sandbox="allow-same-origin" style={style} />;
+    return (
+      <iframe
+        ref={iframeRef}
+        title="Site preview"
+        srcDoc={html}
+        sandbox="allow-same-origin allow-scripts"
+        style={style}
+      />
+    );
   }
 
   return (

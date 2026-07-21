@@ -92,6 +92,12 @@ export type SiteRenderContext = {
   // active/aria-current state and, for a non-home page, the <title>.
   // Ignored when `pages` is omitted.
   activePageSlug?: string;
+  // Independent of `editable`: the read-only staff "Preview" toggle
+  // renders with editable false (so it's byte-identical to the public
+  // route) but still runs inside the builder, where a nav-link click
+  // must switch the active page in-app rather than navigating the
+  // iframe to the live public URL. Never set on the public path.
+  previewNav?: boolean;
 };
 
 function escapeHtml(input: string): string {
@@ -797,6 +803,29 @@ const CANVAS_BRIDGE_SCRIPT = `
 })();
 </script>`;
 
+// Read-only counterpart to CANVAS_BRIDGE_SCRIPT's nav handling, for the
+// staff "Preview" toggle (previewNav) — no contentEditable/rich-text
+// wiring, since nothing here is ever editable, just the same
+// site-nav-link interception so clicking "Schedule"/"Team"/"Pricing"
+// switches the builder's active page instead of navigating the iframe
+// to the live public URL (and dead-ending on whatever that route
+// returns for an unsaved or nonexistent draft).
+const NAV_INTERCEPT_SCRIPT = `
+<script>
+(function(){
+  var SRC = 'temple-site-canvas';
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a');
+    if (!a) return;
+    e.preventDefault();
+    if (a.classList.contains('site-nav-link')) {
+      window.parent.postMessage({ source: SRC, type: 'nav-page', slug: a.getAttribute('data-page-slug') || '' }, '*');
+    }
+  });
+  document.addEventListener('submit', function(e){ e.preventDefault(); });
+})();
+</script>`;
+
 // Takes one page's blocks directly, not a whole (possibly multi-page)
 // SiteDocument — the caller resolves which page to render (the staff
 // editor's active page, or the page matching the public route's slug).
@@ -835,5 +864,7 @@ export function renderSiteHtml(blocks: SiteBlock[], ctx: SiteRenderContext): str
 <meta property="og:description" content="${description}">
 ${ctx.gymLogoUrl ? `<meta property="og:image" content="${escapeAttr(ctx.gymLogoUrl)}">` : ''}
 <style>${themeStyleBlock(ctx.theme, ctx.editable)}</style>
-</head><body>${body}${ctx.editable ? CANVAS_BRIDGE_SCRIPT : ''}</body></html>`;
+</head><body>${body}${
+    ctx.editable ? CANVAS_BRIDGE_SCRIPT : ctx.previewNav ? NAV_INTERCEPT_SCRIPT : ''
+  }</body></html>`;
 }
