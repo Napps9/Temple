@@ -100,6 +100,13 @@ Deno.serve(async (req: Request) => {
     server: { url: toolServerUrl, secret: VAPI_SECRET },
   }));
 
+  // Per-tool `server` above only covers tool-calls. Without an
+  // assistant-level server too, Vapi has nowhere to send end-of-call-report
+  // — so the transcript, recording pull, and "Call ended" marker never
+  // land, on every channel (phone and the browser test widget alike).
+  // lead-agent-voice routes this exact path to its /end-of-call handler.
+  const endOfCallServerUrl = `${SUPABASE_URL}/functions/v1/lead-agent-voice/end-of-call`;
+
   const recording = gym.settings.call_recording_enabled;
   const firstMessage =
     `Thanks for calling ${gym.name}! I'm the gym's AI assistant.` +
@@ -138,7 +145,11 @@ Deno.serve(async (req: Request) => {
     model.temperature = existingModel.temperature;
   }
 
-  const patch: Record<string, unknown> = { model, firstMessage };
+  const patch: Record<string, unknown> = {
+    model,
+    firstMessage,
+    server: { url: endOfCallServerUrl, secret: VAPI_SECRET },
+  };
   if (voiceRow?.voice_provider && voiceRow?.voice_id) {
     patch.voice = { provider: voiceRow.voice_provider, voiceId: voiceRow.voice_id };
   }
