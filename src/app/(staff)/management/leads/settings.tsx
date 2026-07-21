@@ -601,11 +601,10 @@ export default function LeadAutomationSettings() {
         <BackLink label="Leads" fallbackHref="/management/leads" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Lead automation
+            Automation
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            New leads are shared across your coaches automatically. Change how
-            that works — or leave it, it's set up out of the box.
+            How leads are routed, and what your AI is allowed to do.
           </Text>
         </View>
 
@@ -692,7 +691,9 @@ export default function LeadAutomationSettings() {
 
         <SectionHeader label="AI Front Desk" />
 
-        {agentNumber && voiceReady && Platform.OS === 'web' ? (
+        {/* Only the assistant is required — browser calls don't touch the
+            phone number, so this works while the Twilio bundle is pending. */}
+        {voiceReady && Platform.OS === 'web' ? (
           <Pressable
             onPress={() => setTalkOpen((v) => !v)}
             className="flex-row items-center gap-3 bg-primary/10 border border-primary/25 rounded-xl px-3.5 py-3 active:opacity-80">
@@ -730,6 +731,25 @@ export default function LeadAutomationSettings() {
               onValueChange={(v) => toggleAgent.mutate(v)}
             />
           </View>
+          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                Answer phone calls too
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {voiceReady
+                  ? 'The assistant picks up calls to your number and can text the caller a signup link.'
+                  : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Set up your number above to enable it.'}
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Answer phone calls too"
+              value={voiceOn}
+              disabled={!voiceReady}
+              onValueChange={(v) => toggleVoice.mutate(v)}
+            />
+          </View>
           {agentNumber ? (
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
               Your number: {agentNumber}
@@ -754,27 +774,6 @@ export default function LeadAutomationSettings() {
               to turn it on.
             </Text>
           )}
-        </View>
-
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <View className="flex-row items-center justify-between gap-3">
-            <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                Answer phone calls too
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                {voiceReady
-                  ? 'The assistant picks up calls to your number and can text the caller a signup link.'
-                  : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Set up your number above to enable it.'}
-              </Text>
-            </View>
-            <Switch
-              accessibilityLabel="Answer phone calls too"
-              value={voiceOn}
-              disabled={!voiceReady}
-              onValueChange={(v) => toggleVoice.mutate(v)}
-            />
-          </View>
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">

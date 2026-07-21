@@ -108,15 +108,35 @@ export function TalkToAssistant({
   const colors = useThemeColors();
 
   if (!call.available) {
-    if (presentation === 'docked') return null;
-    return (
+    const card = (
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
         <Text className="text-gray-900 dark:text-gray-50 font-medium">Talk to it</Text>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           {assistantId
-            ? "Voice testing isn't set up on this account yet."
+            ? "Browser calling isn't connected yet — the Vapi public key (EXPO_PUBLIC_VAPI_KEY) hasn't been added to this deployment."
             : 'Finish setting up your assistant first, then you can talk to it here.'}
         </Text>
+        {presentation === 'docked' && onRequestClose ? (
+          <Pressable onPress={onRequestClose} hitSlop={6} className="self-end pt-1">
+            <Text className="text-primary text-xs font-semibold">Close</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    );
+    if (presentation !== 'docked') return card;
+    return (
+      <View
+        style={{ position: 'fixed' as 'absolute', inset: 0, zIndex: 50 }}
+        pointerEvents="box-none">
+        <Pressable
+          onPress={onRequestClose}
+          accessibilityLabel="Dimmed background"
+          className="absolute inset-0 bg-black/40"
+        />
+        <View
+          style={{ position: 'fixed' as 'absolute', right: 20, bottom: 20, width: 340, maxWidth: '92%' }}>
+          {card}
+        </View>
       </View>
     );
   }

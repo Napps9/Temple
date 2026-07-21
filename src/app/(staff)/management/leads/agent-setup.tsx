@@ -665,26 +665,15 @@ export default function AgentSetupWizard() {
             <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
               Test it, then turn it on
             </Text>
-            <View className="gap-2">
-              <SummaryRow k="Brief" v={promptText && promptText.trim() ? 'Saved' : 'Not set'} />
-              <SummaryRow
-                k="Voice"
-                v={currentVoice ? `${currentVoice.name} · ${currentVoice.region}` : 'Default'}
-              />
-              <SummaryRow
-                k="Recording"
-                v={recOn === false ? 'Off' : 'On, with caller notice'}
-              />
-              <SummaryRow
-                k="Number"
-                v={number ?? (frontDeskEntitled ? 'Not set up yet' : 'Not on your plan')}
-              />
-            </View>
+
+            {/* Browser call needs only the assistant, never the number — a
+                gym waiting on the Twilio bundle can still talk to its AI. */}
+            {voiceReady ? (
+              <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} />
+            ) : null}
 
             {number ? (
               <>
-                <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} />
-
                 <Pressable onPress={() => setShowTextTest((s) => !s)} className="py-1">
                   <Text className="text-gray-400 dark:text-gray-500 text-xs text-center underline">
                     {showTextTest ? 'Hide' : 'or text it from your own phone instead'}
@@ -703,7 +692,27 @@ export default function AgentSetupWizard() {
                     </Text>
                   </View>
                 ) : null}
+              </>
+            ) : null}
 
+            <View className="gap-2">
+              <SummaryRow k="Brief" v={promptText && promptText.trim() ? 'Saved' : 'Not set'} />
+              <SummaryRow
+                k="Voice"
+                v={currentVoice ? `${currentVoice.name} · ${currentVoice.region}` : 'Default'}
+              />
+              <SummaryRow
+                k="Recording"
+                v={recOn === false ? 'Off' : 'On, with caller notice'}
+              />
+              <SummaryRow
+                k="Number"
+                v={number ?? (frontDeskEntitled ? 'Not set up yet' : 'Not on your plan')}
+              />
+            </View>
+
+            {number ? (
+              <>
                 <View className="flex-row items-center justify-between gap-3 pt-1">
                   <View className="flex-1">
                     <Text className="text-gray-900 dark:text-gray-50 font-medium">

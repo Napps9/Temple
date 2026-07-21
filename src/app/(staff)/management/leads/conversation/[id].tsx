@@ -68,6 +68,35 @@ function fmtClock(s: number): string {
   return `${Math.floor(t / 60)}:${`0${t % 60}`.slice(-2)}`;
 }
 
+function ScrubBar({
+  current,
+  duration,
+  onSeek,
+}: {
+  current: number;
+  duration: number;
+  onSeek: (t: number) => void;
+}) {
+  const [width, setWidth] = useState(0);
+  const frac = duration > 0 ? Math.max(0, Math.min(1, current / duration)) : 0;
+  return (
+    <Pressable
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      onPress={(e) => {
+        const x = e.nativeEvent.locationX;
+        if (typeof x !== 'number' || width <= 0 || duration <= 0) return;
+        onSeek(Math.max(0, Math.min(duration, (x / width) * duration)));
+      }}
+      accessibilityLabel="Seek within the recording"
+      // Tall hit target around a thin track — a 6px bar is miserable to tap.
+      className="flex-1 h-8 justify-center">
+      <View className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+        <View className="h-full bg-primary" style={{ width: `${frac * 100}%` }} />
+      </View>
+    </Pressable>
+  );
+}
+
 type AudioLike = {
   currentTime: number;
   duration: number;
@@ -347,13 +376,21 @@ export default function AgentConversationScreen() {
                       color="#FFFFFF"
                     />
                   </Pressable>
-                  <Text className="text-gray-600 dark:text-gray-300 text-sm">
+                  <ScrubBar
+                    current={audio.currentTime}
+                    duration={audio.duration || recording.data.duration_seconds || 0}
+                    onSeek={audio.seek}
+                  />
+                  <Text
+                    className="text-gray-600 dark:text-gray-300 text-xs"
+                    style={{ fontVariant: ['tabular-nums'] }}>
                     {fmtClock(audio.currentTime)} /{' '}
                     {fmtClock(audio.duration || recording.data.duration_seconds || 0)}
                   </Text>
                 </View>
                 <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                  The transcript below follows the audio as it plays. Tap a line to jump.
+                  The transcript follows the audio — tap a line to jump, or drag
+                  across a phrase in an AI reply to coach just that part.
                 </Text>
               </>
             ) : (
