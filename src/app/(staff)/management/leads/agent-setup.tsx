@@ -4,11 +4,11 @@ import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
+import { AgentBriefBuilder } from '@/components/AgentBriefBuilder';
 import { BackLink } from '@/components/BackLink';
 import { BrandGradientHero } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
-import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
@@ -35,15 +35,7 @@ type AgentSettings = {
   provision_status: string;
 };
 
-type Tone = 'friendly' | 'professional' | 'high_energy';
-
 const STEPS = ['Welcome', 'What it says', 'Voice', 'Recording', 'Test & go live'];
-
-const TONES: { id: Tone; label: string; desc: string }[] = [
-  { id: 'friendly', label: 'Friendly', desc: 'Warm, like your best front-desk person' },
-  { id: 'professional', label: 'Professional', desc: 'Polished and precise' },
-  { id: 'high_energy', label: 'High-energy', desc: 'Upbeat and enthusiastic' },
-];
 
 function suggestedRegion(tz: string | null, currency: string | null): string {
   const t = tz ?? '';
@@ -71,15 +63,6 @@ export default function AgentSetupWizard() {
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [promptMode, setPromptMode] = useState<'generate' | 'manual'>('generate');
-  const [answers, setAnswers] = useState({
-    intro_offer: '',
-    beginner_start: '',
-    levels: '',
-    location: '',
-    faq: '',
-    tone: 'friendly' as Tone,
-  });
   const [promptText, setPromptText] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [recOn, setRecOn] = useState<boolean | null>(null);
@@ -94,9 +77,6 @@ export default function AgentSetupWizard() {
   // spinner. It caps at the last item until the real request resolves.
   const [provisionStep, setProvisionStep] = useState(0);
   const provisionTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  // What the last generate produced — so "Regenerate" can warn before it
-  // replaces a brief the owner has since edited by hand.
-  const lastGenerated = useRef<string | null>(null);
 
   const agent = useQuery({
     queryKey: ['agent-settings', membership?.gymId],
@@ -175,25 +155,6 @@ export default function AgentSetupWizard() {
       setSelectedVoice(first.id);
     }
   }, [selectedVoice, gymInfo.isSuccess, suggestedVoices]);
-
-  const generate = useMutation({
-    mutationFn: async () => {
-      const { data, error: e } = await supabase.functions.invoke('generate-agent-prompt', {
-        body: { gym_id: membership!.gymId, answers },
-      });
-      if (e) throw e;
-      if (data?.error) throw new Error(data.error);
-      return data?.prompt as string;
-    },
-    onSuccess: (prompt) => {
-      setError(null);
-      if (prompt) {
-        setPromptText(prompt);
-        lastGenerated.current = prompt;
-      }
-    },
-    onError: (e) => setError(errorMessage(e, 'Could not draft the brief')),
-  });
 
   const saveContext = useMutation({
     mutationFn: async () => {
@@ -311,8 +272,6 @@ export default function AgentSetupWizard() {
   const frontDeskEntitled = agent.data?.front_desk_entitled ?? false;
   const provisionFailed = agent.data?.provision_status === 'failed';
   const currentVoice = AGENT_VOICES.find((v) => v.id === selectedVoice) ?? null;
-  const editedSinceGenerate =
-    !!promptText?.trim() && promptText !== lastGenerated.current;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -390,154 +349,26 @@ export default function AgentSetupWizard() {
         ) : null}
 
         {/* STEP 1 — Prompt */}
-        {step === 1 ? (
+        {step === 1 && promptText !== null ? (
           <View className="gap-4">
+            <AgentBriefBuilder
+              gymId={membership.gymId}
+              value={promptText}
+              onChange={setPromptText}
+            />
             <View className="flex-row gap-2">
-              {(
-                [
-                  ['generate', 'Build it from my gym'],
-                  ['manual', 'Write it myself'],
-                ] as ['generate' | 'manual', string][]
-              ).map(([m, label]) => (
-                <Pressable
-                  key={m}
-                  onPress={() => setPromptMode(m)}
-                  className={`flex-1 px-3 py-2.5 rounded-lg border ${
-                    promptMode === m
-                      ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}>
-                  <Text
-                    className={`text-sm font-semibold text-center ${
-                      promptMode === m ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
-                    }`}>
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            {promptMode === 'generate' ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Your plans, schedule, class types and coaches are included
-                  automatically. These five fill in what only you know — every
-                  one is optional, but the first is where the sales happen.
-                </Text>
-                <Input
-                  label="Your intro offer — what gets someone through the door?"
-                  value={answers.intro_offer}
-                  onChangeText={(t) => setAnswers((a) => ({ ...a, intro_offer: t }))}
-                  multiline
-                  placeholder="First class free. Or: £19 trial week, no commitment…"
-                />
-                <Input
-                  label="Where should a brand-new member start?"
-                  value={answers.beginner_start}
-                  onChangeText={(t) => setAnswers((a) => ({ ...a, beginner_start: t }))}
-                  multiline
-                  placeholder="Book any Foundations class — coaches take it from there…"
-                />
-                <Input
-                  label="Which classes suit beginners vs advanced?"
-                  value={answers.levels}
-                  onChangeText={(t) => setAnswers((a) => ({ ...a, levels: t }))}
-                  multiline
-                  placeholder="Foundations & Sweat are beginner-friendly; Comp is advanced…"
-                />
-                <Input
-                  label="Location, parking, how to find you"
-                  value={answers.location}
-                  onChangeText={(t) => setAnswers((a) => ({ ...a, location: t }))}
-                  multiline
-                  placeholder="Rivington St, behind the station; free parking after 6pm…"
-                />
-                <Input
-                  label="The questions you answer most — with your answers"
-                  value={answers.faq}
-                  onChangeText={(t) => setAnswers((a) => ({ ...a, faq: t }))}
-                  multiline
-                  numberOfLines={3}
-                  placeholder={
-                    'Do you do drop-ins? Yes, £15.\nDo I need to be fit first? No — everything scales.'
-                  }
-                />
-                <View className="gap-1.5">
-                  <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-                    How should it sound?
-                  </Text>
-                  <View className="flex-row gap-2">
-                    {TONES.map((t) => {
-                      const sel = answers.tone === t.id;
-                      return (
-                        <Pressable
-                          key={t.id}
-                          onPress={() => setAnswers((a) => ({ ...a, tone: t.id }))}
-                          className={`flex-1 rounded-lg border px-2 py-2 ${
-                            sel
-                              ? 'border-primary bg-primary/10'
-                              : 'border-gray-200 dark:border-gray-700'
-                          }`}>
-                          <Text
-                            className={`text-xs font-semibold text-center ${
-                              sel ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
-                            }`}>
-                            {t.label}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs">
-                    {TONES.find((t) => t.id === answers.tone)?.desc}
-                  </Text>
-                </View>
-                <Button
-                  variant="secondary"
-                  icon="sparkles"
-                  onPress={() => generate.mutate()}
-                  loading={generate.isPending}>
-                  {promptText?.trim()
-                    ? editedSinceGenerate
-                      ? 'Regenerate (replaces your edits)'
-                      : 'Regenerate'
-                    : 'Draft the brief'}
+              <View className="flex-1">
+                <Button variant="ghost" onPress={() => setStep(0)}>
+                  Back
                 </Button>
               </View>
-            ) : null}
-
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-                The agent's brief
-              </Text>
-              {promptText !== null ? (
-                <Input
-                  label="Edit anything before saving — it's yours"
-                  value={promptText}
-                  onChangeText={setPromptText}
-                  multiline
-                  numberOfLines={10}
-                  placeholder={
-                    promptMode === 'generate'
-                      ? 'Answer what you can above, then tap "Draft the brief" — it lands here for you to tweak.'
-                      : "You are the friendly front desk for … Answer new leads, capture their name and number, and send a signup link to close."
-                  }
-                />
-              ) : null}
-              <View className="flex-row gap-2">
-                <View className="flex-1">
-                  <Button variant="ghost" onPress={() => setStep(0)}>
-                    Back
-                  </Button>
-                </View>
-                <View className="flex-1">
-                  <Button
-                    onPress={() => saveContext.mutate()}
-                    loading={saveContext.isPending}
-                    disabled={!promptText || !promptText.trim()}>
-                    Save &amp; continue
-                  </Button>
-                </View>
+              <View className="flex-1">
+                <Button
+                  onPress={() => saveContext.mutate()}
+                  loading={saveContext.isPending}
+                  disabled={!promptText || !promptText.trim()}>
+                  Save &amp; continue
+                </Button>
               </View>
             </View>
           </View>

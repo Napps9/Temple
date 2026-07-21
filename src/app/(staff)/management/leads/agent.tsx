@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { AgentBriefBuilder } from '@/components/AgentBriefBuilder';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -17,6 +18,7 @@ import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
 
 type AgentSettings = {
@@ -65,6 +67,7 @@ function SectionHeader({ label }: { label: string }) {
 export default function LeadAgentScreen() {
   const { data: membership } = useGymMembership();
   const brand = useGymBrand();
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const isOwner = membership?.role === 'owner';
 
@@ -110,6 +113,8 @@ export default function LeadAgentScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirmTurnOff, setConfirmTurnOff] = useState(false);
   const [talkOpen, setTalkOpen] = useState(false);
+  const [briefModalOpen, setBriefModalOpen] = useState(false);
+  const [briefDraft, setBriefDraft] = useState('');
 
   useEffect(() => {
     if (!agent.isSuccess) return;
@@ -592,9 +597,20 @@ export default function LeadAgentScreen() {
       <SectionHeader label="Knowledge & Coaching" />
 
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-          What the agent knows
-        </Text>
+        <View className="flex-row items-start justify-between gap-3">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest pt-1">
+            What the agent knows
+          </Text>
+          <ChipButton
+            label="Rewrite with AI"
+            icon="sparkles"
+            tone="primary"
+            onPress={() => {
+              setBriefDraft(agentContext ?? '');
+              setBriefModalOpen(true);
+            }}
+          />
+        </View>
         <Text className="text-gray-500 dark:text-gray-400 text-xs">
           Plans and the class schedule are included automatically. Add anything else it should
           know — address, parking, intro offer, what makes your gym great.
@@ -613,6 +629,61 @@ export default function LeadAgentScreen() {
           Save notes
         </Button>
       </View>
+
+      <Modal
+        visible={briefModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBriefModalOpen(false)}>
+        <Pressable
+          onPress={() => setBriefModalOpen(false)}
+          className="flex-1 bg-black/60 items-center justify-center px-6 py-10">
+          <Pressable
+            onPress={() => {}}
+            className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-xl gap-4 max-h-[90%]">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                Rewrite with AI
+              </Text>
+              <Pressable
+                onPress={() => setBriefModalOpen(false)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-200 dark:active:bg-gray-800">
+                <Ionicons name="close" size={18} color={colors.iconSecondary} />
+              </Pressable>
+            </View>
+            <ScrollView>
+              <AgentBriefBuilder
+                gymId={membership.gymId}
+                value={briefDraft}
+                onChange={setBriefDraft}
+              />
+            </ScrollView>
+            <View className="flex-row gap-2">
+              <View className="flex-1">
+                <Button variant="secondary" onPress={() => setBriefModalOpen(false)}>
+                  Cancel
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button
+                  onPress={() => {
+                    setAgentContext(briefDraft);
+                    setBriefModalOpen(false);
+                  }}
+                  disabled={!briefDraft.trim()}>
+                  Use this
+                </Button>
+              </View>
+            </View>
+            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+              This fills in the notes below — tap "Save notes" after to make it live.
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">

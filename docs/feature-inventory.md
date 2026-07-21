@@ -816,6 +816,15 @@ answers (class levels, where beginners start, onboarding, location), and
 Claude drafts the agent's brief (`AGENT_PROMPT_MODEL`, default
 `claude-sonnet-5`; deterministic template fallback with no key) — saved to
 `gym_agent_settings.context` via `set_gym_agent_context`, fully editable.
+The step's mode toggle, five answer fields, tone picker and
+generate/regenerate button live in a shared `AgentBriefBuilder` component
+(`src/components/AgentBriefBuilder.tsx`), taking `gymId`/`value`/`onChange`
+so any surface can host the same drafting flow over whatever text state it
+owns. The AI Agent tab's "What the agent knows" card reuses it: a "Rewrite
+with AI" chip opens a modal with the same fields over a scratch draft
+seeded from the current notes; "Use this" copies the draft back into the
+card's own textarea (still requires the card's own "Save notes" to
+persist) so a half-finished AI rewrite can never overwrite the saved brief.
 
 **Onboarding at close (0138).** When the agent closes, the `start_onboarding`
 tool stages the member via `agent_stage_onboarding` (service-role, tenancy from
