@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { hexToHsv, hsvToHex } from './colour';
+import { darkenHex, hexToHsv, hsvToHex } from './colour';
 
 describe('hexToHsv', () => {
   it('parses primaries', () => {
@@ -40,5 +40,24 @@ describe('hsvToHex', () => {
         expect(Math.abs(a - b)).toBeLessThanOrEqual(1);
       }
     }
+  });
+});
+
+describe('darkenHex', () => {
+  it('lowers brightness while roughly preserving hue', () => {
+    const darker = darkenHex('#F97316', 0.35);
+    expect(darker).not.toBe('#F97316');
+    const before = hexToHsv('#F97316')!;
+    const after = hexToHsv(darker)!;
+    expect(after.v).toBeLessThan(before.v);
+    expect(after.h).toBeCloseTo(before.h, 0);
+  });
+
+  it('clamps at black rather than going negative', () => {
+    expect(darkenHex('#000000', 0.5)).toBe('#000000');
+  });
+
+  it('returns the input unchanged for invalid hex', () => {
+    expect(darkenHex('not-a-colour', 0.3)).toBe('not-a-colour');
   });
 });

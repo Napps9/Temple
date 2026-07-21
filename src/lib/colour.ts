@@ -43,3 +43,12 @@ export function hsvToHex({ h, s, v }: Hsv): string {
       .padStart(2, '0');
   return `#${to255(r)}${to255(g)}${to255(b)}`.toUpperCase();
 }
+
+// Drops HSV value by `amount` (0-1). Used for the second stop of a
+// brand-coloured gradient — a gym's own colour, just darker, rather
+// than a second hard-coded hue.
+export function darkenHex(hex: string, amount: number): string {
+  const hsv = hexToHsv(hex);
+  if (!hsv) return hex;
+  return hsvToHex({ ...hsv, v: Math.max(0, hsv.v * (1 - amount)) });
+}

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { BrandGradientHero } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
@@ -889,57 +890,59 @@ function LiveHero({
   const tint = (opacity: string) => (ink === '#FFFFFF' ? `rgba(255,255,255,${opacity})` : `rgba(17,24,39,${opacity})`);
 
   return (
-    <View className="rounded-xl p-5 gap-4 items-center" style={{ backgroundColor: primaryColor }}>
-      <View
-        className="w-14 h-14 rounded-full items-center justify-center"
-        style={{ backgroundColor: tint('0.2'), borderWidth: 1, borderColor: tint('0.3') }}>
-        <Ionicons name="checkmark" size={26} color={ink} />
-      </View>
-      <View className="gap-1 items-center">
-        <Text className="text-2xl font-bold" style={{ color: ink }}>
-          You're live
-        </Text>
-        <Text className="text-sm text-center" style={{ color: tint('0.85') }}>
-          {gymName}'s AI is now answering calls and texts.
-        </Text>
-      </View>
-      {number ? (
+    <BrandGradientHero color={primaryColor}>
+      <View className="px-8 py-8 gap-4 items-center">
         <View
-          className="flex-row items-center justify-between gap-3 rounded-lg px-4 py-3 self-stretch"
-          style={{ backgroundColor: tint('0.15') }}>
-          <Text className="text-lg font-semibold" style={{ color: ink }}>
-            {number}
+          className="w-16 h-16 rounded-full items-center justify-center"
+          style={{ backgroundColor: tint('0.2'), borderWidth: 1, borderColor: tint('0.3') }}>
+          <Ionicons name="checkmark" size={28} color={ink} />
+        </View>
+        <View className="gap-1 items-center">
+          <Text className="font-bold" style={{ color: ink, fontSize: 26, lineHeight: 32 }}>
+            You're live
           </Text>
-          <Pressable onPress={() => copyToClipboard(number)} hitSlop={6}>
-            <Text className="font-semibold text-xs" style={{ color: ink }}>
-              Copy
+          <Text className="text-sm text-center" style={{ color: tint('0.85') }}>
+            {gymName}'s AI is now answering calls and texts.
+          </Text>
+        </View>
+        {number ? (
+          <View
+            className="flex-row items-center justify-between gap-3 rounded-lg px-4 py-3 self-stretch"
+            style={{ backgroundColor: tint('0.15') }}>
+            <Text className="text-lg font-semibold" style={{ color: ink }}>
+              {number}
             </Text>
-          </Pressable>
+            <Pressable onPress={() => copyToClipboard(number)} hitSlop={6}>
+              <Text className="font-semibold text-xs" style={{ color: ink }}>
+                Copy
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+        <View className="flex-row gap-2">
+          <View
+            className="rounded-full px-3 py-1.5"
+            style={{ backgroundColor: tint('0.15'), borderWidth: 1, borderColor: tint('0.25') }}>
+            <Text className="text-xs font-medium" style={{ color: ink }}>
+              Add to website
+            </Text>
+          </View>
+          <View
+            className="rounded-full px-3 py-1.5"
+            style={{ backgroundColor: tint('0.15'), borderWidth: 1, borderColor: tint('0.25') }}>
+            <Text className="text-xs font-medium" style={{ color: ink }}>
+              Add to Google listing
+            </Text>
+          </View>
         </View>
-      ) : null}
-      <View className="flex-row gap-2">
-        <View
-          className="rounded-full px-3 py-1.5"
-          style={{ backgroundColor: tint('0.15'), borderWidth: 1, borderColor: tint('0.25') }}>
-          <Text className="text-xs font-medium" style={{ color: ink }}>
-            Add to website
+        <Pressable
+          onPress={onDone}
+          className="bg-white rounded-lg px-6 py-3 self-stretch items-center">
+          <Text className="font-semibold" style={{ color: primaryColor }}>
+            Done
           </Text>
-        </View>
-        <View
-          className="rounded-full px-3 py-1.5"
-          style={{ backgroundColor: tint('0.15'), borderWidth: 1, borderColor: tint('0.25') }}>
-          <Text className="text-xs font-medium" style={{ color: ink }}>
-            Add to Google listing
-          </Text>
-        </View>
+        </Pressable>
       </View>
-      <Pressable
-        onPress={onDone}
-        className="bg-white rounded-lg px-6 py-3 self-stretch items-center">
-        <Text className="font-semibold" style={{ color: primaryColor }}>
-          Done
-        </Text>
-      </Pressable>
-    </View>
+    </BrandGradientHero>
   );
 }

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { BrandGradientHero } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
@@ -277,44 +278,45 @@ export default function LeadsScreen() {
         </View>
 
         {isOwner && agentSettings.data?.vapi_assistant_id && Platform.OS === 'web' ? (
-          <Pressable
-            onPress={() => setCallOpen(true)}
-            className="flex-row items-center gap-4 rounded-2xl p-4 active:opacity-90"
-            style={{ backgroundColor: colors.primary }}>
-            <View className="w-11 h-11 rounded-xl items-center justify-center bg-white/20">
-              <Ionicons name="mic" size={20} color="#FFFFFF" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-white font-semibold text-[15px]">
-                Hear how it sounds right now
-              </Text>
-              <Text className="text-white/85 text-xs mt-0.5">
-                No phone needed — talk to your AI right here in the browser.
-              </Text>
-            </View>
-            <View className="bg-white rounded-lg px-3 py-2">
-              <Text className="font-semibold text-xs" style={{ color: colors.primary }}>
-                Start talking
-              </Text>
-            </View>
-          </Pressable>
+          <BrandGradientHero color={colors.primary}>
+            <Pressable
+              onPress={() => setCallOpen(true)}
+              className="flex-row items-center gap-5 px-7 py-6 active:opacity-90">
+              <View className="w-[46px] h-[46px] rounded-2xl items-center justify-center bg-white/20">
+                <Ionicons name="mic" size={22} color="#FFFFFF" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-white font-bold text-[19px] leading-6">
+                  Hear how it sounds right now
+                </Text>
+                <Text className="text-white/85 text-[13px] mt-1">
+                  No phone needed — talk to your AI right here in the browser.
+                </Text>
+              </View>
+              <View className="bg-white rounded-lg px-4 py-2.5">
+                <Text className="font-semibold text-xs" style={{ color: colors.primary }}>
+                  Start talking
+                </Text>
+              </View>
+            </Pressable>
+          </BrandGradientHero>
         ) : isOwner && agentSettings.data?.vapi_assistant_id ? (
           // Browser voice calls need @vapi-ai/web, which only exists on web
           // (the native TalkToAssistant is a hard no-op) — a "Start talking"
           // button here would just do nothing when tapped on the phone app.
-          <View
-            className="flex-row items-center gap-4 rounded-2xl p-4"
-            style={{ backgroundColor: colors.primary }}>
-            <View className="w-11 h-11 rounded-xl items-center justify-center bg-white/20">
-              <Ionicons name="mic" size={20} color="#FFFFFF" />
+          <BrandGradientHero color={colors.primary}>
+            <View className="flex-row items-center gap-5 px-7 py-6">
+              <View className="w-[46px] h-[46px] rounded-2xl items-center justify-center bg-white/20">
+                <Ionicons name="mic" size={22} color="#FFFFFF" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-white font-bold text-[19px] leading-6">Talk to your AI</Text>
+                <Text className="text-white/85 text-[13px] mt-1">
+                  Best on desktop for now — open Temple in a browser to talk to it live.
+                </Text>
+              </View>
             </View>
-            <View className="flex-1">
-              <Text className="text-white font-semibold text-[15px]">Talk to your AI</Text>
-              <Text className="text-white/85 text-xs mt-0.5">
-                Best on desktop for now — open Temple in a browser to talk to it live.
-              </Text>
-            </View>
-          </View>
+          </BrandGradientHero>
         ) : isOwner ? (
           <Link href="/management/leads/agent-setup" asChild>
             <Pressable className="flex-row items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl p-4 active:opacity-80">
