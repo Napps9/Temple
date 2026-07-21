@@ -17,6 +17,7 @@ import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
+import { planKindLabel, planPriceLabel } from '@/lib/subscriptions';
 import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
@@ -164,6 +165,9 @@ export function PlansPanel() {
   const [rows, setRows] = useState<EditablePlan[]>([]);
   const [showArchived, setShowArchived] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Plans render collapsed (a member-style summary) until the staff member
+  // opens one for editing. New plans open straight into the editor.
+  const [editingIds, setEditingIds] = useState<Set<string>>(() => new Set());
   // Per-plan save errors and success flashes, keyed by localId, so each
   // card reports its own outcome instead of one message for the page.
   const [saveErrors, setSaveErrors] = useState<Record<string, string>>({});
@@ -477,6 +481,7 @@ export function PlansPanel() {
         return next;
       });
       setSavedLocalId(localId);
+      endEdit(localId);
       // Patch just this row locally instead of re-seeding from a refetch —
       // a refetch-driven reseed would also overwrite any other card's
       // still-unsaved edits.
@@ -504,6 +509,19 @@ export function PlansPanel() {
     return <Redirect href="/management" />;
   }
 
+  function beginEdit(localId: string) {
+    setEditingIds((curr) => new Set(curr).add(localId));
+  }
+
+  function endEdit(localId: string) {
+    setEditingIds((curr) => {
+      if (!curr.has(localId)) return curr;
+      const next = new Set(curr);
+      next.delete(localId);
+      return next;
+    });
+  }
+
   function update(idx: number, patch: Partial<EditablePlan>) {
     setRows((curr) => curr.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
   }
@@ -524,12 +542,14 @@ export function PlansPanel() {
   }
 
   // New plans land right under the "Add plan" CTA, not at the bottom of
-  // whatever list of existing plans the gym already has.
+  // whatever list of existing plans the gym already has, and open straight
+  // into the editor since a blank card has nothing to summarise.
   function addRow() {
+    const localId = `new-${Math.random().toString(36).slice(2, 8)}`;
     setRows((curr) => [
       {
         serverId: null,
-        localId: `new-${Math.random().toString(36).slice(2, 8)}`,
+        localId,
         resetNonce: 0,
         name: '',
         kind: 'unlimited',
@@ -545,6 +565,7 @@ export function PlansPanel() {
       },
       ...curr,
     ]);
+    beginEdit(localId);
   }
 
   // A brand-new, never-saved card is discarded outright; an existing plan
@@ -556,6 +577,7 @@ export function PlansPanel() {
       delete next[target.localId];
       return next;
     });
+    endEdit(target.localId);
     if (target.serverId === null) {
       setRows((curr) => curr.filter((r) => r.localId !== target.localId));
       return;
@@ -682,6 +704,43 @@ export function PlansPanel() {
             const rowSaving = save.isPending && save.variables?.localId === r.localId;
             const rowError = saveErrors[r.localId];
             const rowSaved = savedLocalId === r.localId;
+
+            // Collapsed by default: a read-only summary that mirrors the
+            // member-facing plan card, until the staff member taps Edit.
+            if (!editingIds.has(r.localId) && r.serverSnapshot) {
+              const snap = r.serverSnapshot;
+              return (
+                <Pressable
+                  key={r.localId}
+                  onPress={() => beginEdit(r.localId)}
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card active:opacity-70">
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="flex-1">
+                      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                        {snap.name}
+                      </Text>
+                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                        {planKindLabel(snap)}
+                      </Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                        {planPriceLabel(snap)}
+                      </Text>
+                      {snap.notice_period_days ? (
+                        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                          {snap.notice_period_days}-day notice
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  <View className="flex-row items-center gap-1.5 self-start">
+                    <Ionicons name="create-outline" size={15} color={colors.primary} />
+                    <Text className="text-primary text-sm font-medium">Edit</Text>
+                  </View>
+                </Pressable>
+              );
+            }
             return (
               <View
                 key={r.localId}
