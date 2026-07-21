@@ -659,9 +659,10 @@ The Manage page presents a tab strip:
 
 ### Leads
 
-[`can_assign_plan`] Reachable from Manage → Leads
-(`/management/leads`), a top-level section (renamed from "CRM" — the
-nav category key is still `crm` internally). Track prospects from
+[`can_assign_plan`] Reachable from Manage → AI Front Desk
+(`/management/leads`), a top-level section (renamed from "CRM", then
+"Leads" — the nav category key is still `crm` internally). Track prospects
+from
 first contact through conversion. A date-range-scoped stats row up
 top shows **New leads** (captured in the period, straight off the
 `leads` table), **Intro sessions** and **Conversion to member** (both
@@ -693,7 +694,7 @@ DEFINER, granted to `anon`), which validates the gym is accepting
 enquiries, checks a loose email shape, and dedups on
 `(gym, lower(email))` within a 30-day window so repeat submissions
 refresh the existing open lead instead of piling up duplicates.
-Captured rows land in Manage → Leads as `cold` with no
+Captured rows land in Manage → AI Front Desk as `cold` with no
 `captured_by`. The public form also carries an explicit marketing-consent
 tick (unticked by default); ticking it records `marketing_consent`,
 `consent_at` and a `consent_policy_version` on the lead, while the enquiry
@@ -707,8 +708,8 @@ and the coach is notified, so nothing falls through the cracks. Assignment
 is deterministic and zero-config: with no rule set, `assign_lead`
 round-robins across active coaches (least-loaded first, longest-idle
 tie-break), falling back to an owner/admin if a gym has no coaches — a lead
-is never silently dropped. Owners can change the strategy at Manage → Leads
-→ Settings (`/management/leads/settings`): `round_robin` (default),
+is never silently dropped. Owners can change the strategy at Manage →
+AI Front Desk → Settings (`/management/leads/settings`): `round_robin` (default),
 `single_default` (one named coach), or `manual` (no auto-assign). Rules live
 in `lead_assignment_rules`; the setter and page are owner-only.
 
@@ -764,13 +765,13 @@ without voice enabled point Twilio's voice webhook at the `/missed-call`
 path: a short "we're texting you" TwiML answer plus an automatic opening
 SMS.
 
-Staff surfaces [`can_assign_plan`]: Manage → Leads → Conversations lists
+Staff surfaces [`can_assign_plan`]: Manage → AI Front Desk → Conversations lists
 every thread (AI replying / With a coach / Opted out); the thread view
 polls live, and Take over / reply / Hand back to AI go through the
 `lead-agent-staff-send` edge function (JWT + RLS-proven authorisation —
 staff replies send from the gym's number and implicitly pause the agent).
 The lead detail modal deep-links to its conversation. Owner settings live
-on Manage → Leads → AI Agent: enable toggle, voice toggle (disabled until
+on Manage → AI Front Desk → AI Agent: enable toggle, voice toggle (disabled until
 Vapi is provisioned), and the free-text "what the agent knows" card
 (`set_gym_agent_enabled` / `set_gym_agent_voice` / `set_gym_agent_context`,
 all owner-only; `phone_number` and `vapi_assistant_id` are service-role

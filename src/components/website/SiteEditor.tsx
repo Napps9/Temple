@@ -885,7 +885,7 @@ function ContactInspector({
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
       <TextField label="Subheading" value={block.subheading} onChangeText={(t) => onPatch({ subheading: t })} multiline />
       <Text className="text-gray-400 dark:text-gray-500 text-xs">
-        Submissions land in Manage → Leads, same as your existing enquiry page.
+        Submissions land in Manage → AI Front Desk, same as your existing enquiry page.
       </Text>
     </View>
   );

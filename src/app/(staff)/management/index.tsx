@@ -102,7 +102,7 @@ type IconName = ComponentProps<typeof Ionicons>['name'];
 const CATEGORY_LABELS: Record<Category, string> = {
   insights: 'Insights',
   members: 'Members',
-  crm: 'Leads',
+  crm: 'AI Front Desk',
   comms: 'Email campaigns',
   website: 'Website',
   store: 'Store',
@@ -365,7 +365,7 @@ export default function ManagementHome() {
     },
     {
       category: 'crm',
-      title: 'Leads',
+      title: 'AI Front Desk',
       description: 'Track prospects from first contact through conversion.',
       href: '/management/leads',
       visible: !!canAssignPlan,
@@ -408,7 +408,7 @@ export default function ManagementHome() {
       router.push('/management/website');
       return;
     }
-    // Leads is a doorway to the leads page, like Website — no inline panel.
+    // AI Front Desk is a doorway to the leads page, like Website — no inline panel.
     if (c === 'crm') {
       router.push('/management/leads');
       return;
@@ -1188,8 +1188,8 @@ function ppDelta(current: number, previous: number): Delta {
 
 // ============================================================================
 // Insights tab — Revenue, Members, Attendance. Everything lead/lifecycle
-// related (intros, conversions, retention, targets) lives on the Leads tab
-// instead — see LeadsScreen's stats row.
+// related (intros, conversions, retention, targets) lives on the AI Front
+// Desk tab instead — see LeadsScreen's stats row.
 // ============================================================================
 
 function InsightsTab() {

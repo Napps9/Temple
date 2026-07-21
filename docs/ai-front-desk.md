@@ -20,7 +20,7 @@ checklist per gym.
   conversation store. Gyms without voice point Twilio's voice webhook at
   `lead-agent-voice/missed-call` instead (say-and-text fallback).
 - All conversation state is in `agent_conversations` / `agent_messages`;
-  staff read and take over from Manage → Leads → Conversations.
+  staff read and take over from Manage → AI Front Desk → Conversations.
 
 ## Platform secrets (once)
 
@@ -126,8 +126,8 @@ philosophy as `send-lead-notifications`.
    them. After setting the assistant id, have the owner re-save any agent
    card (or run the setup wizard) to trigger the first sync.
 
-6. **Owner flips the switch** at Manage → Leads → Automation: enable the
-   front desk, write the "what the agent knows" notes (address, parking,
+6. **Owner flips the switch** at Manage → AI Front Desk → AI Agent: enable
+   the front desk, write the "what the agent knows" notes (address, parking,
    intro offer — the schema has no gym address field, so anything
    location-ish must go here), optionally enable voice.
 
@@ -135,9 +135,9 @@ philosophy as `send-lead-notifications`.
 
 1. Text "hi, how much is membership?" to the number from a personal
    phone. Expect a reply quoting real plan prices within ~15s, a new
-   thread under Manage → Leads → Conversations, and — after you give a
-   name — a lead in Manage → Leads sourced "AI front desk" and assigned
-   to a coach.
+   thread under Manage → AI Front Desk → Conversations, and — after you
+   give a name — a lead in Manage → AI Front Desk sourced "AI front desk"
+   and assigned to a coach.
 2. Reply STOP. Expect the thread to show "Opted out" and
    `marketing_consent = false` on the lead.
 3. Bad-signature check:
@@ -169,8 +169,8 @@ for now.
   `artifact.recording` into the private `agent-call-recordings` Storage bucket
   and inserts `call_recordings`; per-turn `artifact.messages[].secondsFromStart`
   land on `agent_messages` for transcript sync. Owners toggle recording + set a
-  retention window (floor 30 days) in Manage → Leads → Automation → *Call
-  recording & consent*; `purge_expired_agent_recordings` (cron `0 4 * * *`) drops
+  retention window (floor 30 days) in Manage → AI Front Desk → Settings →
+  *Call Recording & Consent*; `purge_expired_agent_recordings` (cron `0 4 * * *`) drops
   both the row and the Storage object. Playback is web-first (owners review on
   desktop) and every open writes `agent_recording_access_log`.
 - **Coaching loop.** In a conversation, *Coach this turn* on any AI message writes
@@ -216,9 +216,9 @@ here) with `VAPI_API_KEY` (private, used server-side by `sync-vapi-assistant`).
   native bundle entirely (a runtime `Platform.OS` check alone isn't enough
   here, since importing the package would still execute browser-only code
   at module load on native).
-- Placements: the CRM dashboard (docked panel over a dimmed pipeline), the
-  setup wizard's go-live step (primary action), and the top of Automation's
-  AI Front Desk section (compact inline row).
+- Placements: the Leads dashboard (docked panel over a dimmed pipeline), the
+  setup wizard's go-live step (primary action), and the top of the AI Agent
+  tab's AI Front Desk section (compact inline row).
 - Calls persist through the normal `agent_conversations` pipeline under the
   synthetic `phone='web-test'` row (one upserted thread per gym, reviewable
   under Conversations) — they just never create a `leads` row.

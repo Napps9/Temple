@@ -545,7 +545,7 @@ export function BrandingPanel() {
               </Text>
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
                 When on, anyone with your enquiry link can leave their
-                details — they land in Manage → Leads as a cold lead.
+                details — they land in Manage → AI Front Desk as a cold lead.
               </Text>
             </View>
             <Switch
