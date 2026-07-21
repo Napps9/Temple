@@ -161,10 +161,11 @@ rental, or a **physical subscription box** shipped every cycle.
   set stock; an orders queue with the buyer,
   items, shipping address and a **Mark shipped / done** action; a **Sales
   this month** tile [`can_see_store_revenue`].
-- **Owner settings** — switch the store on and set the shipping fee
-  (`gyms.store_enabled` / `store_shipping_fee_cents`, RPC
-  `set_store_settings`). Owners pick who manages the store and who sees
-  revenue from the Team → role-permissions editor.
+- **Owner settings** — switch the store off/on (on by default for
+  every gym since 0154) and set the shipping fee (`gyms.store_enabled`
+  / `store_shipping_fee_cents`, RPC `set_store_settings`). Owners pick
+  who manages the store and who sees revenue from the Team →
+  role-permissions editor.
 - **Under the hood (0085–0087)** — `store_products` / `store_orders` /
   `store_order_items` / `store_digital_deliveries` / `store_subscriptions`,
   all `gym_id`-RLS; products carry an ordered `image_urls` gallery (0135,
