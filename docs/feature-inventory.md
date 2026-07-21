@@ -990,7 +990,8 @@ a ready → connecting → live → ended flow with a live transcript, and
 appears in three places: a hero card on the Leads dashboard (docked,
 floating over a dimmed pipeline rather than navigating away), the setup
 wizard's go-live step (primary action, text-yourself testing demoted to a
-secondary link), and the top of the AI Agent tab's AI Front Desk section.
+secondary link), and the AI Agent tab's "Talk to your AI" hero, under its
+Test tab.
 Browser calls flow through the existing `agent_conversations` pipeline
 like any other call (upserted under the synthetic `phone='web-test'` row)
 so a test is reviewable afterward under Conversations — it just never
@@ -1017,13 +1018,16 @@ from — no longer its own sidebar tab), Call Recording & Consent, Usage &
 Data (usage stats, outcomes, daily message cap, conversation retention),
 Data Retention (lead retention window). **AI Agent**
 (`/management/leads/agent`) holds the assistant's behaviour and persona:
-a "Teach it by talking" card leads the page as a hero (step bar + large
-icon avatar carrying the call → review → apply arc, plus a transient
-"Applied — the agent is live" confirmation), followed by AI Front Desk
-(Talk-to-it preview, answer texts/calls toggles, number provisioning,
-voice picker) and Knowledge & Coaching (agent notes, coaching rules),
-with the destructive "turn off & release number" card in Danger Zone at
-the bottom.
+a "Talk to your AI" hero leads the page, with a Teach/Test tab switch
+inside one container rather than two separate "talk to it" cards —
+**Teach it** is the interview (step bar + large icon avatar carrying the
+call → review → apply arc, plus a transient "Applied — the agent is live"
+confirmation, phone or browser); **Test it** is the existing Talk-to-it
+preview (hear the live sales assistant, browser-only). Below the hero:
+AI Front Desk (answer texts/calls toggles, number provisioning, voice
+picker) and Knowledge & Coaching (agent notes, coaching rules), with the
+destructive "turn off & release number" card in Danger Zone at the
+bottom.
 
 ### Member import
 

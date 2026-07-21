@@ -117,6 +117,7 @@ export default function LeadAgentScreen() {
   const [briefModalOpen, setBriefModalOpen] = useState(false);
   const [briefDraft, setBriefDraft] = useState('');
   const [teachMode, setTeachMode] = useState<'phone' | 'browser'>('phone');
+  const [heroTab, setHeroTab] = useState<'teach' | 'test'>('teach');
 
   useEffect(() => {
     if (!agent.isSuccess) return;
@@ -343,183 +344,219 @@ export default function LeadAgentScreen() {
         </Text>
       </View>
 
-      {/* Teach it by talking — the fastest way to brief the agent, so it
-          leads the page rather than sitting at the bottom of a settings
-          list. Step bar + a large icon avatar carry the call → review → live
-          arc visually instead of just a status sentence. */}
+      {/* Talk to your AI — teaching it (the interview) and testing it (how
+          it sounds to a lead) both start the same way, so they share one
+          hero container with a tab switch instead of two separate "talk to
+          it" cards on the page. Step bar + icon avatar only apply to the
+          Teach tab's call → review → live arc. */}
       <View className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-2xl p-5 gap-4">
         <View className="flex-row items-center gap-3">
           <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
             {isCalling ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Ionicons name="call" size={20} color="#FFFFFF" />
+              <Ionicons name={heroTab === 'teach' ? 'call' : 'mic'} size={20} color="#FFFFFF" />
             )}
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-              Teach it by talking
+              Talk to your AI
             </Text>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
-              A five-minute call briefs the agent faster than typing notes.
+              Teach it what to say, or hear how it sounds right now.
             </Text>
           </View>
         </View>
 
-        <View className="gap-1.5">
-          <View className="flex-row gap-1.5">
-            <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 0 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`} />
-            <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 1 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`} />
-          </View>
-          <View className="flex-row justify-between">
-            <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 0 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
-              1. Call
-            </Text>
-            <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 1 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
-              2. Review &amp; apply
-            </Text>
-          </View>
-        </View>
-
-        {isCalling ? (
-          <View className="gap-2">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
-              {interview!.phone === 'browser'
-                ? "A browser interview looks to be in progress — if that's stuck (e.g. left over from a closed tab), cancel and start again."
-                : `Calling you now at ${interview!.phone} — answer and chat. When the call ends, the updated brief appears here for your review.`}
-            </Text>
-            <Pressable onPress={() => discardInterview.mutate()} hitSlop={6} className="self-start">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs underline">Cancel</Text>
-            </Pressable>
-          </View>
-        ) : isReviewing ? (
-          <View className="gap-3">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              Here's what your call taught the agent, merged into its brief. Edit anything, then
-              apply — nothing is live until you do.
-            </Text>
-            {interviewDraft !== null ? (
-              <Input
-                label="Updated brief from your call"
-                value={interviewDraft}
-                onChangeText={setInterviewDraft}
-                multiline
-                numberOfLines={10}
-              />
-            ) : null}
-            <View className="flex-row gap-2 items-start">
-              <View className="flex-1">
-                <Button
-                  onPress={() => applyInterview.mutate()}
-                  loading={applyInterview.isPending}
-                  disabled={!interviewDraft?.trim()}>
-                  Apply to the agent
-                </Button>
-              </View>
-              <ChipButton
-                label="Discard"
-                icon="trash-outline"
-                tone="neutral"
-                onPress={() => discardInterview.mutate()}
-              />
-            </View>
-          </View>
-        ) : isTranscriptOnly ? (
-          <View className="gap-3">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              Call captured, but automatic drafting isn't configured — copy anything useful into
-              the notes card below.
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs" numberOfLines={12}>
-              {interview!.transcript ?? ''}
-            </Text>
-            <ChipButton
-              label="Dismiss"
-              icon="trash-outline"
-              tone="neutral"
-              onPress={() => discardInterview.mutate()}
-            />
-          </View>
-        ) : teachMode === 'browser' && Platform.OS === 'web' ? (
-          <BrowserInterviewCall
-            gymId={membership.gymId}
-            onCompleted={() => {
-              setTeachMode('phone');
-              queryClient.invalidateQueries({ queryKey: ['agent-interview', membership.gymId] });
-            }}
-            onCancel={() => setTeachMode('phone')}
-          />
-        ) : (
-          <View className="gap-3">
-            {applyInterview.isSuccess ? (
-              <View className="flex-row items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
-                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">
-                  Applied — the agent is live with your update.
-                </Text>
-              </View>
-            ) : null}
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              The assistant interviews you — your intro offer, where beginners start, parking, the
-              questions you always get. It drafts the update; you review and approve before
-              anything changes.
-            </Text>
-            {interview?.status === 'failed' ? (
-              <Text className="text-amber-600 dark:text-amber-400 text-xs">
-                The last call didn't connect — check the number and try again.
-              </Text>
-            ) : null}
-            <Input
-              label="Your mobile"
-              value={teachPhone}
-              onChangeText={setTeachPhone}
-              keyboardType="phone-pad"
-              placeholder="+447700900123"
-            />
-            <Button
-              icon="call-outline"
-              onPress={() => startInterview.mutate()}
-              loading={startInterview.isPending}
-              disabled={!teachPhone.trim()}>
-              Call me now
-            </Button>
-            {Platform.OS === 'web' ? (
+        <View className="flex-row gap-2">
+          {(['teach', 'test'] as const).map((t) => {
+            const sel = heroTab === t;
+            return (
               <Pressable
-                onPress={() => setTeachMode('browser')}
-                hitSlop={6}
-                className="self-center">
-                <Text className="text-primary text-xs font-semibold">
-                  No phone needed — talk to it in your browser instead
+                key={t}
+                onPress={() => setHeroTab(t)}
+                className={`flex-1 px-3 py-2 rounded-lg border ${
+                  sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                }`}>
+                <Text
+                  className={`text-sm font-semibold text-center ${
+                    sel ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                  }`}>
+                  {t === 'teach' ? 'Teach it' : 'Test it'}
                 </Text>
               </Pressable>
-            ) : null}
+            );
+          })}
+        </View>
+
+        {heroTab === 'test' ? (
+          <View className="gap-3">
+            {voiceReady && Platform.OS === 'web' ? (
+              talkOpen ? (
+                <TalkToAssistant
+                  assistantId={agent.data?.vapi_assistant_id ?? null}
+                  gymName={brand.gymName}
+                />
+              ) : (
+                <Pressable
+                  onPress={() => setTalkOpen(true)}
+                  className="flex-row items-center gap-3 bg-white/70 dark:bg-black/20 border border-primary/25 rounded-xl px-3.5 py-3 active:opacity-80">
+                  <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
+                    <Ionicons name="mic" size={15} color="#FFFFFF" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+                      Check how it sounds
+                    </Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      Talk to the same assistant your leads do, anytime
+                    </Text>
+                  </View>
+                  <Text className="text-primary text-xs font-semibold">Start →</Text>
+                </Pressable>
+              )
+            ) : (
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Finish setting up your assistant first, then you can talk to it here.
+              </Text>
+            )}
           </View>
+        ) : (
+          <>
+            <View className="gap-1.5">
+              <View className="flex-row gap-1.5">
+                <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 0 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 1 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`} />
+              </View>
+              <View className="flex-row justify-between">
+                <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 0 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
+                  1. Call
+                </Text>
+                <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 1 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
+                  2. Review &amp; apply
+                </Text>
+              </View>
+            </View>
+
+            {isCalling ? (
+              <View className="gap-2">
+                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                  {interview!.phone === 'browser'
+                    ? "A browser interview looks to be in progress — if that's stuck (e.g. left over from a closed tab), cancel and start again."
+                    : `Calling you now at ${interview!.phone} — answer and chat. When the call ends, the updated brief appears here for your review.`}
+                </Text>
+                <Pressable onPress={() => discardInterview.mutate()} hitSlop={6} className="self-start">
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs underline">Cancel</Text>
+                </Pressable>
+              </View>
+            ) : isReviewing ? (
+              <View className="gap-3">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  Here's what your call taught the agent, merged into its brief. Edit anything, then
+                  apply — nothing is live until you do.
+                </Text>
+                {interviewDraft !== null ? (
+                  <Input
+                    label="Updated brief from your call"
+                    value={interviewDraft}
+                    onChangeText={setInterviewDraft}
+                    multiline
+                    numberOfLines={10}
+                  />
+                ) : null}
+                <View className="flex-row gap-2 items-start">
+                  <View className="flex-1">
+                    <Button
+                      onPress={() => applyInterview.mutate()}
+                      loading={applyInterview.isPending}
+                      disabled={!interviewDraft?.trim()}>
+                      Apply to the agent
+                    </Button>
+                  </View>
+                  <ChipButton
+                    label="Discard"
+                    icon="trash-outline"
+                    tone="neutral"
+                    onPress={() => discardInterview.mutate()}
+                  />
+                </View>
+              </View>
+            ) : isTranscriptOnly ? (
+              <View className="gap-3">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  Call captured, but automatic drafting isn't configured — copy anything useful into
+                  the notes card below.
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs" numberOfLines={12}>
+                  {interview!.transcript ?? ''}
+                </Text>
+                <ChipButton
+                  label="Dismiss"
+                  icon="trash-outline"
+                  tone="neutral"
+                  onPress={() => discardInterview.mutate()}
+                />
+              </View>
+            ) : teachMode === 'browser' && Platform.OS === 'web' ? (
+              <BrowserInterviewCall
+                gymId={membership.gymId}
+                onCompleted={() => {
+                  setTeachMode('phone');
+                  queryClient.invalidateQueries({ queryKey: ['agent-interview', membership.gymId] });
+                }}
+                onCancel={() => setTeachMode('phone')}
+              />
+            ) : (
+              <View className="gap-3">
+                {applyInterview.isSuccess ? (
+                  <View className="flex-row items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
+                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                    <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                      Applied — the agent is live with your update.
+                    </Text>
+                  </View>
+                ) : null}
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  The assistant interviews you — your intro offer, where beginners start, parking, the
+                  questions you always get. It drafts the update; you review and approve before
+                  anything changes.
+                </Text>
+                {interview?.status === 'failed' ? (
+                  <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                    The last call didn't connect — check the number and try again.
+                  </Text>
+                ) : null}
+                <Input
+                  label="Your mobile"
+                  value={teachPhone}
+                  onChangeText={setTeachPhone}
+                  keyboardType="phone-pad"
+                  placeholder="+447700900123"
+                />
+                <Button
+                  icon="call-outline"
+                  onPress={() => startInterview.mutate()}
+                  loading={startInterview.isPending}
+                  disabled={!teachPhone.trim()}>
+                  Call me now
+                </Button>
+                {Platform.OS === 'web' ? (
+                  <Pressable
+                    onPress={() => setTeachMode('browser')}
+                    hitSlop={6}
+                    className="self-center">
+                    <Text className="text-primary text-xs font-semibold">
+                      No phone needed — talk to it in your browser instead
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            )}
+          </>
         )}
       </View>
 
       <SectionHeader label="AI Front Desk" />
-
-      {/* Only the assistant is required — browser calls don't touch the
-          phone number, so this works while the Twilio bundle is pending. */}
-      {voiceReady && Platform.OS === 'web' ? (
-        <Pressable
-          onPress={() => setTalkOpen((v) => !v)}
-          className="flex-row items-center gap-3 bg-primary/10 border border-primary/25 rounded-xl px-3.5 py-3 active:opacity-80">
-          <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
-            <Ionicons name="mic" size={15} color="#FFFFFF" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">Talk to it</Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">Check how it sounds, anytime</Text>
-          </View>
-          <Text className="text-primary text-xs font-semibold">
-            {talkOpen ? 'Hide' : 'Start →'}
-          </Text>
-        </Pressable>
-      ) : null}
-      {talkOpen && Platform.OS === 'web' ? (
-        <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} />
-      ) : null}
 
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center justify-between gap-3">
