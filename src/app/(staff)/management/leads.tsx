@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
@@ -276,7 +276,7 @@ export default function LeadsScreen() {
           </View>
         </View>
 
-        {isOwner && agentSettings.data?.vapi_assistant_id ? (
+        {isOwner && agentSettings.data?.vapi_assistant_id && Platform.OS === 'web' ? (
           <Pressable
             onPress={() => setCallOpen(true)}
             className="flex-row items-center gap-4 rounded-2xl p-4 active:opacity-90"
@@ -298,6 +298,23 @@ export default function LeadsScreen() {
               </Text>
             </View>
           </Pressable>
+        ) : isOwner && agentSettings.data?.vapi_assistant_id ? (
+          // Browser voice calls need @vapi-ai/web, which only exists on web
+          // (the native TalkToAssistant is a hard no-op) — a "Start talking"
+          // button here would just do nothing when tapped on the phone app.
+          <View
+            className="flex-row items-center gap-4 rounded-2xl p-4"
+            style={{ backgroundColor: colors.primary }}>
+            <View className="w-11 h-11 rounded-xl items-center justify-center bg-white/20">
+              <Ionicons name="mic" size={20} color="#FFFFFF" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white font-semibold text-[15px]">Talk to your AI</Text>
+              <Text className="text-white/85 text-xs mt-0.5">
+                Best on desktop for now — open Temple in a browser to talk to it live.
+              </Text>
+            </View>
+          </View>
         ) : isOwner ? (
           <Link href="/management/leads/agent-setup" asChild>
             <Pressable className="flex-row items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl p-4 active:opacity-80">

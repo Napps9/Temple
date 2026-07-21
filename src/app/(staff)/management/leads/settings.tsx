@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -692,7 +692,7 @@ export default function LeadAutomationSettings() {
 
         <SectionHeader label="AI Front Desk" />
 
-        {agentNumber && voiceReady ? (
+        {agentNumber && voiceReady && Platform.OS === 'web' ? (
           <Pressable
             onPress={() => setTalkOpen((v) => !v)}
             className="flex-row items-center gap-3 bg-primary/10 border border-primary/25 rounded-xl px-3.5 py-3 active:opacity-80">
@@ -708,7 +708,9 @@ export default function LeadAutomationSettings() {
             </Text>
           </Pressable>
         ) : null}
-        {talkOpen ? <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} /> : null}
+        {talkOpen && Platform.OS === 'web' ? (
+          <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} />
+        ) : null}
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center justify-between gap-3">
