@@ -1,90 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native';
-import Vapi from '@vapi-ai/web';
 
 import { copyToClipboard } from '@/lib/clipboard';
-import { errorMessage } from '@/lib/errors';
 import { useThemeColors } from '@/lib/theme';
-import {
-  finalTranscriptTurn,
-  formatCallDuration,
-  transcriptToText,
-  type TranscriptTurn,
-} from '@/lib/vapi-call';
-
-const VAPI_PUBLIC_KEY = process.env.EXPO_PUBLIC_VAPI_KEY;
-
-type Phase = 'ready' | 'connecting' | 'live' | 'ended';
-
-function useVapiCall(assistantId: string | null) {
-  const [phase, setPhase] = useState<Phase>('ready');
-  const [speaking, setSpeaking] = useState(false);
-  const [turns, setTurns] = useState<TranscriptTurn[]>([]);
-  const [duration, setDuration] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const vapiRef = useRef<InstanceType<typeof Vapi> | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const available = !!assistantId && !!VAPI_PUBLIC_KEY;
-
-  useEffect(
-    () => () => {
-      vapiRef.current?.stop();
-      if (timerRef.current) clearInterval(timerRef.current);
-    },
-    [],
-  );
-
-  function start() {
-    if (!available || !assistantId) return;
-    setError(null);
-    setTurns([]);
-    setDuration(0);
-    setPhase('connecting');
-    const vapi = new Vapi(VAPI_PUBLIC_KEY as string);
-    vapiRef.current = vapi;
-
-    vapi.on('call-start', () => {
-      setPhase('live');
-      timerRef.current = setInterval(() => setDuration((d) => d + 1), 1000);
-    });
-    vapi.on('speech-start', () => setSpeaking(true));
-    vapi.on('speech-end', () => setSpeaking(false));
-    vapi.on('message', (message) => {
-      const turn = finalTranscriptTurn(message);
-      if (turn) setTurns((t) => [...t, turn]);
-    });
-    vapi.on('call-end', () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setSpeaking(false);
-      setPhase('ended');
-    });
-    vapi.on('error', (e) => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setError(errorMessage(e, "Couldn't connect the call"));
-      setPhase('ready');
-    });
-
-    vapi.start(assistantId).catch((e) => {
-      setError(errorMessage(e, "Couldn't connect the call"));
-      setPhase('ready');
-    });
-  }
-
-  function end() {
-    vapiRef.current?.end();
-  }
-
-  function reset() {
-    setPhase('ready');
-    setTurns([]);
-    setDuration(0);
-    setError(null);
-  }
-
-  return { phase, speaking, turns, duration, error, available, start, end, reset };
-}
+import { formatCallDuration, transcriptToText } from '@/lib/vapi-call';
+import { useVapiCall } from '@/lib/useVapiCall';
 
 type CallState = ReturnType<typeof useVapiCall>;
 

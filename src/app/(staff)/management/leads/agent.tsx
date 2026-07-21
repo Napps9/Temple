@@ -6,6 +6,7 @@ import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Switch, Text
 import { Ionicons } from '@expo/vector-icons';
 
 import { AgentBriefBuilder } from '@/components/AgentBriefBuilder';
+import { BrowserInterviewCall } from '@/components/BrowserInterviewCall';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -115,6 +116,7 @@ export default function LeadAgentScreen() {
   const [talkOpen, setTalkOpen] = useState(false);
   const [briefModalOpen, setBriefModalOpen] = useState(false);
   const [briefDraft, setBriefDraft] = useState('');
+  const [teachMode, setTeachMode] = useState<'phone' | 'browser'>('phone');
 
   useEffect(() => {
     if (!agent.isSuccess) return;
@@ -380,10 +382,16 @@ export default function LeadAgentScreen() {
         </View>
 
         {isCalling ? (
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
-            Calling you now at {interview!.phone} — answer and chat. When the call ends, the
-            updated brief appears here for your review.
-          </Text>
+          <View className="gap-2">
+            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+              {interview!.phone === 'browser'
+                ? "A browser interview looks to be in progress — if that's stuck (e.g. left over from a closed tab), cancel and start again."
+                : `Calling you now at ${interview!.phone} — answer and chat. When the call ends, the updated brief appears here for your review.`}
+            </Text>
+            <Pressable onPress={() => discardInterview.mutate()} hitSlop={6} className="self-start">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs underline">Cancel</Text>
+            </Pressable>
+          </View>
         ) : isReviewing ? (
           <View className="gap-3">
             <Text className="text-gray-500 dark:text-gray-400 text-sm">
@@ -432,6 +440,15 @@ export default function LeadAgentScreen() {
               onPress={() => discardInterview.mutate()}
             />
           </View>
+        ) : teachMode === 'browser' && Platform.OS === 'web' ? (
+          <BrowserInterviewCall
+            gymId={membership.gymId}
+            onCompleted={() => {
+              setTeachMode('phone');
+              queryClient.invalidateQueries({ queryKey: ['agent-interview', membership.gymId] });
+            }}
+            onCancel={() => setTeachMode('phone')}
+          />
         ) : (
           <View className="gap-3">
             {applyInterview.isSuccess ? (
@@ -466,6 +483,16 @@ export default function LeadAgentScreen() {
               disabled={!teachPhone.trim()}>
               Call me now
             </Button>
+            {Platform.OS === 'web' ? (
+              <Pressable
+                onPress={() => setTeachMode('browser')}
+                hitSlop={6}
+                className="self-center">
+                <Text className="text-primary text-xs font-semibold">
+                  No phone needed — talk to it in your browser instead
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
       </View>

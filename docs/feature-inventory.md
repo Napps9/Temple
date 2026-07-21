@@ -892,13 +892,26 @@ voice row can have a play button: with an `ELEVENLABS_API_KEY` set,
 `voice-sample` synthesises the clip once (ElevenLabs TTS, allow-listed
 ids) into the public `agent-voice-samples` bucket; without it the buttons
 are hidden. "Teach it by talking"
-(settings, owner-only): `agent-interview/start` rings the owner via a
+(AI Agent tab, owner-only): `agent-interview/start` rings the owner via a
 Vapi outbound call — a transient interviewer assistant (in the gym's
 chosen voice) asks about the offer, beginners, parking and FAQs; the
 end-of-call transcript is distilled by Claude into a DRAFT brief stored
 on `agent_interviews`, which the owner edits and applies (or discards)
-from the settings card — a call never rewrites the live agent directly.
-pgTAP: `agent_interviews`.
+from the hero card — a call never rewrites the live agent directly. Needs
+`VAPI_INTERVIEW_NUMBER_ID` (a platform-wide outbound Vapi number); "No
+phone needed — talk to it in your browser instead" runs the identical
+interview with no outbound telephony at all: `agent-interview/browser-start`
+hands the client an inline assistant config (deliberately with no
+`server`/secret in it, since it goes straight to the browser) for
+`@vapi-ai/web` to call directly — the shared `useVapiCall` hook (factored
+out of `TalkToAssistant`) drives ready → connecting → live → ended the same
+way "Talk to it" does. The browser already has the live transcript from
+Vapi's client-side `message` events, so `agent-interview/submit-transcript`
+(owner-JWT authorised, gym_id derived from the interview row rather than
+trusted from the request) stands in for the phone path's webhook and runs
+the same Claude distillation. A "Cancel" link on both a stuck phone call and
+mid-interview marks the row discarded via the existing
+`set_agent_interview_status` RPC. pgTAP: `agent_interviews`.
 
 **Outcomes + health flag (0148).** The settings usage card now shows
 results, not just activity: agent-sourced leads captured (30d), joined

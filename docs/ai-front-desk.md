@@ -50,11 +50,14 @@ Optional extras:
   it in the public `agent-voice-samples` bucket; without the key the play
   buttons are hidden. The live call voice does NOT need this key — Vapi
   renders the ElevenLabs voices through its bundled access.
-- `VAPI_INTERVIEW_NUMBER_ID` — interview mode ("Teach it by talking").
-  One outbound-capable Vapi phone number, platform-wide: buy/import a
+- `VAPI_INTERVIEW_NUMBER_ID` — interview mode ("Teach it by talking") by
+  phone. One outbound-capable Vapi phone number, platform-wide: buy/import a
   number in Vapi, copy its phone number id. `agent-interview/start`
   rings the owner from it with a transient interviewer assistant;
-  without it the card reports phone teaching isn't switched on.
+  without it the card reports phone teaching isn't switched on. The card's
+  "talk to it in your browser instead" option needs none of this — it runs
+  the same interview through `@vapi-ai/web` (`EXPO_PUBLIC_VAPI_KEY` only),
+  so it works even before this secret is ever set.
 
 `VAPI_API_KEY` (the private key from the Vapi dashboard) lets
 `sync-vapi-assistant` push each gym's prompt, tools, voice and greeting to
