@@ -24,7 +24,8 @@ function routeFor(key: OnboardingStepKey): string {
     case 'book':
       return '/book';
     case 'programming':
-      return '/programming';
+      // Group-qualified: '/programming' also matches (staff)'s route.
+      return '/(member)/programming';
     case 'log':
       return '/track';
     case 'injury':

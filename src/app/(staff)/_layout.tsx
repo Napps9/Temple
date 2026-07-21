@@ -7,7 +7,16 @@ import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 
 const STAFF_SECTIONS: NavSection[] = [
-  { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
+  // Programming exists under both (staff) and (member) at the same
+  // '/programming' URL — the group-qualified navigateTo pins this pill to
+  // the staff editor specifically. See NavSection's comment.
+  {
+    name: 'programming',
+    href: '/programming',
+    navigateTo: '/(staff)/programming',
+    label: 'Programming',
+    icon: 'barbell-outline',
+  },
   { name: 'classes', href: '/classes', label: 'Classes', icon: 'calendar-outline' },
   { name: 'management', href: '/management', label: 'Manage', icon: 'settings-outline' },
 ];

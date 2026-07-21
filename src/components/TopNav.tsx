@@ -27,6 +27,13 @@ type IoniconName = keyof typeof Ionicons.glyphMap;
 export type NavSection = {
   name: string;
   href: string;
+  // Only needed when `href` also matches a route in the OTHER top-level
+  // group — Programming exists under both (member) and (staff), so a bare
+  // router.replace('/programming') is ambiguous and can land on the wrong
+  // one. When set, this group-qualified path (e.g. '/(staff)/programming')
+  // is what actually gets navigated to; `href` still drives the active-
+  // pill match against the real (group-stripped) pathname.
+  navigateTo?: string;
   label: string;
   icon: IoniconName;
 };
@@ -108,7 +115,7 @@ export function TopNav({
             key={s.name}
             onPress={() => {
               haptic.selection();
-              router.replace(s.href as never);
+              router.replace((s.navigateTo ?? s.href) as never);
             }}
             hitSlop={4}
             accessibilityRole="tab"

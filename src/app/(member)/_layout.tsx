@@ -8,7 +8,16 @@ import { useThemeColors } from '@/lib/theme';
 // Bookings intentionally isn't a top-level section — it lives on the
 // Book page ("My bookings" card) where members actually look for it.
 const MEMBER_SECTIONS: NavSection[] = [
-  { name: 'programming', href: '/programming', label: 'Programming', icon: 'barbell-outline' },
+  // Programming exists under both (member) and (staff) at the same
+  // '/programming' URL — the group-qualified navigateTo pins this pill to
+  // the member view specifically. See NavSection's comment in TopNav.
+  {
+    name: 'programming',
+    href: '/programming',
+    navigateTo: '/(member)/programming',
+    label: 'Programming',
+    icon: 'barbell-outline',
+  },
   { name: 'book', href: '/book', label: 'Book', icon: 'calendar-clear-outline' },
   { name: 'track', href: '/track', label: 'Track', icon: 'trending-up-outline' },
 ];
