@@ -260,7 +260,7 @@ Left for you (policy/config, not code):
         one live Stripe account, and a completed demo checkout is real
         money (show the flow, don't complete a real charge unless you'll
         refund it).
-- [x] **Decide Temple's pricing** — **£200/month, all-inclusive**,
+- [x] **Decide Temple's pricing** — **£299/month +VAT, all-inclusive**,
       matching what the marketing site's stat strip and pricing page
       already commit to. The website builder add-on
       (`website_builder_enabled`, flipped manually by you after an
