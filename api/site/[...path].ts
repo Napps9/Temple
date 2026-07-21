@@ -73,7 +73,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).send(notFoundHtml());
     return;
   }
-  const pageSlug = segments[1] ?? '';
+  // Vercel compiles the catch-all `api/site/[...path]` into a
+  // single-segment matcher (^/api/site/([^/]+)$), so a rewritten
+  // /site/<slug>/<page-slug> two-segment path never reaches this
+  // function — it 404s at the edge. vercel.json therefore rewrites the
+  // page shape to /api/site/<slug>?page=<page-slug>, keeping the path to
+  // one segment; the page arrives here as a query param. segments[1] is
+  // kept as a fallback for the (currently unroutable) two-segment path.
+  const pageParam = req.query.page;
+  const pageFromQuery = Array.isArray(pageParam) ? pageParam[0] : pageParam;
+  const pageSlug = pageFromQuery ?? segments[1] ?? '';
 
   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;

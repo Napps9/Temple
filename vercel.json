@@ -5,6 +5,7 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/site/:slug/sitemap.xml", "destination": "/api/site-sitemap/:slug" },
+    { "source": "/site/:slug/:page", "destination": "/api/site/:slug?page=:page" },
     { "source": "/site/:path*", "destination": "/api/site/:path*" },
     { "source": "/join/:slug", "destination": "/join/[slug]" },
     { "source": "/lead/:slug", "destination": "/lead/[slug]" },
