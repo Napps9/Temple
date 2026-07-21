@@ -68,6 +68,17 @@ function fmtClock(s: number): string {
   return `${Math.floor(t / 60)}:${`0${t % 60}`.slice(-2)}`;
 }
 
+// Wall-clock timestamp for a staff-sent SMS — unlike call turns these
+// aren't seconds-from-call-start, so they need a real date/time, not fmtClock.
+function fmtSmsTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function ScrubBar({
   current,
   duration,
@@ -339,6 +350,127 @@ export default function AgentConversationScreen() {
   const c = conversation.data;
   const status = c?.status;
   const rows = messages.data ?? [];
+  // Staff's own follow-up texts land in this same conversation's messages
+  // (see lead-agent-staff-send) alongside the call's spoken turns — split
+  // them out so the recorded call and any SMS sent from here read as two
+  // distinct things instead of one confusing mixed thread. Only meaningful
+  // for a voice conversation; an SMS-channel conversation is SMS start to
+  // finish, so it keeps the single unified thread.
+  const transcriptRows = rows.filter((m) => m.role !== 'staff');
+  const smsRows = rows.filter((m) => m.role === 'staff');
+
+  const replyBox =
+    c && status !== 'closed' ? (
+      <>
+        <Input
+          label="Reply as staff"
+          value={draft}
+          onChangeText={setDraft}
+          multiline
+          placeholder="Texts the lead from your gym's number and pauses the AI"
+        />
+        <Button
+          onPress={() => act.mutate({ action: 'send', body: draft })}
+          loading={act.isPending}
+          disabled={!draft.trim()}>
+          Send text
+        </Button>
+      </>
+    ) : null;
+  const closedText =
+    c && status === 'closed' ? (
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        This person replied STOP, so the thread is closed and no more texts can be
+        sent.
+      </Text>
+    ) : null;
+
+  function renderBubble(m: MessageRow) {
+    if (m.role === 'system') {
+      return (
+        <View key={m.id} className="px-4 py-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
+            {m.body}
+          </Text>
+        </View>
+      );
+    }
+    const fromLead = m.role === 'lead';
+    const isAgent = m.role === 'agent';
+    const active = m.id === activeId;
+    const seekable = audio.supported && m.seconds_from_start != null;
+    return (
+      <View key={m.id} className={`gap-1 ${fromLead ? 'items-start' : 'items-end'}`}>
+        <Pressable
+          disabled={!seekable}
+          onPress={() => seekable && audio.seek(m.seconds_from_start ?? 0)}
+          // nativeID -> DOM id, so the web-only selection listener
+          // can tell which turn a highlighted phrase is in.
+          nativeID={isAgent ? `${MESSAGE_ID_PREFIX}${m.id}` : undefined}
+          className={`max-w-[88%] rounded-xl px-3 py-2 ${
+            fromLead ? 'self-start bg-gray-200 dark:bg-gray-800' : 'self-end bg-primary/10'
+          } ${active ? 'border border-primary' : 'border border-transparent'}`}>
+          <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
+          <View className="flex-row items-center justify-between mt-1 gap-3">
+            <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+              {m.role === 'agent' ? 'AI' : m.role === 'staff' ? 'Staff' : 'Lead'}
+              {m.seconds_from_start != null ? ` · ${fmtClock(m.seconds_from_start)}` : ''}
+            </Text>
+            {isAgent && canReview === true ? (
+              <Pressable
+                onPress={() => setCoachFor(m)}
+                hitSlop={6}
+                className="flex-row items-center gap-1">
+                <Ionicons name="school-outline" size={12} color={colors.primary} />
+                <Text className="text-primary text-[11px] font-semibold">Coach</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {isAgent && coachedIds.has(m.id) ? (
+            <View className="flex-row items-center gap-1 mt-1">
+              <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
+              <Text className="text-green-600 dark:text-green-400 text-[11px] font-semibold">
+                Coached — applies to future calls
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
+
+        {isAgent &&
+        canReview === true &&
+        selectedText?.messageId === m.id &&
+        inlineCoachFor?.id !== m.id ? (
+          <Pressable
+            onPress={() => {
+              setInlineCoachFor(m);
+              if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+            }}
+            className="flex-row items-center gap-1 bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
+            <Ionicons name="chatbox-ellipses-outline" size={11} color={colors.primary} />
+            <Text className="text-primary text-[11px] font-semibold">
+              Comment on "{selectedText.text.length > 40 ? `${selectedText.text.slice(0, 40)}…` : selectedText.text}"
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {isAgent && inlineCoachFor?.id === m.id ? (
+          <InlineCoachForm
+            message={m}
+            excerpt={selectedText?.messageId === m.id ? selectedText.text : m.body}
+            gymId={conversation.data?.gym_id ?? null}
+            conversationId={id ?? null}
+            onClose={() => setInlineCoachFor(null)}
+            onCoached={(mid) => {
+              setCoachedIds((s) => new Set(s).add(mid));
+              setInlineCoachFor(null);
+              setSelectedText(null);
+              queryClient.invalidateQueries({ queryKey: ['agent-rules', conversation.data?.gym_id] });
+            }}
+          />
+        ) : null}
+      </View>
+    );
+  }
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -426,123 +558,63 @@ export default function AgentConversationScreen() {
           </View>
         ) : null}
 
-        <View className="gap-2" ref={transcriptRef}>
-          {rows.map((m) => {
-            if (m.role === 'system') {
-              return (
-                <View key={m.id} className="px-4 py-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
-                    {m.body}
+        {isVoice ? (
+          <>
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                Call transcript
+              </Text>
+              <View className="gap-2" ref={transcriptRef}>
+                {transcriptRows.map(renderBubble)}
+                {messages.isSuccess && transcriptRows.length === 0 ? (
+                  <Text className="text-gray-500 dark:text-gray-400 text-center py-6">
+                    No call transcript yet.
                   </Text>
-                </View>
-              );
-            }
-            const fromLead = m.role === 'lead';
-            const isAgent = m.role === 'agent';
-            const active = m.id === activeId;
-            const seekable = audio.supported && m.seconds_from_start != null;
-            return (
-              <View key={m.id} className={`gap-1 ${fromLead ? 'items-start' : 'items-end'}`}>
-                <Pressable
-                  disabled={!seekable}
-                  onPress={() => seekable && audio.seek(m.seconds_from_start ?? 0)}
-                  // nativeID -> DOM id, so the web-only selection listener
-                  // can tell which turn a highlighted phrase is in.
-                  nativeID={isAgent ? `${MESSAGE_ID_PREFIX}${m.id}` : undefined}
-                  className={`max-w-[88%] rounded-xl px-3 py-2 ${
-                    fromLead ? 'self-start bg-gray-200 dark:bg-gray-800' : 'self-end bg-primary/10'
-                  } ${active ? 'border border-primary' : 'border border-transparent'}`}>
-                  <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
-                  <View className="flex-row items-center justify-between mt-1 gap-3">
-                    <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
-                      {m.role === 'agent' ? 'AI' : m.role === 'staff' ? 'Staff' : 'Lead'}
-                      {m.seconds_from_start != null ? ` · ${fmtClock(m.seconds_from_start)}` : ''}
-                    </Text>
-                    {isAgent && canReview === true ? (
-                      <Pressable
-                        onPress={() => setCoachFor(m)}
-                        hitSlop={6}
-                        className="flex-row items-center gap-1">
-                        <Ionicons name="school-outline" size={12} color={colors.primary} />
-                        <Text className="text-primary text-[11px] font-semibold">Coach</Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                  {isAgent && coachedIds.has(m.id) ? (
-                    <View className="flex-row items-center gap-1 mt-1">
-                      <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
-                      <Text className="text-green-600 dark:text-green-400 text-[11px] font-semibold">
-                        Coached — applies to future calls
-                      </Text>
-                    </View>
-                  ) : null}
-                </Pressable>
-
-                {isAgent &&
-                canReview === true &&
-                selectedText?.messageId === m.id &&
-                inlineCoachFor?.id !== m.id ? (
-                  <Pressable
-                    onPress={() => {
-                      setInlineCoachFor(m);
-                      if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
-                    }}
-                    className="flex-row items-center gap-1 bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
-                    <Ionicons name="chatbox-ellipses-outline" size={11} color={colors.primary} />
-                    <Text className="text-primary text-[11px] font-semibold">
-                      Comment on "{selectedText.text.length > 40 ? `${selectedText.text.slice(0, 40)}…` : selectedText.text}"
-                    </Text>
-                  </Pressable>
-                ) : null}
-
-                {isAgent && inlineCoachFor?.id === m.id ? (
-                  <InlineCoachForm
-                    message={m}
-                    excerpt={selectedText?.messageId === m.id ? selectedText.text : m.body}
-                    gymId={conversation.data?.gym_id ?? null}
-                    conversationId={id ?? null}
-                    onClose={() => setInlineCoachFor(null)}
-                    onCoached={(mid) => {
-                      setCoachedIds((s) => new Set(s).add(mid));
-                      setInlineCoachFor(null);
-                      setSelectedText(null);
-                      queryClient.invalidateQueries({ queryKey: ['agent-rules', conversation.data?.gym_id] });
-                    }}
-                  />
                 ) : null}
               </View>
-            );
-          })}
-          {messages.isSuccess && rows.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-center py-6">
-              No messages yet.
-            </Text>
-          ) : null}
-        </View>
+            </View>
 
-        {c && status !== 'closed' ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Input
-              label="Reply as staff"
-              value={draft}
-              onChangeText={setDraft}
-              multiline
-              placeholder="Texts the lead from your gym's number and pauses the AI"
-            />
-            <Button
-              onPress={() => act.mutate({ action: 'send', body: draft })}
-              loading={act.isPending}
-              disabled={!draft.trim()}>
-              Send text
-            </Button>
-          </View>
-        ) : null}
-        {c && status === 'closed' ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            This person replied STOP, so the thread is closed and no more texts can be
-            sent.
-          </Text>
-        ) : null}
+            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                SMS
+              </Text>
+              {smsRows.length > 0 ? (
+                <View className="gap-2">
+                  {smsRows.map((m) => (
+                    <View key={m.id} className="items-end">
+                      <View className="max-w-[88%] rounded-xl px-3 py-2 bg-primary/10">
+                        <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
+                        <Text className="text-gray-400 dark:text-gray-500 text-[10px] mt-1">
+                          Staff · {fmtSmsTime(m.created_at)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              {replyBox}
+              {closedText}
+            </View>
+          </>
+        ) : (
+          <>
+            <View className="gap-2" ref={transcriptRef}>
+              {rows.map(renderBubble)}
+              {messages.isSuccess && rows.length === 0 ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-center py-6">
+                  No messages yet.
+                </Text>
+              ) : null}
+            </View>
+
+            {c && status !== 'closed' ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+                {replyBox}
+              </View>
+            ) : null}
+            {closedText}
+          </>
+        )}
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
