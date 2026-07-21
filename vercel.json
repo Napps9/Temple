@@ -14,6 +14,9 @@
     { "source": "/track/workout/:id", "destination": "/track/workout/[id]" },
     { "source": "/inbox/direct/:peer", "destination": "/inbox/direct/[peer]" },
     { "source": "/management/members/:profile", "destination": "/management/members/[profile]" },
-    { "source": "/management/communications/:id", "destination": "/management/communications/[id]" }
+    { "source": "/management/members/imported/:id", "destination": "/management/members/imported/[id]" },
+    { "source": "/management/communications/:id", "destination": "/management/communications/[id]" },
+    { "source": "/management/communications/automations/:id", "destination": "/management/communications/automations/[id]" },
+    { "source": "/management/leads/conversation/:id", "destination": "/management/leads/conversation/[id]" }
   ]
 }
