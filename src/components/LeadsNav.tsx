@@ -9,32 +9,27 @@ import { useThemeColors } from '@/lib/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-export type LeadsTab = 'leads' | 'conversations' | 'sources' | 'settings' | 'agent';
+export type LeadsTab = 'leads' | 'agent' | 'conversations' | 'settings';
 
 const TAB_LABELS: Record<LeadsTab, string> = {
   leads: 'Leads',
-  conversations: 'Conversations',
-  sources: 'Manage sources',
-  settings: 'Settings',
   agent: 'AI Agent',
+  conversations: 'Conversations',
+  settings: 'Settings',
 };
 
 const TAB_ICONS: Record<LeadsTab, IconName> = {
   leads: 'funnel-outline',
-  conversations: 'chatbubbles-outline',
-  sources: 'share-social-outline',
-  settings: 'settings-outline',
   agent: 'sparkles-outline',
+  conversations: 'chatbubbles-outline',
+  settings: 'settings-outline',
 };
 
 function goToTab(tab: LeadsTab) {
   if (tab === 'leads') router.push('/management/leads' as never);
+  else if (tab === 'agent') router.push('/management/leads/agent' as never);
   else if (tab === 'conversations') router.push('/management/leads/conversations' as never);
-  // Sources has no route of its own — it's a modal on the Leads pipeline
-  // screen, opened here via a query param the pipeline reads on mount.
-  else if (tab === 'sources') router.push('/management/leads?sources=1' as never);
-  else if (tab === 'settings') router.push('/management/leads/settings' as never);
-  else router.push('/management/leads/agent' as never);
+  else router.push('/management/leads/settings' as never);
 }
 
 // Same pill idiom as the Manage screen's own sidebar (ManageNav) — a
@@ -47,7 +42,7 @@ function LeadsPills({
   vertical,
 }: {
   tabs: LeadsTab[];
-  active: LeadsTab | null;
+  active: LeadsTab;
   vertical: boolean;
 }) {
   const colors = useThemeColors();
@@ -94,17 +89,15 @@ function LeadsPills({
   );
 }
 
-// Shell for the Leads section's screens (pipeline, conversations, settings,
-// agent) — a persistent left sidebar on desktop matching the Manage
-// screen's own sidebar, a pill row above the content on mobile. `active`
-// is null for the sources "tab" since it's a modal on the pipeline
-// screen, not a page of its own.
+// Shell for the Leads section's screens (pipeline, agent, conversations,
+// settings) — a persistent left sidebar on desktop matching the Manage
+// screen's own sidebar, a pill row above the content on mobile.
 export function LeadsShell({
   active,
   tabs,
   children,
 }: {
-  active: LeadsTab | null;
+  active: LeadsTab;
   tabs: LeadsTab[];
   children: ReactNode;
 }) {

@@ -982,20 +982,25 @@ real progress signal to instrument) instead of a bare spinner, "your
 progress was saved" copy on a failed-retry so resuming doesn't read as
 starting over, and a brand-coloured "You're live" moment with the number
 and a copy button before returning to Leads. The former single
-"Automation" page is split across two owner-only tabs in the Leads section
-sidebar (`/management/leads/settings`, `/management/leads/agent`), both
-using `LeadsShell`/`LeadsNav`. **Settings** holds the operational/policy
-cards under plain (non-collapsible) section labels — When A Lead Comes In
-(assignment strategy + "text the coach too"), Call Recording & Consent,
-Usage & Data (usage stats, outcomes, daily message cap, conversation
-retention), Data Retention (lead retention window). **AI Agent** holds the
-assistant's behaviour and persona: a "Teach it by talking" card leads the
-page as a hero (step bar + large icon avatar carrying the call → review →
-apply arc, plus a transient "Applied — the agent is live" confirmation),
-followed by AI Front Desk (Talk-to-it preview, answer texts/calls toggles,
-number provisioning, voice picker) and Knowledge & Coaching (agent notes,
-coaching rules), with the destructive "turn off & release number" card in
-Danger Zone at the bottom.
+"Automation" page is split across two owner-only tabs in the Leads
+section's left sidebar (`LeadsShell`/`LeadsNav`), ordered Leads → AI
+Agent → Conversations → Settings (non-owners with `can_assign_plan` see
+only Leads/Conversations). **Settings**
+(`/management/leads/settings`) holds the operational/policy cards under
+plain (non-collapsible) section labels — When A Lead Comes In
+(assignment strategy + "text the coach too"), Lead Sources (opens the
+same add/archive `SourcesEditorModal` the pipeline's source picker reads
+from — no longer its own sidebar tab), Call Recording & Consent, Usage &
+Data (usage stats, outcomes, daily message cap, conversation retention),
+Data Retention (lead retention window). **AI Agent**
+(`/management/leads/agent`) holds the assistant's behaviour and persona:
+a "Teach it by talking" card leads the page as a hero (step bar + large
+icon avatar carrying the call → review → apply arc, plus a transient
+"Applied — the agent is live" confirmation), followed by AI Front Desk
+(Talk-to-it preview, answer texts/calls toggles, number provisioning,
+voice picker) and Knowledge & Coaching (agent notes, coaching rules),
+with the destructive "turn off & release number" card in Danger Zone at
+the bottom.
 
 ### Member import
 

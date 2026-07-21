@@ -47,8 +47,8 @@ export default function AgentConversationsScreen() {
 
   const tabs: LeadsTab[] =
     membership.role === 'owner'
-      ? ['leads', 'conversations', 'sources', 'settings', 'agent']
-      : ['leads', 'conversations', 'sources'];
+      ? ['leads', 'agent', 'conversations', 'settings']
+      : ['leads', 'conversations'];
 
   return (
     <LeadsShell active="conversations" tabs={tabs}>

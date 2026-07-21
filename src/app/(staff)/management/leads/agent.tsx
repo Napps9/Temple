@@ -328,7 +328,7 @@ export default function LeadAgentScreen() {
   const teachStep = isReviewing ? 1 : 0;
 
   return (
-    <LeadsShell active="agent" tabs={['leads', 'conversations', 'sources', 'settings', 'agent']}>
+    <LeadsShell active="agent" tabs={['leads', 'agent', 'conversations', 'settings']}>
       <View className="gap-1">
         <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">AI Agent</Text>
         <Text className="text-gray-500 dark:text-gray-400">

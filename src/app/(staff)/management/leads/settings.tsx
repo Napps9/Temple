@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+
+import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { LeadsShell } from '@/components/LeadsNav';
@@ -11,6 +14,7 @@ import { syncVapiAssistant } from '@/lib/agent-sync';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useThemeColors } from '@/lib/theme';
 
 type Strategy = 'round_robin' | 'single_default' | 'manual';
 
@@ -25,6 +29,8 @@ type GymLeadSettings = {
 };
 
 type CoachRow = { profile_id: string; full_name: string | null };
+
+type SourceRow = { id: string; label: string; color: string };
 
 type AgentLimits = {
   call_recording_enabled: boolean;
@@ -143,6 +149,7 @@ export default function LeadSettingsScreen() {
   const [msgCap, setMsgCap] = useState<string | null>(null);
   const [convRetention, setConvRetention] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
 
   useEffect(() => {
     if (rule.data) {
@@ -330,7 +337,7 @@ export default function LeadSettingsScreen() {
   const recOn = agent.data?.call_recording_enabled ?? true;
 
   return (
-    <LeadsShell active="settings" tabs={['leads', 'conversations', 'sources', 'settings', 'agent']}>
+    <LeadsShell active="settings" tabs={['leads', 'agent', 'conversations', 'settings']}>
       <View className="gap-1">
         <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">Settings</Text>
         <Text className="text-gray-500 dark:text-gray-400">
@@ -405,6 +412,23 @@ export default function LeadSettingsScreen() {
             accessibilityLabel="Text the coach too"
             value={smsOn}
             onValueChange={(v) => toggleSms.mutate(v)}
+          />
+        </View>
+      </View>
+
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1">
+            <Text className="text-gray-900 dark:text-gray-50 font-medium">Lead sources</Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Where your prospects come from — Instagram, walk-in, referral, open day.
+            </Text>
+          </View>
+          <ChipButton
+            label="Manage"
+            icon="share-social-outline"
+            tone="neutral"
+            onPress={() => setSourcesOpen(true)}
           />
         </View>
       </View>
@@ -557,6 +581,184 @@ export default function LeadSettingsScreen() {
       </View>
 
       {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
+
+      <SourcesEditorModal
+        visible={sourcesOpen}
+        gymId={membership.gymId}
+        onClose={() => setSourcesOpen(false)}
+      />
     </LeadsShell>
+  );
+}
+
+const SOURCE_COLOURS = [
+  '#EF4444', '#F97316', '#F59E0B', '#10B981',
+  '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280',
+];
+
+function SourcesEditorModal({
+  visible,
+  gymId,
+  onClose,
+}: {
+  visible: boolean;
+  gymId: string;
+  onClose: () => void;
+}) {
+  const colors = useThemeColors();
+  const queryClient = useQueryClient();
+  const [label, setLabel] = useState('');
+  const [color, setColor] = useState(SOURCE_COLOURS[0]);
+  const [error, setError] = useState<string | null>(null);
+
+  const sources = useQuery({
+    queryKey: ['lead-sources', gymId],
+    enabled: visible,
+    queryFn: async (): Promise<SourceRow[]> => {
+      const { data, error: e } = await supabase
+        .from('lead_sources')
+        .select('id, label, color')
+        .eq('gym_id', gymId)
+        .is('archived_at', null)
+        .order('label');
+      if (e) throw e;
+      return (data ?? []) as SourceRow[];
+    },
+  });
+
+  const create = useMutation({
+    mutationFn: async () => {
+      if (label.trim() === '') throw new Error('Label is required');
+      const { error: e } = await supabase
+        .from('lead_sources')
+        .insert({ gym_id: gymId, label: label.trim(), color });
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      setError(null);
+      setLabel('');
+      setColor(SOURCE_COLOURS[0]);
+      queryClient.invalidateQueries({ queryKey: ['lead-sources', gymId] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not add source')),
+  });
+
+  const archive = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e } = await supabase
+        .from('lead_sources')
+        .update({ archived_at: new Date().toISOString() })
+        .eq('id', id);
+      if (e) throw e;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-sources', gymId] });
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        className="flex-1 bg-black/60 items-center justify-center px-6">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4 max-h-[90%]">
+          <ScrollView>
+            <View className="gap-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                  Lead sources
+                </Text>
+                <Pressable
+                  onPress={onClose}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                  className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+                  <Ionicons name="close" size={18} color={colors.iconSecondary} />
+                </Pressable>
+              </View>
+
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Where your prospects come from — Instagram, walk-in,
+                referral, open day. The chip colour shows up on every
+                lead card.
+              </Text>
+
+              <View className="gap-2">
+                {(sources.data ?? []).length === 0 ? (
+                  <Text className="text-gray-400 dark:text-gray-500 text-sm">
+                    No sources yet.
+                  </Text>
+                ) : (
+                  (sources.data ?? []).map((s) => (
+                    <View
+                      key={s.id}
+                      className="flex-row items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                      <View
+                        style={{ backgroundColor: s.color }}
+                        className="w-4 h-4 rounded-full"
+                      />
+                      <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                        {s.label}
+                      </Text>
+                      <Pressable
+                        onPress={() => archive.mutate(s.id)}
+                        hitSlop={8}
+                        accessibilityLabel="Archive source">
+                        <Ionicons
+                          name="trash-outline"
+                          size={16}
+                          color={colors.iconTertiary}
+                        />
+                      </Pressable>
+                    </View>
+                  ))
+                )}
+              </View>
+
+              <View className="gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                  Add a source
+                </Text>
+                <Input
+                  label=""
+                  value={label}
+                  onChangeText={setLabel}
+                  placeholder="Instagram"
+                />
+                <View className="flex-row flex-wrap gap-2">
+                  {SOURCE_COLOURS.map((c) => {
+                    const sel = c === color;
+                    return (
+                      <Pressable
+                        key={c}
+                        onPress={() => setColor(c)}
+                        style={{ backgroundColor: c }}
+                        className={`w-8 h-8 rounded-full ${
+                          sel ? 'border-2 border-gray-900 dark:border-gray-50' : ''
+                        }`}
+                      />
+                    );
+                  })}
+                </View>
+                {error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                    {error}
+                  </Text>
+                ) : null}
+                <Button
+                  onPress={() => create.mutate()}
+                  loading={create.isPending}
+                  disabled={label.trim() === ''}>
+                  Add source
+                </Button>
+              </View>
+            </View>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
