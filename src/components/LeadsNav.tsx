@@ -9,20 +9,22 @@ import { useThemeColors } from '@/lib/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-export type LeadsTab = 'leads' | 'conversations' | 'sources' | 'automation';
+export type LeadsTab = 'leads' | 'conversations' | 'sources' | 'settings' | 'agent';
 
 const TAB_LABELS: Record<LeadsTab, string> = {
   leads: 'Leads',
   conversations: 'Conversations',
   sources: 'Manage sources',
-  automation: 'Automation',
+  settings: 'Settings',
+  agent: 'AI Agent',
 };
 
 const TAB_ICONS: Record<LeadsTab, IconName> = {
   leads: 'funnel-outline',
   conversations: 'chatbubbles-outline',
   sources: 'share-social-outline',
-  automation: 'sparkles-outline',
+  settings: 'settings-outline',
+  agent: 'sparkles-outline',
 };
 
 function goToTab(tab: LeadsTab) {
@@ -31,7 +33,8 @@ function goToTab(tab: LeadsTab) {
   // Sources has no route of its own — it's a modal on the Leads pipeline
   // screen, opened here via a query param the pipeline reads on mount.
   else if (tab === 'sources') router.push('/management/leads?sources=1' as never);
-  else router.push('/management/leads/settings' as never);
+  else if (tab === 'settings') router.push('/management/leads/settings' as never);
+  else router.push('/management/leads/agent' as never);
 }
 
 // Same pill idiom as the Manage screen's own sidebar (ManageNav) — a
@@ -91,8 +94,8 @@ function LeadsPills({
   );
 }
 
-// Shell for the Leads section's screens (pipeline, conversations,
-// automation) — a persistent left sidebar on desktop matching the Manage
+// Shell for the Leads section's screens (pipeline, conversations, settings,
+// agent) — a persistent left sidebar on desktop matching the Manage
 // screen's own sidebar, a pill row above the content on mobile. `active`
 // is null for the sources "tab" since it's a modal on the pipeline
 // screen, not a page of its own.

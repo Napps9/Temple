@@ -708,7 +708,7 @@ is deterministic and zero-config: with no rule set, `assign_lead`
 round-robins across active coaches (least-loaded first, longest-idle
 tie-break), falling back to an owner/admin if a gym has no coaches — a lead
 is never silently dropped. Owners can change the strategy at Manage → Leads
-→ Automation (`/management/leads/settings`): `round_robin` (default),
+→ Settings (`/management/leads/settings`): `round_robin` (default),
 `single_default` (one named coach), or `manual` (no auto-assign). Rules live
 in `lead_assignment_rules`; the setter and page are owner-only.
 
@@ -770,7 +770,7 @@ polls live, and Take over / reply / Hand back to AI go through the
 `lead-agent-staff-send` edge function (JWT + RLS-proven authorisation —
 staff replies send from the gym's number and implicitly pause the agent).
 The lead detail modal deep-links to its conversation. Owner settings live
-on Manage → Leads → Automation: enable toggle, voice toggle (disabled until
+on Manage → Leads → AI Agent: enable toggle, voice toggle (disabled until
 Vapi is provisioned), and the free-text "what the agent knows" card
 (`set_gym_agent_enabled` / `set_gym_agent_voice` / `set_gym_agent_context`,
 all owner-only; `phone_number` and `vapi_assistant_id` are service-role
@@ -943,10 +943,10 @@ regulatory bundle, creates the gym's Vapi assistant, imports the number
 onto it, and syncs prompt/tools/voice — resumable step-by-step, so
 retrying a `failed` run never buys a second number or assistant.
 `deprovision-front-desk` tears it down (churn or the owner turning it
-off). Entry points: the setup wizard's go-live step and the Automation
-settings "AI front desk" card both show a "Set up my number" button when
-entitled-but-not-provisioned; settings also has a destructive "Turn off &
-release number" card (`ConfirmDialog`-gated) once a number exists.
+off). Entry points: the setup wizard's go-live step and the AI Agent tab's
+"AI front desk" card both show a "Set up my number" button when
+entitled-but-not-provisioned; the AI Agent tab also has a destructive "Turn
+off & release number" card (`ConfirmDialog`-gated) once a number exists.
 Voice-only for now (a UK local number can't take SMS) — the SMS agent
 stays dark for auto-provisioned gyms until phase 3. The live end-to-end
 path is gated on Temple's UK Twilio regulatory bundle (multi-day
@@ -967,7 +967,7 @@ a ready → connecting → live → ended flow with a live transcript, and
 appears in three places: a hero card on the Leads dashboard (docked,
 floating over a dimmed pipeline rather than navigating away), the setup
 wizard's go-live step (primary action, text-yourself testing demoted to a
-secondary link), and the top of Automation's AI Front Desk section.
+secondary link), and the top of the AI Agent tab's AI Front Desk section.
 Browser calls flow through the existing `agent_conversations` pipeline
 like any other call (upserted under the synthetic `phone='web-test'` row)
 so a test is reviewable afterward under Conversations — it just never
@@ -981,11 +981,21 @@ provisioning checklist (client-side only — `provision-front-desk` has no
 real progress signal to instrument) instead of a bare spinner, "your
 progress was saved" copy on a failed-retry so resuming doesn't read as
 starting over, and a brand-coloured "You're live" moment with the number
-and a copy button before returning to Leads. Automation settings'
-twelve cards are grouped under plain (non-collapsible) section labels —
-Lead Assignment, AI Front Desk, Usage & Data, Knowledge & Coaching,
-Danger Zone — with the destructive "turn off & release number" card
-moved out of the everyday flow into Danger Zone at the bottom.
+and a copy button before returning to Leads. The former single
+"Automation" page is split across two owner-only tabs in the Leads section
+sidebar (`/management/leads/settings`, `/management/leads/agent`), both
+using `LeadsShell`/`LeadsNav`. **Settings** holds the operational/policy
+cards under plain (non-collapsible) section labels — When A Lead Comes In
+(assignment strategy + "text the coach too"), Call Recording & Consent,
+Usage & Data (usage stats, outcomes, daily message cap, conversation
+retention), Data Retention (lead retention window). **AI Agent** holds the
+assistant's behaviour and persona: a "Teach it by talking" card leads the
+page as a hero (step bar + large icon avatar carrying the call → review →
+apply arc, plus a transient "Applied — the agent is live" confirmation),
+followed by AI Front Desk (Talk-to-it preview, answer texts/calls toggles,
+number provisioning, voice picker) and Knowledge & Coaching (agent notes,
+coaching rules), with the destructive "turn off & release number" card in
+Danger Zone at the bottom.
 
 ### Member import
 

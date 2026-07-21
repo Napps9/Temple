@@ -147,7 +147,7 @@ export default function LeadsScreen() {
   }, []);
 
   const tabs: LeadsTab[] = isOwner
-    ? ['leads', 'conversations', 'sources', 'automation']
+    ? ['leads', 'conversations', 'sources', 'settings', 'agent']
     : ['leads', 'conversations', 'sources'];
 
   const agentSettings = useQuery({

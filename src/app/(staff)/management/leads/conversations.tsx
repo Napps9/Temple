@@ -47,7 +47,7 @@ export default function AgentConversationsScreen() {
 
   const tabs: LeadsTab[] =
     membership.role === 'owner'
-      ? ['leads', 'conversations', 'sources', 'automation']
+      ? ['leads', 'conversations', 'sources', 'settings', 'agent']
       : ['leads', 'conversations', 'sources'];
 
   return (
