@@ -43,9 +43,48 @@ const randomSuffix = () =>
 
 const MAX_IMAGES = 8;
 
+// Reusable tab switcher + panels, also embedded in the Manage → Store tab.
+export function StoreHome() {
+  const [tab, setTab] = useState<Tab>('products');
+
+  return (
+    <View className="gap-5">
+      <View className="flex-row gap-2">
+        {(['products', 'orders', 'subscriptions', 'settings'] as Tab[]).map((t) => {
+          const selected = t === tab;
+          return (
+            <Pressable
+              key={t}
+              onPress={() => setTab(t)}
+              className={`px-4 py-2 rounded-full ${
+                selected ? 'bg-primary' : 'bg-slate-200 dark:bg-gray-800'
+              }`}>
+              <Text
+                className={`text-sm font-medium capitalize ${
+                  selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                }`}>
+                {t}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {tab === 'products' ? (
+        <ProductsTab />
+      ) : tab === 'orders' ? (
+        <OrdersTab />
+      ) : tab === 'subscriptions' ? (
+        <SubscriptionsTab />
+      ) : (
+        <SettingsTab />
+      )}
+    </View>
+  );
+}
+
 export default function StoreManageScreen() {
   const canManageStore = useCan('can_manage_store');
-  const [tab, setTab] = useState<Tab>('products');
 
   if (canManageStore === false) return <Redirect href="/management" />;
 
@@ -62,36 +101,7 @@ export default function StoreManageScreen() {
           </Text>
         </View>
 
-        <View className="flex-row gap-2">
-          {(['products', 'orders', 'subscriptions', 'settings'] as Tab[]).map((t) => {
-            const selected = t === tab;
-            return (
-              <Pressable
-                key={t}
-                onPress={() => setTab(t)}
-                className={`px-4 py-2 rounded-full ${
-                  selected ? 'bg-primary' : 'bg-slate-200 dark:bg-gray-800'
-                }`}>
-                <Text
-                  className={`text-sm font-medium capitalize ${
-                    selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
-                  }`}>
-                  {t}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {tab === 'products' ? (
-          <ProductsTab />
-        ) : tab === 'orders' ? (
-          <OrdersTab />
-        ) : tab === 'subscriptions' ? (
-          <SubscriptionsTab />
-        ) : (
-          <SettingsTab />
-        )}
+        <StoreHome />
       </ScrollView>
     </Screen>
   );

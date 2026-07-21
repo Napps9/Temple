@@ -56,6 +56,7 @@ import { MessagingPanel } from './messaging';
 import { OperatingDefaultsPanel } from './operating';
 import { HealthScreeningPanel } from './parq';
 import { PlansPanel } from './plans';
+import { StoreHome } from './store';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -413,11 +414,6 @@ export default function ManagementHome() {
       router.push('/management/leads');
       return;
     }
-    // Store is likewise a doorway to its own full-screen page.
-    if (c === 'store') {
-      router.push('/management/store');
-      return;
-    }
     setActive(c);
   }
 
@@ -458,6 +454,8 @@ export default function ManagementHome() {
           <MembersTab />
         ) : activeCategory === 'comms' ? (
           <CommunicationsHome />
+        ) : activeCategory === 'store' ? (
+          <StoreHome />
         ) : activeCategory === 'team' ? (
           <TeamTab />
         ) : activeCategory === 'plans' ? (
