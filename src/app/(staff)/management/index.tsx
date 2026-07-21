@@ -413,6 +413,11 @@ export default function ManagementHome() {
       router.push('/management/leads');
       return;
     }
+    // Store is likewise a doorway to its own full-screen page.
+    if (c === 'store') {
+      router.push('/management/store');
+      return;
+    }
     setActive(c);
   }
 
