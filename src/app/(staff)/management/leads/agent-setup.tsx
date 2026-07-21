@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { BrandGradientHero } from '@/components/BrandGradientHero';
@@ -86,6 +86,7 @@ export default function AgentSetupWizard() {
   const [recRetention, setRecRetention] = useState<string | null>(null);
   const [answerCalls, setAnswerCalls] = useState<boolean | null>(null);
   const [showTextTest, setShowTextTest] = useState(false);
+  const [talkOpen, setTalkOpen] = useState(false);
   const [justWentLive, setJustWentLive] = useState(false);
   // provision-front-desk is one synchronous call (buy number, create
   // assistant, import number) with no progress signal of its own — this
@@ -667,8 +668,26 @@ export default function AgentSetupWizard() {
             </Text>
 
             {/* Browser call needs only the assistant, never the number — a
-                gym waiting on the Twilio bundle can still talk to its AI. */}
-            {voiceReady ? (
+                gym waiting on the Twilio bundle can still talk to its AI.
+                Web-only: the native TalkToAssistant is a hard no-op, so the
+                pitch card would be a dead button there. */}
+            {voiceReady && Platform.OS === 'web' && !talkOpen ? (
+              <View className="rounded-xl border-[1.5px] border-primary bg-white dark:bg-gray-900 p-4 gap-2.5">
+                <View className="flex-row items-center gap-3">
+                  <View className="w-9 h-9 rounded-lg bg-primary/10 items-center justify-center">
+                    <Ionicons name="mic" size={16} color={colors.primary} />
+                  </View>
+                  <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                    Talk to it now
+                  </Text>
+                </View>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Hear it live in the browser before anyone else does — no
+                  phone, no waiting on a number.
+                </Text>
+                <Button onPress={() => setTalkOpen(true)}>Start talking</Button>
+              </View>
+            ) : voiceReady && Platform.OS === 'web' ? (
               <TalkToAssistant assistantId={agent.data?.vapi_assistant_id ?? null} gymName={brand.gymName} />
             ) : null}
 
@@ -676,7 +695,11 @@ export default function AgentSetupWizard() {
               <>
                 <Pressable onPress={() => setShowTextTest((s) => !s)} className="py-1">
                   <Text className="text-gray-400 dark:text-gray-500 text-xs text-center underline">
-                    {showTextTest ? 'Hide' : 'or text it from your own phone instead'}
+                    {showTextTest
+                      ? 'Hide'
+                      : voiceReady && Platform.OS === 'web'
+                        ? 'or text it from your own phone instead'
+                        : 'Test it by text from your own phone'}
                   </Text>
                 </Pressable>
                 {showTextTest ? (

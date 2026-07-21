@@ -83,7 +83,11 @@ function ScrubBar({
     <Pressable
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       onPress={(e) => {
-        const x = e.nativeEvent.locationX;
+        // react-native-web hands onPress a DOM MouseEvent, which has no
+        // locationX — offsetX is the web equivalent (same left origin for
+        // the pressable, the track, and the fill, so it maps directly).
+        const ne = e.nativeEvent as unknown as { locationX?: number; offsetX?: number };
+        const x = typeof ne.locationX === 'number' ? ne.locationX : ne.offsetX;
         if (typeof x !== 'number' || width <= 0 || duration <= 0) return;
         onSeek(Math.max(0, Math.min(duration, (x / width) * duration)));
       }}

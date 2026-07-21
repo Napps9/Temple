@@ -740,7 +740,7 @@ export default function LeadAutomationSettings() {
               <Text className="text-gray-500 dark:text-gray-400 text-xs">
                 {voiceReady
                   ? 'The assistant picks up calls to your number and can text the caller a signup link.'
-                  : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Set up your number above to enable it.'}
+                  : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Set up your number below to enable it.'}
               </Text>
             </View>
             <Switch
