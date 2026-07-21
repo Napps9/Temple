@@ -1,17 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, Switch, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
-import { Screen } from '@/components/Screen';
+import { LeadsShell } from '@/components/LeadsNav';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { deprovisionFrontDesk, provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
@@ -596,9 +595,7 @@ export default function LeadAutomationSettings() {
   const currentVoice = VOICES.find((v) => v.id === (agent.data?.voice_id ?? '')) ?? null;
 
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Leads" fallbackHref="/management/leads" />
+    <LeadsShell active="automation" tabs={['leads', 'conversations', 'sources', 'automation']}>
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Automation
@@ -1162,7 +1159,6 @@ export default function LeadAutomationSettings() {
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
-      </ScrollView>
-    </Screen>
+    </LeadsShell>
   );
 }

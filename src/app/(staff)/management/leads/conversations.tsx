@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, Redirect } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { BackLink } from '@/components/BackLink';
-import { Screen } from '@/components/Screen';
+import { LeadsShell, type LeadsTab } from '@/components/LeadsNav';
 import { useGymMembership } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -46,10 +45,13 @@ export default function AgentConversationsScreen() {
   if (canAssignPlan === false) return <Redirect href="/management" />;
   if (!membership) return null;
 
+  const tabs: LeadsTab[] =
+    membership.role === 'owner'
+      ? ['leads', 'conversations', 'sources', 'automation']
+      : ['leads', 'conversations', 'sources'];
+
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Leads" fallbackHref="/management/leads" />
+    <LeadsShell active="conversations" tabs={tabs}>
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             AI conversations
@@ -104,7 +106,6 @@ export default function AgentConversationsScreen() {
             </View>
           ) : null}
         </View>
-      </ScrollView>
-    </Screen>
+    </LeadsShell>
   );
 }

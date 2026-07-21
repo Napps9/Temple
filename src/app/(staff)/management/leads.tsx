@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, Link, router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { Redirect, Link, router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
-import { BackLink } from '@/components/BackLink';
 import { BrandGradientHero } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
@@ -16,7 +15,7 @@ import {
   presetRange,
 } from '@/components/DateRangeCta';
 import { Input } from '@/components/Input';
-import { Screen } from '@/components/Screen';
+import { LeadsShell, type LeadsTab } from '@/components/LeadsNav';
 import { StatTile } from '@/components/StatTile';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { useGymMembership } from '@/lib/auth';
@@ -137,6 +136,19 @@ export default function LeadsScreen() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [callOpen, setCallOpen] = useState(false);
   const [milestoneDismissed, setMilestoneDismissed] = useState(false);
+
+  // "Manage sources" has no route of its own — the sidebar's sources pill
+  // links here with ?sources=1 so it can open the same modal from any of
+  // the Leads section's screens.
+  const { sources: sourcesParam } = useLocalSearchParams<{ sources?: string }>();
+  useEffect(() => {
+    if (sourcesParam === '1') setSourcesOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const tabs: LeadsTab[] = isOwner
+    ? ['leads', 'conversations', 'sources', 'automation']
+    : ['leads', 'conversations', 'sources'];
 
   const agentSettings = useQuery({
     queryKey: ['agent-settings-brief', membership?.gymId],
@@ -291,9 +303,7 @@ export default function LeadsScreen() {
   if (!membership) return null;
 
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-5xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
+    <LeadsShell active="leads" tabs={tabs}>
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
@@ -303,35 +313,7 @@ export default function LeadsScreen() {
               Track prospects from first contact through conversion.
             </Text>
           </View>
-          <View className="gap-2 items-end">
-            <Button onPress={() => setAddOpen(true)}>Add lead</Button>
-            <View className="flex-row gap-3">
-              <Link href="/management/leads/conversations" asChild>
-                <Pressable hitSlop={6} className="active:opacity-70">
-                  <Text className="text-primary text-xs font-medium">
-                    Conversations
-                  </Text>
-                </Pressable>
-              </Link>
-              <Pressable
-                onPress={() => setSourcesOpen(true)}
-                hitSlop={6}
-                className="active:opacity-70">
-                <Text className="text-primary text-xs font-medium">
-                  Manage sources
-                </Text>
-              </Pressable>
-              {isOwner ? (
-                <Link href="/management/leads/settings" asChild>
-                  <Pressable hitSlop={6} className="active:opacity-70">
-                    <Text className="text-primary text-xs font-medium">
-                      Automation
-                    </Text>
-                  </Pressable>
-                </Link>
-              ) : null}
-            </View>
-          </View>
+          <Button onPress={() => setAddOpen(true)}>Add lead</Button>
         </View>
 
         <View className="gap-3">
@@ -595,7 +577,6 @@ export default function LeadsScreen() {
             })}
           </ScrollView>
         )}
-      </ScrollView>
 
       <AddLeadModal
         visible={addOpen}
@@ -631,7 +612,7 @@ export default function LeadsScreen() {
           onRequestClose={() => setCallOpen(false)}
         />
       ) : null}
-    </Screen>
+    </LeadsShell>
   );
 }
 
