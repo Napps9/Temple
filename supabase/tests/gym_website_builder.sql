@@ -31,9 +31,11 @@ begin
   perform _test_mk_membership(v_off, v_off_owner, 'owner');
   perform _test_mk_membership(v_other, v_other_owner, 'owner');
 
-  -- v_gym has the entitlement on from the start; v_off stays at its
-  -- default (false), used only for the "refused while disabled" check.
-  update public.gyms set website_builder_enabled = true where id = v_gym;
+  -- v_gym has the entitlement on from the start; v_off is explicitly
+  -- disabled (the default is true since 0153), used only for the
+  -- "refused while disabled" check.
+  update public.gyms set website_builder_enabled = true  where id = v_gym;
+  update public.gyms set website_builder_enabled = false where id = v_off;
 
   perform set_config('test.gym',         v_gym::text,         true);
   perform set_config('test.off',         v_off::text,         true);

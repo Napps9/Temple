@@ -35,7 +35,8 @@ begin
 
   update public.gyms set website_builder_enabled = true
     where id in (v_gyma, v_gymb, v_verified, v_dup);
-  -- v_off stays at its default (false) on purpose.
+  -- v_off is explicitly disabled (the default is true since 0153).
+  update public.gyms set website_builder_enabled = false where id = v_off;
 
   -- Seed rows directly (bypasses RLS as the test superuser) — the edge
   -- function is what would normally write these.

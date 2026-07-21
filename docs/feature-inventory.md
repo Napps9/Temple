@@ -1369,10 +1369,10 @@ until then automations enqueue and simulate.
 
 [`can_manage_website`, owner + admin by default] A public marketing
 page per gym, reachable from Manage → Website
-(`/management/website`). A paid add-on: `gyms.website_builder_enabled`
-gates every surface below and has **no owner-facing setter** — Temple
-staff flip it directly after an external invoice, there's no self-serve
-billing for it yet.
+(`/management/website`). `gyms.website_builder_enabled` gates every
+surface below; since 0153 it defaults to true and is on for all gyms
+(it launched as a paid add-on flipped per-gym by Temple staff, so the
+column and its RLS checks remain).
 
 - **Block-based editor** — the same interaction model as the email
   builder (add from a palette, tap a block to edit its fields, up/down
