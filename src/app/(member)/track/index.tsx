@@ -25,6 +25,7 @@ import { useGroupViewedMap } from '@/lib/useGroupViewed';
 import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
+import { useOnboardingFlags, useSetOnboardingFlag } from '@/lib/useOnboardingFlags';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 import {
@@ -48,6 +49,7 @@ export default function TrackHome() {
     title?: string;
   } | null>(null);
   const logNudge = useLogNudge();
+  const onboardingFlags = useOnboardingFlags();
 
   // Logs from the last week per movement group — used to show
   // fresh-activity badges. The query returns rows with their
@@ -184,7 +186,10 @@ export default function TrackHome() {
           </Pressable>
         </View>
 
-        {journalCount.data === 0 ? <TrackHowItWorks /> : null}
+        {journalCount.data === 0 &&
+        !onboardingFlags.data?.track_how_it_works_dismissed ? (
+          <TrackHowItWorks />
+        ) : null}
 
         {(logNudge.data?.length ?? 0) > 0 ? (
           <View className="bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 gap-2">
@@ -320,6 +325,7 @@ function Stat({
 // and regulars never see it.
 function TrackHowItWorks() {
   const colors = useThemeColors();
+  const setFlag = useSetOnboardingFlag();
   const steps: { icon: IoniconName; tint: string; title: string; desc: string }[] = [
     {
       icon: 'add-circle-outline',
@@ -380,6 +386,14 @@ function TrackHowItWorks() {
           </View>
         ))}
       </View>
+      <Pressable
+        onPress={() => setFlag('track_how_it_works_dismissed')}
+        hitSlop={8}
+        className="self-start active:opacity-70">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
+          Don't show me again
+        </Text>
+      </Pressable>
     </View>
   );
 }

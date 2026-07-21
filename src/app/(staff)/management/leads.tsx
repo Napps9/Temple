@@ -1,14 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, Link, router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import {
+  DATE_RE,
+  DateRangeCta,
+  type Preset,
+  isoDate,
+  presetRange,
+} from '@/components/DateRangeCta';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { StatTile } from '@/components/StatTile';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -229,6 +237,55 @@ export default function LeadsScreen() {
 
   const followUpCount = (leads.data ?? []).filter(needsFollowUp).length;
 
+  const [preset, setPreset] = useState<Preset>('month');
+  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
+  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
+  const range = useMemo(
+    () =>
+      preset === 'custom'
+        ? { start: customStart, end: customEnd }
+        : presetRange(preset, new Date()),
+    [preset, customStart, customEnd],
+  );
+  const { start, end } = range;
+  const rangeValid = DATE_RE.test(start) && DATE_RE.test(end) && start <= end;
+  const gymId = membership?.gymId;
+
+  // New leads captured in the period — a plain count against the leads
+  // table itself, unlike intro sessions / conversions below which come
+  // from the same lifecycle RPC the old Insights tab used.
+  const newLeadsCount = useQuery({
+    queryKey: ['leads-new-count', gymId, start, end],
+    enabled: !!gymId && canAssignPlan === true && rangeValid,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('gym_id', gymId!)
+        .gte('captured_at', start)
+        .lte('captured_at', `${end}T23:59:59`);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  const leadLifecycleStats = useQuery({
+    queryKey: ['leads-lifecycle-summary', gymId, start, end],
+    enabled: !!gymId && canAssignPlan === true && rangeValid,
+    queryFn: async (): Promise<{ intros_new: number; lead_conversions: number }> => {
+      const { data, error } = await supabase.rpc('compute_insight_summary', {
+        p_gym_id: gymId!,
+        p_period_start: start,
+        p_period_end: end,
+      });
+      if (error) throw error;
+      const rows = data as unknown as
+        | { intros_new: number; lead_conversions: number }[]
+        | null;
+      return rows?.[0] ?? { intros_new: 0, lead_conversions: 0 };
+    },
+  });
+
   if (canAssignPlan === false) return <Redirect href="/management" />;
   if (!membership) return null;
 
@@ -239,7 +296,7 @@ export default function LeadsScreen() {
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-              CRM
+              Leads
             </Text>
             <Text className="text-gray-500 dark:text-gray-400">
               Track prospects from first contact through conversion.
@@ -273,6 +330,47 @@ export default function LeadsScreen() {
                 </Link>
               ) : null}
             </View>
+          </View>
+        </View>
+
+        <View className="gap-3">
+          <DateRangeCta
+            preset={preset}
+            range={range}
+            customStart={customStart}
+            customEnd={customEnd}
+            onChange={(next) => {
+              setPreset(next.preset);
+              if (next.preset === 'custom') {
+                setCustomStart(next.start);
+                setCustomEnd(next.end);
+              }
+            }}
+          />
+          <View className="flex-row gap-3 flex-wrap">
+            <StatTile
+              title="New leads"
+              value={newLeadsCount.isLoading ? '—' : newLeadsCount.data ?? 0}
+              subtitle="captured this period"
+            />
+            <StatTile
+              title="Intro sessions"
+              value={
+                leadLifecycleStats.isLoading
+                  ? '—'
+                  : leadLifecycleStats.data?.intros_new ?? 0
+              }
+              subtitle="started this period"
+            />
+            <StatTile
+              title="Conversion to member"
+              value={
+                leadLifecycleStats.isLoading
+                  ? '—'
+                  : leadLifecycleStats.data?.lead_conversions ?? 0
+              }
+              subtitle="in this period"
+            />
           </View>
         </View>
 

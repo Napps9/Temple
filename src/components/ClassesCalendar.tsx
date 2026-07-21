@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -11,15 +11,12 @@ import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { Screen } from '@/components/Screen';
+import { TodayButton } from '@/components/TodayButton';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
-import {
-  useClassRecurrences,
-  useClassTypes,
-  type ClassTypeRow,
-} from '@/lib/useClassCatalog';
+import { useClassRecurrences } from '@/lib/useClassCatalog';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 
@@ -357,32 +354,20 @@ function ViewIconToggle({ view }: { view: string }) {
   );
 }
 
-function TodayButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityLabel="Jump to today"
-      className="rounded-full border border-gray-200 dark:border-gray-700 px-4 h-9 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
-      <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
-        Today
-      </Text>
-    </Pressable>
-  );
-}
-
 // Book mode, wide screens only — the phone Agenda view (list) already
 // scopes its own FilterPill to the day's actual class types, so this
 // only renders for the Day/Week/Month grid a member sees on tablet or
 // desktop. Multi-select toggle chips; empty selection means "show
 // everything" rather than "show nothing".
+// classTypes is scoped to whichever days are on screen (see visibleTypes in
+// ClassesCalendar below), not the full catalog — a gym running six class
+// types only shows the ones actually scheduled in view.
 function ClassTypeFilterRow({
   classTypes,
   selected,
   onChange,
 }: {
-  classTypes: ClassTypeRow[];
+  classTypes: { id: string; name: string; color: string }[];
   selected: Set<string>;
   onChange: (next: Set<string>) => void;
 }) {
@@ -394,7 +379,7 @@ function ClassTypeFilterRow({
     onChange(next);
   }
   return (
-    <View className="flex-row flex-wrap gap-2 pb-4 -mt-2 justify-center">
+    <View className="flex-row flex-wrap gap-2 pb-4 justify-center">
       {classTypes.map((ct) => {
         const active = selected.has(ct.id);
         return (
@@ -462,7 +447,6 @@ export function ClassesCalendar({
   const [pickerMonth, setPickerMonth] = useState(() => startOfMonth(new Date()));
   const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
   const { data: membership } = useGymMembership();
-  const classTypesQuery = useClassTypes();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
   const canEditClasses = useCan('can_edit_classes') ?? false;
@@ -547,16 +531,79 @@ export function ClassesCalendar({
   });
   const bookedSet = myBookingsQuery.data ?? new Set<string>();
 
+  // The class types actually scheduled on the days currently in view —
+  // day view scopes to the selected day, week/month scope to their whole
+  // visible range. Mirrors AgendaView's per-day dynamic filter so the
+  // wide-screen grid offers the same "only what's actually on" chips
+  // instead of the gym's full catalog.
+  const filterScopeDays: Date[] =
+    view === 'day'
+      ? [date]
+      : view === 'week'
+        ? Array.from({ length: weekVisibleDays }, (_, i) =>
+            addDays(
+              weekVisibleDays === 7
+                ? startOfWeek(date, weekStartsOn)
+                : startOfDay(date),
+              i,
+            ),
+          )
+        : view === 'month'
+          ? monthGrid(date, weekStartsOn)
+          : [];
+  const filterScopeKey = filterScopeDays.map((d) => d.toISOString()).join(',');
+
+  const visibleTypes = useMemo(() => {
+    const sessions = sessionsQuery.data ?? [];
+    const map = new Map<string, { id: string; name: string; color: string }>();
+    for (const s of sessions) {
+      if (!s.class_type_id || !s.class_types) continue;
+      if (!filterScopeDays.some((d) => isSameDay(d, new Date(s.starts_at))))
+        continue;
+      if (!map.has(s.class_type_id)) {
+        map.set(s.class_type_id, {
+          id: s.class_type_id,
+          name: s.class_types.name,
+          color: s.class_types.color,
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionsQuery.data, filterScopeKey]);
+
+  const visibleTypeIds = useMemo(
+    () => new Set(visibleTypes.map((t) => t.id)),
+    [visibleTypes],
+  );
+
+  // A selection that no longer applies to what's on screen (the member
+  // picked "Crossfit" then paged to a day with none) falls back to
+  // "show everything" rather than silently emptying the view.
+  const effectiveTypeFilter = useMemo(
+    () => new Set([...typeFilter].filter((id) => visibleTypeIds.has(id))),
+    [typeFilter, visibleTypeIds],
+  );
+
   // Wide-screen book mode only — the phone Agenda view (list) already
   // filters itself per day. Staff scheduling (manage mode) always sees
   // everything; hiding a class type there would look like it had been
   // unscheduled.
   const visibleSessions =
-    mode === 'book' && view !== 'list' && typeFilter.size > 0
+    mode === 'book' && view !== 'list' && effectiveTypeFilter.size > 0
       ? sessionsQuery.data?.filter(
-          (s) => !!s.class_type_id && typeFilter.has(s.class_type_id),
+          (s) => !!s.class_type_id && effectiveTypeFilter.has(s.class_type_id),
         )
       : sessionsQuery.data;
+
+  const filterBar =
+    mode === 'book' && !compactBook && visibleTypes.length > 1 ? (
+      <ClassTypeFilterRow
+        classTypes={visibleTypes}
+        selected={typeFilter}
+        onChange={setTypeFilter}
+      />
+    ) : null;
 
   const extend = useMutation({
     mutationFn: async (untilDate: string) => {
@@ -734,16 +781,6 @@ export function ClassesCalendar({
         </View>
       )}
 
-      {mode === 'book' && !compactBook && (classTypesQuery.data?.length ?? 0) > 0 ? (
-        <View className="w-full max-w-5xl mx-auto px-2">
-          <ClassTypeFilterRow
-            classTypes={classTypesQuery.data!}
-            selected={typeFilter}
-            onChange={setTypeFilter}
-          />
-        </View>
-      ) : null}
-
       <GestureDetector gesture={swipe}>
         <View className="flex-1">
           {view === 'list' ? (
@@ -772,6 +809,7 @@ export function ClassesCalendar({
               bookedSet={bookedSet}
               weekStartsOn={weekStartsOn}
               topSlot={topSlot}
+              filterBar={filterBar}
             />
           ) : null}
           {view === 'week' ? (
@@ -788,6 +826,7 @@ export function ClassesCalendar({
               dimPast={mode === 'book'}
               topSlot={topSlot}
               visibleDays={weekVisibleDays}
+              filterBar={filterBar}
             />
           ) : null}
           {view === 'month' ? (
@@ -798,6 +837,7 @@ export function ClassesCalendar({
               sessions={visibleSessions}
               weekStartsOn={weekStartsOn}
               topSlot={topSlot}
+              filterBar={filterBar}
             />
           ) : null}
         </View>
@@ -1190,6 +1230,7 @@ function DayView({
   bookedSet,
   weekStartsOn,
   topSlot,
+  filterBar,
 }: {
   mode: 'manage' | 'book';
   date: Date;
@@ -1201,6 +1242,7 @@ function DayView({
   bookedSet: Set<string>;
   weekStartsOn: 'mon' | 'sun';
   topSlot?: React.ReactNode;
+  filterBar?: React.ReactNode;
 }) {
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -1277,6 +1319,7 @@ function DayView({
           })}
         </View>
 
+        {filterBar}
       </View>
 
       <ScrollView
@@ -1545,6 +1588,7 @@ function WeekView({
   dimPast,
   topSlot,
   visibleDays = 7,
+  filterBar,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -1558,6 +1602,7 @@ function WeekView({
   dimPast?: boolean;
   topSlot?: React.ReactNode;
   visibleDays?: number;
+  filterBar?: React.ReactNode;
 }) {
   // A true week anchors on the gym's week-start; the phone Book calendar
   // shows a rolling N-day window (Apple-style) anchored on the selected
@@ -1647,6 +1692,8 @@ function WeekView({
             );
           })}
         </View>
+
+        {filterBar}
       </View>
 
       <ScrollView
@@ -1872,6 +1919,7 @@ function MonthView({
   sessions,
   weekStartsOn,
   topSlot,
+  filterBar,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -1879,6 +1927,7 @@ function MonthView({
   sessions: ClassSession[] | undefined;
   weekStartsOn: 'mon' | 'sun';
   topSlot?: React.ReactNode;
+  filterBar?: React.ReactNode;
 }) {
   const grid = monthGrid(date, weekStartsOn);
   const weekLetters =
@@ -1896,6 +1945,8 @@ function MonthView({
             </View>
           ))}
         </View>
+
+        {filterBar}
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
