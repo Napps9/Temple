@@ -113,7 +113,6 @@ export default function LeadAgentScreen() {
   const seededInterviewId = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmTurnOff, setConfirmTurnOff] = useState(false);
-  const [talkOpen, setTalkOpen] = useState(false);
   const [briefModalOpen, setBriefModalOpen] = useState(false);
   const [briefDraft, setBriefDraft] = useState('');
   const [teachMode, setTeachMode] = useState<'phone' | 'browser'>('phone');
@@ -392,29 +391,10 @@ export default function LeadAgentScreen() {
         {heroTab === 'test' ? (
           <View className="gap-3">
             {voiceReady && Platform.OS === 'web' ? (
-              talkOpen ? (
-                <TalkToAssistant
-                  assistantId={agent.data?.vapi_assistant_id ?? null}
-                  gymName={brand.gymName}
-                />
-              ) : (
-                <Pressable
-                  onPress={() => setTalkOpen(true)}
-                  className="flex-row items-center gap-3 bg-white/70 dark:bg-black/20 border border-primary/25 rounded-xl px-3.5 py-3 active:opacity-80">
-                  <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
-                    <Ionicons name="mic" size={15} color="#FFFFFF" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
-                      Check how it sounds
-                    </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                      Talk to the same assistant your leads do, anytime
-                    </Text>
-                  </View>
-                  <Text className="text-primary text-xs font-semibold">Start →</Text>
-                </Pressable>
-              )
+              <TalkToAssistant
+                assistantId={agent.data?.vapi_assistant_id ?? null}
+                gymName={brand.gymName}
+              />
             ) : (
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Finish setting up your assistant first, then you can talk to it here.
