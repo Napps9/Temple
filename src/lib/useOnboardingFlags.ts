@@ -11,7 +11,8 @@ import { useCallback } from 'react';
 export type OnboardingFlag =
   | 'programming_peeked'
   | 'injury_answered'
-  | 'getstarted_dismissed';
+  | 'getstarted_dismissed'
+  | 'track_how_it_works_dismissed';
 
 type FlagMap = Partial<Record<OnboardingFlag, boolean>>;
 

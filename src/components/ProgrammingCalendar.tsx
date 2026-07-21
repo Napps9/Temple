@@ -14,6 +14,7 @@ import {
 } from '@/components/ProgrammingModal';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
+import { TodayButton } from '@/components/TodayButton';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
@@ -300,14 +301,7 @@ export function ProgrammingCalendar({
             day with day-stepping arrows, and a tap-to-open month grid. */}
         <View className="flex-row items-center pt-3 pb-4">
           <View className="flex-1 flex-row justify-start">
-            <Pressable
-              onPress={() => setDate(startOfDay(new Date()))}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Jump to today"
-              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="locate-outline" size={18} color={colors.iconSecondary} />
-            </Pressable>
+            <TodayButton onPress={() => setDate(startOfDay(new Date()))} />
           </View>
           <View className="flex-row items-center gap-0.5">
             <Pressable

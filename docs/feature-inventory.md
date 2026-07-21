@@ -467,14 +467,16 @@ The staff area shows up when `can_access_staff_area` is on.
 
 The Manage page presents a tab strip:
 
-- **Insights** [`can_see_insights`] — one date range driving every
-  KPI: Revenue, Members, Attendance %, Intros new, Expiring soon,
-  Expired, Paying, Conversion vs target, Retention vs target. Each
-  tile delta vs previous period. **Targets** [`can_set_targets`] editor
-  sets one goal at a time per metric (New intros, Conversions,
-  Retention) via a value box + a Week/Month/Quarter/Year period
-  selector — Conversions and Retention can be a rate (%) instead of a
-  headcount; New intros is count-only.
+- **Insights** [`can_see_insights`] — trimmed to three top-line KPIs
+  driven by one date range: Revenue (all sales — memberships, store,
+  individual programming), Members, Attendance % (share of members
+  who attended a class in the period), each with a delta vs the
+  previous period. Lead/lifecycle metrics (new leads, intro sessions,
+  conversion to member) live on the **Leads** tab instead — see below.
+  The **Targets** editor [`can_set_targets`] and the retired
+  Expiring/Expired/Paying/rate-based-Conversion/Retention tiles are no
+  longer surfaced anywhere; `gym_insight_targets` and
+  `compute_insight_summary` still exist server-side.
 - **Members** [`can_manage_tags`] — Attendance summary (Attended /
   No-show / Unmarked) by class type, **shareable signup link** card
   (Copy / Share, with archived state when public signup is off),
@@ -656,9 +658,14 @@ The Manage page presents a tab strip:
 
 ### Leads
 
-[`can_assign_plan`] Reachable from Manage → CRM
-(`/management/leads`), a top-level section. Track prospects from first contact through
-conversion. Each lead row stores name, email, phone, source (from a
+[`can_assign_plan`] Reachable from Manage → Leads
+(`/management/leads`), a top-level section (renamed from "CRM" — the
+nav category key is still `crm` internally). Track prospects from
+first contact through conversion. A date-range-scoped stats row up
+top shows **New leads** (captured in the period, straight off the
+`leads` table), **Intro sessions** and **Conversion to member** (both
+from the same `compute_insight_summary` RPC the Insights tab uses).
+Each lead row stores name, email, phone, source (from a
 per-gym `lead_sources` vocabulary), a notes field, and a fixed status
 pipeline: `cold → contacted → intro_booked → trial_attended →
 converted | lost`. `record_lead` and `set_lead_status` RPCs gate
@@ -672,9 +679,7 @@ card to open the detail modal and move it between stages. An
 owner-only **AI Sales Agent** CTA launches the setup wizard
 (`/management/leads/agent-setup`). The detail modal exposes a manual "Converted" flow
 with an inline member search for cases where auto-attribute on
-signup didn't fire. The Insights page surfaces a "Conversions by
-source" chip row alongside the lead_conversions tile so owners can
-see which acquisition channels are paying off.
+signup didn't fire.
 
 ### Public lead capture
 
@@ -800,7 +805,7 @@ anchored under that turn, reusing the same kind/scope fields and
 native keeps the original tap-the-bubble flow (`window.getSelection` has no
 native equivalent). pgTAP: `agent_qc_backend`.
 
-**Setup wizard (AI Sales Agent).** The CRM's "AI Sales Agent" CTA opens
+**Setup wizard (AI Sales Agent).** The Leads page's "AI Sales Agent" CTA opens
 `/management/leads/agent-setup` — a stepper (welcome → prompt → voice →
 recording → go live) over the same owner RPCs. The prompt step either takes
 manual text or **generates a brief from platform data**: the
@@ -958,7 +963,7 @@ assistant id alone, which is exactly the no-phone-number browser-call case.
 The shared `TalkToAssistant` component (`.web.tsx`/native-fallback split,
 so `@vapi-ai/web`'s WebRTC internals never reach the native bundle) drives
 a ready → connecting → live → ended flow with a live transcript, and
-appears in three places: a hero card on the CRM dashboard (docked,
+appears in three places: a hero card on the Leads dashboard (docked,
 floating over a dimmed pipeline rather than navigating away), the setup
 wizard's go-live step (primary action, text-yourself testing demoted to a
 secondary link), and the top of Automation's AI Front Desk section.
@@ -975,7 +980,7 @@ provisioning checklist (client-side only — `provision-front-desk` has no
 real progress signal to instrument) instead of a bare spinner, "your
 progress was saved" copy on a failed-retry so resuming doesn't read as
 starting over, and a brand-coloured "You're live" moment with the number
-and a copy button before returning to the CRM. Automation settings'
+and a copy button before returning to Leads. Automation settings'
 twelve cards are grouped under plain (non-collapsible) section labels —
 Lead Assignment, AI Front Desk, Usage & Data, Knowledge & Coaching,
 Danger Zone — with the destructive "turn off & release number" card
@@ -1586,8 +1591,10 @@ actions are owner-only by policy:
   else (active rejoin of the same gym is still allowed).
 - **Pay rates** [`can_set_coach_pay`] — owner sets per-coach,
   per-class-type rates.
-- **Targets** [`can_set_targets`] — Insights conversion / intro
-  targets per month or quarter.
+- **Targets** [`can_set_targets`] — conversion / intro targets per
+  month or quarter; the capability and its `gym_insight_targets` table
+  still exist, but no screen currently surfaces the editor (dropped
+  from Insights, see above).
 - **Hard delete** [`can_hard_delete`] — owner can delete classes /
   plans / class types when nothing depends on them.
 

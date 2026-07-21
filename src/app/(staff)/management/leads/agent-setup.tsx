@@ -316,7 +316,7 @@ export default function AgentSetupWizard() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="CRM" fallbackHref="/management/leads" />
+        <BackLink label="Leads" fallbackHref="/management/leads" />
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
