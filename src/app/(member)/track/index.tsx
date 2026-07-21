@@ -354,7 +354,7 @@ function TrackHowItWorks() {
   ];
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card border border-primary/20">
-      <View className="flex-row items-center gap-3">
+      <View className="flex-row items-start gap-3">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
           <Ionicons name="compass-outline" size={22} color={colors.primary} />
         </View>
@@ -366,6 +366,14 @@ function TrackHowItWorks() {
             Your workouts, PRs and progress — all in one place.
           </Text>
         </View>
+        <Pressable
+          onPress={() => setFlag('track_how_it_works_dismissed')}
+          hitSlop={8}
+          className="shrink-0 active:opacity-70">
+          <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium text-right">
+            Don't show me again
+          </Text>
+        </Pressable>
       </View>
       <View className="gap-3">
         {steps.map((s) => (
@@ -386,14 +394,6 @@ function TrackHowItWorks() {
           </View>
         ))}
       </View>
-      <Pressable
-        onPress={() => setFlag('track_how_it_works_dismissed')}
-        hitSlop={8}
-        className="self-start active:opacity-70">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
-          Don't show me again
-        </Text>
-      </Pressable>
     </View>
   );
 }
