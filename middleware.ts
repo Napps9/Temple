@@ -10,9 +10,12 @@
 // Scoped to `/` (see `matcher`) on purpose. Non-root paths on a custom
 // domain intentionally serve the same content they do on the platform
 // host — the deployment is shared, so `/join/<slug>` etc. resolve to the
-// Expo app everywhere. The rendered site's own links point at the
-// platform origin (see site-render.ts), so the only path a custom-domain
-// visitor organically lands on is `/`.
+// Expo app everywhere, and `/site/<slug>/<page>` resolves to the site
+// renderer via vercel.json's host-agnostic rewrite. The site's own
+// page-nav links are PATH-absolute (`/site/<slug>/<page>`, no origin — see
+// renderSiteNav), so a custom-domain visitor navigating between pages
+// stays on the custom domain and hits that same rewrite; only the bare
+// root `/` needs this middleware's Host-based rewrite.
 //
 // Implements Vercel's Routing Middleware protocol
 // (https://vercel.com/docs/routing-middleware) directly — signalling
@@ -23,11 +26,11 @@
 // (api/site/[...path].ts avoids src/lib/supabase.ts for the same
 // reason).
 //
-// Only ever rewrites to the bare gym slug (the site's Home page) —
-// a connected custom domain doesn't yet resolve any other page
-// (/site/<slug>/<page-slug>); this middleware is scoped to `/` only
-// (see `matcher`), so those links always point at the platform origin
-// instead (see site-render.ts's renderSiteNav).
+// Only rewrites the bare root `/` to the gym's Home page. Sub-pages
+// (/site/<slug>/<page-slug>) don't need this middleware: they're plain
+// path-absolute links that vercel.json rewrites to the renderer on every
+// host, custom domains included — so this stays scoped to `/` (see
+// `matcher`) and sub-page navigation just works on a connected domain.
 
 export const config = { matcher: ['/'] };
 

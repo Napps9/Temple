@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { BRAND_THEMES } from './brand-themes';
+import { contrastRatio } from './brand-derivation';
+import { BRAND_THEMES, BRAND_THEME_LIST, composeThemeWithBrand } from './brand-themes';
 import {
   appendBlock,
   createBlock,
@@ -80,20 +81,23 @@ describe('renderSiteHtml', () => {
     expect(onePage).toContain('<title>Iron Gym</title>');
   });
 
-  it('renders a nav link per page, marks the active one, and links absolutely to the platform origin', () => {
+  it('renders a nav link per page with PATH-absolute hrefs (no origin) so they work on a custom domain', () => {
     const pages = [
       { slug: '', title: 'Home' },
       { slug: 'schedule', title: 'Schedule' },
     ];
     const html = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: 'schedule' });
     expect(html).toContain('<nav class="site-nav" aria-label="Site pages">');
-    expect(html).toContain('href="https://app.example.com/site/iron-gym"');
-    expect(html).toContain('href="https://app.example.com/site/iron-gym/schedule"');
+    // Path-absolute, not origin-absolute: on a custom domain these stay on
+    // the domain and resolve via vercel.json's host-agnostic /site/* rewrite.
+    expect(html).toContain('href="/site/iron-gym"');
+    expect(html).toContain('href="/site/iron-gym/schedule"');
+    expect(html).not.toContain('href="https://app.example.com/site/iron-gym');
     // The active page gets aria-current + is-active; home (inactive here) doesn't.
     // Each link also carries data-page-slug so the editable-canvas bridge can
     // switch the editor's active page instead of navigating the iframe.
-    expect(html).toContain('class="site-nav-link is-active" href="https://app.example.com/site/iron-gym/schedule" data-page-slug="schedule" aria-current="page"');
-    expect(html).toContain('class="site-nav-link" href="https://app.example.com/site/iron-gym" data-page-slug=""');
+    expect(html).toContain('class="site-nav-link is-active" href="/site/iron-gym/schedule" data-page-slug="schedule" aria-current="page"');
+    expect(html).toContain('class="site-nav-link" href="/site/iron-gym" data-page-slug=""');
   });
 
   it('titles a non-home page as "<page title> — <gym name>", but keeps home as just the gym name', () => {
@@ -234,6 +238,25 @@ describe('renderSiteHtml', () => {
       expect(html).not.toContain('javascript:');
       expect(html).toContain('team-initials');
     });
+  });
+
+  it('never emits an --accent-ink that fails 4.5:1 text contrast on the background or a card surface', () => {
+    const extractVar = (html: string, name: string): string => {
+      const m = html.match(new RegExp(`--${name}:(#[0-9A-Fa-f]{3,8});`));
+      return m ? m[1] : '';
+    };
+    // A muddy mid-grey clears the 3:1 fill floor on some themes but is
+    // unreadable as text — exactly the case accent-ink must reject.
+    for (const theme of BRAND_THEME_LIST) {
+      for (const brand of ['#808080', '#FF5A1F', '#0F766E', '#C0C0C0']) {
+        const composed = composeThemeWithBrand(theme, brand);
+        const html = renderSiteHtml([], { ...baseCtx, theme: composed });
+        const ink = extractVar(html, 'accent-ink');
+        expect(ink).not.toBe('');
+        expect(contrastRatio(ink, composed.palette.background)).toBeGreaterThanOrEqual(4.5);
+        expect(contrastRatio(ink, composed.palette.surface)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
   it('renders an empty-state message for the schedule block with no sessions', () => {

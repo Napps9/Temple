@@ -551,14 +551,35 @@ export default function WebsiteManageScreen() {
     queryClient.setQueryData(['gym-website', brand.gymId], data);
   }
 
+  // Best-effort removal of the gym's uploaded/stock site images once the
+  // whole site is gone. Deleting the row already takes the site offline;
+  // this stops the gym-website-assets folder accreting orphans no design
+  // references any more. Scoped to full-site deletion only — block/page
+  // deletes leave images in place (an image may still be referenced from
+  // another block/page, and coerce-on-read makes a stray one harmless).
+  // Never blocks or fails the delete: an orphaned object is cosmetic.
+  async function purgeSiteStorage(gymId: string) {
+    try {
+      const { data: files } = await supabase.storage
+        .from('gym-website-assets')
+        .list(gymId, { limit: 1000 });
+      const paths = (files ?? []).filter((f) => f.id !== null).map((f) => `${gymId}/${f.name}`);
+      if (paths.length > 0) {
+        await supabase.storage.from('gym-website-assets').remove(paths);
+      }
+    } catch {
+      // swallow — the record is already deleted; an orphaned image is not
+      // worth surfacing an error the owner can't act on.
+    }
+  }
+
   // Lets an owner start over from the template picker — the only way
   // back there once a site exists. Removing the gym_websites row (not
   // just clearing design) also takes an already-published site offline,
-  // since /api/site/[...path] has nothing left to serve; the storage
-  // images a previous design referenced are left in place, matching
-  // AccountScreen's "erase the record, not the underlying media" split.
+  // since /api/site/[...path] has nothing left to serve.
   async function deleteSite() {
     if (!site.data) return;
+    const gymId = site.data.gym_id;
     setDeletingSite(true);
     const { error: delErr } = await supabase.from('gym_websites').delete().eq('id', site.data.id);
     setDeletingSite(false);
@@ -566,6 +587,7 @@ export default function WebsiteManageScreen() {
       setError(errorMessage(delErr, 'Could not delete the site'));
       return;
     }
+    void purgeSiteStorage(gymId);
     setShowDeleteSite(false);
     setError(null);
     initialized.current = false;

@@ -201,11 +201,14 @@ function themeStyleBlock(theme: BrandTheme, editable: boolean): string {
 .tp-rt-toolbar button{width:26px;height:26px;border:none;background:transparent;color:#E5E7EB;border-radius:5px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .tp-rt-toolbar button:hover{background:#374151;}`
     : '';
-  // The accent doubles as link/eyebrow TEXT, which needs 4.5:1 — a
-  // colour that only clears the 3:1 fill floor falls back to body text
-  // for those roles (the fill keeps the accent).
+  // The accent doubles as link/eyebrow TEXT, which needs 4.5:1 — and that
+  // text appears on BOTH the page background and card surfaces, so it must
+  // clear the bar against each. A colour that only clears the 3:1 fill
+  // floor (or clears one surface but not the other) falls back to body
+  // text for those roles; the fill itself keeps the accent.
   const accentInk =
-    contrastRatio(theme.palette.accent, theme.palette.background) >= 4.5
+    contrastRatio(theme.palette.accent, theme.palette.background) >= 4.5 &&
+    contrastRatio(theme.palette.accent, theme.palette.surface) >= 4.5
       ? theme.palette.accent
       : theme.palette.text;
   return `:root{
@@ -304,13 +307,16 @@ input,textarea{width:100%;padding:12px 14px;border-radius:calc(var(--radius) / 2
 .team-name{font-weight:700;font-size:14px;}${editableCss}`;
 }
 
-// Renders nothing for a single-page site (the common case today) —
-// only shows up once a gym has actually added a second page. Absolute
-// on the platform origin, same reasoning as the hero CTA's join link:
-// a custom domain's middleware only rewrites `/` to the site renderer
-// (see middleware.ts), so a relative /site/<slug>/<page> would 404
-// there. Known tradeoff: a custom-domain visitor briefly leaves the
-// custom domain when moving between pages, rather than a broken link.
+// Renders nothing for a single-page site (the common case today) — only
+// shows up once a gym has actually added a second page. The hrefs are
+// PATH-absolute (no origin), unlike the hero CTA / footer legal links: the
+// `/site/:slug/:page` rewrites in vercel.json are host-agnostic, so a
+// path like /site/<slug>/schedule resolves to this same renderer on the
+// platform origin AND on a connected custom domain. Keeping the origin off
+// is what lets a custom-domain visitor move between pages without being
+// bounced back to app.jointemple.io. In editor/preview mode ctx.slug is
+// still used, but the canvas/preview scripts intercept the click via
+// data-page-slug before the href ever navigates.
 function renderSiteNav(ctx: SiteRenderContext): string {
   if (!ctx.pages || ctx.pages.length <= 1) return '';
   const activeSlug = ctx.activePageSlug ?? '';
@@ -323,7 +329,7 @@ function renderSiteNav(ctx: SiteRenderContext): string {
       // data-page-slug is inert on the public render (the href is what
       // navigates there); the editable-canvas bridge script reads it to
       // switch the editor's active page instead of navigating the iframe.
-      return `<a class="site-nav-link${isActive ? ' is-active' : ''}" href="${escapeAttr(ctx.platformOrigin + path)}" data-page-slug="${escapeAttr(p.slug)}"${
+      return `<a class="site-nav-link${isActive ? ' is-active' : ''}" href="${escapeAttr(path)}" data-page-slug="${escapeAttr(p.slug)}"${
         isActive ? ' aria-current="page"' : ''
       }>${escapeHtml(p.title)}</a>`;
     })
