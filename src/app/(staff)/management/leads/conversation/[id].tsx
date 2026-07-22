@@ -438,19 +438,31 @@ export default function AgentConversationScreen() {
 
         {isAgent &&
         canReview === true &&
+        Platform.OS === 'web' &&
         selectedText?.messageId === m.id &&
         inlineCoachFor?.id !== m.id ? (
-          <Pressable
-            onPress={() => {
+          // Raw <div>, not <Pressable>: clicking this chip is itself a click
+          // "outside" the active selection, so the browser's default
+          // mousedown behavior collapses it before the click completes —
+          // that reactively nulls selectedText, which unmounts this chip
+          // (its own visibility is keyed off that same selection) before
+          // onPress ever fires. preventDefault on mousedown is the standard
+          // fix (same technique already used for the site-builder toolbar
+          // in site-render.ts) and needs the raw DOM event Pressable
+          // doesn't expose a typed prop for.
+          <div
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
               setInlineCoachFor(m);
-              if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+              window.getSelection()?.removeAllRanges();
             }}
-            className="flex-row items-center gap-1 bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
+            className="flex-row items-center gap-1 bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1 cursor-pointer"
+            style={{ display: 'flex', alignItems: 'center' }}>
             <Ionicons name="chatbox-ellipses-outline" size={11} color={colors.primary} />
             <Text className="text-primary text-[11px] font-semibold">
               Comment on "{selectedText.text.length > 40 ? `${selectedText.text.slice(0, 40)}…` : selectedText.text}"
             </Text>
-          </Pressable>
+          </div>
         ) : null}
 
         {isAgent && inlineCoachFor?.id === m.id ? (
