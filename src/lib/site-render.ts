@@ -114,7 +114,7 @@ function escapeAttr(input: string): string {
 }
 
 // Defence-in-depth against a hostile URL surviving into a rendered
-// attribute. Write-time validation (save_gym_website, migration 0156) is
+// attribute. Write-time validation (save_gym_website, migration 0157) is
 // the primary gate, but rows predating it — or any future write path that
 // bypasses the RPC — must not be able to inject `javascript:`/`data:` here.
 //

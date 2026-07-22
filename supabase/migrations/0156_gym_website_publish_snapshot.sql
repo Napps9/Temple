@@ -18,7 +18,7 @@
 --
 -- Also folded in here (all touch the same table/policies):
 --   * updated_at is now maintained by a trigger, not the client — every
---     write path (the new RPCs, and 0156's save RPC) bumps it authoritatively.
+--     write path (the new RPCs, and 0157's save RPC) bumps it authoritatively.
 --   * the RLS entitlement asymmetry is closed: the UPDATE with-check and the
 --     DELETE policy previously omitted the website_builder_enabled recheck
 --     that SELECT/INSERT/UPDATE-using already enforce, so a gym with the
@@ -130,7 +130,7 @@ grant execute on function public.gym_website_by_slug(text) to anon, authenticate
 -- leaves the snapshot in place (so re-publishing without further edits
 -- restores the same content, and published_at reflects the last publish).
 -- Return the new updated_at so the client can keep its optimistic-
--- concurrency token (see 0156) in sync after a publish.
+-- concurrency token (see 0157) in sync after a publish.
 -- ============================================================================
 
 create function public.publish_gym_website(p_gym_id uuid)

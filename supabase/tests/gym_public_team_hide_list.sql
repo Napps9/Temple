@@ -1,4 +1,4 @@
--- gym_public_team hide-list enforcement (0157): a staff member listed in the
+-- gym_public_team hide-list enforcement (0158): a staff member listed in the
 -- Team block's hiddenMemberIds must not be returned by the RPC itself — not
 -- merely dropped by the renderer. Exercised as the real anon role, which also
 -- proves the anon EXECUTE grant and the SECURITY DEFINER RLS bypass.

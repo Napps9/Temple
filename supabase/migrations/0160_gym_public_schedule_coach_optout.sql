@@ -5,7 +5,7 @@
 -- (settings.showCoachNames): when the owner sets it false, coach_name comes
 -- back null from the RPC itself — not merely hidden in the renderer — so the
 -- raw anon response can't leak it either (same discipline as the Team
--- block's hide-list, 0157). Read from the published snapshot. Absent or true
+-- block's hide-list, 0158). Read from the published snapshot. Absent or true
 -- keeps today's behaviour.
 --
 -- Return shape is unchanged, so CREATE OR REPLACE (grants preserved).

@@ -6,7 +6,7 @@
 -- raw RPC — anyone calling it with the anon key saw the hidden name/avatar.
 -- The filter belongs in the RPC, not the renderer.
 --
--- Reads the hide-list from published_design (the public snapshot, 0155), so
+-- Reads the hide-list from published_design (the public snapshot, 0156), so
 -- hiding someone takes effect only once re-published — consistent with every
 -- other public read. Return shape unchanged. DROP first per the 0043/0098
 -- precedent even though the columns are the same, to keep the swap explicit.

@@ -1,4 +1,4 @@
--- Site builder draft/publish separation (0155): editing the draft `design`
+-- Site builder draft/publish separation (0156): editing the draft `design`
 -- must not change what the public sees until publish snapshots it into
 -- published_design; unpublish takes it offline; publish/unpublish are
 -- authorised via capability; and the RLS entitlement fix blocks UPDATE and

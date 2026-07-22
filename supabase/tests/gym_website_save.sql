@@ -1,4 +1,4 @@
--- save_gym_website server-side validation (0156): unknown theme, oversize
+-- save_gym_website server-side validation (0157): unknown theme, oversize
 -- document, and non-http(s) image URLs are rejected; a stale optimistic-
 -- concurrency token conflicts; the capability-override path lets a coach
 -- save; a plain member cannot; and a disabled gym is refused.

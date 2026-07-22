@@ -1,4 +1,4 @@
--- Coach-name opt-out on the public schedule (0159): when the site setting
+-- Coach-name opt-out on the public schedule (0160): when the site setting
 -- showCoachNames is false, gym_public_schedule must return coach_name as
 -- null from the RPC itself (not merely hide it in the renderer). Exercised
 -- as anon. A control gym with the setting unset still returns the name.
