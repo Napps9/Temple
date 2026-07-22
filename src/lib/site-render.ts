@@ -743,7 +743,21 @@ const CANVAS_BRIDGE_SCRIPT = `
 
   document.addEventListener('keydown', function(e){
     var el = e.target.closest && e.target.closest('[data-field]');
-    if (!el || e.key !== 'Enter') return;
+    if (!el) return;
+    // Cmd/Ctrl + B/I/U — a keyboard-accessible equivalent to the floating
+    // formatting toolbar, which is otherwise mouse/selection-only.
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && el.getAttribute('data-rich') === 'true') {
+      var k = e.key.toLowerCase();
+      var cmd = k === 'b' ? 'bold' : k === 'i' ? 'italic' : k === 'u' ? 'underline' : null;
+      if (cmd) {
+        e.preventDefault();
+        document.execCommand('styleWithCSS', false, false);
+        document.execCommand(cmd);
+        post({ type: 'field-input', path: el.getAttribute('data-field'), value: el.innerHTML });
+        return;
+      }
+    }
+    if (e.key !== 'Enter') return;
     if (el.getAttribute('data-multiline') !== 'true') {
       e.preventDefault();
       el.blur();

@@ -984,6 +984,17 @@ function ThemePicker({
           );
         })}
       </View>
+      <View className="gap-1.5 mt-2">
+        <FieldLabel>Coach names on the public schedule</FieldLabel>
+        <Segmented
+          value={document.settings.showCoachNames === false ? 'hide' : 'show'}
+          options={[
+            { value: 'show', label: 'Show' },
+            { value: 'hide', label: 'Hide' },
+          ]}
+          onChange={(v) => onChange(updateSettings(document, { showCoachNames: v === 'show' }))}
+        />
+      </View>
     </View>
   );
 }

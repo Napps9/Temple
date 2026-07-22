@@ -131,6 +131,10 @@ export type SiteBlockType = SiteBlock['type'];
 
 export type SiteSettings = {
   themeId: ThemeId;
+  // When explicitly false, coach names are hidden from the public schedule
+  // (both the rendered page and the raw gym_public_schedule RPC). Absent or
+  // true shows them — the default.
+  showCoachNames?: boolean;
 };
 
 // slug: '' for the home page, a URL segment (e.g. 'schedule') for every
@@ -582,6 +586,7 @@ export function coerceDocument(raw: unknown): SiteDocument {
   const s = (r.settings ?? {}) as Record<string, unknown>;
   const settings: SiteSettings = {
     themeId: isThemeId(s.themeId) ? s.themeId : defaults.themeId,
+    ...(typeof s.showCoachNames === 'boolean' ? { showCoachNames: s.showCoachNames } : {}),
   };
 
   if (Array.isArray(r.pages)) {
