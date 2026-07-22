@@ -158,12 +158,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       plans,
       team,
       now: new Date().toISOString(),
-      // Same hardcoded-fallback precedent as send-invite's origin.
-      platformOrigin: 'https://app.jointemple.io',
+      // Env-driven with the prod apex as fallback, matching the edge
+      // functions' APP_ORIGIN convention — so a preview/staging deploy
+      // renders links to its own origin rather than production.
+      platformOrigin: (process.env.APP_ORIGIN ?? 'https://app.jointemple.io').replace(/\/+$/, ''),
       supabaseUrl,
       supabaseAnonKey,
       editable: false,
-      pages: document.pages.map((p) => ({ slug: p.slug, title: p.title })),
+      pages: document.pages.map((p) => ({
+        slug: p.slug,
+        title: p.title,
+        metaDescription: p.metaDescription,
+      })),
       activePageSlug: page.slug,
     });
 

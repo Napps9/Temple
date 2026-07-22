@@ -152,6 +152,15 @@ describe('coerceDocument', () => {
     expect(doc.pages[0].slug).toBe('');
   });
 
+  it('coerces and caps a page meta description', () => {
+    const doc = coerceDocument({
+      pages: [{ id: 'p', slug: '', title: 'Home', metaDescription: 'x'.repeat(500), blocks: [] }],
+    });
+    expect(doc.pages[0].metaDescription).toHaveLength(300);
+    const bad = coerceDocument({ pages: [{ id: 'p', slug: '', title: 'Home', metaDescription: 42, blocks: [] }] });
+    expect(bad.pages[0].metaDescription).toBeUndefined();
+  });
+
   it('accepts a valid hero ctaTarget of contact', () => {
     const doc = coerceDocument({ blocks: [{ id: 'h', type: 'hero', ctaTarget: 'contact' }] });
     expect((doc.pages[0].blocks[0] as HeroBlock).ctaTarget).toBe('contact');

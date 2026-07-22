@@ -53,7 +53,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const document = coerceDocument(site.design);
-    const base = `https://app.jointemple.io/site/${encodeURIComponent(slug)}`;
+    const origin = (process.env.APP_ORIGIN ?? 'https://app.jointemple.io').replace(/\/+$/, '');
+    const base = `${origin}/site/${encodeURIComponent(slug)}`;
     const urls = document.pages
       .map((p) => (p.slug ? `${base}/${encodeURIComponent(p.slug)}` : base))
       .map((loc) => `<url><loc>${escapeXml(loc)}</loc></url>`)

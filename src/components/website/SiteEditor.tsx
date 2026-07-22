@@ -30,6 +30,7 @@ import {
   createBlock,
   duplicateBlock,
   moveBlock,
+  newSiteId,
   removeBlock,
   updateBlock,
   updateSettings,
@@ -762,7 +763,7 @@ function TestimonialsInspector({
           onPatch({
             quotes: [
               ...block.quotes,
-              { id: `q_${Date.now().toString(36)}`, quote: '', name: '' },
+              { id: newSiteId(), quote: '', name: '' },
             ],
           })
         }
@@ -825,7 +826,7 @@ function GalleryInspector({
             const url = await pickAndUpload();
             if (url) {
               onPatch({
-                images: [...block.images, { id: `g_${Date.now().toString(36)}`, url, alt: '' }],
+                images: [...block.images, { id: newSiteId(), url, alt: '' }],
               });
             }
           }}
@@ -849,7 +850,7 @@ function GalleryInspector({
         defaultQuery={defaultStockQuery}
         onPick={({ url, alt }) =>
           onPatch({
-            images: [...block.images, { id: `g_${Date.now().toString(36)}`, url, alt }],
+            images: [...block.images, { id: newSiteId(), url, alt }],
           })
         }
       />

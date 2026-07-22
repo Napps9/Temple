@@ -135,6 +135,23 @@ describe('renderSiteHtml', () => {
     expect(renderSiteHtml(contactPage.blocks, baseCtx)).toContain('href="#contact"');
   });
 
+  it('uses a page meta description when set, falling back to the gym-level default', () => {
+    const withMeta = renderSiteHtml([], {
+      ...baseCtx,
+      pages: [{ slug: '', title: 'Home', metaDescription: 'The best CrossFit in town.' }],
+      activePageSlug: '',
+    });
+    expect(withMeta).toContain('<meta name="description" content="The best CrossFit in town.">');
+    expect(withMeta).toContain('og:description" content="The best CrossFit in town.');
+
+    const noMeta = renderSiteHtml([], {
+      ...baseCtx,
+      pages: [{ slug: '', title: 'Home' }],
+      activePageSlug: '',
+    });
+    expect(noMeta).toContain('content="Iron Gym — book a class');
+  });
+
   describe('image URL sanitisation (defence-in-depth for pre-validation rows)', () => {
     it('drops a javascript: URL from a hero background image', () => {
       const hero = createBlock('hero') as HeroBlock;

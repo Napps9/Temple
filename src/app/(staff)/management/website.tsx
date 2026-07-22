@@ -802,7 +802,11 @@ export default function WebsiteManageScreen() {
     platformOrigin: '',
     supabaseUrl: '',
     supabaseAnonKey: '',
-    pages: document.pages.map((p) => ({ slug: p.slug, title: p.title })),
+    pages: document.pages.map((p) => ({
+      slug: p.slug,
+      title: p.title,
+      metaDescription: p.metaDescription,
+    })),
     activePageSlug: activePage.slug,
   };
   const previewHtml = renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: true });

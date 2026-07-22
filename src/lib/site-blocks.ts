@@ -139,6 +139,9 @@ export type SitePage = {
   id: string;
   slug: string;
   title: string;
+  // Optional per-page <meta name="description"> / og:description. Empty or
+  // absent falls back to the gym-level default in the renderer.
+  metaDescription?: string;
   blocks: SiteBlock[];
 };
 
@@ -187,6 +190,13 @@ let counter = 0;
 function genId(): string {
   counter += 1;
   return `sb_${Date.now().toString(36)}_${counter.toString(36)}`;
+}
+
+// Shared id generator for editor-created sub-items (testimonial quotes,
+// gallery images) so they can't collide on same-millisecond adds the way
+// a bare Date.now() id can. Same scheme as block/page ids above.
+export function newSiteId(): string {
+  return genId();
 }
 
 export function defaultSettings(): SiteSettings {
@@ -297,6 +307,20 @@ export function renamePage(doc: SiteDocument, pageId: string, title: string): Si
   return {
     ...doc,
     pages: doc.pages.map((p) => (p.id === pageId ? { ...p, title } : p)),
+  };
+}
+
+// Sets a page's SEO meta description (capped, same 300-char ceiling as
+// coercePage). Applies to any page, home included.
+export function setPageMetaDescription(
+  doc: SiteDocument,
+  pageId: string,
+  metaDescription: string,
+): SiteDocument {
+  const trimmed = metaDescription.slice(0, 300);
+  return {
+    ...doc,
+    pages: doc.pages.map((p) => (p.id === pageId ? { ...p, metaDescription: trimmed } : p)),
   };
 }
 
@@ -534,12 +558,17 @@ function coercePage(raw: unknown, isHome: boolean): SitePage | null {
   const r = raw as Record<string, unknown>;
   const rawBlocks = Array.isArray(r.blocks) ? r.blocks : [];
   const blocks = rawBlocks.map(coerceBlock).filter((b): b is SiteBlock => b !== null);
+  // Capped at 300 chars — a meta description longer than that is truncated
+  // by search engines anyway. Only included when non-empty so a document
+  // without one round-trips through coerce unchanged (the field is optional).
+  const metaDescription = asString(r.metaDescription, '').slice(0, 300);
   return {
     id: asString(r.id, genId()),
     // The home page's slug is always '' regardless of what's stored —
     // position in the array is what makes a page "home", not its slug.
     slug: isHome ? '' : asString(r.slug, ''),
     title: asString(r.title, isHome ? 'Home' : 'Untitled'),
+    ...(metaDescription ? { metaDescription } : {}),
     blocks,
   };
 }

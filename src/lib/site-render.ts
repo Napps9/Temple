@@ -87,7 +87,7 @@ export type SiteRenderContext = {
   // name. Only set once a document actually HAS more than one page —
   // omitted or a single-page `pages` array both render the same
   // nav-less header.
-  pages?: { slug: string; title: string }[];
+  pages?: { slug: string; title: string; metaDescription?: string }[];
   // Which of `pages` is the one being rendered — drives the nav's
   // active/aria-current state and, for a non-home page, the <title>.
   // Ignored when `pages` is omitted.
@@ -877,15 +877,18 @@ export function renderSiteHtml(blocks: SiteBlock[], ctx: SiteRenderContext): str
   // Home (or a single-page site, or `pages` omitted entirely) keeps the
   // plain gym-name title every existing page already has; a non-home
   // page prefixes its own title so browser tabs/bookmarks/search
-  // results can tell pages apart. No per-page meta description yet —
-  // that stays gym-level, same as before multi-page existed.
+  // results can tell pages apart.
   const activePage = ctx.pages?.find((p) => p.slug === (ctx.activePageSlug ?? ''));
   const title =
     activePage && activePage.slug !== ''
       ? escapeHtml(`${activePage.title} — ${ctx.gymName}`)
       : escapeHtml(ctx.gymName);
+  // Per-page meta description when the owner set one, else a gym-level
+  // default. Drives both <meta name="description"> and og:description.
   const description = escapeAttr(
-    `${ctx.gymName} — book a class, see membership options and get in touch.`,
+    activePage?.metaDescription?.trim()
+      ? activePage.metaDescription.trim()
+      : `${ctx.gymName} — book a class, see membership options and get in touch.`,
   );
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">

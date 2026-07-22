@@ -7,7 +7,14 @@ import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Input } from '@/components/Input';
 import { useThemeColors } from '@/lib/theme';
-import { addPage, removePage, renamePage, reslugPage, type SiteDocument } from '@/lib/site-blocks';
+import {
+  addPage,
+  removePage,
+  renamePage,
+  reslugPage,
+  setPageMetaDescription,
+  type SiteDocument,
+} from '@/lib/site-blocks';
 
 // Add/rename/reslug/delete every page in one place, rather than
 // scattering these across the page tabs themselves — a rare, "admin"
@@ -108,6 +115,13 @@ export function PageManagerModal({
                       </Text>
                     </View>
                   ) : null}
+                  <Input
+                    label="Search description"
+                    value={p.metaDescription ?? ''}
+                    onChangeText={(d) => onChange(setPageMetaDescription(document, p.id, d))}
+                    placeholder="One line shown in Google results (optional)"
+                    multiline
+                  />
                 </View>
               ))}
             </ScrollView>
