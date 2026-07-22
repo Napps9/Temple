@@ -1568,12 +1568,40 @@ column and its RLS checks remain).
   submits straight to the existing `capture_public_lead` RPC via a
   small inline script — a real working form, not a link-out. A
   non-home page's `<title>` is `<page title> — <gym name>`; Home stays
-  just the gym name. Nav links (and the hero's join CTA) are always
-  absolute to the platform origin: a connected custom domain's
-  middleware only rewrites its bare root to the renderer
-  (`middleware.ts`), so a relative link to another page would 404
-  there — a custom-domain visitor briefly leaves the custom domain when
-  moving between pages, a known limitation, not a broken link.
+  just the gym name. Nav links are path-absolute (no origin), so they
+  resolve on whichever host actually served the page (platform path or
+  a connected custom domain) via `vercel.json`'s host-agnostic
+  `/site/:slug/:page` rewrite; the hero's join CTA stays absolute to the
+  platform origin on purpose (a relative `/join/<slug>` on a custom
+  domain would land on the Expo app shell there, where Supabase auth
+  redirect emails can't be allowlisted per-gym).
+- **SEO** — a per-page `<link rel="canonical">`: Home points at the
+  gym's verified custom domain when one is connected (via the new
+  `gym_website_canonical_domain` RPC, migration `0161`, the anon-safe
+  slug→domain mirror of `gym_slug_for_domain`), else the platform path;
+  every other page is self-canonical, since a connected custom domain
+  doesn't serve non-home pages yet. **LocalBusiness (`ExerciseGym`)
+  JSON-LD** renders once a location block's structured address is
+  filled in — `LocationBlock` gained optional `street`/`city`/`region`/
+  `postalCode`/`country` fields, separate from the free-text
+  `address`/`hours` that still render on the page unchanged;
+  `findStructuredAddress` (`site-blocks.ts`) scans the whole document
+  for the first one (home page first), and emits nothing at all rather
+  than a half-populated schema when neither `street` nor `city` is set.
+  No `openingHoursSpecification` — the hours field is free text an
+  owner can phrase however they like, and guessing a structured
+  schedule out of it risked feeding search engines wrong hours.
+  **Open Graph / Twitter Card tags** grew `og:type`, `og:site_name`,
+  `og:url`; `og:image`/`twitter:image` fall back to the page's own hero
+  photo when no gym logo is set (previously omitted entirely with no
+  logo). A per-gym **`robots.txt`** (`/site/<slug>/robots.txt`,
+  `api/site-robots/[slug].ts`) points crawlers at the gym's sitemap.
+  Hero/About blocks gained an optional owner-editable `imageAlt` field
+  (falls back to the gym name / block heading); About/Team images now
+  render `loading="lazy"`. A `searchConsoleVerification` site setting
+  (Theme & ownership panel) renders a `google-site-verification` meta
+  tag so an owner can verify the site with Google Search Console and
+  submit its sitemap.
 - **Images** — hero/about/gallery uploads go to the `gym-website-assets`
   Storage bucket, gated the same way as the store's product-image
   bucket (`can_manage_website` + folder-scoped to the gym).

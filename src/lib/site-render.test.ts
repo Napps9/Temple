@@ -139,6 +139,165 @@ describe('renderSiteHtml', () => {
     expect(renderSiteHtml(contactPage.blocks, baseCtx)).toContain('href="#contact"');
   });
 
+  describe('canonical tag and og:url', () => {
+    it('omits the canonical link and og:url when canonicalUrl is not set', () => {
+      const html = renderSiteHtml([], baseCtx);
+      expect(html).not.toContain('rel="canonical"');
+      expect(html).not.toContain('og:url');
+    });
+
+    it('renders the canonical link and matching og:url when set', () => {
+      const html = renderSiteHtml([], { ...baseCtx, canonicalUrl: 'https://iron-gym.example/' });
+      expect(html).toContain('<link rel="canonical" href="https://iron-gym.example/">');
+      expect(html).toContain('<meta property="og:url" content="https://iron-gym.example/">');
+    });
+  });
+
+  describe('google-site-verification', () => {
+    it('omits the meta tag when not set', () => {
+      const html = renderSiteHtml([], baseCtx);
+      expect(html).not.toContain('google-site-verification');
+    });
+
+    it('renders the verification meta tag when set', () => {
+      const html = renderSiteHtml([], { ...baseCtx, searchConsoleVerification: 'abc123' });
+      expect(html).toContain('<meta name="google-site-verification" content="abc123">');
+    });
+  });
+
+  describe('Open Graph / Twitter tags', () => {
+    it('emits og:type, og:site_name, and a summary twitter:card with no image', () => {
+      const html = renderSiteHtml([], baseCtx);
+      expect(html).toContain('<meta property="og:type" content="website">');
+      expect(html).toContain('<meta property="og:site_name" content="Iron Gym">');
+      expect(html).toContain('<meta name="twitter:card" content="summary">');
+      expect(html).toContain('<meta name="twitter:title" content="Iron Gym">');
+      expect(html).not.toContain('twitter:image');
+      expect(html).not.toContain('og:image');
+    });
+
+    it('uses the gym logo for og:image/twitter:image and switches to summary_large_image', () => {
+      const html = renderSiteHtml([], { ...baseCtx, gymLogoUrl: 'https://x.com/logo.png' });
+      expect(html).toContain('<meta property="og:image" content="https://x.com/logo.png">');
+      expect(html).toContain('<meta name="twitter:image" content="https://x.com/logo.png">');
+      expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
+    });
+
+    it('falls back to the hero photo for og:image/twitter:image when there is no gym logo', () => {
+      const hero = createBlock('hero') as HeroBlock;
+      const page = appendBlock(emptyPage(), { ...hero, imageUrl: 'https://x.com/hero.jpg' });
+      const html = renderSiteHtml(page.blocks, baseCtx);
+      expect(html).toContain('<meta property="og:image" content="https://x.com/hero.jpg">');
+      expect(html).toContain('<meta name="twitter:image" content="https://x.com/hero.jpg">');
+    });
+
+    it('prefers the gym logo over the hero photo when both are set', () => {
+      const hero = createBlock('hero') as HeroBlock;
+      const page = appendBlock(emptyPage(), { ...hero, imageUrl: 'https://x.com/hero.jpg' });
+      const html = renderSiteHtml(page.blocks, { ...baseCtx, gymLogoUrl: 'https://x.com/logo.png' });
+      expect(html).toContain('<meta property="og:image" content="https://x.com/logo.png">');
+    });
+  });
+
+  describe('LocalBusiness JSON-LD', () => {
+    it('emits nothing when there is no structuredAddress', () => {
+      const html = renderSiteHtml([], baseCtx);
+      expect(html).not.toContain('application/ld+json');
+    });
+
+    it('emits an ExerciseGym schema with the structured address, canonical url and image', () => {
+      const html = renderSiteHtml([], {
+        ...baseCtx,
+        gymLogoUrl: 'https://x.com/logo.png',
+        canonicalUrl: 'https://iron-gym.example/',
+        structuredAddress: { street: '1 Gym St', city: 'Anytown', region: 'Anystate', postalCode: 'AB1 2CD', country: 'GB' },
+      });
+      expect(html).toContain('<script type="application/ld+json">');
+      const match = html.match(/<script type="application\/ld\+json">(.+?)<\/script>/);
+      expect(match).not.toBeNull();
+      const data = JSON.parse(match![1]);
+      expect(data).toMatchObject({
+        '@context': 'https://schema.org',
+        '@type': 'ExerciseGym',
+        name: 'Iron Gym',
+        url: 'https://iron-gym.example/',
+        image: 'https://x.com/logo.png',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: '1 Gym St',
+          addressLocality: 'Anytown',
+          addressRegion: 'Anystate',
+          postalCode: 'AB1 2CD',
+          addressCountry: 'GB',
+        },
+      });
+    });
+
+    it('omits optional address fields and url/image when not provided', () => {
+      const html = renderSiteHtml([], {
+        ...baseCtx,
+        structuredAddress: { street: '1 Gym St', city: 'Anytown' },
+      });
+      const match = html.match(/<script type="application\/ld\+json">(.+?)<\/script>/);
+      const data = JSON.parse(match![1]);
+      expect(data.url).toBeUndefined();
+      expect(data.image).toBeUndefined();
+      expect(data.address.addressRegion).toBeUndefined();
+      expect(data.address.postalCode).toBeUndefined();
+      expect(data.address.addressCountry).toBeUndefined();
+    });
+
+    it('neutralises a hostile value so it cannot break out of the script tag', () => {
+      const html = renderSiteHtml([], {
+        ...baseCtx,
+        gymName: '</script><script>alert(1)</script>',
+        structuredAddress: { street: '1 Gym St', city: 'Anytown' },
+      });
+      expect(html).not.toContain('</script><script>alert(1)</script>');
+      expect(html).toContain('\\u003c/script>\\u003cscript>alert(1)\\u003c/script>');
+    });
+  });
+
+  describe('imageAlt overrides', () => {
+    it('uses the hero imageAlt when set, falling back to the gym name', () => {
+      const hero = createBlock('hero') as HeroBlock;
+      const withAlt = appendBlock(emptyPage(), {
+        ...hero,
+        layout: 'side',
+        imageUrl: 'https://x.com/hero.jpg',
+        imageAlt: 'Members deadlifting',
+      });
+      expect(renderSiteHtml(withAlt.blocks, baseCtx)).toContain('alt="Members deadlifting"');
+
+      const withoutAlt = appendBlock(emptyPage(), {
+        ...hero,
+        layout: 'side',
+        imageUrl: 'https://x.com/hero.jpg',
+      });
+      expect(renderSiteHtml(withoutAlt.blocks, baseCtx)).toContain('alt="Iron Gym"');
+    });
+
+    it('uses the about imageAlt when set, falling back to the heading, and lazy-loads it', () => {
+      const about = createBlock('about') as AboutBlock;
+      const withAlt = appendBlock(emptyPage(), {
+        ...about,
+        heading: 'About us',
+        imageUrl: 'https://x.com/about.jpg',
+        imageAlt: 'Coach demonstrating a lift',
+      });
+      const html = renderSiteHtml(withAlt.blocks, baseCtx);
+      expect(html).toContain('alt="Coach demonstrating a lift"');
+      expect(html).toContain('loading="lazy"');
+
+      const withoutAlt = appendBlock(emptyPage(), {
+        ...about,
+        heading: 'About us',
+        imageUrl: 'https://x.com/about.jpg',
+      });
+      expect(renderSiteHtml(withoutAlt.blocks, baseCtx)).toContain('alt="About us"');
+    });
+  });
+
   it('uses a page meta description when set, falling back to the gym-level default', () => {
     const withMeta = renderSiteHtml([], {
       ...baseCtx,
@@ -500,6 +659,7 @@ describe('renderSiteHtml', () => {
     const html = renderSiteHtml(page.blocks, { ...baseCtx, team: members });
     expect(html).toContain('Priya Shah');
     expect(html).toContain('src="https://x.com/priya.png"');
+    expect(html).toContain('class="team-avatar" src="https://x.com/priya.png" alt="Priya Shah" loading="lazy"');
     expect(html).not.toContain('Hidden Coach');
     expect(html).toContain('Sam Lee');
     // No avatarUrl falls back to a static initials circle, not an <img>.

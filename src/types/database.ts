@@ -4240,6 +4240,10 @@ export type Database = {
         Args: { p_host: string };
         Returns: string | null;
       };
+      gym_website_canonical_domain: {
+        Args: { p_slug: string };
+        Returns: string | null;
+      };
       invite_code_gym: {
         Args: { p_code: string };
         Returns: {

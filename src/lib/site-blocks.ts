@@ -43,6 +43,9 @@ export type HeroBlock = {
   // of sending a visitor away from the page they're already reading.
   ctaTarget: 'join' | 'contact';
   imageUrl: string;
+  // Optional alt text for imageUrl. Empty/absent falls back to the gym
+  // name at render time, same as before this field existed.
+  imageAlt?: string;
   layout: 'background' | 'side';
 };
 
@@ -52,6 +55,9 @@ export type AboutBlock = {
   heading: string;
   body: string;
   imageUrl: string;
+  // Optional alt text for imageUrl. Empty/absent falls back to the
+  // block's own heading at render time, same as before this field existed.
+  imageAlt?: string;
   layout: 'image-left' | 'image-right' | 'none';
 };
 
@@ -95,6 +101,17 @@ export type LocationBlock = {
   heading: string;
   address: string;
   hours: string;
+  // Structured address, kept separate from the free-text `address` above
+  // (which stays exactly as authored for on-page display). Optional and
+  // additive: absent on every block predating this. Only used to build
+  // the LocalBusiness JSON-LD and improve map/local-search matching — a
+  // block with only the free-text address renders identically to before
+  // and simply emits no structured address data.
+  street?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  country?: string;
 };
 
 // Restyled version of the existing /lead/<slug> form, to sit inside the
@@ -135,6 +152,10 @@ export type SiteSettings = {
   // (both the rendered page and the raw gym_public_schedule RPC). Absent or
   // true shows them — the default.
   showCoachNames?: boolean;
+  // The verification code Google Search Console issues for the HTML-tag
+  // method — rendered as <meta name="google-site-verification">. Optional;
+  // absent means the owner hasn't verified the site with Search Console yet.
+  searchConsoleVerification?: string;
 };
 
 // slug: '' for the home page, a URL segment (e.g. 'schedule') for every
@@ -473,7 +494,8 @@ function coerceBlock(raw: unknown): SiteBlock | null {
   const r = raw as Record<string, unknown>;
   const id = asString(r.id, genId());
   switch (r.type) {
-    case 'hero':
+    case 'hero': {
+      const imageAlt = asString(r.imageAlt, '');
       return {
         id,
         type: 'hero',
@@ -482,17 +504,22 @@ function coerceBlock(raw: unknown): SiteBlock | null {
         ctaLabel: asString(r.ctaLabel, 'Book a free class'),
         ctaTarget: asHeroCtaTarget(r.ctaTarget),
         imageUrl: asString(r.imageUrl, ''),
+        ...(imageAlt ? { imageAlt } : {}),
         layout: asHeroLayout(r.layout),
       };
-    case 'about':
+    }
+    case 'about': {
+      const imageAlt = asString(r.imageAlt, '');
       return {
         id,
         type: 'about',
         heading: asString(r.heading, ''),
         body: asString(r.body, ''),
         imageUrl: asString(r.imageUrl, ''),
+        ...(imageAlt ? { imageAlt } : {}),
         layout: asAboutLayout(r.layout),
       };
+    }
     case 'schedule':
       return { id, type: 'schedule', heading: asString(r.heading, 'This week') };
     case 'pricing':
@@ -530,14 +557,25 @@ function coerceBlock(raw: unknown): SiteBlock | null {
         .filter((img): img is GalleryImage => img !== null);
       return { id, type: 'gallery', heading: asString(r.heading, ''), images };
     }
-    case 'location':
+    case 'location': {
+      const street = asString(r.street, '');
+      const city = asString(r.city, '');
+      const region = asString(r.region, '');
+      const postalCode = asString(r.postalCode, '');
+      const country = asString(r.country, '');
       return {
         id,
         type: 'location',
         heading: asString(r.heading, ''),
         address: asString(r.address, ''),
         hours: asString(r.hours, ''),
+        ...(street ? { street } : {}),
+        ...(city ? { city } : {}),
+        ...(region ? { region } : {}),
+        ...(postalCode ? { postalCode } : {}),
+        ...(country ? { country } : {}),
       };
+    }
     case 'contact':
       return {
         id,
@@ -584,9 +622,12 @@ export function coerceDocument(raw: unknown): SiteDocument {
   }
   const r = raw as Record<string, unknown>;
   const s = (r.settings ?? {}) as Record<string, unknown>;
+  const searchConsoleVerification =
+    typeof s.searchConsoleVerification === 'string' ? s.searchConsoleVerification.trim().slice(0, 200) : '';
   const settings: SiteSettings = {
     themeId: isThemeId(s.themeId) ? s.themeId : defaults.themeId,
     ...(typeof s.showCoachNames === 'boolean' ? { showCoachNames: s.showCoachNames } : {}),
+    ...(searchConsoleVerification ? { searchConsoleVerification } : {}),
   };
 
   if (Array.isArray(r.pages)) {
@@ -643,6 +684,41 @@ export type PageWarning = { pageId: string; pageTitle: string; message: string }
 // UI that only shows the page label when there's more than one page
 // (avoiding "Home: ..." noise on the common case) can key off
 // `document.pages.length > 1` directly.
+export type StructuredAddress = {
+  street: string;
+  city: string;
+  region?: string;
+  postalCode?: string;
+  country?: string;
+};
+
+// Sourced for the LocalBusiness JSON-LD the public renderer emits on every
+// page — a gym has one physical location regardless of which page its
+// location block lives on, so this scans the whole document rather than
+// just the page being rendered. Home is pages[0], so it's checked first.
+// Requires at minimum street + city: a PostalAddress with only a region or
+// postal code is more likely to mislead a crawler than help one, so a block
+// that hasn't had its structured fields filled in yet contributes nothing
+// here (the free-text `address` still renders on the page as always).
+export function findStructuredAddress(doc: SiteDocument): StructuredAddress | null {
+  for (const page of doc.pages) {
+    for (const block of page.blocks) {
+      if (block.type !== 'location') continue;
+      const street = block.street?.trim();
+      const city = block.city?.trim();
+      if (!street || !city) continue;
+      return {
+        street,
+        city,
+        ...(block.region?.trim() ? { region: block.region.trim() } : {}),
+        ...(block.postalCode?.trim() ? { postalCode: block.postalCode.trim() } : {}),
+        ...(block.country?.trim() ? { country: block.country.trim() } : {}),
+      };
+    }
+  }
+  return null;
+}
+
 export function allPageWarnings(doc: SiteDocument): PageWarning[] {
   return doc.pages.flatMap((p) =>
     documentWarnings(p).map((message) => ({ pageId: p.id, pageTitle: p.title, message })),

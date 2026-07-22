@@ -40,6 +40,7 @@ import {
   allPageWarnings,
   coerceDocument,
   emptyDocument,
+  findStructuredAddress,
   updateBlock,
   type PageWarning,
   type SiteBlock,
@@ -830,6 +831,12 @@ export default function WebsiteManageScreen() {
       metaDescription: p.metaDescription,
     })),
     activePageSlug: activePage.slug,
+    structuredAddress: findStructuredAddress(document),
+    searchConsoleVerification: document.settings.searchConsoleVerification,
+    // No canonicalUrl here: this preview is never served to a crawler
+    // (platformOrigin is deliberately empty above too), so there's no real
+    // authoritative URL to point at yet — api/site/[...path].ts is the only
+    // renderer that computes one.
   };
   const previewHtml = renderSiteHtml(activePage.blocks, { ...siteRenderCtx, editable: true });
   // Preview mode renders this instead — no contentEditable, no canvas-sync

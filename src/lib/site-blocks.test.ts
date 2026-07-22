@@ -10,6 +10,7 @@ import {
   duplicateBlock,
   emptyDocument,
   emptyPage,
+  findStructuredAddress,
   insertBlock,
   moveBlock,
   removeBlock,
@@ -22,7 +23,9 @@ import {
   type AboutBlock,
   type GalleryBlock,
   type HeroBlock,
+  type LocationBlock,
   type PricingBlock,
+  type SiteDocument,
   type SitePage,
   type TeamBlock,
   type TestimonialsBlock,
@@ -210,6 +213,127 @@ describe('coerceDocument', () => {
     const doc = coerceDocument({ blocks: [{ id: 'tm', type: 'team' }] });
     expect((doc.pages[0].blocks[0] as TeamBlock).heading).toBe('Meet the team');
     expect((doc.pages[0].blocks[0] as TeamBlock).hiddenMemberIds).toEqual([]);
+  });
+
+  it("round-trips a location block's structured address fields, omitting any left blank", () => {
+    const doc = coerceDocument({
+      blocks: [
+        {
+          id: 'l',
+          type: 'location',
+          address: '1 Gym St, Anytown',
+          street: '1 Gym St',
+          city: 'Anytown',
+          region: 'Anystate',
+          postalCode: 'AB1 2CD',
+          country: 'GB',
+        },
+      ],
+    });
+    const location = doc.pages[0].blocks[0] as LocationBlock;
+    expect(location.address).toBe('1 Gym St, Anytown');
+    expect(location.street).toBe('1 Gym St');
+    expect(location.city).toBe('Anytown');
+    expect(location.region).toBe('Anystate');
+    expect(location.postalCode).toBe('AB1 2CD');
+    expect(location.country).toBe('GB');
+
+    const bare = coerceDocument({ blocks: [{ id: 'l', type: 'location', address: '1 Gym St' }] });
+    const bareLocation = bare.pages[0].blocks[0] as LocationBlock;
+    expect(bareLocation.street).toBeUndefined();
+    expect(bareLocation.city).toBeUndefined();
+    expect(bareLocation.region).toBeUndefined();
+    expect(bareLocation.postalCode).toBeUndefined();
+    expect(bareLocation.country).toBeUndefined();
+  });
+
+  it('round-trips imageAlt on hero and about blocks, omitting it when blank', () => {
+    const doc = coerceDocument({
+      blocks: [
+        { id: 'h', type: 'hero', imageAlt: 'Members mid-workout' },
+        { id: 'a', type: 'about', imageAlt: 'Coach demonstrating a lift' },
+      ],
+    });
+    expect((doc.pages[0].blocks[0] as HeroBlock).imageAlt).toBe('Members mid-workout');
+    expect((doc.pages[0].blocks[1] as AboutBlock).imageAlt).toBe('Coach demonstrating a lift');
+
+    const bare = coerceDocument({ blocks: [{ id: 'h', type: 'hero' }] });
+    expect((bare.pages[0].blocks[0] as HeroBlock).imageAlt).toBeUndefined();
+  });
+
+  it('round-trips and caps searchConsoleVerification, dropping a non-string value', () => {
+    const doc = coerceDocument({ settings: { searchConsoleVerification: 'abc123' } });
+    expect(doc.settings.searchConsoleVerification).toBe('abc123');
+
+    const long = coerceDocument({ settings: { searchConsoleVerification: 'x'.repeat(500) } });
+    expect(long.settings.searchConsoleVerification).toHaveLength(200);
+
+    const bad = coerceDocument({ settings: { searchConsoleVerification: 42 } });
+    expect(bad.settings.searchConsoleVerification).toBeUndefined();
+  });
+});
+
+describe('findStructuredAddress', () => {
+  function docWithLocation(location: Partial<LocationBlock>, extraPages: SitePage[] = []): SiteDocument {
+    const home = appendBlock(emptyPage(), { ...(createBlock('location') as LocationBlock), ...location });
+    return { version: 2, settings: { themeId: 'forged' }, pages: [home, ...extraPages] };
+  }
+
+  it('returns null when no location block exists', () => {
+    expect(findStructuredAddress(emptyDocument())).toBeNull();
+  });
+
+  it('returns null when a location block has only street or only city, not both', () => {
+    expect(findStructuredAddress(docWithLocation({ street: '1 Gym St' }))).toBeNull();
+    expect(findStructuredAddress(docWithLocation({ city: 'Anytown' }))).toBeNull();
+  });
+
+  it('returns the structured address once street and city are both present', () => {
+    const doc = docWithLocation({
+      street: '1 Gym St',
+      city: 'Anytown',
+      region: 'Anystate',
+      postalCode: 'AB1 2CD',
+      country: 'GB',
+    });
+    expect(findStructuredAddress(doc)).toEqual({
+      street: '1 Gym St',
+      city: 'Anytown',
+      region: 'Anystate',
+      postalCode: 'AB1 2CD',
+      country: 'GB',
+    });
+  });
+
+  it('omits optional fields that are blank rather than including empty strings', () => {
+    const doc = docWithLocation({ street: '1 Gym St', city: 'Anytown' });
+    expect(findStructuredAddress(doc)).toEqual({ street: '1 Gym St', city: 'Anytown' });
+  });
+
+  it('prefers the home page over a later page when both have a structured location', () => {
+    const schedulePage: SitePage = {
+      id: 'sched',
+      slug: 'schedule',
+      title: 'Schedule',
+      blocks: [
+        { ...(createBlock('location') as LocationBlock), street: '2 Other St', city: 'Elsewhere' },
+      ],
+    };
+    const doc = docWithLocation({ street: '1 Gym St', city: 'Anytown' }, [schedulePage]);
+    expect(findStructuredAddress(doc)?.street).toBe('1 Gym St');
+  });
+
+  it('finds a structured location on a later page when home has none', () => {
+    const schedulePage: SitePage = {
+      id: 'sched',
+      slug: 'schedule',
+      title: 'Schedule',
+      blocks: [
+        { ...(createBlock('location') as LocationBlock), street: '2 Other St', city: 'Elsewhere' },
+      ],
+    };
+    const doc: SiteDocument = { version: 2, settings: { themeId: 'forged' }, pages: [emptyPage(), schedulePage] };
+    expect(findStructuredAddress(doc)?.street).toBe('2 Other St');
   });
 });
 

@@ -5,7 +5,7 @@
 -- UNPUBLISHED site resolves its slug but still serves nothing.
 
 begin;
-select plan(8);
+select plan(11);
 
 \ir _helpers.psql
 
@@ -45,6 +45,10 @@ begin
   -- C has a verified custom domain despite being unpublished.
   insert into public.gym_website_domains (gym_id, domain, status, verified_at)
   values (v_c, 'ccustom.example', 'verified', now());
+
+  -- A (published) has its own verified domain, for gym_website_canonical_domain.
+  insert into public.gym_website_domains (gym_id, domain, status, verified_at)
+  values (v_a, 'acustom.example', 'verified', now());
 
   perform set_config('test.a',      v_a::text,      true);
   perform set_config('test.sess_a', v_sess_a::text, true);
@@ -95,6 +99,22 @@ select is(
 select is(
   public.gym_slug_for_domain('ccustom.example'),
   'anon-c', 'a verified domain resolves its slug; the publish check happens downstream');
+
+-- 8. gym_website_canonical_domain resolves a published gym's verified domain.
+select is(
+  public.gym_website_canonical_domain('anon-a'),
+  'acustom.example', 'canonical domain resolves for a published gym with a verified domain');
+
+-- 9. ...returns nothing for a published gym with no connected domain.
+select is(
+  public.gym_website_canonical_domain('anon-b'),
+  null, 'canonical domain is null when no domain is connected');
+
+-- 10. ...and nothing for an unpublished gym even though its domain is verified —
+-- the platform path must stay the sole canonical URL until the site goes live.
+select is(
+  public.gym_website_canonical_domain('anon-c'),
+  null, 'canonical domain is null for an unpublished site regardless of domain status');
 
 select * from finish();
 rollback;

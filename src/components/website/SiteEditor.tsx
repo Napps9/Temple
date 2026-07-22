@@ -500,6 +500,14 @@ function HeroInspector({
         gymId={gymId}
         defaultStockQuery={defaultStockQuery}
       />
+      {block.imageUrl ? (
+        <TextField
+          label="Photo description (alt text)"
+          value={block.imageAlt ?? ''}
+          onChangeText={(t) => onPatch({ imageAlt: t })}
+          placeholder="What's happening in the photo — read aloud by screen readers"
+        />
+      ) : null}
     </View>
   );
 }
@@ -544,6 +552,14 @@ function AboutInspector({
           onChange={(u) => onPatch({ imageUrl: u })}
           gymId={gymId}
           defaultStockQuery={defaultStockQuery}
+        />
+      ) : null}
+      {block.layout !== 'none' && block.imageUrl ? (
+        <TextField
+          label="Photo description (alt text)"
+          value={block.imageAlt ?? ''}
+          onChangeText={(t) => onPatch({ imageAlt: t })}
+          placeholder="What's happening in the photo — read aloud by screen readers"
         />
       ) : null}
     </View>
@@ -870,6 +886,43 @@ function LocationInspector({
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
       <TextField label="Address" value={block.address} onChangeText={(t) => onPatch({ address: t })} multiline />
       <TextField label="Hours" value={block.hours} onChangeText={(t) => onPatch({ hours: t })} multiline placeholder={'Mon-Fri 6am-8pm\nSat-Sun 8am-1pm'} />
+      <View className="gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <FieldLabel>Structured address (helps Google Maps &amp; local search)</FieldLabel>
+        <TextField label="Street" value={block.street ?? ''} onChangeText={(t) => onPatch({ street: t })} placeholder="1 Gym St" />
+        <View className="flex-row gap-2">
+          <View className="flex-1">
+            <TextField label="City" value={block.city ?? ''} onChangeText={(t) => onPatch({ city: t })} />
+          </View>
+          <View className="flex-1">
+            <TextField
+              label="Region / state"
+              value={block.region ?? ''}
+              onChangeText={(t) => onPatch({ region: t })}
+            />
+          </View>
+        </View>
+        <View className="flex-row gap-2">
+          <View className="flex-1">
+            <TextField
+              label="Postal code"
+              value={block.postalCode ?? ''}
+              onChangeText={(t) => onPatch({ postalCode: t })}
+            />
+          </View>
+          <View className="flex-1">
+            <TextField
+              label="Country"
+              value={block.country ?? ''}
+              onChangeText={(t) => onPatch({ country: t })}
+              placeholder="GB"
+            />
+          </View>
+        </View>
+        <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+          Optional — fill these in and search engines can show your address and hours directly in
+          results. Your Address text above still controls what visitors see on the page.
+        </Text>
+      </View>
     </View>
   );
 }
@@ -993,6 +1046,15 @@ function ThemePicker({
             { value: 'hide', label: 'Hide' },
           ]}
           onChange={(v) => onChange(updateSettings(document, { showCoachNames: v === 'show' }))}
+        />
+      </View>
+      <View className="gap-1.5 mt-2">
+        <TextField
+          label="Search Console verification code"
+          value={document.settings.searchConsoleVerification ?? ''}
+          onChangeText={(t) => onChange(updateSettings(document, { searchConsoleVerification: t }))}
+          placeholder="Paste the content= value from the HTML tag method"
+          note="Lets Google Search Console confirm you own this site, so you can submit your sitemap and see search performance."
         />
       </View>
     </View>

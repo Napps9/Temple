@@ -23,7 +23,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 import { composeThemeWithBrand, BRAND_THEMES, isThemeId } from '../../src/lib/brand-themes';
-import { coerceDocument } from '../../src/lib/site-blocks';
+import { coerceDocument, findStructuredAddress } from '../../src/lib/site-blocks';
 import {
   renderSiteHtml,
   type PublicPlan,
@@ -106,14 +106,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const [scheduleResult, plansResult, teamResult] = await Promise.all([
+    const [scheduleResult, plansResult, teamResult, canonicalDomainResult] = await Promise.all([
       supabase.rpc('gym_public_schedule', { p_slug: slug }),
       supabase.rpc('gym_public_plans', { p_slug: slug }),
       supabase.rpc('gym_public_team', { p_slug: slug }),
+      supabase.rpc('gym_website_canonical_domain', { p_slug: slug }),
     ]);
     if (scheduleResult.error) throw scheduleResult.error;
     if (plansResult.error) throw plansResult.error;
     if (teamResult.error) throw teamResult.error;
+    if (canonicalDomainResult.error) throw canonicalDomainResult.error;
 
     const schedule: ScheduleSession[] = (scheduleResult.data ?? []).map((s) => ({
       sessionId: s.session_id,
@@ -148,6 +150,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    const platformOrigin = (process.env.APP_ORIGIN ?? 'https://app.jointemple.io').replace(/\/+$/, '');
+    // Home is the only page a connected custom domain actually serves
+    // (middleware.ts only rewrites that domain's bare root) — a non-home
+    // page has just one real URL today, so it's self-canonical. Without
+    // this, the platform path stays live and indexable alongside the
+    // custom domain with nothing telling a crawler which one is
+    // authoritative.
+    const canonicalUrl =
+      pageSlug === ''
+        ? canonicalDomainResult.data
+          ? `https://${canonicalDomainResult.data}`
+          : `${platformOrigin}/site/${encodeURIComponent(slug)}`
+        : `${platformOrigin}/site/${encodeURIComponent(slug)}/${encodeURIComponent(pageSlug)}`;
+
     const html = renderSiteHtml(page.blocks, {
       slug,
       gymName: site.gym_name,
@@ -161,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Env-driven with the prod apex as fallback, matching the edge
       // functions' APP_ORIGIN convention — so a preview/staging deploy
       // renders links to its own origin rather than production.
-      platformOrigin: (process.env.APP_ORIGIN ?? 'https://app.jointemple.io').replace(/\/+$/, ''),
+      platformOrigin,
       supabaseUrl,
       supabaseAnonKey,
       editable: false,
@@ -171,6 +187,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         metaDescription: p.metaDescription,
       })),
       activePageSlug: page.slug,
+      structuredAddress: findStructuredAddress(document),
+      canonicalUrl,
+      searchConsoleVerification: document.settings.searchConsoleVerification,
     });
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');

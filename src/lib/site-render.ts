@@ -21,6 +21,7 @@ import type {
   PricingBlock,
   ScheduleBlock,
   SiteBlock,
+  StructuredAddress,
   TeamBlock,
   TestimonialsBlock,
 } from './site-blocks';
@@ -98,6 +99,23 @@ export type SiteRenderContext = {
   // must switch the active page in-app rather than navigating the
   // iframe to the live public URL. Never set on the public path.
   previewNav?: boolean;
+  // The gym's structured address (site-blocks.ts's findStructuredAddress),
+  // resolved once by the caller from the whole document — a gym has one
+  // physical location regardless of which page is being rendered. Drives
+  // the LocalBusiness JSON-LD; omitted (or null) when no location block
+  // has its structured fields filled in, in which case no JSON-LD is
+  // emitted at all rather than a half-populated one.
+  structuredAddress?: StructuredAddress | null;
+  // The authoritative URL for THIS page, resolved by the caller (it needs
+  // to know about a possibly-connected, possibly-verified custom domain,
+  // which this pure renderer has no way to look up). Emitted as
+  // <link rel="canonical"> and og:url. Omitted only by tests that don't
+  // care about it — every real call site sets it.
+  canonicalUrl?: string;
+  // The Search Console HTML-tag verification code (SiteSettings.searchConsoleVerification),
+  // resolved by the caller from document.settings. Omitted when the owner
+  // hasn't verified the site yet.
+  searchConsoleVerification?: string;
 };
 
 function escapeHtml(input: string): string {
@@ -379,10 +397,11 @@ function renderHero(
       : '';
 
   const imageUrl = safeImageUrl(b.imageUrl);
+  const heroAlt = b.imageAlt?.trim() || ctx.gymName;
   if (b.layout === 'side') {
     const text = `<div class="hero-side-text">${eyebrow}${headline}${subheadline}${cta}</div>`;
     const image = imageUrl
-      ? `<img src="${escapeAttr(imageUrl)}" alt="${escapeAttr(ctx.gymName)}" />`
+      ? `<img src="${escapeAttr(imageUrl)}" alt="${escapeAttr(heroAlt)}" />`
       : `<div class="card" style="aspect-ratio:4/3;"></div>`;
     return `<section class="sec"><div class="wrap hero-side">${text}${image}</div></section>`;
   }
@@ -396,8 +415,9 @@ function renderHero(
 function renderAbout(b: AboutBlock, ctx: SiteRenderContext): string {
   const text = `<div><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><p style="white-space:pre-line;"${fieldAttrs(ctx, `${b.id}:body`, { multiline: true })}>${sanitizeRichText(b.body)}</p></div>`;
   const aboutImg = safeImageUrl(b.imageUrl);
+  const aboutAlt = b.imageAlt?.trim() || b.heading;
   const img = aboutImg
-    ? `<img src="${escapeAttr(aboutImg)}" alt="${escapeAttr(b.heading)}" />`
+    ? `<img src="${escapeAttr(aboutImg)}" alt="${escapeAttr(aboutAlt)}" loading="lazy" />`
     : '';
   if (b.layout === 'none' || !img) {
     return `<section class="sec"><div class="wrap" style="max-width:720px;">${text}</div></section>`;
@@ -683,7 +703,7 @@ function renderTeam(b: TeamBlock, ctx: SiteRenderContext): string {
     .map((m) => {
       const avatar = safeImageUrl(m.avatarUrl ?? '');
       const photo = avatar
-        ? `<img class="team-avatar" src="${escapeAttr(avatar)}" alt="${escapeAttr(m.fullName)}" />`
+        ? `<img class="team-avatar" src="${escapeAttr(avatar)}" alt="${escapeAttr(m.fullName)}" loading="lazy" />`
         : `<div class="team-initials">${escapeHtml(teamInitial(m.fullName))}</div>`;
       return `<div class="team-card">${photo}<div class="team-name">${escapeHtml(m.fullName)}</div></div>`;
     })
@@ -878,18 +898,56 @@ const NAV_INTERCEPT_SCRIPT = `
 })();
 </script>`;
 
+// `<` is the one character JSON.stringify never escapes that can break out
+// of a <script> context (a value containing "</script>" would close the
+// tag early); < round-trips through JSON.parse to the same "<"
+// without meaning anything special inside a JSON string, so this is a
+// no-op for the data itself.
+function escapeJsonLd(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
+// LocalBusiness (ExerciseGym) structured data — only emitted once the
+// owner has filled in a location block's structured address fields
+// (ctx.structuredAddress, resolved by the caller via
+// site-blocks.ts's findStructuredAddress). No openingHoursSpecification:
+// the hours block is free text an owner can phrase however they like
+// ("by appointment", split shifts, etc.), and guessing a structured
+// schedule out of it would risk feeding search engines wrong hours —
+// worse than omitting the field.
+function renderLocalBusinessJsonLd(ctx: SiteRenderContext, businessImage: string): string {
+  if (!ctx.structuredAddress) return '';
+  const addr = ctx.structuredAddress;
+  const data: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'ExerciseGym',
+    name: ctx.gymName,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: addr.street,
+      addressLocality: addr.city,
+      ...(addr.region ? { addressRegion: addr.region } : {}),
+      ...(addr.postalCode ? { postalCode: addr.postalCode } : {}),
+      ...(addr.country ? { addressCountry: addr.country } : {}),
+    },
+  };
+  if (ctx.canonicalUrl) data.url = ctx.canonicalUrl;
+  if (businessImage) data.image = businessImage;
+  return `<script type="application/ld+json">${escapeJsonLd(data)}</script>`;
+}
+
 // Takes one page's blocks directly, not a whole (possibly multi-page)
 // SiteDocument — the caller resolves which page to render (the staff
 // editor's active page, or the page matching the public route's slug).
 export function renderSiteHtml(blocks: SiteBlock[], ctx: SiteRenderContext): string {
   const header = renderSiteHeader(ctx);
-  const firstHeroId = blocks.find((b) => b.type === 'hero')?.id;
+  const firstHero = blocks.find((b): b is HeroBlock => b.type === 'hero');
   const blocksHtml = blocks
-    .map((b) => renderBlock(b, ctx, b.id === firstHeroId))
+    .map((b) => renderBlock(b, ctx, b.id === firstHero?.id))
     .join('');
   // A page with no hero would otherwise have no h1 at all — give it a
   // visually-hidden one so the outline starts at the right level.
-  const fallbackH1 = firstHeroId
+  const fallbackH1 = firstHero
     ? ''
     : `<h1 class="sr-only">${escapeHtml(ctx.gymName)}</h1>`;
   const footer = renderSiteFooter(ctx);
@@ -904,20 +962,36 @@ export function renderSiteHtml(blocks: SiteBlock[], ctx: SiteRenderContext): str
       ? escapeHtml(`${activePage.title} — ${ctx.gymName}`)
       : escapeHtml(ctx.gymName);
   // Per-page meta description when the owner set one, else a gym-level
-  // default. Drives both <meta name="description"> and og:description.
+  // default. Drives <meta name="description">, og:description and
+  // twitter:description.
   const description = escapeAttr(
     activePage?.metaDescription?.trim()
       ? activePage.metaDescription.trim()
       : `${ctx.gymName} — book a class, see membership options and get in touch.`,
   );
+  // og:image / twitter:image: the gym's logo when set, else the page's own
+  // hero photo — a better social-share preview than no image at all, which
+  // is what a gym with no logo yet got before this fallback existed.
+  const socialImage = safeImageUrl(ctx.gymLogoUrl ?? '') || (firstHero ? safeImageUrl(firstHero.imageUrl) : '');
+  const canonical = ctx.canonicalUrl ? escapeAttr(ctx.canonicalUrl) : '';
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
 <meta name="description" content="${description}">
+${canonical ? `<link rel="canonical" href="${canonical}">` : ''}
+${ctx.searchConsoleVerification ? `<meta name="google-site-verification" content="${escapeAttr(ctx.searchConsoleVerification)}">` : ''}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${escapeAttr(ctx.gymName)}">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
-${ctx.gymLogoUrl ? `<meta property="og:image" content="${escapeAttr(ctx.gymLogoUrl)}">` : ''}
+${canonical ? `<meta property="og:url" content="${canonical}">` : ''}
+${socialImage ? `<meta property="og:image" content="${escapeAttr(socialImage)}">` : ''}
+<meta name="twitter:card" content="${socialImage ? 'summary_large_image' : 'summary'}">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${description}">
+${socialImage ? `<meta name="twitter:image" content="${escapeAttr(socialImage)}">` : ''}
+${renderLocalBusinessJsonLd(ctx, socialImage)}
 <style>${themeStyleBlock(ctx.theme, ctx.editable)}</style>
 </head><body>${body}${
     ctx.editable ? CANVAS_BRIDGE_SCRIPT : ctx.previewNav ? NAV_INTERCEPT_SCRIPT : ''
