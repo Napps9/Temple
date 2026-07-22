@@ -3,7 +3,7 @@
 -- current/target plan names.
 
 begin;
-select plan(6);
+select plan(7);
 
 \ir _helpers.psql
 
@@ -78,6 +78,10 @@ select is(
   (select target_plan_name from public.staff_membership_change_requests(
      current_setting('test.gym')::uuid) limit 1),
   'Premium', 'request carries the target plan name');
+select is(
+  (select profile_id from public.staff_membership_change_requests(
+     current_setting('test.gym')::uuid) limit 1),
+  current_setting('test.member')::uuid, 'request carries the member profile_id');
 
 select * from finish();
 rollback;

@@ -7,7 +7,6 @@ import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
-import { ChipButton } from '@/components/ChipButton';
 import {
   DATE_RE,
   DateRangeCta,
@@ -17,11 +16,13 @@ import {
   presetRange,
 } from '@/components/DateRangeCta';
 import { GymSetupChecklist } from '@/components/GymSetupChecklist';
+import { ImportDataModal } from '@/components/ImportDataModal';
 import { Input } from '@/components/Input';
-import { InviteSection } from '@/components/InviteSection';
+import { InviteMemberModal } from '@/components/InviteMemberModal';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
+import { TagRulesModal } from '@/components/TagRulesModal';
 import { StatTile, type Delta, type DeltaDirection } from '@/components/StatTile';
 import {
   bucketByClassType,
@@ -96,12 +97,11 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'insights' | 'members' | 'crm' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
+type Category = 'members' | 'crm' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 const CATEGORY_LABELS: Record<Category, string> = {
-  insights: 'Insights',
   members: 'Members',
   crm: 'AI Front Desk',
   comms: 'Email campaigns',
@@ -113,7 +113,6 @@ const CATEGORY_LABELS: Record<Category, string> = {
 };
 
 const CATEGORY_ICONS: Record<Category, IconName> = {
-  insights: 'bar-chart-outline',
   members: 'people-outline',
   crm: 'funnel-outline',
   comms: 'mail-outline',
@@ -191,7 +190,6 @@ function ManageNav({
 }
 
 const CATEGORY_ORDER: Category[] = [
-  'insights',
   'members',
   'crm',
   'comms',
@@ -230,18 +228,22 @@ export default function ManagementHome() {
   const canManageWebsite = useCan('can_manage_website');
 
   const cards: Card[] = [
+    // Insights + attendance folded into the Members tab: these two cards
+    // no longer render (Members owns a custom panel), they only keep the
+    // Members category visible for roles that can see stats but not the
+    // member list — e.g. a coach with attendance but no tag management.
     {
-      category: 'insights',
+      category: 'members',
       title: 'Insights',
       description: 'Revenue, members and attendance.',
-      href: '/management/attendance',
+      href: '/management/members',
       visible: !!canSeeInsights,
     },
     {
-      category: 'insights',
+      category: 'members',
       title: 'Attendance',
       description: 'Trends from check-ins on class bookings.',
-      href: '/management/attendance',
+      href: '/management/members',
       visible: !!canViewAttendance,
     },
     {
@@ -391,11 +393,11 @@ export default function ManagementHome() {
     cards.some((card) => card.category === c && card.visible),
   );
   const [active, setActive] = useState<Category>(
-    availableCategories[0] ?? 'insights',
+    availableCategories[0] ?? 'members',
   );
   const activeCategory = availableCategories.includes(active)
     ? active
-    : availableCategories[0] ?? 'insights';
+    : availableCategories[0] ?? 'members';
   const visibleCards = cards.filter(
     (c) => c.visible && c.category === activeCategory,
   );
@@ -448,9 +450,7 @@ export default function ManagementHome() {
           {/* Owner-only setup nudge. Self-hides once all five steps are done
               so the card never nags a finished gym. */}
           <GymSetupChecklist />
-          {activeCategory === 'insights' ? (
-          <InsightsTab />
-        ) : activeCategory === 'members' ? (
+          {activeCategory === 'members' ? (
           <MembersTab />
         ) : activeCategory === 'comms' ? (
           <CommunicationsHome />
@@ -1195,25 +1195,23 @@ function ppDelta(current: number, previous: number): Delta {
 // Desk tab instead — see LeadsScreen's stats row.
 // ============================================================================
 
-function InsightsTab() {
+// Insights stats — the KPI grid, driven by the Members tab's shared date
+// range (passed in) so the same picker filters these and the attendance
+// summary together.
+function InsightsStats({
+  range,
+  rangeValid,
+}: {
+  range: { start: string; end: string };
+  rangeValid: boolean;
+}) {
   const { data: membership } = useGymMembership();
   const gymCurrency = useGymCurrency();
   const canSeeInsights = useCan('can_see_insights') ?? false;
   const showRevenue = useCan('can_see_money') ?? false;
   const showMembers = useCan('can_view_attendance') ?? false;
 
-  // One range drives every tile on this tab — the headline KPIs and
-  // the lifecycle metrics used to carry their own pickers.
-  const [preset, setPreset] = useState<Preset>('month');
-  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
-  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
-  const range = useMemo(() => {
-    if (preset === 'custom') return { start: customStart, end: customEnd };
-    return presetRange(preset, new Date());
-  }, [preset, customStart, customEnd]);
   const { start, end } = range;
-  const rangeValid =
-    DATE_RE.test(start) && DATE_RE.test(end) && start <= end;
   const prev = useMemo(
     () => (rangeValid ? mirrorRange(range) : null),
     [start, end, rangeValid],
@@ -1299,13 +1297,7 @@ function InsightsTab() {
     },
   });
 
-  if (!canSeeInsights && !showRevenue && !showMembers) {
-    return (
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
-        You don't have permission to see insights.
-      </Text>
-    );
-  }
+  if (!canSeeInsights && !showRevenue && !showMembers) return null;
 
   const queryError =
     revenueCurrent.error ??
@@ -1339,26 +1331,6 @@ function InsightsTab() {
 
   return (
     <View className="gap-4">
-      <DateRangeCta
-        preset={preset}
-        range={range}
-        customStart={customStart}
-        customEnd={customEnd}
-        onChange={(next) => {
-          setPreset(next.preset);
-          if (next.preset === 'custom') {
-            setCustomStart(next.start);
-            setCustomEnd(next.end);
-          }
-        }}
-      />
-
-      {!rangeValid ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
-          Pick valid dates with From on or before To.
-        </Text>
-      ) : null}
-
       {queryError ? (
         <Text className="text-red-500 dark:text-red-400 text-sm">
           {errorMessage(queryError, 'Could not load insights')}
@@ -1414,19 +1386,30 @@ function InsightsTab() {
 }
 
 // ============================================================================
-// Members tab — attendance stats first, export CTA, then the member list.
-// Tag rules sit at the bottom as a CTA.
+// Members tab — one shared date range drives the insight KPIs and the
+// attendance summary; the member list sits high with Invite / Import / Tag
+// rules folded into CTA modals so it stays the focus of the page.
 // ============================================================================
 
 function MembersTab() {
   const { data: membership } = useGymMembership();
   const canViewAttendance = useCan('can_view_attendance') ?? false;
+  const canSeeInsights = useCan('can_see_insights') ?? false;
+  const canSeeMoney = useCan('can_see_money') ?? false;
   const canExport = useCan('can_export_members') ?? false;
   const canManageTags = useCan('can_manage_tags') ?? false;
   const canManageStaff = useCan('can_manage_staff') ?? false;
   const canInvite = useCan('can_invite') ?? false;
   const canAssignPlan = useCan('can_assign_plan') ?? false;
   const exportMembers = useExportMembersCsv();
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [tagRulesOpen, setTagRulesOpen] = useState(false);
+
+  // can_see_money and can_see_insights are owner/admin; can_view_attendance
+  // extends to coaches/staff, who then get the member + attendance tiles.
+  const showInsights = canSeeInsights || canSeeMoney || canViewAttendance;
 
   const [preset, setPreset] = useState<Preset>('month');
   const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
@@ -1488,24 +1471,37 @@ function MembersTab() {
 
   return (
     <View className="gap-4">
+      {showInsights ? (
+        <DateRangeCta
+          preset={preset}
+          range={range}
+          customStart={customStart}
+          customEnd={customEnd}
+          onChange={(next) => {
+            setPreset(next.preset);
+            if (next.preset === 'custom') {
+              setCustomStart(next.start);
+              setCustomEnd(next.end);
+            }
+          }}
+        />
+      ) : null}
+
+      {showInsights && !rangeValid ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          Pick valid dates with From on or before To.
+        </Text>
+      ) : null}
+
+      {showInsights ? (
+        <InsightsStats range={range} rangeValid={rangeValid} />
+      ) : null}
+
       {canViewAttendance ? (
         <View className="gap-3">
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             Attendance
           </Text>
-          <DateRangeCta
-            preset={preset}
-            range={range}
-            customStart={customStart}
-            customEnd={customEnd}
-            onChange={(next) => {
-              setPreset(next.preset);
-              if (next.preset === 'custom') {
-                setCustomStart(next.start);
-                setCustomEnd(next.end);
-              }
-            }}
-          />
           <View className="flex-row gap-3 flex-wrap">
             <StatTile
               title="Attended"
@@ -1529,17 +1525,40 @@ function MembersTab() {
         </View>
       ) : null}
 
-      {canExport ? (
+      {canInvite || canManageStaff || canManageTags || canExport ? (
         <View className="gap-2">
-          <ChipButton
-            className="self-start"
-            label={exportMembers.isPending ? 'Exporting…' : 'Export members CSV'}
-            icon="download-outline"
-            tone="neutral"
-            onPress={() => exportMembers.mutate()}
-            disabled={exportMembers.isPending}
-          />
-          {exportMembers.error ? (
+          <View className="flex-row flex-wrap gap-2">
+            {canInvite ? (
+              <ActionCta
+                icon="person-add-outline"
+                label="Invite a member"
+                onPress={() => setInviteOpen(true)}
+              />
+            ) : null}
+            {canManageStaff ? (
+              <ActionCta
+                icon="cloud-upload-outline"
+                label="Import data"
+                onPress={() => setImportOpen(true)}
+              />
+            ) : null}
+            {canManageTags ? (
+              <ActionCta
+                icon="pricetag-outline"
+                label="Tag rules"
+                onPress={() => setTagRulesOpen(true)}
+              />
+            ) : null}
+            {canExport ? (
+              <ActionCta
+                icon="download-outline"
+                label={exportMembers.isPending ? 'Exporting…' : 'Export CSV'}
+                onPress={() => exportMembers.mutate()}
+                disabled={exportMembers.isPending}
+              />
+            ) : null}
+          </View>
+          {canExport && exportMembers.error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">
               {exportErrorMessage(exportMembers.error, 'members')}
             </Text>
@@ -1547,19 +1566,17 @@ function MembersTab() {
         </View>
       ) : null}
 
-      {canInvite ? (
-        <InviteSection
-          title="Invite a member"
-          subtitle="Email a member an invite to join your gym."
-          roles={['member']}
-          initialRole="member"
-        />
-      ) : null}
+      {/* Inviters get the branded signup link + QR inside the Invite modal;
+          front-desk staff who can't invite keep it inline so they can still
+          hand a walk-in the join link. */}
+      {!canInvite ? <MemberSignupLinkCard /> : null}
 
-      <MemberSignupLinkCard />
+      {canManageTags ? <MembersList /> : null}
 
-      {canAssignPlan ? (
+      {canAssignPlan && !canManageTags ? (
         <View className="gap-3">
+          {/* Owners/admins action requests via the Members list's Requests
+              filter; roles without the list keep the standalone queue. */}
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             Plan changes
           </Text>
@@ -1571,43 +1588,59 @@ function MembersTab() {
         </View>
       ) : null}
 
-      {canManageStaff ? (
-        <View className="gap-3">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            Bring data across
-          </Text>
-          <ManagementCard
-            title="Import from Stripe"
-            description="Already charging members on Stripe? Start here — each member's live subscription is adopted (no re-entering cards, no double-billing). Then bring everyone else across by CSV."
-            href="/management/members/import-stripe"
-          />
-          <ManagementCard
-            title="Import members"
-            description="Drop in a CSV from Mindbody, PushPress, Glofox, Wodify or a spreadsheet — members link to their data when they sign up. Anyone who already pays you on Stripe is flagged so you don't double-bill them."
-            href="/management/members/import"
-          />
-          <ManagementCard
-            title="Import workout history"
-            description="Seed past sets per member — one row per movement result. Lands in /track so PR pages and trends light up immediately."
-            href="/management/members/import-workouts"
-          />
-        </View>
+      {canInvite ? (
+        <InviteMemberModal
+          visible={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+          canInvite={canInvite}
+        />
       ) : null}
-
+      {canManageStaff ? (
+        <ImportDataModal
+          visible={importOpen}
+          onClose={() => setImportOpen(false)}
+        />
+      ) : null}
       {canManageTags ? (
-        <>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            Members
-          </Text>
-          <MembersList />
-          <ManagementCard
-            title="Tag rules"
-            description="Auto-tag members based on cohort state."
-            href="/management/tags"
-          />
-        </>
+        <TagRulesModal
+          visible={tagRulesOpen}
+          onClose={() => setTagRulesOpen(false)}
+        />
       ) : null}
     </View>
+  );
+}
+
+// A compact tappable tile for the Members-tab actions (Invite, Import, Tag
+// rules, Export) — small enough to sit in one wrapping row so the member
+// list stays high on the page.
+function ActionCta({
+  icon,
+  label,
+  onPress,
+  disabled,
+}: {
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  const colors = useThemeColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      className={`flex-1 min-w-[150px] flex-row items-center gap-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-3 shadow-card active:opacity-70 ${
+        disabled ? 'opacity-50' : ''
+      }`}>
+      <View className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+        <Ionicons name={icon} size={16} color={colors.iconSecondary} />
+      </View>
+      <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
