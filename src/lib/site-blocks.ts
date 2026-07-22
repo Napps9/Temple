@@ -164,6 +164,11 @@ export type SitePage = {
   id: string;
   slug: string;
   title: string;
+  // Optional override for the rendered <title> (and og:title/twitter:title) —
+  // separate from `title`, which also names the page in the nav and the
+  // Pages manager. Empty or absent falls back to the existing auto-generated
+  // "<page title> — <gym name>" (or just the gym name on Home).
+  metaTitle?: string;
   // Optional per-page <meta name="description"> / og:description. Empty or
   // absent falls back to the gym-level default in the renderer.
   metaDescription?: string;
@@ -346,6 +351,18 @@ export function setPageMetaDescription(
   return {
     ...doc,
     pages: doc.pages.map((p) => (p.id === pageId ? { ...p, metaDescription: trimmed } : p)),
+  };
+}
+
+// Sets a page's <title> override (capped, same 70-char ceiling as
+// coercePage) — shorter than the meta description cap, matching how much of
+// a <title> most search results actually display before truncating.
+// Applies to any page, home included.
+export function setPageMetaTitle(doc: SiteDocument, pageId: string, metaTitle: string): SiteDocument {
+  const trimmed = metaTitle.slice(0, 70);
+  return {
+    ...doc,
+    pages: doc.pages.map((p) => (p.id === pageId ? { ...p, metaTitle: trimmed } : p)),
   };
 }
 
@@ -604,12 +621,14 @@ function coercePage(raw: unknown, isHome: boolean): SitePage | null {
   // by search engines anyway. Only included when non-empty so a document
   // without one round-trips through coerce unchanged (the field is optional).
   const metaDescription = asString(r.metaDescription, '').slice(0, 300);
+  const metaTitle = asString(r.metaTitle, '').slice(0, 70);
   return {
     id: asString(r.id, genId()),
     // The home page's slug is always '' regardless of what's stored —
     // position in the array is what makes a page "home", not its slug.
     slug: isHome ? '' : asString(r.slug, ''),
     title: asString(r.title, isHome ? 'Home' : 'Untitled'),
+    ...(metaTitle ? { metaTitle } : {}),
     ...(metaDescription ? { metaDescription } : {}),
     blocks,
   };
@@ -717,6 +736,27 @@ export function findStructuredAddress(doc: SiteDocument): StructuredAddress | nu
     }
   }
   return null;
+}
+
+// The authoritative URL for one page of a gym's site, shared by the public
+// renderer (api/site/[...path].ts, for <link rel="canonical">) and the
+// sitemap (api/site-sitemap/[slug].ts) so they can't drift apart. Home
+// prefers a verified custom domain — the only page a connected domain's
+// middleware actually serves (middleware.ts only rewrites that domain's
+// bare root) — every other page only ever has the platform-path URL.
+export function canonicalPageUrl(params: {
+  platformOrigin: string;
+  slug: string;
+  pageSlug: string;
+  verifiedDomain?: string | null;
+}): string {
+  const { platformOrigin, slug, pageSlug, verifiedDomain } = params;
+  if (pageSlug === '') {
+    return verifiedDomain
+      ? `https://${verifiedDomain}`
+      : `${platformOrigin}/site/${encodeURIComponent(slug)}`;
+  }
+  return `${platformOrigin}/site/${encodeURIComponent(slug)}/${encodeURIComponent(pageSlug)}`;
 }
 
 export function allPageWarnings(doc: SiteDocument): PageWarning[] {

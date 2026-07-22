@@ -4,6 +4,7 @@ import {
   addPage,
   allPageWarnings,
   appendBlock,
+  canonicalPageUrl,
   coerceDocument,
   createBlock,
   documentWarnings,
@@ -18,6 +19,7 @@ import {
   renamePage,
   reorderBlocks,
   reslugPage,
+  setPageMetaTitle,
   updateBlock,
   updateSettings,
   type AboutBlock,
@@ -162,6 +164,17 @@ describe('coerceDocument', () => {
     expect(doc.pages[0].metaDescription).toHaveLength(300);
     const bad = coerceDocument({ pages: [{ id: 'p', slug: '', title: 'Home', metaDescription: 42, blocks: [] }] });
     expect(bad.pages[0].metaDescription).toBeUndefined();
+  });
+
+  it('coerces and caps a page meta title, shorter than the description cap', () => {
+    const doc = coerceDocument({
+      pages: [{ id: 'p', slug: '', title: 'Home', metaTitle: 'x'.repeat(200), blocks: [] }],
+    });
+    expect(doc.pages[0].metaTitle).toHaveLength(70);
+    const bad = coerceDocument({ pages: [{ id: 'p', slug: '', title: 'Home', metaTitle: 42, blocks: [] }] });
+    expect(bad.pages[0].metaTitle).toBeUndefined();
+    const absent = coerceDocument({ pages: [{ id: 'p', slug: '', title: 'Home', blocks: [] }] });
+    expect(absent.pages[0].metaTitle).toBeUndefined();
   });
 
   it('accepts a valid hero ctaTarget of contact', () => {
@@ -483,5 +496,56 @@ describe('allPageWarnings', () => {
       pages: doc.pages.map((p) => ({ ...p, blocks: [createBlock('hero')] })),
     };
     expect(allPageWarnings(doc)).toEqual([]);
+  });
+});
+
+describe('setPageMetaTitle', () => {
+  it('sets and caps a page metaTitle at 70 chars without mutating the original', () => {
+    const doc = emptyDocument();
+    const homeId = doc.pages[0].id;
+    const next = setPageMetaTitle(doc, homeId, 'x'.repeat(200));
+    expect(next.pages[0].metaTitle).toHaveLength(70);
+    expect(doc.pages[0].metaTitle).toBeUndefined();
+  });
+
+  it('applies to any page, home included', () => {
+    const doc = addPage(emptyDocument(), 'Schedule');
+    const scheduleId = doc.pages[1].id;
+    const next = setPageMetaTitle(doc, scheduleId, 'Class Schedule — Iron Gym');
+    expect(next.pages[1].metaTitle).toBe('Class Schedule — Iron Gym');
+    expect(next.pages[0].metaTitle).toBeUndefined();
+  });
+});
+
+describe('canonicalPageUrl', () => {
+  const platformOrigin = 'https://app.example.com';
+
+  it("uses the platform path for Home when there's no verified domain", () => {
+    expect(canonicalPageUrl({ platformOrigin, slug: 'iron-gym', pageSlug: '' })).toBe(
+      'https://app.example.com/site/iron-gym',
+    );
+  });
+
+  it('prefers the verified custom domain for Home when connected', () => {
+    expect(
+      canonicalPageUrl({ platformOrigin, slug: 'iron-gym', pageSlug: '', verifiedDomain: 'irongym.com' }),
+    ).toBe('https://irongym.com');
+  });
+
+  it('always uses the platform path for a non-home page, even with a verified domain', () => {
+    expect(
+      canonicalPageUrl({
+        platformOrigin,
+        slug: 'iron-gym',
+        pageSlug: 'schedule',
+        verifiedDomain: 'irongym.com',
+      }),
+    ).toBe('https://app.example.com/site/iron-gym/schedule');
+  });
+
+  it('URL-encodes the slug and page slug', () => {
+    expect(canonicalPageUrl({ platformOrigin, slug: 'iron gym', pageSlug: 'our team' })).toBe(
+      'https://app.example.com/site/iron%20gym/our%20team',
+    );
   });
 });

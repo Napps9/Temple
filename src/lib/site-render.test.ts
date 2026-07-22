@@ -113,6 +113,33 @@ describe('renderSiteHtml', () => {
     expect(sub).toContain('<meta property="og:title" content="This Week — Iron Gym">');
   });
 
+  it('overrides the auto-generated title with a page metaTitle, on Home and other pages alike', () => {
+    const pages = [
+      { slug: '', title: 'Home', metaTitle: 'Best CrossFit Gym in Anytown' },
+      { slug: 'schedule', title: 'This Week', metaTitle: 'Weekly Class Schedule' },
+    ];
+    const home = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: '' });
+    expect(home).toContain('<title>Best CrossFit Gym in Anytown</title>');
+    expect(home).toContain('<meta property="og:title" content="Best CrossFit Gym in Anytown">');
+    expect(home).toContain('<meta name="twitter:title" content="Best CrossFit Gym in Anytown">');
+
+    const sub = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: 'schedule' });
+    expect(sub).toContain('<title>Weekly Class Schedule</title>');
+  });
+
+  it('falls back to the auto-generated title when metaTitle is blank', () => {
+    const pages = [{ slug: '', title: 'Home', metaTitle: '   ' }];
+    const html = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: '' });
+    expect(html).toContain('<title>Iron Gym</title>');
+  });
+
+  it('escapes a hostile metaTitle', () => {
+    const pages = [{ slug: '', title: 'Home', metaTitle: '<script>alert(1)</script>' }];
+    const html = renderSiteHtml([], { ...baseCtx, pages, activePageSlug: '' });
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
   it('escapes author text so it cannot inject markup', () => {
     const hero = createBlock('hero') as HeroBlock;
     const page = appendBlock(emptyPage(), {

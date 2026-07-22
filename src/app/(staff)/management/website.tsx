@@ -828,6 +828,7 @@ export default function WebsiteManageScreen() {
     pages: document.pages.map((p) => ({
       slug: p.slug,
       title: p.title,
+      metaTitle: p.metaTitle,
       metaDescription: p.metaDescription,
     })),
     activePageSlug: activePage.slug,

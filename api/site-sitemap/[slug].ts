@@ -12,7 +12,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-import { coerceDocument } from '../../src/lib/site-blocks';
+import { canonicalPageUrl, coerceDocument } from '../../src/lib/site-blocks';
 import type { Database } from '../../src/types/database';
 
 function escapeXml(input: string): string {
@@ -52,11 +52,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    const { data: verifiedDomain, error: domainError } = await supabase.rpc(
+      'gym_website_canonical_domain',
+      { p_slug: slug },
+    );
+    if (domainError) throw domainError;
+
     const document = coerceDocument(site.design);
-    const origin = (process.env.APP_ORIGIN ?? 'https://app.jointemple.io').replace(/\/+$/, '');
-    const base = `${origin}/site/${encodeURIComponent(slug)}`;
+    const platformOrigin = (process.env.APP_ORIGIN ?? 'https://app.jointemple.io').replace(/\/+$/, '');
+    // Same canonicalPageUrl every page's <link rel="canonical"> uses
+    // (api/site/[...path].ts) — Home lists the verified custom domain when
+    // one is connected, every other page stays on the platform path (the
+    // only URL a connected domain's middleware actually serves today).
     const urls = document.pages
-      .map((p) => (p.slug ? `${base}/${encodeURIComponent(p.slug)}` : base))
+      .map((p) => canonicalPageUrl({ platformOrigin, slug, pageSlug: p.slug, verifiedDomain }))
       .map((loc) => `<url><loc>${escapeXml(loc)}</loc></url>`)
       .join('');
     const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;

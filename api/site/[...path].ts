@@ -23,7 +23,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 import { composeThemeWithBrand, BRAND_THEMES, isThemeId } from '../../src/lib/brand-themes';
-import { coerceDocument, findStructuredAddress } from '../../src/lib/site-blocks';
+import { canonicalPageUrl, coerceDocument, findStructuredAddress } from '../../src/lib/site-blocks';
 import {
   renderSiteHtml,
   type PublicPlan,
@@ -151,18 +151,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const platformOrigin = (process.env.APP_ORIGIN ?? 'https://app.jointemple.io').replace(/\/+$/, '');
-    // Home is the only page a connected custom domain actually serves
-    // (middleware.ts only rewrites that domain's bare root) — a non-home
-    // page has just one real URL today, so it's self-canonical. Without
-    // this, the platform path stays live and indexable alongside the
-    // custom domain with nothing telling a crawler which one is
-    // authoritative.
-    const canonicalUrl =
-      pageSlug === ''
-        ? canonicalDomainResult.data
-          ? `https://${canonicalDomainResult.data}`
-          : `${platformOrigin}/site/${encodeURIComponent(slug)}`
-        : `${platformOrigin}/site/${encodeURIComponent(slug)}/${encodeURIComponent(pageSlug)}`;
+    const canonicalUrl = canonicalPageUrl({
+      platformOrigin,
+      slug,
+      pageSlug,
+      verifiedDomain: canonicalDomainResult.data,
+    });
 
     const html = renderSiteHtml(page.blocks, {
       slug,
@@ -184,6 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pages: document.pages.map((p) => ({
         slug: p.slug,
         title: p.title,
+        metaTitle: p.metaTitle,
         metaDescription: p.metaDescription,
       })),
       activePageSlug: page.slug,

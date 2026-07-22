@@ -1580,7 +1580,17 @@ column and its RLS checks remain).
   `gym_website_canonical_domain` RPC, migration `0161`, the anon-safe
   slug→domain mirror of `gym_slug_for_domain`), else the platform path;
   every other page is self-canonical, since a connected custom domain
-  doesn't serve non-home pages yet. **LocalBusiness (`ExerciseGym`)
+  doesn't serve non-home pages yet. `canonicalPageUrl` (`site-blocks.ts`)
+  is the single shared implementation of that Home-vs-subpage rule —
+  both `api/site/[...path].ts` (the canonical tag) and
+  `/site/<slug>/sitemap.xml` (`api/site-sitemap/[slug].ts`, so a
+  connected custom domain's Home URL is what actually gets listed there
+  too) call it, so the two can't drift apart. Each page also gained an
+  optional owner-editable **meta title** (`SitePage.metaTitle`, "Search
+  title" in the Pages manager, capped at 70 chars vs. the description's
+  300) overriding the auto-generated `<title>` — which also drives
+  `og:title`/`twitter:title`, since a page's `<title>` IS what a search
+  result shows, there's no separate tag for it. **LocalBusiness (`ExerciseGym`)
   JSON-LD** renders once a location block's structured address is
   filled in — `LocationBlock` gained optional `street`/`city`/`region`/
   `postalCode`/`country` fields, separate from the free-text

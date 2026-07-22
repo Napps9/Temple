@@ -13,6 +13,7 @@ import {
   renamePage,
   reslugPage,
   setPageMetaDescription,
+  setPageMetaTitle,
   type SiteDocument,
 } from '@/lib/site-blocks';
 
@@ -115,6 +116,12 @@ export function PageManagerModal({
                       </Text>
                     </View>
                   ) : null}
+                  <Input
+                    label="Search title"
+                    value={p.metaTitle ?? ''}
+                    onChangeText={(t) => onChange(setPageMetaTitle(document, p.id, t))}
+                    placeholder={i === 0 ? p.title : `${p.title} — your gym name (optional)`}
+                  />
                   <Input
                     label="Search description"
                     value={p.metaDescription ?? ''}
