@@ -1,7 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,8 +28,7 @@ import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { deprovisionFrontDesk, provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
-import { errorMessage, functionErrorMessage } from '@/lib/errors';
-import { toE164UK } from '@/lib/phone';
+import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { formatCallDuration } from '@/lib/vapi-call';
@@ -151,15 +161,16 @@ export default function LeadAgentScreen() {
   // unsaved draft of the agent notes.
   const [agentContext, setAgentContext] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
-  const [teachPhone, setTeachPhone] = useState('');
   const [interviewDraft, setInterviewDraft] = useState<string | null>(null);
   const seededInterviewId = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmTurnOff, setConfirmTurnOff] = useState(false);
   const [briefModalOpen, setBriefModalOpen] = useState(false);
   const [briefDraft, setBriefDraft] = useState('');
-  const [teachMode, setTeachMode] = useState<'phone' | 'browser'>('phone');
   const [heroTab, setHeroTab] = useState<'teach' | 'test'>('teach');
+  // Remounts BrowserInterviewCall on cancel so a fresh browser-start call
+  // runs, rather than leaving it stuck showing an already-discarded row.
+  const [teachAttempt, setTeachAttempt] = useState(0);
   const [callClock, setCallClock] = useState(0);
 
   useEffect(() => {
@@ -298,28 +309,6 @@ export default function LeadAgentScreen() {
     return () => clearInterval(id);
   }, [latestInterview.data?.status, latestInterview.data?.id, latestInterview.data?.created_at]);
 
-  const startInterview = useMutation({
-    mutationFn: async () => {
-      const { data, error: e } = await supabase.functions.invoke('agent-interview/start', {
-        body: { gym_id: membership!.gymId, phone: toE164UK(teachPhone.trim()) },
-      });
-      if (e) throw new Error(await functionErrorMessage(e));
-      if (data?.error) throw new Error(data.error);
-      if (data?.started === false) {
-        throw new Error(
-          data?.reason === 'not_configured'
-            ? "Phone teaching isn't switched on for the platform yet."
-            : 'Could not place the call — try again in a minute.',
-        );
-      }
-    },
-    onSuccess: () => {
-      setError(null);
-      queryClient.invalidateQueries({ queryKey: ['agent-interview', membership?.gymId] });
-    },
-    onError: (e) => setError(errorMessage(e, 'Could not start the teaching call')),
-  });
-
   const applyInterview = useMutation({
     mutationFn: async () => {
       const row = latestInterview.data;
@@ -385,6 +374,8 @@ export default function LeadAgentScreen() {
   const voiceOn = agent.data?.voice_enabled ?? false;
   const voiceReady = !!agent.data?.vapi_assistant_id;
   const frontDeskEntitled = agent.data?.front_desk_entitled ?? false;
+  const canTestWeb = voiceReady && Platform.OS === 'web';
+  const canTestPhone = voiceReady && !!agentNumber && voiceOn;
   const provisionFailed = agent.data?.provision_status === 'failed';
   const currentVoice = VOICES.find((v) => v.id === (agent.data?.voice_id ?? '')) ?? null;
 
@@ -450,16 +441,35 @@ export default function LeadAgentScreen() {
 
         {heroTab === 'test' ? (
           <View className="gap-3">
-            {voiceReady && Platform.OS === 'web' ? (
+            {canTestWeb ? (
               <TalkToAssistant
                 assistantId={agent.data?.vapi_assistant_id ?? null}
                 gymName={brand.gymName}
               />
-            ) : (
+            ) : null}
+            {canTestPhone ? (
+              <Pressable
+                onPress={() => Linking.openURL(`tel:${agentNumber}`)}
+                className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+                <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center">
+                  <Ionicons name="call-outline" size={18} color={colors.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+                    Call it for real
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    Dial {agentNumber} to hear exactly what a prospect hears.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.iconSecondary} />
+              </Pressable>
+            ) : null}
+            {!canTestWeb && !canTestPhone ? (
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Finish setting up your assistant first, then you can talk to it here.
               </Text>
-            )}
+            ) : null}
           </View>
         ) : (
           <>
@@ -551,16 +561,7 @@ export default function LeadAgentScreen() {
                   onPress={() => discardInterview.mutate()}
                 />
               </View>
-            ) : teachMode === 'browser' && Platform.OS === 'web' ? (
-              <BrowserInterviewCall
-                gymId={membership.gymId}
-                onCompleted={() => {
-                  setTeachMode('phone');
-                  queryClient.invalidateQueries({ queryKey: ['agent-interview', membership.gymId] });
-                }}
-                onCancel={() => setTeachMode('phone')}
-              />
-            ) : (
+            ) : Platform.OS === 'web' ? (
               <View className="gap-3">
                 {applyInterview.isSuccess ? (
                   <View className="flex-row items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
@@ -577,39 +578,23 @@ export default function LeadAgentScreen() {
                 </Text>
                 {interview?.status === 'failed' ? (
                   <Text className="text-amber-600 dark:text-amber-400 text-xs">
-                    The last call didn't connect — check the number and try again.
+                    The last attempt didn't capture anything — try again.
                   </Text>
                 ) : null}
-                <Input
-                  label="Your mobile"
-                  value={teachPhone}
-                  onChangeText={setTeachPhone}
-                  keyboardType="phone-pad"
-                  placeholder="+447700900123"
+                <BrowserInterviewCall
+                  key={teachAttempt}
+                  gymId={membership.gymId}
+                  onCompleted={() => {
+                    queryClient.invalidateQueries({ queryKey: ['agent-interview', membership.gymId] });
+                  }}
+                  onCancel={() => setTeachAttempt((n) => n + 1)}
                 />
-                <Button
-                  icon="call-outline"
-                  onPress={() => startInterview.mutate()}
-                  loading={startInterview.isPending}
-                  disabled={!teachPhone.trim()}>
-                  Call me now
-                </Button>
-                {startInterview.error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-xs">
-                    {errorMessage(startInterview.error, 'Could not start the teaching call')}
-                  </Text>
-                ) : null}
-                {Platform.OS === 'web' ? (
-                  <Pressable
-                    onPress={() => setTeachMode('browser')}
-                    hitSlop={6}
-                    className="self-center">
-                    <Text className="text-primary text-xs font-semibold">
-                      No phone needed — talk to it in your browser instead
-                    </Text>
-                  </Pressable>
-                ) : null}
               </View>
+            ) : (
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Teaching it by talking needs a browser — open Temple on desktop or your phone's browser
+                to do this.
+              </Text>
             )}
           </>
         )}

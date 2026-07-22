@@ -1040,8 +1040,16 @@ a "Talk to your AI" hero leads the page, with a Teach/Test tab switch
 inside one container rather than two separate "talk to it" cards —
 **Teach it** is the interview (step bar + large icon avatar carrying the
 call → review → apply arc, plus a transient "Applied — the agent is live"
-confirmation, phone or browser); **Test it** is the existing Talk-to-it
-preview (hear the live sales assistant, browser-only). Below the hero:
+confirmation), **browser-only** — no outbound telephony, so teaching the
+agent never touches the Twilio bill; the calling state itself reads as an
+actual phone call (pulsing ring icon, live mm:ss timer, circular red
+hang-up button) even though it's WebRTC under the hood. **Test it** is
+the live sales assistant preview, offered two ways: in-browser (same
+Vapi Web SDK call as the teach flow) and, once the gym has a live number,
+a tap-to-call link that dials the gym's real AI Front Desk number —
+useful for hearing exactly what a prospect hears over an actual phone
+line, and the one path here that also works from the native app. Below
+the hero:
 AI Front Desk (answer texts/calls toggles, number provisioning, voice
 picker) and Knowledge & Coaching (agent notes, coaching rules), with the
 destructive "turn off & release number" card in Danger Zone at the
