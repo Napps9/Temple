@@ -114,7 +114,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
 
 const CATEGORY_ICONS: Record<Category, IconName> = {
   members: 'people-outline',
-  crm: 'funnel-outline',
+  crm: 'sparkles-outline',
   comms: 'mail-outline',
   website: 'globe-outline',
   store: 'bag-handle-outline',
