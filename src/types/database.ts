@@ -3416,6 +3416,7 @@ export type Database = {
         Args: { p_gym_id: string };
         Returns: {
           id: string;
+          profile_id: string;
           plan_subscription_id: string;
           kind: 'cancel' | 'switch_plan';
           member_note: string | null;

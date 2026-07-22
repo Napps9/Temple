@@ -182,6 +182,7 @@ export function useModifySubscription(
 
 export type StaffChangeRequest = {
   id: string;
+  profile_id: string;
   plan_subscription_id: string;
   kind: ChangeRequestKind;
   member_note: string | null;

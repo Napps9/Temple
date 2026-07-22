@@ -462,39 +462,57 @@ The staff area shows up when `can_access_staff_area` is on.
 
 The Manage page presents a tab strip:
 
-- **Insights** [`can_see_insights`] — one date range driving every
-  KPI: Revenue, Members, Attendance %, Intros new, Expiring soon,
-  Expired, Paying, Conversion vs target, Retention vs target. Each
-  tile delta vs previous period. **Targets** [`can_set_targets`] editor
-  sets one goal at a time per metric (New intros, Conversions,
-  Retention) via a value box + a Week/Month/Quarter/Year period
-  selector — Conversions and Retention can be a rate (%) instead of a
-  headcount; New intros is count-only.
-- **Members** [`can_manage_tags`] — Attendance summary (Attended /
-  No-show / Unmarked) by class type, **shareable signup link** card
-  (Copy / Share, with archived state when public signup is off),
-  searchable + filterable member list with PAR-Q badge, Injury badge,
-  cohort badges (Intro / Active / Paying / Expiring / Expired), plan
-  chips, tag chips; **Export members CSV**; **Tag rules** editor.
-  **Imported members** [`can_manage_staff`] that haven't signed up yet
-  (`pending_members` rows, status `pending`/`invited`) are surfaced
-  inline in the list, interleaved by name with live members, each
-  carrying an amber **Imported** / **Invited** badge, their imported
-  plan + credits + tags, and a per-member **Send invite** action
-  (`send-member-join-invites` scoped to that one row, which flips it to
-  `invited`); an **Imported** filter chip isolates them, and a caption
-  above the list counts how many haven't signed up. `invited` rows show
-  "waiting for sign-up" with no re-send (the edge function only targets
-  `pending`). Tapping an imported card opens a **detail/edit page**
-  (`/management/members/imported/<id>`) where staff review and correct
-  the staged account before inviting — name, email, phone, DOB,
-  emergency contact, plan/credits/dates, tags, notes and a "do not
-  email" toggle, saved with a direct RLS-gated `pending_members` update;
-  the page also **sends the invite** (auto-saving edits first) and can
-  **delete** the staged row (e.g. to clear junk from a test import). The Members screen (`/management/members`) also hosts
-  **member invites** [`can_invite`] — email a member, generate a code +
-  QR, or use the front-desk walk-in QR (same card UI as staff invites
-  on Team).
+- **Members** [`can_manage_tags`, or `can_see_insights` /
+  `can_view_attendance` for the stats alone] — the member cockpit, with
+  the former standalone **Insights** tab folded in. One shared **date
+  range** picker sits at the top and drives every stat beneath it:
+  - **Insight KPIs** [`can_see_insights` / `can_see_money` /
+    `can_view_attendance`] — Revenue, Members, Attendance %, Intros new,
+    Leads converted, Expiring soon, Expired, Paying, Conversion vs
+    target, Retention vs target, plus a conversions-by-source breakdown;
+    each tile shows a delta vs the previous period. **Targets**
+    [`can_set_targets`] editor sets one goal at a time per metric (New
+    intros, Conversions, Retention) via a value box + a
+    Week/Month/Quarter/Year selector — Conversions and Retention can be a
+    rate (%) instead of a headcount; New intros is count-only.
+  - **Attendance summary** [`can_view_attendance`] — Attended / No-show /
+    Unmarked over the same range.
+  - **Action CTAs** — compact tiles that keep the member list high on the
+    page: **Invite a member** [`can_invite`] opens a modal with the
+    email-invite form and the shareable/branded signup link + QR; **Import
+    data** [`can_manage_staff`] opens a modal with Members / Workouts tabs
+    linking onward to the Stripe, CSV and workout-history importers; **Tag
+    rules** [`can_manage_tags`] opens the auto-tag rule editor in a modal;
+    **Export members CSV** [`can_export_members`] downloads the roster.
+  - **Member list** [`can_manage_tags`] — searchable + filterable, with
+    PAR-Q, Injury and cohort badges (Intro / Active / Paying / Expiring /
+    Expired), plan chips and tag chips. **Membership requests** surface
+    here too: a **Requests** filter [`can_assign_plan`] isolates members
+    with a pending plan-change or cancellation, each marked with an amber
+    **Request** badge and an inline **Approve / Reject** control (backed by
+    `staff_membership_change_requests`, which now also returns
+    `profile_id`, and the shared decide mutation). **Imported members**
+    [`can_manage_staff`] that haven't signed up yet (`pending_members`
+    rows, status `pending`/`invited`) are surfaced inline in the list,
+    interleaved by name with live members, each carrying an amber
+    **Imported** / **Invited** badge, their imported plan + credits + tags,
+    and a per-member **Send invite** action (`send-member-join-invites`
+    scoped to that one row, which flips it to `invited`); an **Imported**
+    filter chip isolates them, and a caption above the list counts how many
+    haven't signed up. `invited` rows show "waiting for sign-up" with no
+    re-send (the edge function only targets `pending`). Tapping an imported
+    card opens a **detail/edit page** (`/management/members/imported/<id>`)
+    where staff review and correct the staged account before inviting —
+    name, email, phone, DOB, emergency contact, plan/credits/dates, tags,
+    notes and a "do not email" toggle, saved with a direct RLS-gated
+    `pending_members` update; the page also **sends the invite**
+    (auto-saving edits first) and can **delete** the staged row (e.g. to
+    clear junk from a test import).
+  - **Pipeline** [`can_assign_plan`] — a **Leads** card
+    (`/management/leads`); roles without the member list (coaches/staff)
+    also get a **Membership requests** card linking to the standalone
+    queue. The standalone `/management/members`, `/management/tags` and
+    `/management/membership-requests` routes still exist for deep links.
 - **Team** [`can_manage_staff`] — staff roster with inline open-task
   + open-cover-request counts; per-coach earnings + class-type
   qualifications; SOPs card; Invite codes card (one-time codes to
@@ -664,9 +682,9 @@ revenue to its source. The list page filters by status pill (Active
 / All / per-status) and supports inline status changes via the
 detail modal. The detail modal exposes a manual "Converted" flow
 with an inline member search for cases where auto-attribute on
-signup didn't fire. The Insights page surfaces a "Conversions by
-source" chip row alongside the lead_conversions tile so owners can
-see which acquisition channels are paying off.
+signup didn't fire. The Members tab's insight stats surface a
+"Conversions by source" chip row alongside the lead_conversions tile so
+owners can see which acquisition channels are paying off.
 
 ### Public lead capture
 
@@ -720,9 +738,9 @@ health-data purge; converted leads are kept as members.
 
 ### Member import
 
-[`can_manage_staff`] Reachable from Manage → Members → "Bring data
-across" → Import members (`/management/members/import`), and surfaced
-as an optional checklist step on the setup card. Drop a CSV from a
+[`can_manage_staff`] Reachable from Manage → Members → "Import data"
+modal → Members tab → Import members (`/management/members/import`), and
+surfaced as an optional checklist step on the setup card. Drop a CSV from a
 previous platform (Mindbody, PushPress, Glofox, Wodify or a
 spreadsheet). The parser sniffs the delimiter from the header line, so
 comma, **semicolon** (EU/UK Excel's default) and tab exports all read
@@ -838,8 +856,8 @@ badge next to the plan on the member's profile.
 
 ### Workout-history import
 
-[`can_manage_staff`] Reachable from Manage → Members → "Bring data
-across" → Import workout history
+[`can_manage_staff`] Reachable from Manage → Members → "Import data"
+modal → Workouts tab → Import workout history
 (`/management/members/import-workouts`), and surfaced as the final
 optional checklist step. Same CSV/map/preview/commit wizard as the
 members importer; each row is one logged set (email, date,
@@ -900,8 +918,8 @@ importer now cross-checks each email against the connected account's live
 subscribers (via `stripe-import`) and, by default, **skips the overlap**
 (owner can override), surfacing it in the preview counts; it also shows an
 "Import from Stripe first" banner while Stripe is connected. The
-management "Bring data across" hub lists **Import from Stripe** ahead of
-the CSV importer. The overlap check only runs for owners (the `stripe-import`
+Members-tab "Import data" modal lists **Import from Stripe** ahead of
+the CSV importer on its Members tab. The overlap check only runs for owners (the `stripe-import`
 read is owner-gated), and fails open on any error so a Stripe blip never
 blocks a CSV import.
 

@@ -5,6 +5,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
+import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
@@ -12,6 +13,11 @@ import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/format-date';
+import {
+  useChangeRequestQueue,
+  useDecideChangeRequest,
+  type StaffChangeRequest,
+} from '@/lib/membership-changes';
 import { useMembersFilter } from '@/lib/members-filter';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -81,6 +87,11 @@ export function MembersList() {
   // can manage tags but not staff simply see none — the query returns
   // empty under RLS and the section stays hidden.
   const canManageStaff = useCan('can_manage_staff') ?? false;
+  // Membership change requests surface here as a per-member marker + a
+  // "Requests" filter, so can_assign_plan staff can approve/reject
+  // without leaving the list. The RPC throws for anyone without the
+  // capability, so gate the query on it.
+  const canAssignPlan = useCan('can_assign_plan') ?? false;
 
   const cohortQuery = useQuery({
     queryKey: ['members-cohort', membership?.gymId],
@@ -200,6 +211,20 @@ export function MembersList() {
     },
   });
 
+  const requestsQuery = useChangeRequestQueue(
+    canAssignPlan ? membership?.gymId : undefined,
+  );
+
+  const requestsByMember = useMemo(() => {
+    const map = new Map<string, StaffChangeRequest[]>();
+    for (const r of requestsQuery.data ?? []) {
+      const arr = map.get(r.profile_id) ?? [];
+      arr.push(r);
+      map.set(r.profile_id, arr);
+    }
+    return map;
+  }, [requestsQuery.data]);
+
   const tagsByMember = useMemo(() => {
     const map = new Map<string, TagRow[]>();
     for (const t of tagsQuery.data ?? []) {
@@ -243,6 +268,8 @@ export function MembersList() {
             if (filter === 'expired' && !r.is_expired) return false;
             if (filter === 'active' && !r.is_active) return false;
             if (filter === 'managed' && !r.profiles?.managed) return false;
+            if (filter === 'requests' && !requestsByMember.has(r.profile_id))
+              return false;
             if (q.length > 0) {
               return (r.profiles?.full_name?.toLowerCase() ?? '').includes(q);
             }
@@ -276,7 +303,7 @@ export function MembersList() {
     return [...memberItems, ...pendingItems].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
-  }, [cohortQuery.data, pendingQuery.data, filter, search]);
+  }, [cohortQuery.data, pendingQuery.data, filter, search, requestsByMember]);
 
   return (
     <View className="gap-4">
@@ -310,6 +337,17 @@ export function MembersList() {
             label="Imported"
             active={filter === 'imported'}
             onPress={() => setFilter('imported')}
+          />
+        ) : null}
+        {canAssignPlan ? (
+          <FilterChip
+            label={
+              (requestsQuery.data?.length ?? 0) > 0
+                ? `Requests (${requestsQuery.data!.length})`
+                : 'Requests'
+            }
+            active={filter === 'requests'}
+            onPress={() => setFilter('requests')}
           />
         ) : null}
       </View>
@@ -355,6 +393,7 @@ export function MembersList() {
             const subs = subsByMember.get(m.profile_id) ?? [];
             const comps = compsByMember.get(m.profile_id) ?? [];
             const tags = tagsByMember.get(m.profile_id) ?? [];
+            const memberRequests = requestsByMember.get(m.profile_id) ?? [];
             return (
               <View
                 key={m.profile_id}
@@ -384,6 +423,7 @@ export function MembersList() {
                         row={m}
                         flagged={flagsQuery.data?.has(m.profile_id) ?? false}
                         injured={injuriesQuery.data?.has(m.profile_id) ?? false}
+                        requested={memberRequests.length > 0}
                       />
                     </View>
                     {subs.length > 0 || comps.length > 0 ? (
@@ -424,6 +464,12 @@ export function MembersList() {
                     ) : null}
                   </Pressable>
                 </Link>
+                {canAssignPlan && memberRequests.length > 0 && membership ? (
+                  <RequestActionRow
+                    requests={memberRequests}
+                    gymId={membership.gymId}
+                  />
+                ) : null}
                 {canRemove ? (
                   <View className="self-end">
                     <ActionButton
@@ -488,14 +534,17 @@ function CohortBadges({
   row,
   flagged,
   injured,
+  requested,
 }: {
   row: CohortRow;
   flagged: boolean;
   injured: boolean;
+  requested: boolean;
 }) {
   const colors = useThemeColors();
   return (
-    <View className="flex-row gap-1">
+    <View className="flex-row flex-wrap gap-1 justify-end">
+      {requested ? <Badge label="Request" color="#F59E0B" /> : null}
       {row.profiles?.managed ? <Badge label="Child" color="#8B5CF6" /> : null}
       {flagged ? <Badge label="PAR-Q" color="#DC2626" /> : null}
       {injured ? <Badge label="Injury" color="#F59E0B" /> : null}
@@ -513,6 +562,83 @@ function Badge({ label, color }: { label: string; color: string }) {
   return (
     <View style={{ backgroundColor: color }} className="rounded-full px-2 py-0.5">
       <Text className="text-white text-[10px] font-semibold">{label}</Text>
+    </View>
+  );
+}
+
+// A member's pending membership-change request(s), actioned inline so
+// can_assign_plan staff can approve or reject straight from the list.
+// Approve/reject both run through the shared decide mutation, which
+// invalidates the queue — so a decided request drops off the list and
+// the member's "Request" marker clears on the next render.
+function RequestActionRow({
+  requests,
+  gymId,
+}: {
+  requests: StaffChangeRequest[];
+  gymId: string;
+}) {
+  const decide = useDecideChangeRequest(gymId);
+  return (
+    <View className="gap-2 border-t border-gray-100 dark:border-gray-800 pt-3">
+      {requests.map((req) => {
+        const isCancel = req.kind === 'cancel';
+        const acting =
+          decide.isPending && decide.variables?.requestId === req.id;
+        const title = isCancel
+          ? 'Wants to cancel their membership'
+          : `Wants to switch${
+              req.current_plan_name ? ` from ${req.current_plan_name}` : ''
+            }${req.target_plan_name ? ` to ${req.target_plan_name}` : ''}`;
+        return (
+          <View key={req.id} className="gap-2">
+            <View className="flex-row items-center gap-2">
+              <Badge
+                label={isCancel ? 'Cancel' : 'Switch'}
+                color={isCancel ? '#DC2626' : '#F59E0B'}
+              />
+              <Text className="flex-1 text-gray-600 dark:text-gray-300 text-sm">
+                {title}
+              </Text>
+            </View>
+            {req.member_note ? (
+              <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
+                “{req.member_note}”
+              </Text>
+            ) : null}
+            <View className="flex-row gap-2">
+              <View className="flex-1">
+                <Button
+                  icon="checkmark"
+                  loading={acting && decide.variables?.decision === 'approve'}
+                  disabled={acting}
+                  onPress={() =>
+                    decide.mutate({ requestId: req.id, decision: 'approve' })
+                  }>
+                  Approve
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button
+                  variant="secondary"
+                  icon="close"
+                  loading={acting && decide.variables?.decision === 'reject'}
+                  disabled={acting}
+                  onPress={() =>
+                    decide.mutate({ requestId: req.id, decision: 'reject' })
+                  }>
+                  Reject
+                </Button>
+              </View>
+            </View>
+          </View>
+        );
+      })}
+      {decide.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(decide.error, 'Could not apply the decision')}
+        </Text>
+      ) : null}
     </View>
   );
 }
