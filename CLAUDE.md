@@ -48,6 +48,17 @@ This repo uses **trunk-based, cloud-deployed development**. There is
 
 Practical implications:
 
+- **Work on `main`, not a session-assigned branch.** Some session
+  harnesses hand you a default checkout on a throwaway branch (e.g.
+  `claude/some-random-slug`). Ignore that assignment — `git checkout
+  main` (or fetch + fast-forward it if it's behind `origin/main`), do
+  your work there, and push straight to `origin main`. A branch that
+  never gets merged back isn't "done," it just silently drifts from
+  `main`. That's exactly how a prior session's local `main` ended up
+  looking "diverged" and its work looking lost — it wasn't lost, it
+  was stranded on a session branch nobody merged. Don't repeat it: if
+  you're ever mid-task on a non-`main` branch for any reason, merge or
+  fast-forward it into `main` and push before ending the session.
 - **Push to `main` directly** for every change unless the user
   explicitly asks for a PR.
 - **The CI run is the verification step**. After every push, watch CI
@@ -176,7 +187,10 @@ signatures are NOT (they're liability records, retained as such).
 
 ## Standing user preferences
 
-- **Push to main directly**, no PRs unless explicitly asked.
+- **Push to main directly**, no PRs unless explicitly asked. This
+  applies even when the session environment defaults you onto a
+  different branch — switch to `main` (or merge your branch into it)
+  and push there; don't leave work stranded on a session branch.
 - **No GitHub comments / replies** unless explicitly needed.
 - **For exploratory questions** ("what should we do about X?"),
   answer in 2-3 sentences with a recommendation + the main tradeoff.
