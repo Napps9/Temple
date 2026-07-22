@@ -17,7 +17,8 @@ import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { deprovisionFrontDesk, provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
+import { toE164UK } from '@/lib/phone';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
@@ -241,9 +242,9 @@ export default function LeadAgentScreen() {
   const startInterview = useMutation({
     mutationFn: async () => {
       const { data, error: e } = await supabase.functions.invoke('agent-interview/start', {
-        body: { gym_id: membership!.gymId, phone: teachPhone.trim() },
+        body: { gym_id: membership!.gymId, phone: toE164UK(teachPhone.trim()) },
       });
-      if (e) throw e;
+      if (e) throw new Error(await functionErrorMessage(e));
       if (data?.error) throw new Error(data.error);
       if (data?.started === false) {
         throw new Error(
@@ -520,6 +521,11 @@ export default function LeadAgentScreen() {
                   disabled={!teachPhone.trim()}>
                   Call me now
                 </Button>
+                {startInterview.error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-xs">
+                    {errorMessage(startInterview.error, 'Could not start the teaching call')}
+                  </Text>
+                ) : null}
                 {Platform.OS === 'web' ? (
                   <Pressable
                     onPress={() => setTeachMode('browser')}
