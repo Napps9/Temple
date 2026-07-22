@@ -113,10 +113,34 @@ function escapeAttr(input: string): string {
   return escapeHtml(input);
 }
 
+// Defence-in-depth against a hostile URL surviving into a rendered
+// attribute. Write-time validation (save_gym_website, migration 0156) is
+// the primary gate, but rows predating it — or any future write path that
+// bypasses the RPC — must not be able to inject `javascript:`/`data:` here.
+//
+// safeHref preserves same-page fragments and relative paths (they carry no
+// scheme, so they're never dangerous) and allows only http(s)/mailto among
+// schemed URLs. Browsers strip TAB/LF/CR when resolving a scheme, so
+// "java\nscript:..." executes — the scheme test runs against a
+// control-char-stripped copy to catch that, then the original is returned
+// unchanged when it passes.
 function safeHref(href: string): string {
   const trimmed = href.trim();
-  if (/^(https?:|mailto:)/i.test(trimmed)) return trimmed;
-  return '';
+  const scheme = trimmed.replace(/[\u0000-\u0020]/g, '');
+  if (/^[a-z][a-z0-9+.-]*:/i.test(scheme) && !/^(https?:|mailto:)/i.test(scheme)) {
+    return '';
+  }
+  return trimmed;
+}
+
+// Stricter form for <img src> / CSS url(): images in this app are always
+// absolute http(s) URLs (Supabase Storage public URLs or Pexels), so
+// anything else — including relative paths, mailto, and every dangerous
+// scheme — resolves to empty and the caller renders the no-image fallback.
+function safeImageUrl(url: string): string {
+  const trimmed = url.trim();
+  const cleaned = trimmed.replace(/[\u0000-\u0020]/g, '');
+  return /^https?:\/\//i.test(cleaned) ? trimmed : '';
 }
 
 // Marks an element as an on-canvas-editable field, addressed by
@@ -337,7 +361,7 @@ function renderHero(
     b.ctaTarget === 'contact'
       ? '#contact'
       : `${ctx.platformOrigin}/join/${encodeURIComponent(ctx.slug)}`;
-  const cta = `<a class="btn" href="${escapeAttr(ctaHref)}"${fieldAttrs(ctx, `${b.id}:ctaLabel`)}>${sanitizeRichText(b.ctaLabel)}</a>`;
+  const cta = `<a class="btn" href="${escapeAttr(safeHref(ctaHref))}"${fieldAttrs(ctx, `${b.id}:ctaLabel`)}>${sanitizeRichText(b.ctaLabel)}</a>`;
   const eyebrow = `<div class="eyebrow">${escapeHtml(ctx.gymName)}</div>`;
   const headline = `<${headlineTag} style="font-size:clamp(32px,6vw,56px);"${fieldAttrs(ctx, `${b.id}:headline`)}>${sanitizeRichText(b.headline)}</${headlineTag}>`;
   // Editable mode always emits the <p>, even empty, so there's a node
@@ -348,24 +372,26 @@ function renderHero(
       ? `<p>${sanitizeRichText(b.subheadline)}</p>`
       : '';
 
+  const imageUrl = safeImageUrl(b.imageUrl);
   if (b.layout === 'side') {
     const text = `<div class="hero-side-text">${eyebrow}${headline}${subheadline}${cta}</div>`;
-    const image = b.imageUrl
-      ? `<img src="${escapeAttr(b.imageUrl)}" alt="${escapeAttr(ctx.gymName)}" />`
+    const image = imageUrl
+      ? `<img src="${escapeAttr(imageUrl)}" alt="${escapeAttr(ctx.gymName)}" />`
       : `<div class="card" style="aspect-ratio:4/3;"></div>`;
     return `<section class="sec"><div class="wrap hero-side">${text}${image}</div></section>`;
   }
 
-  const bgStyle = b.imageUrl
-    ? `background-image:linear-gradient(color-mix(in srgb, var(--bg) 55%, transparent), color-mix(in srgb, var(--bg) 55%, transparent)), url('${escapeAttr(b.imageUrl)}');`
+  const bgStyle = imageUrl
+    ? `background-image:linear-gradient(color-mix(in srgb, var(--bg) 55%, transparent), color-mix(in srgb, var(--bg) 55%, transparent)), url('${escapeAttr(imageUrl)}');`
     : '';
-  return `<section class="hero-bg${b.imageUrl ? ' has-img' : ''}" style="${bgStyle}"><div class="wrap hero-inner">${eyebrow}${headline}${subheadline}${cta}</div></section>`;
+  return `<section class="hero-bg${imageUrl ? ' has-img' : ''}" style="${bgStyle}"><div class="wrap hero-inner">${eyebrow}${headline}${subheadline}${cta}</div></section>`;
 }
 
 function renderAbout(b: AboutBlock, ctx: SiteRenderContext): string {
   const text = `<div><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><p style="white-space:pre-line;"${fieldAttrs(ctx, `${b.id}:body`, { multiline: true })}>${sanitizeRichText(b.body)}</p></div>`;
-  const img = b.imageUrl
-    ? `<img src="${escapeAttr(b.imageUrl)}" alt="${escapeAttr(b.heading)}" />`
+  const aboutImg = safeImageUrl(b.imageUrl);
+  const img = aboutImg
+    ? `<img src="${escapeAttr(aboutImg)}" alt="${escapeAttr(b.heading)}" />`
     : '';
   if (b.layout === 'none' || !img) {
     return `<section class="sec"><div class="wrap" style="max-width:720px;">${text}</div></section>`;
@@ -544,7 +570,12 @@ function renderTestimonials(b: TestimonialsBlock, ctx: SiteRenderContext): strin
 function renderGallery(b: GalleryBlock, ctx: SiteRenderContext): string {
   if (b.images.length === 0 && !ctx.editable) return '';
   const imgs = b.images
-    .map((img) => `<img src="${escapeAttr(img.url)}" alt="${escapeAttr(img.alt)}" loading="lazy" />`)
+    .map((img) => {
+      const url = safeImageUrl(img.url);
+      return url
+        ? `<img src="${escapeAttr(url)}" alt="${escapeAttr(img.alt)}" loading="lazy" />`
+        : `<div class="card" style="aspect-ratio:1/1;"></div>`;
+    })
     .join('');
   return `<section class="sec"><div class="wrap"><h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2><div class="gallery-grid">${imgs}</div></div></section>`;
 }
@@ -644,8 +675,9 @@ function renderTeam(b: TeamBlock, ctx: SiteRenderContext): string {
   if (visible.length === 0 && !ctx.editable) return '';
   const cards = visible
     .map((m) => {
-      const photo = m.avatarUrl
-        ? `<img class="team-avatar" src="${escapeAttr(m.avatarUrl)}" alt="${escapeAttr(m.fullName)}" />`
+      const avatar = safeImageUrl(m.avatarUrl ?? '');
+      const photo = avatar
+        ? `<img class="team-avatar" src="${escapeAttr(avatar)}" alt="${escapeAttr(m.fullName)}" />`
         : `<div class="team-initials">${escapeHtml(teamInitial(m.fullName))}</div>`;
       return `<div class="team-card">${photo}<div class="team-name">${escapeHtml(m.fullName)}</div></div>`;
     })

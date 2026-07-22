@@ -62,6 +62,7 @@ import { useThemeColors } from '@/lib/theme';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useGymWebsite } from '@/lib/use-gym-website';
+import type { SiteRow } from '@/lib/use-gym-website';
 import type { Json } from '@/types/database';
 
 async function fetchTopStockPhoto(gymId: string, query: string): Promise<AutoImage | null> {
@@ -343,11 +344,17 @@ export default function WebsiteManageScreen() {
   // read by the nav-guard and beforeunload listeners below, not state,
   // so an edit doesn't force those listener effects to re-run.
   const unsavedRef = useRef(false);
+  // Optimistic-concurrency token for save_gym_website — the updated_at we
+  // last observed. Kept in a ref (updated synchronously after every write)
+  // rather than read from site.data, so two autosaves fired in quick
+  // succession can't send a stale token and self-conflict.
+  const updatedAtRef = useRef<string | null>(null);
   const navigation = useNavigation();
 
   useEffect(() => {
     if (initialized.current || !site.data) return;
     setDocument(coerceDocument(site.data.design));
+    updatedAtRef.current = site.data.updated_at;
     initialized.current = true;
   }, [site.data]);
 
@@ -363,20 +370,33 @@ export default function WebsiteManageScreen() {
   async function persistDocument(doc: SiteDocument) {
     if (!site.data) return;
     setSaveState('saving');
-    const { error: upErr } = await supabase
-      .from('gym_websites')
-      .update({
-        design: doc as unknown as Json,
-        theme: doc.settings.themeId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', site.data.id);
+    // Server-validated save (migration 0156): caps size, rejects unknown
+    // themes and non-http(s) image URLs, and enforces optimistic
+    // concurrency via the updated_at token. Editing never touches the
+    // published snapshot — only publish_gym_website copies design across.
+    const { data: newUpdatedAt, error: upErr } = await supabase.rpc('save_gym_website', {
+      p_gym_id: site.data.gym_id,
+      p_design: doc as unknown as Json,
+      p_theme: doc.settings.themeId,
+      p_expected_updated_at: updatedAtRef.current ?? site.data.updated_at,
+    });
     if (upErr) {
       setSaveState('idle');
       setError(errorMessage(upErr, 'Could not save'));
     } else {
+      if (typeof newUpdatedAt === 'string') updatedAtRef.current = newUpdatedAt;
       setSaveState('saved');
       unsavedRef.current = false;
+      queryClient.setQueryData(['gym-website', brand.gymId], (prev: SiteRow | null) =>
+        prev
+          ? {
+              ...prev,
+              design: doc as unknown as Json,
+              theme: doc.settings.themeId,
+              updated_at: typeof newUpdatedAt === 'string' ? newUpdatedAt : prev.updated_at,
+            }
+          : prev,
+      );
     }
   }
 
@@ -526,6 +546,7 @@ export default function WebsiteManageScreen() {
       return;
     }
     initialized.current = true;
+    updatedAtRef.current = data.updated_at;
     setDocument(coerceDocument(data.design));
     queryClient.setQueryData(['gym-website', brand.gymId], data);
   }
@@ -548,6 +569,7 @@ export default function WebsiteManageScreen() {
     setShowDeleteSite(false);
     setError(null);
     initialized.current = false;
+    updatedAtRef.current = null;
     setDocument(emptyDocument());
     setActivePageId(null);
     setSelectedId(null);
@@ -611,18 +633,23 @@ export default function WebsiteManageScreen() {
     // warnings panel below lists which page each one is on.
     if (next && allPageWarnings(document).length > 0) return;
     setPublishState('working');
-    const { error: pubErr } = await supabase
-      .from('gym_websites')
-      .update({ published: next, updated_at: new Date().toISOString() })
-      .eq('id', site.data!.id);
+    // Publishing copies the current draft into the public snapshot
+    // (published_design) and flips the flag atomically; unpublish just
+    // clears the flag. Both re-check capability + entitlement server-side.
+    const { data: newUpdatedAt, error: pubErr } = await supabase.rpc(
+      next ? 'publish_gym_website' : 'unpublish_gym_website',
+      { p_gym_id: site.data.gym_id },
+    );
     setPublishState('idle');
     if (pubErr) {
       setError(errorMessage(pubErr, 'Could not update publish state'));
       return;
     }
+    if (typeof newUpdatedAt === 'string') updatedAtRef.current = newUpdatedAt;
     queryClient.setQueryData(['gym-website', brand.gymId], {
       ...site.data!,
       published: next,
+      updated_at: typeof newUpdatedAt === 'string' ? newUpdatedAt : site.data!.updated_at,
     });
   }
 

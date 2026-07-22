@@ -25,9 +25,11 @@ export function useGymWebsite(gymId: string | null | undefined) {
     queryKey: ['gym-website', gymId],
     enabled: !!gymId,
     queryFn: async (): Promise<SiteRow | null> => {
+      // Explicit columns, not '*': the published_design snapshot (0155) can
+      // be as large as the live design and the editor never needs it.
       const { data, error } = await supabase
         .from('gym_websites')
-        .select('*')
+        .select('id, gym_id, theme, design, published, created_at, updated_at')
         .eq('gym_id', gymId!)
         .maybeSingle();
       if (error) throw error;

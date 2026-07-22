@@ -135,6 +135,90 @@ describe('renderSiteHtml', () => {
     expect(renderSiteHtml(contactPage.blocks, baseCtx)).toContain('href="#contact"');
   });
 
+  describe('image URL sanitisation (defence-in-depth for pre-validation rows)', () => {
+    it('drops a javascript: URL from a hero background image', () => {
+      const hero = createBlock('hero') as HeroBlock;
+      const page = appendBlock(emptyPage(), {
+        ...hero,
+        layout: 'background',
+        imageUrl: 'javascript:alert(document.cookie)',
+      });
+      const html = renderSiteHtml(page.blocks, baseCtx);
+      expect(html).not.toContain('javascript:');
+      // No background-image emitted: the hero renders with an empty style
+      // and without the has-img modifier class on the section.
+      expect(html).toContain('<section class="hero-bg" style="">');
+    });
+
+    it('drops a control-char-obfuscated javascript: URL', () => {
+      const hero = createBlock('hero') as HeroBlock;
+      const page = appendBlock(emptyPage(), {
+        ...hero,
+        layout: 'side',
+        imageUrl: 'java\nscript:alert(1)',
+      });
+      const html = renderSiteHtml(page.blocks, baseCtx);
+      expect(html).not.toContain('script:');
+    });
+
+    it('drops a data: URL and neutralises a CSS url() breakout attempt', () => {
+      const hero = createBlock('hero') as HeroBlock;
+      const dataPage = appendBlock(emptyPage(), {
+        ...hero,
+        layout: 'side',
+        imageUrl: 'data:text/html,<script>alert(1)</script>',
+      });
+      expect(renderSiteHtml(dataPage.blocks, baseCtx)).not.toContain('data:text/html');
+
+      // A quote/paren in the URL must never break out of url('...') in the
+      // inline style — a non-http(s) value is dropped entirely.
+      const breakout = appendBlock(emptyPage(), {
+        ...hero,
+        layout: 'background',
+        imageUrl: "x'); } body { display:none } .x{ background:url('x",
+      });
+      const html = renderSiteHtml(breakout.blocks, baseCtx);
+      expect(html).not.toContain('display:none');
+      expect(html).toContain('<section class="hero-bg" style="">');
+    });
+
+    it('keeps a valid https image URL', () => {
+      const hero = createBlock('hero') as HeroBlock;
+      const page = appendBlock(emptyPage(), {
+        ...hero,
+        layout: 'side',
+        imageUrl: 'https://cdn.example.com/hero.jpg',
+      });
+      const html = renderSiteHtml(page.blocks, baseCtx);
+      expect(html).toContain('src="https://cdn.example.com/hero.jpg"');
+    });
+
+    it('drops unsafe gallery image URLs but keeps safe ones', () => {
+      const gallery = createBlock('gallery') as GalleryBlock;
+      const page = appendBlock(emptyPage(), {
+        ...gallery,
+        images: [
+          { id: 'g1', url: 'https://cdn.example.com/ok.jpg', alt: 'ok' },
+          { id: 'g2', url: 'javascript:alert(1)', alt: 'bad' },
+        ],
+      });
+      const html = renderSiteHtml(page.blocks, baseCtx);
+      expect(html).toContain('src="https://cdn.example.com/ok.jpg"');
+      expect(html).not.toContain('javascript:');
+    });
+
+    it('drops an unsafe team avatar URL and falls back to initials', () => {
+      const team = createBlock('team') as TeamBlock;
+      const page = appendBlock(emptyPage(), team);
+      const html = renderSiteHtml(page.blocks, {
+        ...baseCtx,
+        team: [{ profileId: 'p1', fullName: 'Dana Coach', avatarUrl: 'javascript:alert(1)' }],
+      });
+      expect(html).not.toContain('javascript:');
+      expect(html).toContain('team-initials');
+    });
+  });
+
   it('renders an empty-state message for the schedule block with no sessions', () => {
     const page = appendBlock(emptyPage(), createBlock('schedule') as ScheduleBlock);
     const html = renderSiteHtml(page.blocks, baseCtx);

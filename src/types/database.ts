@@ -4207,6 +4207,23 @@ export type Database = {
           avatar_url: string | null;
         }[];
       };
+      save_gym_website: {
+        Args: {
+          p_gym_id: string;
+          p_design: Json;
+          p_theme: string;
+          p_expected_updated_at?: string | null;
+        };
+        Returns: string;
+      };
+      publish_gym_website: {
+        Args: { p_gym_id: string };
+        Returns: string;
+      };
+      unpublish_gym_website: {
+        Args: { p_gym_id: string };
+        Returns: string;
+      };
       demo_marketing_credentials: {
         Args: Record<string, never>;
         Returns: {
