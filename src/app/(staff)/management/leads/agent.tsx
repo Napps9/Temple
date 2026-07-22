@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Animated, Easing, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -21,6 +21,7 @@ import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import { toE164UK } from '@/lib/phone';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
+import { formatCallDuration } from '@/lib/vapi-call';
 import { useGymBrand } from '@/lib/useGymBrand';
 
 type AgentSettings = {
@@ -49,6 +50,7 @@ type InterviewRow = {
   phone: string;
   transcript: string | null;
   draft_brief: string | null;
+  created_at: string;
 };
 
 const VOICES = AGENT_VOICES;
@@ -62,6 +64,46 @@ function SectionHeader({ label }: { label: string }) {
       <Text className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest">
         {label}
       </Text>
+    </View>
+  );
+}
+
+// An expanding, fading ring behind the avatar reads as "ringing" the way a
+// bare spinner doesn't — same glow-pulse technique as TalkToAssistant's
+// VoiceOrb, just a single ring since there's no live audio to visualize on
+// an outbound phone call.
+function RingingIcon({ color }: { color: string }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(pulse, {
+        toValue: 1,
+        duration: 1100,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  return (
+    <View className="items-center justify-center" style={{ width: 48, height: 48 }}>
+      <Animated.View
+        style={{
+          position: 'absolute',
+          width: 48,
+          height: 48,
+          borderRadius: 24,
+          backgroundColor: color,
+          opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
+          transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.7] }) }],
+        }}
+      />
+      <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
+        <Ionicons name="call" size={20} color="#FFFFFF" />
+      </View>
     </View>
   );
 }
@@ -118,6 +160,7 @@ export default function LeadAgentScreen() {
   const [briefDraft, setBriefDraft] = useState('');
   const [teachMode, setTeachMode] = useState<'phone' | 'browser'>('phone');
   const [heroTab, setHeroTab] = useState<'teach' | 'test'>('teach');
+  const [callClock, setCallClock] = useState(0);
 
   useEffect(() => {
     if (!agent.isSuccess) return;
@@ -220,7 +263,7 @@ export default function LeadAgentScreen() {
     queryFn: async (): Promise<InterviewRow | null> => {
       const { data, error: e } = await supabase
         .from('agent_interviews')
-        .select('id, status, phone, transcript, draft_brief')
+        .select('id, status, phone, transcript, draft_brief, created_at')
         .eq('gym_id', membership!.gymId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -238,6 +281,22 @@ export default function LeadAgentScreen() {
       setInterviewDraft(row.draft_brief);
     }
   }, [latestInterview.data]);
+
+  // Ticks the in-call timer off the row's own created_at rather than a
+  // local counter, so it's still correct after a background tab or a
+  // remount mid-call.
+  useEffect(() => {
+    const row = latestInterview.data;
+    if (row?.status !== 'calling') {
+      setCallClock(0);
+      return;
+    }
+    const startedAt = new Date(row.created_at).getTime();
+    const tick = () => setCallClock(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [latestInterview.data?.status, latestInterview.data?.id, latestInterview.data?.created_at]);
 
   const startInterview = useMutation({
     mutationFn: async () => {
@@ -351,13 +410,13 @@ export default function LeadAgentScreen() {
           Teach tab's call → review → live arc. */}
       <View className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-2xl p-5 gap-4">
         <View className="flex-row items-center gap-3">
-          <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
-            {isCalling ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
+          {isCalling ? (
+            <RingingIcon color={colors.primary} />
+          ) : (
+            <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
               <Ionicons name={heroTab === 'teach' ? 'call' : 'mic'} size={20} color="#FFFFFF" />
-            )}
-          </View>
+            </View>
+          )}
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
               Talk to your AI
@@ -420,15 +479,29 @@ export default function LeadAgentScreen() {
             </View>
 
             {isCalling ? (
-              <View className="gap-2">
-                <Text className="text-gray-700 dark:text-gray-200 text-sm">
-                  {interview!.phone === 'browser'
-                    ? "A browser interview looks to be in progress — if that's stuck (e.g. left over from a closed tab), cancel and start again."
-                    : `Calling you now at ${interview!.phone} — answer and chat. When the call ends, the updated brief appears here for your review.`}
+              <View className="items-center gap-3 py-2">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold uppercase tracking-widest">
+                  {callClock < 3 ? 'Ringing…' : 'In call'}
                 </Text>
-                <Pressable onPress={() => discardInterview.mutate()} hitSlop={6} className="self-start">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs underline">Cancel</Text>
+                <Text
+                  className="text-gray-900 dark:text-gray-50 text-3xl font-semibold"
+                  style={{ fontVariant: ['tabular-nums'] }}>
+                  {formatCallDuration(callClock)}
+                </Text>
+                <Text className="text-gray-700 dark:text-gray-200 text-sm text-center">
+                  {interview!.phone === 'browser'
+                    ? "A browser interview looks to be in progress — if that's stuck (e.g. left over from a closed tab), hang up and start again."
+                    : `Calling ${interview!.phone} — answer and chat. When the call ends, the updated brief appears here for your review.`}
+                </Text>
+                <Pressable
+                  onPress={() => discardInterview.mutate()}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Hang up"
+                  className="w-14 h-14 rounded-full bg-red-500 items-center justify-center active:bg-red-600 mt-1">
+                  <Ionicons name="call" size={24} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
                 </Pressable>
+                <Text className="text-gray-400 dark:text-gray-500 text-xs">Hang up</Text>
               </View>
             ) : isReviewing ? (
               <View className="gap-3">
