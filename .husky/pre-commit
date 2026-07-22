@@ -7,6 +7,6 @@ git config --local --get user.name >/dev/null \
   || git config --local user.name Claude
 
 # Catch type + test failures before they reach CI. Vitest is ~1.5s on this repo
-# so the loop stays tight.
-npx tsc --noEmit
-npm test
+# so the loop stays tight. Chained with && so a failing typecheck actually
+# blocks the commit instead of being masked by npm test's own exit code.
+npx tsc --noEmit && npm test
