@@ -170,9 +170,14 @@ export default function LeadAgentScreen() {
   const [briefModalOpen, setBriefModalOpen] = useState(false);
   const [briefDraft, setBriefDraft] = useState('');
   const [heroTab, setHeroTab] = useState<'teach' | 'test'>('teach');
-  // Remounts BrowserInterviewCall on cancel so a fresh browser-start call
-  // runs, rather than leaving it stuck showing an already-discarded row.
-  const [teachAttempt, setTeachAttempt] = useState(0);
+  // Gates mounting BrowserInterviewCall behind an explicit tap.
+  // BrowserInterviewCall calls agent-interview/browser-start (which
+  // inserts a 'calling' row) the instant it mounts — without this gate
+  // that fired on every page load just from landing on the Teach tab,
+  // silently starting an unrequested interview and, if the tab was ever
+  // closed before it resolved, leaving a stuck "in progress" row that
+  // every later visit picked back up as if a call were still ringing.
+  const [teachStarted, setTeachStarted] = useState(false);
   const [callClock, setCallClock] = useState(0);
 
   useEffect(() => {
@@ -577,24 +582,32 @@ export default function LeadAgentScreen() {
                     </Text>
                   </View>
                 ) : null}
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                  The assistant interviews you — your intro offer, where beginners start, parking, the
-                  questions you always get. It drafts the update; you review and approve before
-                  anything changes.
-                </Text>
-                {interview?.status === 'failed' ? (
-                  <Text className="text-amber-600 dark:text-amber-400 text-xs">
-                    The last attempt didn't capture anything — try again.
-                  </Text>
-                ) : null}
-                <BrowserInterviewCall
-                  key={teachAttempt}
-                  gymId={membership.gymId}
-                  onCompleted={() => {
-                    queryClient.invalidateQueries({ queryKey: ['agent-interview', membership.gymId] });
-                  }}
-                  onCancel={() => setTeachAttempt((n) => n + 1)}
-                />
+                {teachStarted ? (
+                  <BrowserInterviewCall
+                    gymId={membership.gymId}
+                    onCompleted={() => {
+                      setTeachStarted(false);
+                      queryClient.invalidateQueries({ queryKey: ['agent-interview', membership.gymId] });
+                    }}
+                    onCancel={() => setTeachStarted(false)}
+                  />
+                ) : (
+                  <>
+                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      The assistant interviews you — your intro offer, where beginners start, parking,
+                      the questions you always get. It drafts the update; you review and approve
+                      before anything changes.
+                    </Text>
+                    {interview?.status === 'failed' ? (
+                      <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                        The last attempt didn't capture anything — try again.
+                      </Text>
+                    ) : null}
+                    <Button icon="mic-outline" onPress={() => setTeachStarted(true)}>
+                      Start teaching
+                    </Button>
+                  </>
+                )}
               </View>
             ) : (
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
