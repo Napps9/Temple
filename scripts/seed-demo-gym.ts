@@ -162,12 +162,14 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
   console.log(`Creating ${plan.users.length} accounts…`);
   const idMap = new Map<string, string>();
   for (const u of plan.users) {
-    const { data, error } = await sb.auth.admin.createUser({
-      email: u.email,
-      password: plan.password,
-      email_confirm: true,
-      user_metadata: { full_name: u.fullName },
-    });
+    const { data, error } = await withAdminRetry(() =>
+      sb.auth.admin.createUser({
+        email: u.email,
+        password: plan.password,
+        email_confirm: true,
+        user_metadata: { full_name: u.fullName },
+      }),
+    );
     if (error || !data.user) fail(`createUser ${u.email} failed: ${error?.message}`);
     idMap.set(u.id, data.user.id);
   }
@@ -231,23 +233,21 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
 }
 
 // GoTrue's admin API occasionally bounces a call with a transient
-// verification error unrelated to the target user (seen in production:
-// "invalid JWT ... unrecognized JWT kid" on deleteUser). Without a retry,
-// one such blip strands an account that then blocks the next seed's
-// "already exists" guard indefinitely.
-async function deleteUserWithRetry(
-  sb: Client,
-  id: string,
+// verification error unrelated to the request itself (seen in
+// production: "invalid JWT ... unrecognized JWT kid" on both
+// createUser and deleteUser). Without a retry, one such blip either
+// strands an account that blocks the next seed's "already exists"
+// guard, or aborts account creation partway through.
+async function withAdminRetry<R extends { error: { message: string } | null }>(
+  call: () => Promise<R>,
   attempts = 3,
-): Promise<{ message: string } | null> {
-  let lastError: { message: string } | null = null;
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    const { error } = await sb.auth.admin.deleteUser(id);
-    if (!error) return null;
-    lastError = error;
-    if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+): Promise<R> {
+  let result = await call();
+  for (let attempt = 2; attempt <= attempts && result.error; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, (attempt - 1) * 1000));
+    result = await call();
   }
-  return lastError;
+  return result;
 }
 
 async function teardown(sb: Client, slug: string, emailDomain: string): Promise<void> {
@@ -289,7 +289,7 @@ async function teardown(sb: Client, slug: string, emailDomain: string): Promise<
 
   let deleted = 0;
   for (const [id, email] of toDelete) {
-    const error = await deleteUserWithRetry(sb, id);
+    const { error } = await withAdminRetry(() => sb.auth.admin.deleteUser(id));
     if (error) console.warn(`  could not delete ${email}: ${error.message}`);
     else deleted++;
   }
