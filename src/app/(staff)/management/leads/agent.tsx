@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -27,7 +27,9 @@ import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { deprovisionFrontDesk, provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
+import { buildCallWidgetSnippet } from '@/lib/ai-widget-snippet';
 import { useGymMembership } from '@/lib/auth';
+import { copyToClipboard } from '@/lib/clipboard';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
@@ -375,7 +377,11 @@ export default function LeadAgentScreen() {
   const voiceReady = !!agent.data?.vapi_assistant_id;
   const frontDeskEntitled = agent.data?.front_desk_entitled ?? false;
   const canTestWeb = voiceReady && Platform.OS === 'web';
-  const canTestPhone = voiceReady && !!agentNumber && voiceOn;
+  // Same "will actually answer" gate as gym_public_ai_phone (0162) and
+  // canShareNumber below — a real number that's provisioned but not
+  // switched on yet shouldn't be offered as if it works.
+  const canTestPhone = !!agentNumber && agentOn && voiceOn;
+  const canShareNumber = !!agentNumber && agentOn && voiceOn;
   const provisionFailed = agent.data?.provision_status === 'failed';
   const currentVoice = VOICES.find((v) => v.id === (agent.data?.voice_id ?? '')) ?? null;
 
@@ -659,6 +665,71 @@ export default function LeadAgentScreen() {
           </Text>
         )}
       </View>
+
+      {canShareNumber ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            Share your number
+          </Text>
+          <View className="flex-row items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5">
+            <Text className="text-gray-900 dark:text-gray-50 font-medium">{agentNumber}</Text>
+            <ChipButton
+              label="Copy"
+              icon="copy-outline"
+              tone="neutral"
+              onPress={() => copyToClipboard(agentNumber!)}
+            />
+          </View>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Paste this into emails, your Google Business listing, or a social bio.
+          </Text>
+
+          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+                On Temple's website builder
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Add the "Call &amp; text" block from there — it always shows your current number.
+              </Text>
+            </View>
+            <ChipButton
+              label="Open builder"
+              icon="open-outline"
+              tone="primary"
+              onPress={() => router.push('/management/website')}
+            />
+          </View>
+
+          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+
+          <View className="gap-1.5">
+            <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+              Hosting your site elsewhere
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Copy this snippet into a custom-HTML block on Wix, Squarespace or wherever your site
+              lives.
+            </Text>
+            <ChipButton
+              label="Copy embed code"
+              icon="code-slash-outline"
+              tone="neutral"
+              onPress={() =>
+                copyToClipboard(
+                  buildCallWidgetSnippet({
+                    phoneNumber: agentNumber!,
+                    gymName: brand.gymName,
+                    accentColor: colors.primary,
+                  }),
+                )
+              }
+            />
+          </View>
+        </View>
+      ) : null}
 
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
         <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">

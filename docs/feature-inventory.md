@@ -1022,8 +1022,9 @@ a flag. The wizard's go-live step also got: a simulated 3-step
 provisioning checklist (client-side only — `provision-front-desk` has no
 real progress signal to instrument) instead of a bare spinner, "your
 progress was saved" copy on a failed-retry so resuming doesn't read as
-starting over, and a brand-coloured "You're live" moment with the number
-and a copy button before returning to Leads. The former single
+starting over, and a brand-coloured "You're live" moment with the number,
+a copy button, and an "Add to your website" chip linking to the website
+builder, before returning to Leads. The former single
 "Automation" page is split across two owner-only tabs in the Leads
 section's left sidebar (`LeadsShell`/`LeadsNav`), ordered Leads → AI
 Agent → Conversations → Settings (non-owners with `can_assign_plan` see
@@ -1049,11 +1050,15 @@ Vapi Web SDK call as the teach flow) and, once the gym has a live number,
 a tap-to-call link that dials the gym's real AI Front Desk number —
 useful for hearing exactly what a prospect hears over an actual phone
 line, and the one path here that also works from the native app. Below
-the hero:
-AI Front Desk (answer texts/calls toggles, number provisioning, voice
-picker) and Knowledge & Coaching (agent notes, coaching rules), with the
-destructive "turn off & release number" card in Danger Zone at the
-bottom.
+the hero: AI Front Desk (answer texts/calls toggles, number
+provisioning, voice picker), **Share your number** (only shown once
+the front desk is fully live — copy the number for emails/social bios,
+"Open builder" to add the website's Call & text block, and "Copy embed
+code" — a self-contained, inline-styled HTML snippet with tel:/sms:
+links for a gym hosting its site off-platform, built by
+`buildCallWidgetSnippet`), and Knowledge & Coaching (agent notes,
+coaching rules), with the destructive "turn off & release number" card
+in Danger Zone at the bottom.
 
 ### Member import
 
@@ -1450,14 +1455,19 @@ column and its RLS checks remain).
 
 - **Block-based editor** — the same interaction model as the email
   builder (add from a palette, tap a block to edit its fields, up/down
-  reorder, duplicate, delete), for 9 block types: Hero, About, Class
+  reorder, duplicate, delete), for 10 block types: Hero, About, Class
   schedule, Pricing, Team, Testimonials, Photo gallery, Hours &
-  location, Contact. Schedule, Pricing and Team are read-only
-  content-wise — they render the gym's real class sessions, membership
-  plans and staff roster at view time (Pricing/Team can each hide
-  specific rows without touching the source) rather than storing a
-  copy, so none of the three can drift stale. Schedule rows are
-  colour-coded by class type.
+  location, Contact, Call & text. Schedule, Pricing, Team and Call &
+  text are read-only content-wise — they render the gym's real class
+  sessions, membership plans, staff roster and AI Front Desk number at
+  view time (Pricing/Team can each hide specific rows without touching
+  the source) rather than storing a copy, so none of the four can drift
+  stale. Schedule rows are colour-coded by class type. **Call & text**
+  (`gym_public_ai_phone`, 0162) shows the gym's live AI Front Desk
+  number with tap-to-call/text links, and renders nothing on the public
+  page unless the front desk is fully live (enabled, voice on, a number
+  assigned) — a block advertising a number that won't answer would be
+  worse than no block.
 - **Templates (`src/lib/site-templates.ts`)** — four fully written
   starting points, paired 1:1 with the themes: Strength & Conditioning
   (Forged), Fight & Combat (Ringside), Boutique Studio (Daybreak),
