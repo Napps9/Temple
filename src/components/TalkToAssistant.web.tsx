@@ -13,7 +13,9 @@ export type TalkToAssistantProps = {
   assistantId: string | null;
   gymName?: string;
   // 'inline' sits in a card in the normal page flow (wizard, settings).
-  // 'docked' floats bottom-right over a dimmed backdrop and calls
+  // 'docked' floats bottom-right, its own shadow (shadow-pop) doing the
+  // elevation instead of dimming the page behind it — the dashboard stays
+  // fully readable and interactive while this is open. Calls
   // onRequestClose when the owner closes it (the dashboard placement).
   presentation?: 'inline' | 'docked';
   onRequestClose?: () => void;
@@ -51,8 +53,8 @@ export function TalkToAssistant({
         pointerEvents="box-none">
         <Pressable
           onPress={onRequestClose}
-          accessibilityLabel="Dimmed background"
-          className="absolute inset-0 bg-black/40"
+          accessibilityLabel="Close talk-to-it panel"
+          className="absolute inset-0"
         />
         <View
           style={{ position: 'fixed' as 'absolute', right: 20, bottom: 20, width: 340, maxWidth: '92%' }}>
@@ -70,14 +72,16 @@ export function TalkToAssistant({
 
   return (
     <View
-      // Fixed overlay: dims the dashboard behind it without navigating
-      // away, so the pipeline stays visible per the approved mockup.
+      // Fixed overlay: an invisible click-outside-to-dismiss layer, not a
+      // dimmed one — the dashboard stays fully visible and readable behind
+      // the floating panel, whose own shadow (shadow-pop) is what reads as
+      // "above" the page.
       style={{ position: 'fixed' as 'absolute', inset: 0, zIndex: 50 }}
       pointerEvents="box-none">
       <Pressable
         onPress={call.phase === 'ended' ? onRequestClose : undefined}
-        accessibilityLabel="Dimmed background"
-        className="absolute inset-0 bg-black/40"
+        accessibilityLabel="Close talk-to-it panel"
+        className="absolute inset-0"
       />
       <View
         style={{ position: 'fixed' as 'absolute', right: 20, bottom: 20, width: 340, maxWidth: '92%' }}>
