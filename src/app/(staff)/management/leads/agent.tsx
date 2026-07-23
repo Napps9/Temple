@@ -702,8 +702,27 @@ export default function LeadAgentScreen() {
             />
           </View>
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Paste this into emails, your Google Business listing, or a social bio.
+            Paste this into emails or a social bio.
           </Text>
+
+          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+                On your Google Business Profile
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                Opens Google's own site — paste the number in there so it shows on Search and Maps.
+              </Text>
+            </View>
+            <ChipButton
+              label="Open Google"
+              icon="open-outline"
+              tone="neutral"
+              onPress={() => Linking.openURL('https://business.google.com/')}
+            />
+          </View>
 
           <View className="h-px bg-gray-100 dark:bg-gray-800" />
 

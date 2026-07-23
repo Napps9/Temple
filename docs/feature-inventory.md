@@ -1055,6 +1055,10 @@ line, and the one path here that also works from the native app. Below
 the hero: AI Front Desk (answer texts/calls toggles, number
 provisioning, voice picker), **Share your number** (only shown once
 the front desk is fully live — copy the number for emails/social bios,
+"Open Google" to business.google.com so an owner can paste the number
+into their Google Business Profile by hand (no API/OAuth — Google
+requires per-listing owner consent to automate this, not worth
+building until number churn makes manual upkeep a real problem),
 "Open builder" to add the website's Call & text block, and "Copy embed
 code" — a self-contained, inline-styled HTML snippet with tel:/sms:
 links for a gym hosting its site off-platform, built by
