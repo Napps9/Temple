@@ -607,6 +607,11 @@ export default function AgentSetupWizard() {
                 <Button onPress={startProvisioning} loading={provision.isPending}>
                   {provisionFailed ? 'Try again' : 'Set up my number'}
                 </Button>
+                {provision.error ? (
+                  <Text className="text-red-500 dark:text-red-400 text-xs">
+                    {errorMessage(provision.error, "Couldn't set up your number")}
+                  </Text>
+                ) : null}
               </View>
             ) : (
               <View className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-1">

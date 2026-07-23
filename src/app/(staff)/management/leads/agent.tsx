@@ -674,6 +674,11 @@ export default function LeadAgentScreen() {
             <Button variant="secondary" onPress={() => provision.mutate()} loading={provision.isPending}>
               {provisionFailed ? 'Try again' : 'Set up my number'}
             </Button>
+            {provision.error ? (
+              <Text className="text-red-500 dark:text-red-400 text-xs">
+                {errorMessage(provision.error, "Couldn't set up your number")}
+              </Text>
+            ) : null}
           </View>
         ) : (
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
