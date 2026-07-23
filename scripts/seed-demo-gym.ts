@@ -230,6 +230,26 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
   printCredentials(p);
 }
 
+// GoTrue's admin API occasionally bounces a call with a transient
+// verification error unrelated to the target user (seen in production:
+// "invalid JWT ... unrecognized JWT kid" on deleteUser). Without a retry,
+// one such blip strands an account that then blocks the next seed's
+// "already exists" guard indefinitely.
+async function deleteUserWithRetry(
+  sb: Client,
+  id: string,
+  attempts = 3,
+): Promise<{ message: string } | null> {
+  let lastError: { message: string } | null = null;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const { error } = await sb.auth.admin.deleteUser(id);
+    if (!error) return null;
+    lastError = error;
+    if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+  }
+  return lastError;
+}
+
 async function teardown(sb: Client, slug: string, emailDomain: string): Promise<void> {
   const { data: gym } = await sb.from('gyms').select('id').eq('slug', slug).maybeSingle();
 
@@ -269,7 +289,7 @@ async function teardown(sb: Client, slug: string, emailDomain: string): Promise<
 
   let deleted = 0;
   for (const [id, email] of toDelete) {
-    const { error } = await sb.auth.admin.deleteUser(id);
+    const error = await deleteUserWithRetry(sb, id);
     if (error) console.warn(`  could not delete ${email}: ${error.message}`);
     else deleted++;
   }
