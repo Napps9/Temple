@@ -380,7 +380,10 @@ export default function LeadAgentScreen() {
   const agentNumber = agent.data?.phone_number ?? null;
   const voiceOn = agent.data?.voice_enabled ?? false;
   const voiceReady = !!agent.data?.vapi_assistant_id;
-  const frontDeskEntitled = agent.data?.front_desk_entitled ?? false;
+  // Entitled by default (0163) - a gym with no settings row yet is a paying
+  // customer same as any other, so absence reads the same as an explicit
+  // true. Only an explicit false (a manual off-switch) reads as not entitled.
+  const frontDeskEntitled = agent.data?.front_desk_entitled ?? true;
   const canTestWeb = voiceReady && Platform.OS === 'web';
   // Same "will actually answer" gate as gym_public_ai_phone (0162) and
   // canShareNumber below — a real number that's provisioned but not

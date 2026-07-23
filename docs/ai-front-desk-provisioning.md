@@ -19,11 +19,13 @@ gym owner only ever sees Temple's UI.
 
 ## Decisions (agreed)
 
-1. **Billing gate = operator-set entitlement flag.** Temple has no
-   platform-billing model today (all Stripe code is gyms charging their
-   own members via Connect). So `gym_agent_settings.front_desk_entitled`
-   is flipped per gym by an operator (service role). When platform
-   billing lands later, its webhook flips the same flag — no rework.
+1. **No per-gym billing gate.** Temple charges a flat monthly fee per
+   gym via manual invoice, not per-feature — every gym on the platform
+   is already a paying customer, so provisioning needs no separate
+   allowlist. `gym_agent_settings.front_desk_entitled` (0152) defaults
+   to `true` (0163); it stays as a manual, service-role-only
+   off-switch for a specific gym (non-payment, abuse) rather than an
+   opt-in gate every gym has to be granted.
 2. **Temple owns the numbers.** Temple's Twilio account holds the UK
    regulatory bundle; every gym's number is bought under it and used on
    the gym's behalf (standard SaaS). Not per-gym Twilio KYC.
@@ -39,14 +41,16 @@ Added to `gym_agent_settings` (service-role writes only, as with
 
 | column | why |
 | --- | --- |
-| `front_desk_entitled boolean` | the billing gate; provisioning refuses without it |
+| `front_desk_entitled boolean` | defaults true (0163); an explicit `false` is a manual off-switch, provisioning refuses only then |
 | `provision_status text` | `none / provisioning / live / failed / released` — drives the wizard's live state |
 | `twilio_number_sid text` | Twilio's handle for the number, to release it on churn |
 | `vapi_phone_number_id text` | Vapi's handle for the number, to delete it on churn |
 | `provisioned_at timestamptz` | when it went live |
 
 `set_gym_front_desk_entitled(gym, bool)` — security-definer, **service
-role only**. An owner cannot grant themselves a billed number.
+role only**. An owner cannot flip their own entitlement — it's an
+operator escape hatch (e.g. non-payment, abuse), not something a gym
+ever needs to request.
 
 ## `provision-front-desk` (owner-triggered)
 

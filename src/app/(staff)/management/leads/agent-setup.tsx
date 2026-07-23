@@ -269,7 +269,10 @@ export default function AgentSetupWizard() {
 
   const number = agent.data?.phone_number ?? null;
   const voiceReady = !!agent.data?.vapi_assistant_id;
-  const frontDeskEntitled = agent.data?.front_desk_entitled ?? false;
+  // Entitled by default (0163) - a gym with no settings row yet is a paying
+  // customer same as any other, so absence reads the same as an explicit
+  // true. Only an explicit false (a manual off-switch) reads as not entitled.
+  const frontDeskEntitled = agent.data?.front_desk_entitled ?? true;
   const provisionFailed = agent.data?.provision_status === 'failed';
   const currentVoice = AGENT_VOICES.find((v) => v.id === selectedVoice) ?? null;
 

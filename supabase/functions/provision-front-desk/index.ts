@@ -6,11 +6,14 @@
 // sync-vapi-assistant. The gym never touches Twilio or Vapi.
 //
 // Owner/admin caller (re-checks effective_can(can_review_ai_calls)); then works
-// under the service role. Gated on the operator-set front_desk_entitled flag —
-// provisioning is a billed act. Idempotent and resumable: a gym already 'live'
-// returns its number; each external step is skipped if its provider id is
-// already on the row, so retrying a 'failed' run resumes from the first
-// incomplete step instead of buying a second number or assistant.
+// under the service role. front_desk_entitled (0163) defaults to true — every
+// gym on the platform already pays a flat monthly fee, so there's no billing
+// reason to gate this — but the flag stays as a manual off-switch: a row that
+// exists with it explicitly set to false is still refused. Idempotent and
+// resumable: a gym already 'live' returns its number; each external step is
+// skipped if its provider id is already on the row, so retrying a 'failed'
+// run resumes from the first incomplete step instead of buying a second
+// number or assistant.
 //
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY,
 //   VAPI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
@@ -89,13 +92,27 @@ Deno.serve(async (req: Request) => {
   };
   const r = row as Row | null;
 
-  if (!r || r.front_desk_entitled !== true) {
+  if (r && r.front_desk_entitled === false) {
     return json({ provisioned: false, reason: 'not_entitled' });
   }
-  if (r.provision_status === 'live' && r.phone_number) {
+  if (r?.provision_status === 'live' && r.phone_number) {
     return json({ provisioned: true, number: r.phone_number, already: true });
   }
-  const gymName = r.gyms?.name ?? 'the gym';
+  const gymName = r?.gyms?.name ?? 'the gym';
+
+  // A gym with no gym_agent_settings row yet is entitled by default (0163) —
+  // normalize to an empty row so the resume logic below (every "skip if
+  // already set" check) doesn't need to handle null separately from
+  // "nothing set yet".
+  const settings: Row = r ?? {
+    front_desk_entitled: true,
+    provision_status: 'none',
+    phone_number: null,
+    vapi_assistant_id: null,
+    twilio_number_sid: null,
+    vapi_phone_number_id: null,
+    gyms: null,
+  };
 
   const twAuth = `Basic ${btoa(`${TW_SID}:${TW_TOKEN}`)}`;
   const twBase = `https://api.twilio.com/2010-04-01/Accounts/${TW_SID}`;
@@ -121,14 +138,14 @@ Deno.serve(async (req: Request) => {
   //      + emergency address. Skipped on resume if a previous run already
   //      bought one — retrying a failed run must never buy a second number.
   let number: string;
-  if (r.twilio_number_sid && r.phone_number) {
-    number = r.phone_number;
-  } else if (r.twilio_number_sid) {
+  if (settings.twilio_number_sid && settings.phone_number) {
+    number = settings.phone_number;
+  } else if (settings.twilio_number_sid) {
     // A SID was persisted but not the number itself (shouldn't happen from
     // this function going forward — it stores both atomically — but resuming
     // safely means never re-buying just because one field is missing).
     try {
-      const res = await fetch(`${twBase}/IncomingPhoneNumbers/${r.twilio_number_sid}.json`, {
+      const res = await fetch(`${twBase}/IncomingPhoneNumbers/${settings.twilio_number_sid}.json`, {
         headers: { Authorization: twAuth },
       });
       if (!res.ok) return await fail(`twilio_lookup_${res.status}`);
@@ -193,8 +210,8 @@ Deno.serve(async (req: Request) => {
   // 3. Create the gym's Vapi assistant (placeholder config; sync fills it).
   //    Skipped on resume if one already exists.
   let assistantId: string;
-  if (r.vapi_assistant_id) {
-    assistantId = r.vapi_assistant_id;
+  if (settings.vapi_assistant_id) {
+    assistantId = settings.vapi_assistant_id;
   } else {
     try {
       const res = await fetch('https://api.vapi.ai/assistant', {
@@ -226,7 +243,7 @@ Deno.serve(async (req: Request) => {
 
   // 4. Import the Twilio number onto the assistant so Vapi owns inbound voice.
   //    Skipped on resume if already imported.
-  if (!r.vapi_phone_number_id) {
+  if (!settings.vapi_phone_number_id) {
     try {
       const res = await fetch('https://api.vapi.ai/phone-numbers/import', {
         method: 'POST',

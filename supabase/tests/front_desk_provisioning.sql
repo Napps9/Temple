@@ -19,12 +19,14 @@ begin
   values (v_gym) on conflict (gym_id) do nothing;
 end $$;
 
--- 1-2. A fresh settings row is not entitled and not provisioned.
+-- 1-2. A fresh settings row is entitled by default (0163 - Temple charges a
+-- flat monthly fee, not per-feature, so there's no billing reason to gate
+-- this) and not yet provisioned.
 select is(
   (select front_desk_entitled from public.gym_agent_settings
    where gym_id = current_setting('test.gym')::uuid),
-  false,
-  'front_desk_entitled defaults to false — no number until an operator grants it'
+  true,
+  'front_desk_entitled defaults to true — no per-gym billing gate needed'
 );
 select is(
   (select provision_status from public.gym_agent_settings

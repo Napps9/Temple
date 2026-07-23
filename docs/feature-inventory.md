@@ -973,13 +973,15 @@ are the member-facing RPCs. This completes the hands-free close: call →
 committed lead → one-time link → forms → pre-selected plan checkout →
 booked first class.
 
-**Self-serve front-desk provisioning, phase 1 voice (0152).** A gym owner
-can turn the AI front desk on without ever touching Vapi or Twilio —
-Temple owns both accounts and provisions per gym on demand. Gated on an
-operator-set `front_desk_entitled` flag (`set_gym_front_desk_entitled`,
-service-role only — no platform billing yet, so this is the manual "is
-this gym paying" switch; a future billing webhook flips the same flag).
-`provision-front-desk` buys a GB local voice number under Temple's
+**Self-serve front-desk provisioning, phase 1 voice (0152, entitlement
+defaults on since 0163).** A gym owner can turn the AI front desk on
+without ever touching Vapi or Twilio — Temple owns both accounts and
+provisions per gym on demand. `front_desk_entitled` defaults to `true`
+(Temple charges a flat monthly fee per gym, not per-feature, so there's
+no billing reason to gate this); `set_gym_front_desk_entitled`
+(service-role only) is a manual off-switch for a specific gym, not
+something a gym has to be granted. `provision-front-desk` buys a GB
+local voice number under Temple's
 regulatory bundle, creates the gym's Vapi assistant, imports the number
 onto it, and syncs prompt/tools/voice — resumable step-by-step, so
 retrying a `failed` run never buys a second number or assistant.
