@@ -133,6 +133,20 @@ export type TeamBlock = {
   hiddenMemberIds: string[];
 };
 
+// Reads the gym's live AI Front Desk number at render time (like
+// ScheduleBlock reads sessions) — never stored on the block, since a
+// gym can re-provision or turn the front desk off/on independent of
+// any editing. Renders nothing on the public page when the front desk
+// isn't fully live (enabled, voice on, a number assigned); the
+// editable preview shows a placeholder instead so the block isn't
+// invisible while an owner is still setting it up.
+export type CallBlock = {
+  id: string;
+  type: 'call';
+  heading: string;
+  subheading: string;
+};
+
 export type SiteBlock =
   | HeroBlock
   | AboutBlock
@@ -142,7 +156,8 @@ export type SiteBlock =
   | GalleryBlock
   | LocationBlock
   | ContactBlock
-  | TeamBlock;
+  | TeamBlock
+  | CallBlock;
 
 export type SiteBlockType = SiteBlock['type'];
 
@@ -202,6 +217,7 @@ export const SITE_BLOCK_LABELS: Record<SiteBlockType, string> = {
   location: 'Hours & location',
   contact: 'Contact',
   team: 'Team',
+  call: 'Call & text',
 };
 
 export const SITE_BLOCK_ICONS: Record<SiteBlockType, string> = {
@@ -214,6 +230,7 @@ export const SITE_BLOCK_ICONS: Record<SiteBlockType, string> = {
   location: 'location-outline',
   contact: 'mail-outline',
   team: 'people-outline',
+  call: 'call-outline',
 };
 
 let counter = 0;
@@ -276,6 +293,13 @@ export function createBlock(type: SiteBlockType, id: string = genId()): SiteBloc
       };
     case 'team':
       return { id, type: 'team', heading: 'Meet the team', hiddenMemberIds: [] };
+    case 'call':
+      return {
+        id,
+        type: 'call',
+        heading: 'Call or text us',
+        subheading: 'Our AI front desk answers instantly, day or night.',
+      };
   }
 }
 
@@ -606,6 +630,13 @@ function coerceBlock(raw: unknown): SiteBlock | null {
         type: 'team',
         heading: asString(r.heading, 'Meet the team'),
         hiddenMemberIds: asStringArray(r.hiddenMemberIds),
+      };
+    case 'call':
+      return {
+        id,
+        type: 'call',
+        heading: asString(r.heading, 'Call or text us'),
+        subheading: asString(r.subheading, ''),
       };
     default:
       return null;

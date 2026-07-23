@@ -14,6 +14,7 @@ import type { BrandTheme } from './brand-themes';
 import { formatMoney } from './coach-earnings';
 import type {
   AboutBlock,
+  CallBlock,
   ContactBlock,
   GalleryBlock,
   HeroBlock,
@@ -58,6 +59,11 @@ export type SiteRenderContext = {
   schedule: ScheduleSession[];
   plans: PublicPlan[];
   team: TeamMember[];
+  // The gym's live AI Front Desk number, resolved by the caller — null
+  // whenever the front desk isn't fully live (not enabled, voice off, or
+  // no number yet), in which case the call block renders nothing in
+  // public mode. Never sourced from the block itself (see CallBlock).
+  aiPhoneNumber: string | null;
   // The schedule block's reference "today" — the caller's own idea of
   // "now" at the moment it ran the schedule query, so the 7-day grid's
   // first column and "next up" wording ("today" vs a weekday name)
@@ -686,6 +692,32 @@ ${subheading}
 </div></section>${script}`;
 }
 
+// tel:/sms: hrefs are built straight from ctx.aiPhoneNumber, not run
+// through safeHref — safeHref only allows http(s)/mailto because it's
+// defending against a hostile owner-authored URL, and this number is
+// never owner-authored: it's live gym_agent_settings data, already
+// validated E.164 by the column's own CHECK constraint (0136).
+function renderCall(b: CallBlock, ctx: SiteRenderContext): string {
+  if (!ctx.aiPhoneNumber && !ctx.editable) return '';
+  const subheading = ctx.editable
+    ? `<p style="color:var(--muted-text);" data-placeholder="Subheading"${fieldAttrs(ctx, `${b.id}:subheading`, { multiline: true })}>${sanitizeRichText(b.subheading)}</p>`
+    : b.subheading
+      ? `<p style="color:var(--muted-text);">${sanitizeRichText(b.subheading)}</p>`
+      : '';
+  const number = ctx.aiPhoneNumber;
+  const actions = number
+    ? `<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
+<a class="btn" href="tel:${escapeAttr(number)}">Call ${escapeHtml(number)}</a>
+<a class="btn-ghost" href="sms:${escapeAttr(number)}">Text us</a>
+</div>`
+    : `<p style="color:var(--muted-text);font-style:italic;margin-top:20px;">Set up your AI Front Desk number to make this block live.</p>`;
+  return `<section class="sec" id="call"><div class="wrap" style="text-align:center;max-width:520px;">
+<h2${fieldAttrs(ctx, `${b.id}:heading`)}>${sanitizeRichText(b.heading)}</h2>
+${subheading}
+${actions}
+</div></section>`;
+}
+
 function teamInitial(name: string): string {
   const trimmed = name.trim();
   return trimmed ? trimmed.charAt(0).toUpperCase() : '?';
@@ -735,6 +767,8 @@ function renderBlock(
       return renderContact(block, ctx);
     case 'team':
       return renderTeam(block, ctx);
+    case 'call':
+      return renderCall(block, ctx);
   }
 }
 

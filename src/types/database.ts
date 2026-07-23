@@ -4207,6 +4207,12 @@ export type Database = {
           avatar_url: string | null;
         }[];
       };
+      gym_public_ai_phone: {
+        Args: { p_slug: string };
+        Returns: {
+          phone_number: string;
+        }[];
+      };
       save_gym_website: {
         Args: {
           p_gym_id: string;

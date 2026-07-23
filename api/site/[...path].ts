@@ -106,15 +106,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const [scheduleResult, plansResult, teamResult, canonicalDomainResult] = await Promise.all([
-      supabase.rpc('gym_public_schedule', { p_slug: slug }),
-      supabase.rpc('gym_public_plans', { p_slug: slug }),
-      supabase.rpc('gym_public_team', { p_slug: slug }),
-      supabase.rpc('gym_website_canonical_domain', { p_slug: slug }),
-    ]);
+    const [scheduleResult, plansResult, teamResult, aiPhoneResult, canonicalDomainResult] =
+      await Promise.all([
+        supabase.rpc('gym_public_schedule', { p_slug: slug }),
+        supabase.rpc('gym_public_plans', { p_slug: slug }),
+        supabase.rpc('gym_public_team', { p_slug: slug }),
+        supabase.rpc('gym_public_ai_phone', { p_slug: slug }),
+        supabase.rpc('gym_website_canonical_domain', { p_slug: slug }),
+      ]);
     if (scheduleResult.error) throw scheduleResult.error;
     if (plansResult.error) throw plansResult.error;
     if (teamResult.error) throw teamResult.error;
+    if (aiPhoneResult.error) throw aiPhoneResult.error;
     if (canonicalDomainResult.error) throw canonicalDomainResult.error;
 
     const schedule: ScheduleSession[] = (scheduleResult.data ?? []).map((s) => ({
@@ -137,6 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fullName: m.full_name ?? 'Team member',
       avatarUrl: m.avatar_url,
     }));
+    const aiPhoneNumber: string | null = aiPhoneResult.data?.[0]?.phone_number ?? null;
 
     const themeId = isThemeId(site.theme) ? site.theme : 'forged';
     const theme = composeThemeWithBrand(BRAND_THEMES[themeId], site.gym_primary_color);
@@ -167,6 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       schedule,
       plans,
       team,
+      aiPhoneNumber,
       now: new Date().toISOString(),
       // Env-driven with the prod apex as fallback, matching the edge
       // functions' APP_ORIGIN convention — so a preview/staging deploy

@@ -35,6 +35,7 @@ import {
   updateBlock,
   updateSettings,
   type AboutBlock,
+  type CallBlock,
   type ContactBlock,
   type GalleryBlock,
   type HeroBlock,
@@ -60,6 +61,7 @@ const ADDABLE: SiteBlockType[] = [
   'gallery',
   'location',
   'contact',
+  'call',
 ];
 
 // ---------------------------------------------------------------------------
@@ -945,6 +947,26 @@ function ContactInspector({
   );
 }
 
+function CallInspector({
+  block,
+  onPatch,
+}: {
+  block: CallBlock;
+  onPatch: (patch: Partial<CallBlock>) => void;
+}) {
+  return (
+    <View className="gap-3">
+      <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
+      <TextField label="Subheading" value={block.subheading} onChangeText={(t) => onPatch({ subheading: t })} multiline />
+      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        The number itself comes from Manage → AI Front Desk, not from here — this block only shows
+        up on the live site once that's fully set up (a number assigned, and phone answering
+        switched on).
+      </Text>
+    </View>
+  );
+}
+
 function BlockInspector({
   block,
   onPatch,
@@ -996,6 +1018,8 @@ function BlockInspector({
       return <LocationInspector block={block} onPatch={onPatch} />;
     case 'contact':
       return <ContactInspector block={block} onPatch={onPatch} />;
+    case 'call':
+      return <CallInspector block={block} onPatch={onPatch} />;
   }
 }
 

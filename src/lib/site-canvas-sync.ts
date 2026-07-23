@@ -40,6 +40,7 @@ export const EDITABLE_FIELDS: Record<SiteBlockType, string[]> = {
   location: ['heading', 'address', 'hours'],
   contact: ['heading', 'subheading'],
   team: ['heading'],
+  call: ['heading', 'subheading'],
 };
 
 export const EDITABLE_TESTIMONIAL_FIELDS: string[] = ['quote', 'name'];

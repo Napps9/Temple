@@ -225,7 +225,24 @@ function useStaffPreviewData(gymId: string | null | undefined) {
     },
   });
 
-  return { schedule, plans, team };
+  // Same "only when it'll actually answer" gate as gym_public_ai_phone
+  // (0162) — queried from the real table directly (not that public RPC)
+  // since this is an authenticated staff read, same as schedule/plans/team.
+  const aiPhone = useQuery({
+    queryKey: ['website-preview-ai-phone', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await supabase
+        .from('gym_agent_settings')
+        .select('enabled, voice_enabled, phone_number')
+        .eq('gym_id', gymId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.enabled && data.voice_enabled && data.phone_number ? data.phone_number : null;
+    },
+  });
+
+  return { schedule, plans, team, aiPhone };
 }
 
 // Falls back to home whenever activePageId doesn't match any page —
@@ -432,7 +449,8 @@ export default function WebsiteManageScreen() {
     if (
       !settled(preview.schedule.data, preview.schedule.isError) ||
       !settled(preview.plans.data, preview.plans.isError) ||
-      !settled(preview.team.data, preview.team.isError)
+      !settled(preview.team.data, preview.team.isError) ||
+      !settled(preview.aiPhone.data, preview.aiPhone.isError)
     ) {
       return;
     }
@@ -445,6 +463,8 @@ export default function WebsiteManageScreen() {
     preview.plans.isError,
     preview.team.data,
     preview.team.isError,
+    preview.aiPhone.data,
+    preview.aiPhone.isError,
   ]);
 
   // In-app navigation (BackLink, the Domain link, tab/gesture back) goes
@@ -813,6 +833,7 @@ export default function WebsiteManageScreen() {
     schedule: preview.schedule.data ?? [],
     plans: preview.plans.data ?? [],
     team: preview.team.data ?? [],
+    aiPhoneNumber: preview.aiPhone.data ?? null,
     now: new Date().toISOString(),
     // Empty, unlike the public /api/site/[...path] route's hardcoded
     // production domain — this preview never leaves the Temple app's own

@@ -33,6 +33,7 @@ const baseCtx: SiteRenderContext = {
   schedule: [],
   plans: [],
   team: [],
+  aiPhoneNumber: null,
   now: '2026-07-06T08:00:00Z',
   platformOrigin: 'https://app.example.com',
   supabaseUrl: 'https://example.supabase.co',
@@ -811,5 +812,26 @@ describe('accessibility structure', () => {
   it('keeps focus-visible outlines in the public CSS', () => {
     const html = renderSiteHtml([], baseCtx);
     expect(html).toContain(':focus-visible{outline:2px solid var(--text)');
+  });
+
+  describe('call block', () => {
+    it('renders nothing in public mode when the front desk is not live', () => {
+      const page = appendBlock(emptyPage(), createBlock('call') as never);
+      const html = renderSiteHtml(page.blocks, { ...baseCtx, aiPhoneNumber: null });
+      expect(html).not.toContain('id="call"');
+    });
+
+    it('shows a setup placeholder in editable mode when the front desk is not live', () => {
+      const page = appendBlock(emptyPage(), createBlock('call') as never);
+      const html = renderSiteHtml(page.blocks, { ...baseCtx, aiPhoneNumber: null, editable: true });
+      expect(html).toContain('Set up your AI Front Desk number');
+    });
+
+    it('renders tel: and sms: links to the live number', () => {
+      const page = appendBlock(emptyPage(), createBlock('call') as never);
+      const html = renderSiteHtml(page.blocks, { ...baseCtx, aiPhoneNumber: '+447700900123' });
+      expect(html).toContain('href="tel:+447700900123"');
+      expect(html).toContain('href="sms:+447700900123"');
+    });
   });
 });

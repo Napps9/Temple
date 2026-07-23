@@ -35,6 +35,7 @@ const baseCtx: SiteRenderContext = {
   schedule: [],
   plans: [],
   team: [],
+  aiPhoneNumber: null,
   now: '2026-07-06T08:00:00Z',
   platformOrigin: 'https://app.example.com',
   supabaseUrl: 'https://example.supabase.co',
