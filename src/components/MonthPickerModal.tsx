@@ -75,7 +75,7 @@ export function MonthPickerModal({
         onPress={onClose}>
         <Pressable
           onPress={() => {}}
-          className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl p-4 gap-3 shadow-pop">
+          className="w-full max-w-sm md:max-w-md bg-white dark:bg-gray-900 rounded-3xl p-4 gap-3 shadow-pop">
           <View className="flex-row items-center justify-between">
             <Pressable
               onPress={() => onChangeMonth(-1)}

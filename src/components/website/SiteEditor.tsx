@@ -295,7 +295,7 @@ function StockPhotoPickerModal({
       <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-3">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-3">
           <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">Stock photos</Text>
           <View className="flex-row gap-2 items-center">
             <TextInput
@@ -1141,7 +1141,7 @@ function AddBlockModal({
       <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
           <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">Add a block</Text>
           <View className="gap-2">
             {ADDABLE.map((type) => (
@@ -1178,7 +1178,7 @@ function TemplatePickerModal({
       <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
           <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
             Apply a template
           </Text>

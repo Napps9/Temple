@@ -109,7 +109,7 @@ export function DateRangeCta({
           className="flex-1 bg-black/40 items-center justify-center px-6">
           <Pressable
             onPress={() => {}}
-            className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 gap-3">
+            className="w-full max-w-md md:max-w-lg bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 gap-3">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
               Select period
             </Text>

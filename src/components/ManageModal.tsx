@@ -44,7 +44,7 @@ export function ManageModal({
         className="flex-1 bg-black/60 items-center justify-center px-4 py-8">
         <Pressable
           onPress={() => {}}
-          className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          className="w-full max-w-lg md:max-w-2xl bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <View className="flex-row items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
             <View className="flex-1">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold text-lg">

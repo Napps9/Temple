@@ -140,7 +140,7 @@ export function RefundDialog({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 bg-black/50 justify-center px-4">
-        <View className="bg-white dark:bg-gray-900 rounded-2xl p-5 gap-3 max-w-lg w-full self-center">
+        <View className="bg-white dark:bg-gray-900 rounded-2xl p-5 gap-3 max-w-lg md:max-w-2xl w-full self-center">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Refund {sub.planName}
           </Text>

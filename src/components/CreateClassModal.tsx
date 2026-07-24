@@ -288,7 +288,7 @@ export function CreateClassModal({
       animationType="fade"
       onRequestClose={onClose}>
       <View className="flex-1 bg-black/60 items-center justify-center px-6">
-        <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5">
+        <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
               {stage === 'form' ? 'New class' : 'Ready to schedule?'}

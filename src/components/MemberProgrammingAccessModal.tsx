@@ -96,7 +96,7 @@ export function MemberProgrammingAccessModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[90vh]">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
               Programming access
@@ -202,7 +202,7 @@ export function MemberProgrammingAccessModal({
           className="flex-1 bg-black/60 items-center justify-center px-6">
           <Pressable
             onPress={() => {}}
-            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
             <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
               Pick a product
             </Text>

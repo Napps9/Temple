@@ -485,7 +485,7 @@ export function ClassDetailModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5">
           {/* Close X — discoverable affordance on mobile where the
               tap-outside isn't obvious. Needs an explicit z-index: on
               web every sibling defaults to zIndex 0 and paints in DOM

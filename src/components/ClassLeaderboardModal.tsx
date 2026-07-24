@@ -50,7 +50,7 @@ export function ClassLeaderboardModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[85vh]">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[85vh]">
           <View>
             <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
               Leaderboard

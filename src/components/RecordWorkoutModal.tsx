@@ -651,7 +651,7 @@ export function RecordWorkoutModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Record workout"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-5 max-h-[92vh]">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[92vh]">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
               Record workout
@@ -1521,7 +1521,7 @@ function TagEditModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Edit tag"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm gap-3">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm md:max-w-md gap-3">
           <View className="gap-1">
             <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
               Edit tag
@@ -1714,7 +1714,7 @@ function MovementTagPickerModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Tag a movement"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             Tag a movement
           </Text>
@@ -1819,7 +1819,7 @@ function PickerModal({
           role="dialog"
           aria-modal
           accessibilityLabel={title}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md gap-3 max-h-[80vh]">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
           <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
             {title}
           </Text>

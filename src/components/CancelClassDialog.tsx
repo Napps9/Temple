@@ -230,7 +230,7 @@ export function CancelClassDialog({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
           <View className="gap-1">
             <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
               Cancel {classTypeName}

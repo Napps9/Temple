@@ -39,7 +39,7 @@ export function ConfirmDialog({
           role="dialog"
           aria-modal
           accessibilityLabel={title}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4">
+          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
           <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">{title}</Text>
           <Text className="text-gray-700 dark:text-gray-200">{body}</Text>
           {error ? (
