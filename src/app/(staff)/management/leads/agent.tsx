@@ -67,6 +67,8 @@ type InterviewRow = {
 
 const VOICES = AGENT_VOICES;
 
+const STALE_CALL_MS = 15 * 60 * 1000;
+
 // Plain grouping label, not a collapsible accordion — every card stays
 // visible, this just gives the scroll a scannable shape.
 function SectionHeader({ label }: { label: string }) {
@@ -394,10 +396,23 @@ export default function LeadAgentScreen() {
   const currentVoice = VOICES.find((v) => v.id === (agent.data?.voice_id ?? '')) ?? null;
 
   const interview = latestInterview.data;
-  const isCalling = interview?.status === 'calling';
+  // Interview calls run under ~6 minutes by design (see interviewerPrompt in
+  // the edge function) — a 'calling' row older than this is a dead tab, not
+  // a live call, and must not be shown as one. Without this, a closed-tab
+  // row that never resolved would render "in call" with a growing timer on
+  // every future visit to this page, forever.
+  const isStaleCall =
+    interview?.status === 'calling' &&
+    Date.now() - new Date(interview.created_at).getTime() > STALE_CALL_MS;
+  const isCalling = interview?.status === 'calling' && !isStaleCall;
   const isReviewing = interview?.status === 'completed' && !!interview.draft_brief;
   const isTranscriptOnly = interview?.status === 'completed' && !interview.draft_brief;
   const teachStep = isReviewing ? 1 : 0;
+
+  useEffect(() => {
+    if (isStaleCall) discardInterview.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStaleCall, interview?.id]);
 
   return (
     <LeadsShell active="agent" tabs={['leads', 'agent', 'conversations', 'settings']}>
