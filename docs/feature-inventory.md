@@ -20,7 +20,8 @@ dead-end). It carries:
   membership-independent, so the history survives leaving and is read
   back by `profile_id`). Read-only per-movement detail reuses the
   shared `MovementDetailView` (`mode="athlete"`): best-of, PR badges,
-  trend sparklines, journal — minus the leaderboard + Record affordances.
+  trend sparklines, the 1RM percentages card (pure arithmetic on their
+  own history), journal — minus the leaderboard + Record affordances.
 - **Join / start-a-gym CTAs** — the athlete home and account screen
   both offer "Join a gym" (invite) and "Start a gym", so the gymless
   landing subsumes what `/welcome` used to do.
@@ -270,8 +271,9 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Movement tagging** — at log time, tag a section with the
   movements it contained + a rep-max scheme so it counts on the
   movement / leaderboard.
-- **Per-movement detail page** — rep-max best-of, full history merging
-  direct PRs with section-tagged results, "session" badge.
+- **Per-movement detail page** — rep-max best-of, the 1RM percentages
+  card, full history merging direct PRs with section-tagged results,
+  "session" badge.
 - **Per-group page** — best-of per movement in a group (Squats,
   Pushing, Pulling, Cleans, Snatch, Aerobic, Bodyweight).
 - **Movement Library + starred home** (`/track/movements`, "Movement
@@ -328,8 +330,10 @@ rental, or a **physical subscription box** shipped every cycle.
 
 ### Programming
 - **Programming view** — read-only calendar of what's been programmed
-  for the member's eligible class types each day; the same surface
-  the recorder pre-fills from.
+  each day; the same surface the recorder pre-fills from. Scoped to the
+  gym, not to the member's own bookings or plan: `class_programming`'s
+  select policy is a plain `user_belongs_to(gym_id)`, so anyone in the
+  gym sees every class type's programming.
 - **Percentage chips** — a section reading "Back squat 5×5 @ 75%"
   gains a `75% · 75 kg` chip underneath, resolved against the viewer's
   own rep maxes; tapping shows the provenance. Bodies are free text, so
@@ -1976,6 +1980,18 @@ Items the conversation has flagged but not implemented yet:
 - Health-data reads hardened to definer-function access (today the
   audit log is written by the app surfaces, not enforced at the row
   level for raw API calls).
+- **Per-gym weight unit.** Weights are stored unit-tagged
+  (`tracked_movement_results.value_unit`,
+  `tracked_section_entries.weight_unit`) but nothing normalises them:
+  every in-app writer stores `kg` while the CSV importer (0072) writes
+  `lb` through unconverted, and both `bestOf` (`src/lib/track.ts`) and
+  the `strength_leaderboard` RPC compare raw numerics — so a 315 lb
+  deadlift currently outranks a 200 kg one on the leaderboard. The fix
+  is a `gyms.weight_unit` following the `set_gym_discipline` /
+  `set_gym_currency` pattern, kg stored canonically and converted at
+  the edges, plus the RPC. Until then the 1RM percentages card refuses
+  to show numbers for a movement with any non-kg row rather than
+  contradict the rep-max row above it.
 - Supabase preview branches + Vercel preview environments.
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.
