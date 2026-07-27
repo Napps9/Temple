@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -30,6 +30,7 @@ import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/format-date';
 import { monthLabel, monthRange, pctDelta, previousMonthRange } from '@/lib/metrics';
+import { drainPaymentEmails } from '@/lib/payment-notifications';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import {
   daysAgo,
@@ -859,6 +860,16 @@ function OverdueList({ gymId }: { gymId: string }) {
       return (data ?? []) as unknown as OverdueRow[];
     },
   });
+
+  // Secondary drain. stripe-webhook invokes the worker when the payment
+  // fails, but nothing retries a failed invoke — and an owner looking at
+  // who needs chasing is exactly when a stuck email should go out. Not
+  // gated on rows: this lists MEMBERS, not queued emails, so a member who
+  // has since recovered would strand their own stuck row. The worker is a
+  // no-op on an empty queue.
+  useEffect(() => {
+    if (gymId) void drainPaymentEmails(gymId);
+  }, [gymId]);
 
   const list = rows.data ?? [];
   if (rows.error) {

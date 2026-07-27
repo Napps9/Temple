@@ -117,6 +117,7 @@ export default function Inbox() {
             announcement_unread: number;
             class_broadcast_unread: number;
             class_change_unread: number;
+            payment_unread: number;
           }
         | undefined;
       return (
@@ -125,6 +126,7 @@ export default function Inbox() {
           announcement_unread: 0,
           class_broadcast_unread: 0,
           class_change_unread: 0,
+          payment_unread: 0,
         }
       );
     },
@@ -153,6 +155,10 @@ export default function Inbox() {
           </Text>
         </View>
 
+        <PaymentNoticeBanner
+          gymId={membership.gymId}
+          profileId={session.user.id}
+        />
         <InjuryCheckInBanner />
         <LogNudgeBanner />
 
@@ -732,6 +738,65 @@ function ClassesTab({
 
 // The weekly injury nudge: when a member's open injury hasn't been
 // checked in on for a week, the inbox asks for an update.
+// A failing payment is the one inbox item that costs the member their
+// membership if ignored, so it sits above the tabs as a banner rather than
+// inside one — the same treatment as an overdue injury check-in.
+// Deliberately does NOT mark itself read on render: it stays unread until
+// the payment recovers (_clear_payment_failure marks it) or the member
+// opens Membership, because a badge that clears on a glance is a badge
+// that stops meaning anything.
+function PaymentNoticeBanner({
+  gymId,
+  profileId,
+}: {
+  gymId: string;
+  profileId: string;
+}) {
+  const notices = useQuery({
+    queryKey: ['payment-notifications', gymId, profileId],
+    enabled: !!gymId && !!profileId,
+    queryFn: async (): Promise<{ id: string; kind: string; body: string }[]> => {
+      // Scoped to the reader. RLS lets can_see_money staff read every
+      // member's rows, so without this an owner sees a member's failed
+      // payment as their own — and could never clear it, because
+      // mark_payment_notifications_read is scoped to auth.uid().
+      const { data, error } = await supabase
+        .from('payment_notifications')
+        .select('id, kind, body')
+        .eq('gym_id', gymId)
+        .eq('recipient_profile_id', profileId)
+        .eq('channel', 'in_app')
+        .is('read_at', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return (data ?? []) as { id: string; kind: string; body: string }[];
+    },
+  });
+
+  const notice = notices.data?.[0];
+  if (!notice) return null;
+
+  return (
+    <Pressable
+      onPress={() => router.push('/membership' as never)}
+      className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-xl p-4 gap-2 active:opacity-80">
+      <View className="flex-row items-center gap-2">
+        <Ionicons name="card-outline" size={18} color="#DC2626" />
+        <Text
+          className="flex-1 text-red-800 dark:text-red-200 font-semibold"
+          numberOfLines={1}>
+          {notice.kind === 'payment_final_notice'
+            ? 'Your membership is about to stop'
+            : "We couldn't take your payment"}
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color="#DC2626" />
+      </View>
+      <Text className="text-red-900 dark:text-red-100 text-sm">{notice.body}</Text>
+    </Pressable>
+  );
+}
+
 function InjuryCheckInBanner() {
   const injuries = useMyInjuries();
   const due = dueCheckIns(injuries.data);

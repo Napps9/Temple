@@ -237,7 +237,9 @@ function CurrentSubCard({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      {sub.past_due_since ? <PaymentFailedNotice sub={sub} /> : null}
+      {sub.past_due_since ? (
+        <PaymentFailedNotice sub={sub} />
+      ) : null}
 
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
@@ -656,6 +658,23 @@ export default function MembershipScreen() {
   useEffect(() => {
     if (currentSubs.length > 0 && gymId) clearPendingCheckout(gymId);
   }, [currentSubs.length, gymId]);
+
+  // Reaching this screen IS reading the payment notice — it says the same
+  // thing the inbox banner does, with the Pay now button. Marked at screen
+  // level, not inside PaymentFailedNotice: that only renders for a CURRENT
+  // subscription, and the final notice is precisely the one whose
+  // subscription is about to leave that set, so the badge would stick.
+  const markedPaymentRead = useRef(false);
+  useEffect(() => {
+    if (!gymId || markedPaymentRead.current) return;
+    markedPaymentRead.current = true;
+    supabase
+      .rpc('mark_payment_notifications_read', { p_gym_id: gymId })
+      .then(() => {
+        queryClientRef.invalidateQueries({ queryKey: ['payment-notifications'] });
+        queryClientRef.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
+      });
+  }, [gymId, queryClientRef]);
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>

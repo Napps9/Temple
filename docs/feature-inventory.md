@@ -457,7 +457,24 @@ The staff area shows up when `can_access_staff_area` is on.
   visibility instead. Recovery (`invoice.paid`, or the subscription
   returning to `active`) clears every flag together via
   `_clear_payment_failure`.
-  **Member side**: the Membership screen shows what happened, when Stripe
+  **Member side**: the member is told (0175) — an in-app notice the DB
+  writes instantly, plus a queued email drained by
+  `send-payment-notifications`. **One notice per dunning run, not per
+  retry**: Stripe attempts a failing card three or four times over about
+  two weeks, and mailing each would train the member to ignore the sender
+  by the time it matters, so the idempotency key carries `past_due_since`.
+  Stripe giving up earns its own `payment_final_notice`, because the
+  consequence changes from "we'll try again" to "your membership will be
+  cancelled" — and the two are never sent together, which a gym with
+  retries disabled would otherwise trigger. **Recovery unsends what it
+  can**: paying marks a still-queued email `skipped` and the in-app row
+  read, so a member who fixes it in ten minutes is neither mailed nor left
+  with a badge. A blanket email unsubscribe is deliberately NOT honoured —
+  a failing payment is not marketing. Unlike the cover and class-change
+  workers there is no client to drain the queue (the failure arrives from
+  Stripe with nobody watching), so `stripe-webhook` invokes the worker
+  itself and the staff chase list nudges it as a backstop.
+  The Membership screen shows what happened, when Stripe
   will retry, and a **Pay now** button. That link lives on its own
   `membership_invoice_links` table with a self-only RLS policy —
   deliberately NOT on `plan_subscriptions`, whose staff select policy is
@@ -2107,12 +2124,6 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
-- **Telling a member their payment failed, actively**: 0174 shows the
-  notice when they next open Membership, and gives them a Stripe-hosted
-  invoice to pay. Nothing pushes or emails them, so a member who does not
-  open the app finds out when their membership is cancelled. The
-  `class_change_notifications` queue + edge-worker pattern (0169/0172) is
-  the obvious shape to reuse.
 - **Health-data GDPR — owner sign-off remainder**: the DPIA and
   lawful-basis register are drafted (`docs/legal/`) but need formal
   owner sign-off, and the in-app legal docs carry a DRAFT banner with

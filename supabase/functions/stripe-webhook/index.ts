@@ -841,6 +841,42 @@ Deno.serve(async (req: Request) => {
         amountCents: (obj.amount_due as number) ?? 0,
         currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
       });
+
+      // The in-app notice is already in the member's inbox — the DB wrote
+      // it (0175). The email still needs a push, and unlike the cover and
+      // class-change workers there is no browser here to do it: this
+      // arrived from Stripe with nobody watching. Best-effort; a row left
+      // queued is picked up by the next invoke, and the member has the
+      // in-app notice regardless.
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/functions/v1/send-payment-notifications`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${SERVICE_KEY}`,
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({ gym_id: ps.gym_id }),
+            // A hung worker must not hold the webhook open past Stripe's
+            // own timeout, which would have Stripe retry a failure we
+            // already recorded.
+            signal: AbortSignal.timeout(10_000),
+          },
+        );
+        if (!res.ok) {
+          console.error(
+            'send-payment-notifications invoke failed',
+            res.status,
+            await res.text(),
+          );
+        }
+      } catch (e) {
+        // Non-fatal by design — never 500 the webhook over an email. Logged
+        // because otherwise a worker that is down looks exactly like a gym
+        // with nothing to send.
+        console.error('send-payment-notifications invoke threw', e);
+      }
     } else if (type === 'customer.subscription.updated') {
       // Keep store subscriptions in sync — cancel-at-period-end toggles,
       // renewal date, past_due.

@@ -2000,6 +2000,47 @@ export type Database = {
         Update: Partial<{ recurrence_id: string | null }>;
         Relationships: [];
       };
+      payment_notifications: {
+        Row: {
+          id: string;
+          gym_id: string;
+          plan_subscription_id: string;
+          recipient_profile_id: string | null;
+          kind: 'payment_failed' | 'payment_final_notice';
+          channel: 'email' | 'in_app';
+          recipient: string | null;
+          body: string;
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          idempotency_key: string;
+          created_at: string;
+          sent_at: string | null;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          plan_subscription_id: string;
+          recipient_profile_id?: string | null;
+          kind: 'payment_failed' | 'payment_final_notice';
+          channel: 'email' | 'in_app';
+          recipient?: string | null;
+          body: string;
+          status?: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error?: string | null;
+          idempotency_key: string;
+          created_at?: string;
+          sent_at?: string | null;
+          read_at?: string | null;
+        };
+        Update: Partial<{
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          sent_at: string | null;
+          read_at: string | null;
+        }>;
+        Relationships: [];
+      };
       class_change_notifications: {
         Row: {
           id: string;
@@ -4372,6 +4413,7 @@ export type Database = {
           announcement_unread: number;
           class_broadcast_unread: number;
           class_change_unread: number;
+          payment_unread: number;
         }[];
       };
       can_dm: {
@@ -4731,6 +4773,10 @@ export type Database = {
           recurrences_split: number;
           recurrences_unchanged: number;
         };
+      };
+      mark_payment_notifications_read: {
+        Args: { p_gym_id: string };
+        Returns: null;
       };
       mark_class_change_notifications_read: {
         Args: { p_gym_id: string };
