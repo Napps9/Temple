@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { ChipButton } from '@/components/ChipButton';
 import { RecordHyroxRaceModal } from '@/components/RecordHyroxRaceModal';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
@@ -12,7 +13,7 @@ import { Sparkline } from '@/components/Sparkline';
 import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { HYROX_SIM } from '@/lib/hyrox';
-import { findMovement, type Metric } from '@/lib/movements';
+import { findMovement, type Metric, type Movement } from '@/lib/movements';
 import {
   bestOfMerged,
   deriveTagValue,
@@ -23,6 +24,12 @@ import {
   type TagInputRow,
 } from '@/lib/movement-journal';
 import { normaliseForPlot, trendPoints } from '@/lib/movement-trend';
+import {
+  formatWeight,
+  percentWeight,
+  resolveOneRepMax,
+  PERCENT_STEPS,
+} from '@/lib/one-rep-max';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 import {
@@ -305,6 +312,12 @@ export function MovementDetailView({
           </View>
         </View>
 
+        <MovementPercentagesCard
+          movement={movement}
+          merged={merged}
+          onRecord={isMember ? () => setRecording({ trackKey: '1rm' }) : null}
+        />
+
         {isMember ? (
           <MovementLeaderboardSection
             movementKey={movement.key}
@@ -366,6 +379,82 @@ export function MovementDetailView({
         />
       ) : null}
     </Screen>
+  );
+}
+
+// What to load for a given percentage of this member's 1RM. Resolved
+// from the journal already fetched above rather than a second query.
+// Only for movements you can actually load — a percentage of a 5k time
+// means nothing.
+function MovementPercentagesCard({
+  movement,
+  merged,
+  onRecord,
+}: {
+  movement: Movement;
+  merged: JournalRow[];
+  onRecord: (() => void) | null;
+}) {
+  const loadable = movement.schemes.some(
+    (s) => s.metric === 'weight' && s.better === 'higher',
+  );
+  if (!loadable) return null;
+
+  const resolved = resolveOneRepMax(merged, movement);
+
+  return (
+    <View className="gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+        Percentages
+      </Text>
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        {resolved === null ? (
+          <>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Log a 1 rep max — or a 3, 5 or 10 rep max — and we'll work
+              out your percentages here and in your programming.
+            </Text>
+            {onRecord ? (
+              <ChipButton
+                className="self-start"
+                tone="primary"
+                icon="add-circle-outline"
+                label="Log a 1 rep max"
+                onPress={onRecord}
+              />
+            ) : null}
+          </>
+        ) : resolved.kind === 'unit_unknown' ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            Your {movement.name} results are recorded in pounds.
+            Percentages need kilograms, so we're not going to guess at a
+            conversion here.
+          </Text>
+        ) : (
+          <>
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              {resolved.source === 'recorded'
+                ? `Of your ${formatWeight(resolved.value)} 1RM, set ${fmtDateShort(resolved.performedAt)}`
+                : `Of ~${formatWeight(resolved.value)}, estimated from your ${resolved.fromReps} rep max (${formatWeight(resolved.fromValue)} × ${resolved.fromReps}, ${fmtDateShort(resolved.performedAt)})`}
+            </Text>
+            <View className="flex-row flex-wrap -m-1">
+              {PERCENT_STEPS.map((pct) => (
+                <View key={pct} className="w-1/2 md:w-1/3 p-1">
+                  <View className="flex-row items-baseline justify-between rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">
+                      {pct}%
+                    </Text>
+                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                      {formatWeight(percentWeight(resolved.value, pct))}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+    </View>
   );
 }
 

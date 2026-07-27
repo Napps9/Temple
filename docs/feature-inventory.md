@@ -227,6 +227,19 @@ rental, or a **physical subscription box** shipped every cycle.
   upward. Pure helpers `trendPoints` + `normaliseForPlot`
   (`src/lib/movement-trend.ts`), unit-tested; the line is
   `src/components/Sparkline.tsx`.
+- **Percentages of your 1RM** — a card under Rep maxes on the movement
+  detail page giving 50–100% in 5% steps, rounded to loadable 2.5 kg.
+  A recorded `1rm` always wins; with none, it estimates from the
+  member's 3/5/10RM (Epley) and takes the **highest** estimate, saying
+  which rep max it came from so the member can judge it. Only for
+  movements with a weight scheme, and shown in athlete mode too.
+  `resolveOneRepMax` / `percentWeight` (`src/lib/one-rep-max.ts`),
+  unit-tested. **Pounds limitation:** `bestOf` compares raw numerics
+  and the CSV importer (0072) stores `lb` unconverted, so a movement
+  with any non-kg row resolves to "recorded in pounds" and shows no
+  numbers rather than contradicting the rep-max row directly above it.
+  The real fix is a per-gym weight unit with kg stored canonically,
+  which also has to cover the `strength_leaderboard` RPC.
 
 - **Consistency stats + 12-week heatmap** — on the /track home, a card
   leads with a three-up stat row — days in a row, weeks in a row, and
@@ -317,6 +330,25 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Programming view** — read-only calendar of what's been programmed
   for the member's eligible class types each day; the same surface
   the recorder pre-fills from.
+- **Percentage chips** — a section reading "Back squat 5×5 @ 75%"
+  gains a `75% · 75 kg` chip underneath, resolved against the viewer's
+  own rep maxes; tapping shows the provenance. Bodies are free text, so
+  `findPrescriptions` (`src/lib/percent-prescription.ts`, unit-tested
+  against the real demo bodies) recovers the grammar
+  `<work> @ <pct>% [of <reference>]` — the reference comes *after* the
+  percentage, so "4x3 clean pull @ 90% of clean" is 90% of the clean.
+  A wrong number on a barbell being worse than none, it renders nothing
+  for a percentage of a session max ("70% of today's 1"), of a non-load
+  quantity ("90% effort", "70% max HR"), or of a movement it can't pin
+  down. Bare family words ("clean", "squat") prompt **once** — the
+  answer is stored per profile in `member_movement_preferences` (0168,
+  no `gym_id`, self-only RLS, like movement favourites) and reused
+  everywhere that word appears again. Rep maxes are fetched once per
+  member (`useMyRepMaxes`), not per section or per day, so stepping
+  through days never refetches. Gated on an explicit
+  `showMyPercentages` prop set only by the member programming tab —
+  the staff surfaces share the calendar component, and the viewer
+  there is a coach.
 - **Individual programming (member side)** — when a coach has written
   a personal programme for the member, an "Individual programming"
   card renders in the same day list as the class-type cards (same

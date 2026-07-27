@@ -2668,6 +2668,27 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      member_movement_preferences: {
+        Row: {
+          profile_id: string;
+          term: string;
+          movement_key: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          term: string;
+          movement_key: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          movement_key: string;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       tracked_movement_favourites: {
         Row: {
           profile_id: string;

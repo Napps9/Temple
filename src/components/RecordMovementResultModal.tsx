@@ -16,6 +16,7 @@ import {
   type SchemeOption,
 } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
+import { MY_REP_MAXES_KEY } from '@/lib/useOneRepMaxes';
 import { useThemeColors } from '@/lib/theme';
 import { defaultUnit, parseDuration } from '@/lib/track';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -203,6 +204,7 @@ export function RecordMovementResultModal({
       queryClient.invalidateQueries({ queryKey: ['tracked-journal'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-movement'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-group'] });
+      queryClient.invalidateQueries({ queryKey: [MY_REP_MAXES_KEY] });
       queryClient.invalidateQueries({ queryKey: ['athlete-logged-movements'] });
       queryClient.invalidateQueries({ queryKey: ['athlete-workout-count'] });
       setTimeout(() => onClose(), 600);

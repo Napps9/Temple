@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
+import { PercentPrescriptionRow } from '@/components/PercentPrescriptionRow';
 import {
   ProgrammingModal,
   type ProgrammingTarget,
@@ -36,6 +37,7 @@ import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
+import { useMyRepMaxes, type RepMaxLookup } from '@/lib/useOneRepMaxes';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -118,6 +120,7 @@ export function ProgrammingCalendar({
   headerAction,
   memberScope,
   topBar,
+  showMyPercentages,
 }: {
   mode: 'manage' | 'view';
   // Optional control rendered beside the month header (right-aligned
@@ -130,12 +133,18 @@ export function ProgrammingCalendar({
   // Rendered above the date header, inside the Screen — the member
   // scope uses it for its BackLink + identity row.
   topBar?: React.ReactNode;
+  // Resolve "@ 75%" against the VIEWER's own rep maxes. Set only from
+  // the member programming tab: on the staff surfaces the viewer is a
+  // coach, so this would silently attribute the coach's numbers to
+  // whoever's programming is on screen.
+  showMyPercentages?: boolean;
 }) {
   const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
+  const { lookup: repMaxLookup } = useMyRepMaxes(!!showMyPercentages);
   // A ?date=YYYY-MM-DD param deep-links the calendar to a specific day
   // (e.g. "See programming" from a class). Read once on mount so it
   // doesn't fight the user's own navigation afterwards.
@@ -435,6 +444,7 @@ export function ProgrammingCalendar({
                   sections={personalDay?.sections ?? []}
                   files={personalFiles}
                   mode="view"
+                  repMaxLookup={showMyPercentages ? repMaxLookup : undefined}
                 />
               ) : null}
               {dayTypes.length === 0 ? (
@@ -455,6 +465,7 @@ export function ProgrammingCalendar({
                       programmingId={prog?.id ?? null}
                       sections={prog?.sections ?? []}
                       mode={mode}
+                      repMaxLookup={showMyPercentages ? repMaxLookup : undefined}
                       onEdit={() =>
                         setOpenFor({
                           target: { kind: 'classType', classType: t },
@@ -507,12 +518,14 @@ function ClassTypeCard({
   sections,
   mode,
   onEdit,
+  repMaxLookup,
 }: {
   classType: DayClassType;
   programmingId: string | null;
   sections: Section[];
   mode: 'manage' | 'view';
   onEdit: () => void;
+  repMaxLookup?: RepMaxLookup;
 }) {
   const [leaderboardOpenFor, setLeaderboardOpenFor] = useState<
     { sectionIndex: number; sectionTitle: string } | null
@@ -557,6 +570,9 @@ function ClassTypeCard({
               </View>
             </View>
             <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
+            {repMaxLookup ? (
+              <PercentPrescriptionRow section={s} lookup={repMaxLookup} />
+            ) : null}
             {s.leaderboard_enabled && programmingId ? (
               <ChipButton
                 className="self-start mt-1"
@@ -620,12 +636,14 @@ function PersonalCard({
   files,
   mode,
   onEdit,
+  repMaxLookup,
 }: {
   title: string;
   sections: Section[];
   files: MemberProgrammingFile[];
   mode: 'manage' | 'view';
   onEdit?: () => void;
+  repMaxLookup?: RepMaxLookup;
 }) {
   const colors = useThemeColors();
   const openFile = useOpenProgrammingFile();
@@ -670,6 +688,9 @@ function PersonalCard({
               </View>
             </View>
             <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
+            {repMaxLookup ? (
+              <PercentPrescriptionRow section={s} lookup={repMaxLookup} />
+            ) : null}
           </View>
         ))}
       </View>

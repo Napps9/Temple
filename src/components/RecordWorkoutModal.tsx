@@ -37,6 +37,7 @@ import {
   type SectionFormatKey,
 } from '@/lib/programming';
 import { supabase } from '@/lib/supabase';
+import { MY_REP_MAXES_KEY } from '@/lib/useOneRepMaxes';
 import {
   emptyEntryDraft,
   entryDraftIsEmpty,
@@ -625,6 +626,7 @@ export function RecordWorkoutModal({
       queryClient.invalidateQueries({ queryKey: ['tracked-journal-count'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-movement'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-group'] });
+      queryClient.invalidateQueries({ queryKey: [MY_REP_MAXES_KEY] });
       // Feeds the streak tiles + 12-week heatmap, and gates whether that
       // rail shows at all — so the first log makes it appear, not just
       // update.
