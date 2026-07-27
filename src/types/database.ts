@@ -1913,6 +1913,47 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      cover_notifications: {
+        Row: {
+          id: string;
+          gym_id: string;
+          request_id: string;
+          offer_id: string | null;
+          kind: 'cover_requested' | 'cover_claimed';
+          channel: 'email' | 'in_app';
+          recipient: string | null;
+          recipient_profile_id: string | null;
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          idempotency_key: string;
+          created_at: string;
+          sent_at: string | null;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          request_id: string;
+          offer_id?: string | null;
+          kind: 'cover_requested' | 'cover_claimed';
+          channel: 'email' | 'in_app';
+          recipient?: string | null;
+          recipient_profile_id?: string | null;
+          status?: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error?: string | null;
+          idempotency_key: string;
+          created_at?: string;
+          sent_at?: string | null;
+          read_at?: string | null;
+        };
+        Update: Partial<{
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          sent_at: string | null;
+          read_at: string | null;
+        }>;
+        Relationships: [];
+      };
       cover_request_sessions: {
         Row: {
           id: string;
@@ -4452,6 +4493,14 @@ export type Database = {
       };
       cancel_cover_request: {
         Args: { p_request_id: string };
+        Returns: null;
+      };
+      count_unread_cover_notifications: {
+        Args: { p_gym_id: string };
+        Returns: number;
+      };
+      mark_cover_notifications_read: {
+        Args: { p_gym_id: string };
         Returns: null;
       };
       complete_task: {

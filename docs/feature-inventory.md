@@ -432,6 +432,19 @@ The staff area shows up when `can_access_staff_area` is on.
   the unclaimed offers and leaves the claimed ones alone. A nightly
   `expire_cover_requests` sweep (pg_cron) closes out windows that have
   passed and clears offers for classes that already ran.
+- **Cover notifications** — `cover_notifications` is a queue + audit log
+  on the `lead_notifications` pattern (in-app row delivered instantly,
+  email enqueued and drained by the `send-cover-notifications` edge
+  worker, every attempt logged and retryable). Two events: **cover
+  requested**, fanned out to every coach who could claim it, and **cover
+  claimed**, back to the coach who asked. Requested notifications are
+  **one digest per request**, naming the window and the class count —
+  never one per class. Coaches disqualified for every class type in the
+  request aren't told, and neither is the requester. A **blanket** email
+  unsubscribe suppresses the cover email (recorded as `skipped`, not
+  silently dropped) but never the in-app notification. Surfaced as a
+  **Cover tab in the Inbox** and counted in the nav badge; opening
+  either the tab or the Cover screen marks them read.
 - **Class detail modal** — roster, attendance marking (check-in / no-
   show / unmark), leaderboard for that session.
   **Message class** [`can_broadcast_to_class`] — inline composer

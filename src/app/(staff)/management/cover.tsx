@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { CoverRangeModal } from '@/components/CoverRangeModal';
@@ -15,6 +15,22 @@ import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+
+// Best-effort nudge to the edge worker to drain any queued cover emails.
+// Never throws — a failed drain leaves the rows queued and retryable, and
+// the in-app half of the notification has already landed.
+async function drainCoverEmails(gymId: string) {
+  try {
+    await supabase.functions.invoke('send-cover-notifications', {
+      body: {
+        gym_id: gymId,
+        origin: Platform.OS === 'web' ? window.location.origin : undefined,
+      },
+    });
+  } catch {
+    // Non-fatal by design.
+  }
+}
 
 type MyRequest = {
   id: string;
@@ -38,6 +54,22 @@ export default function CoverScreen() {
   const [error, setError] = useState<string | null>(null);
   const canRequest = useCan('can_request_cover');
   const canClaim = useCan('can_claim_cover');
+
+  // Opening this screen IS reading the cover notifications — everything
+  // they point at is on it. Once per mount; the ref stops a refetch or a
+  // mutation's re-render from firing it again.
+  const marked = useRef(false);
+  useEffect(() => {
+    if (marked.current || !membership?.gymId) return;
+    marked.current = true;
+    supabase
+      .rpc('mark_cover_notifications_read', { p_gym_id: membership.gymId })
+      .then(() =>
+        queryClient.invalidateQueries({
+          queryKey: ['unread-cover-notifications'],
+        }),
+      );
+  }, [membership?.gymId, queryClient]);
 
   const offersQuery = useQuery({
     queryKey: ['cover-offers', membership?.gymId],
@@ -109,6 +141,7 @@ export default function CoverScreen() {
       setError(null);
       setPickerOpen(false);
       setNotes('');
+      void drainCoverEmails(membership!.gymId);
       queryClient.invalidateQueries({ queryKey: ['cover-offers'] });
       queryClient.invalidateQueries({ queryKey: ['my-cover-requests'] });
     },
@@ -135,6 +168,7 @@ export default function CoverScreen() {
       setError(null);
       setRangeOpen(false);
       setNotes('');
+      void drainCoverEmails(membership!.gymId);
       queryClient.invalidateQueries({ queryKey: ['cover-offers'] });
       queryClient.invalidateQueries({ queryKey: ['my-cover-requests'] });
     },

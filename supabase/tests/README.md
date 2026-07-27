@@ -38,6 +38,8 @@ pg_prove --ext .sql supabase/tests/
 | `cover_partial_cancellable.sql` | A partially-claimed request can still be withdrawn; the claimed offer and its coach swap survive. |
 | `cover_request_header_rollup.sql` | Cancelling the last class expires a per-class request but leaves a still-future standing window open. Also the first coverage `request_cover` has ever had — it caught the `min(uuid)` bug fixed in 0164. |
 | `cover_requests_expire.sql` | `expire_cover_requests` sweeps dead offers, expires spent requests and windows, and leaves live ones alone. |
+| `cover_notifications.sql` | One digest per recipient per request (never per class); requester and members excluded; in-app delivered on insert while email queues; claiming notifies the requester; RLS keeps a coach out of another coach's notifications. |
+| `cover_notifications_suppression.sql` | A blanket email unsubscribe suppresses the cover email but not the in-app row, and records why. A coach disqualified for every class type in the request is not notified at all. |
 | `admin_cannot_invite_admin.sql` | Admin caller passing `p_role = 'admin'` (or `'owner'`) to `create_invite` raises. Owner can mint an admin. |
 | `assignee_cannot_reassign_task.sql` | Task assignees cannot direct-`UPDATE` rows on `coach_tasks` (RLS rejects). The `complete_task` RPC succeeds. |
 | `tag_rules_cross_gym.sql` | Same-label rules in two gyms don't collide; `apply_tag_rules(gymA)` does not write any tags in gymB; an owner in gymA cannot `SELECT` any tag from gymB. |

@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
@@ -34,6 +34,7 @@ type Props = {
 export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
   const colors = useThemeColors();
   const session = useSession();
+  const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +47,18 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
     },
     onSuccess: () => {
       setError(null);
+      // Tell the requester their class is covered. Best-effort: the
+      // in-app half already landed and the email stays queued.
+      if (membership?.gymId) {
+        void supabase.functions
+          .invoke('send-cover-notifications', {
+            body: {
+              gym_id: membership.gymId,
+              origin: Platform.OS === 'web' ? window.location.origin : undefined,
+            },
+          })
+          .catch(() => {});
+      }
       queryClient.invalidateQueries({ queryKey: ['cover-offers'] });
       queryClient.invalidateQueries({ queryKey: ['my-cover-requests'] });
     },

@@ -6,10 +6,11 @@ import { useCan } from '@/lib/useCan';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { localDayKey } from '@/lib/workout-streak';
 
-// In-app "what needs you" surfacing. No push/email — these read the same
-// data the relevant screens use, so a nav badge can total them and the
-// inbox can show them. Three sources: unread messages, injury check-ins
-// due, and classes you attended but haven't logged.
+// In-app "what needs you" surfacing, so a nav badge can total it and the
+// inbox can show it. Most sources here read the same data the relevant
+// screens use; cover is the exception — cover_notifications (0165) is a
+// real queue table, because those events also go out by email and every
+// attempt has to be logged.
 
 export type InboxUnread = {
   dm_unread: number;
@@ -147,6 +148,27 @@ export function useOpenStaffAlertsCount() {
   });
 }
 
+// Unread in-app cover notifications for the signed-in coach — cover they
+// could claim, or one of their own classes being picked up. The RPC
+// filters on auth.uid(), so it only ever counts your own.
+export function useUnreadCoverNotifications() {
+  const { data: membership } = useGymMembership();
+  const canRequestCover = useCan('can_request_cover') ?? false;
+  const canClaimCover = useCan('can_claim_cover') ?? false;
+  return useQuery({
+    queryKey: ['unread-cover-notifications', membership?.gymId],
+    enabled: !!membership?.gymId && (canRequestCover || canClaimCover),
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc(
+        'count_unread_cover_notifications',
+        { p_gym_id: membership!.gymId },
+      );
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+}
+
 // Total count behind the nav badges: unread messages + injury
 // check-ins due + classes waiting to be logged + open staff alerts.
 export function useNotificationCount(): number {
@@ -155,6 +177,7 @@ export function useNotificationCount(): number {
   const logNudge = useLogNudge();
   const openAlerts = useOpenStaffAlertsCount();
   const leadNotifications = useUnreadLeadNotifications();
+  const coverNotifications = useUnreadCoverNotifications();
   const unreadTotal =
     (unread.data?.dm_unread ?? 0) +
     (unread.data?.announcement_unread ?? 0) +
@@ -164,6 +187,7 @@ export function useNotificationCount(): number {
     dueCheckIns(injuries.data).length +
     (logNudge.data?.length ?? 0) +
     (openAlerts.data ?? 0) +
-    (leadNotifications.data ?? 0)
+    (leadNotifications.data ?? 0) +
+    (coverNotifications.data ?? 0)
   );
 }

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -21,12 +21,31 @@ import {
 } from '@/lib/messaging';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
-import { useLogNudge } from '@/lib/notifications';
+import {
+  useLogNudge,
+  useUnreadCoverNotifications,
+} from '@/lib/notifications';
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { useThemeColors } from '@/lib/theme';
 import type { StaffAlertKind } from '@/types/database';
 
-type Tab = 'direct' | 'announcements' | 'classes' | 'alerts';
+type Tab = 'direct' | 'announcements' | 'classes' | 'alerts' | 'cover';
+
+type CoverNotificationRow = {
+  id: string;
+  kind: 'cover_requested' | 'cover_claimed';
+  request_id: string;
+  offer_id: string | null;
+  created_at: string;
+  read_at: string | null;
+  cover_requests: {
+    range_start: string;
+    range_end: string;
+    requested_start: string | null;
+    requested_end: string | null;
+    requester: { full_name: string | null } | null;
+  } | null;
+};
 
 type StaffAlertRow = {
   id: string;
@@ -80,6 +99,10 @@ export default function Inbox() {
   const canPostAnnouncements = useCan('can_post_announcements');
   const canBroadcast = useCan('can_broadcast_to_class');
   const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
+  const canRequestCover = useCan('can_request_cover') ?? false;
+  const canClaimCover = useCan('can_claim_cover') ?? false;
+  const canCover = canRequestCover || canClaimCover;
+  const unreadCover = useUnreadCoverNotifications();
   const queryClient = useQueryClient();
 
   const unread = useQuery({
@@ -161,6 +184,15 @@ export default function Inbox() {
               onPress={() => setTab('alerts')}
             />
           ) : null}
+          {canCover ? (
+            <TabChip
+              label={`Cover${
+                (unreadCover.data ?? 0) > 0 ? ` · ${unreadCover.data}` : ''
+              }`}
+              active={tab === 'cover'}
+              onPress={() => setTab('cover')}
+            />
+          ) : null}
         </View>
 
         {tab === 'direct' ? (
@@ -180,6 +212,8 @@ export default function Inbox() {
             role={role}
             onChange={refreshUnread}
           />
+        ) : tab === 'cover' ? (
+          <CoverTab gymId={membership.gymId} />
         ) : (
           <AlertsTab gymId={membership.gymId} />
         )}
@@ -675,6 +709,105 @@ function LogNudgeBanner() {
         iconSide="right"
         onPress={() => router.push('/track' as never)}
       />
+    </View>
+  );
+}
+
+// Cover notifications (0165). Opening the tab marks them read — every
+// one of them points at the same place, and that place is one tap away.
+function CoverTab({ gymId }: { gymId: string }) {
+  const colors = useThemeColors();
+  const queryClient = useQueryClient();
+  const marked = useRef(false);
+
+  const rows = useQuery({
+    queryKey: ['cover-notifications', gymId],
+    queryFn: async (): Promise<CoverNotificationRow[]> => {
+      const { data, error } = await supabase
+        .from('cover_notifications')
+        .select(
+          'id, kind, request_id, offer_id, created_at, read_at, cover_requests(range_start, range_end, requested_start, requested_end, requester:profiles!requested_by(full_name))',
+        )
+        .eq('gym_id', gymId)
+        .eq('channel', 'in_app')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as unknown as CoverNotificationRow[];
+    },
+  });
+
+  useEffect(() => {
+    if (marked.current || rows.data === undefined) return;
+    marked.current = true;
+    supabase
+      .rpc('mark_cover_notifications_read', { p_gym_id: gymId })
+      .then(() =>
+        queryClient.invalidateQueries({
+          queryKey: ['unread-cover-notifications'],
+        }),
+      );
+  }, [rows.data, gymId, queryClient]);
+
+  const list = rows.data ?? [];
+
+  return (
+    <View className="gap-3">
+      {rows.isLoading ? (
+        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+      ) : list.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400">
+          Nothing yet. You'll hear here when a coach needs cover, or when
+          someone picks up one of your classes.
+        </Text>
+      ) : (
+        list.map((n) => {
+          const req = n.cover_requests;
+          const from = req?.requested_start ?? req?.range_start;
+          const to = req?.requested_end ?? req?.range_end;
+          const window =
+            from && to
+              ? formatDate(from) === formatDate(to)
+                ? formatDate(from)
+                : `${formatDate(from)} → ${formatDate(to)}`
+              : '';
+          const claimed = n.kind === 'cover_claimed';
+          return (
+            <View
+              key={n.id}
+              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name={claimed ? 'checkmark-circle' : 'swap-horizontal-outline'}
+                  size={18}
+                  color={colors.primary}
+                />
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                  {claimed
+                    ? 'One of your classes is covered'
+                    : `${req?.requester?.full_name ?? 'A coach'} needs cover`}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {timeAgo(n.created_at)}
+                </Text>
+              </View>
+              {window ? (
+                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                  {window}
+                </Text>
+              ) : null}
+              <View className="flex-row">
+                <ChipButton
+                  tone="primary"
+                  label={claimed ? 'View your requests' : 'See what needs cover'}
+                  icon="open-outline"
+                  onPress={() => router.push('/management/cover' as never)}
+                />
+              </View>
+            </View>
+          );
+        })
+      )}
     </View>
   );
 }
