@@ -133,14 +133,24 @@ export function AccountScreen() {
       const phoneChanged = nextPhone !== (profile?.phone ?? '');
       const contactChanged = nextContact !== (myEmergencyContact.data ?? '');
 
-      if (nameChanged || phoneChanged) {
+      if (nameChanged) {
         const { error } = await supabase
           .from('profiles')
-          .update({
-            ...(nameChanged ? { full_name: name } : {}),
-            ...(phoneChanged ? { phone: nextPhone || null } : {}),
-          })
+          .update({ full_name: name })
           .eq('id', session.user.id);
+        if (error) throw error;
+      }
+
+      // Separate table since 0179 — phone is not something the rest of the
+      // gym gets to read off the profile row.
+      if (phoneChanged) {
+        const { error } = await supabase
+          .from('member_contact_details')
+          .upsert(
+            { profile_id: session.user.id, phone: nextPhone || null,
+              updated_at: new Date().toISOString() },
+            { onConflict: 'profile_id' },
+          );
         if (error) throw error;
       }
       if (emailChanged) {

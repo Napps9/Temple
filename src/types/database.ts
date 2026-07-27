@@ -1171,7 +1171,6 @@ export type Database = {
           id: string;
           full_name: string | null;
           avatar_url: string | null;
-          phone: string | null;
           date_of_birth: string | null;
           managed: boolean;
           created_at: string;
@@ -1180,7 +1179,6 @@ export type Database = {
           id: string;
           full_name?: string | null;
           avatar_url?: string | null;
-          phone?: string | null;
           date_of_birth?: string | null;
           managed?: boolean;
           created_at?: string;
@@ -1189,7 +1187,6 @@ export type Database = {
           id: string;
           full_name: string | null;
           avatar_url: string | null;
-          phone: string | null;
           date_of_birth: string | null;
           managed: boolean;
           created_at: string;
@@ -1772,6 +1769,23 @@ export type Database = {
         Update: Partial<{
           plan_id: string;
           class_type_id: string;
+        }>;
+        Relationships: [];
+      };
+      member_contact_details: {
+        Row: {
+          profile_id: string;
+          phone: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          phone: string | null;
+          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -4795,6 +4809,10 @@ export type Database = {
           recurrences_split: number;
           recurrences_unchanged: number;
         };
+      };
+      gym_member_contacts: {
+        Args: { p_gym_id: string };
+        Returns: { profile_id: string; email: string | null; phone: string | null }[];
       };
       gym_member_contact: {
         Args: { p_gym_id: string; p_profile_id: string };

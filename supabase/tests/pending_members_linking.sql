@@ -99,10 +99,10 @@ select is(
 );
 
 select is(
-  (select phone from public.profiles
-    where id = current_setting('test.ada')::uuid),
+  (select phone from public.member_contact_details
+    where profile_id = current_setting('test.ada')::uuid),
   '07700900123',
-  'pending.phone is written onto the new profile'
+  'pending.phone lands on the member''s own contact row, not on profiles'
 );
 
 select is(

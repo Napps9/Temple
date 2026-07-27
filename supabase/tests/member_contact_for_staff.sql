@@ -24,7 +24,8 @@ begin
   perform _test_mk_membership(v_gym,   v_member, 'member');
   perform _test_mk_membership(v_other, v_out,    'owner');
 
-  update public.profiles set phone = '07700 900123' where id = v_member;
+  insert into public.member_contact_details (profile_id, phone)
+    values (v_member, '07700 900123');
 
   perform set_config('test.gym',    v_gym::text,    true);
   perform set_config('test.other',  v_other::text,  true);

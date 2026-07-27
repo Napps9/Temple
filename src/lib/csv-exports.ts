@@ -14,7 +14,7 @@ type MemberRow = {
   is_expiring_soon: boolean;
   is_expired: boolean;
   days_until_expiry: number | null;
-  profiles: { full_name: string | null; phone: string | null } | null;
+  profiles: { full_name: string | null } | null;
 };
 
 type MembershipRow = {
@@ -52,14 +52,36 @@ export function useExportMembersCsv() {
       const { data, error } = await supabase
         .from('v_member_cohort')
         .select(
-          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name, phone)',
+          'profile_id, joined_at, is_intro, is_paying, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name)',
         )
         .eq('gym_id', membership.gymId);
       if (error) throw error;
+
+      // Phone comes from the capability-gated RPC, not an embedded join.
+      // It used to ride out on profiles under can_export_members alone —
+      // a permission about exporting, not about seeing someone's number.
+      // A caller without can_see_full_pii gets an empty column, and one
+      // without any contact capability gets an error we swallow, because a
+      // member export minus a phone column is still a useful export.
+      const phones = new Map<string, string>();
+      const { data: contacts } = await supabase.rpc('gym_member_contacts', {
+        p_gym_id: membership.gymId,
+      });
+      for (const c of (contacts ?? []) as {
+        profile_id: string;
+        phone: string | null;
+      }[]) {
+        if (c.phone) phones.set(c.profile_id, c.phone);
+      }
+
       const rows = (data ?? []) as unknown as MemberRow[];
       const csv = buildCsv<MemberRow>(rows, [
         { key: 'name', header: 'Name', format: (r) => r.profiles?.full_name ?? '' },
-        { key: 'phone', header: 'Phone', format: (r) => r.profiles?.phone ?? '' },
+        {
+          key: 'phone',
+          header: 'Phone',
+          format: (r) => phones.get(r.profile_id) ?? '',
+        },
         { key: 'joined_at', header: 'Joined', format: (r) => r.joined_at.slice(0, 10) },
         { key: 'is_active', header: 'Active', format: (r) => (r.is_active ? 'yes' : 'no') },
         { key: 'is_intro', header: 'Intro', format: (r) => (r.is_intro ? 'yes' : 'no') },

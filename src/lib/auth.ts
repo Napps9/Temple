@@ -143,16 +143,24 @@ export function useMyProfile() {
     queryKey: ['my-profile', session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url, phone')
-        .eq('id', session!.user.id)
-        .single();
+      // Phone lives on member_contact_details (0179) — off profiles, which
+      // every gym-mate can read. Self-only RLS there, so this is one row.
+      const [{ data, error }, { data: contact }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', session!.user.id)
+          .single(),
+        supabase
+          .from('member_contact_details')
+          .select('phone')
+          .eq('profile_id', session!.user.id)
+          .maybeSingle(),
+      ]);
       if (error) throw error;
-      return data as {
-        full_name: string | null;
-        avatar_url: string | null;
-        phone: string | null;
+      return {
+        ...(data as { full_name: string | null; avatar_url: string | null }),
+        phone: contact?.phone ?? null,
       };
     },
   });
