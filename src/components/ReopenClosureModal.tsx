@@ -3,18 +3,16 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import {
+  dayTickState,
+  formatDayLabel,
+  groupSlotsByDay,
+  slotKey,
+  toggleDay,
+  type ReopenSlot,
+} from '@/lib/closure-reopen';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-
-// A slot is identified by the pattern that produces it, not by a session
-// id — the classes being reopened do not exist yet.
-export type ReopenSlot = {
-  recurrence_id: string;
-  starts_at: string;
-  class_type_name: string;
-  duration_minutes: number;
-  capacity: number;
-};
 
 type Props = {
   visible: boolean;
@@ -26,7 +24,22 @@ type Props = {
   error?: string | null;
 };
 
-const slotKey = (s: ReopenSlot) => `${s.recurrence_id}@${s.starts_at}`;
+function Tick({ state }: { state: 'all' | 'some' | 'none' }) {
+  return (
+    <View
+      className={`w-5 h-5 rounded border items-center justify-center ${
+        state === 'none'
+          ? 'border-gray-300 dark:border-gray-600'
+          : 'bg-primary border-primary'
+      }`}>
+      {state === 'all' ? (
+        <Text className="text-white text-center text-xs leading-5">✓</Text>
+      ) : state === 'some' ? (
+        <View className="w-2.5 h-0.5 bg-white rounded-full" />
+      ) : null}
+    </View>
+  );
+}
 
 export function ReopenClosureModal({
   visible,
@@ -56,10 +69,11 @@ export function ReopenClosureModal({
   });
 
   const slots = slotsQuery.data ?? [];
+  const days = groupSlotsByDay(slots);
   const selected = slots.filter((s) => !excluded.has(slotKey(s)));
   const lifts = slots.length > 0 && excluded.size === 0;
 
-  const toggle = (s: ReopenSlot) => {
+  const toggleSlot = (s: ReopenSlot) => {
     setExcluded((prev) => {
       const next = new Set(prev);
       const k = slotKey(s);
@@ -84,12 +98,25 @@ export function ReopenClosureModal({
             Reopen classes
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            {closureLabel}. Pick the classes to put back on the calendar.
-            Bookings are not restored — those members were refunded and will
-            need to book again.
+            {closureLabel}. Pick the classes to put back on the calendar. Tap a
+            date to take the whole day. Anyone who lost a booking to a class
+            you bring back is told they need to book it again.
           </Text>
 
-          <ScrollView className="max-h-64">
+          {slots.length > 0 ? (
+            <View className="flex-row gap-4">
+              <Pressable onPress={() => setExcluded(new Set())} hitSlop={6}>
+                <Text className="text-primary text-sm font-medium">Select all</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setExcluded(new Set(slots.map(slotKey)))}
+                hitSlop={6}>
+                <Text className="text-primary text-sm font-medium">Select none</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          <ScrollView className="max-h-72">
             {slotsQuery.isLoading ? (
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
                 Working out what would come back…
@@ -104,45 +131,52 @@ export function ReopenClosureModal({
                 put back. Reopening will just end the closure.
               </Text>
             ) : (
-              <View className="gap-2">
-                {slots.map((s) => {
-                  const checked = !excluded.has(slotKey(s));
-                  const startsAt = new Date(s.starts_at);
+              <View className="gap-3">
+                {days.map((day) => {
+                  const state = dayTickState(day, excluded);
                   return (
-                    <Pressable
-                      key={slotKey(s)}
-                      onPress={() => toggle(s)}
-                      className="flex-row items-center gap-3 p-2 rounded-lg">
-                      <View
-                        className={`w-5 h-5 rounded border ${
-                          checked
-                            ? 'bg-primary border-primary'
-                            : 'border-gray-300 dark:border-gray-600'
-                        }`}>
-                        {checked ? (
-                          <Text className="text-white text-center text-xs leading-5">
-                            ✓
-                          </Text>
-                        ) : null}
-                      </View>
-                      <View className="flex-1">
-                        <Text className="text-gray-900 dark:text-gray-50">
-                          {s.class_type_name}
+                    <View key={day.date} className="gap-1">
+                      <Pressable
+                        onPress={() => setExcluded((prev) => toggleDay(day, prev))}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: state === 'all' }}
+                        accessibilityLabel={`${formatDayLabel(day.date)}, ${
+                          day.slots.length
+                        } classes`}
+                        className="flex-row items-center gap-3 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <Tick state={state} />
+                        <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm font-medium">
+                          {formatDayLabel(day.date)}
                         </Text>
                         <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                          {startsAt.toLocaleDateString(undefined, {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                          })}{' '}
-                          at{' '}
-                          {startsAt.toLocaleTimeString(undefined, {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {day.slots.length}
                         </Text>
-                      </View>
-                    </Pressable>
+                      </Pressable>
+
+                      {day.slots.map((s) => {
+                        const checked = !excluded.has(slotKey(s));
+                        const startsAt = new Date(s.starts_at);
+                        return (
+                          <Pressable
+                            key={slotKey(s)}
+                            onPress={() => toggleSlot(s)}
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked }}
+                            className="flex-row items-center gap-3 pl-6 pr-2 py-1.5 rounded-lg">
+                            <Tick state={checked ? 'all' : 'none'} />
+                            <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm">
+                              {s.class_type_name}
+                            </Text>
+                            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                              {startsAt.toLocaleTimeString(undefined, {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
                   );
                 })}
               </View>

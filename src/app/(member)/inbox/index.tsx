@@ -519,7 +519,7 @@ function AnnouncementsTab({
 
 type ClassChangeRow = {
   id: string;
-  kind: 'gym_closed' | 'classes_rescheduled';
+  kind: 'gym_closed' | 'classes_rescheduled' | 'classes_reopened';
   body: string;
   created_at: string;
   read_at: string | null;
@@ -575,7 +575,11 @@ function ClassChangeNotices({
           <View className="flex-row items-center gap-2">
             <Ionicons name="alert-circle" size={18} color="#D97706" />
             <Text className="text-amber-800 dark:text-amber-200 font-semibold flex-1">
-              {n.kind === 'gym_closed' ? 'Gym closed' : 'Class times changed'}
+              {n.kind === 'gym_closed'
+                ? 'Gym closed'
+                : n.kind === 'classes_reopened'
+                  ? 'Classes are back on'
+                  : 'Class times changed'}
             </Text>
           </View>
           <Text className="text-amber-900 dark:text-amber-100 text-sm">

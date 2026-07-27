@@ -1946,12 +1946,36 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      closure_cancelled_bookings: {
+        Row: {
+          id: string;
+          closure_id: string;
+          gym_id: string;
+          profile_id: string;
+          recurrence_id: string | null;
+          starts_at: string;
+          class_type_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          closure_id: string;
+          gym_id: string;
+          profile_id: string;
+          recurrence_id?: string | null;
+          starts_at: string;
+          class_type_id?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<{ recurrence_id: string | null }>;
+        Relationships: [];
+      };
       class_change_notifications: {
         Row: {
           id: string;
           gym_id: string;
           closure_id: string | null;
-          kind: 'gym_closed' | 'classes_rescheduled';
+          kind: 'gym_closed' | 'classes_rescheduled' | 'classes_reopened';
           channel: 'email' | 'in_app';
           recipient: string | null;
           recipient_profile_id: string | null;
@@ -1967,7 +1991,7 @@ export type Database = {
           id?: string;
           gym_id: string;
           closure_id?: string | null;
-          kind: 'gym_closed' | 'classes_rescheduled';
+          kind: 'gym_closed' | 'classes_rescheduled' | 'classes_reopened';
           channel: 'email' | 'in_app';
           recipient?: string | null;
           recipient_profile_id?: string | null;
@@ -4615,6 +4639,7 @@ export type Database = {
         Returns: {
           recurrence_id: string;
           starts_at: string;
+          local_date: string;
           class_type_name: string;
           duration_minutes: number;
           capacity: number;
@@ -4625,7 +4650,7 @@ export type Database = {
           p_closure_id: string;
           p_exclude: { recurrence_id: string; starts_at: string }[] | null;
         };
-        Returns: { restored: number; lifted: boolean };
+        Returns: { restored: number; lifted: boolean; notified: number };
       };
       bulk_edit_sessions: {
         Args: {

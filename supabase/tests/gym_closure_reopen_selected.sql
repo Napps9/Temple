@@ -79,7 +79,7 @@ select results_eq(
   $$ select (public.reopen_closure(
        current_setting('test.closure')::uuid,
        current_setting('test.exclude')::jsonb)) $$,
-  $$ values ('{"lifted": false, "restored": 0}'::jsonb) $$,
+  $$ values ('{"lifted": false, "restored": 0, "notified": 0}'::jsonb) $$,
   'the closure stays live, and re-running restores nothing'
 );
 

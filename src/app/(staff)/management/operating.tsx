@@ -10,6 +10,7 @@ import { DurationField } from '@/components/DurationField';
 import { ReopenClosureModal } from '@/components/ReopenClosureModal';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
+import { drainClassChangeEmails } from '@/lib/class-change-notifications';
 import { errorMessage } from '@/lib/errors';
 import type { Discipline } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
@@ -753,6 +754,7 @@ function ClosuresCard() {
     },
     onSuccess: () => {
       setReopening(null);
+      if (membership?.gymId) void drainClassChangeEmails(membership.gymId);
       queryClient.invalidateQueries({ queryKey: ['closure-reopen-preview'] });
       queryClient.invalidateQueries({ queryKey: ['gym-closures-live'] });
       queryClient.invalidateQueries({ queryKey: ['gym-closures'] });

@@ -42,9 +42,34 @@ function json(body: unknown, status = 200): Response {
 
 type Row = {
   id: string;
-  kind: 'gym_closed' | 'classes_rescheduled';
+  kind: 'gym_closed' | 'classes_rescheduled' | 'classes_reopened';
   recipient: string | null;
   body: string;
+};
+
+const COPY: Record<
+  Row['kind'],
+  { title: string; tail: (gym: string) => string; button: string }
+> = {
+  gym_closed: {
+    title: 'The gym is closed',
+    tail: (gym) =>
+      `Nothing to do — any credits you used have already been returned to your account at ${gym}.`,
+    button: 'See the timetable',
+  },
+  classes_rescheduled: {
+    title: 'Your class times have changed',
+    tail: (gym) => `Open Temple to check the new times for your bookings at ${gym}.`,
+    button: 'Check your bookings',
+  },
+  // The one kind that needs an action: the credit went back when the gym
+  // shut, so the class returning does nothing unless they rebook it.
+  classes_reopened: {
+    title: 'Your class is back on',
+    tail: (gym) =>
+      `Your place was not held while ${gym} was closed, so book again to get it back.`,
+    button: 'Book your class',
+  },
 };
 
 function emailHtml(
@@ -53,23 +78,15 @@ function emailHtml(
   body: string,
   link: string,
 ): string {
-  const closed = kind === 'gym_closed';
+  const copy = COPY[kind] ?? COPY.classes_rescheduled;
   return templeEmailHtml({
-    title: closed ? 'The gym is closed' : 'Your class times have changed',
+    title: copy.title,
     preheader: body.slice(0, 140),
     bodyHtml: `<p style="margin:0 0 18px;">${escapeHtml(body)}</p>
       <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#64748b;">
-        ${
-          closed
-            ? `Nothing to do — any credits you used have already been returned to your account at ${escapeHtml(
-                gymName,
-              )}.`
-            : `Open Temple to check the new times for your bookings at ${escapeHtml(
-                gymName,
-              )}.`
-        }
+        ${escapeHtml(copy.tail(gymName))}
       </p>`,
-    button: { label: closed ? 'See the timetable' : 'Check your bookings', url: link },
+    button: { label: copy.button, url: link },
     footerNote:
       "You're receiving this because you had a class booked at this gym.",
   });
@@ -171,7 +188,9 @@ Deno.serve(async (req: Request) => {
     const subject =
       r.kind === 'gym_closed'
         ? `${gymName} is closed — your classes have been cancelled`
-        : `Your class times at ${gymName} have changed`;
+        : r.kind === 'classes_reopened'
+          ? `Your classes at ${gymName} are back on — book again`
+          : `Your class times at ${gymName} have changed`;
 
     try {
       const res = await fetch('https://api.resend.com/emails', {

@@ -568,10 +568,15 @@ The staff area shows up when `can_access_staff_area` is on.
     fires on.
 - **Reopening a closure, class by class** — the **Closures** card on Gym
   settings opens a picker of the classes that would come back, ticked by
-  default. The classes do not exist to be listed (the closure deleted
-  them), so `preview_closure_reopen` recomputes them from the schedules —
-  and the restore inserts from that same function, so the list ticked is
-  the list created.
+  default and **grouped by day**, so a fortnight of a busy timetable is
+  tickable a day at a time (plus Select all / none). The day boundary is
+  `preview_closure_reopen`'s `local_date`, resolved in the gym's timezone,
+  not derived client-side — otherwise a staff member signed in from
+  another country groups onto the wrong day. Grouping and tick logic are
+  pure functions in `src/lib/closure-reopen.ts`. The classes do not exist
+  to be listed (the closure deleted them), so `preview_closure_reopen`
+  recomputes them from the schedules — and the restore inserts from that
+  same function, so the list ticked is the list created.
   - **Everything ticked** ends the closure: `reopen_closure` rewinds each
     recurrence's materialisation cursor over the window and re-extends,
     and the dates are open for new classes again.
@@ -584,7 +589,16 @@ The staff area shows up when `can_access_staff_area` is on.
     transaction-local `temple.restoring_closed_class` GUC, the same device
     as `temple.skip_booking_refund` (0065).
   - Bookings are never restored by either path — those members were
-    refunded and have to book again, which the modal says plainly.
+    refunded and have to book again, and **they are told** (0172,
+    `classes_reopened`). This is the notification that needs an action
+    from the member, so its email says so and links to booking. It works
+    because `close_gym_dates` snapshots the bookings it cancels into
+    **`closure_cancelled_bookings`** keyed on `(recurrence_id, starts_at)`
+    — the pattern slot, not the session id, because the session it deletes
+    and the one that comes back are different rows. One digest per member
+    per reopen, keyed on a digest of the restored slots, so a second
+    reopen bringing back different classes tells them again while a retry
+    of the same one does not.
 - **Class-change notifications** — closures and bulk reschedules tell
   the affected members: one in-app row (delivered instantly, shown in
   the Inbox Classes tab and counted by `inbox_unread_summary`) plus one
