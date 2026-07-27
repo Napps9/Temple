@@ -3284,6 +3284,7 @@ export type Database = {
           compiled_html: string | null;
           compiled_text: string | null;
           scheduled_for: string | null;
+          subject_variants: string[];
           sent_at: string | null;
           recipient_count: number;
           created_at: string;
@@ -3306,12 +3307,14 @@ export type Database = {
           compiled_html?: string | null;
           compiled_text?: string | null;
           scheduled_for?: string | null;
+          subject_variants?: string[];
           sent_at?: string | null;
           recipient_count?: number;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<{
+          subject_variants: string[];
           id: string;
           gym_id: string;
           created_by: string | null;
@@ -5025,6 +5028,16 @@ export type Database = {
       comms_audience_sample: {
         Args: { p_gym_id: string; p_definition: Json; p_limit?: number };
         Returns: { profile_id: string; full_name: string | null; email: string }[];
+      };
+      comms_variant_stats: {
+        Args: { p_campaign_id: string };
+        Returns: {
+          variant: number;
+          subject: string | null;
+          recipients: number;
+          delivered: number;
+          opened: number;
+        }[];
       };
       comms_schedule_campaign: {
         Args: {

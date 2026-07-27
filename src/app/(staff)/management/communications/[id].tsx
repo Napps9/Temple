@@ -134,6 +134,9 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
   const [title, setTitle] = useState(campaign.title);
   const [subject, setSubject] = useState(campaign.subject);
+  const [variants, setVariants] = useState<string[]>(
+    (campaign.subject_variants as string[] | null) ?? [],
+  );
   const [preheader, setPreheader] = useState(campaign.preheader);
   const [fromName, setFromName] = useState(campaign.from_name ?? '');
   const history = useEmailHistory(() =>
@@ -187,6 +190,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
           .update({
             title: title.trim() || 'Untitled campaign',
             subject,
+            subject_variants: variants.filter((v) => v.trim().length > 0),
             preheader,
             from_name: fromName.trim() || null,
             design: document as unknown as Json,
@@ -205,7 +209,18 @@ function EditorView({ campaign }: { campaign: Campaign }) {
           void queryClient.invalidateQueries({ queryKey: ['comms-campaigns'] });
         }
       },
-    [title, subject, preheader, fromName, document, audience, topicId, campaign.id, queryClient],
+    [
+      title,
+      subject,
+      variants,
+      preheader,
+      fromName,
+      document,
+      audience,
+      topicId,
+      campaign.id,
+      queryClient,
+    ],
   );
 
   // Save immediately (used by the explicit Save buttons), cancelling any
@@ -409,12 +424,53 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             placeholder="June newsletter"
           />
           <Input
-            label="Subject line"
+            label={variants.length > 0 ? 'Subject line A' : 'Subject line'}
             value={subject}
             onChangeText={setSubject}
             autoCapitalize="sentences"
             placeholder="What members see in their inbox"
           />
+          {/* A/B subject test. Recipients are split evenly and
+              deterministically at snapshot time, so a retry cannot put two
+              different subjects in front of the same person. */}
+          {variants.map((v, i) => (
+            <View key={`variant-${i}`} className="flex-row items-end gap-2">
+              <View className="flex-1">
+                <Input
+                  label={`Subject line ${String.fromCharCode(66 + i)}`}
+                  value={v}
+                  onChangeText={(next) =>
+                    setVariants((prev) =>
+                      prev.map((p, j) => (j === i ? next : p)),
+                    )
+                  }
+                  autoCapitalize="sentences"
+                  placeholder="A different way of saying it"
+                />
+              </View>
+              <ChipButton
+                tone="neutral"
+                icon="close-outline"
+                label="Remove"
+                onPress={() =>
+                  setVariants((prev) => prev.filter((_, j) => j !== i))
+                }
+              />
+            </View>
+          ))}
+          {variants.length < 3 ? (
+            <ChipButton
+              className="self-start"
+              tone="neutral"
+              icon="git-branch-outline"
+              label={
+                variants.length === 0
+                  ? 'Test another subject line'
+                  : 'Add another'
+              }
+              onPress={() => setVariants((prev) => [...prev, ''])}
+            />
+          ) : null}
           <Input
             label="Preview text (optional)"
             value={preheader}
@@ -723,6 +779,23 @@ function ReportView({ campaign }: { campaign: Campaign }) {
     },
   });
 
+  const variantStats = useQuery({
+    queryKey: ['comms-variant-stats', campaign.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('comms_variant_stats', {
+        p_campaign_id: campaign.id,
+      });
+      if (error) throw error;
+      return (data ?? []) as {
+        variant: number;
+        subject: string | null;
+        recipients: number;
+        delivered: number;
+        opened: number;
+      }[];
+    },
+  });
+
   const s = stats.data;
   const reached = s?.sent ?? 0;
   const openRate = reached > 0 ? Math.round(((s?.opened ?? 0) / reached) * 100) : 0;
@@ -790,6 +863,52 @@ function ReportView({ campaign }: { campaign: Campaign }) {
             This campaign was recorded as sent to {s?.simulated} members, but no
             email actually left the building — connect a sending domain to
             deliver for real and unlock open / click analytics.
+          </Text>
+        </View>
+      ) : null}
+
+      {/* Subject A/B result. Open rate only: a click-rate difference
+          between two subject lines is a difference in who opened,
+          measured twice. */}
+      {(variantStats.data ?? []).length > 1 ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            Subject line test
+          </Text>
+          {(variantStats.data ?? []).map((v, i) => {
+            const rate =
+              v.delivered > 0 ? Math.round((v.opened / v.delivered) * 100) : 0;
+            const best = Math.max(
+              ...(variantStats.data ?? []).map((x) =>
+                x.delivered > 0 ? x.opened / x.delivered : 0,
+              ),
+            );
+            const won = v.delivered > 0 && v.opened / v.delivered === best;
+            return (
+              <View
+                key={v.variant}
+                className="flex-row items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-2">
+                <Text className="text-gray-400 dark:text-gray-500 text-xs w-4">
+                  {String.fromCharCode(65 + i)}
+                </Text>
+                <Text
+                  className="flex-1 text-gray-700 dark:text-gray-200 text-sm"
+                  numberOfLines={2}>
+                  {v.subject ?? '(no subject)'}
+                </Text>
+                <Text
+                  className={`text-sm font-semibold ${
+                    won
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                  {fullySimulated ? '—' : `${rate}%`}
+                </Text>
+              </View>
+            );
+          })}
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            Open rate per subject, from an even split of the audience.
           </Text>
         </View>
       ) : null}

@@ -188,6 +188,16 @@ rental, or a **physical subscription box** shipped every cycle.
 
 ### Tracking & training
 
+- **Per-gym weight unit** — weights are stored in kilograms and displayed
+  in the gym's unit (`gyms.weight_unit`, default `kg`; owner-gated
+  `set_gym_weight_unit`, `useGymWeightUnit`, Manage → Settings). Storage
+  was unit-tagged and never normalised until 0181: the CSV importer wrote
+  `lb` through unconverted while every comparator — `bestOf`, the PR
+  badge, both leaderboards, the gym-wide trends — ranked raw numerics, so
+  a 315 lb import outranked a 200 kg lift and then suppressed that
+  member's own later PRs. The importer still accepts `lb` and converts on
+  the way in; existing rows were backfilled, including imports staged in
+  `pending_member_workouts.payload` for members who had not signed up yet.
 - **Per-gym discipline (CrossFit vs Hyrox)** — a gym runs Track in its
   training flavour, set by the owner in Manage → Settings → Gym settings
   (`gyms.discipline`, default `crossfit`; owner-gated `set_gym_discipline`
@@ -1593,6 +1603,22 @@ surface, reachable from the **Comms** tab on Manage or
 
 - **Campaigns list + overview** — every draft / sent campaign with a
   status badge, plus headline tiles (campaigns, sent, emails delivered).
+- **Scheduled sends** — pick a time and the campaign goes out without
+  anyone at a keyboard (`comms_schedule_campaign`, swept every 15 minutes
+  by `dispatch_scheduled_campaigns` via pg_cron, 0183/0184). The document
+  is compiled and frozen when it is scheduled, not when it sends: what
+  goes out is what was approved. Authorisation splits accordingly — the
+  capability is checked at scheduling time, while a user exists, and the
+  cron path authorises on the campaign row because `auth.uid()` is null
+  under cron.
+- **A/B subject testing** — up to four subject lines per campaign (0185).
+  Recipients are split evenly and deterministically at snapshot time, so a
+  retry cannot put two subjects in front of the same person, and the
+  report shows open rate per line — the only thing a subject can move.
+- **Hand-picked audiences and saved segments** — `{"kind":"manual"}` has
+  been in the resolver since 0044 with no UI to produce one; the builder
+  now has a member picker, and saves the current audience under a name in
+  `email_audiences` (also built in 0044, also never used).
 - **Block-based editor** — a WYSIWYG canvas built from stackable blocks
   (Heading / Text / Button / Image / Divider / Spacer). Each block
   reorders, duplicates and deletes; an inspector edits its text,
@@ -2155,47 +2181,23 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
-- **`profiles.phone` is readable by every gym-mate.**
-  `profiles_gym_member_select` (`0006:107`) is `same_gym_as_caller(id)` with
-  no capability term, and the members CSV export emits the column under
-  `can_export_members` alone. `gym_member_contact` (0178) gates phone on
-  `can_see_full_pii`, but that gates the surface, not the column — closing
-  it properly means narrowing the `profiles` policy, which touches every
-  screen that reads a name.
-- **Notification workers trust their caller.** All seven senders take
-  `gym_id` and `origin` from the request body without checking the caller
-  belongs to that gym, so an authenticated user can probe another gym's
-  queue size and, on `send-payment-notifications`, put their own URL in a
-  gym-branded payment email. Worth one pass across all of them.
-- **Health-data GDPR — owner sign-off remainder**: the DPIA and
-  lawful-basis register are drafted (`docs/legal/`) but need formal
-  owner sign-off, and the in-app legal docs carry a DRAFT banner with
-  registered-office / effective-date placeholders to fill in. The
-  engineering surround (consent gate, erasure, retention sweep + its
-  pg_cron schedule, audit log) has shipped.
-- Health-data reads hardened to definer-function access (today the
-  audit log is written by the app surfaces, not enforced at the row
-  level for raw API calls).
-- **Per-gym weight unit.** Weights are stored unit-tagged
-  (`tracked_movement_results.value_unit`,
-  `tracked_section_entries.weight_unit`) but nothing normalises them:
-  every in-app writer stores `kg` while the CSV importer (0072) writes
-  `lb` through unconverted, and both `bestOf` (`src/lib/track.ts`) and
-  the `strength_leaderboard` RPC compare raw numerics — so a 315 lb
-  deadlift currently outranks a 200 kg one on the leaderboard. The fix
-  is a `gyms.weight_unit` following the `set_gym_discipline` /
-  `set_gym_currency` pattern, kg stored canonically and converted at
-  the edges, plus the RPC. Until then the 1RM percentages card refuses
-  to show numbers for a movement with any non-kg row rather than
-  contradict the rep-max row above it.
+- **`profiles` is still one row for everyone in the gym.** `phone` moved
+  to `member_contact_details` (0179) and `same_gym_as_caller` now requires
+  the CALLER to be a current member, but `date_of_birth` still rides along
+  on a row every gym-mate can read. It is read cross-profile by
+  `useDependents` (a guardian reading their child's DOB), so moving it is
+  its own change.
 - Supabase preview branches + Vercel preview environments.
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.
-- **Communications Suite — live delivery + extras**: the send /
-  tracking / domain-authentication pipeline ships behind a pluggable
-  ESP. Going live just needs `RESEND_API_KEY` (+ `RESEND_FROM_EMAIL`
-  for the shared-domain fallback) on the `send-campaign` /
-  `sending-domain` functions; until then sends are simulated.
-  Per-gym sending domains are built (0048); scheduled sends, A/B
-  subject testing, a hand-pick-members audience picker, and a reusable
-  saved-segment / template library are scoped but not yet built.
+- **Communications Suite — live delivery.** The send / tracking /
+  domain-authentication pipeline ships behind a pluggable ESP. Going live
+  needs `RESEND_API_KEY` (+ `RESEND_FROM_EMAIL` for the shared-domain
+  fallback) on the `send-campaign` / `sending-domain` functions; until then
+  sends are simulated. Scheduled sends, A/B subject testing, the
+  hand-picked audience and saved segments have all shipped (0182-0185).
+- **Legal — a person, not engineering.** The DPIA and lawful-basis
+  register are signed (2026-07-10), the placeholders are filled and the
+  DRAFT banners are gone. What remains is a solicitor review of the ToS
+  and DPA, and the consumer cancellation flow if a paid solo tier ever
+  launches. See `docs/legal/README.md`.

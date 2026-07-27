@@ -173,7 +173,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: recipients, error: rErr } = await service
     .from('email_campaign_recipients')
-    .select('id, email, full_name')
+    .select('id, email, full_name, subject_variant')
     .eq('campaign_id', campaignId)
     .eq('status', 'queued');
   if (rErr) return json({ error: rErr.message }, 500);
@@ -192,7 +192,22 @@ Deno.serve(async (req: Request) => {
   // 1000-member gym in well under a minute.
   const CONCURRENCY = 8;
 
-  async function deliver(r: { id: string; email: string; full_name: string | null }) {
+  // Variant 0 is the campaign's own subject; the rest come off
+  // subject_variants in order. Assignment was decided and stored at
+  // snapshot time (0185) — deciding here would re-roll on a retry and put
+  // two different subjects in front of the same person.
+  const variants = (campaign.subject_variants ?? []) as string[];
+  function subjectFor(variant: number | null): string {
+    if (!variant) return campaign.subject || '(no subject)';
+    return variants[variant - 1] || campaign.subject || '(no subject)';
+  }
+
+  async function deliver(r: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    subject_variant: number | null;
+  }) {
     const unsubUrl = `${trackBase}?e=u&c=${campaignId}&r=${r.id}`;
     const nowIso = new Date().toISOString();
 
@@ -233,7 +248,7 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           from: `${fromName} <${fromAddress}>`,
           to: [r.email],
-          subject: campaign.subject || '(no subject)',
+          subject: subjectFor(r.subject_variant),
           html,
           text,
           reply_to: replyTo,
