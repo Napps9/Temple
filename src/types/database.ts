@@ -4630,6 +4630,9 @@ export type Database = {
           skipped_past: number;
           skipped_conflict: number;
           notified: number;
+          recurrences_updated: number;
+          recurrences_split: number;
+          recurrences_unchanged: number;
         };
       };
       mark_class_change_notifications_read: {

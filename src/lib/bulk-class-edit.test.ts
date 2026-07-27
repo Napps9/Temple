@@ -83,8 +83,44 @@ describe('describeBulkEditResult', () => {
         skipped_past: 0,
         skipped_conflict: 0,
         notified: 0,
+        recurrences_updated: 1,
+        recurrences_split: 0,
+        recurrences_unchanged: 0,
       }),
     ).toBe('9 classes updated.');
+  });
+
+  it('says nothing about schedules it rewrote or split', () => {
+    expect(
+      describeBulkEditResult({
+        updated: 7,
+        skipped_overbooked: 0,
+        skipped_past: 0,
+        skipped_conflict: 0,
+        notified: 0,
+        recurrences_updated: 0,
+        recurrences_split: 3,
+        recurrences_unchanged: 0,
+      }),
+    ).toBe('7 classes updated.');
+  });
+
+  it('warns when a schedule was left behind, because that change will not stick', () => {
+    expect(
+      describeBulkEditResult({
+        updated: 2,
+        skipped_overbooked: 0,
+        skipped_past: 0,
+        skipped_conflict: 0,
+        notified: 0,
+        recurrences_updated: 0,
+        recurrences_split: 0,
+        recurrences_unchanged: 1,
+      }),
+    ).toBe(
+      '2 classes updated. 1 repeating schedule was left as it is, because only ' +
+        'some of its classes were picked — editing that schedule later will undo this.',
+    );
   });
 
   it('explains each kind of skip', () => {
@@ -95,6 +131,9 @@ describe('describeBulkEditResult', () => {
         skipped_past: 1,
         skipped_conflict: 1,
         notified: 6,
+        recurrences_updated: 0,
+        recurrences_split: 1,
+        recurrences_unchanged: 0,
       }),
     ).toBe(
       '4 classes updated. 2 left alone — more members are booked in than the new capacity. ' +

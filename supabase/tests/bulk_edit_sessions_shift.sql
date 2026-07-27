@@ -40,6 +40,7 @@ begin
   v_result := public.bulk_edit_sessions(
     v_gym, v_start, v_end, null::uuid[], null::int, 45, 60);
 
+  perform set_config('test.gym',    v_gym::text,    true);
   perform set_config('test.rec',    v_rec::text,    true);
   perform set_config('test.start',  v_start::text,  true);
   perform set_config('test.end',    v_end::text,    true);
@@ -53,9 +54,12 @@ select is(
   'shifting a whole series forward hits no unique-index conflict'
 );
 
+-- Scoped by gym, not by the original recurrence id: 0170 reparents the
+-- shifted classes onto the window-scoped schedule it splits out, so the id
+-- they started under no longer owns them.
 select is(
   (select count(*)::int from public.class_sessions
-    where recurrence_id = current_setting('test.rec')::uuid
+    where gym_id = current_setting('test.gym')::uuid
       and starts_at::date between current_setting('test.start')::date
                               and current_setting('test.end')::date
       and starts_at::time in ('11:00', '12:00')),
@@ -65,7 +69,7 @@ select is(
 
 select is(
   (select count(distinct duration_minutes)::int from public.class_sessions
-    where recurrence_id = current_setting('test.rec')::uuid
+    where gym_id = current_setting('test.gym')::uuid
       and starts_at::date between current_setting('test.start')::date
                               and current_setting('test.end')::date),
   1,

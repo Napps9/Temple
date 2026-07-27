@@ -454,7 +454,11 @@ The staff area shows up when `can_access_staff_area` is on.
   under its type and adds/removes them independently (materialisation
   already expands each row, so no schema change was needed).
 - **Recurrence materialisation** — schedules turn into individual
-  sessions on the calendar, extended to a horizon.
+  sessions on the calendar, extended to a horizon. The walk is clamped
+  to `starts_on` (0170); the cursor alone used to drive it, so a
+  schedule whose `materialized_until` had been rewound behind its own
+  start date — which the class-types editor does on every save — would
+  materialise backwards over dates it does not own.
 - **Cover requests** [`can_request_cover` / `can_claim_cover`] — a
   coach can hand a class to another coach; first-claim wins; refunds
   and waitlist promotion handled correctly on cancellation. **Claims
@@ -548,6 +552,20 @@ The staff area shows up when `can_access_staff_area` is on.
     a shift into the past is skipped, and shifts are applied away from
     the direction of travel so a whole series stepping over itself never
     trips the `(recurrence_id, starts_at)` unique index.
+    **The repeating schedule is updated too** (0170), otherwise the
+    pattern and the calendar disagree and the pattern wins the next time
+    it is walked — either via the 0078 reset-on-pattern-edit trigger or
+    the class-types editor's delete-future-and-re-extend save. A window
+    covering a schedule's whole life rewrites it in place; a window
+    covering part of it **splits the schedule into up to three** (before
+    / window / after), reparenting the sessions so re-materialisation is
+    a no-op instead of a duplicate factory. Two refusals, both because
+    the alternative is a pattern that lies: a **partial selection**
+    leaves the schedule alone and says so in the result (there is no
+    recurrence for "these three Tuesdays but not that one"), and a shift
+    that would push any class **past midnight** is rejected before
+    anything is applied, since it would change which days the pattern
+    fires on.
 - **Reopening a closure** — the **Closures** card on Gym settings.
   `lift_gym_closure` rewinds each recurrence's materialisation cursor
   over the window and re-extends, so the classes come back. Bookings do

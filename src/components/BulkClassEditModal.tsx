@@ -209,7 +209,7 @@ export function BulkClassEditModal({
           <Text className="text-gray-500 dark:text-gray-400 text-sm">
             {mode === 'close'
               ? 'Every class between these dates is cancelled and credits are returned. Anything scheduled into the window later is blocked until you reopen it.'
-              : 'Change capacity, length or start time for every class between these dates. Leave a field blank to keep it as it is.'}
+              : 'Change capacity, length or start time for every class between these dates. Leave a field blank to keep it as it is. Repeating schedules are updated to match, so the change sticks — untick a class and its schedule is left alone instead.'}
           </Text>
 
           <View className="flex-row gap-3">

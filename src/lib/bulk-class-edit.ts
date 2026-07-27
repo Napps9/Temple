@@ -18,6 +18,9 @@ export type BulkEditResult = {
   skipped_past: number;
   skipped_conflict: number;
   notified: number;
+  recurrences_updated: number;
+  recurrences_split: number;
+  recurrences_unchanged: number;
 };
 
 // Blank means "leave unchanged", which is why this can't just be
@@ -94,6 +97,17 @@ export function describeBulkEditResult(result: BulkEditResult): string {
   if (result.notified > 0) {
     parts.push(
       result.notified === 1 ? '1 member told' : `${result.notified} members told`,
+    );
+  }
+  // Only worth saying when it did NOT happen. A rewritten or split schedule
+  // is the expected outcome and needs no commentary; a schedule left behind
+  // means the change will not survive the next edit to it, which the
+  // operator has to know.
+  if (result.recurrences_unchanged > 0) {
+    parts.push(
+      result.recurrences_unchanged === 1
+        ? '1 repeating schedule was left as it is, because only some of its classes were picked — editing that schedule later will undo this'
+        : `${result.recurrences_unchanged} repeating schedules were left as they are, because only some of their classes were picked — editing those schedules later will undo this`,
     );
   }
   return `${parts.join('. ')}.`;
