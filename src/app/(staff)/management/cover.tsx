@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { CoverRangeModal } from '@/components/CoverRangeModal';
 import { CoverRequestCard, type CoverOffer } from '@/components/CoverRequestCard';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -19,9 +20,12 @@ type MyRequest = {
   id: string;
   range_start: string;
   range_end: string;
+  requested_start: string | null;
+  requested_end: string | null;
   status: 'open' | 'partial' | 'claimed' | 'cancelled' | 'expired';
   notes: string | null;
   created_at: string;
+  cover_request_sessions: { claimed_by: string | null }[];
 };
 
 export default function CoverScreen() {
@@ -29,6 +33,7 @@ export default function CoverScreen() {
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [rangeOpen, setRangeOpen] = useState(false);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const canRequest = useCan('can_request_cover');
@@ -41,10 +46,14 @@ export default function CoverScreen() {
       const { data, error } = await supabase
         .from('cover_request_sessions')
         .select(
-          'id, original_coach_id, class_session_id, class_sessions(name, starts_at, duration_minutes, class_type_id, class_types(name, color)), original_coach:profiles!original_coach_id(full_name)',
+          'id, original_coach_id, class_session_id, class_sessions!inner(name, starts_at, duration_minutes, class_type_id, class_types(name, color)), original_coach:profiles!original_coach_id(full_name)',
         )
         .eq('gym_id', membership!.gymId)
-        .is('claimed_by', null);
+        .is('claimed_by', null)
+        // !inner so PostgREST filters on the embedded class rather than
+        // just nulling it — offers for classes that already ran are dead.
+        .gte('class_sessions.starts_at', new Date().toISOString())
+        .order('starts_at', { referencedTable: 'class_sessions', ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as CoverOffer[];
     },
@@ -76,12 +85,14 @@ export default function CoverScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cover_requests')
-        .select('id, range_start, range_end, status, notes, created_at')
+        .select(
+          'id, range_start, range_end, requested_start, requested_end, status, notes, created_at, cover_request_sessions(claimed_by)',
+        )
         .eq('gym_id', membership!.gymId)
         .eq('requested_by', session!.user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as MyRequest[];
+      return (data ?? []) as unknown as MyRequest[];
     },
   });
 
@@ -97,6 +108,32 @@ export default function CoverScreen() {
     onSuccess: () => {
       setError(null);
       setPickerOpen(false);
+      setNotes('');
+      queryClient.invalidateQueries({ queryKey: ['cover-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['my-cover-requests'] });
+    },
+    onError: (e) => setError(errorMessage(e, 'Could not request cover')),
+  });
+
+  const requestRange = useMutation({
+    mutationFn: async (args: {
+      start: string;
+      end: string;
+      excludeSessionIds: string[];
+    }) => {
+      const { data, error } = await supabase.rpc('request_cover_range', {
+        p_gym_id: membership!.gymId,
+        p_start: args.start,
+        p_end: args.end,
+        p_exclude_session_ids: args.excludeSessionIds,
+        p_notes: notes.trim().length > 0 ? notes.trim() : null,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      setError(null);
+      setRangeOpen(false);
       setNotes('');
       queryClient.invalidateQueries({ queryKey: ['cover-offers'] });
       queryClient.invalidateQueries({ queryKey: ['my-cover-requests'] });
@@ -131,8 +168,9 @@ export default function CoverScreen() {
             Cover
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Hand a class off to another coach. First-claim wins; offers
-            disappear from this feed the moment they're claimed.
+            Hand a class — or a whole stretch of dates — off to another
+            coach. First-claim wins; offers disappear from this feed the
+            moment they're claimed.
           </Text>
         </View>
 
@@ -147,7 +185,12 @@ export default function CoverScreen() {
             placeholder="Anything the covering coach should know"
             multiline
           />
-          <Button onPress={() => setPickerOpen(true)}>Pick classes to cover</Button>
+          <Button icon="calendar-outline" onPress={() => setRangeOpen(true)}>
+            Pick dates
+          </Button>
+          <Button variant="secondary" onPress={() => setPickerOpen(true)}>
+            Pick individual classes
+          </Button>
         </View>
 
         {error ? (
@@ -195,33 +238,49 @@ export default function CoverScreen() {
               You haven't requested cover yet.
             </Text>
           ) : (
-            (myRequestsQuery.data ?? []).map((r) => (
-              <View
-                key={r.id}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                    {formatDate(r.range_start)} → {formatDate(r.range_end)}
-                  </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase">
-                    {r.status}
-                  </Text>
-                </View>
-                {r.notes ? (
+            (myRequestsQuery.data ?? []).map((r) => {
+              const isRange = r.requested_start !== null;
+              const total = r.cover_request_sessions.length;
+              const covered = r.cover_request_sessions.filter(
+                (o) => o.claimed_by !== null,
+              ).length;
+              return (
+                <View
+                  key={r.id}
+                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      {isRange
+                        ? `${formatDate(r.requested_start)} → ${formatDate(r.requested_end)}`
+                        : `${formatDate(r.range_start)} → ${formatDate(r.range_end)}`}
+                    </Text>
+                    <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase">
+                      {r.status}
+                    </Text>
+                  </View>
                   <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                    {r.notes}
+                    {total === 0
+                      ? isRange
+                        ? 'No classes scheduled in this window yet — anything added will be offered automatically.'
+                        : 'No classes left on this request.'
+                      : `${total} ${total === 1 ? 'class' : 'classes'} · ${covered} covered`}
                   </Text>
-                ) : null}
-                {r.status === 'open' ? (
-                  <Button
-                    variant="ghost"
-                    onPress={() => cancel.mutate(r.id)}
-                    loading={cancel.isPending}>
-                    Cancel
-                  </Button>
-                ) : null}
-              </View>
-            ))
+                  {r.notes ? (
+                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      {r.notes}
+                    </Text>
+                  ) : null}
+                  {r.status === 'open' || r.status === 'partial' ? (
+                    <Button
+                      variant="ghost"
+                      onPress={() => cancel.mutate(r.id)}
+                      loading={cancel.isPending}>
+                      Cancel
+                    </Button>
+                  ) : null}
+                </View>
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -232,6 +291,13 @@ export default function CoverScreen() {
         onConfirm={(ids) => request.mutate(ids)}
         confirmLabel="Request cover"
         pending={request.isPending}
+      />
+
+      <CoverRangeModal
+        visible={rangeOpen}
+        onClose={() => setRangeOpen(false)}
+        onConfirm={(args) => requestRange.mutate(args)}
+        pending={requestRange.isPending}
       />
     </Screen>
   );

@@ -6,7 +6,7 @@
 -- admin could claim a coach's class — the bug the plan called out.
 
 begin;
-select plan(1);
+select plan(2);
 
 \ir _helpers.psql
 
@@ -39,6 +39,7 @@ begin
   returning id into v_offer;
 
   perform set_config('test.offer', v_offer::text, true);
+  perform set_config('test.gym',   v_gym::text,   true);
 
   -- Act as admin for the upcoming throws_ok.
   perform _test_act_as(v_admin);
@@ -50,6 +51,17 @@ select throws_ok(
   null::text,
   null::text,
   'admin attempting claim_cover raises'
+);
+
+-- The same gate covers the date-range entry point.
+select throws_ok(
+  format(
+    'select request_cover_range(%L::uuid, current_date + 1, current_date + 3, null::uuid[], null::text)',
+    current_setting('test.gym')
+  ),
+  null::text,
+  null::text,
+  'admin attempting request_cover_range raises'
 );
 
 select * from finish();

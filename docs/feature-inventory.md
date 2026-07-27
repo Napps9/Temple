@@ -418,9 +418,22 @@ The staff area shows up when `can_access_staff_area` is on.
   and waitlist promotion handled correctly on cancellation. **Claims
   are gated on class-type qualification** — a coach explicitly
   disqualified for that class type can't claim it (enforced in the
-  `claim_cover` RPC and surfaced as a disabled state in the UI).
+  `claim_cover` RPC and surfaced as a disabled state in the UI). Two
+  ways in: **pick individual classes**, or **pick dates**
+  (`request_cover_range`) for "cover me from 22 Dec to 3 Jan". A date
+  range is a **standing window** — the requested dates live on the
+  request, so classes scheduled into the window *after* it was lodged
+  are offered automatically, and a window with nothing in it yet is a
+  valid request. The range flow materialises the gym's recurrences out
+  to the end date first (`extend_gym_recurrences`), so a window past
+  the 12-week materialisation horizon still finds real classes. The
+  preview list lets a coach untick a class they'll still teach.
+  Partially-claimed requests **can** be withdrawn — cancelling drops
+  the unclaimed offers and leaves the claimed ones alone. A nightly
+  `expire_cover_requests` sweep (pg_cron) closes out windows that have
+  passed and clears offers for classes that already ran.
 - **Class detail modal** — roster, attendance marking (check-in / no-
-  show / unmark), cover request, leaderboard for that session.
+  show / unmark), leaderboard for that session.
   **Message class** [`can_broadcast_to_class`] — inline composer
   attached to the Members section sends a broadcast to every booked
   member without leaving the modal (same RLS-gated insert as the

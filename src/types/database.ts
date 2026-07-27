@@ -1882,6 +1882,8 @@ export type Database = {
           status: 'open' | 'partial' | 'claimed' | 'cancelled' | 'expired';
           created_at: string;
           cancelled_at: string | null;
+          requested_start: string | null;
+          requested_end: string | null;
         };
         Insert: {
           id?: string;
@@ -1893,6 +1895,8 @@ export type Database = {
           status?: 'open' | 'partial' | 'claimed' | 'cancelled' | 'expired';
           created_at?: string;
           cancelled_at?: string | null;
+          requested_start?: string | null;
+          requested_end?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -1904,6 +1908,8 @@ export type Database = {
           status: 'open' | 'partial' | 'claimed' | 'cancelled' | 'expired';
           created_at: string;
           cancelled_at: string | null;
+          requested_start: string | null;
+          requested_end: string | null;
         }>;
         Relationships: [];
       };
@@ -3858,6 +3864,10 @@ export type Database = {
         Args: { rec_id: string; until_date: string };
         Returns: null;
       };
+      extend_gym_recurrences: {
+        Args: { p_gym_id: string; p_until: string };
+        Returns: null;
+      };
       book_class: {
         Args: {
           session_id: string;
@@ -4424,6 +4434,16 @@ export type Database = {
       };
       request_cover: {
         Args: { p_session_ids: string[]; p_notes: string | null };
+        Returns: string;
+      };
+      request_cover_range: {
+        Args: {
+          p_gym_id: string;
+          p_start: string;
+          p_end: string;
+          p_exclude_session_ids: string[] | null;
+          p_notes: string | null;
+        };
         Returns: string;
       };
       claim_cover: {

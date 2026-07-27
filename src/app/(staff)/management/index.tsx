@@ -838,11 +838,14 @@ function TeamMemberRow({
     queryKey: ['team-cover-open', membership?.gymId, member.profile_id],
     enabled: !!membership?.gymId && showCover,
     queryFn: async () => {
+      // claimed_by lives on the per-session offers, not the header —
+      // querying it on cover_requests errored, so this pill always
+      // rendered 0.
       const { count, error } = await supabase
-        .from('cover_requests')
+        .from('cover_request_sessions')
         .select('id', { count: 'exact', head: true })
         .eq('gym_id', membership!.gymId)
-        .eq('requested_by', member.profile_id)
+        .eq('original_coach_id', member.profile_id)
         .is('claimed_by', null);
       if (error) throw error;
       return count ?? 0;

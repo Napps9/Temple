@@ -13,6 +13,7 @@ type SessionRow = {
   starts_at: string;
   duration_minutes: number;
   class_types: { name: string; color: string } | null;
+  cover_request_sessions: { claimed_by: string | null }[];
 };
 
 type Props = {
@@ -43,13 +44,19 @@ export function SessionPickerModal({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_sessions')
-        .select('id, name, starts_at, duration_minutes, class_types(name, color)')
+        .select(
+          'id, name, starts_at, duration_minutes, class_types(name, color), cover_request_sessions(claimed_by)',
+        )
         .eq('coach_id', session!.user.id)
         .gte('starts_at', new Date().toISOString())
         .order('starts_at', { ascending: true })
-        .limit(50);
+        .limit(200);
       if (error) throw error;
-      return (data ?? []) as unknown as SessionRow[];
+      // Classes already sitting in the feed can't be offered twice —
+      // request_cover would hit cover_request_sessions_open_session_uniq.
+      return ((data ?? []) as unknown as SessionRow[]).filter(
+        (s) => !s.cover_request_sessions.some((o) => o.claimed_by === null),
+      );
     },
   });
 

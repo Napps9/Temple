@@ -31,7 +31,13 @@ pg_prove --ext .sql supabase/tests/
 | `staff_can_check_in.sql` | Front-desk staff can call `check_in_member` and mark a booking attended. Locked-in by gating on `user_can_access_staff_area`. |
 | `check_in_idempotent.sql` | Repeated `check_in_member` calls do not rewrite `marked_by` / `attended_at`. No time-window dependency. |
 | `staff_can_view_sops.sql` | Staff can `SELECT` from `sop_documents` — `user_can_access_staff_area` rather than `user_can_admin_or_coach`. |
-| `admin_cannot_claim_cover.sql` | Admin cannot call `claim_cover`. Gate is `user_can_cover`, not `user_can_manage_classes`. |
+| `admin_cannot_claim_cover.sql` | Admin cannot call `claim_cover` or `request_cover_range`. Gate is `user_can_cover`, not `user_can_manage_classes`. |
+| `cover_range_request.sql` | `request_cover_range` offers exactly the caller's in-window classes: final day inclusive, days either side excluded, unticked and already-offered classes skipped, requested dates recorded. |
+| `cover_range_auto_attach.sql` | A date range is a standing window — an empty window is still a valid request, classes scheduled into it later auto-attach, and a cancelled window stops attaching. |
+| `cover_range_timezone.sql` | Window edges are local midnight at the gym, not UTC. Uses Australia/Brisbane so a UTC implementation fails both assertions. |
+| `cover_partial_cancellable.sql` | A partially-claimed request can still be withdrawn; the claimed offer and its coach swap survive. |
+| `cover_request_header_rollup.sql` | Cancelling the last class expires a per-class request but leaves a still-future standing window open. Also the first coverage `request_cover` has ever had — it caught the `min(uuid)` bug fixed in 0164. |
+| `cover_requests_expire.sql` | `expire_cover_requests` sweeps dead offers, expires spent requests and windows, and leaves live ones alone. |
 | `admin_cannot_invite_admin.sql` | Admin caller passing `p_role = 'admin'` (or `'owner'`) to `create_invite` raises. Owner can mint an admin. |
 | `assignee_cannot_reassign_task.sql` | Task assignees cannot direct-`UPDATE` rows on `coach_tasks` (RLS rejects). The `complete_task` RPC succeeds. |
 | `tag_rules_cross_gym.sql` | Same-label rules in two gyms don't collide; `apply_tag_rules(gymA)` does not write any tags in gymB; an owner in gymA cannot `SELECT` any tag from gymB. |
@@ -43,7 +49,7 @@ pg_prove --ext .sql supabase/tests/
 ## Conventions
 
 - Each file is hermetic: `BEGIN; SELECT plan(N); ... SELECT * FROM finish(); ROLLBACK;`.
-- `\i tests/_helpers.sql` pulls in the shared fixture functions
+- `\ir _helpers.psql` pulls in the shared fixture functions
   (`_test_mk_user`, `_test_mk_gym`, `_test_mk_membership`,
   `_test_mk_session`, `_test_mk_booking`, `_test_act_as`).
 - Auth is simulated via `set_config('request.jwt.claim.sub', uid, true)`
