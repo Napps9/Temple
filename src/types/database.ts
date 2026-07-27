@@ -4796,6 +4796,10 @@ export type Database = {
           recurrences_unchanged: number;
         };
       };
+      gym_member_contact: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: { email: string | null; phone: string | null }[];
+      };
       mark_payment_notifications_read: {
         Args: { p_gym_id: string };
         Returns: null;

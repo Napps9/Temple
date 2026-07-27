@@ -488,6 +488,23 @@ The staff area shows up when `can_access_staff_area` is on.
   **It expires.** `leave_gym` deletes the dunning row, the notifications
   and the invoice link, and `purge_expired_payment_data` (weekly, 0177)
   sweeps stale links after 30 days and notifications after a year.
+  **The notice outlives the subscription.** It renders at Membership screen
+  level off the dunning row rather than inside the current-subscription
+  card, because Stripe giving up means `customer.subscription.deleted` and
+  a `cancelled` status — the moment the member most needs to see why. Past
+  the cancellation the copy switches to past tense and keeps Pay now, since
+  `invoice.paid` sets status `active` unconditionally, so paying really
+  does reinstate. Marking read waits for the notice to be on screen.
+  **The inbox banner tracks the failure, not the read.** It is shown while
+  a dunning row exists, so it survives being read on day 1 and stays up for
+  the rest of Stripe's fortnight; the badge stays read-based, because a
+  badge means "new" and the banner means "ongoing".
+  **Chasing is actionable.** Each chase row carries a Message chip into the
+  existing DM thread, and the member's own screen gains a Payment trouble
+  card (`can_see_money`) with the dunning detail plus Email / Call /
+  Message. Contact details come from `gym_member_contact` (0178), which
+  gates email on `can_see_email` and phone on `can_see_full_pii` — the
+  first place `can_see_email` is enforced anywhere in the app.
   The Membership screen shows what happened, when Stripe
   will retry, and a **Pay now** button. That link lives on its own
   `membership_invoice_links` table with a self-only RLS policy —
@@ -2138,16 +2155,13 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
-- **Failed payments — three known gaps**, all confirmed by review rather
-  than guessed at. (1) The Membership screen marks the payment notice read
-  on mount, but `PaymentFailedNotice` only renders for a subscription in
-  `CURRENT_SUB_STATUSES` — so once Stripe deletes the subscription the
-  final notice is consumed with nothing having displayed it. (2) The inbox
-  banner keys on unread rather than on live dunning state, so reading it
-  once on day 1 silences Temple for the remaining fortnight of retries.
-  (3) The chase list deep-links to the member profile, which carries no
-  email, no phone, no message action and no dunning fields — for a list
-  whose purpose is "pick up the phone".
+- **`profiles.phone` is readable by every gym-mate.**
+  `profiles_gym_member_select` (`0006:107`) is `same_gym_as_caller(id)` with
+  no capability term, and the members CSV export emits the column under
+  `can_export_members` alone. `gym_member_contact` (0178) gates phone on
+  `can_see_full_pii`, but that gates the surface, not the column — closing
+  it properly means narrowing the `profiles` policy, which touches every
+  screen that reads a name.
 - **Notification workers trust their caller.** All seven senders take
   `gym_id` and `origin` from the request body without checking the caller
   belongs to that gym, so an authenticated user can probe another gym's

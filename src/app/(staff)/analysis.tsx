@@ -20,6 +20,7 @@ import {
   type Preset,
 } from '@/components/DateRangeCta';
 import { BackLink } from '@/components/BackLink';
+import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
 import {
   computeMovementTrends,
@@ -934,6 +935,15 @@ function OverdueList({ gymId }: { gymId: string }) {
             <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
               {formatMoney(r.amount_cents, r.currency)}
             </Text>
+            {/* The one action that needs no PII and no extra fetch. Email
+                and phone live on the member's own screen, one member at a
+                time, each behind its own capability. */}
+            <ChipButton
+              label="Message"
+              icon="chatbubble-outline"
+              tone="neutral"
+              onPress={() => router.push(`/inbox/direct/${r.profile_id}` as never)}
+            />
             <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
           </Pressable>
         ))}

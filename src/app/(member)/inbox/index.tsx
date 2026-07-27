@@ -741,10 +741,15 @@ function ClassesTab({
 // A failing payment is the one inbox item that costs the member their
 // membership if ignored, so it sits above the tabs as a banner rather than
 // inside one — the same treatment as an overdue injury check-in.
-// Deliberately does NOT mark itself read on render: it stays unread until
-// the payment recovers (_clear_payment_failure marks it) or the member
-// opens Membership, because a badge that clears on a glance is a badge
-// that stops meaning anything.
+// Shown for as long as the payment is ACTUALLY failing, not for as long as
+// the notice is unread. Reading it once on day 1 used to silence Temple for
+// the rest of the fortnight, because one-notice-per-run collapses Stripe's
+// remaining retries onto that same already-read row.
+//
+// The badge stays read-based on purpose (payment_unread in
+// inbox_unread_summary): the badge means "something new", this banner means
+// "something ongoing". Tying them together would either nag forever or go
+// quiet mid-run.
 function PaymentNoticeBanner({
   gymId,
   profileId,
@@ -752,21 +757,38 @@ function PaymentNoticeBanner({
   gymId: string;
   profileId: string;
 }) {
+  // Presence of a dunning row IS past-due (0176), and recovery deletes it,
+  // so the banner clears itself without needing to be told.
+  const failing = useQuery({
+    queryKey: ['my-dunning', gymId, profileId],
+    enabled: !!gymId && !!profileId,
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('plan_subscription_dunning')
+        .select('plan_subscription_id', { count: 'exact', head: true })
+        .eq('gym_id', gymId)
+        .eq('profile_id', profileId);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const notices = useQuery({
     queryKey: ['payment-notifications', gymId, profileId],
-    enabled: !!gymId && !!profileId,
+    enabled: !!gymId && !!profileId && (failing.data ?? 0) > 0,
     queryFn: async (): Promise<{ id: string; kind: string; body: string }[]> => {
       // Scoped to the reader. RLS lets can_see_money staff read every
       // member's rows, so without this an owner sees a member's failed
-      // payment as their own — and could never clear it, because
-      // mark_payment_notifications_read is scoped to auth.uid().
+      // payment as their own.
+      //
+      // Read or unread — the stored in-app body is deliberately dateless
+      // (0176), so it is still true when re-read a week into the run.
       const { data, error } = await supabase
         .from('payment_notifications')
         .select('id, kind, body')
         .eq('gym_id', gymId)
         .eq('recipient_profile_id', profileId)
         .eq('channel', 'in_app')
-        .is('read_at', null)
         .order('created_at', { ascending: false })
         .limit(1);
       if (error) throw error;
@@ -775,7 +797,7 @@ function PaymentNoticeBanner({
   });
 
   const notice = notices.data?.[0];
-  if (!notice) return null;
+  if (!(failing.data ?? 0) || !notice) return null;
 
   return (
     <Pressable

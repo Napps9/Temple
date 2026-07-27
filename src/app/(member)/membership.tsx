@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { paymentNoticeCopy } from '@/lib/payment-notice';
 import {
   clearPendingCheckout,
   hasPendingCheckout,
@@ -74,41 +75,32 @@ const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
 // actually pay. Without that link this notice would be a dead end.
 function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
   const dunning = sub.plan_subscription_dunning?.[0];
-  const stopped = !dunning?.next_payment_attempt;
   const invoiceUrl = sub.membership_invoice_links?.[0]?.invoice_url ?? null;
-  // Only unlimited members can keep booking through a failure. Credits are
-  // topped up by invoice.paid and by nothing else, so a credit member who
-  // has spent this month's is locked out until the payment goes through.
-  const canStillBook = (sub.membership_plans?.kind ?? 'unlimited') === 'unlimited';
+  const copy = paymentNoticeCopy({
+    planKind: sub.membership_plans?.kind ?? 'unlimited',
+    status: sub.status,
+    nextAttemptLabel: dunning?.next_payment_attempt
+      ? fmtDate(dunning.next_payment_attempt)
+      : null,
+    lastError: dunning?.last_payment_error ?? null,
+    hasInvoiceLink: !!invoiceUrl,
+  });
   return (
     <View className="rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 gap-2">
       <View className="flex-row items-center gap-2">
         <Ionicons name="alert-circle" size={18} color="#DC2626" />
         <Text className="text-red-800 dark:text-red-200 font-semibold flex-1">
-          {stopped ? 'Your membership is about to stop' : "We couldn't take your payment"}
+          {copy.title}
         </Text>
       </View>
-      <Text className="text-red-900 dark:text-red-100 text-sm">
-        {stopped
-          ? 'We have tried your card and it keeps being declined. Your membership will be cancelled unless this is paid.'
-          : `${
-              canStillBook
-                ? "Your classes aren't affected — you can keep booking."
-                : "This month's class credits haven't been added yet, so you can't book until this is paid."
-            } We'll try your card again${
-              dunning?.next_payment_attempt
-                ? ` on ${fmtDate(dunning.next_payment_attempt)}`
-                : ''
-            }, and if it keeps failing your membership will be cancelled.`}
-        {dunning?.last_payment_error ? ` (${dunning.last_payment_error})` : ''}
-      </Text>
-      {invoiceUrl ? (
+      <Text className="text-red-900 dark:text-red-100 text-sm">{copy.body}</Text>
+      {copy.action === 'pay' && invoiceUrl ? (
         <Pressable
           onPress={() => Linking.openURL(invoiceUrl)}
           className="bg-red-600 rounded-lg px-3 py-2 items-center active:opacity-80">
           <Text className="text-white text-sm font-semibold">Pay now</Text>
         </Pressable>
-      ) : (
+      ) : copy.action === 'plans' ? null : (
         <Text className="text-red-900 dark:text-red-100 text-xs">
           Speak to the gym to update your card.
         </Text>
@@ -246,10 +238,6 @@ function CurrentSubCard({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      {sub.plan_subscription_dunning?.length ? (
-        <PaymentFailedNotice sub={sub} />
-      ) : null}
-
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
@@ -609,6 +597,13 @@ export default function MembershipScreen() {
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
   );
+  // Deliberately NOT filtered to current statuses. When Stripe gives up it
+  // deletes the subscription and the webhook marks it cancelled, which is
+  // exactly when the member most needs to see why — and nothing clears the
+  // dunning row except recovery or leaving the gym.
+  const failingSub = (subs.data ?? []).find(
+    (s) => s.plan_subscription_dunning?.length,
+  );
   const currentPlanIds = new Set(currentSubs.map((s) => s.plan_id));
   const awaitingActivation = awaitingPossible && currentSubs.length === 0;
 
@@ -668,14 +663,14 @@ export default function MembershipScreen() {
     if (currentSubs.length > 0 && gymId) clearPendingCheckout(gymId);
   }, [currentSubs.length, gymId]);
 
-  // Reaching this screen IS reading the payment notice — it says the same
-  // thing the inbox banner does, with the Pay now button. Marked at screen
-  // level, not inside PaymentFailedNotice: that only renders for a CURRENT
-  // subscription, and the final notice is precisely the one whose
-  // subscription is about to leave that set, so the badge would stick.
+  // Reading the notice is what marks it read — so this waits for the notice
+  // to actually be on screen. Marking on mount regardless meant the final
+  // notice was consumed by a screen that showed nothing about it, since
+  // PaymentFailedNotice used to live inside a card that only renders for a
+  // current subscription.
   const markedPaymentRead = useRef(false);
   useEffect(() => {
-    if (!gymId || markedPaymentRead.current) return;
+    if (!gymId || !failingSub || markedPaymentRead.current) return;
     markedPaymentRead.current = true;
     supabase
       .rpc('mark_payment_notifications_read', { p_gym_id: gymId })
@@ -683,12 +678,14 @@ export default function MembershipScreen() {
         queryClientRef.invalidateQueries({ queryKey: ['payment-notifications'] });
         queryClientRef.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
       });
-  }, [gymId, queryClientRef]);
+  }, [gymId, failingSub, queryClientRef]);
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink label="Account" fallbackHref="/account" />
+
+        {failingSub ? <PaymentFailedNotice sub={failingSub} /> : null}
 
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">

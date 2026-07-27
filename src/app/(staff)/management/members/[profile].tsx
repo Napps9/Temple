@@ -2,7 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
@@ -416,6 +424,14 @@ export default function MemberDetailScreen() {
 
         <InjuriesSection gymId={membership!.gymId} profileId={profileId!} />
 
+        {canSeeMoneyHere && membership?.gymId && profileId ? (
+          <PaymentTroubleCard
+            gymId={membership.gymId}
+            profileId={profileId}
+            memberName={profile.data?.full_name ?? 'this member'}
+          />
+        ) : null}
+
         <Section title="Plans">
           {subs.data && subs.data.length > 0 ? (
             subs.data.map((s) => {
@@ -631,6 +647,111 @@ export default function MemberDetailScreen() {
         />
       ) : null}
     </Screen>
+  );
+}
+
+// The chase list's destination. 0174 sent staff here on the reasoning that
+// "PII is already gated correctly" on the member profile — but the screen
+// showed no contact details at all and nothing about the payment, so the
+// only affordance on a row reading "Sam Ali · £45 · card declined" was a
+// chevron into a page of tags and injuries.
+//
+// Contact details come from gym_member_contact rather than off the money
+// RPC: email needs can_see_email and phone needs can_see_full_pii, and an
+// owner chasing a payment holds those separately from can_see_money.
+function PaymentTroubleCard({
+  gymId,
+  profileId,
+  memberName,
+}: {
+  gymId: string;
+  profileId: string;
+  memberName: string;
+}) {
+  const router = useRouter();
+
+  const dunning = useQuery({
+    queryKey: ['member-dunning', gymId, profileId],
+    enabled: !!gymId && !!profileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('plan_subscription_dunning')
+        .select(
+          'past_due_since, payment_failure_count, last_payment_error, next_payment_attempt',
+        )
+        .eq('gym_id', gymId)
+        .eq('profile_id', profileId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const contact = useQuery({
+    queryKey: ['member-contact', gymId, profileId],
+    enabled: !!gymId && !!profileId && !!dunning.data,
+    // A coach is refused outright rather than handed two blank fields, so
+    // an error here means "no permission", not "nothing on file".
+    retry: false,
+    queryFn: async (): Promise<{ email: string | null; phone: string | null }> => {
+      const { data, error } = await supabase.rpc('gym_member_contact', {
+        p_gym_id: gymId,
+        p_profile_id: profileId,
+      });
+      if (error) throw error;
+      const row = (data ?? [])[0];
+      return { email: row?.email ?? null, phone: row?.phone ?? null };
+    },
+  });
+
+  const d = dunning.data;
+  if (!d) return null;
+
+  return (
+    <Section title="Payment trouble">
+      <View className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-2">
+        <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+          Failing since {formatDate(d.past_due_since)}
+          {d.payment_failure_count > 1
+            ? ` · ${d.payment_failure_count} attempts`
+            : ''}
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          {d.next_payment_attempt
+            ? `Stripe retries ${formatDate(d.next_payment_attempt)}`
+            : 'Stripe has stopped retrying — this one is urgent'}
+          {d.last_payment_error ? ` · ${d.last_payment_error}` : ''}
+        </Text>
+        <View className="flex-row flex-wrap gap-2 pt-1">
+          {contact.data?.email ? (
+            <ChipButton
+              label="Email"
+              icon="mail-outline"
+              onPress={() => Linking.openURL(`mailto:${contact.data!.email}`)}
+            />
+          ) : null}
+          {contact.data?.phone ? (
+            <ChipButton
+              label="Call"
+              icon="call-outline"
+              onPress={() => Linking.openURL(`tel:${contact.data!.phone}`)}
+            />
+          ) : null}
+          <ChipButton
+            label="Message"
+            icon="chatbubble-outline"
+            tone="neutral"
+            onPress={() => router.push(`/inbox/direct/${profileId}` as never)}
+          />
+        </View>
+        {contact.isError ? (
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            You can message {memberName} in Temple; seeing their email or
+            phone needs a different permission.
+          </Text>
+        ) : null}
+      </View>
+    </Section>
   );
 }
 
