@@ -121,9 +121,20 @@ function requestedEmailHtml(
   });
 }
 
+// The warning lead is gyms.cover_warning_hours (0167), so the copy has
+// to say the gym's own number rather than a baked-in 48.
+function leadHoursLabel(hours: number): string {
+  if (hours % 24 === 0) {
+    const days = hours / 24;
+    return days === 1 ? '24 hours' : `${days} days`;
+  }
+  return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+}
+
 function uncoveredEmailHtml(
   gymName: string,
   s: UncoveredSummary,
+  lead: string,
   link: string,
 ): string {
   const who = escapeHtml(s.requesterName);
@@ -136,10 +147,10 @@ function uncoveredEmailHtml(
     : '';
   return templeEmailHtml({
     title: 'Still no cover',
-    preheader: `${classes} at ${gymName} run within 48 hours with no coach.`,
+    preheader: `${classes} at ${gymName} run within ${lead} with no coach.`,
     bodyHtml: `<p style="margin:0 0 18px;">
         <strong>${escapeHtml(classes)}</strong> that ${who} asked cover for
-        run within the next 48 hours and nobody has claimed them.
+        run within the next ${escapeHtml(lead)} and nobody has claimed them.
       </p>
       ${firstLine}
       <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#64748b;">
@@ -220,7 +231,11 @@ Deno.serve(async (req: Request) => {
 
   const [{ data: gym }, { data: settings }, { data: sendingDomain }] =
     await Promise.all([
-      service.from('gyms').select('name, timezone').eq('id', gymId ?? '').maybeSingle(),
+      service
+        .from('gyms')
+        .select('name, timezone, cover_warning_hours')
+        .eq('id', gymId ?? '')
+        .maybeSingle(),
       service
         .from('gym_comms_settings')
         .select('from_name, reply_to')
@@ -235,6 +250,7 @@ Deno.serve(async (req: Request) => {
 
   const gymName = gym?.name ?? 'your gym';
   const gymTz = gym?.timezone ?? 'UTC';
+  const leadLabel = leadHoursLabel(gym?.cover_warning_hours ?? 48);
   const fromName = settings?.from_name || gymName;
   const replyTo = settings?.reply_to || undefined;
   const fromAddress =
@@ -387,10 +403,10 @@ Deno.serve(async (req: Request) => {
         s.uncoveredCount === 1 ? 'class' : 'classes'
       }`;
       subject = `Still no cover for ${classes}`;
-      html = uncoveredEmailHtml(gymName, s, link);
+      html = uncoveredEmailHtml(gymName, s, leadLabel, link);
       text =
         `${classes} that ${s.requesterName} asked cover for run within the next ` +
-        `48 hours and nobody has claimed them.` +
+        `${leadLabel} and nobody has claimed them.` +
         (s.firstAt ? ` The first is ${s.firstAt}.` : '') +
         `\n\nSort out cover: ${link}`;
     } else if (r.kind === 'cover_claimed') {

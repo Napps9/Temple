@@ -89,6 +89,7 @@ export type Database = {
           cancel_cutoff_mode: 'relative' | 'day_before';
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
+          cover_warning_hours: number;
           members_can_self_checkout: boolean;
           require_membership_to_book: boolean;
           allow_minors: boolean;
@@ -140,6 +141,7 @@ export type Database = {
           cancel_cutoff_mode?: 'relative' | 'day_before';
           cancel_cutoff_time?: string | null;
           cancel_cutoff_days_before?: number;
+          cover_warning_hours?: number;
           discipline?: 'crossfit' | 'hyrox';
           onboarding_dismissed_at?: string | null;
         };
@@ -182,6 +184,7 @@ export type Database = {
           cancel_cutoff_mode: 'relative' | 'day_before';
           cancel_cutoff_time: string | null;
           cancel_cutoff_days_before: number;
+          cover_warning_hours: number;
           discipline: 'crossfit' | 'hyrox';
           onboarding_dismissed_at: string | null;
         }>;
@@ -4389,6 +4392,7 @@ export type Database = {
           p_cancel_cutoff_mode?: 'relative' | 'day_before';
           p_cancel_cutoff_time?: string | null;
           p_cancel_cutoff_days_before?: number;
+          p_cover_warning_hours?: number;
         };
         Returns: null;
       };

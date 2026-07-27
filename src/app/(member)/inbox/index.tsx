@@ -812,8 +812,8 @@ function CoverTab({ gymId }: { gymId: string }) {
               </View>
               {uncovered ? (
                 <Text className="text-amber-700 dark:text-amber-300 text-sm">
-                  Cover {who} asked for runs within 48 hours and nobody has
-                  claimed it.
+                  Cover {who} asked for is coming up and nobody has claimed
+                  it.
                 </Text>
               ) : null}
               {window ? (

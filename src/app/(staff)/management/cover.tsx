@@ -15,10 +15,18 @@ import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
-// Matches the lead time in warn_uncovered_cover (0166) — the banner and
-// the nightly warning must agree on what "soon" means.
-const UNCOVERED_LEAD_MS = 48 * 60 * 60 * 1000;
+// The lead is a gym setting now, so the banner has to say it out loud
+// rather than assume 48. Whole days read as days; anything else stays in
+// hours rather than inventing "2 days 6 hours".
+function leadLabel(hours: number): string {
+  if (hours % 24 === 0) {
+    const days = hours / 24;
+    return days === 1 ? '24 hours' : `${days} days`;
+  }
+  return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+}
 
 // Best-effort nudge to the edge worker to drain any queued cover emails.
 // Never throws — a failed drain leaves the rows queued and retryable, and
@@ -58,6 +66,8 @@ export default function CoverScreen() {
   const [error, setError] = useState<string | null>(null);
   const canRequest = useCan('can_request_cover');
   const canClaim = useCan('can_claim_cover');
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const warningHours = gymDefaults?.cover_warning_hours ?? 0;
 
   // Opening this screen IS reading the cover notifications — everything
   // they point at is on it. Once per mount; the ref stops a refetch or a
@@ -115,15 +125,16 @@ export default function CoverScreen() {
     },
   });
 
-  // Live count of classes about to run with nobody on them. Same
-  // 48-hour lead as the warn_uncovered_cover sweep (0166), but computed
-  // on read so the banner is always current rather than as-of-3:30am.
+  // Live count of classes about to run with nobody on them. Reads the
+  // same gyms.cover_warning_hours the warn_uncovered_cover sweep (0167)
+  // uses, but computed on read so the banner is current rather than
+  // as-of-3:30am. 0 turns the whole thing off.
   const uncoveredSoonQuery = useQuery({
-    queryKey: ['cover-uncovered-soon', membership?.gymId],
-    enabled: !!membership?.gymId,
+    queryKey: ['cover-uncovered-soon', membership?.gymId, warningHours],
+    enabled: !!membership?.gymId && warningHours > 0,
     queryFn: async (): Promise<number> => {
       const now = new Date();
-      const cutoff = new Date(now.getTime() + UNCOVERED_LEAD_MS);
+      const cutoff = new Date(now.getTime() + warningHours * 60 * 60 * 1000);
       const { count, error } = await supabase
         .from('cover_request_sessions')
         .select('id, class_sessions!inner(starts_at)', {
@@ -263,8 +274,8 @@ export default function CoverScreen() {
           <View className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
             <Text className="text-amber-800 dark:text-amber-200 font-semibold">
               {uncoveredSoonQuery.data === 1
-                ? '1 class needs a coach in the next 48 hours'
-                : `${uncoveredSoonQuery.data} classes need a coach in the next 48 hours`}
+                ? `1 class needs a coach in the next ${leadLabel(warningHours)}`
+                : `${uncoveredSoonQuery.data} classes need a coach in the next ${leadLabel(warningHours)}`}
             </Text>
             <Text className="text-amber-700 dark:text-amber-300 text-sm">
               Nobody has claimed them yet. They're in the open offers below.

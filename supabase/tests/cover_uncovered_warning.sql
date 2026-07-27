@@ -10,7 +10,7 @@
 -- rows plus an admin's view of the gym.
 
 begin;
-select plan(8);
+select plan(11);
 
 \ir _helpers.psql
 
@@ -171,6 +171,74 @@ select ok(
      from public.cover_notifications
      where kind = 'cover_uncovered'),
   'the idempotency key is day-scoped, so the warning repeats daily'
+);
+
+-- 9-11. The lead time is gyms.cover_warning_hours (0167), not a
+--       constant. A gym on a week's notice catches the far-off request
+--       the 48h default ignored; a gym set to 0 is opted out entirely.
+do $$
+declare
+  v_week_gym  uuid := _test_mk_gym('Week Gym', 'covwarn-week');
+  v_off_gym   uuid := _test_mk_gym('Off Gym',  'covwarn-off');
+  v_week_coach uuid := _test_mk_user('coach@covwarn-week.test');
+  v_off_coach  uuid := _test_mk_user('coach@covwarn-off.test');
+  v_week_owner uuid := _test_mk_user('owner@covwarn-week.test');
+  v_off_owner  uuid := _test_mk_user('owner@covwarn-off.test');
+  v_week_req  uuid;
+  v_off_req   uuid;
+  v_s1 uuid;
+  v_s2 uuid;
+begin
+  perform _test_mk_membership(v_week_gym, v_week_owner, 'owner');
+  perform _test_mk_membership(v_week_gym, v_week_coach, 'coach');
+  perform _test_mk_membership(v_off_gym,  v_off_owner,  'owner');
+  perform _test_mk_membership(v_off_gym,  v_off_coach,  'coach');
+
+  update public.gyms set cover_warning_hours = 168 where id = v_week_gym;
+  update public.gyms set cover_warning_hours = 0   where id = v_off_gym;
+
+  -- Four days out: outside the 48h default, inside a week's notice.
+  v_s1 := _test_mk_session(v_week_gym, v_week_coach, now() + interval '4 days');
+  v_s2 := _test_mk_session(v_off_gym,  v_off_coach,  now() + interval '4 hours');
+
+  perform _test_act_as(v_week_coach);
+  v_week_req := request_cover(array[v_s1], null::text);
+  perform _test_act_as(v_off_coach);
+  v_off_req := request_cover(array[v_s2], null::text);
+
+  perform set_config('role', 'postgres', true);
+  perform warn_uncovered_cover();
+
+  perform set_config('test.week_req', v_week_req::text, true);
+  perform set_config('test.off_req',  v_off_req::text,  true);
+end;
+$$;
+
+select is(
+  (select count(*)::int from public.cover_notifications
+     where request_id = current_setting('test.week_req')::uuid
+       and kind = 'cover_uncovered'
+       and channel = 'in_app'),
+  2,
+  'a gym on a 168-hour lead is warned about a class four days out'
+);
+
+select is(
+  (select count(*)::int from public.cover_notifications
+     where request_id = current_setting('test.off_req')::uuid
+       and kind = 'cover_uncovered'),
+  0,
+  'a gym with cover_warning_hours = 0 is opted out of the sweep'
+);
+
+-- The original gym is on the 48h default, so its far-off request is
+-- still ignored — the per-gym lead did not become a global one.
+select is(
+  (select count(*)::int from public.cover_notifications
+     where request_id = current_setting('test.req_later')::uuid
+       and kind = 'cover_uncovered'),
+  0,
+  'the lead is per gym — a default-48h gym still ignores a distant class'
 );
 
 select * from finish();

@@ -47,6 +47,7 @@ type Defaults = {
   cancel_cutoff_mode: 'relative' | 'day_before';
   cancel_cutoff_time: string | null;
   cancel_cutoff_days_before: number;
+  cover_warning_hours: number;
 };
 
 // Each card saves independently. The gyms columns share one RPC, so a
@@ -60,6 +61,7 @@ type SectionKey =
   | 'class'
   | 'memberships'
   | 'booking'
+  | 'cover'
   | 'health'
   | 'leads';
 
@@ -72,6 +74,7 @@ const SECTION_FIELDS: Partial<Record<SectionKey, (keyof Defaults)[]>> = {
     'booking_cutoff_minutes_before',
     'cancel_cutoff_minutes_before',
   ],
+  cover: ['cover_warning_hours'],
   health: ['parq_expiry_days', 'health_retention_months'],
   leads: ['lead_conversion_window_days'],
 };
@@ -114,7 +117,7 @@ export function OperatingDefaultsPanel() {
       const { data, error: e } = await supabase
         .from('gyms')
         .select(
-          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, subscription_resolution, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before',
+          'week_starts_on, timezone, default_class_capacity, default_class_minutes, expiring_within_days, parq_expiry_days, health_retention_months, lead_conversion_window_days, subscription_resolution, booking_window_hours_ahead, booking_cutoff_minutes_before, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before, cover_warning_hours',
         )
         .eq('id', membership!.gymId)
         .single();
@@ -204,6 +207,7 @@ export function OperatingDefaultsPanel() {
         p_cancel_cutoff_mode: 'relative',
         p_cancel_cutoff_time: null,
         p_cancel_cutoff_days_before: merged.cancel_cutoff_days_before,
+        p_cover_warning_hours: merged.cover_warning_hours,
       });
       if (e) throw e;
     },
@@ -440,6 +444,27 @@ export function OperatingDefaultsPanel() {
           }
           base="minutes"
           units={['minutes', 'hours', 'days', 'weeks']}
+        />
+      </Section>
+
+      <Section title="Cover" {...sectionProps('cover')}>
+        <DurationField
+          label="Warn about uncovered classes"
+          blurb="How far ahead to chase the coach who asked and the gym's owners when a class still has nobody covering it. 0 turns the warning off."
+          value={String(draft.cover_warning_hours)}
+          onChange={(v) =>
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    cover_warning_hours:
+                      v.trim() === '' ? 0 : parseInt(v, 10),
+                  }
+                : d,
+            )
+          }
+          base="hours"
+          units={['hours', 'days']}
         />
       </Section>
 

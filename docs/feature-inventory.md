@@ -438,9 +438,11 @@ The staff area shows up when `can_access_staff_area` is on.
   worker, every attempt logged and retryable). Three events: **cover
   requested**, fanned out to every coach who could claim it; **cover
   claimed**, back to the coach who asked; and **still uncovered** — a
-  nightly `warn_uncovered_cover` sweep (pg_cron, 48-hour lead) chasing
-  the requester and the gym's owners/admins about classes nobody has
-  claimed. That last one **repeats daily** while the problem persists
+  nightly `warn_uncovered_cover` sweep chasing the requester and the
+  gym's owners/admins about classes nobody has claimed. The lead time is
+  the per-gym **`cover_warning_hours`** setting (Operating defaults →
+  Cover; default 48, max two weeks, **0 turns the warning off**). That
+  last one **repeats daily** while the problem persists
   (the idempotency key carries the gym-local date) and is mirrored by a
   live amber banner on the Cover screen, computed on read so it never
   goes stale between sweeps. Requested notifications are
