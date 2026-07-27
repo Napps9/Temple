@@ -88,13 +88,16 @@ export type MySubscription = {
   // nothing is actually renewing this until they (or staff) move it
   // onto real billing.
   imported_legacy: boolean;
-  // Dunning state (0174). The membership stays 'active' through Stripe's
-  // retry window on purpose — the member keeps training — so these, not
-  // status, are how a failing payment is visible.
-  past_due_since: string | null;
-  payment_failure_count: number;
-  last_payment_error: string | null;
-  next_payment_attempt: string | null;
+  // Dunning state. The membership stays 'active' through Stripe's retry
+  // window on purpose — the member keeps training — so this, not status, is
+  // how a failing payment is visible. A row exists only while a run of
+  // failures is live (0176), so presence IS past-due.
+  plan_subscription_dunning: {
+    past_due_since: string;
+    payment_failure_count: number;
+    last_payment_error: string | null;
+    next_payment_attempt: string | null;
+  }[] | null;
   // Self-only by RLS (0174) — staff cannot read this, deliberately.
   membership_invoice_links: { invoice_url: string }[] | null;
   membership_plans: {
@@ -152,7 +155,7 @@ export function useMySubscriptions(
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, imported_legacy, past_due_since, payment_failure_count, last_payment_error, next_payment_attempt, membership_invoice_links(invoice_url), membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
+          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, imported_legacy, plan_subscription_dunning(past_due_since, payment_failure_count, last_payment_error, next_payment_attempt), membership_invoice_links(invoice_url), membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
         )
         .eq('gym_id', gymId!)
         .eq('profile_id', profileId!)

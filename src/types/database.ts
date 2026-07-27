@@ -1775,6 +1775,36 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      plan_subscription_dunning: {
+        Row: {
+          plan_subscription_id: string;
+          profile_id: string;
+          gym_id: string;
+          past_due_since: string;
+          payment_failure_count: number;
+          last_payment_error: string | null;
+          next_payment_attempt: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          plan_subscription_id: string;
+          profile_id: string;
+          gym_id: string;
+          past_due_since?: string;
+          payment_failure_count?: number;
+          last_payment_error?: string | null;
+          next_payment_attempt?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          past_due_since: string;
+          payment_failure_count: number;
+          last_payment_error: string | null;
+          next_payment_attempt: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       membership_invoice_links: {
         Row: {
           plan_subscription_id: string;
@@ -1810,10 +1840,6 @@ export type Database = {
           price_cents: number | null;
           priority: number;
           imported_legacy: boolean;
-          past_due_since: string | null;
-          payment_failure_count: number;
-          last_payment_error: string | null;
-          next_payment_attempt: string | null;
           created_at: string;
         };
         Insert: {
@@ -1832,10 +1858,6 @@ export type Database = {
           price_cents?: number | null;
           priority?: number;
           imported_legacy?: boolean;
-          past_due_since?: string | null;
-          payment_failure_count?: number;
-          last_payment_error?: string | null;
-          next_payment_attempt?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -1854,10 +1876,6 @@ export type Database = {
           price_cents: number | null;
           priority: number;
           imported_legacy: boolean;
-          past_due_since: string | null;
-          payment_failure_count: number;
-          last_payment_error: string | null;
-          next_payment_attempt: string | null;
           created_at: string;
         }>;
         Relationships: [];
@@ -2013,6 +2031,7 @@ export type Database = {
           status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
           error: string | null;
           idempotency_key: string;
+          attempts: number;
           created_at: string;
           sent_at: string | null;
           read_at: string | null;
@@ -2029,6 +2048,7 @@ export type Database = {
           status?: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
           error?: string | null;
           idempotency_key: string;
+          attempts?: number;
           created_at?: string;
           sent_at?: string | null;
           read_at?: string | null;
@@ -2036,6 +2056,7 @@ export type Database = {
         Update: Partial<{
           status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
           error: string | null;
+          attempts: number;
           sent_at: string | null;
           read_at: string | null;
         }>;
@@ -4354,6 +4375,7 @@ export type Database = {
           payment_failure_count: number;
           next_payment_attempt: string | null;
           last_payment_error: string | null;
+          notice_status: string | null;
         }[];
       };
       compute_revenue_summary: {

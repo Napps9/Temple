@@ -46,7 +46,13 @@ type Row = {
   recipient_profile_id: string | null;
   body: string;
   plan_subscription_id: string;
+  attempts: number;
 };
+
+// A provider 429 must not be terminal. One notice per dunning run means
+// nothing enqueues a replacement, so a row left at 'failed' would be a
+// member who is simply never told. Re-picked until the budget runs out.
+const MAX_ATTEMPTS = 3;
 
 function emailHtml(
   gymName: string,
@@ -100,10 +106,11 @@ Deno.serve(async (req: Request) => {
 
   const { data: rows, error: rErr } = await service
     .from('payment_notifications')
-    .select('id, kind, recipient_profile_id, body, plan_subscription_id')
+    .select('id, kind, recipient_profile_id, body, plan_subscription_id, attempts')
     .eq('gym_id', gymId)
     .eq('channel', 'email')
-    .eq('status', 'queued');
+    .in('status', ['queued', 'failed'])
+    .lt('attempts', MAX_ATTEMPTS);
   if (rErr) return json({ error: rErr.message }, 500);
 
   const queue = (rows as Row[] | null) ?? [];
@@ -216,20 +223,33 @@ Deno.serve(async (req: Request) => {
         const errTxt = (await res.text()).slice(0, 500);
         await service
           .from('payment_notifications')
-          .update({ status: 'failed', error: errTxt })
+          .update({
+            status: 'failed',
+            error: errTxt,
+            attempts: r.attempts + 1,
+          })
           .eq('id', r.id);
         failed += 1;
         return;
       }
       await service
         .from('payment_notifications')
-        .update({ status: 'sent', sent_at: nowIso, error: null })
+        .update({
+          status: 'sent',
+          sent_at: nowIso,
+          error: null,
+          attempts: r.attempts + 1,
+        })
         .eq('id', r.id);
       sent += 1;
     } catch (e) {
       await service
         .from('payment_notifications')
-        .update({ status: 'failed', error: String(e).slice(0, 500) })
+        .update({
+          status: 'failed',
+          error: String(e).slice(0, 500),
+          attempts: r.attempts + 1,
+        })
         .eq('id', r.id);
       failed += 1;
     }

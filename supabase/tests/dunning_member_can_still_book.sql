@@ -20,6 +20,7 @@ declare
   v_gym    uuid := _test_mk_gym('Dun Book', 'dunbook');
   v_plan   uuid;
   v_mid    uuid;
+  v_sub    uuid;
   v_sess   uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
@@ -32,11 +33,15 @@ begin
   -- Active, and three days into a failing run.
   insert into public.plan_subscriptions
     (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents,
-     paid_period_end, past_due_since, payment_failure_count,
-     last_payment_error, stripe_subscription_id)
+     paid_period_end, stripe_subscription_id)
   values (v_mid, v_member, v_gym, v_plan, 'active'::public.plan_sub_state, 6000,
-     now() + interval '20 days', now() - interval '3 days', 2,
-     'Card declined', 'sub_dunning');
+     now() + interval '20 days', 'sub_dunning')
+  returning id into v_sub;
+  insert into public.plan_subscription_dunning
+    (plan_subscription_id, profile_id, gym_id, past_due_since,
+     payment_failure_count, last_payment_error)
+  values (v_sub, v_member, v_gym, now() - interval '3 days', 2,
+     'Card declined');
 
   v_sess := _test_mk_session(v_gym, v_owner, now() + interval '2 days');
   perform set_config('test.sess',   v_sess::text,   true);

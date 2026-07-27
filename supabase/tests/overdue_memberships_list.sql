@@ -13,6 +13,7 @@ declare
   v_gym    uuid := _test_mk_gym('Chase', 'chase');
   v_plan   uuid;
   v_mid    uuid;
+  v_sub    uuid;
   v_member uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
@@ -27,25 +28,28 @@ begin
   update public.profiles set full_name = 'Ada Failing' where id = v_member;
   v_mid := _test_mk_membership(v_gym, v_member, 'member');
   insert into public.plan_subscriptions
-    (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents,
-     past_due_since, payment_failure_count)
-  values (v_mid, v_member, v_gym, v_plan, 'active'::public.plan_sub_state, 4200,
-     now() - interval '5 days', 2);
+    (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents)
+  values (v_mid, v_member, v_gym, v_plan, 'active'::public.plan_sub_state, 4200)
+  returning id into v_sub;
+  insert into public.plan_subscription_dunning
+    (plan_subscription_id, profile_id, gym_id, past_due_since,
+     payment_failure_count)
+  values (v_sub, v_member, v_gym, now() - interval '5 days', 2);
   perform set_config('test.failing', v_member::text, true);
   insert into public.membership_invoice_links
     (plan_subscription_id, profile_id, gym_id, invoice_url)
-  select id, v_member, v_gym, 'https://invoice/secret'
-    from public.plan_subscriptions
-    where profile_id = v_member and gym_id = v_gym;
+  values (v_sub, v_member, v_gym, 'https://invoice/secret');
 
   -- Failing but already cancelled: the money is gone, do not chase.
   v_member := _test_mk_user('gone@chase.test');
   v_mid := _test_mk_membership(v_gym, v_member, 'member');
   insert into public.plan_subscriptions
-    (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents,
-     past_due_since)
-  values (v_mid, v_member, v_gym, v_plan, 'cancelled'::public.plan_sub_state, 6000,
-     now() - interval '9 days');
+    (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents)
+  values (v_mid, v_member, v_gym, v_plan, 'cancelled'::public.plan_sub_state, 6000)
+  returning id into v_sub;
+  insert into public.plan_subscription_dunning
+    (plan_subscription_id, profile_id, gym_id, past_due_since)
+  values (v_sub, v_member, v_gym, now() - interval '9 days');
 
   -- Healthy: never on the list.
   v_member := _test_mk_user('fine@chase.test');

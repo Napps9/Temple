@@ -441,8 +441,13 @@ The staff area shows up when `can_access_staff_area` is on.
   skips it.
   **Pending is scheduled money; At risk is money already failing.**
   `stripe-webhook` handles `invoice.payment_failed` (0174) and records
-  dunning on `plan_subscriptions` — `past_due_since`,
+  dunning on `plan_subscription_dunning` — `past_due_since`,
   `payment_failure_count`, `last_payment_error`, `next_payment_attempt`.
+  Its own table, behind `can_see_money`, because `plan_subscriptions`'
+  staff policy is `user_can_assign_plan` (every coach, no capability term)
+  and Stripe's verbatim decline reason is not roster data (0176). A row
+  exists only while a run of failures is live, so presence IS past-due and
+  recovery is a delete.
   A failing renewal moves out of Pending into **At risk** and is kept out
   of Month projected, because counting a declined card is how a forecast
   lies. Underneath the tiles, **Needs chasing** lists who
@@ -455,8 +460,8 @@ The staff area shows up when `can_access_staff_area` is on.
   `past_due` state would bar someone from training over a card that
   expired. The grace period is the point; the dunning columns carry the
   visibility instead. Recovery (`invoice.paid`, or the subscription
-  returning to `active`) clears every flag together via
-  `_clear_payment_failure`.
+  returning to `active`) drops the dunning row and the invoice link
+  together via `_clear_payment_failure`.
   **Member side**: the member is told (0175) — an in-app notice the DB
   writes instantly, plus a queued email drained by
   `send-payment-notifications`. **One notice per dunning run, not per
@@ -473,7 +478,16 @@ The staff area shows up when `can_access_staff_area` is on.
   a failing payment is not marketing. Unlike the cover and class-change
   workers there is no client to drain the queue (the failure arrives from
   Stripe with nobody watching), so `stripe-webhook` invokes the worker
-  itself and the staff chase list nudges it as a backstop.
+  itself and the Money block nudges it as a backstop; a send that fails at
+  the provider is retried up to three times rather than left terminal,
+  since one-notice-per-run means nothing would ever replace it.
+  **The copy tracks the plan kind.** Only `unlimited` members can keep
+  booking through a failure — credits are topped up by `invoice.paid` and
+  by nothing else, so a credit member who has spent this month's is locked
+  out until it clears, and every surface says so (0176).
+  **It expires.** `leave_gym` deletes the dunning row, the notifications
+  and the invoice link, and `purge_expired_payment_data` (weekly, 0177)
+  sweeps stale links after 30 days and notifications after a year.
   The Membership screen shows what happened, when Stripe
   will retry, and a **Pay now** button. That link lives on its own
   `membership_invoice_links` table with a self-only RLS policy —
@@ -2124,6 +2138,21 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
+- **Failed payments — three known gaps**, all confirmed by review rather
+  than guessed at. (1) The Membership screen marks the payment notice read
+  on mount, but `PaymentFailedNotice` only renders for a subscription in
+  `CURRENT_SUB_STATUSES` — so once Stripe deletes the subscription the
+  final notice is consumed with nothing having displayed it. (2) The inbox
+  banner keys on unread rather than on live dunning state, so reading it
+  once on day 1 silences Temple for the remaining fortnight of retries.
+  (3) The chase list deep-links to the member profile, which carries no
+  email, no phone, no message action and no dunning fields — for a list
+  whose purpose is "pick up the phone".
+- **Notification workers trust their caller.** All seven senders take
+  `gym_id` and `origin` from the request body without checking the caller
+  belongs to that gym, so an authenticated user can probe another gym's
+  queue size and, on `send-payment-notifications`, put their own URL in a
+  gym-branded payment email. Worth one pass across all of them.
 - **Health-data GDPR — owner sign-off remainder**: the DPIA and
   lawful-basis register are drafted (`docs/legal/`) but need formal
   owner sign-off, and the in-app legal docs carry a DRAFT banner with

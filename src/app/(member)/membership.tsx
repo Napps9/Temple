@@ -73,8 +73,13 @@ const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
 // billing portal, so the Stripe-hosted invoice is the only place they can
 // actually pay. Without that link this notice would be a dead end.
 function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
-  const stopped = !sub.next_payment_attempt;
+  const dunning = sub.plan_subscription_dunning?.[0];
+  const stopped = !dunning?.next_payment_attempt;
   const invoiceUrl = sub.membership_invoice_links?.[0]?.invoice_url ?? null;
+  // Only unlimited members can keep booking through a failure. Credits are
+  // topped up by invoice.paid and by nothing else, so a credit member who
+  // has spent this month's is locked out until the payment goes through.
+  const canStillBook = (sub.membership_plans?.kind ?? 'unlimited') === 'unlimited';
   return (
     <View className="rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 gap-2">
       <View className="flex-row items-center gap-2">
@@ -86,12 +91,16 @@ function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
       <Text className="text-red-900 dark:text-red-100 text-sm">
         {stopped
           ? 'We have tried your card and it keeps being declined. Your membership will be cancelled unless this is paid.'
-          : `Your classes aren't affected — you can keep booking. We'll try your card again${
-              sub.next_payment_attempt
-                ? ` on ${fmtDate(sub.next_payment_attempt)}`
+          : `${
+              canStillBook
+                ? "Your classes aren't affected — you can keep booking."
+                : "This month's class credits haven't been added yet, so you can't book until this is paid."
+            } We'll try your card again${
+              dunning?.next_payment_attempt
+                ? ` on ${fmtDate(dunning.next_payment_attempt)}`
                 : ''
             }, and if it keeps failing your membership will be cancelled.`}
-        {sub.last_payment_error ? ` (${sub.last_payment_error})` : ''}
+        {dunning?.last_payment_error ? ` (${dunning.last_payment_error})` : ''}
       </Text>
       {invoiceUrl ? (
         <Pressable
@@ -237,7 +246,7 @@ function CurrentSubCard({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      {sub.past_due_since ? (
+      {sub.plan_subscription_dunning?.length ? (
         <PaymentFailedNotice sub={sub} />
       ) : null}
 

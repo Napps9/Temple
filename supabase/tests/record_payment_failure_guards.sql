@@ -52,8 +52,9 @@ select is(
 );
 
 select is(
-  (select past_due_since from public.plan_subscriptions
-    where stripe_subscription_id = 'sub_live'),
+  (select d.past_due_since from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   null::timestamptz,
   'and leaves it genuinely untouched'
 );
@@ -76,9 +77,9 @@ select is(
 );
 
 select ok(
-  (select past_due_since is not null and payment_failure_count = 1
-     and last_payment_error = 'Card declined'
-   from public.plan_subscriptions where stripe_subscription_id = 'sub_live'),
+  (select d.payment_failure_count = 1 and d.last_payment_error = 'Card declined' from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   'with the attempt count and the reason'
 );
 
@@ -97,8 +98,9 @@ select is(
 --    start of the run, which is the number a gym chases on.
 select lives_ok(
   $$ select set_config('test.first',
-       (select past_due_since::text from public.plan_subscriptions
-         where stripe_subscription_id = 'sub_live'), true) $$,
+       (select d.past_due_since::text from public.plan_subscription_dunning d
+       join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+      where ps.stripe_subscription_id = 'sub_live'), true) $$,
   'remember when it started'
 );
 
@@ -110,8 +112,9 @@ select is(
 );
 
 select is(
-  (select past_due_since from public.plan_subscriptions
-    where stripe_subscription_id = 'sub_live'),
+  (select d.past_due_since from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   current_setting('test.first')::timestamptz,
   'and leaves the start of the run alone'
 );
@@ -126,15 +129,17 @@ select is(
 );
 
 select is(
-  (select payment_failure_count from public.plan_subscriptions
-    where stripe_subscription_id = 'sub_live'),
+  (select d.payment_failure_count from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   2,
   'but does not walk the counter back from attempt 2'
 );
 
 select ok(
-  (select next_payment_attempt < now() + interval '10 days'
-     from public.plan_subscriptions where stripe_subscription_id = 'sub_live'),
+  (select d.next_payment_attempt < now() + interval '10 days' from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   'and does not rewind the retry date it carried'
 );
 
@@ -148,8 +153,9 @@ select is(
 );
 
 select ok(
-  (select next_payment_attempt is null and payment_failure_count = 4
-     from public.plan_subscriptions where stripe_subscription_id = 'sub_live'),
+  (select d.next_payment_attempt is null and d.payment_failure_count = 4 from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   'with no retry scheduled, which is how "Stripe has given up" is read'
 );
 
@@ -161,10 +167,10 @@ select lives_ok(
 );
 
 select ok(
-  (select past_due_since is null and payment_failure_count = 0
-     and last_payment_error is null and next_payment_attempt is null
-   from public.plan_subscriptions where stripe_subscription_id = 'sub_live'),
-  'every flag clears together, not just the headline one'
+  not exists (select 1 from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
+  'the dunning row goes entirely — presence of a row IS past due'
 );
 
 select is(
@@ -194,8 +200,9 @@ select is(
 );
 
 select is(
-  (select past_due_since from public.plan_subscriptions
-    where stripe_subscription_id = 'sub_live'),
+  (select d.past_due_since from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   null::timestamptz,
   'the recovered member stays recovered'
 );
@@ -216,8 +223,9 @@ select lives_ok(
 );
 
 select ok(
-  (select past_due_since is not null from public.plan_subscriptions
-    where stripe_subscription_id = 'sub_live'),
+  exists (select 1 from public.plan_subscription_dunning d
+     join public.plan_subscriptions ps on ps.id = d.plan_subscription_id
+    where ps.stripe_subscription_id = 'sub_live'),
   'and does not wipe the newer failure'
 );
 

@@ -703,6 +703,7 @@ type OverdueRow = {
   payment_failure_count: number;
   next_payment_attempt: string | null;
   last_payment_error: string | null;
+  notice_status: string | null;
 };
 
 function useFinanceMonth(gymId: string | undefined, monthStart: string) {
@@ -743,6 +744,16 @@ function primaryFinanceRow(rows: FinanceRow[], fallback: string): FinanceRow {
 }
 
 function FinanceBlock({ gymId }: { gymId: string }) {
+  // Secondary drain. stripe-webhook invokes the worker when the payment
+  // fails, but nothing retries a failed invoke, and an owner opening the
+  // Money block is the next moment a stuck email can go out. It lives here
+  // rather than in OverdueList because that only mounts while someone is
+  // still at risk — and a member whose subscription Stripe has since
+  // deleted drops off the list with their final-notice email still queued.
+  useEffect(() => {
+    if (gymId) void drainPaymentEmails(gymId);
+  }, [gymId]);
+
   const currency = useGymCurrency();
   const now = new Date();
   const thisMonth = monthRange(now);
@@ -861,16 +872,6 @@ function OverdueList({ gymId }: { gymId: string }) {
     },
   });
 
-  // Secondary drain. stripe-webhook invokes the worker when the payment
-  // fails, but nothing retries a failed invoke — and an owner looking at
-  // who needs chasing is exactly when a stuck email should go out. Not
-  // gated on rows: this lists MEMBERS, not queued emails, so a member who
-  // has since recovered would strand their own stuck row. The worker is a
-  // no-op on an empty queue.
-  useEffect(() => {
-    if (gymId) void drainPaymentEmails(gymId);
-  }, [gymId]);
-
   const list = rows.data ?? [];
   if (rows.error) {
     return (
@@ -892,8 +893,9 @@ function OverdueList({ gymId }: { gymId: string }) {
       </Text>
       <Text className="text-gray-500 dark:text-gray-400 text-xs">
         Stripe has tried to take these and been declined. It keeps retrying for
-        about two weeks — they can still book in the meantime — and gives up
-        after that.
+        about two weeks and gives up after that. Unlimited members can keep
+        booking meanwhile; members on a credit plan cannot, because their
+        credits only arrive when the payment goes through.
       </Text>
       <View className="gap-2">
         {shown.map((r) => (
@@ -916,6 +918,17 @@ function OverdueList({ gymId }: { gymId: string }) {
                   ? `Stripe retries ${formatDate(r.next_payment_attempt)}`
                   : 'Stripe has stopped retrying'}
                 {r.last_payment_error ? ` · ${r.last_payment_error}` : ''}
+              </Text>
+              {/* Whether they have actually been told. "Emailed, ignored"
+                  and "never emailed" need different phone calls. */}
+              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                {r.notice_status === 'sent'
+                  ? 'Emailed'
+                  : r.notice_status === 'queued'
+                    ? 'Email not sent yet'
+                    : r.notice_status === 'failed'
+                      ? 'Email could not be delivered'
+                      : 'Not emailed — no address on file'}
               </Text>
             </View>
             <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">

@@ -104,6 +104,7 @@ export type DemoPlan = {
   plans: T<'membership_plans'>[];
   subscriptions: T<'plan_subscriptions'>[];
   invoiceLinks: T<'membership_invoice_links'>[];
+  dunning: T<'plan_subscription_dunning'>[];
   classTypes: T<'class_types'>[];
   recurrences: T<'class_recurrences'>[];
   sessions: T<'class_sessions'>[];
@@ -248,6 +249,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
 
   const subscriptions: T<'plan_subscriptions'>[] = [];
   const invoiceLinks: T<'membership_invoice_links'>[] = [];
+  const dunning: T<'plan_subscription_dunning'>[] = [];
   activeMembers.forEach((m, i) => {
     const base = {
       gym_membership_id: membershipIdByProfile.get(m.id)!,
@@ -268,18 +270,20 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
         plan_id: unlimitedPlanId,
         status: 'active',
         paid_period_end: iso(daysFrom(config.now, rngInt(rng, 5, 30))),
-        ...(failing
-          ? {
-              past_due_since: iso(daysFrom(config.now, i === 1 ? -9 : -2)),
-              payment_failure_count: i === 1 ? 3 : 1,
-              last_payment_error:
-                i === 1 ? 'Your card has insufficient funds.' : 'Card declined.',
-              // i === 1 has exhausted Stripe's retries — the urgent case.
-              next_payment_attempt:
-                i === 1 ? null : iso(daysFrom(config.now, 3)),
-            }
-          : {}),
       });
+      if (subId) {
+        dunning.push({
+          plan_subscription_id: subId,
+          profile_id: m.id,
+          gym_id: gymId,
+          past_due_since: iso(daysFrom(config.now, i === 1 ? -9 : -2)),
+          payment_failure_count: i === 1 ? 3 : 1,
+          last_payment_error:
+            i === 1 ? 'Your card has insufficient funds.' : 'Card declined.',
+          // i === 1 has exhausted Stripe's retries — the urgent case.
+          next_payment_attempt: i === 1 ? null : iso(daysFrom(config.now, 3)),
+        });
+      }
       // Without a link the member sees "Speak to the gym" — the weakest
       // state. Seed it so a demo shows the Pay now button that makes the
       // notice actionable.
@@ -925,6 +929,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     plans,
     subscriptions,
     invoiceLinks,
+    dunning,
     classTypes,
     recurrences,
     sessions,

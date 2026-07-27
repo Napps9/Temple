@@ -14,6 +14,7 @@ declare
   v_start  date := (date_trunc('month', current_date) + interval '1 month')::date;
   v_plan   uuid;
   v_mid    uuid;
+  v_sub    uuid;
   v_member uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
@@ -36,11 +37,14 @@ begin
   v_mid    := _test_mk_membership(v_gym, v_member, 'member');
   insert into public.plan_subscriptions
     (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents,
-     paid_period_end, past_due_since, payment_failure_count)
+     paid_period_end, stripe_subscription_id)
   values (v_mid, v_member, v_gym, v_plan, 'active'::public.plan_sub_state, 4000,
-     v_start::timestamptz + interval '12 days', now() - interval '3 days', 2);
-  update public.plan_subscriptions set stripe_subscription_id = 'sub_recover'
-    where profile_id = v_member and gym_id = v_gym;
+     v_start::timestamptz + interval '12 days', 'sub_recover')
+  returning id into v_sub;
+  insert into public.plan_subscription_dunning
+    (plan_subscription_id, profile_id, gym_id, past_due_since,
+     payment_failure_count)
+  values (v_sub, v_member, v_gym, now() - interval '3 days', 2);
 
   -- Failing, but NOT renewing inside the window: still at risk. At risk is
   -- about the state of the payment, not about when the next one is due.
@@ -48,12 +52,18 @@ begin
   v_mid    := _test_mk_membership(v_gym, v_member, 'member');
   insert into public.plan_subscriptions
     (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents,
-     paid_period_end, past_due_since, payment_failure_count)
+     paid_period_end)
   values (v_mid, v_member, v_gym, v_plan, 'active'::public.plan_sub_state, 1500,
-     v_start::timestamptz + interval '60 days', now() - interval '1 day', 1);
+     v_start::timestamptz + interval '60 days')
+  returning id into v_sub;
+  insert into public.plan_subscription_dunning
+    (plan_subscription_id, profile_id, gym_id, past_due_since,
+     payment_failure_count)
+  values (v_sub, v_member, v_gym, now() - interval '1 day', 1);
 
   perform set_config('test.gym',   v_gym::text,   true);
   perform set_config('test.start', v_start::text, true);
+  perform set_config('test.owner', v_owner::text, true);
   perform _test_act_as(v_owner);
 end;
 $$;
@@ -95,18 +105,20 @@ select is(
   'forward revenue still counts all three'
 );
 
--- Recovery: clearing past_due_since puts the money straight back.
--- Recovery is simulated with an UPDATE rather than _clear_payment_failure,
--- because that function is service-role only and this block runs as the
--- owner. record_payment_failure_guards.sql exercises the real function,
--- including asserting that an authenticated caller is refused.
+-- Recovery: dropping the dunning row puts the money straight back.
+-- Simulated with a DELETE rather than _clear_payment_failure, which is
+-- service-role only while this block runs as the owner — and the owner has
+-- no write policy on the dunning table, which is the point of 0176. So step
+-- out of RLS for the one statement and step straight back in.
+-- record_payment_failure_guards.sql exercises the real function, including
+-- asserting that an authenticated caller is refused.
 select lives_ok(
-  $$ update public.plan_subscriptions
-       set past_due_since = null, payment_failure_count = 0
-       where gym_id = current_setting('test.gym')::uuid
-         and past_due_since is not null $$,
+  $$ select set_config('role', 'postgres', true) $$,
   'the payments recover'
 );
+delete from public.plan_subscription_dunning
+  where gym_id = current_setting('test.gym')::uuid;
+select _test_act_as(current_setting('test.owner')::uuid);
 
 select is(
   (select at_risk_cents from public.compute_finance_summary(

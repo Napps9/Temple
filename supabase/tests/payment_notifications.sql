@@ -2,7 +2,7 @@
 -- per retry, and unsent if they pay before the worker drains.
 
 begin;
-select plan(17);
+select plan(19);
 
 \ir _helpers.psql
 
@@ -142,9 +142,11 @@ select ok(
 -- pgTAP runs in one transaction where now() never advances, so the new run
 -- start is stamped by hand — what is under test is that a different run
 -- start produces a fresh notice rather than colliding with the old key.
-update public.plan_subscriptions
-  set past_due_since = now() - interval '40 days'
-  where stripe_subscription_id = 'sub_notify';
+insert into public.plan_subscription_dunning
+  (plan_subscription_id, profile_id, gym_id, past_due_since)
+select ps.id, ps.profile_id, ps.gym_id, now() - interval '40 days'
+  from public.plan_subscriptions ps
+  where ps.stripe_subscription_id = 'sub_notify';
 
 select is(
   public._record_payment_failure('sub_notify', 1, 'Card declined again',
@@ -196,6 +198,48 @@ select is(
     where gym_id = current_setting('test.noretry')::uuid),
   'payment_final_notice',
   'and it is the one that tells them the membership is about to stop'
+);
+
+-- A credit member CANNOT keep booking through a failure. Credits are only
+-- topped up by invoice.paid (stripe-webhook:749) and booking needs
+-- credit_balance > 0 (0011:92), so telling them their classes are fine
+-- sends them to a screen that refuses every one.
+do $$
+declare
+  v_o uuid := _test_mk_user('o3@paynotif.test');
+  v_m uuid := _test_mk_user('m3@paynotif.test');
+  v_g uuid := _test_mk_gym('Credit Gym', 'creditgym');
+  v_p uuid; v_mid uuid;
+begin
+  perform _test_mk_membership(v_g, v_o, 'owner');
+  v_mid := _test_mk_membership(v_g, v_m, 'member');
+  insert into public.membership_plans
+    (gym_id, name, kind, monthly_price_cents, credit_count, period_length)
+    values (v_g, '8 a month', 'credit_period', 5000, 8, '1 month')
+    returning plan_id into v_p;
+  insert into public.plan_subscriptions
+    (gym_membership_id, profile_id, gym_id, plan_id, status, price_cents,
+     credit_balance, stripe_subscription_id)
+  values (v_mid, v_m, v_g, v_p, 'active'::public.plan_sub_state, 5000, 0,
+     'sub_credit');
+  perform public._record_payment_failure('sub_credit', 1, 'declined', null,
+    now() + interval '3 days', 'subscription_cycle', null);
+  perform set_config('test.credit', v_g::text, true);
+end;
+$$;
+
+select ok(
+  (select body from public.payment_notifications
+    where gym_id = current_setting('test.credit')::uuid and channel = 'in_app')
+    like '%cannot book until it is paid%',
+  'a credit member is told the truth: no credits until it is paid'
+);
+
+select ok(
+  (select body from public.payment_notifications
+    where gym_id = current_setting('test.credit')::uuid and channel = 'in_app')
+    not like '%not affected%',
+  'and not the unlimited member''s reassurance'
 );
 
 select * from finish();
