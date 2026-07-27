@@ -28,6 +28,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { requireGymMember, safeOrigin } from '../_shared/caller.ts';
+
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 
 const cors: Record<string, string> = {
@@ -78,9 +80,10 @@ Deno.serve(async (req: Request) => {
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL');
-  if (!SUPABASE_URL || !SERVICE_KEY) {
+  if (!SUPABASE_URL || !SERVICE_KEY || !ANON_KEY) {
     return json({ error: 'Function is not configured' }, 500);
   }
 
@@ -92,10 +95,20 @@ Deno.serve(async (req: Request) => {
   }
   const gymId = body.gym_id;
   const notificationId = body.notification_id;
-  const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
   if (!gymId && !notificationId) {
     return json({ error: 'gym_id or notification_id is required' }, 400);
   }
+
+  // The public /lead/<slug> capture form invokes this with no JWT, so a
+  // membership check would break the very path this exists for. Instead:
+  // constrain the origin that reaches the email, and tell an anonymous
+  // caller nothing back. The counts were the whole probe — knowing how
+  // many lead emails a rival gym has queued is a business fact.
+  const known = gymId
+    ? await requireGymMember(req, gymId, SUPABASE_URL, ANON_KEY, SERVICE_KEY)
+    : ({ ok: false, status: 403, error: 'Not authorised' } as const);
+  const origin = await safeOrigin(
+    body.origin, gymId ?? '', SUPABASE_URL, SERVICE_KEY);
 
   const service = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -236,5 +249,7 @@ Deno.serve(async (req: Request) => {
   }
   await Promise.all(workers);
 
-  return json({ ok: true, mode: live ? 'live' : 'simulated', sent, failed, simulated });
+  return known.ok
+    ? json({ ok: true, mode: live ? 'live' : 'simulated', sent, failed, simulated })
+    : json({ ok: true });
 });

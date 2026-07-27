@@ -15,6 +15,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { safeOrigin } from '../_shared/caller.ts';
+
 import { escapeHtml, linkFallbackHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 
 const cors: Record<string, string> = {
@@ -71,8 +73,11 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Expected a JSON body' }, 400);
   }
   const gymId = body.gym_id;
-  const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
   if (!gymId) return json({ error: 'gym_id is required' }, 400);
+  // The caller is already authorised below through effective_can as
+  // themselves; origin still needs constraining because it lands in the
+  // email as the clickable link.
+  const origin = await safeOrigin(body.origin, gymId, SUPABASE_URL, SERVICE_KEY);
 
   const authHeader = req.headers.get('Authorization') ?? '';
   const service = createClient(SUPABASE_URL, SERVICE_KEY);

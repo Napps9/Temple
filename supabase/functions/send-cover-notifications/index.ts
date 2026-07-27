@@ -30,6 +30,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { requireGymMember, safeOrigin } from '../_shared/caller.ts';
+
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 
 const cors: Record<string, string> = {
@@ -192,9 +194,10 @@ Deno.serve(async (req: Request) => {
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL');
-  if (!SUPABASE_URL || !SERVICE_KEY) {
+  if (!SUPABASE_URL || !SERVICE_KEY || !ANON_KEY) {
     return json({ error: 'Function is not configured' }, 500);
   }
 
@@ -204,14 +207,32 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ error: 'Expected a JSON body' }, 400);
   }
-  const gymId = body.gym_id;
   const notificationId = body.notification_id;
-  const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
-  if (!gymId && !notificationId) {
+  if (!body.gym_id && !notificationId) {
     return json({ error: 'gym_id or notification_id is required' }, 400);
   }
 
   const service = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Resolve the gym from the row when the caller named a notification
+  // rather than a gym, so the membership check below has something real to
+  // check against rather than whatever the body claimed.
+  let gymId = body.gym_id;
+  if (!gymId && notificationId) {
+    const { data: row } = await service
+      .from('cover_notifications')
+      .select('gym_id')
+      .eq('id', notificationId)
+      .maybeSingle();
+    gymId = row?.gym_id as string | undefined;
+    if (!gymId) return json({ error: 'Not authorised' }, 403);
+  }
+
+  const who = await requireGymMember(
+    req, gymId!, SUPABASE_URL, ANON_KEY, SERVICE_KEY);
+  if (!who.ok) return json({ error: who.error }, who.status);
+
+  const origin = await safeOrigin(body.origin, gymId!, SUPABASE_URL, SERVICE_KEY);
 
   let query = service
     .from('cover_notifications')

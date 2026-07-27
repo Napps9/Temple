@@ -17,12 +17,20 @@
 // it under the service role at send time avoids copying a bearer URL into
 // a second table with a wider audience.
 //
+// The caller must belong to the gym they name (_shared/caller.ts), or be
+// stripe-webhook calling with the service key. Without that check any
+// authenticated account could name another gym and learn how many of its
+// members had a queued email — and supply the `origin` that becomes the
+// only link in the resulting payment email.
+//
 // Required env (SUPABASE_* injected by the platform):
-//   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+//   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
 // Optional env to go live:
 //   RESEND_API_KEY, RESEND_FROM_EMAIL
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+
+import { requireGymMember, safeOrigin } from '../_shared/caller.ts';
 
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 
@@ -86,9 +94,10 @@ Deno.serve(async (req: Request) => {
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL');
-  if (!SUPABASE_URL || !SERVICE_KEY) {
+  if (!SUPABASE_URL || !SERVICE_KEY || !ANON_KEY) {
     return json({ error: 'Function is not configured' }, 500);
   }
 
@@ -99,8 +108,13 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Expected a JSON body' }, 400);
   }
   const gymId = body.gym_id;
-  const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
   if (!gymId) return json({ error: 'gym_id is required' }, 400);
+
+  const who = await requireGymMember(
+    req, gymId, SUPABASE_URL, ANON_KEY, SERVICE_KEY);
+  if (!who.ok) return json({ error: who.error }, who.status);
+
+  const origin = await safeOrigin(body.origin, gymId, SUPABASE_URL, SERVICE_KEY);
 
   const service = createClient(SUPABASE_URL, SERVICE_KEY);
 
