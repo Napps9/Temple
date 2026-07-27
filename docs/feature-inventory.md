@@ -435,9 +435,15 @@ The staff area shows up when `can_access_staff_area` is on.
 - **Cover notifications** — `cover_notifications` is a queue + audit log
   on the `lead_notifications` pattern (in-app row delivered instantly,
   email enqueued and drained by the `send-cover-notifications` edge
-  worker, every attempt logged and retryable). Two events: **cover
-  requested**, fanned out to every coach who could claim it, and **cover
-  claimed**, back to the coach who asked. Requested notifications are
+  worker, every attempt logged and retryable). Three events: **cover
+  requested**, fanned out to every coach who could claim it; **cover
+  claimed**, back to the coach who asked; and **still uncovered** — a
+  nightly `warn_uncovered_cover` sweep (pg_cron, 48-hour lead) chasing
+  the requester and the gym's owners/admins about classes nobody has
+  claimed. That last one **repeats daily** while the problem persists
+  (the idempotency key carries the gym-local date) and is mirrored by a
+  live amber banner on the Cover screen, computed on read so it never
+  goes stale between sweeps. Requested notifications are
   **one digest per request**, naming the window and the class count —
   never one per class. Coaches disqualified for every class type in the
   request aren't told, and neither is the requester. A **blanket** email

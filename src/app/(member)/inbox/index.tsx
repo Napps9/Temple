@@ -33,7 +33,7 @@ type Tab = 'direct' | 'announcements' | 'classes' | 'alerts' | 'cover';
 
 type CoverNotificationRow = {
   id: string;
-  kind: 'cover_requested' | 'cover_claimed';
+  kind: 'cover_requested' | 'cover_claimed' | 'cover_uncovered';
   request_id: string;
   offer_id: string | null;
   created_at: string;
@@ -772,34 +772,70 @@ function CoverTab({ gymId }: { gymId: string }) {
                 : `${formatDate(from)} → ${formatDate(to)}`
               : '';
           const claimed = n.kind === 'cover_claimed';
+          const uncovered = n.kind === 'cover_uncovered';
+          const who = req?.requester?.full_name ?? 'A coach';
           return (
             <View
               key={n.id}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+              className={`rounded-xl p-4 gap-2 border ${
+                uncovered
+                  ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                  : 'border-transparent bg-white dark:bg-gray-900 shadow-card'
+              }`}>
               <View className="flex-row items-center gap-2">
                 <Ionicons
-                  name={claimed ? 'checkmark-circle' : 'swap-horizontal-outline'}
+                  name={
+                    uncovered
+                      ? 'alert-circle'
+                      : claimed
+                        ? 'checkmark-circle'
+                        : 'swap-horizontal-outline'
+                  }
                   size={18}
-                  color={colors.primary}
+                  color={uncovered ? '#D97706' : colors.primary}
                 />
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
-                  {claimed
-                    ? 'One of your classes is covered'
-                    : `${req?.requester?.full_name ?? 'A coach'} needs cover`}
+                <Text
+                  className={`font-semibold flex-1 ${
+                    uncovered
+                      ? 'text-amber-800 dark:text-amber-200'
+                      : 'text-gray-900 dark:text-gray-50'
+                  }`}>
+                  {uncovered
+                    ? 'Classes still have no coach'
+                    : claimed
+                      ? 'One of your classes is covered'
+                      : `${who} needs cover`}
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
                   {timeAgo(n.created_at)}
                 </Text>
               </View>
+              {uncovered ? (
+                <Text className="text-amber-700 dark:text-amber-300 text-sm">
+                  Cover {who} asked for runs within 48 hours and nobody has
+                  claimed it.
+                </Text>
+              ) : null}
               {window ? (
-                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                <Text
+                  className={
+                    uncovered
+                      ? 'text-amber-700 dark:text-amber-300 text-sm'
+                      : 'text-gray-700 dark:text-gray-200 text-sm'
+                  }>
                   {window}
                 </Text>
               ) : null}
               <View className="flex-row">
                 <ChipButton
-                  tone="primary"
-                  label={claimed ? 'View your requests' : 'See what needs cover'}
+                  tone={uncovered ? 'amber' : 'primary'}
+                  label={
+                    uncovered
+                      ? 'Sort out cover'
+                      : claimed
+                        ? 'View your requests'
+                        : 'See what needs cover'
+                  }
                   icon="open-outline"
                   onPress={() => router.push('/management/cover' as never)}
                 />

@@ -16,6 +16,10 @@ import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
+// Matches the lead time in warn_uncovered_cover (0166) — the banner and
+// the nightly warning must agree on what "soon" means.
+const UNCOVERED_LEAD_MS = 48 * 60 * 60 * 1000;
+
 // Best-effort nudge to the edge worker to drain any queued cover emails.
 // Never throws — a failed drain leaves the rows queued and retryable, and
 // the in-app half of the notification has already landed.
@@ -108,6 +112,30 @@ export default function CoverScreen() {
       return new Set(
         (data ?? []).map((r) => (r as { class_type_id: string }).class_type_id),
       );
+    },
+  });
+
+  // Live count of classes about to run with nobody on them. Same
+  // 48-hour lead as the warn_uncovered_cover sweep (0166), but computed
+  // on read so the banner is always current rather than as-of-3:30am.
+  const uncoveredSoonQuery = useQuery({
+    queryKey: ['cover-uncovered-soon', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<number> => {
+      const now = new Date();
+      const cutoff = new Date(now.getTime() + UNCOVERED_LEAD_MS);
+      const { count, error } = await supabase
+        .from('cover_request_sessions')
+        .select('id, class_sessions!inner(starts_at)', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('gym_id', membership!.gymId)
+        .is('claimed_by', null)
+        .gt('class_sessions.starts_at', now.toISOString())
+        .lte('class_sessions.starts_at', cutoff.toISOString());
+      if (error) throw error;
+      return count ?? 0;
     },
   });
 
@@ -229,6 +257,19 @@ export default function CoverScreen() {
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
+
+        {(uncoveredSoonQuery.data ?? 0) > 0 ? (
+          <View className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
+            <Text className="text-amber-800 dark:text-amber-200 font-semibold">
+              {uncoveredSoonQuery.data === 1
+                ? '1 class needs a coach in the next 48 hours'
+                : `${uncoveredSoonQuery.data} classes need a coach in the next 48 hours`}
+            </Text>
+            <Text className="text-amber-700 dark:text-amber-300 text-sm">
+              Nobody has claimed them yet. They're in the open offers below.
+            </Text>
+          </View>
         ) : null}
 
         <View className="gap-2">

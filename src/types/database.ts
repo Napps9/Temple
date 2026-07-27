@@ -1919,7 +1919,7 @@ export type Database = {
           gym_id: string;
           request_id: string;
           offer_id: string | null;
-          kind: 'cover_requested' | 'cover_claimed';
+          kind: 'cover_requested' | 'cover_claimed' | 'cover_uncovered';
           channel: 'email' | 'in_app';
           recipient: string | null;
           recipient_profile_id: string | null;
@@ -1935,7 +1935,7 @@ export type Database = {
           gym_id: string;
           request_id: string;
           offer_id?: string | null;
-          kind: 'cover_requested' | 'cover_claimed';
+          kind: 'cover_requested' | 'cover_claimed' | 'cover_uncovered';
           channel: 'email' | 'in_app';
           recipient?: string | null;
           recipient_profile_id?: string | null;

@@ -48,7 +48,7 @@ function json(body: unknown, status = 200): Response {
 
 type Row = {
   id: string;
-  kind: 'cover_requested' | 'cover_claimed';
+  kind: 'cover_requested' | 'cover_claimed' | 'cover_uncovered';
   recipient: string | null;
   request_id: string;
   offer_id: string | null;
@@ -58,6 +58,15 @@ type RequestSummary = {
   requesterName: string;
   classCount: number;
   window: string;
+};
+
+// Recomputed at send time rather than stamped on the notification row:
+// the warning repeats daily while the problem persists, and by the time
+// the second one goes out some of the classes may have been claimed.
+type UncoveredSummary = {
+  requesterName: string;
+  uncoveredCount: number;
+  firstAt: string | null;
 };
 
 type ClaimSummary = {
@@ -109,6 +118,36 @@ function requestedEmailHtml(
       </p>`,
     button: { label: 'See what needs cover', url: link },
     footerNote: "You're receiving this because you coach at this gym.",
+  });
+}
+
+function uncoveredEmailHtml(
+  gymName: string,
+  s: UncoveredSummary,
+  link: string,
+): string {
+  const who = escapeHtml(s.requesterName);
+  const n = s.uncoveredCount;
+  const classes = `${n} ${n === 1 ? 'class' : 'classes'}`;
+  const firstLine = s.firstAt
+    ? `<p style="margin:0 0 18px;">The first is <strong>${escapeHtml(
+        s.firstAt,
+      )}</strong>.</p>`
+    : '';
+  return templeEmailHtml({
+    title: 'Still no cover',
+    preheader: `${classes} at ${gymName} run within 48 hours with no coach.`,
+    bodyHtml: `<p style="margin:0 0 18px;">
+        <strong>${escapeHtml(classes)}</strong> that ${who} asked cover for
+        run within the next 48 hours and nobody has claimed them.
+      </p>
+      ${firstLine}
+      <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#64748b;">
+        Someone needs to take these or the classes go ahead without a coach.
+      </p>`,
+    button: { label: 'Sort out cover', url: link },
+    footerNote:
+      "You're receiving this because you asked for this cover, or you run this gym.",
   });
 }
 
@@ -215,6 +254,7 @@ Deno.serve(async (req: Request) => {
 
   const requestSummaries = new Map<string, RequestSummary>();
   const claimSummaries = new Map<string, ClaimSummary>();
+  const uncoveredSummaries = new Map<string, UncoveredSummary>();
 
   if (requestIds.length > 0) {
     const { data: reqs } = await service
@@ -243,6 +283,36 @@ Deno.serve(async (req: Request) => {
           fromLabel === toLabel
             ? `on ${fromLabel}`
             : `between ${fromLabel} and ${toLabel}`,
+      });
+    }
+  }
+
+  const uncoveredRequestIds = [
+    ...new Set(
+      queue.filter((r) => r.kind === 'cover_uncovered').map((r) => r.request_id),
+    ),
+  ];
+  if (uncoveredRequestIds.length > 0) {
+    const { data: stillOpen } = await service
+      .from('cover_request_sessions')
+      .select('request_id, class_sessions!inner(starts_at)')
+      .in('request_id', uncoveredRequestIds)
+      .is('claimed_by', null)
+      .gt('class_sessions.starts_at', new Date().toISOString())
+      .order('starts_at', { referencedTable: 'class_sessions', ascending: true });
+    for (const id of uncoveredRequestIds) {
+      const mine = ((stillOpen ?? []) as unknown as {
+        request_id: string;
+        class_sessions: { starts_at: string } | null;
+      }[]).filter((r) => r.request_id === id);
+      const starts = mine
+        .map((r) => r.class_sessions?.starts_at)
+        .filter((v): v is string => !!v)
+        .sort();
+      uncoveredSummaries.set(id, {
+        requesterName: requestSummaries.get(id)?.requesterName ?? 'A coach',
+        uncoveredCount: mine.length,
+        firstAt: starts.length > 0 ? whenLabel(starts[0], gymTz) : null,
       });
     }
   }
@@ -302,7 +372,28 @@ Deno.serve(async (req: Request) => {
     let html: string;
     let text: string;
 
-    if (r.kind === 'cover_claimed') {
+    if (r.kind === 'cover_uncovered') {
+      const s = uncoveredSummaries.get(r.request_id);
+      // Everything got claimed between the sweep and the drain — the
+      // warning is moot, so don't send it.
+      if (!s || s.uncoveredCount === 0) {
+        await service
+          .from('cover_notifications')
+          .update({ status: 'skipped', error: 'Cover was found before sending' })
+          .eq('id', r.id);
+        return;
+      }
+      const classes = `${s.uncoveredCount} ${
+        s.uncoveredCount === 1 ? 'class' : 'classes'
+      }`;
+      subject = `Still no cover for ${classes}`;
+      html = uncoveredEmailHtml(gymName, s, link);
+      text =
+        `${classes} that ${s.requesterName} asked cover for run within the next ` +
+        `48 hours and nobody has claimed them.` +
+        (s.firstAt ? ` The first is ${s.firstAt}.` : '') +
+        `\n\nSort out cover: ${link}`;
+    } else if (r.kind === 'cover_claimed') {
       const s = claimSummaries.get(r.offer_id ?? '');
       if (!s) {
         await service
