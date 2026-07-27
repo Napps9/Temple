@@ -4,7 +4,7 @@
 -- with the rest.
 
 begin;
-select plan(8);
+select plan(9);
 
 \ir _helpers.psql
 
@@ -114,11 +114,21 @@ select is(
 );
 
 -- ---- purge sweep: B (4mo) goes, C (1mo) stays ----
+-- Read outside RLS on purpose: these two assertions are about whether the
+-- ROW still exists, not about who may see it. 0180 took the staff branch
+-- off member_injuries_select, so an owner reading the table directly now
+-- sees nothing either way and the assertions would pass for the wrong
+-- reason.
 do $$
 begin
   perform _test_act_as(current_setting('test.owner')::uuid);
   perform public.purge_expired_health_data();
 end $$;
+
+select lives_ok(
+  $$ select set_config('role', 'postgres', true) $$,
+  'step out of RLS to check what survived the sweep'
+);
 
 select is(
   (select count(*) from public.member_injuries

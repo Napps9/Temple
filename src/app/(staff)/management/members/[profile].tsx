@@ -134,6 +134,8 @@ export default function MemberDetailScreen() {
     ) {
       return;
     }
+    // PAR-Q history is still a direct read, so it still logs here. The
+    // injury reads log themselves inside their RPCs (0180).
     void supabase.rpc('log_health_data_access', {
       p_gym_id: membership.gymId,
       p_subject: profileId,
@@ -808,16 +810,36 @@ function InjuriesSection({
   const injuries = useQuery({
     queryKey: ['member-injuries-staff', gymId, profileId],
     queryFn: async (): Promise<StaffInjuryRow[]> => {
-      const { data, error } = await supabase
-        .from('member_injuries')
-        .select(
-          'id, body_region, side, description, pain_level, movements_hurt, movements_ok, started_on, status, updated_at, injury_updates(pain_level, feeling, status, note, created_at)',
-        )
-        .eq('gym_id', gymId)
-        .eq('profile_id', profileId)
-        .order('created_at', { ascending: false });
+      // Two audited RPCs rather than one embedded select (0180). The
+      // embed is gone because injury_updates is no longer staff-readable
+      // at the row level — that is what makes the audit row unavoidable
+      // rather than a courtesy the screen pays.
+      const [{ data, error }, { data: updates, error: uErr }] =
+        await Promise.all([
+          supabase.rpc('gym_member_injuries', {
+            p_gym_id: gymId,
+            p_profile_id: profileId,
+          }),
+          supabase.rpc('gym_injury_updates', {
+            p_gym_id: gymId,
+            p_profile_id: profileId,
+          }),
+        ]);
       if (error) throw error;
-      return (data ?? []) as unknown as StaffInjuryRow[];
+      if (uErr) throw uErr;
+
+      const byInjury = new Map<string, StaffInjuryRow['injury_updates']>();
+      for (const u of (updates ?? []) as unknown as ({
+        injury_id: string;
+      } & NonNullable<StaffInjuryRow['injury_updates']>[number])[]) {
+        const list = byInjury.get(u.injury_id) ?? [];
+        list.push(u);
+        byInjury.set(u.injury_id, list);
+      }
+      return ((data ?? []) as unknown as StaffInjuryRow[]).map((r) => ({
+        ...r,
+        injury_updates: byInjury.get(r.id) ?? [],
+      }));
     },
   });
 

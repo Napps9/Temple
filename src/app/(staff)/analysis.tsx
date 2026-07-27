@@ -126,16 +126,18 @@ export default function AnalysisScreen() {
     queryKey: ['gym-open-injuries', membership?.gymId],
     enabled: !!membership?.gymId && canSeeHealth,
     queryFn: async (): Promise<OpenInjury[]> => {
-      const { data, error } = await supabase
-        .from('member_injuries')
-        .select(
-          'id, profile_id, body_region, side, pain_level, status, movements_hurt, updated_at, profiles!profile_id(full_name)',
-        )
-        .eq('gym_id', membership!.gymId)
-        .neq('status', 'resolved')
-        .order('updated_at', { ascending: false });
+      // Through the RPC, not the table: staff reads of health data have to
+      // leave an audit row, and this one — every open injury in the gym at
+      // once — was the loudest of the three that never did (0180).
+      const { data, error } = await supabase.rpc('gym_open_injuries', {
+        p_gym_id: membership!.gymId,
+        p_surface: 'gym_overview',
+      });
       if (error) throw error;
-      return (data ?? []) as unknown as OpenInjury[];
+      return (data ?? []).map((r) => ({
+        ...(r as unknown as Omit<OpenInjury, 'profiles'>),
+        profiles: { full_name: (r as { full_name: string | null }).full_name },
+      })) as OpenInjury[];
     },
   });
 

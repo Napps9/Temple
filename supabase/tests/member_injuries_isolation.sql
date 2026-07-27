@@ -1,11 +1,12 @@
--- Injury rows are health data: members see only their own; coaches
--- read via can_see_health_flag (default-on) and are locked out when
--- the override is flipped off. The log_injury RPC raises a staff
+-- Injury rows are health data: members see only their own; coaches read
+-- through the audited RPC (0180 took the staff branch off the table
+-- policy so the access log cannot be skipped) and are locked out when the
+-- can_see_health_flag override is flipped off. The log_injury RPC raises a staff
 -- alert, and log_injury_update appends a check-in + rolls the parent
 -- row's pain/status forward.
 
 begin;
-select plan(7);
+select plan(8);
 
 \ir _helpers.psql
 
@@ -52,7 +53,7 @@ select is(
   'member A cannot SELECT member B''s injuries'
 );
 
--- Coach sees it (can_see_health_flag default-on for coach).
+-- Coach sees it, but only through the RPC that logs the read.
 do $$
 begin
   perform _test_act_as(current_setting('test.coach')::uuid);
@@ -62,8 +63,16 @@ $$;
 select is(
   (select count(*) from public.member_injuries
     where profile_id = current_setting('test.b')::uuid)::int,
+  0,
+  'coach cannot SELECT the table directly — that read left no trace'
+);
+
+select is(
+  (select count(*) from public.gym_member_injuries(
+     current_setting('test.gym')::uuid,
+     current_setting('test.b')::uuid))::int,
   1,
-  'coach can SELECT member injuries via can_see_health_flag'
+  'coach reads it through the audited RPC via can_see_health_flag'
 );
 
 -- The RPC raised an injury_new staff alert visible to the coach.

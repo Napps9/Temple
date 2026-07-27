@@ -199,11 +199,12 @@ export function MembersList() {
     queryKey: ['members-open-injuries', membership?.gymId],
     enabled: !!membership?.gymId,
     queryFn: async (): Promise<Set<string>> => {
-      const { data, error } = await supabase
-        .from('member_injuries')
-        .select('profile_id')
-        .eq('gym_id', membership!.gymId)
-        .neq('status', 'resolved');
+      // Audited read (0180). The roster's injury flag is still a health
+      // read even though it only shows a dot.
+      const { data, error } = await supabase.rpc('gym_open_injuries', {
+        p_gym_id: membership!.gymId,
+        p_surface: 'member_roster',
+      });
       if (error) throw error;
       return new Set(
         (data ?? []).map((r) => (r as { profile_id: string }).profile_id),

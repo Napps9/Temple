@@ -4113,6 +4113,46 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
+      gym_member_injuries: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: {
+          id: string;
+          body_region: string;
+          side: string;
+          description: string | null;
+          pain_level: number;
+          movements_hurt: string[];
+          movements_ok: string[];
+          started_on: string | null;
+          status: string;
+          updated_at: string;
+        }[];
+      };
+      gym_injury_updates: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: {
+          injury_id: string;
+          pain_level: number;
+          feeling: string;
+          status: string;
+          note: string | null;
+          created_at: string;
+        }[];
+      };
+      gym_open_injuries: {
+        Args: { p_gym_id: string; p_surface?: string };
+        Returns: {
+          id: string;
+          profile_id: string;
+          full_name: string | null;
+          body_region: string;
+          side: string;
+          pain_level: number;
+          status: string;
+          movements_hurt: string[];
+          updated_at: string;
+        }[];
+      };
       log_health_data_access: {
         Args: { p_gym_id: string; p_subject: string; p_surface: string };
         Returns: null;
