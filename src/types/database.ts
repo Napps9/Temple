@@ -4610,9 +4610,22 @@ export type Database = {
         };
         Returns: { closure_id: string; cancelled: number; notified: number };
       };
-      lift_gym_closure: {
+      preview_closure_reopen: {
         Args: { p_closure_id: string };
-        Returns: number;
+        Returns: {
+          recurrence_id: string;
+          starts_at: string;
+          class_type_name: string;
+          duration_minutes: number;
+          capacity: number;
+        }[];
+      };
+      reopen_closure: {
+        Args: {
+          p_closure_id: string;
+          p_exclude: { recurrence_id: string; starts_at: string }[] | null;
+        };
+        Returns: { restored: number; lifted: boolean };
       };
       bulk_edit_sessions: {
         Args: {

@@ -6,8 +6,8 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-na
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DurationField } from '@/components/DurationField';
+import { ReopenClosureModal } from '@/components/ReopenClosureModal';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -724,7 +724,7 @@ function ClosuresCard() {
   const { data: membership } = useGymMembership();
   const canBulkEdit = useCan('can_bulk_edit_classes') ?? false;
   const queryClient = useQueryClient();
-  const [confirming, setConfirming] = useState<Closure | null>(null);
+  const [reopening, setReopening] = useState<Closure | null>(null);
 
   const closuresQuery = useQuery({
     queryKey: ['gym-closures-live', membership?.gymId],
@@ -740,15 +740,20 @@ function ClosuresCard() {
     },
   });
 
-  const lift = useMutation({
-    mutationFn: async (closureId: string) => {
-      const { error } = await supabase.rpc('lift_gym_closure', {
-        p_closure_id: closureId,
+  const reopen = useMutation({
+    mutationFn: async (args: {
+      closureId: string;
+      exclude: { recurrence_id: string; starts_at: string }[];
+    }) => {
+      const { error } = await supabase.rpc('reopen_closure', {
+        p_closure_id: args.closureId,
+        p_exclude: args.exclude,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      setConfirming(null);
+      setReopening(null);
+      queryClient.invalidateQueries({ queryKey: ['closure-reopen-preview'] });
       queryClient.invalidateQueries({ queryKey: ['gym-closures-live'] });
       queryClient.invalidateQueries({ queryKey: ['gym-closures'] });
       queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
@@ -803,27 +808,33 @@ function ClosuresCard() {
                 label="Reopen"
                 icon="lock-open-outline"
                 tone="neutral"
-                onPress={() => setConfirming(c)}
+                onPress={() => setReopening(c)}
               />
             </View>
           ))}
         </View>
       )}
 
-      {lift.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
-          {errorMessage(lift.error, 'Could not reopen those dates')}
-        </Text>
-      ) : null}
-
-      <ConfirmDialog
-        visible={confirming !== null}
-        title="Reopen these dates?"
-        body="Recurring classes will be put back on the calendar. Bookings are not restored — those members were refunded when the gym closed and will need to book again."
-        confirmLabel="Reopen"
-        onCancel={() => setConfirming(null)}
-        onConfirm={() => confirming && lift.mutate(confirming.id)}
-        pending={lift.isPending}
+      <ReopenClosureModal
+        visible={reopening !== null}
+        closureId={reopening?.id ?? null}
+        closureLabel={
+          reopening
+            ? reopening.starts_on === reopening.ends_on
+              ? fmtClosureDate(reopening.starts_on)
+              : `${fmtClosureDate(reopening.starts_on)} – ${fmtClosureDate(reopening.ends_on)}`
+            : ''
+        }
+        onClose={() => setReopening(null)}
+        onConfirm={(exclude) =>
+          reopening && reopen.mutate({ closureId: reopening.id, exclude })
+        }
+        pending={reopen.isPending}
+        error={
+          reopen.error
+            ? errorMessage(reopen.error, 'Could not reopen those dates')
+            : null
+        }
       />
     </View>
   );

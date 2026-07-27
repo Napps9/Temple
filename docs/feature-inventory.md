@@ -566,11 +566,25 @@ The staff area shows up when `can_access_staff_area` is on.
     that would push any class **past midnight** is rejected before
     anything is applied, since it would change which days the pattern
     fires on.
-- **Reopening a closure** — the **Closures** card on Gym settings.
-  `lift_gym_closure` rewinds each recurrence's materialisation cursor
-  over the window and re-extends, so the classes come back. Bookings do
-  not — those members were refunded and have to book again, which the
-  confirm dialog says plainly.
+- **Reopening a closure, class by class** — the **Closures** card on Gym
+  settings opens a picker of the classes that would come back, ticked by
+  default. The classes do not exist to be listed (the closure deleted
+  them), so `preview_closure_reopen` recomputes them from the schedules —
+  and the restore inserts from that same function, so the list ticked is
+  the list created.
+  - **Everything ticked** ends the closure: `reopen_closure` rewinds each
+    recurrence's materialisation cursor over the window and re-extends,
+    and the dates are open for new classes again.
+  - **Anything left unticked** keeps the closure **live**, so the dates it
+    still covers stay shut against classes created later as well as the
+    ones it removed. That is the "shut 22 Dec – 3 Jan, but open gym on the
+    28th" case, and it is the same shape as the create flow's
+    `p_exclude_session_ids` — the closure holds, with named exceptions.
+    The restore itself gets past the suppression trigger via a
+    transaction-local `temple.restoring_closed_class` GUC, the same device
+    as `temple.skip_booking_refund` (0065).
+  - Bookings are never restored by either path — those members were
+    refunded and have to book again, which the modal says plainly.
 - **Class-change notifications** — closures and bulk reschedules tell
   the affected members: one in-app row (delivered instantly, shown in
   the Inbox Classes tab and counted by `inbox_unread_summary`) plus one

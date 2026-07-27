@@ -1,6 +1,6 @@
--- Reopening a closure puts the recurring classes back, and does not
--- resurrect the bookings — those members were refunded and have to book
--- again. The closure row survives, marked lifted.
+-- Reopening with nothing held back ends the closure and puts the recurring
+-- classes back. Bookings are not resurrected — those members were refunded
+-- and have to book again. The closure row survives, marked lifted.
 
 begin;
 select plan(4);
@@ -66,8 +66,9 @@ select is(
 );
 
 select ok(
-  (select public.lift_gym_closure(current_setting('test.closure')::uuid)) > 0,
-  'lifting reports the classes it put back'
+  ((select public.reopen_closure(current_setting('test.closure')::uuid, null))
+     ->> 'restored')::int > 0,
+  'reopening reports the classes it put back'
 );
 
 select is(
