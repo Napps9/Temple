@@ -302,8 +302,11 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Gym announcements** — gym-wide posts in the inbox.
 - **"What needs you" nav badge** — the top-bar inbox bell shows a count
   rolling up unread messages (`inbox_unread_summary`), injury check-ins
-  due, and classes attended-but-not-logged. `useNotificationCount`
-  (`src/lib/notifications.ts`). All in-app — no push/email.
+  due, classes attended-but-not-logged, open staff alerts, unread lead
+  notifications, and unread cover notifications. `useNotificationCount`
+  (`src/lib/notifications.ts`). In-app only — there is no push anywhere
+  in the app. Two of the sources (leads, cover) also send email, via
+  their own queue tables and edge workers rather than through the badge.
 - **Post-workout log nudge** — after a class you were marked in for
   (`class_bookings.attended_at`) with nothing logged that day, the Track
   home and the Inbox show a "log your results" prompt; on Track it opens
@@ -452,7 +455,12 @@ The staff area shows up when `can_access_staff_area` is on.
   unsubscribe suppresses the cover email (recorded as `skipped`, not
   silently dropped) but never the in-app notification. Surfaced as a
   **Cover tab in the Inbox** and counted in the nav badge; opening
-  either the tab or the Cover screen marks them read.
+  either the tab or the Cover screen marks them read. Email delivery
+  sits behind the same gate as the rest of the comms pipeline: with a
+  verified per-gym sending domain (or `RESEND_API_KEY` +
+  `RESEND_FROM_EMAIL`) it sends for real, otherwise rows are marked
+  sent and the worker reports `mode: 'simulated'`. The in-app half
+  always lands either way.
 - **Class detail modal** — roster, attendance marking (check-in / no-
   show / unmark), leaderboard for that session.
   **Message class** [`can_broadcast_to_class`] — inline composer
@@ -686,7 +694,9 @@ The Manage page presents a tab strip:
     order, "expiring soon" window, booking windows (open / close / free-
     cancel cutoff, each with a min/hr/day/wk unit toggle so "2 weeks" or
     "48 hours" is entered directly), PAR-Q expiry, health-data retention,
-    lead conversion window. Same editor as the standalone
+    lead conversion window, and the **Cover** warning lead
+    (`cover_warning_hours` — how far ahead to chase an uncovered class;
+    0 turns the warning off). Same editor as the standalone
     `/management/operating` page. (Internally still "operating defaults":
     the `set_gym_operating_defaults` RPC + `gyms` columns.)
   - **Branding** — gym name, slug, logo upload, primary / secondary /
@@ -1708,8 +1718,10 @@ column and its RLS checks remain).
 - **Coach Earnings summary** [`can_set_coach_pay` for the owner] —
   per-class-type pay rates + total earnings for a date range, plus a
   per-coach breakdown card with a "Show breakdown" expander.
-- **Cover claims and qualifications** [`can_request_cover`,
-  `can_claim_cover`] — qualified-only cover claiming.
+- **Cover** [`can_request_cover`, `can_claim_cover`] — request cover by
+  picking classes or a date range, claim other coaches' open offers
+  (qualified-only), and a **Cover inbox tab** for the notifications.
+  Full detail under Classes & scheduling.
 - **Tasks** [`can_manage_tasks`] — assign, reassign, complete, reopen.
 - **SOPs** [`can_manage_sops` to write, `can_view_sops` to read] —
   doc-style standard operating procedures the whole team can read.
@@ -1729,6 +1741,10 @@ column and its RLS checks remain).
   and Acknowledge actions. Unacknowledged alerts also count toward the
   nav's unread indicator (`count_open_staff_alerts`), so a staff member
   sees there's something open without visiting the Inbox first.
+- **Cover inbox tab** [`can_request_cover` / `can_claim_cover`] — cover
+  requested / claimed / still-uncovered cards, the last in amber, each
+  linking through to the Cover screen. Opening the tab marks them read.
+  See Cover notifications under Classes & scheduling.
 
 ### Messaging (coach side)
 
