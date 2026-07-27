@@ -16,6 +16,7 @@ export type InboxUnread = {
   dm_unread: number;
   announcement_unread: number;
   class_broadcast_unread: number;
+  class_change_unread: number;
 };
 
 // Mirrors the inbox screen's query (same key → shared cache).
@@ -33,6 +34,7 @@ export function useInboxUnread() {
           dm_unread: 0,
           announcement_unread: 0,
           class_broadcast_unread: 0,
+          class_change_unread: 0,
         }
       );
     },
@@ -181,7 +183,8 @@ export function useNotificationCount(): number {
   const unreadTotal =
     (unread.data?.dm_unread ?? 0) +
     (unread.data?.announcement_unread ?? 0) +
-    (unread.data?.class_broadcast_unread ?? 0);
+    (unread.data?.class_broadcast_unread ?? 0) +
+    (unread.data?.class_change_unread ?? 0);
   return (
     unreadTotal +
     dueCheckIns(injuries.data).length +

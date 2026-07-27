@@ -41,7 +41,8 @@ export type Capability =
   | 'can_see_store_revenue'
   | 'can_manage_website'
   | 'can_program_members'
-  | 'can_review_ai_calls';
+  | 'can_review_ai_calls'
+  | 'can_bulk_edit_classes';
 
 const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_access_staff_area: { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
@@ -85,6 +86,7 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_manage_website:     { owner: true, admin: true,  coach: false, staff: false, member: false },
   can_program_members:    { owner: true, admin: true,  coach: true,  staff: false, member: false },
   can_review_ai_calls:    { owner: true, admin: true,  coach: false, staff: false, member: false },
+  can_bulk_edit_classes:  { owner: true, admin: true,  coach: false, staff: false, member: false },
 };
 
 export const RoleOrder: GymRole[] = ['owner', 'admin', 'coach', 'staff', 'member'];

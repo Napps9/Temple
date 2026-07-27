@@ -7,12 +7,18 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/Avatar';
+import { BulkClassEditModal } from '@/components/BulkClassEditModal';
+import { ChipButton } from '@/components/ChipButton';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { Screen } from '@/components/Screen';
 import { TodayButton } from '@/components/TodayButton';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { invalidateBookingCaches } from '@/lib/bookings';
+import type { BulkEditResult } from '@/lib/bulk-class-edit';
+import { drainClassChangeEmails } from '@/lib/class-change-notifications';
+import { errorMessage } from '@/lib/errors';
 import { useCan } from '@/lib/useCan';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
@@ -149,6 +155,16 @@ function fmtWeekRange(start: Date, end: Date) {
     day: 'numeric',
     month: 'short',
   })}`;
+}
+
+function fmtClosureRange(c: { starts_on: string; ends_on: string }) {
+  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+  // The dates are plain YYYY-MM-DD; parsing them as UTC noon keeps them on
+  // the right day whatever the viewer's offset.
+  const at = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, opts);
+  return c.starts_on === c.ends_on
+    ? at(c.starts_on)
+    : `${at(c.starts_on)} – ${at(c.ends_on)}`;
 }
 
 function classesOnDay(sessions: ClassSession[] | undefined, day: Date) {
@@ -446,11 +462,14 @@ export function ClassesCalendar({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => startOfMonth(new Date()));
   const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkResult, setBulkResult] = useState<BulkEditResult | null>(null);
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
   const weekStartsOn: 'mon' | 'sun' = gymDefaults?.week_starts_on ?? 'mon';
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canCreate = mode === 'manage' && canEditClasses;
+  const canBulkEdit = (useCan('can_bulk_edit_classes') ?? false) && mode === 'manage';
   const queryClient = useQueryClient();
 
   const goToToday = () => {
@@ -499,6 +518,27 @@ export function ClassesCalendar({
       // keeps them out of the calendar so the UI doesn't show
       // un-bookable phantoms.
       return rows.filter((s) => !s.class_types?.archived_at);
+    },
+  });
+
+  // Live closures overlapping the visible month. A calendar that is
+  // simply empty for a fortnight reads as a bug; members and staff both
+  // need to see that the gym is shut and why.
+  const closuresQuery = useQuery({
+    queryKey: ['gym-closures', membership?.gymId, monthKey],
+    enabled: !!membership?.gymId,
+    queryFn: async () => {
+      const from = fmtDateLocal(addDays(startOfMonth(date), -7));
+      const to = fmtDateLocal(addDays(startOfMonth(addMonths(date, 1)), 7));
+      const { data, error } = await supabase
+        .from('gym_closures')
+        .select('id, starts_on, ends_on, reason')
+        .is('lifted_at', null)
+        .lte('starts_on', to)
+        .gte('ends_on', from)
+        .order('starts_on');
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -604,6 +644,86 @@ export function ClassesCalendar({
         onChange={setTypeFilter}
       />
     ) : null;
+
+  const afterBulkChange = () => {
+    invalidateBookingCaches(queryClient);
+    queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
+    queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
+    queryClient.invalidateQueries({ queryKey: ['gym-closures'] });
+    queryClient.invalidateQueries({ queryKey: ['bulk-class-preview'] });
+    if (membership?.gymId) void drainClassChangeEmails(membership.gymId);
+  };
+
+  const closeGym = useMutation({
+    mutationFn: async (args: {
+      start: string;
+      end: string;
+      reason: string;
+      excludeSessionIds: string[];
+    }) => {
+      const { error } = await supabase.rpc('close_gym_dates', {
+        p_gym_id: membership!.gymId,
+        p_start: args.start,
+        p_end: args.end,
+        p_reason: args.reason.trim() || null,
+        p_exclude_session_ids: args.excludeSessionIds,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      afterBulkChange();
+      setBulkOpen(false);
+    },
+  });
+
+  const bulkEdit = useMutation({
+    mutationFn: async (args: {
+      start: string;
+      end: string;
+      sessionIds: string[];
+      capacity: number | null;
+      durationMinutes: number | null;
+      shiftMinutes: number | null;
+    }) => {
+      const { data, error } = await supabase.rpc('bulk_edit_sessions', {
+        p_gym_id: membership!.gymId,
+        p_start: args.start,
+        p_end: args.end,
+        p_session_ids: args.sessionIds,
+        p_capacity: args.capacity,
+        p_duration_minutes: args.durationMinutes,
+        p_shift_minutes: args.shiftMinutes,
+      });
+      if (error) throw error;
+      return data as unknown as BulkEditResult;
+    },
+    onSuccess: (result) => {
+      afterBulkChange();
+      setBulkResult(result);
+    },
+  });
+
+  // Which live closure, if any, covers what the current view is showing.
+  // Day and list views ask about the selected day; week and month views
+  // about the whole span, since a closure rarely lines up with either.
+  const visibleClosure = useMemo(() => {
+    const closures = closuresQuery.data ?? [];
+    if (closures.length === 0) return null;
+    let from = date;
+    let to = date;
+    if (view === 'week') {
+      from = compactBook ? startOfDay(date) : startOfWeek(date, weekStartsOn);
+      to = addDays(from, weekVisibleDays - 1);
+    } else if (view === 'month') {
+      from = startOfMonth(date);
+      to = addDays(startOfMonth(addMonths(date, 1)), -1);
+    }
+    const fromStr = fmtDateLocal(from);
+    const toStr = fmtDateLocal(to);
+    return (
+      closures.find((c) => c.starts_on <= toStr && c.ends_on >= fromStr) ?? null
+    );
+  }, [closuresQuery.data, date, view, weekStartsOn, weekVisibleDays, compactBook]);
 
   const extend = useMutation({
     mutationFn: async (untilDate: string) => {
@@ -724,7 +844,18 @@ export function ClassesCalendar({
                 <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
               </Pressable>
             </View>
-            <View className="flex-1 flex-row justify-end">
+            <View className="flex-1 flex-row items-center justify-end gap-2">
+              {canBulkEdit ? (
+                <ChipButton
+                  label="Bulk"
+                  icon="calendar-outline"
+                  tone="neutral"
+                  onPress={() => {
+                    setBulkResult(null);
+                    setBulkOpen(true);
+                  }}
+                />
+              ) : null}
               <ViewIconToggle view={view} />
             </View>
           </View>
@@ -761,16 +892,29 @@ export function ClassesCalendar({
               className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
               <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
             </Pressable>
-            {canCreate ? (
-              <View className="absolute right-0 top-6">
-                <Pressable
-                  onPress={() => setCreateAt({ date })}
-                  className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-pop">
-                  <Ionicons name="add" size={16} color="#FFFFFF" />
-                  <Text className="hidden md:flex text-white text-sm font-semibold">
-                    Add class
-                  </Text>
-                </Pressable>
+            {canCreate || canBulkEdit ? (
+              <View className="absolute right-0 top-6 flex-row items-center gap-2">
+                {canBulkEdit ? (
+                  <ChipButton
+                    label="Bulk"
+                    icon="calendar-outline"
+                    tone="neutral"
+                    onPress={() => {
+                      setBulkResult(null);
+                      setBulkOpen(true);
+                    }}
+                  />
+                ) : null}
+                {canCreate ? (
+                  <Pressable
+                    onPress={() => setCreateAt({ date })}
+                    className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-pop">
+                    <Ionicons name="add" size={16} color="#FFFFFF" />
+                    <Text className="hidden md:flex text-white text-sm font-semibold">
+                      Add class
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -780,6 +924,17 @@ export function ClassesCalendar({
           </View>
         </View>
       )}
+
+      {visibleClosure ? (
+        <View className="w-full max-w-5xl mx-auto px-4 pb-3">
+          <View className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+            <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
+              Gym closed {fmtClosureRange(visibleClosure)}
+              {visibleClosure.reason ? ` · ${visibleClosure.reason}` : ''}
+            </Text>
+          </View>
+        </View>
+      ) : null}
 
       <GestureDetector gesture={swipe}>
         <View className="flex-1">
@@ -842,6 +997,22 @@ export function ClassesCalendar({
           ) : null}
         </View>
       </GestureDetector>
+
+      <BulkClassEditModal
+        visible={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onClosureCreated={(args) => closeGym.mutate(args)}
+        onEdit={(args) => bulkEdit.mutate(args)}
+        pending={closeGym.isPending || bulkEdit.isPending}
+        editResult={bulkResult}
+        error={
+          closeGym.error
+            ? errorMessage(closeGym.error, 'Could not close those dates')
+            : bulkEdit.error
+              ? errorMessage(bulkEdit.error, 'Could not apply those changes')
+              : null
+        }
+      />
 
       <CreateClassModal
         visible={createAt !== null}

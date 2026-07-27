@@ -5,6 +5,8 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-na
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DurationField } from '@/components/DurationField';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
@@ -693,7 +695,136 @@ export default function OperatingDefaultsPage() {
           </Text>
         </View>
         <OperatingDefaultsPanel />
+        <ClosuresCard />
       </ScrollView>
     </Screen>
+  );
+}
+
+type Closure = {
+  id: string;
+  starts_on: string;
+  ends_on: string;
+  reason: string | null;
+};
+
+function fmtClosureDate(iso: string) {
+  // Plain YYYY-MM-DD; parsing at UTC noon keeps it on the right day
+  // whatever the viewer's offset.
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+// Closures are created from the calendar's Bulk action; this card is
+// where they are reviewed and reopened.
+function ClosuresCard() {
+  const { data: membership } = useGymMembership();
+  const canBulkEdit = useCan('can_bulk_edit_classes') ?? false;
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState<Closure | null>(null);
+
+  const closuresQuery = useQuery({
+    queryKey: ['gym-closures-live', membership?.gymId],
+    enabled: !!membership?.gymId && canBulkEdit,
+    queryFn: async (): Promise<Closure[]> => {
+      const { data, error } = await supabase
+        .from('gym_closures')
+        .select('id, starts_on, ends_on, reason')
+        .is('lifted_at', null)
+        .order('starts_on');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const lift = useMutation({
+    mutationFn: async (closureId: string) => {
+      const { error } = await supabase.rpc('lift_gym_closure', {
+        p_closure_id: closureId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setConfirming(null);
+      queryClient.invalidateQueries({ queryKey: ['gym-closures-live'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-closures'] });
+      queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
+      queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
+    },
+  });
+
+  if (!canBulkEdit) return null;
+
+  const closures = closuresQuery.data ?? [];
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        Closures
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        Dates the gym is shut. Classes inside a closure are cancelled, and
+        anything scheduled into it later is blocked. Start one from the Bulk
+        button on the Classes calendar.
+      </Text>
+
+      {closuresQuery.isLoading ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+      ) : closuresQuery.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(closuresQuery.error, 'Could not load closures')}
+        </Text>
+      ) : closures.length === 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          No closures set.
+        </Text>
+      ) : (
+        <View className="gap-2">
+          {closures.map((c) => (
+            <View
+              key={c.id}
+              className="flex-row items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                  {c.starts_on === c.ends_on
+                    ? fmtClosureDate(c.starts_on)
+                    : `${fmtClosureDate(c.starts_on)} – ${fmtClosureDate(c.ends_on)}`}
+                </Text>
+                {c.reason ? (
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    {c.reason}
+                  </Text>
+                ) : null}
+              </View>
+              <ChipButton
+                label="Reopen"
+                icon="lock-open-outline"
+                tone="neutral"
+                onPress={() => setConfirming(c)}
+              />
+            </View>
+          ))}
+        </View>
+      )}
+
+      {lift.error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(lift.error, 'Could not reopen those dates')}
+        </Text>
+      ) : null}
+
+      <ConfirmDialog
+        visible={confirming !== null}
+        title="Reopen these dates?"
+        body="Recurring classes will be put back on the calendar. Bookings are not restored — those members were refunded when the gym closed and will need to book again."
+        confirmLabel="Reopen"
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => confirming && lift.mutate(confirming.id)}
+        pending={lift.isPending}
+      />
+    </View>
   );
 }

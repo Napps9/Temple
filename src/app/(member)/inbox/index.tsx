@@ -116,6 +116,7 @@ export default function Inbox() {
             dm_unread: number;
             announcement_unread: number;
             class_broadcast_unread: number;
+            class_change_unread: number;
           }
         | undefined;
       return (
@@ -123,10 +124,16 @@ export default function Inbox() {
           dm_unread: 0,
           announcement_unread: 0,
           class_broadcast_unread: 0,
+          class_change_unread: 0,
         }
       );
     },
   });
+
+  // The Classes tab holds both broadcasts and closure/reschedule notices.
+  const classesUnread =
+    (unread.data?.class_broadcast_unread ?? 0) +
+    (unread.data?.class_change_unread ?? 0);
 
   function refreshUnread() {
     queryClient.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
@@ -170,9 +177,7 @@ export default function Inbox() {
           />
           <TabChip
             label={`Classes${
-              (unread.data?.class_broadcast_unread ?? 0) > 0
-                ? ` · ${unread.data!.class_broadcast_unread}`
-                : ''
+              classesUnread > 0 ? ` · ${classesUnread}` : ''
             }`}
             active={tab === 'classes'}
             onPress={() => setTab('classes')}
@@ -512,6 +517,79 @@ function AnnouncementsTab({
   );
 }
 
+type ClassChangeRow = {
+  id: string;
+  kind: 'gym_closed' | 'classes_rescheduled';
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+
+// Closures and bulk reschedules (0169). Opening the tab marks them read —
+// they carry their whole message in `body` (the classes they describe have
+// been deleted), so there is nothing further to open.
+function ClassChangeNotices({
+  gymId,
+  onChange,
+}: {
+  gymId: string;
+  onChange: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const marked = useRef(false);
+
+  const rows = useQuery({
+    queryKey: ['class-change-notifications', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<ClassChangeRow[]> => {
+      const { data, error } = await supabase
+        .from('class_change_notifications')
+        .select('id, kind, body, created_at, read_at')
+        .eq('gym_id', gymId)
+        .eq('channel', 'in_app')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as ClassChangeRow[];
+    },
+  });
+
+  useEffect(() => {
+    if (marked.current || rows.data === undefined) return;
+    if (!rows.data.some((r) => r.read_at === null)) return;
+    marked.current = true;
+    supabase
+      .rpc('mark_class_change_notifications_read', { p_gym_id: gymId })
+      .then(() => onChange());
+  }, [rows.data, gymId, onChange, queryClient]);
+
+  const list = rows.data ?? [];
+  if (list.length === 0) return null;
+
+  return (
+    <View className="gap-2">
+      {list.map((n) => (
+        <View
+          key={n.id}
+          className="rounded-xl p-4 gap-1 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="alert-circle" size={18} color="#D97706" />
+            <Text className="text-amber-800 dark:text-amber-200 font-semibold flex-1">
+              {n.kind === 'gym_closed' ? 'Gym closed' : 'Class times changed'}
+            </Text>
+          </View>
+          <Text className="text-amber-900 dark:text-amber-100 text-sm">
+            {n.body}
+          </Text>
+          <Text className="text-amber-700/70 dark:text-amber-300/70 text-xs">
+            {formatDate(n.created_at)}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function ClassesTab({
   canBroadcast,
   gymId,
@@ -564,6 +642,8 @@ function ClassesTab({
 
   return (
     <View className="gap-3">
+      <ClassChangeNotices gymId={gymId} onChange={onChange} />
+
       <View className="flex-row items-center justify-between">
         <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
           Class messages

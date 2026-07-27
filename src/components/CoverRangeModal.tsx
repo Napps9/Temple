@@ -5,7 +5,7 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { DatePicker } from '@/components/DatePicker';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { coverRangeWindow, validateCoverRange } from '@/lib/cover-range';
+import { dateRangeWindow, validateDateRange } from '@/lib/date-range';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -55,8 +55,8 @@ export function CoverRangeModal({ visible, onClose, onConfirm, pending }: Props)
 
   const tz = defaults?.timezone ?? 'UTC';
   const rangeError =
-    start || end ? validateCoverRange(start, end, tz, new Date()) : null;
-  const window = rangeError ? null : coverRangeWindow(start, end, tz);
+    start || end ? validateDateRange(start, end, tz, new Date()) : null;
+  const window = rangeError ? null : dateRangeWindow(start, end, tz);
 
   // Materialise before previewing so the list matches what
   // request_cover_range will actually attach — recurrences are only

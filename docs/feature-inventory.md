@@ -71,7 +71,10 @@ dead-end). It carries:
   cascade stays intact (0065 uses a transaction-local skip flag, not
   the replica-mode hack that had been orphaning bookings). Credit
   balances are guarded by non-negative CHECK constraints, so a
-  double-book race aborts rather than going negative.
+  double-book race aborts rather than going negative. When the gym
+  closes a range of dates outright, the same refund runs and the member
+  is told — in-app and by email — rather than finding the class quietly
+  gone.
 - **Booking eligibility** — a member self-booking with no eligible
   entitlement is refused only when they already hold a plan with this
   gym (out of credits / lapsed); gyms that grant access by membership
@@ -522,6 +525,44 @@ The staff area shows up when `can_access_staff_area` is on.
   is eligible via `list_booking_entitlements` against the target member.
 - **Cancel session** — refunds credits, drops waitlist, deletes the
   session.
+- **Bulk class edits across a date range** [`can_bulk_edit_classes`,
+  owner/admin] — the **Bulk** button on the Classes calendar. Two modes
+  over a From/To window, both previewing the matching classes with
+  untick-to-exclude (same shape as the cover range picker, and the same
+  timezone arithmetic in `src/lib/date-range.ts`):
+  - **Close the gym** — "we're shut 22 Dec to 3 Jan". Cancels every
+    class in the window with the normal refund + waitlist handling
+    (`_cancel_session_internal`), and records a **`gym_closures`** row.
+    The closure is a **standing window**, not a one-shot sweep: a
+    BEFORE INSERT trigger on `class_sessions` silently suppresses
+    recurrence materialisation into the window (silently, so
+    `extend_recurrence` doesn't abort mid-walk) and raises a plain
+    error for a hand-added one-off, so the operator is told why it
+    didn't stick. The range materialises out to the end date first
+    (`extend_gym_recurrences`), so a Christmas closure entered in July
+    still finds real classes past the 12-week horizon.
+  - **Change classes** — capacity / length / start-time shift across the
+    window for a reduced holiday timetable. Blank means "leave
+    unchanged". Per-class outcomes are counted rather than raised: a
+    class with more members booked than the new capacity is left alone,
+    a shift into the past is skipped, and shifts are applied away from
+    the direction of travel so a whole series stepping over itself never
+    trips the `(recurrence_id, starts_at)` unique index.
+- **Reopening a closure** — the **Closures** card on Gym settings.
+  `lift_gym_closure` rewinds each recurrence's materialisation cursor
+  over the window and re-extends, so the classes come back. Bookings do
+  not — those members were refunded and have to book again, which the
+  confirm dialog says plainly.
+- **Class-change notifications** — closures and bulk reschedules tell
+  the affected members: one in-app row (delivered instantly, shown in
+  the Inbox Classes tab and counted by `inbox_unread_summary`) plus one
+  queued email drained by the `send-class-change-notifications` edge
+  worker. **One digest per member per change, never one per class.**
+  Same queue shape as `cover_notifications` (0165), except the message
+  text is stored on the row: the classes it describes have been deleted,
+  so there is nothing to join to at send time. A blanket email
+  unsubscribe marks the email `skipped` (visible, not silently lost) and
+  never suppresses the in-app row.
 
 ### Manage tabs
 

@@ -1916,6 +1916,77 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_closures: {
+        Row: {
+          id: string;
+          gym_id: string;
+          starts_on: string;
+          ends_on: string;
+          reason: string | null;
+          created_by: string;
+          created_at: string;
+          lifted_at: string | null;
+          lifted_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          starts_on: string;
+          ends_on: string;
+          reason?: string | null;
+          created_by: string;
+          created_at?: string;
+          lifted_at?: string | null;
+          lifted_by?: string | null;
+        };
+        Update: Partial<{
+          reason: string | null;
+          lifted_at: string | null;
+          lifted_by: string | null;
+        }>;
+        Relationships: [];
+      };
+      class_change_notifications: {
+        Row: {
+          id: string;
+          gym_id: string;
+          closure_id: string | null;
+          kind: 'gym_closed' | 'classes_rescheduled';
+          channel: 'email' | 'in_app';
+          recipient: string | null;
+          recipient_profile_id: string | null;
+          body: string;
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          idempotency_key: string;
+          created_at: string;
+          sent_at: string | null;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          closure_id?: string | null;
+          kind: 'gym_closed' | 'classes_rescheduled';
+          channel: 'email' | 'in_app';
+          recipient?: string | null;
+          recipient_profile_id?: string | null;
+          body: string;
+          status?: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error?: string | null;
+          idempotency_key: string;
+          created_at?: string;
+          sent_at?: string | null;
+          read_at?: string | null;
+        };
+        Update: Partial<{
+          status: 'queued' | 'sent' | 'failed' | 'skipped' | 'read';
+          error: string | null;
+          sent_at: string | null;
+          read_at: string | null;
+        }>;
+        Relationships: [];
+      };
       cover_notifications: {
         Row: {
           id: string;
@@ -4217,6 +4288,7 @@ export type Database = {
           dm_unread: number;
           announcement_unread: number;
           class_broadcast_unread: number;
+          class_change_unread: number;
         }[];
       };
       can_dm: {
@@ -4525,6 +4597,42 @@ export type Database = {
         Returns: number;
       };
       mark_cover_notifications_read: {
+        Args: { p_gym_id: string };
+        Returns: null;
+      };
+      close_gym_dates: {
+        Args: {
+          p_gym_id: string;
+          p_start: string;
+          p_end: string;
+          p_reason: string | null;
+          p_exclude_session_ids: string[] | null;
+        };
+        Returns: { closure_id: string; cancelled: number; notified: number };
+      };
+      lift_gym_closure: {
+        Args: { p_closure_id: string };
+        Returns: number;
+      };
+      bulk_edit_sessions: {
+        Args: {
+          p_gym_id: string;
+          p_start: string;
+          p_end: string;
+          p_session_ids: string[] | null;
+          p_capacity: number | null;
+          p_duration_minutes: number | null;
+          p_shift_minutes: number | null;
+        };
+        Returns: {
+          updated: number;
+          skipped_overbooked: number;
+          skipped_past: number;
+          skipped_conflict: number;
+          notified: number;
+        };
+      };
+      mark_class_change_notifications_read: {
         Args: { p_gym_id: string };
         Returns: null;
       };
