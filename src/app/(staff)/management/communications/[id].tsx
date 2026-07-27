@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { AudienceBuilder } from '@/components/email/AudienceBuilder';
+import { ChipButton } from '@/components/ChipButton';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { EmailEditor } from '@/components/email/EmailEditor';
 import { StatusBadge } from '@/components/email/CampaignList';
@@ -18,7 +19,9 @@ import {
   formatDateTime,
   useAudienceCount,
   useCommsSettings,
+  useScheduleCampaign,
   useSendCampaign,
+  useUnscheduleCampaign,
 } from '@/lib/comms';
 import {
   describeAudience,
@@ -115,6 +118,9 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   const colors = useThemeColors();
   const settings = useCommsSettings();
   const send = useSendCampaign();
+  const schedule = useScheduleCampaign();
+  const unschedule = useUnscheduleCampaign();
+  const [scheduleAt, setScheduleAt] = useState<string>('');
   const queryClient = useQueryClient();
 
   const brandSeed: BrandSeed = useMemo(
@@ -292,6 +298,23 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     } catch (e) {
       setError(errorMessage(e, 'Could not send the campaign'));
       setConfirming(false);
+    }
+  }
+
+  async function doSchedule() {
+    setError(null);
+    try {
+      await persist();
+      await schedule.mutateAsync({
+        campaignId: campaign.id,
+        sendAt: new Date(scheduleAt).toISOString(),
+        document,
+        preheader,
+        footer,
+      });
+      setConfirming(false);
+    } catch (e) {
+      setError(errorMessage(e, 'Could not schedule the campaign'));
     }
   }
 
@@ -492,6 +515,59 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             <Button onPress={() => setConfirming(true)} disabled={!canSend}>
               Send campaign
             </Button>
+
+            {/* Schedule. scheduled_for and the amber Scheduled badge have
+                existed since 0044 with nothing ever writing the column. */}
+            {campaign.status === 'scheduled' && campaign.scheduled_for ? (
+              <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 gap-2">
+                <Text className="text-amber-800 dark:text-amber-300 text-sm">
+                  Scheduled to send{' '}
+                  {new Date(campaign.scheduled_for).toLocaleString('en-GB', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                  . Edits after this point will not go out — the version you
+                  scheduled is the version that sends.
+                </Text>
+                <ChipButton
+                  className="self-start"
+                  tone="amber"
+                  icon="close-circle-outline"
+                  label="Cancel schedule"
+                  onPress={() => unschedule.mutate(campaign.id)}
+                />
+              </View>
+            ) : (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2 border border-gray-200 dark:border-gray-700">
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  Or send it later. Times are in your device's timezone;
+                  delivery starts within about fifteen minutes of the slot.
+                </Text>
+                <Input
+                  label="Send at"
+                  value={scheduleAt}
+                  onChangeText={setScheduleAt}
+                  placeholder="2026-08-01 18:30"
+                  autoCapitalize="none"
+                />
+                <ChipButton
+                  className="self-start"
+                  tone="primary"
+                  icon="time-outline"
+                  label="Schedule"
+                  disabled={
+                    !canSend ||
+                    !scheduleAt.trim() ||
+                    Number.isNaN(new Date(scheduleAt).getTime()) ||
+                    new Date(scheduleAt).getTime() <= Date.now()
+                  }
+                  onPress={doSchedule}
+                />
+              </View>
+            )}
             {noSubject ? (
               <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
                 Add a subject line to enable sending.

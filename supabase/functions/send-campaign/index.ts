@@ -127,12 +127,23 @@ Deno.serve(async (req: Request) => {
     .single();
   if (cErr || !campaign) return json({ error: 'Campaign not found' }, 404);
 
-  // Re-authorise as the caller (the service client above bypasses RLS).
-  const { data: allowed, error: aErr } = await caller.rpc('effective_can', {
-    p_gym_id: campaign.gym_id,
-    p_capability: 'can_manage_comms',
-  });
-  if (aErr || allowed !== true) return json({ error: 'Not authorised' }, 403);
+  // Two ways in. A person clicking Send re-authorises as themselves (the
+  // service client above bypasses RLS). A scheduled send arrives from
+  // pg_cron with no user at all, so it presents the shared secret instead
+  // — the same path send-email-automations has always had. The campaign
+  // was authorised when it was scheduled, by someone who held the
+  // capability then; comms_schedule_campaign is where that is checked.
+  const CRON_SECRET = Deno.env.get('AUTOMATION_WORKER_SECRET');
+  const fromCron =
+    !!CRON_SECRET && req.headers.get('x-automation-secret') === CRON_SECRET;
+
+  if (!fromCron) {
+    const { data: allowed, error: aErr } = await caller.rpc('effective_can', {
+      p_gym_id: campaign.gym_id,
+      p_capability: 'can_manage_comms',
+    });
+    if (aErr || allowed !== true) return json({ error: 'Not authorised' }, 403);
+  }
 
   if (campaign.status !== 'sending') {
     return json({ error: `Campaign is ${campaign.status}, not sending` }, 409);

@@ -214,6 +214,55 @@ export function useAudienceCount(
   });
 }
 
+// Scheduling a send. The document is compiled and stored NOW rather than
+// at send time: what goes out has to be what was approved when the button
+// was pressed, and a late-edited draft quietly changing a scheduled send
+// is the kind of surprise nobody wants from a mailing tool.
+export function useScheduleCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    void,
+    Error,
+    {
+      campaignId: string;
+      sendAt: string;
+      document: EmailDocument;
+      preheader: string;
+      footer: { businessName?: string | null; address?: string | null };
+    }
+  >({
+    mutationFn: async ({ campaignId, sendAt, document, preheader, footer }) => {
+      const { error } = await supabase.rpc('comms_schedule_campaign', {
+        p_campaign_id: campaignId,
+        p_send_at: sendAt,
+        p_html: renderEmailHtml(document, { preheader, footer }),
+        p_text: renderEmailText(document, { footer }),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comms-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['comms-campaign'] });
+    },
+  });
+}
+
+export function useUnscheduleCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: async (campaignId) => {
+      const { error } = await supabase.rpc('comms_unschedule_campaign', {
+        p_campaign_id: campaignId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comms-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['comms-campaign'] });
+    },
+  });
+}
+
 export type SendResult = { recipientCount: number; mode: 'live' | 'simulated' };
 
 // Orchestrates a send: compile the document to HTML/text, snapshot the

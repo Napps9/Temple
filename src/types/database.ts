@@ -5026,6 +5026,19 @@ export type Database = {
         Args: { p_gym_id: string; p_definition: Json; p_limit?: number };
         Returns: { profile_id: string; full_name: string | null; email: string }[];
       };
+      comms_schedule_campaign: {
+        Args: {
+          p_campaign_id: string;
+          p_send_at: string;
+          p_html: string;
+          p_text: string;
+        };
+        Returns: null;
+      };
+      comms_unschedule_campaign: {
+        Args: { p_campaign_id: string };
+        Returns: null;
+      };
       comms_send_campaign: {
         Args: { p_campaign_id: string; p_html: string; p_text: string };
         Returns: number;
