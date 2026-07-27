@@ -424,6 +424,28 @@ The staff area shows up when `can_access_staff_area` is on.
   as active/paying for cohorts, and checkout/change/cancel ride the
   existing Stripe rails (every non-credit_pack kind is subscription
   mode).
+- **Money block on Analysis** [`can_see_money`, owner-only by default —
+  so it is absent for the coaches the rest of the page is aimed at] —
+  four tiles for the current calendar month off one RPC,
+  `compute_finance_summary(gym, month_start)`:
+  **Confirmed** (settled `billing_events` this month, with a delta vs the
+  named previous month rather than the generic "previous period"),
+  **Pending** (recurring memberships whose `paid_period_end` falls before
+  the month rolls over — the charges Stripe is scheduled to attempt),
+  **Month projected** (confirmed + pending, the mid-month number), and
+  **Expected monthly** (what the memberships already sold are worth per
+  month, each at `plan_subscriptions.price_cents` — the grandfathered
+  snapshot, so a price rise never re-rates an existing member).
+  `credit_pack` is excluded from both forward-looking figures: it is a
+  one-off purchase with no renewal, the same reason `0125`'s lapse sweep
+  skips it.
+  **Pending means scheduled, not overdue.** `plan_sub_state` has no
+  `past_due`, there is no `invoice.payment_failed` handler in
+  `stripe-webhook`, and `plan_subscriptions.awaiting_payment_authentication`
+  is never written by anything — so a member whose card has already
+  bounced stays `active` and sits inside Pending looking healthy. Real
+  arrears need the failure event handled and a status to put it in; the
+  InfoPanel on the block says so.
 - **Programming Analysis page** — 12-week injury heat map across the
   gym body + per-movement member trends (from both direct PR logs and
   section-tagged workout results) + the Programming Balance block:
@@ -641,7 +663,16 @@ The Manage page presents a tab strip:
     `can_view_attendance`] — the three top-line tiles: Revenue (all
     sales — memberships, store, individual programming), Members, and
     Attendance % (share of members who attended a class in the period),
-    each with a delta vs the previous period. Lead/lifecycle metrics live
+    each with a delta vs the previous period. **The Revenue tile read
+    zero for every gym from `0080` until `0173`** — `is_revenue_event`
+    matched Stripe's own event names (`charge.succeeded`, `invoice.paid`)
+    while `stripe-webhook` writes its own shorter kinds (`checkout`,
+    `invoice`, `store_order`, `store_subscription`), so nothing matched
+    and an empty result read as "no revenue yet" rather than as a fault.
+    `0173` matches the kinds actually written and
+    `supabase/tests/revenue_event_kinds.sql` pins them, so the next
+    rename fails a test instead of silently zeroing the dashboard.
+    Lead/lifecycle metrics live
     on the **AI Front Desk** tab; the retired Targets editor and
     Expiring/Expired/Paying/Conversion/Retention tiles remain unsurfaced
     (`gym_insight_targets` and `compute_insight_summary` still exist
@@ -2058,6 +2089,18 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
+- **Failed / overdue membership payments**: Temple cannot currently see
+  one. `stripe-webhook` handles only `checkout.session.completed`,
+  `invoice.paid`, `customer.subscription.updated` (store subs only) and
+  `customer.subscription.deleted` — there is no `invoice.payment_failed`
+  handler, `plan_sub_state` has no `past_due`/`unpaid`, and
+  `plan_subscriptions.awaiting_payment_authentication` exists but is
+  written by nothing. A member whose card fails stays `active` with a
+  stale `paid_period_end` until Stripe eventually deletes the
+  subscription. Needs: handle the failure event, add a status for it,
+  and a "needs chasing" list. The Money block's **Pending** figure is
+  scheduled collections and says so, but it will quietly include a
+  renewal that has already bounced until this lands.
 - **Health-data GDPR — owner sign-off remainder**: the DPIA and
   lawful-basis register are drafted (`docs/legal/`) but need formal
   owner sign-off, and the in-app legal docs carry a DRAFT banner with

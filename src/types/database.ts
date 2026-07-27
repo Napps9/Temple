@@ -4256,6 +4256,18 @@ export type Database = {
           lead_conversions: number;
         }[];
       };
+      compute_finance_summary: {
+        Args: { p_gym_id: string; p_month_start: string };
+        Returns: {
+          currency: string;
+          confirmed_cents: number;
+          confirmed_count: number;
+          pending_cents: number;
+          pending_count: number;
+          forward_mrr_cents: number;
+          forward_count: number;
+        }[];
+      };
       compute_revenue_summary: {
         Args: { p_gym_id: string; p_period_start: string; p_period_end: string };
         Returns: {

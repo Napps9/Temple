@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { BodyMap } from '@/components/BodyMap';
+import { StatTile } from '@/components/StatTile';
 import {
   DATE_RE,
   DateRangeCta,
@@ -25,6 +26,10 @@ import {
   type MovementTrendSummary,
 } from '@/lib/analysis';
 import { useGymMembership } from '@/lib/auth';
+import { formatMoney } from '@/lib/coach-earnings';
+import { errorMessage } from '@/lib/errors';
+import { monthLabel, monthRange, pctDelta, previousMonthRange } from '@/lib/metrics';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import {
   daysAgo,
   injuryTitle,
@@ -112,6 +117,7 @@ export default function AnalysisScreen() {
   const colors = useThemeColors();
   const canSeeHealth = useCan('can_see_health_flag') ?? false;
   const canSeeLogs = useCan('can_see_workout_logs') ?? false;
+  const canSeeMoney = useCan('can_see_money') ?? false;
 
   const injuries = useQuery({
     queryKey: ['gym-open-injuries', membership?.gymId],
@@ -264,6 +270,10 @@ export default function AnalysisScreen() {
             regions — plus open injuries and member trends.
           </Text>
         </View>
+
+        {membership?.gymId && canSeeMoney ? (
+          <FinanceBlock gymId={membership.gymId} />
+        ) : null}
 
         {membership?.gymId ? (
           <ProgrammingBalanceBlock
@@ -657,6 +667,145 @@ function InfoPanel({ what, why }: { what: string; why: string }) {
         <Text className="text-gray-600 dark:text-gray-300 text-xs leading-5">
           {why}
         </Text>
+      </View>
+    </View>
+  );
+}
+
+// ============================================================================
+// Finance — confirmed, pending, forward. Gated on can_see_money, which is
+// owner-only by default, so this block is simply absent for the coaches
+// this screen is otherwise aimed at.
+// ============================================================================
+
+type FinanceRow = {
+  currency: string;
+  confirmed_cents: number;
+  confirmed_count: number;
+  pending_cents: number;
+  pending_count: number;
+  forward_mrr_cents: number;
+  forward_count: number;
+};
+
+function useFinanceMonth(gymId: string | undefined, monthStart: string) {
+  return useQuery({
+    queryKey: ['finance-summary', gymId, monthStart],
+    enabled: !!gymId,
+    queryFn: async (): Promise<FinanceRow[]> => {
+      const { data, error } = await supabase.rpc('compute_finance_summary', {
+        p_gym_id: gymId!,
+        p_month_start: monthStart,
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as FinanceRow[];
+    },
+  });
+}
+
+// The RPC returns a row per currency. Pick the one the gym actually trades
+// in — same rule as the Revenue tile on Manage, and for the same reason: a
+// stray foreign charge shouldn't rename the headline number.
+function primaryFinanceRow(rows: FinanceRow[], fallback: string): FinanceRow {
+  const empty: FinanceRow = {
+    currency: fallback,
+    confirmed_cents: 0,
+    confirmed_count: 0,
+    pending_cents: 0,
+    pending_count: 0,
+    forward_mrr_cents: 0,
+    forward_count: 0,
+  };
+  if (rows.length === 0) return empty;
+  return (
+    rows.find((r) => r.forward_count > 0 || r.pending_count > 0) ??
+    [...rows].sort((a, b) => b.confirmed_count - a.confirmed_count)[0]!
+  );
+}
+
+function FinanceBlock({ gymId }: { gymId: string }) {
+  const currency = useGymCurrency();
+  const now = new Date();
+  const thisMonth = monthRange(now);
+  const lastMonth = previousMonthRange(now);
+
+  const current = useFinanceMonth(gymId, thisMonth.start);
+  const previous = useFinanceMonth(gymId, lastMonth.start);
+
+  const cur = primaryFinanceRow(current.data ?? [], currency);
+  const prev = primaryFinanceRow(previous.data ?? [], currency);
+  const ccy = cur.currency;
+  const loading = current.isLoading || previous.isLoading;
+
+  const error = current.error ?? previous.error;
+  if (error) {
+    return (
+      <View className="gap-3">
+        <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          Money
+        </Text>
+        <Text className="text-red-500 dark:text-red-400 text-sm">
+          {errorMessage(error, 'Could not load the finance summary')}
+        </Text>
+      </View>
+    );
+  }
+
+  const projected = cur.confirmed_cents + cur.pending_cents;
+
+  return (
+    <View className="gap-3">
+      <CardHeading
+        size="section"
+        title="Money"
+        subtitle={monthLabel(thisMonth.start)}
+        what="Confirmed is what has actually settled this month. Pending is what Stripe is scheduled to take from existing memberships before the month ends. Expected monthly is what the memberships you have already sold are worth per month, each at the price that member pays."
+        why="Confirmed alone understates a month that is only half over. Confirmed plus pending is the number to compare against last month. Note that pending means scheduled, not overdue: Temple cannot currently see a failed membership payment, so a card that has already bounced still sits in pending looking healthy."
+      />
+      <View className="flex-row flex-wrap -m-1.5">
+        <View className="w-1/2 lg:w-1/3 p-1.5">
+          <StatTile
+            title="Confirmed"
+            value={loading ? '—' : formatMoney(cur.confirmed_cents, ccy)}
+            subtitle={`vs ${monthLabel(lastMonth.start)}`}
+            delta={
+              loading
+                ? undefined
+                : pctDelta(cur.confirmed_cents, prev.confirmed_cents)
+            }
+          />
+        </View>
+        <View className="w-1/2 lg:w-1/3 p-1.5">
+          <StatTile
+            title="Pending"
+            value={loading ? '—' : formatMoney(cur.pending_cents, ccy)}
+            subtitle={
+              cur.pending_count === 1
+                ? '1 renewal still due'
+                : `${cur.pending_count} renewals still due`
+            }
+            tone="muted"
+          />
+        </View>
+        <View className="w-1/2 lg:w-1/3 p-1.5">
+          <StatTile
+            title="Month projected"
+            value={loading ? '—' : formatMoney(projected, ccy)}
+            subtitle="confirmed + pending"
+          />
+        </View>
+        <View className="w-1/2 lg:w-1/3 p-1.5">
+          <StatTile
+            title="Expected monthly"
+            value={loading ? '—' : formatMoney(cur.forward_mrr_cents, ccy)}
+            subtitle={
+              cur.forward_count === 1
+                ? 'from 1 active membership'
+                : `from ${cur.forward_count} active memberships`
+            }
+            href="/management/plans"
+          />
+        </View>
       </View>
     </View>
   );

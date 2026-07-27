@@ -23,7 +23,7 @@ import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
 import { TagRulesModal } from '@/components/TagRulesModal';
-import { StatTile, type Delta, type DeltaDirection } from '@/components/StatTile';
+import { StatTile } from '@/components/StatTile';
 import {
   bucketByClassType,
   type AttendanceBooking,
@@ -44,6 +44,14 @@ import {
   type MembershipPolicies,
 } from '@/lib/membership-changes';
 import { supabase } from '@/lib/supabase';
+import {
+  dayBefore,
+  mirrorRange,
+  pctDelta,
+  pickPrimaryCurrency,
+  ppDelta,
+  type RevenueRow,
+} from '@/lib/metrics';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import type { GymRole } from '@/types/database';
 import { useCan } from '@/lib/useCan';
@@ -1122,76 +1130,6 @@ function CoachEarningsSummary({ profileId }: { profileId: string }) {
 
 
 
-function formatCurrency(cents: number, currency: string): string {
-  const amount = cents / 100;
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 2,
-    }).format(amount);
-  } catch {
-    return `${currency.toUpperCase()} ${amount.toFixed(2)}`;
-  }
-}
-
-type RevenueRow = { currency: string; gross_cents: number; charge_count: number };
-
-// Build the "previous period" — same length as the current range,
-// immediately preceding it. Inclusive on both ends.
-//
-// e.g. current = (2026-06-01, 2026-06-07) — 7 days
-//      mirror  = (2026-05-25, 2026-05-31) — 7 days, ending the day before current starts
-function mirrorRange(range: { start: string; end: string }): { start: string; end: string } {
-  const start = new Date(`${range.start}T00:00:00Z`);
-  const end = new Date(`${range.end}T00:00:00Z`);
-  const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
-  const mirrorEnd = new Date(start.getTime() - 86400000);
-  const mirrorStart = new Date(mirrorEnd.getTime() - (days - 1) * 86400000);
-  return { start: isoDate(mirrorStart), end: isoDate(mirrorEnd) };
-}
-
-// The day before a given period — used as the as-of date for the
-// mirror member count, so it's strictly before the current period starts.
-function dayBefore(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  return isoDate(new Date(d.getTime() - 86400000));
-}
-
-// Pick the dominant currency by charge_count. With no charges yet, fall
-// back to the gym's configured currency (which follows its connected
-// Stripe account) so the empty tile reads "£0.00" not "US$0.00". Multi-
-// currency gyms are rare enough that one tile per gym is the right
-// trade — if a gym needs more, the Plans / Reports screens still show
-// per-currency detail.
-function pickPrimaryCurrency(
-  rows: RevenueRow[],
-  fallbackCurrency: string,
-): RevenueRow {
-  if (rows.length === 0)
-    return { currency: fallbackCurrency, gross_cents: 0, charge_count: 0 };
-  return [...rows].sort((a, b) => b.charge_count - a.charge_count)[0]!;
-}
-
-function pctDelta(current: number, previous: number): Delta {
-  if (previous === 0 && current === 0) return { direction: 'flat', label: 'no change' };
-  if (previous === 0) return { direction: 'up', label: 'new' };
-  const ratio = (current - previous) / previous;
-  if (Math.abs(ratio) < 0.001) return { direction: 'flat', label: '0%' };
-  const pct = ratio * 100;
-  const direction: DeltaDirection = pct > 0 ? 'up' : 'down';
-  const sign = pct > 0 ? '+' : '';
-  return { direction, label: `${sign}${pct.toFixed(1)}%` };
-}
-
-function ppDelta(current: number, previous: number): Delta {
-  const diff = current - previous;
-  if (Math.abs(diff) < 0.05) return { direction: 'flat', label: '0 pp' };
-  const direction: DeltaDirection = diff > 0 ? 'up' : 'down';
-  const sign = diff > 0 ? '+' : '';
-  return { direction, label: `${sign}${diff.toFixed(1)} pp` };
-}
-
 // ============================================================================
 // Insights tab — Revenue, Members, Attendance. Everything lead/lifecycle
 // related (intros, conversions, retention, targets) lives on the AI Front
@@ -1353,7 +1291,7 @@ function InsightsStats({
               value={
                 revenueLoading
                   ? '—'
-                  : formatCurrency(revenueNow.gross_cents, revenueNow.currency)
+                  : formatMoney(revenueNow.gross_cents, revenueNow.currency)
               }
               subtitle="vs previous period"
               delta={revenueDelta}
