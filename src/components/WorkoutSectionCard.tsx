@@ -2,6 +2,8 @@ import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { findMovement, findScheme } from '@/lib/movements';
+import { formatWeight } from '@/lib/weight';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import {
   categoryLabel,
   formatLabel,
@@ -163,6 +165,7 @@ function EntryLine({
   entry: SectionEntryShape;
   format: SectionFormatKey;
 }) {
+  const weightUnit = useGymWeightUnit();
   const labelBase =
     format === 'amrap'
       ? 'Round'
@@ -175,7 +178,7 @@ function EntryLine({
   const pieces: string[] = [];
   if (entry.weight_numeric != null) {
     pieces.push(
-      `${entry.weight_numeric}${entry.weight_unit ? ' ' + entry.weight_unit : ''}`,
+      formatWeight(entry.weight_numeric, weightUnit),
     );
   }
   if (entry.reps != null) pieces.push(`${entry.reps} reps`);

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Text, View } from 'react-native';
 
 import { useGymMembership } from '@/lib/auth';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import {
   formatStrengthValue,
   ordinal,
@@ -24,6 +25,7 @@ export function StrengthLeaderboard({
   limit?: number;
 }) {
   const { data: membership } = useGymMembership();
+  const weightUnit = useGymWeightUnit();
 
   const query = useQuery({
     queryKey: [
@@ -91,7 +93,7 @@ export function StrengthLeaderboard({
             </Text>
           </View>
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-            {formatStrengthValue(r, scheme.metric)}
+            {formatStrengthValue(r, scheme.metric, weightUnit)}
           </Text>
         </View>
       ))}

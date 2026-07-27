@@ -57,6 +57,7 @@ export type Database = {
           created_at: string;
           coach_credit_policy: 'all_scheduled' | 'only_checked_in';
           currency: string;
+          weight_unit: 'kg' | 'lb';
           class_leaderboards_enabled: boolean;
           strength_leaderboards_enabled: boolean;
           dm_scope: 'full_gym' | 'member_coach_only';
@@ -109,6 +110,7 @@ export type Database = {
           created_at?: string;
           coach_credit_policy?: 'all_scheduled' | 'only_checked_in';
           currency?: string;
+          weight_unit?: 'kg' | 'lb';
           class_leaderboards_enabled?: boolean;
           strength_leaderboards_enabled?: boolean;
           dm_scope?: 'full_gym' | 'member_coach_only';
@@ -4889,6 +4891,10 @@ export type Database = {
       set_allow_minors: {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: undefined;
+      };
+      set_gym_weight_unit: {
+        Args: { p_gym_id: string; p_unit: string };
+        Returns: null;
       };
       set_gym_discipline: {
         Args: { p_gym_id: string; p_discipline: string };

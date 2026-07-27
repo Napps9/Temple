@@ -7,19 +7,14 @@
 // rep max exists (Epley) and label it as an estimate, rather than
 // showing a member nothing.
 //
-// Units: every writer in the app stores 'kg', but the CSV importer
-// (0072) writes 'lb' through unconverted, and bestOf() compares raw
-// numerics — so a 315 lb row currently outranks a 200 kg one.
-//
-// We deliberately do NOT convert. The rep-max row on the movement
-// detail page renders the winner of that raw comparison ("315 lb"); a
-// converting resolver would pick a different row and render a
-// different number three centimetres below it, disagreeing about both
-// the weight and which session was best. Instead, a movement with any
-// non-kg weight row resolves to `unit_unknown` and the card says so.
-// That makes the gap visible rather than burying a guess inside one
-// feature. The real fix is a per-gym weight unit with kg stored
-// canonically, which also has to cover the strength_leaderboard RPC.
+// Units: kilograms are canonical in storage since 0181 — the importer
+// converts on the way in and the existing lb rows were backfilled — so
+// every weight here is directly comparable. Display conversion is the
+// caller's job, via useGymWeightUnit and formatWeight in lib/weight.
+// This file used to refuse to resolve a max for any movement with a
+// pounds row, because ranking it against kg rows would have contradicted
+// the rep-max row rendered three centimetres above. That refusal is gone
+// with the reason for it.
 
 import { bestOfMerged, type JournalRow } from './movement-journal';
 import type { Movement, Scheme } from './movements';
@@ -41,17 +36,7 @@ export type ResolvedMax = {
   performedAt: string;
 };
 
-// A movement whose weight history is in pounds. We can't rank it
-// against kg rows without contradicting the rep-max card, so we say
-// nothing numeric and explain why.
-export type UnitUnknown = { kind: 'unit_unknown' };
-
-export type MaxResolution = ResolvedMax | UnitUnknown;
-
-export function isKgUnit(unit: string | null | undefined): boolean {
-  const u = (unit ?? '').trim().toLowerCase();
-  return u === '' || u === 'kg' || u === 'kgs';
-}
+export type MaxResolution = ResolvedMax;
 
 // Epley. Identity at one rep, which matters — a recorded 1RM must never
 // be inflated by passing through here.
@@ -88,9 +73,6 @@ export function resolveOneRepMax(
     (r) => schemeKeys.has(r.track_key) && r.value_numeric != null,
   );
   if (weightRows.length === 0) return null;
-  if (weightRows.some((r) => !isKgUnit(r.value_unit))) {
-    return { kind: 'unit_unknown' };
-  }
 
   const bestFor = (scheme: Scheme): { row: JournalRow; reps: number } | null => {
     const reps = repsForScheme(scheme.key);
@@ -159,13 +141,9 @@ export function percentWeight(oneRm: number, pct: number): number {
   return Math.round(((oneRm * pct) / 100) / 2.5) * 2.5;
 }
 
-export function formatWeight(value: number): string {
-  // Rounded values land on .0 or .5 — drop a trailing .0 so 80 kg
-  // doesn't render as "80.0 kg".
-  const n = Math.round(value * 10) / 10;
-  const text = Number.isInteger(n) ? String(n) : n.toFixed(1);
-  return `${text} kg`;
-}
+// Re-exported so callers that already import from here don't need a
+// second import; the implementation lives with the conversion.
+export { formatWeight } from './weight';
 
 // 50-100% in 5% steps. Nobody prescribes a 40% working set, and 13
 // rows made a very tall card above the leaderboard on a phone.

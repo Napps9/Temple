@@ -8,6 +8,8 @@ import { BackLink } from '@/components/BackLink';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
+import { formatWeight } from '@/lib/weight';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { findMovement, findScheme } from '@/lib/movements';
 import {
   formatLabel,
@@ -253,11 +255,12 @@ function EntryLine({
   entry: SectionEntryRow;
   format: SectionFormatKey;
 }) {
+  const weightUnit = useGymWeightUnit();
   const labelBase = format === 'amrap' ? 'Round' : format === 'emom' ? 'Minute' : format === 'intervals' ? 'Interval' : 'Set';
   const idx = entry.round_index ?? entry.entry_index;
   const pieces: string[] = [];
   if (entry.weight_numeric != null) {
-    pieces.push(`${entry.weight_numeric}${entry.weight_unit ? ' ' + entry.weight_unit : ''}`);
+    pieces.push(formatWeight(entry.weight_numeric, weightUnit));
   }
   if (entry.reps != null) pieces.push(`${entry.reps} reps`);
   if (entry.time_seconds != null) pieces.push(formatSeconds(entry.time_seconds));
@@ -279,11 +282,12 @@ function EntryLine({
 }
 
 function ResultRow({ row }: { row: TrackedResultRow }) {
+  const weightUnit = useGymWeightUnit();
   const meta = findMovement(row.movement_key);
   const scheme = findScheme(row.movement_key, row.track_key);
   const movementName = meta?.movement.name ?? row.movement_key;
   const schemeLabel = scheme?.label ?? row.track_key;
-  const display = scheme ? formatResultValue(row, scheme.metric) : null;
+  const display = scheme ? formatResultValue(row, scheme.metric, weightUnit) : null;
   return (
     <Pressable
       onPress={() =>

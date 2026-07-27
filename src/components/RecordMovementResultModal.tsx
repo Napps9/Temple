@@ -7,6 +7,8 @@ import { Button } from './Button';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { displayToKg, type WeightUnit } from '@/lib/weight';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { errorMessage } from '@/lib/errors';
 import {
   allSchemeOptions,
@@ -74,6 +76,7 @@ export function RecordMovementResultModal({
   const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
+  const weightUnit = useGymWeightUnit();
   const queryClient = useQueryClient();
 
   const [date, setDate] = useState<string>(initialDate ?? todayLocalIso());
@@ -186,7 +189,13 @@ export function RecordMovementResultModal({
           workout_id: workoutId,
           movement_key: opt.movementKey,
           track_key: opt.schemeKey,
-          value_numeric: isTime ? null : parsedValue,
+          // Storage is kilograms (0181); the member typed in whatever
+          // their gym displays.
+          value_numeric: isTime
+            ? null
+            : scheme.metric === 'weight'
+              ? displayToKg(parsedValue, weightUnit)
+              : parsedValue,
           value_seconds: isTime ? parsedValue : null,
           value_unit: isTime ? null : defaultUnit(scheme.metric),
           notes: draft.notes.trim() || null,
@@ -340,6 +349,7 @@ function DraftCard({
   onUpdate: (next: Partial<DraftResult>) => void;
   onRemove: () => void;
 }) {
+  const weightUnit = useGymWeightUnit();
   const colors = useThemeColors();
   const opt = draft.option;
   return (
@@ -379,7 +389,7 @@ function DraftCard({
       {opt ? (
         <>
           <Input
-            label={valueInputLabel(opt.metric)}
+            label={valueInputLabel(opt.metric, weightUnit)}
             value={draft.value}
             onChangeText={(v) => onUpdate({ value: v })}
             placeholder={valuePlaceholder(opt.metric)}
@@ -552,10 +562,10 @@ function SchemePickerModal({
   );
 }
 
-function valueInputLabel(metric: Metric): string {
+function valueInputLabel(metric: Metric, weightUnit: WeightUnit): string {
   switch (metric) {
     case 'weight':
-      return 'Weight (kg)';
+      return `Weight (${weightUnit})`;
     case 'time':
       return 'Time (MM:SS or HH:MM:SS)';
     case 'reps':

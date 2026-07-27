@@ -4,7 +4,6 @@ import type { JournalRow } from './movement-journal';
 import {
   estimateOneRepMax,
   formatWeight,
-  isKgUnit,
   percentWeight,
   repsForScheme,
   resolveOneRepMax,
@@ -54,19 +53,6 @@ describe('estimateOneRepMax', () => {
   it('refuses nonsense input', () => {
     expect(estimateOneRepMax(100, 0)).toBe(0);
     expect(estimateOneRepMax(Number.NaN, 5)).toBe(0);
-  });
-});
-
-describe('isKgUnit', () => {
-  it('treats kg and a missing unit as kg', () => {
-    expect(isKgUnit('kg')).toBe(true);
-    expect(isKgUnit(null)).toBe(true);
-    expect(isKgUnit('')).toBe(true);
-  });
-
-  it('does not treat pounds as kg', () => {
-    expect(isKgUnit('lb')).toBe(false);
-    expect(isKgUnit('LBS')).toBe(false);
   });
 });
 
@@ -127,22 +113,16 @@ describe('resolveOneRepMax', () => {
     expect(res?.kind === 'max' && res.value).toBeCloseTo(110.833, 3);
   });
 
-  it('refuses to rank a pounds row rather than contradicting the card above', () => {
-    // bestOf() elsewhere compares raw numerics, so the rep-max row
-    // renders "315 lb" as this member's best. Converting here would
-    // pick the 200 kg set instead and disagree about both the weight
-    // and the date, three centimetres apart on the same screen.
+  // This used to resolve to unit_unknown and the card said "your results
+  // are recorded in pounds". Storage is kilograms now (0181) — the
+  // importer converts and the old rows were backfilled — so a stored
+  // number is a stored number and the resolver just ranks them.
+  it('ranks every row now that storage is one unit', () => {
     const res = resolveOneRepMax(
-      [row('1rm', 200, { unit: 'kg' }), row('3rm', 315, { unit: 'lb' })],
+      [row('1rm', 200, { unit: 'kg' }), row('3rm', 142.9, { unit: 'kg' })],
       BACK_SQUAT,
     );
-    expect(res).toEqual({ kind: 'unit_unknown' });
-  });
-
-  it('refuses on pounds-only history too', () => {
-    expect(resolveOneRepMax([row('1rm', 315, { unit: 'lb' })], BACK_SQUAT)).toEqual(
-      { kind: 'unit_unknown' },
-    );
+    expect(res).toMatchObject({ kind: 'max', value: 200, fromScheme: '1rm' });
   });
 
   it('treats a missing unit as kg', () => {
@@ -182,7 +162,7 @@ describe('percentWeight', () => {
 
 describe('formatWeight', () => {
   it('drops a trailing zero decimal', () => {
-    expect(formatWeight(80)).toBe('80 kg');
-    expect(formatWeight(82.5)).toBe('82.5 kg');
+    expect(formatWeight(80, 'kg')).toBe('80 kg');
+    expect(formatWeight(82.5, 'kg')).toBe('82.5 kg');
   });
 });

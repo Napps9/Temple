@@ -9,6 +9,7 @@ import {
   type WorkoutSectionShape,
 } from '@/components/WorkoutSectionCard';
 import { useSession } from '@/lib/auth';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { findMovement, findScheme } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
 import {
@@ -135,11 +136,12 @@ export default function WorkoutDetail() {
 }
 
 function ResultRow({ row }: { row: TrackedResultRow }) {
+  const weightUnit = useGymWeightUnit();
   const meta = findMovement(row.movement_key);
   const scheme = findScheme(row.movement_key, row.track_key);
   const movementName = meta?.movement.name ?? row.movement_key;
   const schemeLabel = scheme?.label ?? row.track_key;
-  const display = scheme ? formatResultValue(row, scheme.metric) : null;
+  const display = scheme ? formatResultValue(row, scheme.metric, weightUnit) : null;
   return (
     <Pressable
       onPress={() =>

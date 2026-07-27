@@ -4,6 +4,7 @@
 // Journal rows are formatted.
 
 import type { Metric } from './movements';
+import { formatWeight, type WeightUnit } from './weight';
 import type { SectionFormatKey } from './programming';
 import { formatSeconds } from './track';
 
@@ -44,7 +45,10 @@ export type StrengthLeaderboardRow = {
 //   emom          → "X / N done" if we knew N; falls back to weight
 //   intervals     → falls back to weight
 //   no_score/other → "—"
-export function formatClassScore(row: ClassLeaderboardRow): string {
+export function formatClassScore(
+  row: ClassLeaderboardRow,
+  weightUnit: WeightUnit = 'kg',
+): string {
   const f = row.section_format as SectionFormatKey;
   if (f === 'for_time') {
     if (row.did_not_finish) return 'DNF';
@@ -70,12 +74,12 @@ export function formatClassScore(row: ClassLeaderboardRow): string {
   }
   if (f === 'max_load' || f === 'strength_sets') {
     return row.heaviest_weight != null
-      ? `${row.heaviest_weight} ${row.weight_unit ?? 'kg'}`
+      ? formatWeight(row.heaviest_weight, weightUnit)
       : '—';
   }
   if (f === 'emom' || f === 'intervals') {
     return row.heaviest_weight != null
-      ? `${row.heaviest_weight} ${row.weight_unit ?? 'kg'}`
+      ? formatWeight(row.heaviest_weight, weightUnit)
       : '—';
   }
   return '—';
@@ -84,19 +88,19 @@ export function formatClassScore(row: ClassLeaderboardRow): string {
 export function formatStrengthValue(
   row: StrengthLeaderboardRow,
   metric: Metric,
+  weightUnit: WeightUnit = 'kg',
 ): string {
   if (metric === 'time') {
     return row.value_seconds != null ? formatSeconds(row.value_seconds) : '—';
   }
   if (row.value_numeric == null) return '—';
+  // Weights are stored in kilograms (0181), so this converts for display
+  // rather than asserting a unit it cannot see — strength_leaderboard
+  // returns no unit column, which is why this used to hardcode 'kg' and
+  // mislabel every imported row.
+  if (metric === 'weight') return formatWeight(row.value_numeric, weightUnit);
   const unit =
-    metric === 'weight'
-      ? 'kg'
-      : metric === 'distance'
-        ? 'm'
-        : metric === 'calories'
-          ? 'cal'
-          : 'reps';
+    metric === 'distance' ? 'm' : metric === 'calories' ? 'cal' : 'reps';
   return `${row.value_numeric} ${unit}`;
 }
 

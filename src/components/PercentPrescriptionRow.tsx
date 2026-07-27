@@ -5,6 +5,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { movementName, searchMovements } from '@/lib/movements';
 import { formatWeight, percentWeight, type ResolvedMax } from '@/lib/one-rep-max';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { findPrescriptions } from '@/lib/percent-prescription';
 import { useMovementPreferences } from '@/lib/useMovementPreferences';
 import type { RepMaxLookup } from '@/lib/useOneRepMaxes';
@@ -44,7 +45,6 @@ export function PercentPrescriptionRow({ section, lookup, onRecord }: Props) {
     });
 
   const chips: { pct: number; movementKey: string; max: ResolvedMax }[] = [];
-  const needsUnitHelp = new Set<string>();
   const missingMax = new Set<string>();
 
   for (const p of resolved) {
@@ -52,10 +52,6 @@ export function PercentPrescriptionRow({ section, lookup, onRecord }: Props) {
     const max = lookup(p.movementKey);
     if (!max) {
       missingMax.add(p.movementKey);
-      continue;
-    }
-    if (max.kind === 'unit_unknown') {
-      needsUnitHelp.add(p.movementKey);
       continue;
     }
     chips.push({ pct: p.pct, movementKey: p.movementKey, max });
@@ -72,8 +68,7 @@ export function PercentPrescriptionRow({ section, lookup, onRecord }: Props) {
   if (
     chips.length === 0 &&
     unanswered.length === 0 &&
-    missingMax.size === 0 &&
-    needsUnitHelp.size === 0
+    missingMax.size === 0
   ) {
     return null;
   }
@@ -97,15 +92,6 @@ export function PercentPrescriptionRow({ section, lookup, onRecord }: Props) {
           label={`Add your ${movementName(key)} max`}
           onPress={() => onRecord?.(key)}
         />
-      ))}
-
-      {[...needsUnitHelp].map((key) => (
-        <Text
-          key={`unit-${key}`}
-          className="text-gray-500 dark:text-gray-400 text-xs">
-          Your {movementName(key)} history is in pounds — percentages need
-          kilograms.
-        </Text>
       ))}
 
       {unanswered.map((term) => (
@@ -140,23 +126,24 @@ function PercentChip({
   movementKey: string;
 }) {
   const [showSource, setShowSource] = useState(false);
+  const unit = useGymWeightUnit();
   const weight = percentWeight(max.value, pct);
   const name = movementName(movementKey);
   const provenance =
     max.source === 'recorded'
-      ? `${pct}% of your ${formatWeight(max.value)} ${name} 1RM`
-      : `${pct}% of ~${formatWeight(max.value)}, estimated from your ${
+      ? `${pct}% of your ${formatWeight(max.value, unit)} ${name} 1RM`
+      : `${pct}% of ~${formatWeight(max.value, unit)}, estimated from your ${
           max.fromReps
-        } rep max (${formatWeight(max.fromValue)} × ${max.fromReps})`;
+        } rep max (${formatWeight(max.fromValue, unit)} × ${max.fromReps})`;
 
   return (
     <Pressable
       onPress={() => setShowSource((v) => !v)}
-      accessibilityLabel={`${formatWeight(weight)}. ${provenance}`}
+      accessibilityLabel={`${formatWeight(weight, unit)}. ${provenance}`}
       className="rounded-full bg-primary/10 border border-primary/30 px-3 py-1 active:bg-primary/20">
       <Text className="text-primary text-xs font-semibold">
         {pct}% · {max.source === 'estimated' ? '≈' : ''}
-        {formatWeight(weight)}
+        {formatWeight(weight, unit)}
       </Text>
       {showSource ? (
         <Text className="text-gray-500 dark:text-gray-400 text-[10px] mt-0.5">

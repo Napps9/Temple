@@ -8,6 +8,7 @@ import {
   type ClassLeaderboardRow,
 } from '@/lib/leaderboards';
 import { supabase } from '@/lib/supabase';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 
 // Per-section class leaderboard. Opened from the Programming view
 // for any section flagged leaderboard_enabled by the coach.
@@ -24,6 +25,7 @@ export function ClassLeaderboardModal({
   sectionTitle: string;
   onClose: () => void;
 }) {
+  const weightUnit = useGymWeightUnit();
   const query = useQuery({
     queryKey: ['class-leaderboard', programmingId, sectionIndex],
     enabled: visible && !!programmingId && sectionIndex != null,
@@ -88,7 +90,7 @@ export function ClassLeaderboardModal({
                     {r.display_name}
                   </Text>
                   <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                    {formatClassScore(r)}
+                    {formatClassScore(r, weightUnit)}
                   </Text>
                 </View>
               ))}

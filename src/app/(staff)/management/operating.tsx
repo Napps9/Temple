@@ -19,6 +19,8 @@ import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
 import { useGymCurrency } from '@/lib/useGymCurrency';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
+import { WEIGHT_UNIT_OPTIONS, type WeightUnit } from '@/lib/weight';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
@@ -60,6 +62,7 @@ type SectionKey =
   | 'discipline'
   | 'minors'
   | 'currency'
+  | 'weightUnit'
   | 'week'
   | 'class'
   | 'memberships'
@@ -106,6 +109,12 @@ export function OperatingDefaultsPanel() {
   useEffect(() => {
     setCurrency(currentCurrency);
   }, [currentCurrency]);
+
+  const currentWeightUnit = useGymWeightUnit();
+  const [weightUnit, setWeightUnit] = useState<WeightUnit | null>(null);
+  useEffect(() => {
+    setWeightUnit(currentWeightUnit);
+  }, [currentWeightUnit]);
 
   const currentAllowMinors = useGymAllowMinors();
   const [allowMinors, setAllowMinors] = useState<boolean | null>(null);
@@ -169,6 +178,15 @@ export function OperatingDefaultsPanel() {
         if (ce) throw ce;
         return;
       }
+      if (section === 'weightUnit') {
+        if (!weightUnit || weightUnit === currentWeightUnit) return;
+        const { error: we } = await supabase.rpc('set_gym_weight_unit', {
+          p_gym_id: membership.gymId,
+          p_unit: weightUnit,
+        });
+        if (we) throw we;
+        return;
+      }
       if (section === 'minors') {
         if (allowMinors === null || allowMinors === currentAllowMinors) return;
         const { error: me } = await supabase.rpc('set_allow_minors', {
@@ -220,6 +238,7 @@ export function OperatingDefaultsPanel() {
       queryClient.invalidateQueries({ queryKey: ['gym-operating-defaults'] });
       queryClient.invalidateQueries({ queryKey: ['gym-discipline'] });
       queryClient.invalidateQueries({ queryKey: ['gym-currency'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-weight-unit'] });
       queryClient.invalidateQueries({ queryKey: ['gym-allow-minors'] });
       // Saving stamps operating_defaults_reviewed_at, which flips the
       // 'settings' onboarding step done — refresh the checklist so it
@@ -322,6 +341,25 @@ export function OperatingDefaultsPanel() {
           }
           value={currency ?? 'GBP'}
           onChange={(v) => setCurrency(v)}
+        />
+      </Section>
+
+      <Section title="Weight unit" {...sectionProps('weightUnit')}>
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          How weights are shown across Track, leaderboards and percentage
+          prescriptions. Everything is stored in kilograms and converted for
+          display, so switching this re-labels existing results rather than
+          changing them — and a member's history stays comparable either
+          way.
+        </Text>
+        <Choice
+          label="Show weights in"
+          options={WEIGHT_UNIT_OPTIONS.map((o) => ({
+            key: o.value,
+            label: o.label,
+          }))}
+          value={weightUnit ?? 'kg'}
+          onChange={(v) => setWeightUnit(v as WeightUnit)}
         />
       </Section>
 

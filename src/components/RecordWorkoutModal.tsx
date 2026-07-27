@@ -15,6 +15,8 @@ import { Button } from './Button';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { displayToKg, type WeightUnit } from '@/lib/weight';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { errorMessage } from '@/lib/errors';
 import { detectMovementsInText } from '@/lib/movement-detection';
 import {
@@ -193,6 +195,7 @@ export function RecordWorkoutModal({
   const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
+  const weightUnit = useGymWeightUnit();
   const queryClient = useQueryClient();
 
   const [date, setDate] = useState<string>(initialDate ?? todayLocalIso());
@@ -578,6 +581,7 @@ export function RecordWorkoutModal({
               entryIdx: j,
               draft: e,
               format,
+              weightUnit,
             }),
           );
         });
@@ -1240,6 +1244,7 @@ function QuickFillBar({
   ) => void;
 }) {
   const colors = useThemeColors();
+  const weightUnit = useGymWeightUnit();
   const [expanded, setExpanded] = useState(false);
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
@@ -1333,7 +1338,7 @@ function QuickFillBar({
       <View className="gap-2">
         {metrics.includes('weight') ? (
           <Input
-            label="Weight (kg)"
+            label={`Weight (${weightUnit})`}
             value={weight}
             onChangeText={setWeight}
             placeholder="100"
@@ -1395,11 +1400,12 @@ function EntryFields({
   metrics: EntryMetric[];
   onUpdate: (next: Partial<SectionEntryDraft>) => void;
 }) {
+  const weightUnit = useGymWeightUnit();
   return (
     <View className="gap-2">
       {metrics.includes('weight') ? (
         <Input
-          label="Weight (kg)"
+          label={`Weight (${weightUnit})`}
           value={entry.weight}
           onChangeText={(v) => onUpdate({ weight: v })}
           placeholder="100"
@@ -1922,8 +1928,10 @@ function buildEntryInsert(args: {
   entryIdx: number;
   draft: SectionEntryDraft;
   format: SectionFormatKey;
+  weightUnit: WeightUnit;
 }) {
-  const { gymId, profileId, sectionId, entryIdx, draft, format } = args;
+  const { gymId, profileId, sectionId, entryIdx, draft, format, weightUnit } =
+    args;
   const shape = FORMAT_SHAPES[format];
   // Round-keyed formats use round_index; set-keyed formats leave it null.
   const isRoundKeyed =
@@ -1934,7 +1942,11 @@ function buildEntryInsert(args: {
     section_id: sectionId,
     entry_index: entryIdx + 1,
     round_index: isRoundKeyed ? entryIdx + 1 : null,
-    weight_numeric: parseNumber(draft.weight),
+    // Always stored in kilograms (0181), whatever the gym displays.
+    weight_numeric: (() => {
+      const v = parseNumber(draft.weight);
+      return v == null ? null : displayToKg(v, weightUnit);
+    })(),
     weight_unit: draft.weight.trim() ? 'kg' : null,
     reps: parseInt2(draft.reps),
     time_seconds: parseDuration(draft.time.trim()) ?? null,

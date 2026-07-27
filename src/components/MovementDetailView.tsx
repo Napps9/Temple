@@ -31,6 +31,7 @@ import {
   PERCENT_STEPS,
 } from '@/lib/one-rep-max';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { useMovementFavourites } from '@/lib/useFavouriteMovements';
 import {
   categoryLabel,
@@ -88,6 +89,7 @@ export function MovementDetailView({
   const session = useSession();
   const colors = useThemeColors();
   const discipline = useGymDiscipline();
+  const weightUnit = useGymWeightUnit();
   const meta = movementKey ? findMovement(movementKey) : undefined;
   const fav = useMovementFavourites(discipline);
   const starred = fav.movements.has(movementKey);
@@ -254,7 +256,7 @@ export function MovementDetailView({
             {movement.schemes.map((scheme) => {
               const best = bestOfMerged(merged, scheme.key, scheme);
               const display = best
-                ? formatResultValue(best, scheme.metric)
+                ? formatResultValue(best, scheme.metric, weightUnit)
                 : null;
               const series = normaliseForPlot(
                 trendPoints(merged, scheme.key, scheme.metric),
@@ -395,6 +397,7 @@ function MovementPercentagesCard({
   merged: JournalRow[];
   onRecord: (() => void) | null;
 }) {
+  const weightUnit = useGymWeightUnit();
   const loadable = movement.schemes.some(
     (s) => s.metric === 'weight' && s.better === 'higher',
   );
@@ -424,18 +427,12 @@ function MovementPercentagesCard({
               />
             ) : null}
           </>
-        ) : resolved.kind === 'unit_unknown' ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            Your {movement.name} results are recorded in pounds.
-            Percentages need kilograms, so we're not going to guess at a
-            conversion here.
-          </Text>
         ) : (
           <>
             <Text className="text-gray-500 dark:text-gray-400 text-xs">
               {resolved.source === 'recorded'
-                ? `Of your ${formatWeight(resolved.value)} 1RM, set ${fmtDateShort(resolved.performedAt)}`
-                : `Of ~${formatWeight(resolved.value)}, estimated from your ${resolved.fromReps} rep max (${formatWeight(resolved.fromValue)} × ${resolved.fromReps}, ${fmtDateShort(resolved.performedAt)})`}
+                ? `Of your ${formatWeight(resolved.value, weightUnit)} 1RM, set ${fmtDateShort(resolved.performedAt)}`
+                : `Of ~${formatWeight(resolved.value, weightUnit)}, estimated from your ${resolved.fromReps} rep max (${formatWeight(resolved.fromValue, weightUnit)} × ${resolved.fromReps}, ${fmtDateShort(resolved.performedAt)})`}
             </Text>
             <View className="flex-row flex-wrap -m-1">
               {PERCENT_STEPS.map((pct) => (
@@ -445,7 +442,7 @@ function MovementPercentagesCard({
                       {pct}%
                     </Text>
                     <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                      {formatWeight(percentWeight(resolved.value, pct))}
+                      {formatWeight(percentWeight(resolved.value, pct), weightUnit)}
                     </Text>
                   </View>
                 </View>
@@ -537,7 +534,8 @@ function JournalRowView({
   isPR: boolean;
   linkable: boolean;
 }) {
-  const display = metric ? formatResultValue(row, metric) : null;
+  const weightUnit = useGymWeightUnit();
+  const display = metric ? formatResultValue(row, metric, weightUnit) : null;
   const body = (
     <>
       <View className="flex-1">

@@ -7,6 +7,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
+import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { findGroup } from '@/lib/movements';
 import {
   bestOfMerged,
@@ -45,6 +46,7 @@ type RawTagRow = {
 };
 
 export default function GroupPage() {
+  const weightUnit = useGymWeightUnit();
   const colors = useThemeColors();
   const { group: groupKey } = useLocalSearchParams<{ group: string }>();
   const session = useSession();
@@ -188,7 +190,7 @@ export default function GroupPage() {
             const headlineScheme = m.schemes[0];
             const best = bestOfMerged(merged, headlineScheme.key, headlineScheme);
             const display = best
-              ? formatResultValue(best, headlineScheme.metric)
+              ? formatResultValue(best, headlineScheme.metric, weightUnit)
               : null;
             return (
               <Pressable

@@ -142,13 +142,26 @@ describe('formatResultValue', () => {
     ).toBe('100 kg');
   });
 
-  it('honours an explicit unit', () => {
+  // A stored weight is kilograms whatever value_unit says (0181 converted
+  // the lb rows and the importer no longer writes any). The gym's display
+  // unit decides how it reads, not the row.
+  it('ignores a legacy unit tag and shows the gym unit', () => {
     expect(
       formatResultValue(
-        { value_numeric: 220, value_seconds: null, value_unit: 'lbs' },
+        { value_numeric: 100, value_seconds: null, value_unit: 'lbs' },
         'weight',
       ),
-    ).toBe('220 lbs');
+    ).toBe('100 kg');
+  });
+
+  it('converts for a gym that displays pounds', () => {
+    expect(
+      formatResultValue(
+        { value_numeric: 100, value_seconds: null, value_unit: 'kg' },
+        'weight',
+        'lb',
+      ),
+    ).toBe('220.5 lb');
   });
 
   it('formats time from seconds', () => {

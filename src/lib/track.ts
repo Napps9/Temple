@@ -2,6 +2,7 @@
 // best-of selection across a series of movement results.
 
 import type { Metric, Scheme } from './movements';
+import { formatWeight, type WeightUnit } from './weight';
 
 export type TrackedResultRow = {
   id: string;
@@ -26,17 +27,23 @@ export type TrackedWorkoutRow = {
 
 // Format a single result for display. Returns null when there's
 // nothing recordable (defensive — the form prevents this).
+// Weights are stored in kilograms (0181); everything else is stored in
+// the unit it is displayed in. So `weightUnit` converts the weight metric
+// and nothing else — value_unit is a shared column carrying 'm' and 'cal'
+// for the other metrics.
 export function formatResultValue(
   row: Pick<TrackedResultRow, 'value_numeric' | 'value_seconds' | 'value_unit'>,
   metric: Metric,
+  weightUnit: WeightUnit = 'kg',
 ): string | null {
   if (metric === 'time') {
     if (row.value_seconds == null) return null;
     return formatSeconds(row.value_seconds);
   }
   if (row.value_numeric == null) return null;
+  if (metric === 'weight') return formatWeight(row.value_numeric, weightUnit);
   const unit = row.value_unit ?? defaultUnit(metric);
-  const n = round(row.value_numeric, metric === 'weight' ? 1 : 0);
+  const n = round(row.value_numeric, 0);
   return `${n}${unit ? ` ${unit}` : ''}`;
 }
 
