@@ -13,7 +13,7 @@
 -- going to zero.
 
 begin;
-select plan(7);
+select plan(8);
 
 \ir _helpers.psql
 
@@ -40,6 +40,11 @@ select ok(
 select ok(
   not public.is_revenue_event('stripe', 'refund'),
   'refund does not count — recorded for audit, never netted off gross'
+);
+
+select ok(
+  not public.is_revenue_event('stripe', 'payment_failed'),
+  'payment_failed does not count — recorded for the audit trail (0174), never collected'
 );
 
 select ok(

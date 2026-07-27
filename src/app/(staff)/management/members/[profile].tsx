@@ -302,8 +302,13 @@ export default function MemberDetailScreen() {
   });
 
   const canProgram = useCan('can_program_members') ?? false;
+  // The chase list on Analysis deep-links here, and that list is gated on
+  // can_see_money — which an owner can grant without can_manage_tags. Being
+  // bounced to /management from your own chase list's only action is a dead
+  // end, so money-capable users get in too.
+  const canSeeMoneyHere = useCan('can_see_money') ?? false;
 
-  if (canManageTags === false) {
+  if (canManageTags === false && !canSeeMoneyHere) {
     return <Redirect href="/management" />;
   }
 

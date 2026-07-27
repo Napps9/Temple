@@ -103,6 +103,7 @@ export type DemoPlan = {
   consents: T<'member_consents'>[];
   plans: T<'membership_plans'>[];
   subscriptions: T<'plan_subscriptions'>[];
+  invoiceLinks: T<'membership_invoice_links'>[];
   classTypes: T<'class_types'>[];
   recurrences: T<'class_recurrences'>[];
   sessions: T<'class_sessions'>[];
@@ -246,6 +247,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   ];
 
   const subscriptions: T<'plan_subscriptions'>[] = [];
+  const invoiceLinks: T<'membership_invoice_links'>[] = [];
   activeMembers.forEach((m, i) => {
     const base = {
       gym_membership_id: membershipIdByProfile.get(m.id)!,
@@ -253,12 +255,42 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
       gym_id: gymId,
     };
     if (i < Math.ceil(activeMembers.length * 0.7)) {
+      // Two of the unlimited members are mid-dunning: a card that has
+      // bounced, which is what the At risk tile and the chase list are
+      // for. They stay 'active' on purpose — Stripe is still retrying and
+      // they can still book (0174) — so a demo shows the grace period
+      // rather than an instant lockout.
+      const failing = i === 1 || i === 4;
+      const subId = failing ? demoUuid(rng) : undefined;
       subscriptions.push({
+        ...(subId ? { id: subId } : {}),
         ...base,
         plan_id: unlimitedPlanId,
         status: 'active',
         paid_period_end: iso(daysFrom(config.now, rngInt(rng, 5, 30))),
+        ...(failing
+          ? {
+              past_due_since: iso(daysFrom(config.now, i === 1 ? -9 : -2)),
+              payment_failure_count: i === 1 ? 3 : 1,
+              last_payment_error:
+                i === 1 ? 'Your card has insufficient funds.' : 'Card declined.',
+              // i === 1 has exhausted Stripe's retries — the urgent case.
+              next_payment_attempt:
+                i === 1 ? null : iso(daysFrom(config.now, 3)),
+            }
+          : {}),
       });
+      // Without a link the member sees "Speak to the gym" — the weakest
+      // state. Seed it so a demo shows the Pay now button that makes the
+      // notice actionable.
+      if (subId) {
+        invoiceLinks.push({
+          plan_subscription_id: subId,
+          profile_id: m.id,
+          gym_id: gymId,
+          invoice_url: 'https://invoice.stripe.com/i/demo',
+        });
+      }
     } else if (i % 2 === 0) {
       subscriptions.push({
         ...base,
@@ -892,6 +924,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     consents,
     plans,
     subscriptions,
+    invoiceLinks,
     classTypes,
     recurrences,
     sessions,

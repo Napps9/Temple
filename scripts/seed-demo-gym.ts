@@ -113,6 +113,7 @@ function printCounts(plan: DemoPlan): void {
     ['member_consents', plan.consents.length],
     ['membership_plans', plan.plans.length],
     ['plan_subscriptions', plan.subscriptions.length],
+    ['membership_invoice_links', plan.invoiceLinks.length],
     ['class_types', plan.classTypes.length],
     ['class_recurrences', plan.recurrences.length],
     ['class_sessions', plan.sessions.length],
@@ -196,6 +197,7 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
   await insertAll(sb, 'member_consents', p.consents);
   await insertAll(sb, 'membership_plans', p.plans);
   await insertAll(sb, 'plan_subscriptions', p.subscriptions);
+  await insertAll(sb, 'membership_invoice_links', p.invoiceLinks);
   await insertAll(sb, 'class_types', p.classTypes);
   await insertAll(sb, 'class_recurrences', p.recurrences);
   await insertAll(sb, 'class_sessions', p.sessions);

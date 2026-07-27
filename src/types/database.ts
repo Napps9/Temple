@@ -1775,6 +1775,24 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      membership_invoice_links: {
+        Row: {
+          plan_subscription_id: string;
+          profile_id: string;
+          gym_id: string;
+          invoice_url: string;
+          updated_at: string;
+        };
+        Insert: {
+          plan_subscription_id: string;
+          profile_id: string;
+          gym_id: string;
+          invoice_url: string;
+          updated_at?: string;
+        };
+        Update: Partial<{ invoice_url: string; updated_at: string }>;
+        Relationships: [];
+      };
       plan_subscriptions: {
         Row: {
           id: string;
@@ -1792,6 +1810,10 @@ export type Database = {
           price_cents: number | null;
           priority: number;
           imported_legacy: boolean;
+          past_due_since: string | null;
+          payment_failure_count: number;
+          last_payment_error: string | null;
+          next_payment_attempt: string | null;
           created_at: string;
         };
         Insert: {
@@ -1810,6 +1832,10 @@ export type Database = {
           price_cents?: number | null;
           priority?: number;
           imported_legacy?: boolean;
+          past_due_since?: string | null;
+          payment_failure_count?: number;
+          last_payment_error?: string | null;
+          next_payment_attempt?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -1828,6 +1854,10 @@ export type Database = {
           price_cents: number | null;
           priority: number;
           imported_legacy: boolean;
+          past_due_since: string | null;
+          payment_failure_count: number;
+          last_payment_error: string | null;
+          next_payment_attempt: string | null;
           created_at: string;
         }>;
         Relationships: [];
@@ -4264,8 +4294,25 @@ export type Database = {
           confirmed_count: number;
           pending_cents: number;
           pending_count: number;
+          at_risk_cents: number;
+          at_risk_count: number;
           forward_mrr_cents: number;
           forward_count: number;
+        }[];
+      };
+      gym_overdue_memberships: {
+        Args: { p_gym_id: string };
+        Returns: {
+          subscription_id: string;
+          profile_id: string;
+          full_name: string | null;
+          plan_name: string;
+          amount_cents: number;
+          currency: string;
+          past_due_since: string;
+          payment_failure_count: number;
+          next_payment_attempt: string | null;
+          last_payment_error: string | null;
         }[];
       };
       compute_revenue_summary: {

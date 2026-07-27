@@ -88,6 +88,15 @@ export type MySubscription = {
   // nothing is actually renewing this until they (or staff) move it
   // onto real billing.
   imported_legacy: boolean;
+  // Dunning state (0174). The membership stays 'active' through Stripe's
+  // retry window on purpose — the member keeps training — so these, not
+  // status, are how a failing payment is visible.
+  past_due_since: string | null;
+  payment_failure_count: number;
+  last_payment_error: string | null;
+  next_payment_attempt: string | null;
+  // Self-only by RLS (0174) — staff cannot read this, deliberately.
+  membership_invoice_links: { invoice_url: string }[] | null;
   membership_plans: {
     name: string;
     kind: MembershipPlanKind;
@@ -143,7 +152,7 @@ export function useMySubscriptions(
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, imported_legacy, membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
+          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, imported_legacy, past_due_since, payment_failure_count, last_payment_error, next_payment_attempt, membership_invoice_links(invoice_url), membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
         )
         .eq('gym_id', gymId!)
         .eq('profile_id', profileId!)
@@ -186,6 +195,12 @@ export function useMyInvoices(
         )
         .eq('gym_id', gymId!)
         .eq('member_id', profileId!)
+        // Payment history means money that MOVED. A failed charge is
+        // recorded in billing_events for the audit trail (0174), and it
+        // carries the same invoice payload as a real one — so without
+        // this filter a decline renders as a receipt, directly under the
+        // banner telling the member that payment failed.
+        .neq('kind', 'payment_failed')
         .order('occurred_at', { ascending: false });
       if (error) throw error;
       const str = (v: unknown): string | null =>

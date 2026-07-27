@@ -2,7 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
@@ -59,6 +66,47 @@ const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
   muted:
     'bg-gray-500/10 border-gray-400/40 text-gray-600 dark:text-gray-300',
 };
+
+// A failed payment leaves the membership 'active' on purpose — Stripe
+// retries for about two weeks and the member keeps training meanwhile
+// (0174). But nothing gets fixed unless they know, and Temple has no
+// billing portal, so the Stripe-hosted invoice is the only place they can
+// actually pay. Without that link this notice would be a dead end.
+function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
+  const stopped = !sub.next_payment_attempt;
+  const invoiceUrl = sub.membership_invoice_links?.[0]?.invoice_url ?? null;
+  return (
+    <View className="rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 gap-2">
+      <View className="flex-row items-center gap-2">
+        <Ionicons name="alert-circle" size={18} color="#DC2626" />
+        <Text className="text-red-800 dark:text-red-200 font-semibold flex-1">
+          {stopped ? 'Your membership is about to stop' : "We couldn't take your payment"}
+        </Text>
+      </View>
+      <Text className="text-red-900 dark:text-red-100 text-sm">
+        {stopped
+          ? 'We have tried your card and it keeps being declined. Your membership will be cancelled unless this is paid.'
+          : `Your classes aren't affected — you can keep booking. We'll try your card again${
+              sub.next_payment_attempt
+                ? ` on ${fmtDate(sub.next_payment_attempt)}`
+                : ''
+            }, and if it keeps failing your membership will be cancelled.`}
+        {sub.last_payment_error ? ` (${sub.last_payment_error})` : ''}
+      </Text>
+      {invoiceUrl ? (
+        <Pressable
+          onPress={() => Linking.openURL(invoiceUrl)}
+          className="bg-red-600 rounded-lg px-3 py-2 items-center active:opacity-80">
+          <Text className="text-white text-sm font-semibold">Pay now</Text>
+        </Pressable>
+      ) : (
+        <Text className="text-red-900 dark:text-red-100 text-xs">
+          Speak to the gym to update your card.
+        </Text>
+      )}
+    </View>
+  );
+}
 
 function StatusChip({ status }: { status: MySubscription['status'] }) {
   const meta = SUB_STATUS_META[status];
@@ -189,6 +237,8 @@ function CurrentSubCard({
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      {sub.past_due_since ? <PaymentFailedNotice sub={sub} /> : null}
+
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-gray-900 dark:text-gray-50 font-semibold">

@@ -439,13 +439,31 @@ The staff area shows up when `can_access_staff_area` is on.
   `credit_pack` is excluded from both forward-looking figures: it is a
   one-off purchase with no renewal, the same reason `0125`'s lapse sweep
   skips it.
-  **Pending means scheduled, not overdue.** `plan_sub_state` has no
-  `past_due`, there is no `invoice.payment_failed` handler in
-  `stripe-webhook`, and `plan_subscriptions.awaiting_payment_authentication`
-  is never written by anything — so a member whose card has already
-  bounced stays `active` and sits inside Pending looking healthy. Real
-  arrears need the failure event handled and a status to put it in; the
-  InfoPanel on the block says so.
+  **Pending is scheduled money; At risk is money already failing.**
+  `stripe-webhook` handles `invoice.payment_failed` (0174) and records
+  dunning on `plan_subscriptions` — `past_due_since`,
+  `payment_failure_count`, `last_payment_error`, `next_payment_attempt`.
+  A failing renewal moves out of Pending into **At risk** and is kept out
+  of Month projected, because counting a declined card is how a forecast
+  lies. Underneath the tiles, **Needs chasing** lists who
+  (`gym_overdue_memberships`, `can_see_money`, deep-linking to the
+  member).
+  **The membership deliberately stays `active` while Stripe retries.**
+  `ps.status = 'active'` is what gates booking eligibility
+  (`0011_eligibility_predicates.sql`, `0050_multi_membership_booking.sql`),
+  Stripe's smart retries run about two weeks, and most recover — so a
+  `past_due` state would bar someone from training over a card that
+  expired. The grace period is the point; the dunning columns carry the
+  visibility instead. Recovery (`invoice.paid`, or the subscription
+  returning to `active`) clears every flag together via
+  `_clear_payment_failure`.
+  **Member side**: the Membership screen shows what happened, when Stripe
+  will retry, and a **Pay now** button. That link lives on its own
+  `membership_invoice_links` table with a self-only RLS policy —
+  deliberately NOT on `plan_subscriptions`, whose staff select policy is
+  `user_can_assign_plan` (owner/coach/staff), because the Stripe-hosted
+  invoice is a bearer URL rendering the member's billing address and
+  coach/staff hold neither `can_see_full_pii` nor `can_see_email`.
 - **Programming Analysis page** — 12-week injury heat map across the
   gym body + per-movement member trends (from both direct PR logs and
   section-tagged workout results) + the Programming Balance block:
@@ -2089,18 +2107,12 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
-- **Failed / overdue membership payments**: Temple cannot currently see
-  one. `stripe-webhook` handles only `checkout.session.completed`,
-  `invoice.paid`, `customer.subscription.updated` (store subs only) and
-  `customer.subscription.deleted` — there is no `invoice.payment_failed`
-  handler, `plan_sub_state` has no `past_due`/`unpaid`, and
-  `plan_subscriptions.awaiting_payment_authentication` exists but is
-  written by nothing. A member whose card fails stays `active` with a
-  stale `paid_period_end` until Stripe eventually deletes the
-  subscription. Needs: handle the failure event, add a status for it,
-  and a "needs chasing" list. The Money block's **Pending** figure is
-  scheduled collections and says so, but it will quietly include a
-  renewal that has already bounced until this lands.
+- **Telling a member their payment failed, actively**: 0174 shows the
+  notice when they next open Membership, and gives them a Stripe-hosted
+  invoice to pay. Nothing pushes or emails them, so a member who does not
+  open the app finds out when their membership is cancelled. The
+  `class_change_notifications` queue + edge-worker pattern (0169/0172) is
+  the obvious shape to reuse.
 - **Health-data GDPR — owner sign-off remainder**: the DPIA and
   lawful-basis register are drafted (`docs/legal/`) but need formal
   owner sign-off, and the in-app legal docs carry a DRAFT banner with

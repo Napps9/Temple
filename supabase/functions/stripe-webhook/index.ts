@@ -358,6 +358,11 @@ Deno.serve(async (req: Request) => {
   const type: string = event.type;
   // deno-lint-ignore no-explicit-any
   const obj: any = event.data?.object ?? {};
+  // When Stripe says this happened. Both dunning paths gate on it so a
+  // redelivered or out-of-order event cannot undo a newer one.
+  const eventTime = new Date(
+    (event.created ?? Date.now() / 1000) * 1000,
+  ).toISOString();
   console.log('stripe-webhook received', { type, account, eventId: event.id });
 
   async function recordBilling(args: {
@@ -742,11 +747,21 @@ Deno.serve(async (req: Request) => {
       const update: any = { status: 'active' };
       if (periodEnd) update.paid_period_end = new Date(periodEnd * 1000).toISOString();
       if (plan?.kind === 'credit_period') update.credit_balance = plan.credit_count;
+
       const { error: upErr } = await service
         .from('plan_subscriptions')
         .update(update)
         .eq('id', ps.id);
       if (upErr) throw upErr;
+
+      // Recovery. A payment landing is the only thing that ends a dunning
+      // run, and it ends it whole — flags, counter and the member's "pay
+      // now" link together, so nobody is left staring at a stale button.
+      const { error: clrErr } = await service.rpc('_clear_payment_failure', {
+        p_stripe_subscription_id: subId,
+        p_event_time: eventTime,
+      });
+      if (clrErr) throw clrErr;
 
       await recordBilling({
         gymId: ps.gym_id,
@@ -756,12 +771,97 @@ Deno.serve(async (req: Request) => {
         amountCents: (obj.amount_paid as number) ?? 0,
         currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
       });
+    } else if (type === 'invoice.payment_failed') {
+      // Same subscription-id dance as invoice.paid: newer API versions moved
+      // it onto invoice.parent, and reading only obj.subscription silently
+      // drops every renewal failure.
+      const subId: string | null =
+        (obj.subscription as string | null | undefined) ??
+        (obj.parent?.subscription_details?.subscription as string | undefined) ??
+        (obj.subscription_details?.subscription as string | undefined) ??
+        null;
+      if (!subId) return ok();
+
+      const nextAttempt = obj.next_payment_attempt as number | null | undefined;
+      // Parenthesised deliberately: ?? binds tighter than ?:, so without
+      // them a real decline message gets overwritten by the fallback.
+      const reason: string | null =
+        (obj.last_payment_error?.message as string | undefined) ??
+        (obj.last_finalization_error?.message as string | undefined) ??
+        (obj.status_transitions?.marked_uncollectible_at
+          ? 'Marked uncollectible'
+          : null);
+
+      // Resolve + guard + write in one definer call. The guards are the
+      // point: Stripe does not order webhooks (so the attempt count must
+      // be monotonic), redeliveries race (so the first-failure timestamp
+      // must be stamped atomically), and Stripe keeps retrying an open
+      // invoice after cancellation (so a dead membership must not be
+      // re-flagged). See 0174.
+      const { data: flagged, error: failErr } = await service.rpc(
+        '_record_payment_failure',
+        {
+          p_stripe_subscription_id: subId,
+          p_attempt: (obj.attempt_count as number) ?? 1,
+          p_error: reason,
+          p_invoice_url: (obj.hosted_invoice_url as string | null) ?? null,
+          p_next_attempt: nextAttempt
+            ? new Date(nextAttempt * 1000).toISOString()
+            : null,
+          p_billing_reason: (obj.billing_reason as string | null) ?? null,
+          // Same place invoice.paid reads the period from.
+          p_invoice_period_end: (obj.lines?.data?.[0]?.period?.end as
+            | number
+            | undefined)
+            ? new Date(
+                (obj.lines.data[0].period.end as number) * 1000,
+              ).toISOString()
+            : null,
+        },
+      );
+      if (failErr) throw failErr;
+      // Not ours (a store invoice, a manual invoice, or a dead membership).
+      if (!flagged) return ok();
+
+      const { data: ps } = await service
+        .from('plan_subscriptions')
+        .select('id, gym_id, profile_id')
+        .eq('stripe_subscription_id', subId)
+        .maybeSingle();
+      if (!ps) return ok();
+
+      // Recorded so the failure is auditable next to the payments.
+      // is_revenue_event (0173) does not match this kind, so it can never
+      // reach a revenue total.
+      await recordBilling({
+        gymId: ps.gym_id,
+        memberId: ps.profile_id,
+        planSubId: ps.id,
+        kind: 'payment_failed',
+        amountCents: (obj.amount_due as number) ?? 0,
+        currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
+      });
     } else if (type === 'customer.subscription.updated') {
       // Keep store subscriptions in sync — cancel-at-period-end toggles,
-      // renewal date, past_due. Membership subs carry no store metadata,
-      // so this is a no-op for them.
+      // renewal date, past_due.
       if (obj.metadata?.kind === 'store_sub') {
         await ensureStoreSubscription(service, obj);
+      } else {
+        // Membership subs carry no store metadata. Stripe's own
+        // subscription status is the authoritative dunning signal — it
+        // catches a recovery whose invoice.paid we missed, and a move to
+        // past_due/unpaid that arrived without an invoice event. Only ever
+        // CLEARS here; entering dunning is invoice.payment_failed's job,
+        // because that is the event carrying the attempt count and retry
+        // schedule worth recording.
+        const sStatus: string = obj.status ?? '';
+        if (sStatus === 'active' || sStatus === 'trialing') {
+          const { error: clrErr } = await service.rpc('_clear_payment_failure', {
+            p_stripe_subscription_id: obj.id as string,
+            p_event_time: eventTime,
+          });
+          if (clrErr) throw clrErr;
+        }
       }
     } else if (type === 'customer.subscription.deleted') {
       const subId: string = obj.id;

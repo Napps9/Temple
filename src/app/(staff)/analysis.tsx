@@ -28,6 +28,7 @@ import {
 import { useGymMembership } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
+import { formatDate } from '@/lib/format-date';
 import { monthLabel, monthRange, pctDelta, previousMonthRange } from '@/lib/metrics';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import {
@@ -684,8 +685,23 @@ type FinanceRow = {
   confirmed_count: number;
   pending_cents: number;
   pending_count: number;
+  at_risk_cents: number;
+  at_risk_count: number;
   forward_mrr_cents: number;
   forward_count: number;
+};
+
+type OverdueRow = {
+  subscription_id: string;
+  profile_id: string;
+  full_name: string | null;
+  plan_name: string;
+  amount_cents: number;
+  currency: string;
+  past_due_since: string;
+  payment_failure_count: number;
+  next_payment_attempt: string | null;
+  last_payment_error: string | null;
 };
 
 function useFinanceMonth(gymId: string | undefined, monthStart: string) {
@@ -713,6 +729,8 @@ function primaryFinanceRow(rows: FinanceRow[], fallback: string): FinanceRow {
     confirmed_count: 0,
     pending_cents: 0,
     pending_count: 0,
+    at_risk_cents: 0,
+    at_risk_count: 0,
     forward_mrr_cents: 0,
     forward_count: 0,
   };
@@ -760,7 +778,7 @@ function FinanceBlock({ gymId }: { gymId: string }) {
         title="Money"
         subtitle={monthLabel(thisMonth.start)}
         what="Confirmed is what has actually settled this month. Pending is what Stripe is scheduled to take from existing memberships before the month ends. Expected monthly is what the memberships you have already sold are worth per month, each at the price that member pays."
-        why="Confirmed alone understates a month that is only half over. Confirmed plus pending is the number to compare against last month. Note that pending means scheduled, not overdue: Temple cannot currently see a failed membership payment, so a card that has already bounced still sits in pending looking healthy."
+        why="Confirmed alone understates a month that is only half over, so Month projected adds the renewals still to come. At risk is money already failing — Stripe has tried and been declined — and is kept OUT of Month projected on purpose: counting it is how a forecast lies. Anyone in At risk is listed underneath to chase."
       />
       <View className="flex-row flex-wrap -m-1.5">
         <View className="w-1/2 lg:w-1/3 p-1.5">
@@ -789,6 +807,18 @@ function FinanceBlock({ gymId }: { gymId: string }) {
         </View>
         <View className="w-1/2 lg:w-1/3 p-1.5">
           <StatTile
+            title="At risk"
+            value={loading ? '—' : formatMoney(cur.at_risk_cents, ccy)}
+            subtitle={
+              cur.at_risk_count === 1
+                ? '1 payment failing'
+                : `${cur.at_risk_count} payments failing`
+            }
+            tone={cur.at_risk_count > 0 ? 'red' : 'muted'}
+          />
+        </View>
+        <View className="w-1/2 lg:w-1/3 p-1.5">
+          <StatTile
             title="Month projected"
             value={loading ? '—' : formatMoney(projected, ccy)}
             subtitle="confirmed + pending"
@@ -806,6 +836,88 @@ function FinanceBlock({ gymId }: { gymId: string }) {
             href="/management/plans"
           />
         </View>
+      </View>
+      {cur.at_risk_count > 0 ? <OverdueList gymId={gymId} /> : null}
+    </View>
+  );
+}
+
+// Who to chase. Sits under the Money block because "At risk £420" is only
+// useful next to the four people it is. Deep-links to the member rather
+// than showing contact details: gym_overdue_memberships deliberately
+// returns no email or phone, since those are governed by can_see_email /
+// can_see_full_pii and routing them through a money RPC would sidestep it.
+function OverdueList({ gymId }: { gymId: string }) {
+  const rows = useQuery({
+    queryKey: ['overdue-memberships', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<OverdueRow[]> => {
+      const { data, error } = await supabase.rpc('gym_overdue_memberships', {
+        p_gym_id: gymId,
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as OverdueRow[];
+    },
+  });
+
+  const list = rows.data ?? [];
+  if (rows.error) {
+    return (
+      <Text className="text-red-500 dark:text-red-400 text-sm">
+        {errorMessage(rows.error, 'Could not load who needs chasing')}
+      </Text>
+    );
+  }
+  if (rows.isLoading || list.length === 0) return null;
+
+  // Capped like the other lists on this screen — a gym with thirty failing
+  // cards has a collections problem, not a scrolling problem.
+  const shown = list.slice(0, 6);
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        Needs chasing
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        Stripe has tried to take these and been declined. It keeps retrying for
+        about two weeks — they can still book in the meantime — and gives up
+        after that.
+      </Text>
+      <View className="gap-2">
+        {shown.map((r) => (
+          <Pressable
+            key={r.subscription_id}
+            onPress={() => router.push(`/management/members/${r.profile_id}` as never)}
+            className="flex-row items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 active:opacity-70">
+            <View className="flex-1">
+              <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                {r.full_name ?? 'Member'}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {r.plan_name} · failing since {formatDate(r.past_due_since)}
+                {r.payment_failure_count > 1
+                  ? ` · ${r.payment_failure_count} attempts`
+                  : ''}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {r.next_payment_attempt
+                  ? `Stripe retries ${formatDate(r.next_payment_attempt)}`
+                  : 'Stripe has stopped retrying'}
+                {r.last_payment_error ? ` · ${r.last_payment_error}` : ''}
+              </Text>
+            </View>
+            <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+              {formatMoney(r.amount_cents, r.currency)}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+          </Pressable>
+        ))}
+        {list.length > shown.length ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            +{list.length - shown.length} more
+          </Text>
+        ) : null}
       </View>
     </View>
   );
