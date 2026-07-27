@@ -4,8 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useGymMembership } from './auth';
-import type { AudienceDefinition } from './email/audience';
+import { useGymMembership, useSession } from './auth';
+import { normalizeAudience, type AudienceDefinition } from './email/audience';
 import type { EmailDocument } from './email/blocks';
 import { renderEmailHtml, renderEmailText } from './email/render';
 import { functionErrorMessage } from './errors';
@@ -126,6 +126,70 @@ export function useGymTagLabels() {
       for (const r of (data ?? []) as { label: string }[]) labels.add(r.label);
       return [...labels].sort((a, b) => a.localeCompare(b));
     },
+  });
+}
+
+// Saved segments. email_audiences has had full CRUD RLS and a definition
+// column in the resolver's exact format since 0044, and nothing in the app
+// has ever read or written it — an audience worth rebuilding by hand every
+// time is one a gym stops targeting.
+export type SavedAudience = {
+  id: string;
+  name: string;
+  definition: AudienceDefinition;
+};
+
+export function useSavedAudiences() {
+  const { data: membership } = useGymMembership();
+  return useQuery({
+    queryKey: ['comms-saved-audiences', membership?.gymId],
+    enabled: !!membership?.gymId,
+    queryFn: async (): Promise<SavedAudience[]> => {
+      const { data, error } = await supabase
+        .from('email_audiences')
+        .select('id, name, definition')
+        .eq('gym_id', membership!.gymId)
+        .order('name');
+      if (error) throw error;
+      return ((data ?? []) as { id: string; name: string; definition: unknown }[])
+        .map((r) => ({
+          id: r.id,
+          name: r.name,
+          definition: normalizeAudience(r.definition),
+        }));
+    },
+  });
+}
+
+export function useSaveAudience() {
+  const { data: membership } = useGymMembership();
+  const session = useSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { name: string; definition: AudienceDefinition }) => {
+      if (!membership || !session) throw new Error('No gym');
+      const { error } = await supabase.from('email_audiences').insert({
+        gym_id: membership.gymId,
+        name: args.name.trim(),
+        definition: args.definition as unknown as Json,
+        created_by: session.user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['comms-saved-audiences'] }),
+  });
+}
+
+export function useDeleteAudience() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('email_audiences').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['comms-saved-audiences'] }),
   });
 }
 
