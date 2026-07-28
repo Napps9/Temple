@@ -3284,6 +3284,9 @@ export type Database = {
           compiled_html: string | null;
           compiled_text: string | null;
           scheduled_for: string | null;
+          // Subject, variants, audience and topic as approved at schedule
+          // time; only _send_due_campaign reads it (0193).
+          scheduled_snapshot: Json | null;
           subject_variants: string[];
           sent_at: string | null;
           recipient_count: number;
