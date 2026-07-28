@@ -123,8 +123,17 @@ Deno.serve(async (req: Request) => {
   // ---- Path 1: drain the queue --------------------------------------------
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
+  // Two ways in, and neither is "anyone". The x-automation-secret check
+  // was `if (secret && …)`, so with the env var unset — which it is —
+  // every caller passed. That was invisible while the cron dispatcher
+  // could not reach this function at all (0186); now that it can, an
+  // authenticated stranger draining another gym's queue would be real.
   const secret = Deno.env.get('AUTOMATION_WORKER_SECRET');
-  if (secret && req.headers.get('x-automation-secret') !== secret) {
+  const SERVICE_KEY_HEADER = `Bearer ${SERVICE_KEY}`;
+  const authorised =
+    req.headers.get('Authorization') === SERVICE_KEY_HEADER ||
+    (!!secret && req.headers.get('x-automation-secret') === secret);
+  if (!authorised) {
     return json({ error: 'Not authorised' }, 403);
   }
 

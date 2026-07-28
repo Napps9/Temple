@@ -597,11 +597,13 @@ The staff area shows up when `can_access_staff_area` is on.
   silently dropped) but never the in-app notification. Surfaced as a
   **Cover tab in the Inbox** and counted in the nav badge; opening
   either the tab or the Cover screen marks them read. Email delivery
-  sits behind the same gate as the rest of the comms pipeline: with a
-  verified per-gym sending domain (or `RESEND_API_KEY` +
-  `RESEND_FROM_EMAIL`) it sends for real, otherwise rows are marked
-  sent and the worker reports `mode: 'simulated'`. The in-app half
-  always lands either way.
+  sits behind the same gate as the rest of the comms pipeline. That gate
+  is **open** — `RESEND_API_KEY` + `RESEND_FROM_EMAIL` are set and a real
+  campaign send was confirmed delivered on 2026-07-17
+  (`docs/gym-outreach-checklist.md`), so this sends for real. The
+  simulated path (rows marked sent, worker reports `mode: 'simulated'`)
+  is the fallback when no key is configured, not the current state. The
+  in-app half always lands either way.
 - **Class detail modal** — roster, attendance marking (check-in / no-
   show / unmark), leaderboard for that session.
   **Message class** [`can_broadcast_to_class`] — inline composer
@@ -2190,12 +2192,17 @@ Items the conversation has flagged but not implemented yet:
 - Supabase preview branches + Vercel preview environments.
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.
-- **Communications Suite — live delivery.** The send / tracking /
-  domain-authentication pipeline ships behind a pluggable ESP. Going live
-  needs `RESEND_API_KEY` (+ `RESEND_FROM_EMAIL` for the shared-domain
-  fallback) on the `send-campaign` / `sending-domain` functions; until then
-  sends are simulated. Scheduled sends, A/B subject testing, the
-  hand-picked audience and saved segments have all shipped (0182-0185).
+- **One Vault row, and the two cron dispatchers start working.** Run
+  `select vault.create_secret('<SUPABASE_SERVICE_ROLE_KEY>',
+  'worker_service_key');` in the SQL editor. Until it exists,
+  `dispatch_scheduled_campaigns` and `dispatch_email_automations` are
+  no-ops by design (0186) — they read the credential from Vault because
+  hosted Supabase blocks the `ALTER DATABASE` needed for the `app.*` GUCs
+  the original versions used. **Email automations have never actually
+  sent** for this reason, since 0116.
+  Resend itself is live and has been since 2026-07-17 — see
+  `docs/gym-outreach-checklist.md` for the delivery confirmation, and
+  check that runbook rather than this file for outbound-email status.
 - **Legal — a person, not engineering.** The DPIA and lawful-basis
   register are signed (2026-07-10), the placeholders are filled and the
   DRAFT banners are gone. What remains is a solicitor review of the ToS

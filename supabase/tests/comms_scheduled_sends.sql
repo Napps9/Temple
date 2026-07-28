@@ -6,7 +6,7 @@
 -- pg_cron auth.uid() is null and effective_can would refuse everything.
 
 begin;
-select plan(10);
+select plan(13);
 
 \ir _helpers.psql
 
@@ -96,6 +96,37 @@ select is(
   public.dispatch_scheduled_campaigns(),
   0,
   'the sweep ignores a campaign that is not due'
+);
+
+-- No Vault credential means the dispatcher cannot tell the worker to send.
+-- It must leave the campaign alone rather than flipping it to 'sending':
+-- nothing re-sweeps a 'sending' campaign, so proceeding would strand its
+-- recipients permanently. This is the exact fault 0186 exists to fix, and
+-- it is worth a test precisely because a skipped POST looks like a quiet
+-- period.
+update public.email_campaigns
+  set scheduled_for = now() - interval '1 minute'
+  where id = current_setting('test.camp')::uuid;
+
+select is(
+  public.dispatch_scheduled_campaigns(),
+  0,
+  'with no worker credential the sweep sends nothing'
+);
+
+select is(
+  (select status from public.email_campaigns
+    where id = current_setting('test.camp')::uuid),
+  'scheduled',
+  'and leaves the campaign schedulable rather than stranding it'
+);
+
+-- vault.create_secret is the real API; decrypted_secrets is a view over
+-- vault.secrets on hosted Supabase, so inserting into it directly would
+-- pass locally and fail in CI.
+select lives_ok(
+  $$ select vault.create_secret('test-service-key', 'worker_service_key') $$,
+  'the one-time Vault secret is created'
 );
 
 -- pgTAP runs in one transaction where now() never moves, so due-ness is
