@@ -2183,6 +2183,13 @@ surround:
 
 Items the conversation has flagged but not implemented yet:
 
+- **Nothing surfaces `cron_run_log`.** Every scheduled sweep now records
+  what it did (0189/0190) — counts, durations, and for the two dispatchers
+  the difference between "nothing to do" and "could not do anything". It is
+  read from the SQL editor; there is no screen. `select job_name, ran_at,
+  result from cron_run_log order by ran_at desc limit 40;` is the whole
+  interface today.
+
 - **`profiles` is still one row for everyone in the gym.** `phone` moved
   to `member_contact_details` (0179) and `same_gym_as_caller` now requires
   the CALLER to be a current member, but `date_of_birth` still rides along
@@ -2192,17 +2199,6 @@ Items the conversation has flagged but not implemented yet:
 - Supabase preview branches + Vercel preview environments.
 - Bigger themed BodyMap redesigns (Halloween / Christmas / Pride /
   New Year) — designs explored but parked.
-- **One Vault row, and the two cron dispatchers start working.** Run
-  `select vault.create_secret('<SUPABASE_SERVICE_ROLE_KEY>',
-  'worker_service_key');` in the SQL editor. Until it exists,
-  `dispatch_scheduled_campaigns` and `dispatch_email_automations` are
-  no-ops by design (0186/0187) — they read the credential from Vault
-  because hosted Supabase blocks the `ALTER DATABASE` needed for the
-  `app.*` GUCs the original versions used. **Email automations have never
-  actually sent** for this reason, since 0116.
-  Resend itself is live and has been since 2026-07-17 — see
-  `docs/gym-outreach-checklist.md` for the delivery confirmation, and
-  check that runbook rather than this file for outbound-email status.
 - **Legal — a person, not engineering.** The DPIA and lawful-basis
   register are signed (2026-07-10), the placeholders are filled and the
   DRAFT banners are gone. What remains is a solicitor review of the ToS
