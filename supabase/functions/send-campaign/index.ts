@@ -129,13 +129,25 @@ Deno.serve(async (req: Request) => {
 
   // Two ways in. A person clicking Send re-authorises as themselves (the
   // service client above bypasses RLS). A scheduled send arrives from
-  // pg_cron with no user at all, so it presents the shared secret instead
-  // — the same path send-email-automations has always had. The campaign
-  // was authorised when it was scheduled, by someone who held the
-  // capability then; comms_schedule_campaign is where that is checked.
+  // pg_cron with no user at all — dispatch_scheduled_campaigns posts the
+  // service role key from Vault (0186), so that is what this accepts.
+  //
+  // The x-automation-secret variant is kept because send-email-automations
+  // has always had it, but it is NOT the path the dispatcher uses:
+  // AUTOMATION_WORKER_SECRET appears in no runbook and is almost certainly
+  // unset, which makes `!!CRON_SECRET` false and that branch dead.
+  // Depending on it alone would 403 every scheduled send — and because
+  // _send_due_campaign has already moved the campaign to 'sending', which
+  // neither the sweep nor the UI will re-send, the recipients would be
+  // stranded rather than retried.
+  //
+  // The campaign was authorised when it was scheduled, by someone who held
+  // the capability then; comms_schedule_campaign is where that is checked.
   const CRON_SECRET = Deno.env.get('AUTOMATION_WORKER_SECRET');
+  const authHeaderRaw = req.headers.get('Authorization') ?? '';
   const fromCron =
-    !!CRON_SECRET && req.headers.get('x-automation-secret') === CRON_SECRET;
+    authHeaderRaw === `Bearer ${SERVICE_KEY}` ||
+    (!!CRON_SECRET && req.headers.get('x-automation-secret') === CRON_SECRET);
 
   if (!fromCron) {
     const { data: allowed, error: aErr } = await caller.rpc('effective_can', {

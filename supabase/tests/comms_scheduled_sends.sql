@@ -6,7 +6,7 @@
 -- pg_cron auth.uid() is null and effective_can would refuse everything.
 
 begin;
-select plan(13);
+select plan(15);
 
 \ir _helpers.psql
 
@@ -153,6 +153,30 @@ select is(
     where campaign_id = current_setting('test.camp')::uuid),
   1,
   'which is the one member with a usable address'
+);
+
+-- A campaign that reached 'sending' and stalled — a 403 from the worker, a
+-- cold start, a bad deploy — must be picked up again. Nothing else looks
+-- at these: the sweep's first pass filters on 'scheduled', and
+-- comms_send_campaign refuses any status outside draft/scheduled. Without
+-- a second pass those recipients are stranded for good.
+update public.email_campaigns
+  set updated_at = now() - interval '30 minutes'
+  where id = current_setting('test.camp')::uuid;
+
+select is(
+  (select status from public.email_campaigns
+    where id = current_setting('test.camp')::uuid),
+  'sending',
+  'the campaign is stuck mid-send with its recipients still queued'
+);
+
+-- The re-poke is a no-op in tests (pg_net is stubbed), so what is under
+-- test is that the sweep runs clean over a stuck campaign rather than
+-- skipping or erroring on it.
+select lives_ok(
+  $$ select public.dispatch_scheduled_campaigns() $$,
+  'and the next sweep picks it up rather than walking past it'
 );
 
 select * from finish();

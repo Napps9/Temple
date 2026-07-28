@@ -2196,10 +2196,10 @@ Items the conversation has flagged but not implemented yet:
   `select vault.create_secret('<SUPABASE_SERVICE_ROLE_KEY>',
   'worker_service_key');` in the SQL editor. Until it exists,
   `dispatch_scheduled_campaigns` and `dispatch_email_automations` are
-  no-ops by design (0186) — they read the credential from Vault because
-  hosted Supabase blocks the `ALTER DATABASE` needed for the `app.*` GUCs
-  the original versions used. **Email automations have never actually
-  sent** for this reason, since 0116.
+  no-ops by design (0186/0187) — they read the credential from Vault
+  because hosted Supabase blocks the `ALTER DATABASE` needed for the
+  `app.*` GUCs the original versions used. **Email automations have never
+  actually sent** for this reason, since 0116.
   Resend itself is live and has been since 2026-07-17 — see
   `docs/gym-outreach-checklist.md` for the delivery confirmation, and
   check that runbook rather than this file for outbound-email status.
