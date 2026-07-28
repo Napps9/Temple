@@ -6,7 +6,7 @@
 -- pg_cron auth.uid() is null and effective_can would refuse everything.
 
 begin;
-select plan(20);
+select plan(21);
 
 \ir _helpers.psql
 
@@ -123,10 +123,16 @@ select is(
 
 -- vault.create_secret is the real API; decrypted_secrets is a view over
 -- vault.secrets on hosted Supabase, so inserting into it directly would
--- pass locally and fail in CI.
+-- pass locally and fail in CI. The dispatcher needs BOTH the shared secret
+-- (the function's x-automation-secret) and the gateway key (the publishable
+-- key that gets the POST past Kong) since 0199.
 select lives_ok(
-  $$ select vault.create_secret('test-service-key', 'worker_service_key') $$,
-  'the one-time Vault secret is created'
+  $$ select vault.create_secret('test-shared-secret', 'worker_shared_secret') $$,
+  'the shared secret is created'
+);
+select lives_ok(
+  $$ select vault.create_secret('sb_publishable_test', 'worker_gateway_key') $$,
+  'and the gateway key'
 );
 
 -- The editor autosaves and the UPDATE policy allows it while scheduled,

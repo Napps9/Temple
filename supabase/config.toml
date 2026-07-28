@@ -59,7 +59,12 @@ content_path = "./supabase/templates/magic_link.html"
 # public open-pixel / click-redirect / unsubscribe endpoint, so JWT
 # verification is off there.
 [functions.send-campaign]
-verify_jwt = true
+# verify_jwt is false because the function re-authorises every caller itself
+# — effective_can(can_manage_comms) for a person clicking Send, the
+# x-automation-secret shared secret for the pg_cron dispatcher (0199). The
+# gateway's JWT check was redundant with that, and it blocked the dispatcher's
+# non-JWT shared-secret credential from ever reaching the function.
+verify_jwt = false
 
 [functions.track]
 verify_jwt = false

@@ -23,12 +23,13 @@ select is(
   (select result->>'skipped' from public.cron_run_log
     where job_name = 'dispatch-scheduled-campaigns'
     order by id desc limit 1),
-  'no worker_service_key in vault',
+  'missing worker_shared_secret or worker_gateway_key in vault',
   'and says WHY it was zero, rather than reporting success'
 );
 
 select lives_ok(
-  $$ select vault.create_secret('test-key', 'worker_service_key') $$,
+  $$ select vault.create_secret('test-shared-secret', 'worker_shared_secret');
+     select vault.create_secret('sb_publishable_test', 'worker_gateway_key'); $$,
   'the credential is created'
 );
 

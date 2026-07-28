@@ -52,38 +52,65 @@ This single pair of secrets is shared by three functions:
   "invite code created, not emailed" without these secrets — easy to
   miss since nothing surfaces as an error.
 
-## 3. Create the `worker_service_key` Vault row
+## 3. Give the cron dispatchers a worker secret (0199)
 
 **Steps 1 and 2 turn on manual sends only.** Two pg_cron jobs —
 `dispatch-scheduled-campaigns` and `dispatch-email-automations` — POST to
-their workers from inside Postgres, which needs a credential Postgres can
-read. Hosted Supabase blocks `ALTER DATABASE` / `ALTER ROLE` for the
-`postgres` role, so an `app.*` GUC cannot be set at all (0121); Vault is
-the working pattern, same as `security_alert_secret` and
-`agent_storage_purge_secret`.
+their workers from inside Postgres, and that POST has to satisfy two
+layers:
 
-Supabase Dashboard → **SQL Editor**, once per project:
+- **Supabase's gateway (Kong)** rejects any request without a valid project
+  API key — even for `verify_jwt = false` functions. A bare secret in the
+  `Authorization` header gets a gateway `401 Invalid API key` before the
+  function ever runs.
+- **The function** then trusts an `x-automation-secret` header matched
+  against its `AUTOMATION_WORKER_SECRET` env var.
 
-```sql
-select vault.create_secret('<SUPABASE_SERVICE_ROLE_KEY>', 'worker_service_key');
-```
+So the dispatcher sends the **publishable key** (public, satisfies Kong) in
+`apikey`, plus a **shared secret you choose** in `x-automation-secret`.
+This replaces the earlier service-role-key approach, which was unusable:
+it required the Vault value to byte-match the function's injected
+`SUPABASE_SERVICE_ROLE_KEY`, and under Supabase's new API-key system
+(`sb_publishable_…` / `sb_secret_…`) that value can't be reliably obtained
+— every combination 403'd.
 
-The service role key, verbatim, from Settings → API. Both workers accept
-it through the `requireGymMember` service-key bypass, so this is one row
-and no extra edge-function secret.
+**One-time setup (three steps, all deterministic — no key hunting):**
 
-Without it nothing errors. `dispatch_scheduled_campaigns` returns 0 and
-leaves due campaigns `scheduled`; `dispatch_email_automations` does the
-same. `cron.job_run_details` reports `succeeded` either way — that is why
-`cron_run_log` (0189) exists:
+1. Pick a random secret: `openssl rand -hex 32`.
+2. Dashboard → **Edge Functions → Secrets**: set
+   `AUTOMATION_WORKER_SECRET` = that secret. (Both workers already read
+   this name.)
+3. Dashboard → **SQL Editor**, once:
+   ```sql
+   select vault.create_secret('<the same secret from step 1>', 'worker_shared_secret');
+   select vault.create_secret('<publishable key>',             'worker_gateway_key');
+   ```
+   The publishable key is **Settings → API Keys → Publishable**
+   (`sb_publishable_…`); it is public, so it is safe in Vault and in the
+   committed dispatcher. The shared secret in Vault **must equal** step 2.
+
+Without these, nothing errors. `dispatch_scheduled_campaigns` returns 0 and
+leaves due campaigns `scheduled`; `dispatch_email_automations` enqueues but
+posts nothing. `cron.job_run_details` reports `succeeded` either way — that
+is why `cron_run_log` (0189) exists:
 
 ```sql
 select job_name, ran_at, result from cron_run_log
  where job_name like 'dispatch-%' order by ran_at desc limit 10;
 ```
 
-`{"skipped": "no worker_service_key in vault"}` is the missing-row case.
-`{"due": 0, "dispatched": 0, …}` is a genuinely quiet period.
+Campaigns: `{"skipped": "missing worker_shared_secret or worker_gateway_key in vault"}`
+is the not-configured case; `{"due": 0, …}` is a genuinely quiet period.
+Automations: `{"has_secret": false, …}` is not configured; `has_secret:
+true` with `posted: true` means the dispatcher reached the worker.
+
+To check the worker actually **accepted** the call (not just that the
+dispatcher posted), read the gateway's reply — `200` is good, `401`/`403`
+means the secret or gateway key is wrong:
+
+```sql
+select status_code, content from net._http_response order by created desc limit 3;
+```
 
 ## Verify
 
