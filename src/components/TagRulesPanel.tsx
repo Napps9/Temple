@@ -25,7 +25,7 @@ export function TagRulesPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tag_rules')
-        .select('id, gym_id, label, color, predicate_kind, threshold_days, class_type_id, plan_id, active')
+        .select('id, gym_id, label, color, predicate_kind, threshold_days, class_type_id, plan_id, member_visible, active')
         .eq('gym_id', membership!.gymId)
         .order('label');
       if (error) throw error;

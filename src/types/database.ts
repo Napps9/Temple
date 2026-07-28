@@ -2316,6 +2316,7 @@ export type Database = {
           color: string;
           source: 'manual' | 'auto';
           rule_id: string | null;
+          member_visible: boolean;
           created_by: string;
           created_at: string;
         };
@@ -2327,6 +2328,7 @@ export type Database = {
           color: string;
           source: 'manual' | 'auto';
           rule_id?: string | null;
+          member_visible?: boolean;
           created_by: string;
           created_at?: string;
         };
@@ -2338,6 +2340,7 @@ export type Database = {
           color: string;
           source: 'manual' | 'auto';
           rule_id: string | null;
+          member_visible: boolean;
           created_by: string;
           created_at: string;
         }>;
@@ -2365,6 +2368,7 @@ export type Database = {
           threshold_days: number | null;
           class_type_id: string | null;
           plan_id: string | null;
+          member_visible: boolean;
           active: boolean;
           created_by: string;
           created_at: string;
@@ -2390,6 +2394,7 @@ export type Database = {
           threshold_days?: number | null;
           class_type_id?: string | null;
           plan_id?: string | null;
+          member_visible?: boolean;
           active?: boolean;
           created_by: string;
           created_at?: string;
@@ -2415,6 +2420,7 @@ export type Database = {
           threshold_days: number | null;
           class_type_id: string | null;
           plan_id: string | null;
+          member_visible: boolean;
           active: boolean;
           created_by: string;
           created_at: string;

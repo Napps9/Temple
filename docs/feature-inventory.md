@@ -792,7 +792,17 @@ The Manage page presents a tab strip:
     the rule's author. The recompute is **incremental** (`0201`): a member
     who still matches keeps their existing `member_tags` row, so
     `created_at` genuinely means "when the member gained the tag" — the
-    anchor the `member_tagged` email-automation trigger relies on. Tag/rule writes are gated on the
+    anchor the `member_tagged` email-automation trigger relies on.
+    **Member visibility** (`0202`): every tag and rule carries a
+    `member_visible` flag (default off). No member surface shows tags yet,
+    but the read boundary is enforced now — the old tenant-wide
+    `member_tags` SELECT let any member read every member's tags via
+    PostgREST; the replacement policy allows `can_manage_tags`,
+    `can_manage_comms` (audience/automation tag pickers), or a member's
+    **own** flagged-visible tags only. Staff set the flag per manual tag
+    (checkbox on add, tap the eye on a chip to flip) and per rule
+    (checkbox in the rule editor); rule flips propagate to existing tags
+    in place without re-anchoring `created_at`. Tag/rule writes are gated on the
     `can_manage_tags` capability via `effective_can`, so per-gym role
     overrides apply (e.g. a gym can grant coaches tagging).
   - **Member list** [`can_manage_tags`] — searchable + filterable, with

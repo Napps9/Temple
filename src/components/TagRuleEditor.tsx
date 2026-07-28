@@ -37,6 +37,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
   );
   const [classTypeId, setClassTypeId] = useState<string | null>(rule?.class_type_id ?? null);
   const [planId, setPlanId] = useState<string | null>(rule?.plan_id ?? null);
+  const [memberVisible, setMemberVisible] = useState(rule?.member_visible ?? false);
   const [active, setActive] = useState(rule?.active ?? true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,6 +103,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
         threshold_days: meta.thresholdUse === 'none' ? null : threshold,
         class_type_id: meta.needsClassType ? classTypeId : null,
         plan_id: meta.needsPlan ? planId : null,
+        member_visible: memberVisible,
         active,
         created_by: session.user.id,
       };
@@ -268,6 +270,28 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
           placeholder={meta.thresholdUse === 'optional' ? 'Any time' : meta.thresholdDefault}
         />
       ) : null}
+
+      <Pressable
+        onPress={() => setMemberVisible(!memberVisible)}
+        className="flex-row items-center gap-2">
+        <View
+          className={`w-5 h-5 rounded border ${
+            memberVisible
+              ? 'bg-primary border-primary'
+              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
+          }`}>
+          {memberVisible ? (
+            <Text className="text-white text-center text-xs leading-5">✓</Text>
+          ) : null}
+        </View>
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50">Visible to the member</Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Off keeps this tag internal — members can never read tags that
+            aren't marked visible.
+          </Text>
+        </View>
+      </Pressable>
 
       <Pressable
         onPress={() => setActive(!active)}

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ColorSwatchPicker, PALETTE } from '@/components/ColorSwatchPicker';
@@ -21,6 +21,7 @@ type TagRow = {
   color: string;
   source: 'manual' | 'auto';
   rule_id: string | null;
+  member_visible: boolean;
 };
 
 export default function TagsScreen() {
@@ -38,6 +39,7 @@ function MemberTags({ profileId }: { profileId: string }) {
   const queryClient = useQueryClient();
   const [label, setLabel] = useState('');
   const [color, setColor] = useState<string>(PALETTE[0]!.hex);
+  const [memberVisible, setMemberVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const profileQuery = useQuery({
@@ -60,7 +62,7 @@ function MemberTags({ profileId }: { profileId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('member_tags')
-        .select('id, label, color, source, rule_id')
+        .select('id, label, color, source, rule_id, member_visible')
         .eq('gym_id', membership!.gymId)
         .eq('profile_id', profileId);
       if (error) throw error;
@@ -85,15 +87,29 @@ function MemberTags({ profileId }: { profileId: string }) {
         color,
         source: 'manual',
         created_by: session.user.id,
+        member_visible: memberVisible,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setLabel('');
+      setMemberVisible(false);
       setError(null);
       invalidate();
     },
     onError: (e) => setError(errorMessage(e, 'Could not add tag')),
+  });
+
+  const toggleVisible = useMutation({
+    mutationFn: async (tag: TagRow) => {
+      const { error } = await supabase
+        .from('member_tags')
+        .update({ member_visible: !tag.member_visible })
+        .eq('id', tag.id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+    onError: (e) => setError(errorMessage(e, 'Could not change visibility')),
   });
 
   const removeTag = useMutation({
@@ -137,11 +153,20 @@ function MemberTags({ profileId }: { profileId: string }) {
                   label={t.label}
                   color={t.color}
                   source={t.source}
+                  visible={t.member_visible}
+                  onToggleVisible={
+                    t.source === 'manual' ? () => toggleVisible.mutate(t) : undefined
+                  }
                   onRemove={t.source === 'manual' ? () => removeTag.mutate(t.id) : undefined}
                 />
               ))}
             </View>
           )}
+          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            The eye marks tags the member can see themselves; everything else
+            stays internal. Tap it to flip a manual tag; auto tags follow
+            their rule's setting.
+          </Text>
         </View>
 
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
@@ -160,6 +185,21 @@ function MemberTags({ profileId }: { profileId: string }) {
             </Text>
             <ColorSwatchPicker value={color} onChange={setColor} />
           </View>
+          <Pressable
+            onPress={() => setMemberVisible(!memberVisible)}
+            className="flex-row items-center gap-2">
+            <View
+              className={`w-5 h-5 rounded border ${
+                memberVisible
+                  ? 'bg-primary border-primary'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
+              }`}>
+              {memberVisible ? (
+                <Text className="text-white text-center text-xs leading-5">✓</Text>
+              ) : null}
+            </View>
+            <Text className="text-gray-900 dark:text-gray-50">Visible to the member</Text>
+          </Pressable>
           {error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
           ) : null}

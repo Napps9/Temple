@@ -25,6 +25,7 @@ export type TagRule = {
   threshold_days: number | null;
   class_type_id: string | null;
   plan_id: string | null;
+  member_visible: boolean;
   active: boolean;
 };
 
