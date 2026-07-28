@@ -66,4 +66,18 @@ describe('automation wait knob', () => {
     const { delay_minutes } = knobToStorage('member_first_class', -5);
     expect(delay_minutes).toBe(0);
   });
+
+  // member_tagged is delay-based like member_joined; the tag itself is not a
+  // knob (the editor carries it in params separately), so knobToStorage must
+  // not clobber it into existence or require it.
+  it('round-trips waits for a member-tagged automation, including zero', () => {
+    for (const days of [0, 1, 7]) {
+      const { delay_minutes, params } = knobToStorage('member_tagged', days);
+      expect(delay_minutes).toBe(days * 1440);
+      expect(params).toEqual({});
+      expect(
+        storageToKnob({ trigger_type: 'member_tagged', delay_minutes, params: { tag: 'VIP' } }),
+      ).toBe(days);
+    }
+  });
 });

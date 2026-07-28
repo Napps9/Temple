@@ -17,9 +17,16 @@ export type AutomationTrigger =
   | 'member_joined'
   | 'member_first_class'
   | 'member_inactive'
-  | 'lead_cold';
+  | 'lead_cold'
+  | 'member_tagged';
 
-export type AutomationParams = { inactive_days?: number; cold_hours?: number };
+// tag is member_tagged's target label — not a timing knob, so the editor
+// merges it into params alongside what knobToStorage returns.
+export type AutomationParams = {
+  inactive_days?: number;
+  cold_hours?: number;
+  tag?: string;
+};
 
 // The wait a freshly created delay-based automation (member_joined /
 // member_first_class) is born with. Written into the inserted row rather
@@ -35,6 +42,7 @@ export function knobToStorage(
   switch (trigger) {
     case 'member_joined':
     case 'member_first_class':
+    case 'member_tagged':
       return {
         delay_minutes: Math.max(0, Math.round(knob)) * MINUTES_PER_DAY,
         params: {},
@@ -54,6 +62,7 @@ export function storageToKnob(row: {
   switch (row.trigger_type) {
     case 'member_joined':
     case 'member_first_class':
+    case 'member_tagged':
       // delay_minutes is `not null`, so this is always a real number,
       // including 0 ("as soon as it happens"). No `|| 3` — that swallowed a
       // deliberate 0 because 0 is falsy, which is the whole bug.

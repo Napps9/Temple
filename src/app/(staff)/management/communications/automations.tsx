@@ -21,7 +21,8 @@ type TriggerType =
   | 'member_joined'
   | 'member_first_class'
   | 'member_inactive'
-  | 'lead_cold';
+  | 'lead_cold'
+  | 'member_tagged';
 
 type AutomationRow = {
   id: string;
@@ -36,6 +37,7 @@ export const TRIGGER_LABELS: Record<TriggerType, string> = {
   member_first_class: 'After a member’s first class',
   member_inactive: 'When a member goes quiet',
   lead_cold: 'When a lead stays cold',
+  member_tagged: 'When a member is tagged',
 };
 
 export default function AutomationsScreen() {

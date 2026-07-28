@@ -789,7 +789,10 @@ The Manage page presents a tab strip:
     Rules recompute nightly via pg_cron (`recompute-auto-tags`, logged to
     `cron_run_log`) as well as on demand ("Recompute now" →
     `apply_tag_rules`); nightly-applied tags attribute `created_by` to
-    the rule's author. Tag/rule writes are gated on the
+    the rule's author. The recompute is **incremental** (`0201`): a member
+    who still matches keeps their existing `member_tags` row, so
+    `created_at` genuinely means "when the member gained the tag" — the
+    anchor the `member_tagged` email-automation trigger relies on. Tag/rule writes are gated on the
     `can_manage_tags` capability via `effective_can`, so per-gym role
     overrides apply (e.g. a gym can grant coaches tagging).
   - **Member list** [`can_manage_tags`] — searchable + filterable, with
@@ -1729,13 +1732,19 @@ platform fires unattended, reachable from Comms → Automations
 (`/management/communications/automations`). Built on the Comms Suite: the
 same block editor + renderer author the email, `comms_audience_rows`
 resolves recipients and applies per-topic/blanket suppression, and the gym's
-sender identity / sending domain carry the send. Four triggers (0116):
+sender identity / sending domain carry the send. Five triggers (0116, 0201):
 `member_joined` (welcome, N days after joining), `member_first_class`
 (follow-up after the earliest attended `class_bookings` row),
-`member_inactive` (win-back after N days with no attendance), and `lead_cold`
-(nurture a still-cold, consented lead N hours after capture). Each fires only
-for anchor events at or after the automation's `created_at`, so enabling one
-never blasts the back-catalogue.
+`member_inactive` (win-back after N days with no attendance), `lead_cold`
+(nurture a still-cold, consented lead N hours after capture), and
+`member_tagged` (`params.tag` names a member-tag label; fires N days after a
+member gains that tag, whether added by hand or by a tag rule — anchored on
+`member_tags.created_at`, which `0201` made stable by turning the recompute
+incremental: surviving tags keep their row, so a nightly recompute can't make
+old tags look freshly gained. Fired once per member per automation — the
+idempotency key has no date segment, so losing and regaining the tag never
+re-sends). Each trigger fires only for anchor events at or after the
+automation's `created_at`, so enabling one never blasts the back-catalogue.
 
 An automation can be narrowed to a segment via `email_automations.conditions`
 (jsonb, 0118): `plan_ids` gates the member triggers to members on a current

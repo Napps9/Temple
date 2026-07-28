@@ -18,6 +18,7 @@ import {
   type EmailDocument,
 } from '@/lib/email/blocks';
 import { knobToStorage, storageToKnob } from '@/lib/email/automation-knob';
+import { useGymTagLabels } from '@/lib/comms';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -33,7 +34,8 @@ type TriggerType =
   | 'member_joined'
   | 'member_first_class'
   | 'member_inactive'
-  | 'lead_cold';
+  | 'lead_cold'
+  | 'member_tagged';
 
 type AutomationRow = {
   id: string;
@@ -42,7 +44,7 @@ type AutomationRow = {
   enabled: boolean;
   trigger_type: TriggerType;
   delay_minutes: number;
-  params: { inactive_days?: number; cold_hours?: number } | null;
+  params: { inactive_days?: number; cold_hours?: number; tag?: string } | null;
   conditions: AutomationConditions | null;
   send_hour: number | null;
   send_days: number[] | null;
@@ -65,6 +67,8 @@ const TRIGGER_BLURB: Record<TriggerType, string> = {
   member_first_class: 'Follow up after someone attends their first class.',
   member_inactive: 'Win back a member who hasn’t attended in a while.',
   lead_cold: 'Nurture a prospect who enquired but hasn’t been contacted.',
+  member_tagged:
+    'Start a sequence when a member gains a tag — added by hand or by a tag rule.',
 };
 
 // The single timing knob each trigger exposes, and how it maps to storage.
@@ -73,6 +77,7 @@ const KNOB_UNIT: Record<TriggerType, string> = {
   member_first_class: 'days after their first class',
   member_inactive: 'days without attending',
   lead_cold: 'hours if still cold',
+  member_tagged: 'days after they gain the tag',
 };
 
 type Topic = { id: string; label: string };
@@ -332,6 +337,8 @@ export default function AutomationEditor() {
     },
   });
 
+  const tagLabels = useGymTagLabels();
+
   const stepRows = useQuery({
     queryKey: ['email-automation-steps', id],
     enabled: !!id && canManageComms === true,
@@ -355,6 +362,7 @@ export default function AutomationEditor() {
   const [planIds, setPlanIds] = useState<string[]>([]);
   const [classTypeIds, setClassTypeIds] = useState<string[]>([]);
   const [sourceIds, setSourceIds] = useState<string[]>([]);
+  const [tagLabel, setTagLabel] = useState<string | null>(null);
   const [sendHour, setSendHour] = useState<number | null>(null);
   const [sendDays, setSendDays] = useState<number[]>([]);
   const [steps, setSteps] = useState<StepState[]>([]);
@@ -382,6 +390,7 @@ export default function AutomationEditor() {
     setPlanIds(a.conditions?.plan_ids ?? []);
     setClassTypeIds(a.conditions?.class_type_ids ?? []);
     setSourceIds(a.conditions?.lead_source_ids ?? []);
+    setTagLabel(a.params?.tag ?? null);
     setSendHour(a.send_hour);
     setSendDays(a.send_days ?? []);
     setSubject(a.subject);
@@ -412,7 +421,12 @@ export default function AutomationEditor() {
 
   const enabled = automation.data?.enabled ?? false;
   const warnings = doc ? documentWarnings(doc) : ['Loading'];
-  const canEnable = warnings.length === 0 && subject.trim() !== '';
+  // A member_tagged automation with no tag chosen would never fire — the
+  // sweep matches nothing on a blank tag — so don't let it be enabled.
+  const canEnable =
+    warnings.length === 0 &&
+    subject.trim() !== '' &&
+    (trigger !== 'member_tagged' || !!tagLabel);
 
   const previewHtml = useMemo(
     () => (doc ? renderEmailHtml(doc, { preheader, unsubscribeUrl: '#' }) : ''),
@@ -426,7 +440,8 @@ export default function AutomationEditor() {
     const memberTrigger =
       trigger === 'member_joined' ||
       trigger === 'member_inactive' ||
-      trigger === 'member_first_class';
+      trigger === 'member_first_class' ||
+      trigger === 'member_tagged';
     if (memberTrigger && planIds.length) c.plan_ids = planIds;
     if (trigger === 'member_first_class' && classTypeIds.length) c.class_type_ids = classTypeIds;
     if (trigger === 'lead_cold' && sourceIds.length) c.lead_source_ids = sourceIds;
@@ -440,7 +455,8 @@ export default function AutomationEditor() {
       name: name.trim() || 'Untitled automation',
       trigger_type: trigger,
       delay_minutes,
-      params,
+      params:
+        trigger === 'member_tagged' && tagLabel ? { ...params, tag: tagLabel } : params,
       conditions: buildConditions() as unknown as Json,
       send_hour: sendHour,
       send_days: sendHour === null || sendDays.length === 0 ? null : sendDays,
@@ -486,7 +502,7 @@ export default function AutomationEditor() {
     }, 1200);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, trigger, knob, topicId, planIds, classTypeIds, sourceIds, sendHour, sendDays, subject, preheader, fromName, doc]);
+  }, [name, trigger, knob, topicId, planIds, classTypeIds, sourceIds, tagLabel, sendHour, sendDays, subject, preheader, fromName, doc]);
 
   function updateStep(stepId: string, patch: Partial<StepState>) {
     setSteps((prev) => prev.map((s) => (s.id === stepId ? { ...s, ...patch } : s)));
@@ -757,7 +773,7 @@ export default function AutomationEditor() {
           <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
             When it fires
           </Text>
-          {(['member_joined', 'member_first_class', 'member_inactive', 'lead_cold'] as TriggerType[]).map(
+          {(['member_joined', 'member_first_class', 'member_inactive', 'member_tagged', 'lead_cold'] as TriggerType[]).map(
             (t) => {
               const sel = trigger === t;
               return (
@@ -777,6 +793,40 @@ export default function AutomationEditor() {
               );
             },
           )}
+          {trigger === 'member_tagged' ? (
+            <View className="gap-1.5">
+              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                Which tag
+              </Text>
+              {tagLabels.isLoading ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading tags…</Text>
+              ) : (tagLabels.data ?? []).length === 0 ? (
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  No member tags yet. Add tags or tag rules from Manage → Members first.
+                </Text>
+              ) : (
+                <View className="flex-row flex-wrap gap-2">
+                  {(tagLabels.data ?? []).map((label) => {
+                    const sel = tagLabel === label;
+                    return (
+                      <Pressable
+                        key={label}
+                        onPress={() => setTagLabel(label)}
+                        className={`px-3 py-1.5 rounded-full border ${
+                          sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                        }`}>
+                        <Text className="text-xs text-gray-700 dark:text-gray-200">{label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                Fires once per member, whether the tag is added by hand or by a
+                tag rule. Losing and regaining the tag doesn’t re-send.
+              </Text>
+            </View>
+          ) : null}
           <View className="flex-row items-center gap-3">
             <View className="w-24">
               <Input label="Wait" value={knob} onChangeText={setKnob} keyboardType="number-pad" />
@@ -791,7 +841,8 @@ export default function AutomationEditor() {
           const showPlan =
             trigger === 'member_joined' ||
             trigger === 'member_inactive' ||
-            trigger === 'member_first_class';
+            trigger === 'member_first_class' ||
+            trigger === 'member_tagged';
           const showType = trigger === 'member_first_class';
           const showSource = trigger === 'lead_cold';
           const anyOptions =

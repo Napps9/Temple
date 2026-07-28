@@ -3130,7 +3130,8 @@ export type Database = {
             | 'member_joined'
             | 'member_first_class'
             | 'member_inactive'
-            | 'lead_cold';
+            | 'lead_cold'
+            | 'member_tagged';
           delay_minutes: number;
           params: Json;
           conditions: Json;
@@ -3157,7 +3158,8 @@ export type Database = {
             | 'member_joined'
             | 'member_first_class'
             | 'member_inactive'
-            | 'lead_cold';
+            | 'lead_cold'
+            | 'member_tagged';
           delay_minutes?: number;
           params?: Json;
           conditions?: Json;
@@ -3182,7 +3184,8 @@ export type Database = {
             | 'member_joined'
             | 'member_first_class'
             | 'member_inactive'
-            | 'lead_cold';
+            | 'lead_cold'
+            | 'member_tagged';
           delay_minutes: number;
           params: Json;
           conditions: Json;
