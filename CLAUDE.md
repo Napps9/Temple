@@ -204,6 +204,14 @@ signatures are NOT (they're liability records, retained as such).
   better than a premature helper.
 - **Match scope to ask.** A bug fix is a bug fix; don't refactor
   surrounding code.
+- **UI/UX changes come with a screen mockup in the chat.** Any change
+  a user would *see* — new cards or screens, layout shifts, visible
+  copy or colour changes — must be accompanied by a mockup of the
+  affected screen(s) sent as a rendered file in the session, so it
+  can be reviewed visually without pulling the app. An HTML
+  approximation with representative data is fine; match the app's
+  styling (cards, spacing, type scale) and show dark mode where it
+  matters. Backend-only or purely behavioural changes don't need one.
 - **Update `docs/feature-inventory.md`** when you ship a meaningful
   feature. That file is the source of truth for "what's live."
 
