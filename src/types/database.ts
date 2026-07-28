@@ -4114,10 +4114,6 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
-      purge_expired_health_data: {
-        Args: Record<string, never>;
-        Returns: number;
-      };
       gym_member_injuries: {
         Args: { p_gym_id: string; p_profile_id: string };
         Returns: {

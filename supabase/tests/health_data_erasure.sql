@@ -119,16 +119,19 @@ select is(
 -- off member_injuries_select, so an owner reading the table directly now
 -- sees nothing either way and the assertions would pass for the wrong
 -- reason.
-do $$
-begin
-  perform _test_act_as(current_setting('test.owner')::uuid);
-  perform public.purge_expired_health_data();
-end $$;
-
+-- Run as the owner of the schema, which is who pg_cron is: 0192 revoked
+-- this from authenticated (and from PUBLIC, which is what it really had),
+-- because a sweep that erases health data for every departed member on
+-- the platform has no business being callable from a browser.
 select lives_ok(
   $$ select set_config('role', 'postgres', true) $$,
   'step out of RLS to check what survived the sweep'
 );
+
+do $$
+begin
+  perform public.purge_expired_health_data();
+end $$;
 
 select is(
   (select count(*) from public.member_injuries
