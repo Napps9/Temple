@@ -59,9 +59,11 @@ begin
   perform _test_mk_booking(v_s_past, v_a);
   perform _test_mk_booking(v_s_future, v_b);
   perform _test_mk_booking(v_s_yoga, v_b);
-  update public.class_bookings set attended_at = now() - interval '5 days'
+  update public.class_bookings
+    set attended_at = now() - interval '5 days', marked_by = v_coach
     where class_session_id = v_s_past and profile_id = v_a;
-  update public.class_bookings set attended_at = now() - interval '40 days'
+  update public.class_bookings
+    set attended_at = now() - interval '40 days', marked_by = v_coach
     where class_session_id = v_s_yoga and profile_id = v_b;
 
   insert into public.membership_plans (gym_id, name, kind, monthly_price_cents)
