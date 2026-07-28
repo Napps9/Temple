@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { DEFAULT_AUTOMATION_WAIT_DAYS } from '@/lib/email/automation-knob';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
 import { starterDocument } from '@/lib/email/blocks';
 import { errorMessage } from '@/lib/errors';
@@ -89,6 +90,10 @@ export default function AutomationsScreen() {
           created_by: session!.user.id,
           name: 'Untitled automation',
           subject: `A note from ${brand.gymName}`,
+          // The default wait lives here, in the stored row, rather than
+          // being faked on read — otherwise a real 0 can't be told from a
+          // fresh default (both are delay_minutes 0). See automation-knob.ts.
+          delay_minutes: DEFAULT_AUTOMATION_WAIT_DAYS * 1440,
           design: doc as unknown as Json,
           compiled_html: renderEmailHtml(doc),
           compiled_text: renderEmailText(doc),

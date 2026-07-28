@@ -17,6 +17,7 @@ import {
   starterDocument,
   type EmailDocument,
 } from '@/lib/email/blocks';
+import { knobToStorage, storageToKnob } from '@/lib/email/automation-knob';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -73,33 +74,6 @@ const KNOB_UNIT: Record<TriggerType, string> = {
   member_inactive: 'days without attending',
   lead_cold: 'hours if still cold',
 };
-
-function knobToStorage(
-  trigger: TriggerType,
-  knob: number,
-): { delay_minutes: number; params: Json } {
-  switch (trigger) {
-    case 'member_joined':
-    case 'member_first_class':
-      return { delay_minutes: Math.max(0, Math.round(knob)) * 1440, params: {} };
-    case 'member_inactive':
-      return { delay_minutes: 0, params: { inactive_days: Math.max(1, Math.round(knob)) } };
-    case 'lead_cold':
-      return { delay_minutes: 0, params: { cold_hours: Math.max(1, Math.round(knob)) } };
-  }
-}
-
-function storageToKnob(row: AutomationRow): number {
-  switch (row.trigger_type) {
-    case 'member_joined':
-    case 'member_first_class':
-      return Math.round(row.delay_minutes / 1440) || 3;
-    case 'member_inactive':
-      return row.params?.inactive_days ?? 21;
-    case 'lead_cold':
-      return row.params?.cold_hours ?? 24;
-  }
-}
 
 type Topic = { id: string; label: string };
 type Option = { id: string; label: string };
