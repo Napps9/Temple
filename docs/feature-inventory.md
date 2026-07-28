@@ -2222,6 +2222,16 @@ Items the conversation has flagged but not implemented yet:
   all. The DELETEs behind those buttons are authorised by
   `user_can_manage_classes(gym_id)` and `user_is_owner_of(gym_id)`, so
   revoking the capability hides the button and leaves the row deletable.
+  The four of these that were also client-*writable* are now closed
+  (0195): `plan_subscriptions`, `direct_messages`, `gym_announcements`
+  and `class_sessions` each granted a table-wide write the client never
+  issued, with an RLS policy that pinned the row but not the columns —
+  the 0194 pattern. The revoke leaves the definer/service-role writers
+  untouched. `plan_subscriptions` was the worst: its `user_can_assign_plan`
+  guard is raw-role with no `left_at` guard, so a removed coach kept write
+  access to every subscription's `status` and `price_cents`. What remains
+  in this bullet is the read-and-surface-only set, where the grant is not
+  writable and the gap is cosmetic.
 
 - **The scheduled-send path has never run end to end.** Everything
   around it is proven — pgTAP covers the dispatcher, the Vault
