@@ -92,6 +92,10 @@ export function MembersList() {
   // without leaving the list. The RPC throws for anyone without the
   // capability, so gate the query on it.
   const canAssignPlan = useCan('can_assign_plan') ?? false;
+  // Same reason: 0180 put the roster's injury dot behind an audited RPC
+  // that raises rather than the RLS policy it replaced, which returned
+  // empty.
+  const canSeeHealth = useCan('can_see_health_flag') ?? false;
 
   const cohortQuery = useQuery({
     queryKey: ['members-cohort', membership?.gymId],
@@ -192,12 +196,10 @@ export function MembersList() {
     },
   });
 
-  // Members with an unresolved injury get an amber badge; RLS hides
-  // the rows from staff without can_see_health_flag, so this set is
-  // simply empty for them.
+  // Members with an unresolved injury get an amber badge.
   const injuriesQuery = useQuery({
     queryKey: ['members-open-injuries', membership?.gymId],
-    enabled: !!membership?.gymId,
+    enabled: !!membership?.gymId && canSeeHealth,
     queryFn: async (): Promise<Set<string>> => {
       // Audited read (0180). The roster's injury flag is still a health
       // read even though it only shows a dot.

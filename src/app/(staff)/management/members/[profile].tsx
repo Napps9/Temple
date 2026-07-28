@@ -424,7 +424,9 @@ export default function MemberDetailScreen() {
           />
         </View>
 
-        <InjuriesSection gymId={membership!.gymId} profileId={profileId!} />
+        {canSeeHealth ? (
+          <InjuriesSection gymId={membership!.gymId} profileId={profileId!} />
+        ) : null}
 
         {canSeeMoneyHere && membership?.gymId && profileId ? (
           <PaymentTroubleCard
@@ -798,8 +800,11 @@ type StaffInjuryRow = {
 
 // Coach-facing injury history: every injury (open first) with the
 // member's check-in trail inline, so a coach can see how it's
-// trending before adjusting programming. RLS hides this from staff
-// without can_see_health_flag — the query just returns nothing.
+// trending before adjusting programming. Rendered behind
+// can_see_health_flag: 0180 moved these reads onto audited RPCs that
+// RAISE for staff without it, where the dropped RLS policy used to
+// return empty. Unguarded, the section would tell a coach who is not
+// allowed to see injuries that there are none.
 function InjuriesSection({
   gymId,
   profileId,

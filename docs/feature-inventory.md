@@ -2190,6 +2190,37 @@ Items the conversation has flagged but not implemented yet:
   result from cron_run_log order by ran_at desc limit 40;` is the whole
   interface today.
 
+- **Two capability toggles do nothing.** `can_issue_override` and
+  `can_issue_comp_grant` are in the capability matrix and in the Team
+  screen's editor (`team.tsx:69-70`), so an owner can grant and revoke
+  them — but nothing reads either one, because neither action exists.
+  `comp_grants` is read in four places (`MembersList`,
+  `RemoveMemberDialog`, the member detail screen, `insights.ts`) and
+  written by nothing at all: no client insert, no RPC, no migration.
+  Either build the grant flow or take the toggles out; showing a switch
+  that governs nothing is the worse of the two.
+
+- **Some capabilities are enforced at the surface, not in RLS.** 105 of
+  the 287 policies check `effective_can`; 45 still say
+  `user_can_admin(gym_id)` or `user_is_owner_of(gym_id)` instead of the
+  specific key, so revoking one of those from an admin changes what the
+  app offers rather than what the database permits.
+  `can_hard_delete` is the sharpest case: it gates the delete buttons on
+  `class-types.tsx:180` and `plans.tsx:183` and appears in no policy at
+  all. The DELETEs behind those buttons are authorised by
+  `user_can_manage_classes(gym_id)` and `user_is_owner_of(gym_id)`, so
+  revoking the capability hides the button and leaves the row deletable.
+
+- **The scheduled-send path has never run end to end.** Everything
+  around it is proven — pgTAP covers the dispatcher, the Vault
+  credential, the stall recovery and the snapshot — but no real campaign
+  has gone from `scheduled` through `send-campaign` to a delivered
+  Resend event, because the credential only landed on 2026-07-28.
+  Schedule one to the demo gym a few minutes out and watch
+  `cron_run_log` plus the report. Demo accounts are
+  `@demo-ironworks.temple.test` — IANA-reserved, so nothing can route
+  out of the building.
+
 - **`profiles` is still one row for everyone in the gym.** `phone` moved
   to `member_contact_details` (0179) and `same_gym_as_caller` now requires
   the CALLER to be a current member, but `date_of_birth` still rides along

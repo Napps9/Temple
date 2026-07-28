@@ -66,6 +66,38 @@ export async function requireGymMember(
   return { ok: true, profileId, role: membership.role as string };
 }
 
+// Membership is the floor, not the ceiling. A worker whose response says
+// anything about the gym's business needs the same capability as the screen
+// that calls it, or every member gets an oracle: POST a gym id, read back
+// how many of your gym-mates have a failing card.
+//
+// Checked through the CALLER's client so effective_can sees their auth.uid()
+// and applies the same per-member overrides the UI does. The service-key
+// caller passes straight through — cron and stripe-webhook have no user.
+export async function requireGymCapability(
+  req: Request,
+  gymId: string,
+  capability: string,
+  supabaseUrl: string,
+  anonKey: string,
+  serviceKey: string,
+): Promise<CallerCheck> {
+  const who = await requireGymMember(req, gymId, supabaseUrl, anonKey, serviceKey);
+  if (!who.ok || who.role === 'service') return who;
+
+  const caller = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
+  });
+  const { data, error } = await caller.rpc('effective_can', {
+    p_gym_id: gymId,
+    p_capability: capability,
+  });
+  if (error || data !== true) {
+    return { ok: false, status: 403, error: 'Not authorised' };
+  }
+  return who;
+}
+
 // A caller-supplied origin lands in an email as a clickable link, so it is
 // not free text. Allow the configured app URL and the gym's own verified
 // custom domain; anything else falls back rather than erroring, because a

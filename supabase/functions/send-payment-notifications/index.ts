@@ -30,7 +30,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-import { requireGymMember, safeOrigin } from '../_shared/caller.ts';
+import { requireGymCapability, safeOrigin } from '../_shared/caller.ts';
 
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 
@@ -110,8 +110,12 @@ Deno.serve(async (req: Request) => {
   const gymId = body.gym_id;
   if (!gymId) return json({ error: 'gym_id is required' }, 400);
 
-  const who = await requireGymMember(
-    req, gymId, SUPABASE_URL, ANON_KEY, SERVICE_KEY);
+  // can_see_money, not membership. The only client caller is the Money
+  // block on the analysis screen, which is already behind that capability;
+  // membership alone would let any member poll the response counts for how
+  // many people at their gym have a failing card.
+  const who = await requireGymCapability(
+    req, gymId, 'can_see_money', SUPABASE_URL, ANON_KEY, SERVICE_KEY);
   if (!who.ok) return json({ error: who.error }, who.status);
 
   const origin = await safeOrigin(body.origin, gymId, SUPABASE_URL, SERVICE_KEY);

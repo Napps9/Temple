@@ -6,7 +6,7 @@
 -- pg_cron auth.uid() is null and effective_can would refuse everything.
 
 begin;
-select plan(19);
+select plan(20);
 
 \ir _helpers.psql
 
@@ -129,10 +129,15 @@ select lives_ok(
   'the one-time Vault secret is created'
 );
 
--- pgTAP runs in one transaction where now() never moves, so due-ness is
--- simulated by moving the campaign rather than the clock.
+-- The editor autosaves and the UPDATE policy allows it while scheduled,
+-- so the subject and the audience CAN change after the button is pressed
+-- — and the banner promises they will not go out. Only the document was
+-- frozen until 0193; the rest is snapshotted now, so an edit made after
+-- scheduling has to be ignored by the send and must not retitle it.
 update public.email_campaigns
-  set scheduled_for = now() - interval '1 minute'
+  set subject  = 'Edited after scheduling',
+      audience = '{"kind":"staff"}'::jsonb,
+      scheduled_for = now() - interval '1 minute'
   where id = current_setting('test.camp')::uuid;
 
 select is(
@@ -142,17 +147,26 @@ select is(
 );
 
 select is(
+  (select subject from public.email_campaigns
+    where id = current_setting('test.camp')::uuid),
+  'This week at the gym',
+  'sending under the approved subject, not the one edited in afterwards'
+);
+
+select is(
   (select status from public.email_campaigns
     where id = current_setting('test.camp')::uuid),
   'sending',
   'flipping it to sending with its recipients snapshotted'
 );
 
+-- One member, not the two staff the audience was edited to after
+-- scheduling: the snapshot decides who gets it.
 select is(
   (select count(*)::int from public.email_campaign_recipients
     where campaign_id = current_setting('test.camp')::uuid),
   1,
-  'which is the one member with a usable address'
+  'to the approved audience, not the one edited in afterwards'
 );
 
 -- A campaign that reached 'sending' and stalled — a 403 from the worker, a
