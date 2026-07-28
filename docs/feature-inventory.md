@@ -527,23 +527,39 @@ The staff area shows up when `can_access_staff_area` is on.
   `user_can_assign_plan` (owner/coach/staff), because the Stripe-hosted
   invoice is a bearer URL rendering the member's billing address and
   coach/staff hold neither `can_see_full_pii` nor `can_see_email`.
-- **Programming Analysis page** — 12-week injury heat map across the
-  gym body + per-movement member trends (from both direct PR logs and
-  section-tagged workout results) + the Programming Balance block:
-  - Pattern × Energy matrix (the headline 2-D grid)
-  - Energy system bars (phosphagen / glycolytic / oxidative)
-  - Time domains (AI-read conditioning lengths bucketed <5 / 5–10 /
-    10–15 / 15–20 / 20+ min; strength formats deliberately excluded)
-  - Load balance (heavy / moderate / light / bodyweight split, AI-read
-    from the loading cues in the programming text)
-  - Movement pattern volume bars
-  - Region heat (BodyMap silhouette tinted by programmed volume)
-  - Untagged sections (programming that didn't classify, so the coach
-    can fix the wording).
-  - Every Programming Balance card (and the block header) has an (i)
-    toggle that reveals a "What this shows / Why it matters" panel —
-    plain-language explanation of the energy-system / pattern jargon
-    and how to act on each view.
+- **Programming Analysis page** — reorganised "headline first, detail
+  second" (the 12-week injury map and per-movement member trends fold
+  into the page's third group rather than standing alone):
+  - **Verdict tiles** — three at-a-glance answers above everything:
+    Push:Pull ratio, top time domain, heavy share. Green inside a
+    healthy band, amber when drifting (`src/lib/programming-verdicts.ts`,
+    pure + unit-tested: push:pull ok 0.8–1.25, a time domain over 50%
+    flags concentration, heavy ok 20–40% of loaded pieces). Derived
+    from the same aggregations as the cards, so a tile can never
+    disagree with the card below it; captions carry the underlying
+    counts.
+  - One **scope row** (date-range pill + class-type chips, including
+    archived types) drives every programming stat on the page,
+    verdict tiles included.
+  - Cards grouped under three labelled questions:
+    - **What you're training** — Pattern × Energy matrix, Energy
+      system bars, Movement pattern volume
+    - **How it's dosed** — Time domains (AI-read conditioning lengths
+      bucketed <5 / 5–10 / 10–15 / 15–20 / 20+ min; strength formats
+      deliberately excluded) + Load balance (heavy / moderate / light
+      / bodyweight, AI-read from loading cues)
+    - **Bodies & people** — Region load vs open injuries as ONE card
+      (programmed-volume silhouette above the open-injuries
+      silhouette, so the cross-reference is built in; degrades per
+      capability to either half alone), the open-injury list, and the
+      movement trends
+  - **Untagged sections demoted to a housekeeping footer** — a slim
+    row stating the count, expanding to the detail card on Review.
+  - Desktop widens to `max-w-4xl` with two-column groups (matrix
+    beside the mix cards, Time domains beside Load balance, bodies
+    beside trends); phones keep the single stack.
+  - Every card keeps its (i) toggle revealing a "What this shows /
+    Why it matters" plain-language panel.
   - **AI section tagging (0203)** — the dimensions Boxmate makes
     coaches tag by hand, read by AI from what the coach already wrote.
     The `classify-programming` edge function sends each distinct

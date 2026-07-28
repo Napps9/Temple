@@ -56,6 +56,9 @@ export const LOAD_COLOURS: Record<LoadLevel, string> = {
 export type TimeDomain = {
   key: string;
   label: string;
+  // Tile-sized variant — three verdict tiles share a phone row, so the
+  // headline value has ~60 px on the smallest screens.
+  short: string;
   min: number;
   max: number;
 };
@@ -63,11 +66,11 @@ export type TimeDomain = {
 // CrossFit-convention conditioning time domains. max is exclusive so
 // a 5:00 piece lands in 5–10 and a 20:00 piece in 20+.
 export const TIME_DOMAINS: readonly TimeDomain[] = [
-  { key: 'under5', label: 'Under 5 min', min: 0, max: 5 },
-  { key: '5to10', label: '5–10 min', min: 5, max: 10 },
-  { key: '10to15', label: '10–15 min', min: 10, max: 15 },
-  { key: '15to20', label: '15–20 min', min: 15, max: 20 },
-  { key: 'over20', label: '20+ min', min: 20, max: Infinity },
+  { key: 'under5', label: 'Under 5 min', short: '<5 min', min: 0, max: 5 },
+  { key: '5to10', label: '5–10 min', short: '5–10', min: 5, max: 10 },
+  { key: '10to15', label: '10–15 min', short: '10–15', min: 10, max: 15 },
+  { key: '15to20', label: '15–20 min', short: '15–20', min: 15, max: 20 },
+  { key: 'over20', label: '20+ min', short: '20+ min', min: 20, max: Infinity },
 ] as const;
 
 // The formats where "how long does it run" is a property of the piece
@@ -203,7 +206,7 @@ export function applyAiTag(
 
 export function computeTimeDomainMix(
   sections: TaggedSection[],
-): { key: string; label: string; count: number; pct: number }[] {
+): { key: string; label: string; short: string; count: number; pct: number }[] {
   const counts = new Map<string, number>();
   let total = 0;
   for (const s of sections) {
@@ -219,7 +222,7 @@ export function computeTimeDomainMix(
   return TIME_DOMAINS.map((d) => {
     const count = counts.get(d.key) ?? 0;
     const pct = total === 0 ? 0 : Math.round((count / total) * 100);
-    return { key: d.key, label: d.label, count, pct };
+    return { key: d.key, label: d.label, short: d.short, count, pct };
   });
 }
 

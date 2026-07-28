@@ -85,6 +85,12 @@ import {
   untaggedSections,
   type ClassifiedSection,
 } from '@/lib/programming-balance';
+import {
+  heavyShareVerdict,
+  pushPullVerdict,
+  topTimeDomainVerdict,
+  type Verdict,
+} from '@/lib/programming-verdicts';
 import { supabase } from '@/lib/supabase';
 import { formatSeconds } from '@/lib/track';
 import { useCan } from '@/lib/useCan';
@@ -134,7 +140,11 @@ export default function AnalysisScreen() {
   const { data: membership } = useGymMembership();
   const colors = useThemeColors();
   const canSeeHealth = useCan('can_see_health_flag') ?? false;
-  const canSeeLogs = useCan('can_see_workout_logs') ?? false;
+  // undefined = capabilities still resolving. Denial copy keys off the
+  // resolved false, so a cold start doesn't flash "no permission" at
+  // an owner while the overrides load.
+  const canSeeLogsResolved = useCan('can_see_workout_logs');
+  const canSeeLogs = canSeeLogsResolved ?? false;
   const canSeeMoney = useCan('can_see_money') ?? false;
 
   const injuries = useQuery({
@@ -274,20 +284,40 @@ export default function AnalysisScreen() {
     return { map, counts };
   }, [open]);
 
-  const { width } = useWindowDimensions();
-  const figureWidth = width < 360 ? 96 : width < 768 ? 110 : 120;
+  const pb = useProgrammingBalance(membership?.gymId, canSeeLogs);
+  const [showUntagged, setShowUntagged] = useState(false);
+
+  // The three verdicts derive from the same aggregations the cards
+  // below render, so a tile can never disagree with its card. A null
+  // verdict (no data on that axis) simply drops its tile.
+  const verdictTiles = useMemo(() => {
+    const out: { label: string; verdict: Verdict }[] = [];
+    const push = pushPullVerdict(pb.balance);
+    if (push) out.push({ label: 'Push : pull', verdict: push });
+    const domain = topTimeDomainVerdict(pb.timeDomains);
+    if (domain) out.push({ label: 'Top time domain', verdict: domain });
+    const heavy = heavyShareVerdict(pb.loadMix);
+    if (heavy) out.push({ label: 'Heavy share', verdict: heavy });
+    return out;
+  }, [pb.balance, pb.timeDomains, pb.loadMix]);
+
+  // Cards that source purely from AI tags can be empty while the rest
+  // of the page has data — don't strand their group label over
+  // nothing, and let a lone card take the full row.
+  const hasTimeData = pb.timeDomains.some((m) => m.count > 0);
+  const hasLoadData = pb.loadMix.some((m) => m.count > 0);
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-4xl md:mx-auto md:w-full">
         <BackLink label="Programming" fallbackHref="/(staff)/programming" />
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Programming analysis
           </Text>
           <Text className="text-gray-500 dark:text-gray-400">
-            Balance across energy systems, movement patterns and body
-            regions — plus open injuries and member trends.
+            Is the month balanced? Start with the verdicts, then drill
+            into the cards.
           </Text>
         </View>
 
@@ -295,123 +325,217 @@ export default function AnalysisScreen() {
           <FinanceBlock gymId={membership.gymId} />
         ) : null}
 
-        {membership?.gymId ? (
-          <ProgrammingBalanceBlock
-            gymId={membership.gymId}
-            canSeeLogs={canSeeLogs}
-          />
-        ) : null}
-
-        {/* ----------------------------- Injuries ----------------------------- */}
-        <View className="gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            Injury map
+        {canSeeLogsResolved === false ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            You don't have permission to view workout logs, so the
+            programming balance is hidden.
           </Text>
-          {!canSeeHealth ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              You don't have permission to view health data.
-            </Text>
-          ) : (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
-              <BodyMap highlights={highlights.map} figureWidth={figureWidth} />
-              {open.length === 0 ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
-                  No open injuries. Happy days.
-                </Text>
-              ) : (
-                <View className="flex-row flex-wrap gap-1 justify-center">
-                  {[...highlights.counts.entries()]
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([region, n]) => (
-                      <View
-                        key={region}
-                        style={{ borderColor: highlights.map[region] }}
-                        className="rounded-full border px-2 py-0.5">
-                        <Text
-                          style={{ color: highlights.map[region] }}
-                          className="text-[10px] font-semibold">
-                          {regionLabel(region)} · {n}
-                        </Text>
-                      </View>
+        ) : !canSeeLogs ? null : (
+          <>
+            {verdictTiles.length > 0 ? (
+              <View className="flex-row gap-2 md:gap-3">
+                {verdictTiles.map((t) => (
+                  <VerdictTile
+                    key={t.label}
+                    label={t.label}
+                    verdict={t.verdict}
+                  />
+                ))}
+              </View>
+            ) : null}
+
+            <View className="gap-3 md:flex-row md:items-center">
+              <View className="md:flex-1">
+                <DateRangeCta
+                  preset={pb.preset}
+                  range={pb.range}
+                  customStart={pb.customStart}
+                  customEnd={pb.customEnd}
+                  onChange={pb.onRangeChange}
+                />
+              </View>
+              {pb.chipSet.length > 1 ? (
+                // The wrapper bounds the chip strip to its half of the
+                // row — a bare ScrollView keeps grow:1/basis:auto and
+                // a long chip set would shrink the range pill to
+                // nothing.
+                <View className="md:flex-1">
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerClassName="gap-2 pb-1 md:pb-0">
+                    <ClassTypeChip
+                      label="All"
+                      color="#9CA3AF"
+                      active={pb.classTypeFilter === null}
+                      onPress={() => pb.setClassTypeFilter(null)}
+                    />
+                    {pb.chipSet.map((ct) => (
+                      <ClassTypeChip
+                        key={ct.id}
+                        label={ct.name}
+                        color={ct.color}
+                        archived={ct.archived}
+                        active={pb.classTypeFilter === ct.id}
+                        onPress={() => pb.setClassTypeFilter(ct.id)}
+                      />
                     ))}
+                  </ScrollView>
                 </View>
-              )}
+              ) : null}
             </View>
-          )}
 
-          {open.map((r) => (
-            <Pressable
-              key={r.id}
-              onPress={() =>
-                router.push(`/management/members/${r.profile_id}` as never)
-              }
-              className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
-              <View
-                style={{ backgroundColor: painColour(r.pain_level) }}
-                className="w-7 h-7 rounded-full items-center justify-center">
-                <Text className="text-white text-[11px] font-bold">
-                  {r.pain_level}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
-                  {r.profiles?.full_name ?? 'Member'} —{' '}
-                  {injuryTitle(r.body_region, r.side).toLowerCase()}
-                </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  {STATUS_META[r.status].label} · updated{' '}
-                  {daysAgo(r.updated_at) === 0
-                    ? 'today'
-                    : `${daysAgo(r.updated_at)}d ago`}
-                  {r.movements_hurt.length > 0
-                    ? ` · avoid ${r.movements_hurt
-                        .slice(0, 3)
-                        .map(movementName)
-                        .join(', ')}${r.movements_hurt.length > 3 ? '…' : ''}`
-                    : ''}
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={colors.iconTertiary}
-              />
-            </Pressable>
-          ))}
-        </View>
-
-        {/* ------------------------- Movement trends -------------------------- */}
-        <View className="gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            Movement trends
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            First vs latest logged result per member over the last 12
-            weeks, from the movement tracker.
-          </Text>
-          {!canSeeLogs ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              You don't have permission to view workout logs.
-            </Text>
-          ) : results.isLoading || tags.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
-          ) : trends.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+            {pb.isLoading ? (
               <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Not enough logged results yet — trends need at least two
-                results per member on a movement.
+                Loading programming…
               </Text>
-            </View>
-          ) : (
-            trends.map((t) => (
-              <TrendCard
-                key={`${t.movement_key}-${t.track_key}`}
-                trend={t}
-                nameOf={(id) => names.data?.get(id) ?? 'Member'}
-              />
-            ))
-          )}
+            ) : !pb.hasData ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  No programmed sections in this window. Programme a few
+                  classes and the matrices will populate.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <GroupLabel label="What you're training" />
+                {/* The matrix keeps the full row — its full pattern
+                    labels and three-cell grid don't survive a half
+                    column on tablet widths. */}
+                <PatternEnergyMatrix matrix={pb.matrix} balance={pb.balance} />
+                <View className="gap-3 md:flex-row md:items-start">
+                  <View className="md:flex-1">
+                    <EnergyMixCard mix={pb.energyMix} />
+                  </View>
+                  <View className="md:flex-1">
+                    <PatternMixCard mix={pb.patternMix} />
+                  </View>
+                </View>
+
+                {hasTimeData || hasLoadData ? (
+                  <>
+                    <GroupLabel label="How it's dosed" />
+                    <View className="gap-3 md:flex-row md:items-start">
+                      {hasTimeData ? (
+                        <View className="md:flex-1">
+                          <TimeDomainCard mix={pb.timeDomains} />
+                        </View>
+                      ) : null}
+                      {hasLoadData ? (
+                        <View className="md:flex-1">
+                          <LoadBalanceCard mix={pb.loadMix} />
+                        </View>
+                      ) : null}
+                    </View>
+                  </>
+                ) : null}
+              </>
+            )}
+          </>
+        )}
+
+        <GroupLabel label="Bodies & people" />
+        <View className="gap-3 md:flex-row md:items-start">
+          <View className="gap-3 md:flex-1">
+            <RegionInjuriesCard
+              regionVolume={pb.regionVolume}
+              showVolume={canSeeLogs && pb.hasData}
+              injuryTints={highlights.map}
+              injuryCounts={highlights.counts}
+              openCount={open.length}
+              canSeeHealth={canSeeHealth}
+            />
+            {open.map((r) => (
+              <Pressable
+                key={r.id}
+                onPress={() =>
+                  router.push(`/management/members/${r.profile_id}` as never)
+                }
+                className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
+                <View
+                  style={{ backgroundColor: painColour(r.pain_level) }}
+                  className="w-7 h-7 rounded-full items-center justify-center">
+                  <Text className="text-white text-[11px] font-bold">
+                    {r.pain_level}
+                  </Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    {r.profiles?.full_name ?? 'Member'} —{' '}
+                    {injuryTitle(r.body_region, r.side).toLowerCase()}
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    {STATUS_META[r.status].label} · updated{' '}
+                    {daysAgo(r.updated_at) === 0
+                      ? 'today'
+                      : `${daysAgo(r.updated_at)}d ago`}
+                    {r.movements_hurt.length > 0
+                      ? ` · avoid ${r.movements_hurt
+                          .slice(0, 3)
+                          .map(movementName)
+                          .join(', ')}${r.movements_hurt.length > 3 ? '…' : ''}`
+                      : ''}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.iconTertiary}
+                />
+              </Pressable>
+            ))}
+          </View>
+
+          <View className="gap-3 md:flex-1">
+            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              Movement trends — first vs latest logged result per member
+              over the last 12 weeks, from the movement tracker.
+            </Text>
+            {canSeeLogsResolved === false ? (
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                You don't have permission to view workout logs.
+              </Text>
+            ) : !canSeeLogs || results.isLoading || tags.isLoading ? (
+              <Text className="text-gray-500 dark:text-gray-400">
+                Loading…
+              </Text>
+            ) : trends.length === 0 ? (
+              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  Not enough logged results yet — trends need at least two
+                  results per member on a movement.
+                </Text>
+              </View>
+            ) : (
+              trends.map((t) => (
+                <TrendCard
+                  key={`${t.movement_key}-${t.track_key}`}
+                  trend={t}
+                  nameOf={(id) => names.data?.get(id) ?? 'Member'}
+                />
+              ))
+            )}
+          </View>
         </View>
+
+        {canSeeLogs && pb.untagged.length > 0 ? (
+          <View className="gap-3">
+            <Pressable
+              onPress={() => setShowUntagged((v) => !v)}
+              className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex-row items-center gap-3 shadow-card active:opacity-70">
+              <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+                {pb.untagged.length === 1
+                  ? "1 section couldn't be classified"
+                  : `${pb.untagged.length} sections couldn't be classified`}{' '}
+                — spell out the movements so they count.
+              </Text>
+              <Text className="text-primary text-xs font-semibold">
+                {showUntagged ? 'Hide' : 'Review'}
+              </Text>
+            </Pressable>
+            {showUntagged ? <UntaggedCard sections={pb.untagged} /> : null}
+          </View>
+        ) : null}
       </ScrollView>
     </Screen>
   );
@@ -459,13 +583,15 @@ async function fetchAiTags(
   return correlateAiTags(fingerprints, (data as { tags?: unknown }).tags);
 }
 
-function ProgrammingBalanceBlock({
-  gymId,
-  canSeeLogs,
-}: {
-  gymId: string;
-  canSeeLogs: boolean;
-}) {
+// The state + aggregations behind the balance surfaces: the scoped
+// window, the class-type chips, the classified sections and every
+// per-card rollup. A hook rather than a block component since the
+// reorganised page interleaves these with the injuries/trends data
+// the screen already owns.
+function useProgrammingBalance(
+  gymId: string | undefined,
+  canSeeLogs: boolean,
+) {
   const [preset, setPreset] = useState<Preset>('month');
   const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
   const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
@@ -482,12 +608,12 @@ function ProgrammingBalanceBlock({
 
   const programming = useQuery({
     queryKey: ['gym-programming', gymId, range.start, range.end],
-    enabled: canSeeLogs && rangeValid,
+    enabled: !!gymId && canSeeLogs && rangeValid,
     queryFn: async (): Promise<ProgrammingRow[]> => {
       const { data, error } = await supabase
         .from('class_programming')
         .select('id, date, class_type_id, sections')
-        .eq('gym_id', gymId)
+        .eq('gym_id', gymId!)
         .gte('date', range.start)
         .lte('date', range.end);
       if (error) throw error;
@@ -539,9 +665,9 @@ function ProgrammingBalanceBlock({
   );
   const aiTags = useQuery({
     queryKey: ['programming-ai-tags', gymId, contentDigest],
-    enabled: canSeeLogs && rangeValid && parsed.length > 0,
+    enabled: !!gymId && canSeeLogs && rangeValid && parsed.length > 0,
     staleTime: 5 * 60_000,
-    queryFn: () => fetchAiTags(gymId, parsed.map((p) => p.section)),
+    queryFn: () => fetchAiTags(gymId!, parsed.map((p) => p.section)),
   });
 
   // Rule-based classification first, AI merged on top, filter
@@ -617,93 +743,75 @@ function ProgrammingBalanceBlock({
   const timeDomains = useMemo(() => computeTimeDomainMix(filtered), [filtered]);
   const loadMix = useMemo(() => computeLoadMix(filtered), [filtered]);
 
-  if (!canSeeLogs) {
-    return (
-      <View className="gap-3">
-        <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-          Programming balance
-        </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          You don't have permission to view workout logs.
-        </Text>
-      </View>
-    );
-  }
+  const onRangeChange = (
+    next:
+      | { preset: Exclude<Preset, 'custom'> }
+      | { preset: 'custom'; start: string; end: string },
+  ) => {
+    setPreset(next.preset);
+    if (next.preset === 'custom') {
+      setCustomStart(next.start);
+      setCustomEnd(next.end);
+    }
+  };
 
-  const hasData = filtered.length > 0;
+  return {
+    preset,
+    customStart,
+    customEnd,
+    range,
+    onRangeChange,
+    classTypeFilter,
+    setClassTypeFilter,
+    chipSet,
+    isLoading: programming.isLoading,
+    hasData: filtered.length > 0,
+    filtered,
+    matrix,
+    energyMix,
+    patternMix,
+    regionVolume,
+    balance,
+    untagged,
+    timeDomains,
+    loadMix,
+  };
+}
 
+// Section eyebrow — the labelled question each group of cards answers.
+function GroupLabel({ label }: { label: string }) {
   return (
-    <View className="gap-3">
-      <CardHeading
-        size="section"
-        title="Programming balance"
-        subtitle="Movement patterns × energy systems across what you programmed in the window."
-        what="Reads every section you programmed in the selected window and classifies each one by the movement patterns and energy systems it trains. Use the date picker to change the window and the class-type chips to scope it to a single programme."
-        why="It's built from what you wrote in the programming, not what members logged — so it answers 'what am I actually asking of people?'. Spotting a blind spot here, a pattern or energy system you keep skipping, is far easier than catching it class by class."
-      />
+    <View className="flex-row items-center gap-2.5 mt-1">
+      <Text className="text-gray-500 dark:text-gray-400 text-[11px] font-bold uppercase tracking-widest">
+        {label}
+      </Text>
+      <View className="flex-1 h-px bg-slate-200 dark:bg-gray-800" />
+    </View>
+  );
+}
 
-      <DateRangeCta
-        preset={preset}
-        range={range}
-        customStart={customStart}
-        customEnd={customEnd}
-        onChange={(next) => {
-          setPreset(next.preset);
-          if (next.preset === 'custom') {
-            setCustomStart(next.start);
-            setCustomEnd(next.end);
-          }
-        }}
-      />
+const VERDICT_OK = '#10B981';
+const VERDICT_DRIFT = '#F59E0B';
 
-      {chipSet.length > 1 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2 pb-1">
-          <ClassTypeChip
-            label="All"
-            color="#9CA3AF"
-            active={classTypeFilter === null}
-            onPress={() => setClassTypeFilter(null)}
-          />
-          {chipSet.map((ct) => (
-            <ClassTypeChip
-              key={ct.id}
-              label={ct.name}
-              color={ct.color}
-              archived={ct.archived}
-              active={classTypeFilter === ct.id}
-              onPress={() => setClassTypeFilter(ct.id)}
-            />
-          ))}
-        </ScrollView>
-      ) : null}
-
-      {programming.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          Loading programming…
-        </Text>
-      ) : !hasData ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            No programmed sections in this window. Programme a few
-            classes and the matrices will populate.
-          </Text>
-        </View>
-      ) : (
-        <>
-          <PatternEnergyMatrix matrix={matrix} balance={balance} />
-          <EnergyMixCard mix={energyMix} />
-          <TimeDomainCard mix={timeDomains} />
-          <LoadBalanceCard mix={loadMix} />
-          <PatternMixCard mix={patternMix} />
-          <RegionHeatCard regions={regionVolume} />
-          {untagged.length > 0 ? (
-            <UntaggedCard sections={untagged} />
-          ) : null}
-        </>
-      )}
+function VerdictTile({ label, verdict }: { label: string; verdict: Verdict }) {
+  return (
+    <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl px-3 py-2.5 shadow-card">
+      <Text
+        className="text-gray-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-wider"
+        numberOfLines={1}>
+        {label}
+      </Text>
+      <Text
+        style={{ color: verdict.ok ? VERDICT_OK : VERDICT_DRIFT }}
+        className="text-lg font-bold"
+        numberOfLines={1}>
+        {verdict.value}
+      </Text>
+      <Text
+        className="text-gray-500 dark:text-gray-400 text-[9px] leading-3"
+        numberOfLines={2}>
+        {verdict.caption}
+      </Text>
     </View>
   );
 }
@@ -1448,51 +1556,150 @@ function PatternMixCard({
 
 const REGION_RAMP = ['#FCD34D', '#F59E0B', '#F97316', '#EF4444'];
 
-function RegionHeatCard({ regions }: { regions: Record<string, number> }) {
+// The programmed-volume region heat and the open-injuries map, in one
+// card so the cross-reference the two exist for is built in rather
+// than a scroll apart. Degrades per permission: without workout-log
+// access only the injuries half renders (and vice versa without
+// health access).
+function RegionInjuriesCard({
+  regionVolume,
+  showVolume,
+  injuryTints,
+  injuryCounts,
+  openCount,
+  canSeeHealth,
+}: {
+  regionVolume: Record<string, number>;
+  showVolume: boolean;
+  injuryTints: Record<string, string>;
+  injuryCounts: Map<string, number>;
+  openCount: number;
+  canSeeHealth: boolean;
+}) {
   const { width } = useWindowDimensions();
   // Two side-by-side figures + the 24 px gap need ~240 px on mobile;
   // the 120 px default fits, but anything smaller than ~360 wide gets
   // cramped, so step the figure down a little for the iPhone SE end.
   const figureWidth = width < 360 ? 96 : width < 768 ? 110 : 120;
-  const entries = Object.entries(regions)
+  const both = showVolume && canSeeHealth;
+
+  const volEntries = Object.entries(regionVolume)
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1]);
-  const max = entries[0]?.[1] ?? 0;
-  const tint: Record<string, string> = {};
-  for (const [key, count] of entries) {
-    const ratio = max === 0 ? 0 : count / max;
-    const i =
-      ratio >= 0.75 ? 3 : ratio >= 0.5 ? 2 : ratio >= 0.25 ? 1 : 0;
-    tint[key] = REGION_RAMP[i];
+  const volMax = volEntries[0]?.[1] ?? 0;
+  const volTint: Record<string, string> = {};
+  for (const [key, count] of volEntries) {
+    const ratio = volMax === 0 ? 0 : count / volMax;
+    const i = ratio >= 0.75 ? 3 : ratio >= 0.5 ? 2 : ratio >= 0.25 ? 1 : 0;
+    volTint[key] = REGION_RAMP[i];
+  }
+  const injEntries = [...injuryCounts.entries()].sort((a, b) => b[1] - a[1]);
+
+  if (!showVolume && !canSeeHealth) {
+    return (
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          You don't have permission to view health data.
+        </Text>
+      </View>
+    );
   }
 
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
-        title="Region heat"
-        what="Lights up the body silhouette by how often the movements you programmed load each region — hotter means more volume."
-        why="A fast read of what's getting hammered. Cross-reference the Injury map below: if a region runs hot here and you already have open injuries there, that's a signal to ease off before it becomes a pattern."
+        title={
+          both
+            ? 'Region load vs open injuries'
+            : showVolume
+              ? 'Region heat'
+              : 'Injury map'
+        }
+        subtitle={
+          both
+            ? "What you're loading, next to where members already hurt."
+            : undefined
+        }
+        what={
+          both
+            ? 'Two reads of the same silhouette: how often the movements you programmed load each region (hotter means more volume), and where members currently carry open injuries.'
+            : showVolume
+              ? 'Lights up the body silhouette by how often the movements you programmed load each region — hotter means more volume.'
+              : 'Every open injury across the gym, plotted on the body silhouette; the list below links to each member.'
+        }
+        why={
+          both
+            ? "The cross-reference is the point: a region running hot in the programming while members already have open injuries there is the clearest early signal to ease off before a niggle becomes a pattern."
+            : showVolume
+              ? "A fast read of what's getting hammered week to week."
+              : 'A cluster in one region is rarely coincidence — check what you have been programming for that area.'
+        }
       />
-      <BodyMap highlights={tint} figureWidth={figureWidth} />
-      {entries.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
-          No region-tagged movements yet.
-        </Text>
-      ) : (
-        <View className="flex-row flex-wrap gap-1 justify-center">
-          {entries.map(([region, n]) => (
-            <View
-              key={region}
-              style={{ borderColor: tint[region] }}
-              className="rounded-full border px-2 py-0.5">
-              <Text
-                style={{ color: tint[region] }}
-                className="text-[10px] font-semibold">
-                {regionLabel(region)} · {n}
-              </Text>
+
+      {showVolume ? (
+        <View className="gap-2">
+          {both ? (
+            <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider text-center">
+              Programmed volume
+            </Text>
+          ) : null}
+          <BodyMap highlights={volTint} figureWidth={figureWidth} />
+          {volEntries.length === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+              No region-tagged movements yet.
+            </Text>
+          ) : (
+            <View className="flex-row flex-wrap gap-1 justify-center">
+              {volEntries.map(([region, n]) => (
+                <View
+                  key={region}
+                  style={{ borderColor: volTint[region] }}
+                  className="rounded-full border px-2 py-0.5">
+                  <Text
+                    style={{ color: volTint[region] }}
+                    className="text-[10px] font-semibold">
+                    {regionLabel(region)} · {n}
+                  </Text>
+                </View>
+              ))}
             </View>
-          ))}
+          )}
         </View>
+      ) : null}
+
+      {canSeeHealth ? (
+        <View className="gap-2">
+          {both ? (
+            <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider text-center">
+              Open injuries
+            </Text>
+          ) : null}
+          <BodyMap highlights={injuryTints} figureWidth={figureWidth} />
+          {openCount === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              No open injuries. Happy days.
+            </Text>
+          ) : (
+            <View className="flex-row flex-wrap gap-1 justify-center">
+              {injEntries.map(([region, n]) => (
+                <View
+                  key={region}
+                  style={{ borderColor: injuryTints[region] }}
+                  className="rounded-full border px-2 py-0.5">
+                  <Text
+                    style={{ color: injuryTints[region] }}
+                    className="text-[10px] font-semibold">
+                    {regionLabel(region)} · {n}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      ) : (
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          You don't have permission to view health data.
+        </Text>
       )}
     </View>
   );
