@@ -8,10 +8,14 @@
 -- every gym on the platform, on demand, with the publishable key.
 --
 -- Asserted as a family rather than one function at a time, so the next
--- purge_* or dispatch_* someone adds fails here if it ships open.
+-- purge_* or dispatch_* someone adds fails here if it ships open. The
+-- family is keyed on name, which is exactly how expire_unbilled_legacy_
+-- subscriptions slipped the first pass (0196) — it is a cron-only
+-- cross-tenant sweep named expire_*, not purge_*. expire_* is in the
+-- family now; both members are cron sweeps and neither is client-called.
 
 begin;
-select plan(2);
+select plan(3);
 
 \ir _helpers.psql
 
@@ -40,6 +44,19 @@ select is(
         or has_function_privilege('anon', p.oid, 'execute'))),
   '',
   'nor is any worker dispatcher'
+);
+
+-- expire_* is the same cross-tenant sweep shape under a different verb.
+select is(
+  (select coalesce(string_agg(p.proname, ', ' order by p.proname), '')
+     from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname like 'expire\_%'
+      and (has_function_privilege('authenticated', p.oid, 'execute')
+        or has_function_privilege('anon', p.oid, 'execute'))),
+  '',
+  'nor any expire_* sweep'
 );
 
 select * from finish();

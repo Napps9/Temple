@@ -128,6 +128,13 @@ export default function LeadsScreen() {
   const { data: membership } = useGymMembership();
   const canAssignPlan = useCan('can_assign_plan');
   const isOwner = membership?.role === 'owner';
+  // compute_insight_summary raises for anyone but owner/admin (it gates on
+  // user_can_admin, 0102). can_assign_plan — which admits this whole screen
+  // — defaults on for coach and staff, so without this the two lifecycle
+  // tiles fire a query that always 403s and render its absence as a
+  // confident 0. Gate them on the same role the RPC requires.
+  const canSeeLifecycle =
+    membership?.role === 'owner' || membership?.role === 'admin';
   const queryClient = useQueryClient();
   const [scope, setScope] = useState<'active' | 'all'>('active');
   const [search, setSearch] = useState('');
@@ -274,7 +281,7 @@ export default function LeadsScreen() {
 
   const leadLifecycleStats = useQuery({
     queryKey: ['leads-lifecycle-summary', gymId, start, end],
-    enabled: !!gymId && canAssignPlan === true && rangeValid,
+    enabled: !!gymId && canSeeLifecycle && rangeValid,
     queryFn: async (): Promise<{ intros_new: number; lead_conversions: number }> => {
       const { data, error } = await supabase.rpc('compute_insight_summary', {
         p_gym_id: gymId!,
@@ -326,24 +333,28 @@ export default function LeadsScreen() {
               value={newLeadsCount.isLoading ? '—' : newLeadsCount.data ?? 0}
               subtitle="captured this period"
             />
-            <StatTile
-              title="Intro sessions"
-              value={
-                leadLifecycleStats.isLoading
-                  ? '—'
-                  : leadLifecycleStats.data?.intros_new ?? 0
-              }
-              subtitle="started this period"
-            />
-            <StatTile
-              title="Conversion to member"
-              value={
-                leadLifecycleStats.isLoading
-                  ? '—'
-                  : leadLifecycleStats.data?.lead_conversions ?? 0
-              }
-              subtitle="in this period"
-            />
+            {canSeeLifecycle ? (
+              <>
+                <StatTile
+                  title="Intro sessions"
+                  value={
+                    leadLifecycleStats.isLoading
+                      ? '—'
+                      : leadLifecycleStats.data?.intros_new ?? 0
+                  }
+                  subtitle="started this period"
+                />
+                <StatTile
+                  title="Conversion to member"
+                  value={
+                    leadLifecycleStats.isLoading
+                      ? '—'
+                      : leadLifecycleStats.data?.lead_conversions ?? 0
+                  }
+                  subtitle="in this period"
+                />
+              </>
+            ) : null}
           </View>
         </View>
 
