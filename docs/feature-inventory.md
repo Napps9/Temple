@@ -794,7 +794,11 @@ The Manage page presents a tab strip:
     overrides apply (e.g. a gym can grant coaches tagging).
   - **Member list** [`can_manage_tags`] — searchable + filterable, with
     PAR-Q, Injury and cohort badges (Intro / Active / Paying / Expiring /
-    Expired), plan chips and tag chips. **Membership requests** surface
+    Expired), plan chips and tag chips. A second **tag chip row** (one
+    chip per distinct tag label, coloured dot, tap to toggle) filters the
+    list to members carrying that tag; it ANDs with the cohort filter and
+    search, also matches imported members' tag labels, and persists per
+    gym alongside the cohort filter (`useMembersFilter`). **Membership requests** surface
     here too: a **Requests** filter [`can_assign_plan`] isolates members
     with a pending plan-change or cancellation, each marked with an amber
     **Request** badge and an inline **Approve / Reject** control (backed by

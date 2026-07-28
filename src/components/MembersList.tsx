@@ -78,7 +78,7 @@ type ListItem =
 
 export function MembersList() {
   const { data: membership } = useGymMembership();
-  const { filter, search, setFilter, setSearch } = useMembersFilter(membership?.gymId);
+  const { filter, tag, search, setFilter, setTag, setSearch } = useMembersFilter(membership?.gymId);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
 
   const canRemove = useCan('can_archive_members') ?? false;
@@ -238,6 +238,27 @@ export function MembersList() {
     return map;
   }, [tagsQuery.data]);
 
+  // One chip per distinct tag label. Colour comes from the first live
+  // tag seen; labels that only exist on imported rows (string[] with no
+  // colour) get neutral gray. A persisted tag whose last member lost it
+  // still renders as a chip, otherwise the filter would hide everyone
+  // with no visible way to clear it.
+  const tagOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of tagsQuery.data ?? []) {
+      if (!map.has(t.label)) map.set(t.label, t.color);
+    }
+    for (const p of pendingQuery.data ?? []) {
+      for (const l of p.tags) {
+        if (!map.has(l)) map.set(l, '#9CA3AF');
+      }
+    }
+    if (tag && !map.has(tag)) map.set(tag, '#9CA3AF');
+    return [...map.entries()]
+      .map(([label, color]) => ({ label, color }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [tagsQuery.data, pendingQuery.data, tag]);
+
   const subsByMember = useMemo(() => {
     const map = new Map<string, SubRow[]>();
     for (const s of subsQuery.data ?? []) {
@@ -273,6 +294,11 @@ export function MembersList() {
             if (filter === 'managed' && !r.profiles?.managed) return false;
             if (filter === 'requests' && !requestsByMember.has(r.profile_id))
               return false;
+            if (
+              tag &&
+              !(tagsByMember.get(r.profile_id) ?? []).some((t) => t.label === tag)
+            )
+              return false;
             if (q.length > 0) {
               return (r.profiles?.full_name?.toLowerCase() ?? '').includes(q);
             }
@@ -289,6 +315,7 @@ export function MembersList() {
     const pendingItems: ListItem[] = showPending
       ? (pendingQuery.data ?? [])
           .filter((r) => {
+            if (tag && !r.tags.includes(tag)) return false;
             if (q.length === 0) return true;
             return (
               (r.full_name?.toLowerCase() ?? '').includes(q) ||
@@ -306,7 +333,7 @@ export function MembersList() {
     return [...memberItems, ...pendingItems].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
-  }, [cohortQuery.data, pendingQuery.data, filter, search, requestsByMember]);
+  }, [cohortQuery.data, pendingQuery.data, filter, tag, search, requestsByMember, tagsByMember]);
 
   return (
     <View className="gap-4">
@@ -354,6 +381,20 @@ export function MembersList() {
           />
         ) : null}
       </View>
+
+      {tagOptions.length > 0 ? (
+        <View className="flex-row gap-2 flex-wrap">
+          {tagOptions.map((t) => (
+            <TagFilterChip
+              key={t.label}
+              label={t.label}
+              color={t.color}
+              active={tag === t.label}
+              onPress={() => setTag(tag === t.label ? null : t.label)}
+            />
+          ))}
+        </View>
+      ) : null}
 
       {cohortQuery.error ? (
         <Text className="text-red-500 dark:text-red-400 text-sm">
@@ -523,6 +564,36 @@ function FilterChip({
           ? 'border-primary bg-primary/10'
           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
       }`}>
+      <Text
+        className={
+          active ? 'text-primary text-sm' : 'text-gray-500 dark:text-gray-400 text-sm'
+        }>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function TagFilterChip({
+  label,
+  color,
+  active,
+  onPress,
+}: {
+  label: string;
+  color: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`px-3 py-1 rounded-full border flex-row items-center gap-1.5 ${
+        active
+          ? 'border-primary bg-primary/10'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+      }`}>
+      <View style={{ backgroundColor: color }} className="w-2 h-2 rounded-full" />
       <Text
         className={
           active ? 'text-primary text-sm' : 'text-gray-500 dark:text-gray-400 text-sm'

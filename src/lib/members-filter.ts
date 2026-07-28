@@ -13,10 +13,13 @@ export type MembersFilter =
 
 export type MembersFilterState = {
   filter: MembersFilter;
+  // Tag label, ANDed with the cohort filter ("Active members tagged
+  // VIP"). Labels are the cross-member identity for tags; null = any.
+  tag: string | null;
   search: string;
 };
 
-const DEFAULT_STATE: MembersFilterState = { filter: 'all', search: '' };
+const DEFAULT_STATE: MembersFilterState = { filter: 'all', tag: null, search: '' };
 
 export function membersFilterStorageKey(gymId: string): string {
   return `temple.members-filter.${gymId}`;
@@ -40,8 +43,10 @@ export function parseMembersFilter(raw: string | null | undefined): MembersFilte
       parsed.filter === 'requests'
         ? parsed.filter
         : 'all';
+    const tag =
+      typeof parsed.tag === 'string' && parsed.tag.length > 0 ? parsed.tag : null;
     const search = typeof parsed.search === 'string' ? parsed.search : '';
-    return { filter, search };
+    return { filter, tag, search };
   } catch {
     return DEFAULT_STATE;
   }
@@ -86,8 +91,10 @@ export function useMembersFilter(gymId: string | null | undefined) {
 
   return {
     filter: state.filter,
+    tag: state.tag,
     search: state.search,
     setFilter: (f: MembersFilter) => update({ filter: f }),
+    setTag: (t: string | null) => update({ tag: t }),
     setSearch: (s: string) => update({ search: s }),
     clear,
   };
