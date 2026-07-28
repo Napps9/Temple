@@ -205,16 +205,21 @@ signatures are NOT (they're liability records, retained as such).
 - **Match scope to ask.** A bug fix is a bug fix; don't refactor
   surrounding code.
 - **UI/UX changes come with a screen mockup in the chat, as an
-  image.** Any change a user would *see* — new cards or screens,
-  layout shifts, visible copy or colour changes — must be accompanied
-  by a mockup of the affected screen(s) delivered as an **image**
-  (PNG) in the session, so it can be reviewed visually without
-  pulling the app. Build an HTML approximation with representative
-  data, screenshot it with the pre-installed Chromium
-  (`npx playwright screenshot --full-page`), and send the PNG — not
-  the HTML file. Match the app's styling (cards, spacing, type
-  scale) and show dark mode where it matters. Backend-only or purely
-  behavioural changes don't need one.
+  image, showing the full screen in context.** Any change a user
+  would *see* — new cards or screens, layout shifts, visible copy or
+  colour changes — must be accompanied by a mockup delivered as an
+  **image** (PNG) in the session, so it can be reviewed visually
+  without pulling the app. Not isolated components: render the
+  **whole screen** the change lives on — phone frame, page header,
+  nav/back affordances, and the real surrounding cards above and
+  below the change (read the actual screen file first and reproduce
+  its layout and copy; unchanged neighbours may be abbreviated but
+  must be present so placement is obvious). Build the HTML
+  approximation with representative data, screenshot it with the
+  pre-installed Chromium (`npx playwright screenshot --full-page`),
+  and send the PNG — not the HTML file. Match the app's styling
+  (cards, spacing, type scale) and show dark mode where it matters.
+  Backend-only or purely behavioural changes don't need one.
 - **Update `docs/feature-inventory.md`** when you ship a meaningful
   feature. That file is the source of truth for "what's live."
 
