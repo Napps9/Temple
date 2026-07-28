@@ -60,19 +60,18 @@ export default function NewDirectMessage() {
     },
   });
 
-  // Mirrors can_dm()'s server-side rule: under member_coach_only, a
-  // member sender can only reach owner/admin/coach recipients (staff
-  // itself isn't eligible) — filtering here means an ineligible pick
-  // never reaches the RLS-enforced send instead of failing there.
+  // Mirrors can_dm()'s server-side rule (0197): under member_coach_only,
+  // the only blocked pairing is member-to-member. A non-member sender
+  // reaches anyone; a member reaches anyone who is not a member. Filtering
+  // here means an ineligible pick never reaches the RLS-enforced send
+  // instead of failing there.
   const eligible = useMemo(() => {
     const all = candidates.data ?? [];
     const scope = dmScope.data;
     const senderRole = membership?.role;
     if (!scope || scope === 'full_gym' || !senderRole) return all;
-    if (senderRole === 'owner' || senderRole === 'admin' || senderRole === 'coach') {
-      return all;
-    }
-    return all.filter((c) => c.role === 'owner' || c.role === 'admin' || c.role === 'coach');
+    if (senderRole !== 'member') return all;
+    return all.filter((c) => c.role !== 'member');
   }, [candidates.data, dmScope.data, membership?.role]);
 
   const filtered = useMemo(() => {

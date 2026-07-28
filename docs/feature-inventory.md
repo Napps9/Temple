@@ -584,11 +584,17 @@ The staff area shows up when `can_access_staff_area` is on.
 - **Cover notifications** — `cover_notifications` is a queue + audit log
   on the `lead_notifications` pattern (in-app row delivered instantly,
   email enqueued and drained by the `send-cover-notifications` edge
-  worker, every attempt logged and retryable). Three events: **cover
-  requested**, fanned out to every coach who could claim it; **cover
-  claimed**, back to the coach who asked; and **still uncovered** — a
-  nightly `warn_uncovered_cover` sweep chasing the requester and the
-  gym's owners/admins about classes nobody has claimed. The lead time is
+  worker, every attempt logged and retryable). The worker is invoked two
+  ways: best-effort from the client at the moment of a request or claim,
+  and — because the nightly sweep has no human present to trigger that —
+  by the `dispatch-cover-notifications` cron every 15 minutes (0198),
+  which drains any queued cover email per gym with the Vault worker key.
+  Before 0198 the nightly warning email only sent if someone happened to
+  open the Cover screen afterwards. Three events: **cover requested**,
+  fanned out to every coach who could claim it; **cover claimed**, back to
+  the coach who asked; and **still uncovered** — a nightly
+  `warn_uncovered_cover` sweep chasing the requester and the gym's
+  owners/admins about classes nobody has claimed. The lead time is
   the per-gym **`cover_warning_hours`** setting (Operating defaults →
   Cover; default 48, max two weeks, **0 turns the warning off**). That
   last one **repeats daily** while the problem persists

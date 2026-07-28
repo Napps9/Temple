@@ -23,7 +23,7 @@ const OPTIONS: { key: Cfg['dm_scope']; label: string; blurb: string }[] = [
     key: 'member_coach_only',
     label: 'Members can only DM staff',
     blurb:
-      'Members can DM coaches, admins, and the owner. Member ↔ member DMs are blocked. Staff can still DM anyone.',
+      'Members can DM anyone on the team — staff, coaches, admins, the owner — and reply to them. Only member-to-member DMs are blocked.',
   },
 ];
 
