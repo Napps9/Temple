@@ -51,6 +51,13 @@ end $$;
 
 do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
 
+-- comms_audience_rows is definer-internal plumbing again (0188) — granting
+-- it to `authenticated` handed every user a member directory for any gym.
+-- These assertions are about what the resolver RESOLVES TO, not about who
+-- may call it, so they run as the table owner. Who may call it is covered
+-- by comms_audience_not_public.sql.
+select set_config('role', 'postgres', true);
+
 -- 1. Newsletter audience (manual cohort over all gym members):
 --    m1 suppressed (blanket), m2 receives (unsubbed only from Promos),
 --    m3 receives, owner receives → 3 recipients.
