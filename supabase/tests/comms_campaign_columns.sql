@@ -36,11 +36,22 @@ $$;
 
 select _test_act_as(current_setting('test.owner')::uuid);
 
+-- Verbatim the autosave payload from communications/[id].tsx, so this
+-- fails if the grant list and the editor ever disagree — which is the
+-- whole risk of column-level grants.
 select lives_ok(
   format($$ update public.email_campaigns
-              set subject = 'Edited', audience = '{"kind":"staff"}'::jsonb
+              set title            = 'Edited',
+                  subject          = 'Edited',
+                  subject_variants = '["B"]'::jsonb,
+                  preheader        = 'Edited',
+                  from_name        = 'Coach',
+                  design           = '{}'::jsonb,
+                  audience         = '{"kind":"staff"}'::jsonb,
+                  topic_id         = null,
+                  updated_at       = now()
             where id = %L::uuid $$, current_setting('test.camp')),
-  'the editor still writes the fields it has always written'
+  'the editor still writes every field it autosaves'
 );
 
 select throws_ok(
