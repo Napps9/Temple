@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -9,33 +9,12 @@ import { Input } from '@/components/Input';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-
-export type TagRule = {
-  id: string;
-  gym_id: string;
-  label: string;
-  color: string;
-  predicate_kind: PredicateKind;
-  threshold_days: number | null;
-  active: boolean;
-};
-
-type PredicateKind =
-  | 'intro'
-  | 'expiring_soon'
-  | 'expired'
-  | 'paying'
-  | 'inactive'
-  | 'never_paid';
-
-const KIND_OPTIONS: { value: PredicateKind; label: string; usesThreshold: boolean }[] = [
-  { value: 'intro',         label: 'Intro',         usesThreshold: false },
-  { value: 'expiring_soon', label: 'Expiring soon', usesThreshold: true },
-  { value: 'expired',       label: 'Expired',       usesThreshold: false },
-  { value: 'paying',        label: 'Paying',        usesThreshold: false },
-  { value: 'inactive',      label: 'Inactive',      usesThreshold: false },
-  { value: 'never_paid',    label: 'Never paid',    usesThreshold: false },
-];
+import {
+  TAG_RULE_KINDS,
+  tagRuleKindMeta,
+  type TagRule,
+  type TagRulePredicateKind,
+} from '@/lib/tag-rules';
 
 type Props = {
   rule?: TagRule;
@@ -50,31 +29,79 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
 
   const [label, setLabel] = useState(rule?.label ?? '');
   const [color, setColor] = useState(rule?.color ?? PALETTE[0]!.hex);
-  const [kind, setKind] = useState<PredicateKind>(rule?.predicate_kind ?? 'expiring_soon');
-  const [thresholdDays, setThresholdDays] = useState(
-    rule?.threshold_days?.toString() ?? '7',
+  const [kind, setKind] = useState<TagRulePredicateKind>(
+    rule?.predicate_kind ?? 'expiring_soon',
   );
+  const [thresholdDays, setThresholdDays] = useState(
+    rule?.threshold_days?.toString() ?? tagRuleKindMeta(rule?.predicate_kind ?? 'expiring_soon').thresholdDefault ?? '',
+  );
+  const [classTypeId, setClassTypeId] = useState<string | null>(rule?.class_type_id ?? null);
+  const [planId, setPlanId] = useState<string | null>(rule?.plan_id ?? null);
   const [active, setActive] = useState(rule?.active ?? true);
   const [error, setError] = useState<string | null>(null);
 
-  const usesThreshold = KIND_OPTIONS.find((o) => o.value === kind)?.usesThreshold ?? false;
+  const meta = tagRuleKindMeta(kind);
+
+  // Switching kind reseeds the window to that kind's default so a
+  // look-back typed for one predicate doesn't silently apply to another.
+  const changeKind = (next: TagRulePredicateKind) => {
+    setKind(next);
+    setThresholdDays(tagRuleKindMeta(next).thresholdDefault ?? '');
+  };
+
+  const classTypesQuery = useQuery({
+    queryKey: ['class-types-active', membership?.gymId],
+    enabled: !!membership?.gymId && !!meta.needsClassType,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('id, name, color')
+        .eq('gym_id', membership!.gymId)
+        .is('archived_at', null)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; color: string }[];
+    },
+  });
+
+  const plansQuery = useQuery({
+    queryKey: ['membership-plans-active', membership?.gymId],
+    enabled: !!membership?.gymId && !!meta.needsPlan,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .select('plan_id, name')
+        .eq('gym_id', membership!.gymId)
+        .is('archived_at', null)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as { plan_id: string; name: string }[];
+    },
+  });
 
   const save = useMutation({
     mutationFn: async () => {
       if (!membership || !session?.user.id) throw new Error('No gym selected');
       if (label.trim().length === 0) throw new Error('Label is required');
+      if (meta.needsClassType && !classTypeId) throw new Error('Pick a class type');
+      if (meta.needsPlan && !planId) throw new Error('Pick a plan');
       let threshold: number | null = null;
-      if (usesThreshold) {
+      if (meta.thresholdUse !== 'none' && thresholdDays.trim() !== '') {
         const n = Number.parseInt(thresholdDays, 10);
-        if (!Number.isFinite(n) || n < 0) throw new Error('Threshold must be a non-negative integer');
+        if (!Number.isFinite(n) || n < 0) throw new Error('Window must be a non-negative number of days');
         threshold = n;
+      }
+      if (meta.thresholdUse === 'required' && threshold === null) {
+        throw new Error(`${meta.thresholdLabel ?? 'Window'} is required`);
       }
       const payload = {
         gym_id: membership.gymId,
         label: label.trim(),
         color,
         predicate_kind: kind,
-        threshold_days: threshold,
+        threshold_days: meta.thresholdUse === 'none' ? null : threshold,
+        class_type_id: meta.needsClassType ? classTypeId : null,
+        plan_id: meta.needsPlan ? planId : null,
         active,
         created_by: session.user.id,
       };
@@ -130,10 +157,10 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
           When the member is
         </Text>
         <View className="flex-row flex-wrap gap-2">
-          {KIND_OPTIONS.map((o) => (
+          {TAG_RULE_KINDS.map((o) => (
             <Pressable
               key={o.value}
-              onPress={() => setKind(o.value)}
+              onPress={() => changeKind(o.value)}
               className={`px-3 py-1.5 rounded-full border ${
                 kind === o.value
                   ? 'border-primary bg-primary/10'
@@ -152,14 +179,93 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
         </View>
       </View>
 
-      {usesThreshold ? (
+      {meta.needsClassType ? (
+        <View className="gap-2">
+          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            Class type
+          </Text>
+          {classTypesQuery.isLoading ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+          ) : (classTypesQuery.data ?? []).length === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              No class types yet — create one under Classes first.
+            </Text>
+          ) : (
+            <View className="flex-row flex-wrap gap-2">
+              {(classTypesQuery.data ?? []).map((ct) => (
+                <Pressable
+                  key={ct.id}
+                  onPress={() => setClassTypeId(ct.id)}
+                  className={`px-3 py-1.5 rounded-full border flex-row items-center gap-1.5 ${
+                    classTypeId === ct.id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <View
+                    style={{ backgroundColor: ct.color }}
+                    className="w-2 h-2 rounded-full"
+                  />
+                  <Text
+                    className={
+                      classTypeId === ct.id
+                        ? 'text-primary text-sm'
+                        : 'text-gray-500 dark:text-gray-400 text-sm'
+                    }>
+                    {ct.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+      ) : null}
+
+      {meta.needsPlan ? (
+        <View className="gap-2">
+          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            Plan
+          </Text>
+          {plansQuery.isLoading ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+          ) : (plansQuery.data ?? []).length === 0 ? (
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              No plans yet — create one under Plans first.
+            </Text>
+          ) : (
+            <View className="flex-row flex-wrap gap-2">
+              {(plansQuery.data ?? []).map((p) => (
+                <Pressable
+                  key={p.plan_id}
+                  onPress={() => setPlanId(p.plan_id)}
+                  className={`px-3 py-1.5 rounded-full border ${
+                    planId === p.plan_id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <Text
+                    className={
+                      planId === p.plan_id
+                        ? 'text-primary text-sm'
+                        : 'text-gray-500 dark:text-gray-400 text-sm'
+                    }>
+                    {p.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+      ) : null}
+
+      {meta.thresholdUse !== 'none' ? (
         <DurationField
-          label="Threshold"
+          label={meta.thresholdLabel ?? 'Window'}
+          blurb={meta.thresholdUse === 'optional' ? 'Leave blank for any time.' : undefined}
           value={thresholdDays}
           onChange={setThresholdDays}
           base="days"
           units={['days', 'weeks', 'months']}
-          placeholder="7"
+          placeholder={meta.thresholdUse === 'optional' ? 'Any time' : meta.thresholdDefault}
         />
       ) : null}
 

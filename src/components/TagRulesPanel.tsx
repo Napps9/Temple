@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { TagRuleEditor, type TagRule } from '@/components/TagRuleEditor';
+import { TagRuleEditor } from '@/components/TagRuleEditor';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { describeTagRule, type TagRule } from '@/lib/tag-rules';
 
 // The tag-rules editor body — the rules list, the "recompute now" action
 // and the create/edit form. Shared by the standalone /management/tags
@@ -24,13 +25,53 @@ export function TagRulesPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tag_rules')
-        .select('id, gym_id, label, color, predicate_kind, threshold_days, active')
+        .select('id, gym_id, label, color, predicate_kind, threshold_days, class_type_id, plan_id, active')
         .eq('gym_id', membership!.gymId)
         .order('label');
       if (error) throw error;
       return (data ?? []) as TagRule[];
     },
   });
+
+  // Name lookups for the rule subtitles; only fetched once a rule
+  // actually references a class type or plan.
+  const wantsClassTypes = (rulesQuery.data ?? []).some((r) => r.class_type_id);
+  const wantsPlans = (rulesQuery.data ?? []).some((r) => r.plan_id);
+
+  const classTypesQuery = useQuery({
+    queryKey: ['class-type-names', membership?.gymId],
+    enabled: !!membership?.gymId && wantsClassTypes,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('id, name')
+        .eq('gym_id', membership!.gymId);
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
+  const plansQuery = useQuery({
+    queryKey: ['membership-plan-names', membership?.gymId],
+    enabled: !!membership?.gymId && wantsPlans,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .select('plan_id, name')
+        .eq('gym_id', membership!.gymId);
+      if (error) throw error;
+      return (data ?? []) as { plan_id: string; name: string }[];
+    },
+  });
+
+  const classTypeNames = useMemo(
+    () => new Map((classTypesQuery.data ?? []).map((ct) => [ct.id, ct.name])),
+    [classTypesQuery.data],
+  );
+  const planNames = useMemo(
+    () => new Map((plansQuery.data ?? []).map((p) => [p.plan_id, p.name])),
+    [plansQuery.data],
+  );
 
   const recompute = useMutation({
     mutationFn: async () => {
@@ -51,8 +92,8 @@ export function TagRulesPanel() {
   return (
     <View className="gap-4">
       <Text className="text-gray-500 dark:text-gray-400 text-sm">
-        Rules auto-tag members when their cohort state matches. Recompute
-        after editing — there's no scheduled job yet.
+        Rules auto-tag members from their classes, bookings and membership.
+        They recompute nightly; recompute now to apply an edit immediately.
       </Text>
 
       <Button onPress={() => recompute.mutate()} loading={recompute.isPending}>
@@ -87,9 +128,12 @@ export function TagRulesPanel() {
                   {r.label}
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  {r.predicate_kind}
-                  {r.threshold_days !== null ? ` · ${r.threshold_days} days` : ''}
-                  {r.active ? '' : ' · paused'}
+                  {describeTagRule(r, {
+                    classTypeName: r.class_type_id
+                      ? classTypeNames.get(r.class_type_id)
+                      : undefined,
+                    planName: r.plan_id ? planNames.get(r.plan_id) : undefined,
+                  })}
                 </Text>
               </View>
               <Text className="text-primary">›</Text>

@@ -2355,8 +2355,16 @@ export type Database = {
             | 'expired'
             | 'paying'
             | 'inactive'
-            | 'never_paid';
+            | 'never_paid'
+            | 'booked_class_type'
+            | 'attended_class_type'
+            | 'no_recent_attendance'
+            | 'on_plan'
+            | 'cancelling'
+            | 'joined_within';
           threshold_days: number | null;
+          class_type_id: string | null;
+          plan_id: string | null;
           active: boolean;
           created_by: string;
           created_at: string;
@@ -2372,8 +2380,16 @@ export type Database = {
             | 'expired'
             | 'paying'
             | 'inactive'
-            | 'never_paid';
+            | 'never_paid'
+            | 'booked_class_type'
+            | 'attended_class_type'
+            | 'no_recent_attendance'
+            | 'on_plan'
+            | 'cancelling'
+            | 'joined_within';
           threshold_days?: number | null;
+          class_type_id?: string | null;
+          plan_id?: string | null;
           active?: boolean;
           created_by: string;
           created_at?: string;
@@ -2389,8 +2405,16 @@ export type Database = {
             | 'expired'
             | 'paying'
             | 'inactive'
-            | 'never_paid';
+            | 'never_paid'
+            | 'booked_class_type'
+            | 'attended_class_type'
+            | 'no_recent_attendance'
+            | 'on_plan'
+            | 'cancelling'
+            | 'joined_within';
           threshold_days: number | null;
+          class_type_id: string | null;
+          plan_id: string | null;
           active: boolean;
           created_by: string;
           created_at: string;

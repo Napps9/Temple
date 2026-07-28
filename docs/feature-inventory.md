@@ -777,6 +777,21 @@ The Manage page presents a tab strip:
     **Export members CSV** [`can_export_members`] downloads the roster.
     Front-desk staff who can't invite (coaches/staff) keep the shareable
     signup link + QR inline instead of in the modal.
+  - **Member tagging** [`can_manage_tags`] — manual tags per member
+    (`/management/tags?profile=<id>`: label + colour, removable chips)
+    plus auto-tag rules (the Tag rules modal or `/management/tags`).
+    Twelve rule predicates: the six cohort kinds (Intro / Expiring soon /
+    Expired / Paying / Inactive / Never paid) and, since `0200`, six
+    class- and membership-driven kinds — **booked a class type** (future
+    bookings always count; optional look-back window), **attended a class
+    type** (optional look-back), **no recent attendance**, **on a
+    specific plan**, **cancelling** (gave notice), **joined recently**.
+    Rules recompute nightly via pg_cron (`recompute-auto-tags`, logged to
+    `cron_run_log`) as well as on demand ("Recompute now" →
+    `apply_tag_rules`); nightly-applied tags attribute `created_by` to
+    the rule's author. Tag/rule writes are gated on the
+    `can_manage_tags` capability via `effective_can`, so per-gym role
+    overrides apply (e.g. a gym can grant coaches tagging).
   - **Member list** [`can_manage_tags`] — searchable + filterable, with
     PAR-Q, Injury and cohort badges (Intro / Active / Paying / Expiring /
     Expired), plan chips and tag chips. **Membership requests** surface
