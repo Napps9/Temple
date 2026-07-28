@@ -60,13 +60,18 @@ export function paymentNoticeCopy(input: PaymentNoticeInput): PaymentNoticeCopy 
     };
   }
 
-  // Only unlimited members can keep booking through a failure. Credits are
-  // topped up by invoice.paid and by nothing else, so a member who has spent
-  // this month's is locked out until the payment goes through.
+  // Three cases, not two. An unlimited member keeps booking. A member on a
+  // renewing credit plan keeps whatever credits they already have — the
+  // failure means the next batch has not ARRIVED, not that the balance is
+  // zero — so "you cannot book" would be false for anyone with credits
+  // left. And programming_only members do not book classes at all, so
+  // neither sentence applies to them.
   const booking =
     planKind === 'unlimited'
       ? "Your classes aren't affected — you can keep booking."
-      : "This month's class credits haven't been added yet, so you can't book until this is paid.";
+      : planKind === 'programming_only'
+        ? 'Your programming is not affected.'
+        : "Any class credits you have left still work — but this month's haven't been added yet, so they won't top up until this is paid.";
 
   return {
     title: "We couldn't take your payment",

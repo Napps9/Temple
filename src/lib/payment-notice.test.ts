@@ -19,13 +19,21 @@ describe('paymentNoticeCopy', () => {
     expect(c.action).toBe('pay');
   });
 
-  // The bug this whole split exists for: booking needs credit_balance > 0
-  // and credits only arrive with invoice.paid, so "keep booking" would send
-  // a credit member to a screen that refuses every class.
-  it('tells a credit member they cannot book until it is paid', () => {
+  // The failure means the next batch of credits has not ARRIVED, not that
+  // the balance is zero — a member with credits left can still book, so
+  // "you cannot book" would be a second false statement in place of the
+  // first one this split was written to remove.
+  it('tells a credit member their remaining credits still work', () => {
     const c = paymentNoticeCopy({ ...base, planKind: 'credit_period' });
-    expect(c.body).toContain("can't book until this is paid");
-    expect(c.body).not.toContain("aren't affected");
+    expect(c.body).toContain('credits you have left still work');
+    expect(c.body).toContain("haven't been added yet");
+  });
+
+  // Nobody on programming-only books a class, so neither sentence fits.
+  it('says nothing about booking to a programming-only member', () => {
+    const c = paymentNoticeCopy({ ...base, planKind: 'programming_only' });
+    expect(c.body).toContain('programming is not affected');
+    expect(c.body).not.toContain('credits');
   });
 
   it('escalates when Stripe has stopped retrying', () => {

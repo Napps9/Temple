@@ -17,6 +17,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { embedOne } from '@/lib/embed';
 import { errorMessage } from '@/lib/errors';
 import { paymentNoticeCopy } from '@/lib/payment-notice';
 import {
@@ -74,8 +75,8 @@ const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
 // billing portal, so the Stripe-hosted invoice is the only place they can
 // actually pay. Without that link this notice would be a dead end.
 function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
-  const dunning = sub.plan_subscription_dunning?.[0];
-  const invoiceUrl = sub.membership_invoice_links?.[0]?.invoice_url ?? null;
+  const dunning = embedOne(sub.plan_subscription_dunning);
+  const invoiceUrl = embedOne(sub.membership_invoice_links)?.invoice_url ?? null;
   const copy = paymentNoticeCopy({
     planKind: sub.membership_plans?.kind ?? 'unlimited',
     status: sub.status,
@@ -602,7 +603,7 @@ export default function MembershipScreen() {
   // exactly when the member most needs to see why — and nothing clears the
   // dunning row except recovery or leaving the gym.
   const failingSub = (subs.data ?? []).find(
-    (s) => s.plan_subscription_dunning?.length,
+    (s) => embedOne(s.plan_subscription_dunning) !== null,
   );
   const currentPlanIds = new Set(currentSubs.map((s) => s.plan_id));
   const awaitingActivation = awaitingPossible && currentSubs.length === 0;

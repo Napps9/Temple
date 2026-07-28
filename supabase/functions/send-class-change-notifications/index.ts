@@ -145,8 +145,13 @@ Deno.serve(async (req: Request) => {
     .select('id, kind, recipient, body')
     .eq('channel', 'email')
     .eq('status', 'queued');
+  // ALWAYS scoped to the authorised gym. Filtering on id alone let a
+  // caller pass a gym they belong to (satisfying requireGymMember) and
+  // another gym's notification uuid, and operate on that row. The
+  // gym-resolution fallback above only fires when gym_id is absent,
+  // which is the case that was never the bypass.
+  query = query.eq('gym_id', gymId!);
   if (notificationId) query = query.eq('id', notificationId);
-  else if (gymId) query = query.eq('gym_id', gymId);
 
   const { data: rows, error: rErr } = await query;
   if (rErr) return json({ error: rErr.message }, 500);

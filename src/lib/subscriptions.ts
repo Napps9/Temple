@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 
+import type { Embedded } from '@/lib/embed';
 import { supabase } from '@/lib/supabase';
 import type { MembershipPlanKind, PlanSubState } from '@/types/database';
 
@@ -92,14 +93,18 @@ export type MySubscription = {
   // window on purpose — the member keeps training — so this, not status, is
   // how a failing payment is visible. A row exists only while a run of
   // failures is live (0176), so presence IS past-due.
-  plan_subscription_dunning: {
+  // Object OR array: PostgREST sends an object for a one-to-one embed (the
+  // FK is the PK here), an array otherwise. Read it through embedOne rather
+  // than indexing — see src/lib/embed.ts.
+  plan_subscription_dunning: Embedded<{
     past_due_since: string;
     payment_failure_count: number;
     last_payment_error: string | null;
     next_payment_attempt: string | null;
-  }[] | null;
-  // Self-only by RLS (0174) — staff cannot read this, deliberately.
-  membership_invoice_links: { invoice_url: string }[] | null;
+  }>;
+  // Self-only by RLS (0174) — staff cannot read this, deliberately. Same
+  // one-to-one shape as the dunning embed above.
+  membership_invoice_links: Embedded<{ invoice_url: string }>;
   membership_plans: {
     name: string;
     kind: MembershipPlanKind;

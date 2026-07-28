@@ -6,7 +6,7 @@
 -- pg_cron auth.uid() is null and effective_can would refuse everything.
 
 begin;
-select plan(15);
+select plan(19);
 
 \ir _helpers.psql
 
@@ -177,6 +177,68 @@ select is(
 select lives_ok(
   $$ select public.dispatch_scheduled_campaigns() $$,
   'and the next sweep picks it up rather than walking past it'
+);
+
+-- The other half of stuck: the worker drained every recipient and the
+-- closing status write did not land. Re-poking is pointless — there is
+-- nothing queued to pick up — so the recovery pass has to finish the
+-- campaign itself, or it reads as sending forever on a report screen
+-- whose only control is Refresh.
+update public.email_campaign_recipients
+  set status = 'sent'
+  where campaign_id = current_setting('test.camp')::uuid;
+update public.email_campaigns
+  set updated_at = now() - interval '30 minutes'
+  where id = current_setting('test.camp')::uuid;
+
+select lives_ok(
+  $$ select public.dispatch_scheduled_campaigns() $$,
+  'the sweep runs over a campaign with nothing left queued'
+);
+
+select is(
+  (select status from public.email_campaigns
+    where id = current_setting('test.camp')::uuid),
+  'sent',
+  'and closes it out as sent, because mail actually went'
+);
+
+-- Same shape, nothing delivered: that is a failure, not a success.
+do $$
+declare
+  v_camp uuid;
+begin
+  insert into public.email_campaigns
+    (gym_id, created_by, title, subject, status, design, audience,
+     updated_at)
+  values (current_setting('test.gym')::uuid,
+          current_setting('test.owner')::uuid,
+          'Bounced', 'Bounced', 'sending', '{}'::jsonb,
+          '{"kind":"all_members"}'::jsonb, now() - interval '30 minutes')
+  returning id into v_camp;
+
+  insert into public.email_campaign_recipients
+    (campaign_id, gym_id, profile_id, email, status)
+  select v_camp, current_setting('test.gym')::uuid, gm.profile_id,
+         'm1@sched.test', 'failed'
+    from public.gym_memberships gm
+    where gm.gym_id = current_setting('test.gym')::uuid and gm.role = 'member'
+    limit 1;
+
+  perform set_config('test.bounced', v_camp::text, true);
+end;
+$$;
+
+select lives_ok(
+  $$ select public.dispatch_scheduled_campaigns() $$,
+  'the sweep runs over a campaign whose recipients all failed'
+);
+
+select is(
+  (select status from public.email_campaigns
+    where id = current_setting('test.bounced')::uuid),
+  'failed',
+  'and marks it failed rather than sent'
 );
 
 select * from finish();

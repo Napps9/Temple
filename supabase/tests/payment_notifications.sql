@@ -2,7 +2,7 @@
 -- per retry, and unsent if they pay before the worker drains.
 
 begin;
-select plan(19);
+select plan(20);
 
 \ir _helpers.psql
 
@@ -200,10 +200,11 @@ select is(
   'and it is the one that tells them the membership is about to stop'
 );
 
--- A credit member CANNOT keep booking through a failure. Credits are only
--- topped up by invoice.paid (stripe-webhook:749) and booking needs
--- credit_balance > 0 (0011:92), so telling them their classes are fine
--- sends them to a screen that refuses every one.
+-- A credit member is not in the unlimited member's position. Credits are
+-- only topped up by invoice.paid (stripe-webhook:749) and booking needs
+-- credit_balance > 0 (0011:92), so "your classes are fine" would send
+-- someone who has run down their balance to a screen that refuses every
+-- booking.
 do $$
 declare
   v_o uuid := _test_mk_user('o3@paynotif.test');
@@ -228,11 +229,22 @@ begin
 end;
 $$;
 
+-- A failed renewal means the next batch of credits has not arrived, not
+-- that the balance is zero. Telling a credit member they cannot book is
+-- as untrue as telling them nothing is affected, so the copy has to say
+-- the narrower thing: what you hold still works, the top-up is on hold.
 select ok(
   (select body from public.payment_notifications
     where gym_id = current_setting('test.credit')::uuid and channel = 'in_app')
-    like '%cannot book until it is paid%',
-  'a credit member is told the truth: no credits until it is paid'
+    like '%credits you have left still work%',
+  'a credit member keeps the credits they already hold'
+);
+
+select ok(
+  (select body from public.payment_notifications
+    where gym_id = current_setting('test.credit')::uuid and channel = 'in_app')
+    like '%not top up until this is paid%',
+  'and is told the top-up is what is on hold'
 );
 
 select ok(

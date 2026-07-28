@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -29,6 +29,18 @@ export function MemberPickerSheet({
   const { data: membership } = useGymMembership();
   const [search, setSearch] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set(selected));
+
+  // Re-seed whenever the incoming selection changes or the sheet reopens.
+  // useState only runs its initialiser once, and this sheet is rendered
+  // unconditionally rather than behind `{picking && …}`, so it never
+  // remounts — without this, loading a saved segment and tapping Change
+  // would commit whatever was ticked earlier in the session instead, and
+  // closing with X would leave abandoned ticks to be committed next time.
+  const key = selected.join(',');
+  useEffect(() => {
+    if (visible) setPicked(new Set(selected));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, key]);
 
   const members = useQuery({
     queryKey: ['comms-picker-members', membership?.gymId],
