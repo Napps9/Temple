@@ -48,6 +48,12 @@ describe('inferDuration', () => {
     expect(inferDuration('')).toBeNull();
     expect(inferDuration(undefined)).toBeNull();
   });
+
+  it('never reads metre distances as minutes', () => {
+    expect(inferDuration('800m run, then 21-15-9')).toBeNull();
+    expect(inferDuration('3 rounds: 400m run + 15 wall balls')).toBeNull();
+    expect(inferDuration('Row 2000m')).toBeNull();
+  });
 });
 
 // ---------- classifyProgrammedSection ----------

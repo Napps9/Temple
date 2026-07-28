@@ -532,6 +532,10 @@ The staff area shows up when `can_access_staff_area` is on.
   section-tagged workout results) + the Programming Balance block:
   - Pattern × Energy matrix (the headline 2-D grid)
   - Energy system bars (phosphagen / glycolytic / oxidative)
+  - Time domains (AI-read conditioning lengths bucketed <5 / 5–10 /
+    10–15 / 15–20 / 20+ min; strength formats deliberately excluded)
+  - Load balance (heavy / moderate / light / bodyweight split, AI-read
+    from the loading cues in the programming text)
   - Movement pattern volume bars
   - Region heat (BodyMap silhouette tinted by programmed volume)
   - Untagged sections (programming that didn't classify, so the coach
@@ -540,6 +544,24 @@ The staff area shows up when `can_access_staff_area` is on.
     toggle that reveals a "What this shows / Why it matters" panel —
     plain-language explanation of the energy-system / pattern jargon
     and how to act on each view.
+  - **AI section tagging (0203)** — the dimensions Boxmate makes
+    coaches tag by hand, read by AI from what the coach already wrote.
+    The `classify-programming` edge function sends each distinct
+    section (format + title + body, deduped by content fingerprint) to
+    Claude Haiku once and caches the result in `programming_ai_tags`
+    (per-gym, hash-keyed, service-role-only — the vocab arrives from
+    the client, so the cache is deliberately not cross-tenant), gated
+    on `effective_can(gym, 'can_see_workout_logs')` — the same
+    capability that gates the block. Each tag carries movement keys
+    (vocabulary-constrained), an estimated `duration_minutes` and a
+    `load_level`. Client-side (`src/lib/programming-ai-tags.ts`, pure
+    + unit-tested) the AI read merges into the rule-based
+    classification: AI movements union into the matrices and flip
+    lexicon-missed sections off the Untagged card, AI durations beat
+    the "NN min" regex (falling back to it when AI is unavailable),
+    and long AI-estimated for_time/amrap pieces upgrade to oxidative
+    exactly like the regex path. No ANTHROPIC_API_KEY → the block
+    renders the rule-based view unchanged; nothing blocks on AI.
 - **Class-type filter chip** for the analysis matrices, including
   archived class types so historical analysis still works.
 

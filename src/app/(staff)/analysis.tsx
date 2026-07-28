@@ -61,6 +61,21 @@ import {
   type Section,
 } from '@/lib/programming';
 import {
+  applyAiTag,
+  computeLoadMix,
+  computeTimeDomainMix,
+  correlateAiTags,
+  dedupeSections,
+  fingerprintDigest,
+  LOAD_COLOURS,
+  LOAD_LABELS,
+  movementVocab,
+  sectionFingerprint,
+  type AiSectionTag,
+  type ClassifiableSection,
+  type TaggedSection,
+} from '@/lib/programming-ai-tags';
+import {
   classifyProgrammedSection,
   computeBalance,
   computeEnergyMix,
@@ -413,6 +428,37 @@ type ProgrammingRow = {
   sections: unknown;
 };
 
+// AI tags for the window's sections — deduped by fingerprint, fetched
+// through the classify-programming edge function (cached per section
+// server-side). Failures reject so react-query retries and never
+// caches an empty read as success; the render path treats missing
+// data as "no AI" and shows the rule-based view either way.
+async function fetchAiTags(
+  gymId: string,
+  sections: ClassifiableSection[],
+): Promise<Map<string, AiSectionTag>> {
+  const { fingerprints, unique } = dedupeSections(sections);
+  if (unique.length === 0) return new Map();
+  const { data, error } = await supabase.functions.invoke(
+    'classify-programming',
+    {
+      body: {
+        gym_id: gymId,
+        sections: unique.map((s) => ({
+          section_format: s.section_format,
+          section_category: s.section_category,
+          title: s.title,
+          body: s.body,
+        })),
+        vocab: movementVocab(),
+      },
+    },
+  );
+  if (error) throw error;
+  if (!data) throw new Error('classify-programming returned no data');
+  return correlateAiTags(fingerprints, (data as { tags?: unknown }).tags);
+}
+
 function ProgrammingBalanceBlock({
   gymId,
   canSeeLogs,
@@ -463,18 +509,53 @@ function ProgrammingBalanceBlock({
   // dropdown the moment they archive it, but historical analysis
   // shouldn't disappear with it.
 
-  // Flatten programming rows → ClassifiedSection[] once, filter
-  // client-side when the user taps a class-type chip.
-  const classified = useMemo<ClassifiedSection[]>(() => {
-    const out: ClassifiedSection[] = [];
+  // Flatten programming rows once, keeping the parsed Section beside
+  // its date/class-type — the AI tag merge needs the raw body/format.
+  const parsed = useMemo(() => {
+    const out: { section: Section; date: string; classTypeId: string }[] = [];
     for (const row of programming.data ?? []) {
       const sections = parseSections(row.sections) as Section[];
       for (const s of sections) {
-        out.push(classifyProgrammedSection(s, row.date, row.class_type_id));
+        out.push({
+          section: s,
+          date: row.date,
+          classTypeId: row.class_type_id,
+        });
       }
     }
     return out;
   }, [programming.data]);
+
+  // AI read of the same sections: movements the alias lexicon missed,
+  // an estimated duration, and a load level. Keyed on a digest of the
+  // section fingerprints, so any content edit refetches — cheap,
+  // because the edge function caches per section server-side.
+  const contentDigest = useMemo(
+    () =>
+      fingerprintDigest(
+        dedupeSections(parsed.map((p) => p.section)).fingerprints,
+      ),
+    [parsed],
+  );
+  const aiTags = useQuery({
+    queryKey: ['programming-ai-tags', gymId, contentDigest],
+    enabled: canSeeLogs && rangeValid && parsed.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => fetchAiTags(gymId, parsed.map((p) => p.section)),
+  });
+
+  // Rule-based classification first, AI merged on top, filter
+  // client-side when the user taps a class-type chip.
+  const classified = useMemo<TaggedSection[]>(() => {
+    const tags = aiTags.data ?? new Map<string, AiSectionTag>();
+    return parsed.map(({ section: s, date, classTypeId }) =>
+      applyAiTag(
+        classifyProgrammedSection(s, date, classTypeId),
+        s,
+        tags.get(sectionFingerprint(s)),
+      ),
+    );
+  }, [parsed, aiTags.data]);
 
   const filtered = useMemo(
     () =>
@@ -533,6 +614,8 @@ function ProgrammingBalanceBlock({
   );
   const balance = useMemo(() => computeBalance(filtered), [filtered]);
   const untagged = useMemo(() => untaggedSections(filtered), [filtered]);
+  const timeDomains = useMemo(() => computeTimeDomainMix(filtered), [filtered]);
+  const loadMix = useMemo(() => computeLoadMix(filtered), [filtered]);
 
   if (!canSeeLogs) {
     return (
@@ -612,6 +695,8 @@ function ProgrammingBalanceBlock({
         <>
           <PatternEnergyMatrix matrix={matrix} balance={balance} />
           <EnergyMixCard mix={energyMix} />
+          <TimeDomainCard mix={timeDomains} />
+          <LoadBalanceCard mix={loadMix} />
           <PatternMixCard mix={patternMix} />
           <RegionHeatCard regions={regionVolume} />
           {untagged.length > 0 ? (
@@ -1236,6 +1321,91 @@ function EnergyMixCard({
   );
 }
 
+function TimeDomainCard({
+  mix,
+}: {
+  mix: ReturnType<typeof computeTimeDomainMix>;
+}) {
+  const total = mix.reduce((n, m) => n + m.count, 0);
+  if (total === 0) return null;
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+      <CardHeading
+        title="Time domains"
+        subtitle="How long your conditioning pieces run, read by AI from what you wrote."
+        what="Every scored conditioning piece in the window — for time, AMRAP, EMOM, intervals, cardio — bucketed by how long it runs. Explicit clocks and caps are used where you wrote them; otherwise AI estimates the length from the programmed volume. Strength work is deliberately excluded."
+        why="Each time domain trains a different engine: sprint pieces under 5 minutes, the classic 10–15 minute metcon and true 20-plus-minute aerobic work are not interchangeable. If one bucket owns the whole month, members are only ever training one of them."
+      />
+      {mix.map((m) => (
+        <View key={m.key} className="gap-1">
+          <View className="flex-row items-baseline gap-2">
+            <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+              {m.label}
+            </Text>
+            <Text className="flex-1 text-gray-400 dark:text-gray-500 text-[10px]">
+              {m.pct}%
+            </Text>
+            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+              {m.count}
+            </Text>
+          </View>
+          <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <View
+              style={{ width: `${m.pct}%` }}
+              className="h-full rounded-full bg-primary"
+            />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function LoadBalanceCard({
+  mix,
+}: {
+  mix: ReturnType<typeof computeLoadMix>;
+}) {
+  const total = mix.reduce((n, m) => n + m.count, 0);
+  if (total === 0) return null;
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+      <CardHeading
+        title="Load balance"
+        subtitle="The heavy / light split, read by AI from what you wrote."
+        what="The share of sections programmed heavy, moderate, light or bodyweight — read by AI from the loading cues in your programming: percentages, 'build to a heavy single', dumbbell weights, or no external load at all."
+        why="The heavy/light rhythm is the axis programmes drift on most quietly. Weeks where every barbell piece reads heavy break people down; all-light months stall strength. Seeing the split at a glance surfaces the drift before the fatigue does."
+      />
+      {mix.map((m) => (
+        <View key={m.level} className="gap-1">
+          <View className="flex-row items-baseline gap-2">
+            <Text
+              style={{ color: LOAD_COLOURS[m.level] }}
+              className="text-xs font-semibold uppercase tracking-wider">
+              {LOAD_LABELS[m.level]}
+            </Text>
+            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+              {m.count} {m.count === 1 ? 'section' : 'sections'}
+            </Text>
+            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+              {m.pct}%
+            </Text>
+          </View>
+          <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <View
+              style={{
+                width: `${m.pct}%`,
+                backgroundColor: LOAD_COLOURS[m.level],
+              }}
+              className="h-full rounded-full"
+            />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function PatternMixCard({
   mix,
 }: {
@@ -1339,8 +1509,8 @@ function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
       <CardHeading
         title="Untagged sections"
-        subtitle="These sections' bodies don't mention a movement we recognise. Add specific movement names so they get counted."
-        what="Sections whose written body doesn't contain a movement name we recognise, so they couldn't be classified into the matrices above."
+        subtitle="No movement we recognise in these sections' bodies, even after an AI read. Add specific movement names so they get counted."
+        what="Sections where neither our movement list nor the AI read could find a movement, so they couldn't be classified into the matrices above."
         why="Every untagged section is volume that's invisible to this analysis. Spelling out the movements in the body (e.g. 'back squat', not just 'squats') makes the numbers above trustworthy."
       />
       {shown.map((s, i) => (

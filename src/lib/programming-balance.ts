@@ -51,7 +51,10 @@ export type ClassifiedSection = {
 // "30 min for time", "12 minute cap" — so a long for_time/amrap
 // shifts into the oxidative bucket. Cap of 15 min is the boundary
 // between metcon and longer aerobic work (CrossFit convention).
-const DURATION_RE = /(\d{1,3})\s*(?:min|minute|mins|minutes|m\b)/i;
+// Deliberately no bare "m" suffix: in programming text "800m" is
+// metres, and reading it as minutes fed absurd durations into both
+// the oxidative upgrade and the Time domains card.
+const DURATION_RE = /(\d{1,3})\s*(?:min|minute|mins|minutes)\b/i;
 
 export function inferDuration(body: string | null | undefined): number | null {
   if (!body) return null;

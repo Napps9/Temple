@@ -489,14 +489,19 @@ export const MOVEMENT_CLASSIFICATIONS: Record<string, MovementClassification> =
     },
   };
 
+// Own-property lookups: a bare index would resolve prototype keys
+// ("toString", "constructor") to inherited functions, and callers
+// validating AI-returned movement keys rely on unknown → undefined.
 export function classifyMovement(
   key: string,
 ): MovementClassification | undefined {
-  return MOVEMENT_CLASSIFICATIONS[key];
+  return Object.prototype.hasOwnProperty.call(MOVEMENT_CLASSIFICATIONS, key)
+    ? MOVEMENT_CLASSIFICATIONS[key]
+    : undefined;
 }
 
 export function patternsOf(key: string): MovementPattern[] {
-  const c = MOVEMENT_CLASSIFICATIONS[key];
+  const c = classifyMovement(key);
   if (!c) return [];
   return c.secondary ? [c.pattern, c.secondary] : [c.pattern];
 }
