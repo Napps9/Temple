@@ -9,13 +9,15 @@ import {
   patternsOf,
   type MovementClassification,
 } from './movement-classification';
+import { HYROX_GROUPS } from './hyrox';
 import { MOVEMENT_GROUPS } from './movements';
 
 const VALID_REGION_KEYS = new Set(BODY_REGIONS.map((r) => r.key));
 
 function everyCatalogMovementKey(): string[] {
   const keys: string[] = [];
-  for (const g of MOVEMENT_GROUPS) for (const m of g.movements) keys.push(m.key);
+  for (const g of [...MOVEMENT_GROUPS, ...HYROX_GROUPS])
+    for (const m of g.movements) keys.push(m.key);
   return keys;
 }
 
@@ -92,6 +94,23 @@ describe('classifyMovement spot checks', () => {
     });
     expectClass('burpee', { pattern: 'core', secondary: 'horizontal_push' });
     expect(patternsOf('thruster')).toEqual(['squat', 'vertical_push']);
+  });
+
+  it('classifies the Hyrox stations the way the race trains them', () => {
+    expectClass('hyrox_sled_push', {
+      pattern: 'gait',
+      secondary: 'horizontal_push',
+      dominance: 'anterior',
+    });
+    expectClass('hyrox_farmers_carry', { pattern: 'carry' });
+    expectClass('hyrox_wall_balls', {
+      pattern: 'squat',
+      secondary: 'vertical_push',
+    });
+    expectClass('hyrox_sim', {
+      pattern: 'gait',
+      energy_systems: ['oxidative'],
+    });
   });
 
   it('classifies aerobic and gait work', () => {

@@ -19,6 +19,7 @@
 // React/RN/supabase imports — the invoke glue lives on the Analysis
 // page next to the query it feeds.
 
+import { HYROX_GROUPS } from './hyrox';
 import {
   classifyMovement,
   patternsOf,
@@ -95,8 +96,9 @@ export type TaggedSection = ClassifiedSection & {
 };
 
 // The canonical identity of a section's content. The edge function
-// hashes exactly this string server-side for its cache key, so keep
-// the normalisation in lock-step with classify-programming/index.ts.
+// hashes this string (under a server-only cache-version prefix) for
+// its cache key, so keep the normalisation in lock-step with
+// classify-programming/index.ts.
 export function sectionFingerprint(
   s: Pick<Section, 'section_format' | 'title' | 'body'>,
 ): string {
@@ -104,8 +106,11 @@ export function sectionFingerprint(
   return `${s.section_format}\n${norm(s.title)}\n${norm(s.body)}`;
 }
 
+// Both catalogs, whatever the gym's discipline — the Record flow's tag
+// picker is cross-discipline for the same reason, and a CrossFit gym
+// programming a sled push deserves the tag as much as a Hyrox one.
 export function movementVocab(): { key: string; name: string }[] {
-  return MOVEMENT_GROUPS.flatMap((g) =>
+  return [...MOVEMENT_GROUPS, ...HYROX_GROUPS].flatMap((g) =>
     g.movements.map((m) => ({ key: m.key, name: m.name })),
   );
 }

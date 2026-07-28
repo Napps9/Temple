@@ -87,10 +87,16 @@ function json(body: unknown, status = 200): Response {
 }
 
 // Mirrors sectionFingerprint in src/lib/programming-ai-tags.ts —
-// the client dedupes and correlates on the same string.
+// the client dedupes and correlates on the same string. The version
+// prefix is server-only (correlation with the client is positional):
+// bump it when the classification vocabulary changes meaning, so
+// cached tags minted against the old vocab get re-read instead of
+// served forever. v2 = vocabulary widened to the Hyrox catalog.
+const CACHE_VERSION = 'v2';
+
 function fingerprint(s: SectionInput): string {
   const norm = (t: string) => t.trim().toLowerCase().replace(/\s+/g, ' ');
-  return `${s.section_format}\n${norm(s.title)}\n${norm(s.body)}`;
+  return `${CACHE_VERSION}\n${s.section_format}\n${norm(s.title)}\n${norm(s.body)}`;
 }
 
 async function sha256Hex(s: string): Promise<string> {

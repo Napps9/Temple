@@ -553,7 +553,10 @@ The staff area shows up when `can_access_staff_area` is on.
     the client, so the cache is deliberately not cross-tenant), gated
     on `effective_can(gym, 'can_see_workout_logs')` — the same
     capability that gates the block. Each tag carries movement keys
-    (vocabulary-constrained), an estimated `duration_minutes` and a
+    (vocabulary-constrained; the vocabulary spans **both catalogs** —
+    CrossFit and Hyrox — and every `hyrox_*` station is classified in
+    `MOVEMENT_CLASSIFICATIONS`, so a Hyrox gym's programming lands in
+    the same matrices), an estimated `duration_minutes` and a
     `load_level`. Client-side (`src/lib/programming-ai-tags.ts`, pure
     + unit-tested) the AI read merges into the rule-based
     classification: AI movements union into the matrices and flip

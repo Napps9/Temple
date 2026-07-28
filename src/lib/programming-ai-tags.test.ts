@@ -74,11 +74,11 @@ describe('sectionFingerprint', () => {
 // ---------- parseAiTag ----------
 
 describe('parseAiTag', () => {
-  it('keeps only movement keys the classifier recognises', () => {
+  it('keeps only movement keys the classifier recognises, across both catalogs', () => {
     const parsed = parseAiTag(
       tag({ movement_keys: ['back_squat', 'made_up_lift', 'hyrox_row'] }),
     );
-    expect(parsed?.movement_keys).toEqual(['back_squat']);
+    expect(parsed?.movement_keys).toEqual(['back_squat', 'hyrox_row']);
   });
 
   it('drops out-of-range durations and unknown load levels', () => {
@@ -188,6 +188,18 @@ describe('applyAiTag', () => {
       undefined,
     );
     expect(row.duration_minutes).toBeNull();
+  });
+
+  it('classifies Hyrox station tags into the matrices', () => {
+    const s = tagged(
+      { body: 'Compromised running: 4 rounds sled work into 500m efforts' },
+      tag({ movement_keys: ['hyrox_sled_push'], load_level: 'heavy' }),
+    );
+    expect(s.matched).toBe(true);
+    expect(s.patterns).toEqual(
+      expect.arrayContaining(['gait', 'horizontal_push']),
+    );
+    expect(s.regions).toContain('quad');
   });
 
   it('survives a tag carrying prototype-chain movement keys', () => {
@@ -314,11 +326,20 @@ describe('correlateAiTags', () => {
 // ---------- movementVocab ----------
 
 describe('movementVocab', () => {
-  it('exposes the CrossFit catalog as key/name pairs the classifier covers', () => {
+  it('exposes both catalogs as key/name pairs the classifier covers', () => {
     const vocab = movementVocab();
-    expect(vocab.length).toBeGreaterThan(40);
+    expect(vocab.length).toBeGreaterThan(50);
     expect(vocab).toEqual(
-      expect.arrayContaining([{ key: 'back_squat', name: 'Back Squat' }]),
+      expect.arrayContaining([
+        { key: 'back_squat', name: 'Back Squat' },
+        { key: 'hyrox_sled_push', name: 'Sled Push' },
+      ]),
     );
+    for (const v of vocab) {
+      expect(
+        parseAiTag(tag({ movement_keys: [v.key] }))?.movement_keys,
+        v.key,
+      ).toEqual([v.key]);
+    }
   });
 });

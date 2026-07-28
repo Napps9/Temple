@@ -1,7 +1,7 @@
 // Movement classification — pure, hand-authored. Every key in
-// MOVEMENT_GROUPS (src/lib/movements.ts) has one entry here so the
-// Programming Analysis page can group, count, and heat-map movements
-// across three axes:
+// MOVEMENT_GROUPS (src/lib/movements.ts) and HYROX_GROUPS
+// (src/lib/hyrox.ts) has one entry here so the Programming Analysis
+// page can group, count, and heat-map movements across three axes:
 //
 //   • pattern (squat / hinge / push / pull / olympic / gait / ...)
 //   • energy_systems (phosphagen / glycolytic / oxidative)
@@ -485,6 +485,86 @@ export const MOVEMENT_CLASSIFICATIONS: Record<string, MovementClassification> =
       pattern: 'gait',
       energy_systems: ['glycolytic', 'oxidative'],
       primary_regions: ['calf', 'forearm'],
+      dominance: 'mixed',
+    },
+
+    // ---------------------------------------------------------------- Hyrox
+    // The race stations (src/lib/hyrox.ts). Energy systems reflect how
+    // the stations run in the race and in station training: sustained
+    // sub-maximal efforts, so glycolytic/oxidative throughout — nothing
+    // here is a phosphagen movement even when the sled is heavy.
+    hyrox_run: {
+      pattern: 'gait',
+      energy_systems: ['oxidative'],
+      primary_regions: ['quad', 'hamstring', 'calf'],
+      dominance: 'mixed',
+    },
+    hyrox_ski_erg: {
+      pattern: 'monostructural',
+      energy_systems: ['oxidative', 'glycolytic'],
+      primary_regions: ['upper_back', 'abdomen', 'shoulder'],
+      dominance: 'mixed',
+    },
+    hyrox_sled_push: {
+      pattern: 'gait',
+      secondary: 'horizontal_push',
+      energy_systems: ['glycolytic'],
+      primary_regions: ['quad', 'glute', 'calf'],
+      dominance: 'anterior',
+    },
+    hyrox_sled_pull: {
+      pattern: 'horizontal_pull',
+      secondary: 'gait',
+      energy_systems: ['glycolytic'],
+      primary_regions: ['upper_back', 'forearm', 'hamstring'],
+      dominance: 'posterior',
+    },
+    hyrox_burpee_broad_jump: {
+      pattern: 'core',
+      secondary: 'squat',
+      energy_systems: ['glycolytic'],
+      primary_regions: ['chest', 'quad', 'glute'],
+      dominance: 'mixed',
+    },
+    hyrox_row: {
+      pattern: 'monostructural',
+      energy_systems: ['oxidative', 'glycolytic'],
+      primary_regions: ['lower_back', 'hamstring', 'upper_back'],
+      dominance: 'posterior',
+    },
+    hyrox_farmers_carry: {
+      pattern: 'carry',
+      energy_systems: ['glycolytic'],
+      primary_regions: ['forearm', 'upper_back', 'abdomen'],
+      dominance: 'mixed',
+    },
+    hyrox_sandbag_lunge: {
+      pattern: 'squat',
+      secondary: 'carry',
+      energy_systems: ['glycolytic'],
+      primary_regions: QUAD_GLUTE_HAM,
+      dominance: 'anterior',
+    },
+    hyrox_wall_balls: {
+      pattern: 'squat',
+      secondary: 'vertical_push',
+      energy_systems: ['glycolytic'],
+      primary_regions: ['quad', 'glute', 'shoulder'],
+      dominance: 'mixed',
+    },
+    // The race entries. A simulation (and an official race) is 8 km of
+    // running around everything else, so for balance purposes it is an
+    // engine day: gait + oxidative, lower-body regions.
+    hyrox_sim: {
+      pattern: 'gait',
+      energy_systems: ['oxidative'],
+      primary_regions: ['quad', 'hamstring', 'calf'],
+      dominance: 'mixed',
+    },
+    hyrox_time: {
+      pattern: 'gait',
+      energy_systems: ['oxidative'],
+      primary_regions: ['quad', 'hamstring', 'calf'],
       dominance: 'mixed',
     },
   };
