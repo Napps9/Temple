@@ -490,11 +490,16 @@ The staff area shows up when `can_access_staff_area` is on.
   Stripe with nobody watching), so `stripe-webhook` invokes the worker
   itself and the Money block nudges it as a backstop; a send that fails at
   the provider is retried up to three times rather than left terminal,
-  since one-notice-per-run means nothing would ever replace it.
-  **The copy tracks the plan kind.** Only `unlimited` members can keep
-  booking through a failure — credits are topped up by `invoice.paid` and
-  by nothing else, so a credit member who has spent this month's is locked
-  out until it clears, and every surface says so (0176).
+  since one-notice-per-run means nothing would ever replace it. The
+  worker authorises on `can_see_money`, not membership — its response
+  counts are an oracle for how many people at the gym have a failing
+  card.
+  **The copy tracks the plan kind**, three ways (0176/0191). An
+  `unlimited` member keeps booking. A `credit_period` member keeps the
+  credits they already hold — the failure means the next batch has not
+  arrived, not that the balance is zero — so the copy says the top-up is
+  on hold rather than that they cannot book. A `programming_only` member
+  does not book classes at all, so neither sentence applies.
   **It expires.** `leave_gym` deletes the dunning row, the notifications
   and the invoice link, and `purge_expired_payment_data` (weekly, 0177)
   sweeps stale links after 30 days and notifications after a year.
@@ -1607,12 +1612,18 @@ surface, reachable from the **Comms** tab on Manage or
   status badge, plus headline tiles (campaigns, sent, emails delivered).
 - **Scheduled sends** — pick a time and the campaign goes out without
   anyone at a keyboard (`comms_schedule_campaign`, swept every 15 minutes
-  by `dispatch_scheduled_campaigns` via pg_cron, 0183/0184). The document
-  is compiled and frozen when it is scheduled, not when it sends: what
-  goes out is what was approved. Authorisation splits accordingly — the
-  capability is checked at scheduling time, while a user exists, and the
-  cron path authorises on the campaign row because `auth.uid()` is null
-  under cron.
+  by `dispatch_scheduled_campaigns` via pg_cron, 0183/0184). Everything
+  that decides what goes out is frozen when it is scheduled, not when it
+  sends — the compiled document (0183) plus subject, subject variants,
+  audience and topic in `scheduled_snapshot` (0193) — so the editor stays
+  live and late edits land on the next send, not this one. Status
+  transitions are RPC-only: `authenticated` holds column-level UPDATE on
+  the eleven fields the editor writes and nothing else (0194).
+  Authorisation splits accordingly — the capability is checked at
+  scheduling time, while a user exists, and the cron path authorises on
+  the campaign row because `auth.uid()` is null under cron. A send stuck
+  in `sending` for ten minutes is re-poked if recipients are still queued
+  and closed out if none are (0187/0191).
 - **A/B subject testing** — up to four subject lines per campaign (0185).
   Recipients are split evenly and deterministically at snapshot time, so a
   retry cannot put two subjects in front of the same person, and the
@@ -2123,7 +2134,8 @@ surround:
   account screen.
 - **Retention purge** — `purge_expired_health_data()` sweeps health
   data for members who left more than 3 months ago, scheduled via
-  pg_cron (`0095`); safe to run manually.
+  pg_cron (`0095`). Cron-only since `0192`: it, the waiver purge and
+  the payment purge were all reachable with the publishable key.
 - **Waiver-signature purge** — `purge_expired_waiver_signatures()`
   deletes waiver signatures 6 years after the member left (statutory
   limitation window), scheduled nightly via pg_cron (`0108`/`0109`).
