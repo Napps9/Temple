@@ -32,6 +32,12 @@ already get recommendations (quick-book). Anything new on the member side
 is additive — a push nudge, a milestone message — never a redesign. The
 redesign is the staff experience.
 
+And none of it looks new. Every surface here is assembled from the
+platform's existing component kit — the same cards, chips, day strips,
+pills and type scale the app ships today. What changes is the work each
+surface does, not its look; the redesign reads as Temple from day one,
+not as a second product bolted on.
+
 Everything else is a conversation. The owner never learns an admin
 interface; they describe what they want and confirm what comes back.
 Today's ~70 routes demote to the Back Office and burn down from there.
