@@ -86,7 +86,7 @@ export function TopNav({
   const gymName = brand.gymName;
 
   const accountHref = variant === 'staff' ? '/management/account' : '/account';
-  const homeHref = variant === 'staff' ? '/classes' : '/book';
+  const homeHref = variant === 'staff' ? '/timeline' : '/book';
   const showCrossLink = variant === 'staff' || canAccessStaff;
   const crossHref = variant === 'staff' ? '/book' : '/classes';
   // States the CURRENT context ("Viewing Staff"), not the destination —

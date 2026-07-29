@@ -393,6 +393,34 @@ rental, or a **physical subscription box** shipped every cycle.
 
 The staff area shows up when `can_access_staff_area` is on.
 
+### Timeline
+- **The staff home** (`/timeline`, first pill in the staff nav; staff
+  sign-in lands here) — one chronological stream per gym of what already
+  happens, read-only (docs/roadmap.md phase 1, 0204). The
+  `timeline_feed` RPC unions members joining, leads captured (plan-assign
+  gate), failing payments (`can_see_money`), cover asked/claimed (cover
+  gate), closures, and pending membership change requests — per-kind
+  capability gating inside the function, tenancy checked against
+  `can_access_staff_area`. `cron_run_log` stays out: no gym dimension.
+- **One register** — every owner-visible sentence comes from
+  `formatTimelineLine` (`src/lib/timeline.ts`, pure + unit-tested):
+  one idea per line, first person only where Temple itself acted, no
+  system vocabulary; amber dots mark live problems (a failing payment, a
+  pending request). Day groups (Today / Yesterday / weekday), oldest at
+  the top, like a conversation.
+- **Questions decided in place** — pending membership requests render as
+  the stream's only cards: one question, exactly two choices with the
+  yes labelled by the action ("Yes, move Marcus"), member note behind
+  "See the details", decided through the existing
+  `stripe-modify-subscription` path (`useDecideChangeRequest`) — the
+  standalone queue screen is unchanged underneath.
+- **The ledger seed** — `agent_actions` (loop-1 spec's table) exists and
+  is unioned into the feed: staff read behind `can_see_money`, no client
+  write path at all (`Insert: never`). Empty until the first loop writes
+  to it; the surface needs no change when it does. Note for loop 2: the
+  spec's outbound-queue table needs a name other than `agent_messages`,
+  which the AI front desk already owns.
+
 ### Programming
 - **Programming calendar (manage mode)** — author day-by-day sections
   per class type. Each section is category + format + title + body.

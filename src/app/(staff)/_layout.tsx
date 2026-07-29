@@ -7,6 +7,12 @@ import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 
 const STAFF_SECTIONS: NavSection[] = [
+  {
+    name: 'timeline',
+    href: '/timeline',
+    label: 'Timeline',
+    icon: 'chatbubbles-outline',
+  },
   // Programming exists under both (staff) and (member) at the same
   // '/programming' URL — the group-qualified navigateTo pins this pill to
   // the staff editor specifically. See NavSection's comment.
@@ -45,6 +51,7 @@ export default function StaffLayout() {
         <Tabs.Screen name="classes" options={{ title: 'Classes' }} />
         <Tabs.Screen name="management" options={{ title: 'Management' }} />
         <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
+        <Tabs.Screen name="timeline" options={{ title: 'Timeline' }} />
       </Tabs>
     </View>
   );

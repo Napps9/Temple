@@ -179,7 +179,9 @@ export default function Index() {
         return <Redirect href="/setup" />;
       }
     }
-    return <Redirect href="/classes" />;
+    // Staff land on the Timeline — what happened, what needs you — with
+    // the calendar one pill away (docs/roadmap.md phase 1).
+    return <Redirect href="/timeline" />;
   }
   if (waiverState.isLoading) return <Loading />;
   if (waiverState.data?.needs_waiver) return <Redirect href="/waiver" />;
