@@ -193,7 +193,23 @@ export default function SetupScreen() {
 
   async function submitText() {
     const text = input.trim();
-    if (!text || !step || step === 'rules' || step === 'golive' || step === 'logo') {
+    if (!text || !step) return;
+    // The bar never disappears — steps whose fast path is a tap still
+    // answer a typed message instead of presenting a dead input.
+    if (step === 'logo' || step === 'rules' || step === 'golive') {
+      setInput('');
+      pushMsgs(
+        { kind: 'mine', text },
+        {
+          kind: 'temple',
+          text:
+            step === 'logo'
+              ? 'This one’s a tap — choose your logo above, or skip and we’ll move on.'
+              : step === 'rules'
+                ? 'Tap an answer above — the chips are quicker than typing for these.'
+                : 'These last few need real buttons — tap through the list above.',
+        },
+      );
       return;
     }
     setInput('');
@@ -443,7 +459,7 @@ export default function SetupScreen() {
           ) : null}
         </ScrollView>
 
-        {step !== 'golive' && step !== 'rules' && step !== 'logo' ? (
+        {step !== null ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
             <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
               <TextInput
