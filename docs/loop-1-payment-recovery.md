@@ -145,18 +145,23 @@ what needs me, see what the AI did — so it gets one surface, not three.
 Catch-up, approvals and the audit trail are the same chronological stream.
 
 - **`/timeline`** in the staff group, a new pill in the staff `TopNav`
-  (badge = open approvals). The stream renders straight off `agent_actions`
+  (badge = open questions). The stream renders straight off `agent_actions`
   and `agent_messages`, newest at the bottom like a conversation:
-  - **Updates** — teammate chip + short prose ("Recovered £74 from two
-    failed payments"), no card chrome. Derived from executed actions and
-    closed cases; nothing is authored separately for display.
-  - **Approval cards inline** — `proposed` rows render where they arose:
-    claim, reasoning, deterministic evidence rows, Approve / Adjust /
-    Reject, and the "Always allow" affordance once the same kind has been
-    approved 3 times (count from `agent_actions`). "Adjust" v1 = edit the
-    payload (pick a different plan, edit the message) then approve.
-  - **Receipts** — terminal rows collapse to one line ("You approved —
-    Marcus's pause plus 2 comp classes"). Scrolling back is the record;
+  - **Updates** — plain prose from one sender, Temple ("I got £74 back
+    from two failed payments"), no card chrome, no labels. Derived from
+    executed actions and closed cases; nothing is authored separately for
+    display. Which teammate acted is a detail, shown only inside the
+    detail view — the owner talks to Temple, not to an org chart.
+  - **Questions inline** — `proposed` rows render as the only card in the
+    stream: a one-line question ("Move Emma to the smaller plan?"), one
+    sentence of plain-English reasoning, a "See the details" disclosure
+    (the deterministic evidence lives there, not on the surface), and two
+    choices — a labelled yes ("Yes, move her") and "No". Adjusting the
+    proposal and "always allow this" (offered after the same kind has
+    been approved 3 times, counted from `agent_actions`) live inside the
+    detail view, not on the card.
+  - **Receipts** — terminal rows collapse to one soft line ("Marcus's
+    pause — sorted, with 2 free classes"). Scrolling back is the record;
     there is no separate audit screen to build or forget.
 - **The talk bar** is the stream's input. v1 scope is narrow and honest:
   free text files onto the relevant case and the agent answers on its next
@@ -167,6 +172,27 @@ Catch-up, approvals and the audit trail are the same chronological stream.
 - No separate morning brief: the vision's Brief is simply the Timeline's
   opening entry of the day, and it gets rich when more loops can report
   (Bridge phase 3).
+
+### How Temple talks
+
+The audience is a gym owner, not an operator of software — "we're not good
+with computers" is a direct quote from the research. Content rules, applied
+to templates and update strings alike, and enforceable in review because
+the strings are few:
+
+- One idea per message. If a sentence needs an "and", it is usually two
+  messages.
+- First person, plain words, present tense. "I got £74 back", never
+  "Payment recovery completed".
+- No system vocabulary anywhere an owner can see it: no case, dunning,
+  proposal, subscription, RPC, teammate. Money is "£30 less each month",
+  not "£59 (down from £89)".
+- A question offers exactly two choices, and the yes is labelled with the
+  action ("Yes, move her"). Every extra option is cognitive load moved
+  from us to the owner.
+- Reasoning is one sentence; evidence is behind "See the details". The
+  card earns trust by being right, not by showing its working unasked.
+- Numbers appear inside sentences, never as bare figures with labels.
 
 ## Worker + cron
 
