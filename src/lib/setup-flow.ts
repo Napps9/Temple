@@ -57,7 +57,49 @@ export const CLASS_TYPE_PALETTE = [
 // defaults. The first option of each question is the best practice, so
 // tapping straight down the list is the recommended setup.
 
-export type LateCancel = 'day_before_21' | 'two_hours' | 'never';
+// Late-cancel is a value, not a menu of three. The class-type columns
+// behind it take either an absolute time the night before or any number
+// of minutes, so the rule says which and how much:
+//   'never'      - cancelling never costs the credit
+//   'abs:21:00'  - from that time the night before
+//   'rel:120'    - from that many minutes before the class
+// Encoded as a string, not an object, so every option table, token
+// picker and equality check in the sheet keeps comparing primitives.
+export type LateCancel = string;
+
+export const LATE_CANCEL_ABS = /^abs:([01]\d|2[0-3]):([0-5]\d)$/;
+export const LATE_CANCEL_REL = /^rel:([1-9]\d{0,4})$/;
+
+export function isLateCancel(v: unknown): v is LateCancel {
+  return (
+    typeof v === 'string' &&
+    (v === 'never' || LATE_CANCEL_ABS.test(v) || LATE_CANCEL_REL.test(v))
+  );
+}
+
+export function clockLabel(hh: string, mm: string): string {
+  const h = Number(hh);
+  const suffix = h < 12 ? 'am' : 'pm';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return mm === '00' ? `${h12}${suffix}` : `${h12}:${mm}${suffix}`;
+}
+
+export function minutesPhrase(m: number): string {
+  if (m < 60) return `${m} minute${m === 1 ? '' : 's'}`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  if (rem === 0) return h === 1 ? 'an hour' : `${h} hours`;
+  return `${h} hour${h === 1 ? '' : 's'} ${rem} minutes`;
+}
+
+export function lateCancelLabel(v: string): string {
+  if (v === 'never') return 'never';
+  const abs = LATE_CANCEL_ABS.exec(v);
+  if (abs) return `from ${clockLabel(abs[1], abs[2])} the night before`;
+  const rel = LATE_CANCEL_REL.exec(v);
+  if (rel) return `from ${minutesPhrase(Number(rel[1]))} before`;
+  return v;
+}
 
 export type RuleChoices = {
   booking_window_hours_ahead: number | null;
@@ -82,7 +124,7 @@ export type RuleChoices = {
 // straight through changes nothing they didn't choose to change.
 export const DEFAULT_RULE_CHOICES: RuleChoices = {
   booking_window_hours_ahead: 168,
-  late_cancel: 'day_before_21',
+  late_cancel: 'abs:21:00',
   booking_cutoff_minutes_before: 0,
   require_membership_to_book: true,
   week_starts_on: 'mon',
@@ -111,17 +153,21 @@ export const RULE_FIELD_OPTIONS: Record<RuleField, FieldOption[]> = {
     { label: '7 days', value: 168 },
     { label: '3 days', value: 72 },
     { label: '2 weeks', value: 336 },
+    { label: '30 days', value: 720 },
     { label: 'no limit', value: null },
   ],
   late_cancel: [
-    { label: 'from 9pm the night before', value: 'day_before_21' },
-    { label: 'from 2 hours before', value: 'two_hours' },
+    { label: 'from 9pm the night before', value: 'abs:21:00' },
+    { label: 'from 2 hours before', value: 'rel:120' },
+    { label: 'from 12 hours before', value: 'rel:720' },
     { label: 'never', value: 'never' },
   ],
   booking_cutoff_minutes_before: [
     { label: 'right up to the start', value: 0 },
+    { label: 'until 15 minutes before', value: 15 },
     { label: 'until 30 minutes before', value: 30 },
     { label: 'until an hour before', value: 60 },
+    { label: 'until 2 hours before', value: 120 },
   ],
   require_membership_to_book: [
     { label: 'need a membership to book', value: true },
@@ -190,6 +236,7 @@ export function formatRuleValue(
   field: RuleField,
   value: RuleChoices[RuleField],
 ): string {
+  if (field === 'late_cancel') return lateCancelLabel(String(value));
   if (typeof value !== 'number') return String(value);
   switch (field) {
     case 'booking_window_hours_ahead':
@@ -256,8 +303,8 @@ export const RULE_QUESTIONS: RuleQuestion[] = [
     id: 'late_cancel',
     prompt: 'When does cancelling start to cost the class credit?',
     options: [
-      { label: 'From 9pm the night before', value: 'day_before_21' },
-      { label: 'From 2 hours before', value: 'two_hours' },
+      { label: 'From 9pm the night before', value: 'abs:21:00' },
+      { label: 'From 2 hours before', value: 'rel:120' },
       { label: 'Never — cancelling is always free', value: 'never' },
     ],
   },
@@ -511,6 +558,80 @@ export function sanitisePlans(raw: unknown): PlansProposal | null {
   return { plans };
 }
 
+// Presets are the fast answer, not the whole answer. A field listed here
+// takes a value the chips don't offer — a number and the unit the owner
+// would say it in — so "22 days" and "45 minutes before" are ordinary
+// answers rather than things the platform can't hold. The units convert
+// to whatever the column stores.
+export type CustomUnit = { label: string; per: number };
+
+export const CUSTOM_RULE_UNITS: Partial<Record<RuleField, CustomUnit[]>> = {
+  booking_window_hours_ahead: [
+    { label: 'days', per: 24 },
+    { label: 'weeks', per: 168 },
+    { label: 'hours', per: 1 },
+  ],
+  booking_cutoff_minutes_before: [
+    { label: 'minutes', per: 1 },
+    { label: 'hours', per: 60 },
+  ],
+  expiring_within_days: [{ label: 'days', per: 1 }],
+  parq_expiry_days: [
+    { label: 'months', per: 30 },
+    { label: 'days', per: 1 },
+  ],
+  health_retention_months: [{ label: 'months', per: 1 }],
+  cover_warning_hours: [
+    { label: 'hours', per: 1 },
+    { label: 'days', per: 24 },
+  ],
+  lead_conversion_window_days: [{ label: 'days', per: 1 }],
+};
+
+// The cancel rule takes a shape as well as a number, so its custom entry
+// asks which kind first. `abs` reads the amount as an hour of the
+// evening before; the two relative units read it as an amount of time.
+export const LATE_CANCEL_UNITS: CustomUnit[] = [
+  { label: 'hours before', per: 60 },
+  { label: 'minutes before', per: 1 },
+  { label: 'the night before, from', per: 0 },
+];
+
+export function customRuleValue(
+  field: RuleField,
+  amount: number,
+  unit: CustomUnit,
+): RuleChoices[RuleField] | null {
+  if (!Number.isFinite(amount)) return null;
+  if (field === 'late_cancel') {
+    // per 0 marks the absolute shape: the amount is an hour, 24-hour clock.
+    if (unit.per === 0) {
+      const h = Math.round(amount);
+      return h >= 0 && h <= 23 ? `abs:${String(h).padStart(2, '0')}:00` : null;
+    }
+    const minutes = Math.round(amount * unit.per);
+    return minutes >= 1 && minutes <= 20160 ? `rel:${minutes}` : null;
+  }
+  const bounds = NUMERIC_RULE_BOUNDS[field];
+  if (!bounds) return null;
+  const n = Math.round(amount * unit.per);
+  return n >= bounds[0] && n <= bounds[1] ? n : null;
+}
+
+export function customRuleHint(field: RuleField): string | null {
+  if (field === 'late_cancel') return 'Any time you like';
+  const bounds = NUMERIC_RULE_BOUNDS[field];
+  const units = CUSTOM_RULE_UNITS[field];
+  if (!bounds || !units) return null;
+  const per = units[0].per;
+  return `${Math.ceil(bounds[0] / per)}–${Math.floor(bounds[1] / per)} ${units[0].label}`;
+}
+
+export function unitsFor(field: RuleField): CustomUnit[] | null {
+  if (field === 'late_cancel') return LATE_CANCEL_UNITS;
+  return CUSTOM_RULE_UNITS[field] ?? null;
+}
+
 export type RuleChange = { field: RuleField; value: RuleChoices[RuleField] };
 
 // Numeric fields accept off-menu values from a sentence ("make it 5
@@ -556,6 +677,10 @@ export function sanitiseRuleChanges(
         const n = Math.round(it.value);
         if (n >= bounds[0] && n <= bounds[1]) value = n;
       }
+    } else if (field === 'late_cancel') {
+      // Not a menu: any time or any number of minutes is a real answer,
+      // so this one is checked by shape rather than by membership.
+      if (isLateCancel(it.value)) value = it.value;
     } else {
       const opt = RULE_FIELD_OPTIONS[field].find((o) => o.value === it.value);
       if (opt) value = opt.value;

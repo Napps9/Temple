@@ -203,8 +203,12 @@ function changePrompt(): string {
     '1. rule_changes — settings. Fields and values:\n' +
     '   booking_window_hours_ahead: hours as integer ("2 weeks"→336, ' +
     '"5 days"→120), or null for no limit.\n' +
-    '   late_cancel: "day_before_21" (9pm night before) | "two_hours" | ' +
-    '"never".\n' +
+    '   late_cancel: when cancelling starts to cost the credit. ' +
+    '"never", or "abs:HH:MM" for a set time the evening before ' +
+    '("9pm the night before"→"abs:21:00", "10pm"→"abs:22:00"), or ' +
+    '"rel:N" for N minutes before the class ("2 hours before"→"rel:120", ' +
+    '"30 minutes before"→"rel:30"). Any time and any number of minutes ' +
+    'are valid — this one is not a fixed menu.\n' +
     '   booking_cutoff_minutes_before: minutes as integer, 0 = up to ' +
     'the start.\n' +
     '   require_membership_to_book / allow_minors / leaderboards_on / ' +

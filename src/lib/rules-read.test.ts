@@ -63,7 +63,36 @@ describe('lateCancelFromClassTypes', () => {
         { cancel_cutoff_mode: 'day_before', cancel_cutoff_time: '21:00', cancel_cutoff_minutes_before: 0 },
         { cancel_cutoff_mode: 'relative', cancel_cutoff_time: null, cancel_cutoff_minutes_before: 120 },
       ]),
-    ).toBe('day_before_21');
+    ).toBe('abs:21:00');
+  });
+
+  it('reads back the time a gym actually set, not a preset', () => {
+    expect(
+      lateCancelFromClassTypes(0, [
+        { cancel_cutoff_mode: 'day_before', cancel_cutoff_time: '22:00:00', cancel_cutoff_minutes_before: 0 },
+      ]),
+    ).toBe('abs:22:00');
+    expect(
+      lateCancelFromClassTypes(0, [
+        { cancel_cutoff_mode: 'relative', cancel_cutoff_time: null, cancel_cutoff_minutes_before: 30 },
+      ]),
+    ).toBe('rel:30');
+  });
+
+  it('breaks a tie toward the stricter rule', () => {
+    // One of each: the sheet must not promise the looser of the two.
+    expect(
+      lateCancelFromClassTypes(0, [
+        { cancel_cutoff_mode: 'relative', cancel_cutoff_time: null, cancel_cutoff_minutes_before: 30 },
+        { cancel_cutoff_mode: 'relative', cancel_cutoff_time: null, cancel_cutoff_minutes_before: 120 },
+      ]),
+    ).toBe('rel:120');
+    expect(
+      lateCancelFromClassTypes(0, [
+        { cancel_cutoff_mode: 'relative', cancel_cutoff_time: null, cancel_cutoff_minutes_before: 0 },
+        { cancel_cutoff_mode: 'relative', cancel_cutoff_time: null, cancel_cutoff_minutes_before: 60 },
+      ]),
+    ).toBe('rel:60');
   });
 
   it('a type inheriting the gym default counts the gym minutes', () => {
@@ -71,7 +100,7 @@ describe('lateCancelFromClassTypes', () => {
       lateCancelFromClassTypes(120, [
         { cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_minutes_before: null },
       ]),
-    ).toBe('two_hours');
+    ).toBe('rel:120');
     expect(
       lateCancelFromClassTypes(0, [
         { cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_minutes_before: null },
@@ -89,13 +118,13 @@ describe('sanitiseRuleChanges', () => {
     const changes = sanitiseRuleChanges(
       {
         changes: [
-          { field: 'late_cancel', value: 'two_hours' },
+          { field: 'late_cancel', value: 'rel:120' },
           { field: 'week_starts_on', value: 'mon' },
         ],
       },
       DEFAULT_RULE_CHOICES,
     );
-    expect(changes).toEqual([{ field: 'late_cancel', value: 'two_hours' }]);
+    expect(changes).toEqual([{ field: 'late_cancel', value: 'rel:120' }]);
   });
 
   it('accepts off-menu numbers within bounds, rejects outside', () => {
@@ -149,7 +178,7 @@ describe('formatRuleValue', () => {
 describe('ruleChangeLine', () => {
   it('speaks the changed sentence with the old value in brackets', () => {
     const line = ruleChangeLine(
-      { field: 'late_cancel', value: 'two_hours' },
+      { field: 'late_cancel', value: 'rel:120' },
       DEFAULT_RULE_CHOICES,
     );
     expect(line).toBe(

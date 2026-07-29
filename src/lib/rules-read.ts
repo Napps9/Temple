@@ -56,30 +56,38 @@ export function lateCancelFromClassTypes(
   types: ClassTypeCancelRow[],
 ): LateCancel {
   if (types.length === 0) {
-    return gymCancelMinutes > 0 ? 'two_hours' : 'never';
+    return gymCancelMinutes > 0 ? `rel:${gymCancelMinutes}` : 'never';
   }
-  const counts: Record<LateCancel, number> = {
-    day_before_21: 0,
-    two_hours: 0,
-    never: 0,
-  };
+  const counts = new Map<LateCancel, number>();
   for (const t of types) {
     const mode = t.cancel_cutoff_mode;
+    let value: LateCancel;
     if (mode === 'day_before') {
-      counts.day_before_21 += 1;
-      continue;
+      value = `abs:${(t.cancel_cutoff_time ?? '21:00').slice(0, 5)}`;
+    } else {
+      const minutes =
+        mode === 'relative'
+          ? (t.cancel_cutoff_minutes_before ?? 0)
+          : t.cancel_cutoff_minutes_before !== null
+            ? t.cancel_cutoff_minutes_before
+            : gymCancelMinutes;
+      value = minutes > 0 ? `rel:${minutes}` : 'never';
     }
-    const minutes =
-      mode === 'relative'
-        ? (t.cancel_cutoff_minutes_before ?? 0)
-        : t.cancel_cutoff_mode === null && t.cancel_cutoff_minutes_before !== null
-          ? t.cancel_cutoff_minutes_before
-          : gymCancelMinutes;
-    if (minutes > 0) counts.two_hours += 1;
-    else counts.never += 1;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
   }
-  const order: LateCancel[] = ['day_before_21', 'two_hours', 'never'];
-  return order.reduce((best, k) => (counts[k] > counts[best] ? k : best));
+  // Ties break toward the strictest reading so the sheet never promises a
+  // free cancel the booking trigger would charge for: an absolute cutoff
+  // the night before beats any relative one, and a longer relative window
+  // beats a shorter one.
+  return [...counts.entries()].sort(
+    (a, b) => b[1] - a[1] || strictness(b[0]) - strictness(a[0]),
+  )[0][0];
+}
+
+function strictness(value: LateCancel): number {
+  if (value === 'never') return -1;
+  if (value.startsWith('abs:')) return Number.MAX_SAFE_INTEGER;
+  return Number(value.slice(4)) || 0;
 }
 
 export function choicesFromGym(

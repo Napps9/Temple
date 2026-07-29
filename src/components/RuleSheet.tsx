@@ -2,10 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { CustomRuleValue } from '@/components/CustomRuleValue';
 import {
   fieldLabel,
   ruleSheet,
   RULE_FIELD_OPTIONS,
+  unitsFor,
   type RuleChoices,
   type RuleField,
 } from '@/lib/setup-flow';
@@ -25,6 +27,7 @@ export function RuleSheet({
   onEdit: (field: RuleField, value: RuleChoices[RuleField]) => void;
 }) {
   const [openField, setOpenField] = useState<RuleField | null>(null);
+  const [custom, setCustom] = useState<RuleField | null>(null);
   const [showFine, setShowFine] = useState(false);
 
   const groups = ruleSheet(choices).filter((g) => !g.fine || showFine);
@@ -64,7 +67,17 @@ export function RuleSheet({
                     ),
                   )}
                 </Text>
-                {editable && field && openField === field ? (
+                {editable && field && openField === field && custom === field ? (
+                  <CustomRuleValue
+                    field={field}
+                    onSet={(value) => {
+                      onEdit(field, value);
+                      setCustom(null);
+                      setOpenField(null);
+                    }}
+                    onCancel={() => setCustom(null)}
+                  />
+                ) : editable && field && openField === field ? (
                   <View className="flex-row flex-wrap gap-1.5 pb-1">
                     {RULE_FIELD_OPTIONS[field].map((o) => {
                       const selected = choices[field] === o.value;
@@ -89,6 +102,15 @@ export function RuleSheet({
                         </Pressable>
                       );
                     })}
+                    {unitsFor(field) ? (
+                      <Pressable
+                        onPress={() => setCustom(field)}
+                        className="px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
+                        <Text className="text-[13px] font-semibold text-gray-500 dark:text-gray-400">
+                          Something else
+                        </Text>
+                      </Pressable>
+                    ) : null}
                   </View>
                 ) : null}
               </View>

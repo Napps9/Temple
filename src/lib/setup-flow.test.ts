@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CLASS_TYPE_PALETTE,
+  customRuleValue,
   DEFAULT_RULE_CHOICES,
   fieldLabel,
+  isLateCancel,
+  lateCancelLabel,
   formatDays,
   formatPrice,
   mergeRuleAnswers,
@@ -16,6 +19,7 @@ import {
   sanitisePlans,
   sanitiseTimetable,
   timetableSummary,
+  unitsFor,
   type RuleField,
 } from './setup-flow';
 
@@ -243,13 +247,61 @@ describe('rule questions and the rule sheet', () => {
     expect(
       nextRuleQuestion({
         booking_window_hours_ahead: 336,
-        late_cancel: 'two_hours',
+        late_cancel: 'rel:120',
       }),
     ).toBe(2);
     const all = Object.fromEntries(
       RULE_QUESTIONS.map((q) => [q.id, DEFAULT_RULE_CHOICES[q.id]]),
     );
     expect(nextRuleQuestion(all)).toBeNull();
+  });
+
+  it('speaks a cancel rule the presets never offered', () => {
+    expect(lateCancelLabel('rel:30')).toBe('from 30 minutes before');
+    expect(lateCancelLabel('rel:60')).toBe('from an hour before');
+    expect(lateCancelLabel('rel:90')).toBe('from 1 hour 30 minutes before');
+    expect(lateCancelLabel('rel:720')).toBe('from 12 hours before');
+    expect(lateCancelLabel('abs:22:00')).toBe('from 10pm the night before');
+    expect(lateCancelLabel('abs:21:30')).toBe('from 9:30pm the night before');
+    expect(lateCancelLabel('abs:00:00')).toBe('from 12am the night before');
+    expect(lateCancelLabel('never')).toBe('never');
+  });
+
+  it('accepts only cancel values the class-type columns can hold', () => {
+    expect(isLateCancel('rel:30')).toBe(true);
+    expect(isLateCancel('abs:21:00')).toBe(true);
+    expect(isLateCancel('never')).toBe(true);
+    expect(isLateCancel('rel:0')).toBe(false);
+    expect(isLateCancel('abs:24:00')).toBe(false);
+    expect(isLateCancel('abs:21:60')).toBe(false);
+    expect(isLateCancel('two_hours')).toBe(false);
+    expect(isLateCancel(120)).toBe(false);
+  });
+
+  it('builds a custom value in the units the owner would say it in', () => {
+    const days = unitsFor('booking_window_hours_ahead')![0];
+    expect(customRuleValue('booking_window_hours_ahead', 22, days)).toBe(528);
+    const weeks = unitsFor('booking_window_hours_ahead')![1];
+    expect(customRuleValue('booking_window_hours_ahead', 4, weeks)).toBe(672);
+    const mins = unitsFor('booking_cutoff_minutes_before')![0];
+    expect(customRuleValue('booking_cutoff_minutes_before', 45, mins)).toBe(45);
+  });
+
+  it('refuses a custom value the column could not hold, rather than clamping', () => {
+    const days = unitsFor('booking_window_hours_ahead')![0];
+    // The window tops out at 2160 hours; 200 days is 4800.
+    expect(customRuleValue('booking_window_hours_ahead', 200, days)).toBeNull();
+    expect(customRuleValue('booking_window_hours_ahead', 0, days)).toBeNull();
+    expect(customRuleValue('booking_window_hours_ahead', NaN, days)).toBeNull();
+  });
+
+  it('builds both shapes of a custom cancel rule', () => {
+    const [hours, minutes, night] = unitsFor('late_cancel')!;
+    expect(customRuleValue('late_cancel', 3, hours)).toBe('rel:180');
+    expect(customRuleValue('late_cancel', 30, minutes)).toBe('rel:30');
+    expect(customRuleValue('late_cancel', 22, night)).toBe('abs:22:00');
+    expect(customRuleValue('late_cancel', 24, night)).toBeNull();
+    expect(customRuleValue('late_cancel', 0, minutes)).toBeNull();
   });
 
   it('labels the current value of a field', () => {

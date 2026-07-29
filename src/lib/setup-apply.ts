@@ -7,6 +7,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
+  LATE_CANCEL_ABS,
+  LATE_CANCEL_REL,
   type PlansProposal,
   type ProposedPlan,
   type ProposedSchedule,
@@ -128,20 +130,21 @@ export function operatingDefaultsArgs(
 }
 
 export function classCancelPolicyUpdate(choices: RuleChoices) {
-  if (choices.late_cancel === 'day_before_21') {
+  const abs = LATE_CANCEL_ABS.exec(choices.late_cancel);
+  if (abs) {
     return {
       cancel_cutoff_mode: 'day_before',
-      cancel_cutoff_time: '21:00',
+      cancel_cutoff_time: `${abs[1]}:${abs[2]}`,
       cancel_cutoff_days_before: 1,
       cancel_cutoff_minutes_before: 0,
     };
   }
+  const rel = LATE_CANCEL_REL.exec(choices.late_cancel);
   return {
     cancel_cutoff_mode: 'relative',
     cancel_cutoff_time: null,
     cancel_cutoff_days_before: 1,
-    cancel_cutoff_minutes_before:
-      choices.late_cancel === 'two_hours' ? 120 : 0,
+    cancel_cutoff_minutes_before: rel ? Number(rel[1]) : 0,
   };
 }
 

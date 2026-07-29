@@ -1057,7 +1057,26 @@ The staff area shows up when `can_access_staff_area` is on.
   charging (9pm night before / 2h before / never), how close to the
   start booking stays open, membership-to-book, and week start — with
   the best practice as the first (pre-lit) chip and each answer echoed
-  as a chat bubble. **Chips and typing are the same conversation**: an
+  as a chat bubble. **The presets are the fast answer, not the whole
+  answer**: every rule whose column takes an off-menu value carries a
+  "Something else" chip opening `CustomRuleValue` — a number plus the
+  unit the owner would say it in (days/weeks/hours, minutes/hours,
+  months), converted to whatever the column stores and *refused with the
+  range* rather than clamped, since a booking window quietly halved is
+  worse than being told the limit. The same editor opens from the rule
+  sheet's value tokens, so a value reads identically however it was set.
+  **Late-cancel became a value rather than three presets**: the
+  class-type columns behind it hold either an absolute time the night
+  before or any number of minutes, and the old three-option enum was our
+  flattening, not the schema's. It is now encoded `never` /
+  `abs:HH:MM` / `rel:<minutes>` (a string, so every option table and
+  equality check keeps comparing primitives), read back off whatever the
+  class types actually hold — `lateCancelFromClassTypes` returns the real
+  time or minutes and breaks ties toward the stricter rule — and spoken
+  by `lateCancelLabel` ("from 10pm the night before", "from 30 minutes
+  before"). `sanitiseRuleChanges` checks it by shape rather than
+  membership, and the parser is told it is not a fixed menu, so typing
+  "30 minutes before" sets 30 minutes instead of rounding to a preset. **Chips and typing are the same conversation**: an
   answer that isn't on the menu goes to `parse-setup`'s `change` step
   carrying *the question it answers*, so "30 minutes before" can't be
   read as a booking cutoff when what was asked about was cancelling.

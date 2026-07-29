@@ -107,9 +107,18 @@ describe('rules payloads', () => {
       cancel_cutoff_days_before: 1,
       cancel_cutoff_minutes_before: 0,
     });
-    expect(classCancelPolicyUpdate({ ...DEFAULT_RULE_CHOICES, late_cancel: 'two_hours' })).toMatchObject({
+    expect(classCancelPolicyUpdate({ ...DEFAULT_RULE_CHOICES, late_cancel: 'rel:120' })).toMatchObject({
       cancel_cutoff_mode: 'relative',
       cancel_cutoff_minutes_before: 120,
+    });
+    // Any minutes, and any time, not just the three presets.
+    expect(classCancelPolicyUpdate({ ...DEFAULT_RULE_CHOICES, late_cancel: 'rel:30' })).toMatchObject({
+      cancel_cutoff_mode: 'relative',
+      cancel_cutoff_minutes_before: 30,
+    });
+    expect(classCancelPolicyUpdate({ ...DEFAULT_RULE_CHOICES, late_cancel: 'abs:22:00' })).toMatchObject({
+      cancel_cutoff_mode: 'day_before',
+      cancel_cutoff_time: '22:00',
     });
     expect(classCancelPolicyUpdate({ ...DEFAULT_RULE_CHOICES, late_cancel: 'never' })).toMatchObject({
       cancel_cutoff_mode: 'relative',

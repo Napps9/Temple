@@ -26,6 +26,7 @@ import {
   validateRecurrence,
   type RecurrenceForm,
 } from '@/components/RecurrenceEditor';
+import { CustomRuleValue } from '@/components/CustomRuleValue';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { StatusDisk } from '@/components/StatusDisk';
@@ -39,6 +40,7 @@ import {
 import {
   CLASS_TYPE_PALETTE,
   fieldLabel,
+  formatRuleValue,
   formatDays,
   formatPrice,
   mergeRuleAnswers,
@@ -51,6 +53,7 @@ import {
   sanitiseRuleChanges,
   sanitiseTimetable,
   timetableSummary,
+  unitsFor,
   type PlansProposal,
   type RuleChoices,
   type RuleField,
@@ -495,6 +498,14 @@ export default function SetupScreen() {
     askRule();
   }
 
+  function customRule(q: number, value: RuleChoices[RuleField]) {
+    const question = RULE_QUESTIONS[q];
+    (ruleAnswers.current as Record<string, unknown>)[question.id] = value;
+    setMessages((m) => closeCards(m));
+    pushMsgs({ kind: 'mine', text: formatRuleValue(question.id, value) });
+    askRule();
+  }
+
   // The chips are the fast path, not the only path. An answer that isn't
   // on the menu goes to the parser carrying the question it answers, so
   // "30 minutes before" can't be read as a booking cutoff when what was
@@ -792,6 +803,7 @@ export default function SetupScreen() {
                 onConfirmPlans={confirmPlans}
                 onConfirmRules={confirmRules}
                 onAnswerRule={answerRule}
+                onCustomRule={customRule}
                 onEditRule={editRule}
                 onCarryOn={carryOn}
                 onHaveALook={haveALook}
@@ -862,6 +874,7 @@ function MessageRow({
   onConfirmPlans,
   onConfirmRules,
   onAnswerRule,
+  onCustomRule,
   onEditRule,
   onCarryOn,
   onHaveALook,
@@ -873,6 +886,7 @@ function MessageRow({
   onConfirmPlans: (p: PlansProposal) => void;
   onConfirmRules: (choices: RuleChoices) => void;
   onAnswerRule: (q: number, optionIndex: number) => void;
+  onCustomRule: (q: number, value: RuleChoices[RuleField]) => void;
   onEditRule: (field: RuleField, value: RuleChoices[RuleField]) => void;
   onCarryOn: () => void;
   onHaveALook: () => void;
@@ -1046,38 +1060,7 @@ function MessageRow({
     );
   }
   if (msg.kind === 'rule-question') {
-    const q = RULE_QUESTIONS[msg.q];
-    return (
-      <View className="gap-2.5">
-        <View className="flex-row gap-2.5 pr-7">
-          <TempleAvatar />
-          <Text className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] leading-6">
-            {q.prompt}
-          </Text>
-        </View>
-        {msg.open ? (
-          <View className="flex-row flex-wrap gap-2 pl-9">
-            {q.options.map((o, i) => (
-              <Pressable
-                key={o.label}
-                onPress={() => onAnswerRule(msg.q, i)}
-                className={`px-4 py-2.5 rounded-full border active:opacity-70 ${
-                  i === 0
-                    ? 'bg-primary border-primary'
-                    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-                }`}>
-                <Text
-                  className={`text-sm font-semibold ${
-                    i === 0 ? 'text-white' : 'text-gray-700 dark:text-gray-300'
-                  }`}>
-                  {o.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-      </View>
-    );
+    return <RuleQuestion msg={msg} onAnswer={onAnswerRule} onCustom={onCustomRule} />;
   }
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
@@ -1117,6 +1100,73 @@ const FINISH_ROWS: { key: string; label: string; href: string }[] = [
     href: '/management/members/import-workouts',
   },
 ];
+
+// A rule question: the presets as chips, plus "Something else" wherever
+// the field takes a value the presets don't cover — which is most of
+// them, since the columns behind these hold any number and any time.
+function RuleQuestion({
+  msg,
+  onAnswer,
+  onCustom,
+}: {
+  msg: Extract<Msg, { kind: 'rule-question' }>;
+  onAnswer: (q: number, optionIndex: number) => void;
+  onCustom: (q: number, value: RuleChoices[RuleField]) => void;
+}) {
+  const [custom, setCustom] = useState(false);
+  const q = RULE_QUESTIONS[msg.q];
+  return (
+    <View className="gap-2.5">
+      <View className="flex-row gap-2.5 pr-7">
+        <TempleAvatar />
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] leading-6">
+          {q.prompt}
+        </Text>
+      </View>
+      {!msg.open ? null : custom ? (
+        <View className="pl-9">
+          <CustomRuleValue
+            field={q.id}
+            onSet={(value) => {
+              setCustom(false);
+              onCustom(msg.q, value);
+            }}
+            onCancel={() => setCustom(false)}
+          />
+        </View>
+      ) : (
+        <View className="flex-row flex-wrap gap-2 pl-9">
+          {q.options.map((o, i) => (
+            <Pressable
+              key={o.label}
+              onPress={() => onAnswer(msg.q, i)}
+              className={`px-4 py-2.5 rounded-full border active:opacity-70 ${
+                i === 0
+                  ? 'bg-primary border-primary'
+                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+              }`}>
+              <Text
+                className={`text-sm font-semibold ${
+                  i === 0 ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                }`}>
+                {o.label}
+              </Text>
+            </Pressable>
+          ))}
+          {unitsFor(q.id) ? (
+            <Pressable
+              onPress={() => setCustom(true)}
+              className="px-4 py-2.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
+              <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                Something else
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
+    </View>
+  );
+}
 
 function GoLive({
   doneKeys,
