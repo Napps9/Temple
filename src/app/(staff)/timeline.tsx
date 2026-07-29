@@ -73,6 +73,21 @@ function useTimelineFeed(gymId: string | undefined) {
   });
 }
 
+function useMoneyAuthority(gymId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ['agent-authority', gymId],
+    enabled: !!gymId && enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_authority')
+        .select('action_kind, level')
+        .eq('gym_id', gymId!);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 type GymRules = {
   choices: RuleChoices;
   defaults: { capacity: number; minutes: number };
@@ -170,6 +185,18 @@ export default function Timeline() {
 
   const feed = useTimelineFeed(gymId);
   const rules = useGymRules(gymId, isOwner);
+  const authority = useMoneyAuthority(gymId, isOwner);
+  const [jobDismissed, setJobDismissed] = useState(false);
+
+  const hasFailingPayment = (feed.data ?? []).some(
+    (e) => e.kind === 'payment_failing',
+  );
+  const showMoneyJobCard =
+    isOwner &&
+    !jobDismissed &&
+    hasFailingPayment &&
+    authority.data !== undefined &&
+    authority.data.length === 0;
 
   const [local, setLocal] = useState<LocalMsg[]>([]);
   const [input, setInput] = useState('');
@@ -397,6 +424,9 @@ export default function Timeline() {
                 {g.events.map((e) =>
                   e.kind === 'membership_request' ? (
                     <RequestCard key={e.item_id} event={e} gymId={gymId} />
+                  ) : e.kind === 'agent_action' &&
+                    (e.detail as { status?: string }).status === 'proposed' ? (
+                    <AgentActionCard key={e.item_id} event={e} gymId={gymId} />
                   ) : (
                     <ReceiptLine key={e.item_id} event={e} />
                   ),
@@ -404,6 +434,21 @@ export default function Timeline() {
               </View>
             ))
           )}
+
+          {showMoneyJobCard ? (
+            <MoneyJobCard
+              gymId={gymId}
+              onDismiss={() => setJobDismissed(true)}
+              onTakenOn={() => {
+                setJobDismissed(true);
+                push({
+                  kind: 'receipt',
+                  text: "The money job is on — I'll ask before anything goes out.",
+                });
+                qc.invalidateQueries({ queryKey: ['agent-authority', gymId] });
+              }}
+            />
+          ) : null}
 
           {local.map((m, i) => (
             <LocalRow
@@ -673,6 +718,214 @@ function SoftLine({
       {at ? (
         <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[3px]">
           {formatClock(at)}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+// A proposed action from the money loop: one question, one sentence of
+// reasoning, the deterministic evidence behind "See the details", and
+// exactly two choices. "Always allow this" rides the approval so the
+// graduation is itself a ledgered decision (0206).
+function AgentActionCard({
+  event,
+  gymId,
+}: {
+  event: TimelineEvent;
+  gymId: string | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  const [always, setAlways] = useState(false);
+  const [decided, setDecided] = useState<'approve' | 'reject' | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const qc = useQueryClient();
+
+  const payload = ((event.detail.payload ?? {}) as Record<string, unknown>);
+  const kind = typeof event.detail.action_kind === 'string' ? event.detail.action_kind : '';
+  const isOffer = kind === 'plan_adjustment_offer';
+  const evidence = Array.isArray(event.detail.evidence)
+    ? (event.detail.evidence as unknown[]).filter(
+        (x): x is string => typeof x === 'string',
+      )
+    : [];
+  const memberName =
+    typeof payload.member_name === 'string' && payload.member_name
+      ? payload.member_name
+      : event.subject;
+  const first = memberName.trim().split(/\s+/)[0] || 'them';
+  const offerPlan =
+    typeof payload.offer_plan_name === 'string' ? payload.offer_plan_name : null;
+  const offerPrice =
+    typeof payload.offer_price === 'string' ? payload.offer_price : null;
+  const actionId = event.item_id.split(':')[1];
+
+  const line = formatTimelineLine(event);
+  const reasoning = isOffer
+    ? `Stripe has stopped trying${offerPlan ? ` — ${offerPlan}${offerPrice ? ` at ${offerPrice}` : ''} might keep them` : ''}.`
+    : 'A friendly note with their pay link usually sorts it.';
+
+  const decide = async (decision: 'approve' | 'reject') => {
+    if (!actionId || busy) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      const { error } = await supabase.rpc('decide_agent_action', {
+        p_action_id: actionId,
+        p_decision: decision,
+        p_always_allow: decision === 'approve' && always,
+      });
+      if (error) throw error;
+      setDecided(decision);
+      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
+      qc.invalidateQueries({ queryKey: ['agent-authority', gymId] });
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (decided) {
+    return (
+      <SoftLine
+        tone="neutral"
+        text={
+          decided === 'approve'
+            ? isOffer
+              ? `Offered — ${first} has it in their inbox.`
+              : `Sent — ${first} has the note.`
+            : `Left alone — nothing was sent to ${first}.`
+        }
+      />
+    );
+  }
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+        {line.text}
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-sm">{reasoning}</Text>
+      {open ? (
+        <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-1.5">
+          {evidence.map((s, i) => (
+            <Text key={i} className="text-gray-700 dark:text-gray-200 text-sm">
+              {s}
+            </Text>
+          ))}
+          <Pressable
+            onPress={() => setAlways((v) => !v)}
+            className="flex-row items-center gap-2 pt-1.5"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: always }}>
+            <Ionicons
+              name={always ? 'checkbox' : 'square-outline'}
+              size={18}
+              color={always ? '#2563EB' : '#9CA3AF'}
+            />
+            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+              Always allow this — stop asking first
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1">
+          <Button onPress={() => decide('approve')} loading={busy}>
+            {isOffer ? 'Yes, offer it' : 'Yes, send it'}
+          </Button>
+        </View>
+        <View className="flex-1">
+          <Button variant="secondary" onPress={() => decide('reject')} disabled={busy}>
+            No
+          </Button>
+        </View>
+      </View>
+      {!open ? (
+        <Pressable onPress={() => setOpen(true)} hitSlop={6}>
+          <Text className="text-link text-sm font-semibold">See the details</Text>
+        </Pressable>
+      ) : null}
+      {failed ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">
+          That didn&apos;t go through — try again.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+// The switch-on card: taking the money job on is reading its rules and
+// saying "sounds right" — never a settings form. Shown to the owner only
+// while a payment is failing and no authority rows exist.
+function MoneyJobCard({
+  gymId,
+  onDismiss,
+  onTakenOn,
+}: {
+  gymId: string | undefined;
+  onDismiss: () => void;
+  onTakenOn: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const takeOn = async () => {
+    if (!gymId || busy) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      const { error } = await supabase.rpc('set_money_job', {
+        p_gym_id: gymId,
+        p_enabled: true,
+      });
+      if (error) throw error;
+      onTakenOn();
+    } catch {
+      setFailed(true);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+        Failed payments — want me to chase them?
+      </Text>
+      <View className="gap-1.5">
+        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+          When a card fails, Stripe retries and the member already gets one
+          notice from Temple.
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+          Three days in, I&apos;d send a warm nudge with their pay link — and I
+          ask you before each one until you say otherwise.
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+          If Stripe gives up, I ask before offering the smaller plan.
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+          I never cancel anyone, never invent discounts, and stop after two
+          messages.
+        </Text>
+      </View>
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1">
+          <Button onPress={takeOn} loading={busy}>
+            Sounds right — take it on
+          </Button>
+        </View>
+        <View className="flex-1">
+          <Button variant="secondary" onPress={onDismiss} disabled={busy}>
+            Not now
+          </Button>
+        </View>
+      </View>
+      {failed ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">
+          That didn&apos;t go through — try again.
         </Text>
       ) : null}
     </View>

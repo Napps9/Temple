@@ -663,6 +663,67 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      agent_authority: {
+        Row: {
+          gym_id: string;
+          action_kind: 'chase_message' | 'plan_adjustment_offer';
+          level: 'autonomous' | 'approval' | 'reserved';
+          updated_by: string | null;
+          updated_at: string;
+        };
+        // Writes go through set_money_job / decide_agent_action (0206).
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_cases: {
+        Row: {
+          id: string;
+          gym_id: string;
+          plan_subscription_id: string;
+          profile_id: string;
+          opened_at: string;
+          stage: 'watching' | 'touch_2_sent' | 'offer_pending' | 'closed';
+          outcome: 'recovered' | 'adjusted' | 'lapsed' | 'left' | null;
+          closed_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_outbound_messages: {
+        Row: {
+          id: string;
+          gym_id: string;
+          case_id: string | null;
+          action_id: string | null;
+          recipient_profile_id: string | null;
+          channel: 'email';
+          subject: string;
+          body: string;
+          status: 'queued' | 'sent' | 'failed' | 'skipped';
+          error: string | null;
+          attempts: number;
+          idempotency_key: string;
+          created_at: string;
+          sent_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_message_templates: {
+        Row: {
+          gym_id: string;
+          kind: 'chase_message' | 'plan_adjustment_offer';
+          body: string;
+          approved_by: string | null;
+          approved_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       agent_conversations: {
         Row: {
           id: string;
@@ -4073,6 +4134,18 @@ export type Database = {
           subject: string;
           detail: Json;
         }[];
+      };
+      set_money_job: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      decide_agent_action: {
+        Args: {
+          p_action_id: string;
+          p_decision: 'approve' | 'reject';
+          p_always_allow?: boolean;
+        };
+        Returns: null;
       };
       set_membership_change_policies: {
         Args: {

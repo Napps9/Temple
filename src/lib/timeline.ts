@@ -112,15 +112,57 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
         tone: 'amber',
       };
     }
-    case 'agent_action': {
-      // Placeholder until the first loop writes real payloads; the loop-1
-      // build owns the per-kind copy.
-      const name = e.subject.trim();
+    case 'agent_action':
+      return agentActionLine(e);
+  }
+}
+
+// The money loop's receipts and questions (0206). Payload fields are
+// SQL-derived (agent_revenue_tick), never model-authored, so the copy
+// here is the whole owner-visible vocabulary of the loop.
+function agentActionLine(e: TimelineEvent): TimelineLine {
+  const payload = (e.detail.payload ?? {}) as Record<string, unknown>;
+  const status = str(e.detail, 'status');
+  const kind = str(e.detail, 'action_kind');
+  const memberName =
+    typeof payload.member_name === 'string' && payload.member_name
+      ? payload.member_name
+      : e.subject;
+  const first = firstName(memberName);
+  const offerPlan =
+    typeof payload.offer_plan_name === 'string' ? payload.offer_plan_name : null;
+  const offerPrice =
+    typeof payload.offer_price === 'string' ? payload.offer_price : null;
+  const isOffer = kind === 'plan_adjustment_offer';
+
+  switch (status) {
+    case 'proposed':
       return {
-        text: name ? `I've been looking after ${firstName(name)}'s payment.` : 'I took care of something.',
+        text: isOffer
+          ? `Offer ${first} the smaller plan?`
+          : `Send ${first} a nudge about their payment?`,
+        tone: 'amber',
+      };
+    case 'approved':
+    case 'executed':
+      return {
+        text: isOffer
+          ? `I've offered ${first} ${offerPlan ?? 'the smaller plan'}${offerPrice ? ` at ${offerPrice}` : ''} — their call now.`
+          : `I've nudged ${first} about their payment — they have the link.`,
         tone: 'neutral',
       };
-    }
+    case 'rejected':
+      return {
+        text: `${first}'s payment — you said leave it, so I did.`,
+        tone: 'neutral',
+      };
+    case 'expired':
+      return {
+        text: `The question about ${first}'s payment lapsed — nothing was sent.`,
+        tone: 'neutral',
+      };
+    default:
+      return { text: `I've been looking after ${first}'s payment.`, tone: 'neutral' };
   }
 }
 

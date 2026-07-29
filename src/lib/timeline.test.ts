@@ -117,6 +117,55 @@ describe('formatTimelineLine', () => {
     expect(move.text).toBe('Marcus wants to move to 8-class pack.');
   });
 
+  it('speaks the money loop in questions and receipts, never system words', () => {
+    const proposed = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Emma Wilson',
+        detail: {
+          action_kind: 'chase_message',
+          status: 'proposed',
+          payload: { member_name: 'Emma Wilson', plan_name: 'Unlimited' },
+        },
+      }),
+    );
+    expect(proposed).toEqual({
+      text: 'Send Emma a nudge about their payment?',
+      tone: 'amber',
+    });
+
+    const offered = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Marcus Reid',
+        detail: {
+          action_kind: 'plan_adjustment_offer',
+          status: 'executed',
+          payload: {
+            member_name: 'Marcus Reid',
+            offer_plan_name: 'Basic',
+            offer_price: '£59',
+          },
+        },
+      }),
+    );
+    expect(offered.text).toBe("I've offered Marcus Basic at £59 — their call now.");
+    expect(offered.text.toLowerCase()).not.toMatch(/case|dunning|proposal|subscription/);
+
+    const rejected = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Emma Wilson',
+        detail: {
+          action_kind: 'chase_message',
+          status: 'rejected',
+          payload: { member_name: 'Emma Wilson' },
+        },
+      }),
+    );
+    expect(rejected.text).toBe("Emma's payment — you said leave it, so I did.");
+  });
+
   it('describes closures with their dates', () => {
     const line = formatTimelineLine(
       evt({

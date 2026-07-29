@@ -435,10 +435,37 @@ The staff area shows up when `can_access_staff_area` is on.
   per-action saves, a receipt line in the stream, the sheet refetches.
 - **The ledger seed** — `agent_actions` (loop-1 spec's table) exists and
   is unioned into the feed: staff read behind `can_see_money`, no client
-  write path at all (`Insert: never`). Empty until the first loop writes
-  to it; the surface needs no change when it does. Note for loop 2: the
-  spec's outbound-queue table needs a name other than `agent_messages`,
-  which the AI front desk already owns.
+  write path at all (`Insert: never`).
+- **The money loop** (roadmap phase 2, 0206 — spec in
+  `docs/loop-1-payment-recovery.md`). Off by default per gym:
+  `agent_authority` rows ARE the flag, written by owner-only
+  `set_money_job` — surfaced as a Timeline card ("Failed payments — want
+  me to chase them?") that appears only while a payment is failing, and
+  taking the job on is reading its rules and saying "sounds right".
+  Hourly `agent-revenue-tick` (pg_cron, `cron_run_log`-logged) works
+  each dunning row as an `agent_cases` case through a deterministic
+  policy — no model anywhere: touch 1 is the existing 0175 notice;
+  touch 2 a warm chase 3+ days in while Stripe still retries; touch 3,
+  when Stripe gives up, the cheaper-plan offer (existing active cheaper
+  recurring plan only) or a final note. Proposals are `agent_actions`
+  rows: `approval` level renders as a Timeline question card (reasoning
+  sentence, SQL-derived evidence behind "See the details", exactly two
+  choices); `decide_agent_action` (capability-gated) executes on
+  approve, and "Always allow this" flips `agent_authority` to
+  `autonomous` in the same transaction. Execution fills an
+  owner-approved `agent_message_templates` body (placeholders only — no
+  model text ever reaches a member) into `agent_outbound_messages`
+  (named to avoid the front desk's `agent_messages`), drained by the
+  `send-agent-messages` worker (Resend, 3-retry budget, address resolved
+  at send time) via the `dispatch-agent-messages` cron — with quiet
+  hours (09:00–20:00 gym-local) enforced at the send, so a 10pm approval
+  waits rather than refuses. Hard rules in SQL: one open case per
+  subscription (partial unique), max two agent touches per case, one
+  open question at a time, a rejection ends that case's asks for good,
+  proposals expire visibly after 7 days, and no code path cancels a
+  membership or invents a discount. Cases close from the dunning row
+  vanishing: recovered / lapsed / left by subscription + membership
+  state. pgTAP: `money_loop.sql` (18 assertions).
 
 ### Programming
 - **The roadmap** (roadmap phase 5, 0205 — `programming_blocks`) — a year
