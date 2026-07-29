@@ -248,58 +248,69 @@ exceptions.
 
 ---
 
-## 4. Eight surfaces
+## 4. Six surfaces
 
 The concept vocabulary for the new product. Trust surfaces first, because
-autonomy without evidence is a liability.
+autonomy without evidence is a liability. And one register throughout,
+because the audience is a gym owner, not an operator of software — "we're
+not good with computers" is a direct quote. One idea per message. Plain
+words. No system vocabulary anywhere an owner can see it.
 
-**1. The Morning Brief.** The homepage is a written report from your staff,
-not a dashboard. Three to six sentences, judgement already applied, at most
-one ask. Every sentence is tappable and resolves to evidence. Detailed in
-section 6.
+**1. The Timeline.** The owner surface, singular. Catching up, deciding
+and auditing are one workflow, so they are one chronological stream —
+messages from Temple flowing in like a conversation. Three kinds of entry,
+and nothing else:
 
-**2. The Queue.** The only inbox. One stream of decision cards, each
-carrying a recommendation, the reasoning, the evidence, and three buttons:
-Approve, Adjust, Reject — plus, after repeated identical approvals, *Always
-allow*. The Queue absorbs today's five scattered queues (membership change
-requests, cover, imported invites, staff tasks, refund calls). The rule
-that keeps it honest: a card is a decision. If nothing is being asked, it
-is not a notification to be filed here — it belongs in the Ledger.
+- *Updates* — one idea in plain first person: "I got £74 back from two
+  failed payments." No labels, no card chrome. The stream has one sender —
+  Temple. Which teammate acted is a detail inside the detail view; the
+  owner talks to Temple, not to an org chart.
+- *Questions* — the only cards in the stream, and the only inbox in the
+  product. A one-line question ("Move Emma to the smaller plan?"), one
+  sentence of reasoning, exactly two choices — the yes labelled with the
+  action ("Yes, move her") — and the evidence behind "See the details."
+  After the third identical approval, the detail view offers *always
+  allow this*: the authority dial moving right, one decision at a time.
+  The Timeline absorbs today's five scattered queues (membership change
+  requests, cover, imported invites, staff tasks, refund calls).
+- *Receipts* — resolved things collapse to one soft line: "Marcus's pause
+  — sorted, with 2 free classes." Scrolling back is the record: who, what,
+  why, and undo, with every autonomous action declaring a reversal window.
+  Temple has been accreting this record's raw material for years without a
+  surface — every sweep logs to `cron_run_log`, every notification queue
+  is also an audit table, and the whole thing is currently read with a SQL
+  query. The Timeline's history is that discipline, unified and finally
+  given a screen. It is where trust is manufactured.
 
-**3. The Ledger.** The timeline of everything the AI did: who, what, why,
-and undo. Filterable by teammate, member, and loop. Every autonomous action
-declares a reversal window, and the undo lives here — undo is the price of
-autonomy. Temple has been accreting the raw material for years without a
-surface: every sweep logs to `cron_run_log`, every notification queue is
-also an audit table, and the whole thing is currently read with a SQL
-query. The Ledger is that discipline, unified and given a screen. It is
-where trust is manufactured.
+The day's opening entries are the morning brief; the ask-count stays
+honest because a question is the only thing that ever demands attention.
 
-**4. The Roster.** The org-chart page. Each teammate shows its
-responsibilities, its authority dial per action-type, this week's numbers,
-and a coaching view — which already exists for the Front Desk as the
+**2. The talk bar.** The Timeline's input, and the product's real
+navigation. Type or speak — on the gym floor, long-press and say "Jamie's
+shoulder is playing up again, and bump the 6am cap to 14 for summer." Each
+utterance routes to the right loop with its guardrail intact: the injury
+mention lands as a closed-category flag (never free text into a health
+field, the same rule the front desk already obeys), the capacity change
+comes back as a question or just happens, depending on where that action's
+dial sits. This generalises the pattern we already trust — the owner
+taught the front desk by talking. Now the whole gym works that way.
+
+**3. The Roster.** The org-chart page — the one place the teammate
+structure is visible, because here it is useful: what Temple handles, what
+it may do on its own versus what it asks about, this week's numbers, and a
+coaching view — which already exists for the Front Desk as the
 conversation review screen, where the owner corrects an answer and the
 correction becomes a standing rule. Hiring a teammate is enabling a loop
 bundle, presented as an offer letter, not a settings page.
 
-**5. Goal Threads.** "Get to 200 members by December" as a persistent
+**4. Goal Threads.** "Get to 200 members by December" as a persistent
 object with an owner (a teammate), a plan, a running action log, and a
 weekly written report. Temple already has the schema — `gym_insight_targets`
 and its capability shipped server-side and never got a screen. Of course
 they didn't: in a system of record, a target is just another number to
 stare at. In a system of action, a target is a brief you give an employee.
 
-**6. Talk-first capture.** The owner's hands are chalky and the phone is a
-radio to staff, not a filing cabinet. Long-press, speak: "Jamie's shoulder
-is playing up again, and bump the 6am cap to 14 for summer." Each utterance
-routes to the right loop with its guardrail intact — the injury mention
-lands as a closed-category flag (never free text into a health field, the
-same rule the front desk already obeys), the capacity change lands in the
-Queue or executes, depending on where that action's dial sits. This
-generalises the pattern we already trust: the owner taught the front desk
-by talking. Now the whole gym works that way.
-
-**7. The Member's Teammate.** The same agent, facing members. It rebooks
+**5. The Member's Teammate.** The same agent, facing members. It rebooks
 after a missed class, handles "I'm travelling next fortnight" with a hold,
 computes the pro-rata upgrade when someone asks to move up a plan — in
 words, not in a proration UI — celebrates the hundredth class, and nudges
@@ -311,7 +322,7 @@ the by-product. Owners told us the incumbents are "focused on the business
 side and not on the member side." The member side is where retention
 actually lives.
 
-**8. Every chart ends in a verb.** Reports become claims with drafted
+**6. Every chart ends in a verb.** Reports become claims with drafted
 actions attached. The verdict tiles were the halfway house — a flag with no
 hands. The full version: "Shoulder flags are up 40% in six weeks, clustered
 on the Tuesday push cycle. A deload week is drafted — review it?" Aggregate
@@ -328,16 +339,16 @@ and the closed loop that replaces it.
 
 | # | Today | Trigger | AI action | Guardrail | What the owner sees |
 |---|-------|---------|-----------|-----------|---------------------|
-| 1 | The "Needs chasing" list (dunning sees, notifies once, then hands the owner a chase list) | Payment failure recorded | Revenue teammate works the chase: humane outreach in the gym's voice, timed to Stripe's retry schedule; on repeat failure, proposes a plan adjustment instead of a chase | Never cancels a membership; offer sizes capped; tone from the operating brief | "Recovered £74 from two failed payments" in the brief |
+| 1 | The "Needs chasing" list (dunning sees, notifies once, then hands the owner a chase list) | Payment failure recorded | Revenue teammate works the chase: humane outreach in the gym's voice, timed to Stripe's retry schedule; on repeat failure, proposes a plan adjustment instead of a chase | Never cancels a membership; offer sizes capped; tone from the operating brief | "I got £74 back" in the Timeline |
 | 2 | Attendance marking, per member, per session | Class ends | Auto-mark from bookings and check-in signals; infer no-shows; feed the result to Retention | Coach gets a one-swipe correction window | Nothing, unless a pattern emerges |
 | 3 | Membership change-request queue | Request submitted | Evaluate against precedent learned from the owner's past approvals; apply the routine ones | Novel patterns always queue; cancellations human-reserved | One card for the exception |
-| 4 | Store fulfilment — "Mark shipped" per order, every box cycle | Order or renewal settles | Batch, label, mark shipped on carrier scan | Address anomalies and stock-outs queue | A weekly line in the brief |
-| 5 | Cover by email nag (daily "still uncovered" warnings) | Coach unavailable | Ops teammate ranks qualified, available coaches, asks, confirms both sides, updates the class | Pay-rate changes queue; external hires human-reserved (for now — see bet 4) | A Ledger entry, after the fact |
+| 4 | Store fulfilment — "Mark shipped" per order, every box cycle | Order or renewal settles | Batch, label, mark shipped on carrier scan | Address anomalies and stock-outs queue | A weekly line in the Timeline |
+| 5 | Cover by email nag (daily "still uncovered" warnings) | Coach unavailable | Ops teammate ranks qualified, available coaches, asks, confirms both sides, updates the class | Pay-rate changes queue; external hires human-reserved (for now — see bet 4) | A line in the Timeline, after the fact |
 | 6 | Campaign authorship (the mechanics — scheduling, A/B, segments — are already autonomous; the writing isn't) | An outcome brief: "win back three-week-inactive members" | Agent writes, times, sends, measures lift, iterates | New audiences need approval; individual sends don't; frequency caps hold | Lift, not funnels |
 | 7 | Imported-member invite chase | Import commits | Full onboarding pursuit: invite, nudge, escalate; auto-link on signup (the trigger exists) | One-time links stay email-only | A conversion count |
 | 8 | Verdict tiles and attendance trends (verdicts without hands) | Per-member frequency decline | Churn-risk score, personalised outreach, outcome tracked into memory | First-contact templates owner-approved; no health inference | "Three at-risk members contacted; two rebooked" |
 | 9 | Waitlist screen and capacity guessing | Spot opens, or a class under-filled at T-48h | Promote (already autonomous), then proactively invite likely attendees — the quick-book affinity model, re-aimed gym-side, delivered by push | Invite caps per member per week; no pressure language | "Thursday 06:00 at 14/16, three invited" |
-| 10 | Targets: a table, a capability, a Team-screen toggle, and no screen, ever | Owner states a goal in words | A Goal Thread: a teammate owns it, plans, acts, reports weekly | Spend and discount caps; tactics surfaced in the Ledger | Progress in sentences, not gauges |
+| 10 | Targets: a table, a capability, a Team-screen toggle, and no screen, ever | Owner states a goal in words | A Goal Thread: a teammate owns it, plans, acts, reports weekly | Spend and discount caps; tactics surfaced in the Timeline's record | Progress in sentences, not gauges |
 
 Three notes. Row 1 is the sharpest: payment failure is the biggest cause of
 involuntary churn, whole gym communities have switched platforms over it,
@@ -345,7 +356,7 @@ and today's best-in-class answer — ours included — is a well-organised list
 of people for the owner to chase. Row 6 dissolves a pain we heard verbatim
 about a competitor: two coaches answering the same email because the app
 and Gmail don't sync. When the agent answers first and humans are pulled
-in through one Queue, there is no shared-inbox race to sync. And two
+in through one Timeline, there is no shared-inbox race to sync. And two
 surfaces are named human-reserved permanently: waiver and PAR-Q signing.
 Some screens survive because they must. That's the trust story working.
 
@@ -354,46 +365,50 @@ Some screens survive because they must. That's the trust story working.
 ## 6. The homepage
 
 A dashboard is a pull medium: it offers you numbers and hopes you know what
-to do. A brief is push with judgement applied. A gym manager told us
-exactly this, in his own register: "It needs to be super simple… all the
-dashboard should show is money in, money out, total memberships." He wasn't
-asking for a smaller dashboard. He was asking for an employee who has
-already read the dashboard.
+to do. A gym manager told us exactly what he wanted instead, in his own
+register: "It needs to be super simple… all the dashboard should show is
+money in, money out, total memberships." He wasn't asking for a smaller
+dashboard. He was asking for an employee who has already read the
+dashboard.
 
-The homepage of the next Temple is the Morning Brief:
+The homepage of the next Temple is the Timeline, and the morning brief is
+simply how the day opens in it:
 
-> Morning, Dan. Overnight: three enquiries answered — one joined (Sarah M.,
-> Unlimited, first class Thursday 06:00, waiver signed). Recovered £74 from
-> two failed payments; one more is on a final retry, and I'll message her
-> this afternoon unless you object. Thursday 06:00 is at 14/16 — I've
-> invited three regulars who usually train Thursdays. **One thing needs
-> you:** Marcus has asked to pause his membership for a third consecutive
-> month, which is outside anything you've approved before. → Decide
+> Morning Dan. Sarah joined overnight — her first class is Thursday at 6am.
+>
+> I got £74 back from two failed payments. One more is on a final retry;
+> I'll message her this afternoon unless you say otherwise.
+>
+> Thursday's 6am is at 14 of 16, so I've invited three regulars who
+> usually come Thursdays.
+>
+> **Move Emma to the smaller plan?** Her card keeps failing. She trains
+> twice a week, so the 8-class plan fits her — and it's £30 less each
+> month. *See the details* · **Yes, move her** / **No**
 
-Every sentence is tappable and opens evidence — the conversation, the
-Ledger entries, the class roster — not navigation. Numbers appear only
-inside sentences, as support. The brief contains at most one ask, because
-an employee who opens every morning with six demands is an employee you
-stop listening to. And it is not customisable: you don't rearrange an
-employee's report into widgets, you tell them what matters and the next
-report reflects it.
+Short messages, one idea each, and a question is the only thing on screen
+with buttons. Anything the owner wants to know more about is one tap away
+— evidence, not navigation. Numbers appear only inside sentences. And the
+stream is not customisable: you don't rearrange an employee's report into
+widgets, you tell them what matters and tomorrow's messages reflect it.
 
 Compare the current morning: open the app, land on a calendar, tap into
 Manage, scan eight categories, open the Members tab, check the requests
 chip, check the "Needs chasing" list, check the cover screen. Today Temple
-starts the owner's day with a map. The brief starts it with a colleague.
+starts the owner's day with a map. The Timeline starts it with a
+colleague.
 
 ---
 
 ## 7. Navigation
 
-Five destinations. **Brief** (home), **Queue**, **Ledger**, **Roster**,
-**Goals**. Nothing else at the top level.
+Three destinations. **Timeline** (home), **Roster**, **Goals**. Nothing
+else at the top level.
 
-Everything else is reachable by asking. The universal bar — talk or type —
-is the primary navigation: "show me Marcus's payment history" beats
+Everything else is reachable by asking. The talk bar — type or speak — is
+the primary navigation: "show me Marcus's payment history" beats
 remembering which of twenty cards holds it. Navigation stops being a map of
-the database and becomes a conversation with your staff, plus four places
+the database and becomes a conversation with your staff, plus two places
 to check their work.
 
 The honest second half: today's ~70 routes do not vanish on day one. They
@@ -413,7 +428,7 @@ the Member's Teammate and push, and keeps its shape.
 Dan owns Forge Fitness in Leeds: 214 members, four coaches, one Dan. A
 Tuesday, with a running count of the taps Temple asks of him.
 
-**06:45.** Coffee. The Morning Brief reads as above: one join overnight, £74
+**06:45.** Coffee. The Timeline opens as above: one join overnight, £74
 recovered, Thursday's 6am being filled, one decision — Marcus's third
 consecutive pause. Dan taps the card, reads the context (Marcus's
 attendance has been sliding since March; the teammate suggests a pause
@@ -428,7 +443,7 @@ single swipe. *Three.*
 **11:00.** On the floor, hands chalky. Long-press, speak: "Jamie's shoulder
 is playing up again — and bump the 6am cap to 14 for the summer." The
 injury note lands as a flag on Jamie's profile, closed-category, no prose.
-The cap change appears as a Queue card, because capacity changes at Forge
+The cap change comes back as a question, because capacity changes at Forge
 still sit at approval-gated. Dan approves it at lunch. *Four.*
 
 **13:00.** The Revenue teammate reports: the final-retry member paid after
@@ -440,11 +455,11 @@ proposed after two failed cycles, no approval needed next time. An
 action-type just graduated to autonomous. *Six.*
 
 **16:00.** The evening coach texts in sick. Dan finds out about it at 16:20
-— in the Ledger, past tense: cover requested, two qualified coaches asked,
+— in the Timeline, past tense: cover requested, two qualified coaches asked,
 one confirmed, class updated, members untouched. Cover-finding graduated
 months ago. *Still six.*
 
-**20:30.** The evening brief: two loops closed that Dan never saw, the
+**20:30.** The evening entries: two loops closed that Dan never saw, the
 "200 by December" Goal Thread ticked 214 → 215 and posted its weekly note
 on which classes new joiners are actually attending. Dan reads it in bed.
 *Seven taps.*
@@ -507,7 +522,7 @@ timetable out loud.
 **2. The agent is the phone number.** [Plausible] No human answers a gym's
 phone again. Half of this is live — the front desk already takes voice
 calls for leads. The bet is extending it to members and making "a human
-answered" the anomaly that gets a Ledger entry.
+answered" the anomaly that gets its own line in the record.
 
 **3. Programming that adjusts to the cohort.** [Plausible] Deload weeks and
 substitutions proposed from aggregate signals — the classifier already
@@ -560,10 +575,10 @@ We need to stamp it.
 
 | Phase | Ships | Reuses | Dies |
 |-------|-------|--------|------|
-| 0 — The ledger | One `audit_events` stream: every RPC, trigger, sweep and agent action writes who/what/why/undo. Loops become event-driven instead of polled. | `cron_run_log`, the queue-plus-audit tables (cover, payments, class changes), the dispatcher logging discipline — the ledger is half-born and needs unifying, then a screen | "It is read from the SQL editor; there is no screen" |
+| 0 — The ledger | One `audit_events` stream: every RPC, trigger, sweep and agent action writes who/what/why/undo. Loops become event-driven instead of polled. | `cron_run_log`, the queue-plus-audit tables (cover, payments, class changes), the dispatcher logging discipline — the ledger is half-born and needs unifying, then a surface — it becomes the Timeline's history | "It is read from the SQL editor; there is no screen" |
 | 1 — Identity and hands | The `gym_agent` actor in the capability matrix; the ops tool API: `agent_send_member_message`, `agent_book_class`, `agent_offer_comp`, `agent_adjust_plan_offer` — each ledgered, each with an undo path | `effective_can` resolution untouched (authority is capability grants — the approval economy needs zero new machinery); the service-role calling convention and worker-secret pattern the dispatchers already use | Nothing yet — this phase is pure substrate |
-| 2 — Three loops | Revenue: payment recovery, worked not listed. Retention: churn-risk plus tracked outreach, and the first durable per-member memory (with TTLs on the model of the existing purge discipline). Ops: class-fill, which forces the push build with a genuinely useful first message. The Queue ships with the first loop. | The whole dunning pipeline (detection, notices, invoice links) as Revenue's sensors; the inactivity automation and the new attendance-based tag predicates as Retention's signals; the waitlist trigger and the quick-book affinity model as Ops's instincts | The "Needs chasing" list is the first screen to gain the superseded marker |
-| 3 — The flip | The Morning Brief as owner homepage (a brief with one loop is a notification; with three it is an employee). Goal Threads on the orphaned targets schema. The Roster, generalising the conversation-review screen to every teammate. | The front desk's coaching surface, brief-interview flow, and QC patterns, generalised | The Manage hub collapses into the five destinations; the Back Office burndown is published and worked |
+| 2 — Three loops | Revenue: payment recovery, worked not listed. Retention: churn-risk plus tracked outreach, and the first durable per-member memory (with TTLs on the model of the existing purge discipline). Ops: class-fill, which forces the push build with a genuinely useful first message. The Timeline ships with the first loop. | The whole dunning pipeline (detection, notices, invoice links) as Revenue's sensors; the inactivity automation and the new attendance-based tag predicates as Retention's signals; the waitlist trigger and the quick-book affinity model as Ops's instincts | The "Needs chasing" list is the first screen to gain the superseded marker |
+| 3 — The flip | The Timeline as owner homepage (a stream fed by one loop is a notification feed; fed by three it is an employee). Goal Threads on the orphaned targets schema. The Roster, generalising the conversation-review screen to every teammate. | The front desk's coaching surface, brief-interview flow, and QC patterns, generalised | The Manage hub collapses into the three destinations; the Back Office burndown is published and worked |
 
 Why these three loops first: payment recovery has the highest direct pain
 (gyms have switched platforms over it), its substrate is fully built, its
