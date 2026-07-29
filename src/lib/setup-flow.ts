@@ -31,6 +31,7 @@ export type ProposedPlan = {
   kind: PlanKind;
   monthly_price_cents: number | null;
   credit_count: number | null;
+  notice_period_days: number | null;
   blurb: string;
 };
 
@@ -433,6 +434,7 @@ export function sanitisePlans(raw: unknown): PlansProposal | null {
       kind?: unknown;
       monthly_price_cents?: unknown;
       credit_count?: unknown;
+      notice_period_days?: unknown;
       blurb?: unknown;
     };
     const name = cleanName(it.name);
@@ -446,9 +448,9 @@ export function sanitisePlans(raw: unknown): PlansProposal | null {
       kind === 'credit_period' || kind === 'credit_pack'
         ? clampInt(it.credit_count, 1, 100, 8)
         : null;
-    // A paid recurring plan with no price is a parse failure, not a free
-    // plan — dropping it beats selling memberships at £0 by accident.
-    if (kind !== 'credit_pack' && price === null) continue;
+    // A plan with no price is a parse failure, not a free plan —
+    // dropping it beats selling memberships (or packs) at £0 by accident.
+    if (price === null) continue;
     const blurb =
       typeof it.blurb === 'string' ? it.blurb.trim().slice(0, 80) : '';
     plans.push({
@@ -456,6 +458,7 @@ export function sanitisePlans(raw: unknown): PlansProposal | null {
       kind,
       monthly_price_cents: price,
       credit_count: credits,
+      notice_period_days: clampInt(it.notice_period_days, 0, 90, null),
       blurb,
     });
   }

@@ -86,6 +86,7 @@ const PLANS_TOOL = {
             },
             monthly_price_cents: { type: ['integer', 'null'] },
             credit_count: { type: ['integer', 'null'] },
+            notice_period_days: { type: ['integer', 'null'] },
             blurb: { type: 'string' },
           },
           required: ['name', 'kind', 'monthly_price_cents'],
@@ -117,7 +118,9 @@ const PLANS_PROMPT =
   '- blurb is a short plain-English line a member would read, e.g. ' +
   '"every class, every week" or "off-peak classes only". Put any ' +
   'restriction the owner stated (student, off-peak) in the blurb.\n' +
-  '- Never invent plans or prices that were not described.';
+  '- If the owner states a cancellation notice ("30 days notice to ' +
+  'cancel"), set notice_period_days; otherwise null.\n' +
+  '- Never invent plans, prices or notice periods that were not described.';
 
 async function parse(
   step: 'timetable' | 'plans',

@@ -64,7 +64,7 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
   timetable:
     'First, your week: what classes do you run, when, and how many people fit? Say it like you would to a friend — "CrossFit at 6, 7 and 9:30 weekday mornings, 6pm evenings, 9am Saturday, cap of 16."',
   plans:
-    'Prices next: what does membership cost? For example — "Unlimited is £89. An 8-class pack is £59."',
+    'Prices next: what does membership cost? For example — "Unlimited is £89 with 30 days notice. An 8-class pack is £59."',
   rules:
     'A few quick rules — tap what fits. The first answer is what most gyms like yours do, and you can change any of it later just by telling me.',
 };
@@ -515,7 +515,10 @@ function MessageRow({
             key={i}
             className={`flex-row items-baseline gap-2 py-2 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-800' : ''}`}>
             <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">{p.name}</Text>
-            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-[12.5px]">{p.blurb}</Text>
+            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-[12.5px]">
+              {p.blurb}
+              {p.notice_period_days ? `${p.blurb ? ' · ' : ''}${p.notice_period_days} days notice` : ''}
+            </Text>
             <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">
               {formatPrice(p.monthly_price_cents)}
             </Text>
@@ -705,6 +708,14 @@ function GoLive({
     { key: 'parq', label: 'Add your waiver and health questions', href: '/management/parq' },
     { key: 'logo', label: 'Add your logo and colours', href: '/management/branding' },
   ];
+  const optional: { key: string; label: string; href: string }[] = [
+    { key: 'team', label: 'Invite your coaches', href: '/management/team' },
+    { key: 'members_imported', label: 'Bring your members across', href: '/management/members/import' },
+    { key: 'members_imported_stripe', label: 'Pull plans and members from Stripe', href: '/management/members/import-stripe' },
+    { key: 'workouts_imported', label: 'Import workout history', href: '/management/members/import-workouts' },
+  ];
+  const optDone = (key: string) =>
+    doneKeys.has(key === 'members_imported_stripe' ? 'members_imported' : key);
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
       {items.map((it) => (
@@ -725,6 +736,27 @@ function GoLive({
           {!doneKeys.has(it.key) ? (
             <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
           ) : null}
+        </Pressable>
+      ))}
+      <View className="h-px bg-gray-100 dark:bg-gray-800" />
+      <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wide">
+        Switching from another platform?
+      </Text>
+      {optional.map((it) => (
+        <Pressable
+          key={it.key}
+          onPress={() => router.push(it.href as never)}
+          className="flex-row items-center gap-2.5 active:opacity-70">
+          <Ionicons
+            name={optDone(it.key) ? 'checkmark-circle' : 'ellipse-outline'}
+            size={20}
+            color={optDone(it.key) ? '#10B981' : '#9CA3AF'}
+          />
+          <Text
+            className={`flex-1 text-[15px] font-medium ${optDone(it.key) ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-50'}`}>
+            {it.label}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
         </Pressable>
       ))}
       <Button onPress={onFinish} loading={finishing}>

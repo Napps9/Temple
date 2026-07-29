@@ -49,13 +49,14 @@ describe('timetable payloads', () => {
 describe('plan payloads', () => {
   it('adds period_length only for credit_period plans', () => {
     const credit = planInsert('g1', {
-      name: '8 classes', kind: 'credit_period', monthly_price_cents: 5900, credit_count: 8, blurb: '',
+      name: '8 classes', kind: 'credit_period', monthly_price_cents: 5900, credit_count: 8, notice_period_days: null, blurb: '',
     });
     expect(credit).toMatchObject({ period_length: '30 days', credit_count: 8 });
     const unlimited = planInsert('g1', {
-      name: 'Unlimited', kind: 'unlimited', monthly_price_cents: 8900, credit_count: null, blurb: '',
+      name: 'Unlimited', kind: 'unlimited', monthly_price_cents: 8900, credit_count: null, notice_period_days: 30, blurb: '',
     });
     expect('period_length' in unlimited).toBe(false);
+    expect(unlimited.notice_period_days).toBe(30);
   });
 });
 

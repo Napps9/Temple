@@ -78,7 +78,7 @@ export function planInsert(gymId: string, p: ProposedPlan) {
     kind: p.kind,
     credit_count: p.credit_count,
     monthly_price_cents: p.monthly_price_cents,
-    notice_period_days: null,
+    notice_period_days: p.notice_period_days,
     includes_individual_programming: false,
     ...(p.kind === 'credit_period' ? { period_length: '30 days' } : {}),
   };

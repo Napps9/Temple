@@ -115,6 +115,19 @@ describe('sanitisePlans', () => {
     expect(p!.plans.map((x) => x.name)).toEqual(['Student']);
   });
 
+  it('parses notice periods and requires a price on packs too', () => {
+    const p = sanitisePlans({
+      plans: [
+        { name: 'Unlimited', kind: 'unlimited', monthly_price_cents: 8900, notice_period_days: 30 },
+        { name: '10-pack', kind: 'credit_pack', monthly_price_cents: null, credit_count: 10 },
+        { name: '5-pack', kind: 'credit_pack', monthly_price_cents: 6000, credit_count: 5 },
+      ],
+    });
+    expect(p!.plans.map((x) => x.name)).toEqual(['Unlimited', '5-pack']);
+    expect(p!.plans[0].notice_period_days).toBe(30);
+    expect(p!.plans[1].notice_period_days).toBeNull();
+  });
+
   it('dedupes names and rejects an all-invalid set', () => {
     expect(
       sanitisePlans({ plans: [{ name: 'X', kind: 'unlimited', monthly_price_cents: null }] }),
