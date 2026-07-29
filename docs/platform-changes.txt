@@ -1,0 +1,354 @@
+TEMPLE - THE CHANGE OF DIRECTION
+What we have changed, what we are changing now, and what comes next
+
+Plain-text summary. The full argument is in docs/vision.md; the
+sequencing is in docs/roadmap.md; the product on one page is in
+docs/how-temple-works.md. This document is the change log of the
+direction itself.
+
+Last updated: 29 July 2026
+
+
+===================================================================
+1. THE CHANGE IN ONE PARAGRAPH
+===================================================================
+
+Temple was gym management software: nine modules that hold a record of
+the gym, the same nine every competitor ships, all of them answering
+the question "what data does a gym have?" We are rebuilding around a
+different question - "what work does an owner do?" - and the answer is
+that the owner does nearly all of it while the software watches and
+takes notes.
+
+So the product stops being a system of record and becomes a system of
+action. Temple does the work: it answers the phone at 2am, chases what
+is owed, notices the member who is fading, finds the cover, fills the
+6am - and shows its work in a record you can audit and a brief you can
+read over coffee. The screens that only exist so a human can operate
+the machinery go away. The screens where craft, judgement or evidence
+live stay exactly as they are.
+
+The one-line version: we built software that remembers everything and
+does nothing; the next Temple does the work and remembers why.
+
+
+===================================================================
+2. WHY WE MOVED
+===================================================================
+
+The evidence came from owner interviews and from our own codebase.
+
+From the interviews: an owner dealing with an issue a day from his
+platform. One paying GBP 319 a month for Wodify. One paying a
+competitor that is also a debt collector, because at least the debt
+collector chases the money. One gluing TeamUp, BoxMate and GoHighLevel
+together. Members still photographing the whiteboard. And the sharpest
+one - a coach entirely happy with his software ("great, can't see any
+way of improving it") whose actual business problem was bringing in
+members, which no module in any product touches. That is the ceiling
+of the model: perfect it, and you have perfectly organised the owner's
+unpaid admin.
+
+From our own code: attendance marked by hand per member per session;
+every store order waiting for someone to press "mark shipped"; five
+separate queues that move only when a human opens them; roughly 35
+owner-only settings RPCs, each one a decision forced in advance, out of
+context, forever; capability switches for jobs nobody does; fifteen
+scheduled jobs of which six are data deletion. And the clincher - we
+shipped a quarter of flawless feature catch-up against two owners'
+request lists, every line delivered, and the shape of the owner's day
+did not change.
+
+The last two months made it explicit. We built world-class visibility
+into failed payments: detected the moment Stripe reports them, humane
+member notices, at-risk revenue split out of the forecast - and then
+the owner gets a list to chase. Cover works the same way: a nightly
+sweep emails everyone who could take the class, then emails the owner
+that nobody has. Our newest code had learned to nag.
+
+The refutation was already running in production: the AI front desk. It
+answers the phone, handles the objection, sends the join link, takes
+the payment and books the first class while nobody is awake. That is
+not a feature. It is the template for everything else.
+
+
+===================================================================
+3. THE FOUR IDEAS WE NOW BUILD BY
+===================================================================
+
+3.1 The unit is the closed loop, not the screen.
+    A loop is trigger, decision, action, guardrail, outcome, memory.
+    The old product renders state and waits for a human. The new one
+    closes loops and shows the receipts.
+
+3.2 The product is an org chart, not a feature list.
+    Four jobs, not forty features: the front desk (enquiries and
+    joining), the money (failed payments, offers), keeping members
+    (churn signals and outreach), and ops (cover, attendance,
+    fulfilment). Internally each is an agent with a job description,
+    authority and a performance review. On the surface the owner never
+    meets an org chart or "hires" anything - they read a job's rules,
+    in plain words, and say "sounds right".
+
+3.3 Authority is a dial that moves rightward as trust is earned.
+    Every action sits at one of three levels: autonomous,
+    approval-gated, or human-reserved. Instead of pre-answering 35
+    settings questions out of context, the owner approves concrete
+    calls in context; after the third identical approval the card
+    offers "always allow this". Policy stops being configured and
+    becomes emergent from approvals.
+
+3.4 The interface is the exception handler.
+    A screen survives if it holds judgement the software must not
+    exercise, trust it has not earned, evidence, or a hand tool for
+    physical work (a class roster at six o'clock is a tool, not admin).
+    Everything else is a loop that should have closed silently.
+    Progress is measured in admin screens deleted.
+
+
+===================================================================
+4. THE NEW SHAPE
+===================================================================
+
+Three destinations for the office, one for the floor, and a talk bar.
+
+  Timeline - the staff home. What happened, as short messages from
+    Temple in one register, one idea per line. What needs you, as a
+    question with exactly two choices and the evidence behind "see the
+    details". What got resolved, as one soft line. Scrolling back is
+    the record.
+
+  Roster - the people who work for you, and Temple's jobs in plain
+    names, each with what it does, this week's number, and how much
+    rope it has ("asks first" or "on its own").
+
+  Goals - "200 members by December" as a brief you have given an
+    employee, scored from live data and reported on in sentences.
+
+  Today - the coach's landing, deliberately the calendar they already
+    know. Same grid, same colours, same controls. What changes is what
+    disappears from it, not how it looks.
+
+  The talk bar - the real navigation. Type or speak a sentence and it
+    routes to the right loop with its guardrail intact.
+
+Two commitments about this shape. First, the member app does not
+change: signing up, buying, booking and tracking already work and are
+how the system gets its data. Anything new there is additive - a push
+nudge, a milestone message - never a redesign. The redesign is the
+staff experience. Second, none of it looks new: every surface is
+assembled from the component kit the app already ships, so it reads as
+Temple from day one rather than a second product bolted on.
+
+Today's roughly 70 routes do not vanish. They demote to a Back Office
+and burn down from there, with two public measures: routes retired,
+and owner interventions per member per month.
+
+
+===================================================================
+5. WHAT WE HAVE ALREADY CHANGED
+===================================================================
+
+5.1 The AI front desk - the proof, shipped before the vision was
+    written. Its own number per gym; it answers calls and texts from
+    the gym's live plans and timetable, works objections into a closed
+    category set, schedules the chase, emails a one-time join link,
+    stages the agreed plan, and books the first class the prospect said
+    they would try. The owner teaches it by talking to it and coaches
+    it by correcting individual turns, which become standing rules on
+    both channels. Self-serve provisioning: the owner presses one
+    button and Temple's own Twilio and Vapi accounts do the rest.
+
+5.2 The Timeline, lit up. A single chronological stream per gym,
+    read-only to begin with, unioning what already happens: members
+    joining, leads captured, payments failing, cover asked and claimed,
+    closures, and pending membership change requests. Every line comes
+    from one formatter so the register never drifts - one idea, plain
+    words, first person only where Temple itself acted, no system
+    vocabulary anywhere. Each kind is capability-gated inside the
+    query, so a coach and an owner see different streams. Membership
+    change requests render as the stream's only cards: one question,
+    two choices, decided in place through the existing path.
+
+5.3 The talk bar. A sentence becomes a change. Rule changes, new
+    classes, new plans, closures and newsletters are parsed into
+    proposals, sanitised client-side against a fixed option table (no
+    invented classes, no free plan sold by accident), and rendered as a
+    card with exactly two choices. Confirming applies through the same
+    writes the manual editors use. Anything it does not handle gets a
+    fixed "not from here yet" - it never guesses.
+
+5.4 Settings became sentences. The rule sheet reads the gym's current
+    settings back as grouped sentences with tappable values - tap
+    "7 days" in "classes can be booked 7 days ahead" and that field's
+    options open as chips. Sixteen fields, one table of options shared
+    with setup, each saved on its own through the same setters the
+    settings cards use.
+
+5.5 Day one is a conversation. A new owner lands in /setup rather than
+    a checklist: nine steps in the checklist's own order, each with a
+    real container in the chat - the branding picker for the logo, the
+    class-types screen's own recurrence editor for the week, the
+    Stripe OAuth handoff (which returns the owner to the conversation
+    where they left it), a plan builder, health screening by waiver or
+    PAR-Q, then team invites, bringing members across and importing
+    workout history. Each step takes the fastest input for that step:
+    tap where tapping is faster, describe it where describing is. The
+    rules step is five one-tap questions with the best practice
+    pre-lit. Nothing is written until the owner confirms, and every
+    write then runs through the owner's own session on the manual
+    editors' exact paths - setup holds no write power of its own.
+    Setup is never lost: the Timeline carries the progress header, and
+    saying "continue setup" in the bar returns to the right step.
+
+5.6 The money loop acts. The first list to die. Off by default per gym
+    and taken on by reading its rules on a Timeline card that only
+    appears while a payment is actually failing. An hourly worker works
+    each failing subscription as a case through a deterministic policy
+    with no model anywhere: the existing notice, then a warm chase
+    while Stripe still retries, then - once Stripe gives up - an offer
+    of a cheaper plan the gym already sells, or a final note. Anything
+    needing judgement becomes a Timeline question with SQL-derived
+    evidence; approving executes it, and "always allow this" moves that
+    action type to autonomous in the same transaction. Member-facing
+    text is filled from owner-approved templates with placeholders
+    only, so no model text ever reaches a member, and sends respect
+    quiet hours in the gym's own timezone. The hard rules live in SQL:
+    one open case per subscription, at most two agent touches, one open
+    question at a time, a rejection ends that case's asks for good,
+    proposals expire visibly after seven days, and no code path can
+    cancel a membership or invent a discount.
+
+5.7 Two more jobs from the same template. Keeping members: a daily
+    worker finds regulars who have gone quiet - attended in the last 90
+    days, nothing for 21, still on an active plan - and proposes one
+    warm note each, capped at three a gym a day, never the same member
+    twice inside 45 days, never about health, and writing anyone off
+    stays human. Finding cover: an hourly worker re-asks the coaches
+    who can claim an unclaimed cover request inside the gym's own
+    warning window, once a day at most; it never assigns a coach and
+    never moves or cancels a class.
+
+5.8 The Roster and Goals. The Roster shows people beside Temple's jobs
+    in plain names, each with a rope pill and, for the owner, dials to
+    move a job between "asks first" and "on its own". Goals turns a
+    stated target into a brief with a score computed from the live
+    roster and never typed in - "143 today, 57 to go, 5 months left".
+    The targets schema had existed for months with no screen; in a
+    system of record a target is a number to stare at, which is why it
+    never got one.
+
+5.9 The programming roadmap. Named training blocks across the year, a
+    block strip above the week the coach is writing, and a year view -
+    inside the existing editor, from the same component kit. The thing
+    the interviews asked for twice. Authoring itself is untouched:
+    Temple never rewrites a coach's programming or invents a workout
+    unasked.
+
+5.10 A newsletter is a sentence. Say what you want said; the draft
+     comes back as the preview card and opens in the existing editor
+     with the gym's brand, audience, topics, A/B and unsubscribe
+     machinery unchanged. The send button remains the approval -
+     nothing sends from the bar. The prompt is forbidden from inventing
+     dates, prices or names.
+
+5.11 The ledger. Agent actions are written to their own table with no
+     client write path at all, and read into the Timeline. This is the
+     substrate for "why did that happen" and for undo.
+
+Alongside all of this, the growth surfaces that shipped just before the
+turn are now part of the substrate rather than the point: the website
+builder (multi-page, real SEO, live schedule and pricing that cannot go
+stale), the storefront, the comms suite, tags and auto-tagging, and the
+import machinery for gyms switching from another platform.
+
+
+===================================================================
+6. WHAT WE ARE DOING NOW AND NEXT
+===================================================================
+
+Remaining, roughly in order:
+
+  - Attendance stops being transcription. Everyone booked marks as
+    attended unless the coach unticks them; no-shows resolve after
+    class; the patterns flow to the retention job with nobody typing
+    them in. The coach's screen does not change - the work inside it
+    disappears.
+
+  - The member in hand. "Show me Marcus" returns the picture rather
+    than a profile page - plan, tenure, the thing worth knowing, and an
+    offer to act - with the full profile one tap deeper.
+
+  - Class fill, which forces push notifications into the product for
+    the first time, attached to a message members actually want
+    (a spot in tomorrow's 6am they usually attend).
+
+  - Sequences described rather than built, over the automation engine
+    that already exists.
+
+  - Store fulfilment and the imported-member invite chase - two more
+    queues that become receipts.
+
+  - Every chart ends in a verb: the analysis verdicts become messages
+    with drafted actions, with the full page surviving in the Back
+    Office for the deep dive. Aggregates of closed categories only,
+    never an individual's health.
+
+  - The scheduled sweeps get their first screen. Every sweep already
+    logs what it did; the only interface today is a SQL query.
+
+  - The Manage hub collapses into the three destinations, and the Back
+    Office burndown is published and worked.
+
+Also open, and deliberately not designed yet: how agent usage is
+metered and billed (Temple is GBP 299 a month plus VAT, all-inclusive,
+today), and the go-to-market wedge - noting that the front desk can
+answer a gym's phone while that gym still runs its old platform, which
+means we can be switched on before we are the system of record we
+replace.
+
+
+===================================================================
+7. WHAT DOES NOT CHANGE
+===================================================================
+
+  - The member app. Book, Track, Programming, the store, plan changes,
+    family accounts, athlete mode: unchanged, because they work and
+    because members feeding the system is what makes every loop
+    possible.
+
+  - The machinery. Every RPC, worker, cron job and RLS policy survives;
+    it stops being something a human operates and becomes the loops'
+    sensors and hands. The capability matrix stays the authorisation
+    substrate - an agent's authority is a row in the same system that
+    decides what a coach may do.
+
+  - Craft and evidence keep their screens. Writing programming, running
+    a class, listening back to a call, reviewing an import's judgement
+    calls, a coach checking their pay.
+
+  - The trust architecture, by name and unchanged. Waivers and health
+    questionnaires are signed by the member's own hand and can never be
+    pre-filled by software. No model-authored free text reaches a
+    health field - an injury mention sets a flag, nothing more.
+    Objections and health markers are closed category sets. One-time
+    auth links travel by email only. Changes to an agent's brief arrive
+    as drafts and wait for the owner. Writing a member off is a human
+    judgement. Prices are the owner's, permanently. Every action is one
+    tap from "why?" and one tap from undo, and every memory the jobs
+    acquire inherits the existing retention and purge discipline.
+
+
+===================================================================
+8. HOW WE WILL KNOW IT WORKED
+===================================================================
+
+  - Owner interventions per member per month, driven down release by
+    release. This is the north star.
+  - Back Office routes retired, and Back Office visits per owner per
+    week. When a screen's visits hit zero for a quarter it is deleted,
+    and the deletion is a release note.
+  - Recovered revenue, saved members, filled classes and placed cover -
+    outcomes in sentences, not funnels.
+
+A screen deleted is progress. A screen rebuilt prettier is not.
