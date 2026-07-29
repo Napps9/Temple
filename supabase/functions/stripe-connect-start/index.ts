@@ -37,7 +37,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Stripe Connect is not configured yet' }, 503);
   }
 
-  let body: { gym_id?: string; origin?: string };
+  let body: { gym_id?: string; origin?: string; return_path?: string };
   try {
     body = await req.json();
   } catch {
@@ -45,6 +45,16 @@ Deno.serve(async (req: Request) => {
   }
   const gymId = body.gym_id;
   const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
+  // Where to land when Stripe returns. Mirrors the DB's CHECK (0210):
+  // one leading slash, no scheme or protocol-relative form, short — the
+  // trusted origin is supplied by us, this is only ever a route on it.
+  const requested = body.return_path ?? '';
+  const returnPath =
+    /^\/[A-Za-z0-9._~/-]*$/.test(requested) &&
+    !requested.startsWith('//') &&
+    requested.length <= 120
+      ? requested
+      : '/management/billing';
   if (!gymId) return json({ error: 'gym_id is required' }, 400);
 
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -67,6 +77,7 @@ Deno.serve(async (req: Request) => {
     state,
     gym_id: gymId,
     origin,
+    return_path: returnPath,
     created_by: userData?.user?.id ?? null,
   });
   if (sErr) return json({ error: 'Could not start the connection' }, 500);

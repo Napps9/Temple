@@ -30,6 +30,7 @@ import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { StatusDisk } from '@/components/StatusDisk';
 import { useGymMembership, useMyProfile, useRole, useSession } from '@/lib/auth';
+import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import {
   applyPlans,
   applyRules,
@@ -1250,22 +1251,64 @@ function ClassBuilderCard({
   );
 }
 
-// The payments step: Stripe needs its own secure page, so this card
-// hands off to the billing screen's proven OAuth round-trip
-// (?backTo=setup returns here afterwards, and progress skips the step
-// once the account is connected).
+// The payments step. Stripe's OAuth has to leave the app — that part is
+// unavoidable — but there is no reason to detour through the billing
+// screen to reach the same button, so the card starts the round-trip
+// itself. The callback lands on billing with ?stripe=connected, whose
+// handler sees the setup flag and returns here, so the owner's
+// experience is: tap in the chat, authorise, back in the chat.
 function StripeCard({ onSkip }: { onSkip: () => void }) {
+  const { data: membership } = useGymMembership();
+  const [error, setError] = useState<string | null>(null);
+
+  const origin =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://app.jointemple.io';
+
+  const connect = useMutation({
+    mutationFn: async () => {
+      if (!membership) throw new Error('Missing context');
+      const { data, error: e } = await supabase.functions.invoke(
+        'stripe-connect-start',
+        { body: { gym_id: membership.gymId, origin, return_path: '/setup' } },
+      );
+      if (e) throw new Error(await functionErrorMessage(e));
+      const url = (data as { url?: string } | null)?.url;
+      if (!url) throw new Error('Could not start the Stripe connection');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem('temple-setup-stripe', '1');
+        } catch {
+          // sessionStorage unavailable — billing's own back link still works
+        }
+        window.location.href = url;
+        return;
+      }
+      throw new Error('Connecting Stripe is only available on the web for now');
+    },
+    onError: (e) =>
+      setError(errorMessage(e, 'Could not start the Stripe connection')),
+  });
+
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
       <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
-        Your own Stripe account takes the money and pays out to your bank —
-        Temple never touches it and takes no cut.
+        Your own Stripe account takes the money and pays out to your bank.
+        Card processing is Stripe's usual rate; Temple adds nothing on top and
+        takes no cut of bookings.
       </Text>
-      <Button
-        onPress={() => router.push('/management/billing?backTo=setup' as never)}>
+      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+        You'll sign in to Stripe (or create an account) and come straight back
+        here. It takes about a minute.
+      </Text>
+      {error ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+      <Button onPress={() => connect.mutate()} loading={connect.isPending}>
         Connect Stripe
       </Button>
-      <Pressable onPress={onSkip} hitSlop={6}>
+      <Pressable onPress={onSkip} disabled={connect.isPending} hitSlop={6}>
         <Text className="text-link text-sm font-medium text-center">Do this later</Text>
       </Pressable>
     </View>

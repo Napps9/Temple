@@ -11,10 +11,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const FALLBACK_ORIGIN = 'https://app.jointemple.io';
 
-function redirect(origin: string, status: 'connected' | 'error'): Response {
+function redirect(
+  origin: string,
+  status: 'connected' | 'error',
+  returnPath = '/management/billing',
+): Response {
   return new Response(null, {
     status: 302,
-    headers: { Location: `${origin}/management/billing?stripe=${status}` },
+    headers: { Location: `${origin}${returnPath}?stripe=${status}` },
   });
 }
 
@@ -33,17 +37,23 @@ Deno.serve(async (req: Request) => {
   const oauthError = url.searchParams.get('error');
 
   // Resolve the state first so we know which app origin to return to.
-  let stateRow: { gym_id: string; origin: string; created_by: string | null } | null =
+  let stateRow: {
+    gym_id: string;
+    origin: string;
+    return_path: string;
+    created_by: string | null;
+  } | null =
     null;
   if (state) {
     const { data } = await service
       .from('stripe_oauth_states')
-      .select('gym_id, origin, created_by')
+      .select('gym_id, origin, return_path, created_by')
       .eq('state', state)
       .maybeSingle();
     stateRow = data ?? null;
   }
   const appOrigin = stateRow?.origin ?? FALLBACK_ORIGIN;
+  const appReturnPath = stateRow?.return_path ?? '/management/billing';
 
   // Single-use: drop the token whatever the outcome.
   const burnState = async () => {
@@ -52,7 +62,7 @@ Deno.serve(async (req: Request) => {
 
   if (oauthError || !code || !stateRow || !STRIPE_SECRET_KEY) {
     await burnState();
-    return redirect(appOrigin, 'error');
+    return redirect(appOrigin, 'error', appReturnPath);
   }
 
   try {
@@ -68,7 +78,7 @@ Deno.serve(async (req: Request) => {
     const data = await res.json();
     if (!res.ok || !data.stripe_user_id) {
       await burnState();
-      return redirect(appOrigin, 'error');
+      return redirect(appOrigin, 'error', appReturnPath);
     }
 
     const accountId = data.stripe_user_id as string;
@@ -101,9 +111,9 @@ Deno.serve(async (req: Request) => {
     }
 
     await burnState();
-    return redirect(appOrigin, 'connected');
+    return redirect(appOrigin, 'connected', appReturnPath);
   } catch {
     await burnState();
-    return redirect(appOrigin, 'error');
+    return redirect(appOrigin, 'error', appReturnPath);
   }
 });
