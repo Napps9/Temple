@@ -426,6 +426,38 @@ The staff area shows up when `can_access_staff_area` is on.
   reuses an existing class type by name instead of duplicating it),
   `applyPlans`, and `close_gym_dates` for closures. Anything else gets a
   fixed "not from here yet" reply — never a guess.
+- **The action registry** (`src/lib/actions/`) — the bar's verbs were
+  hand-built: a field on the tool schema, a sanitiser, a resolver, a card
+  and an apply path, per verb. That reaches five things, not a platform.
+  An action now declares itself once — `name`, `kind` (`do` | `ask`),
+  `capability`, `says` (when it's the right one, written as an owner
+  would say it), typed `args`, `sanitise`, `preview`, `apply` — and
+  everything else derives. The client filters the catalogue through
+  `useCanFn` and sends only what this person may do, so `parse-setup`
+  builds the tool's action enum and the prompt's catalogue per call and
+  the model is never told about an action it couldn't perform. Dispatch
+  is one branch in the Timeline and one card: a `do` gets the two-choice
+  confirm and a receipt, an `ask` renders as the answer. The capability
+  filter is a convenience for the model, never the authorisation — the
+  write still runs in the owner's session against RLS. Shared arg
+  readers (`argMoney` takes 1, "1", "1.50", "£1.50" and refuses a third
+  decimal rather than rounding someone's price; `argInt`, `argString`,
+  `argEnum`) mean model output is re-validated per action. **Adding an
+  action to the bar is adding one entry.** Tests pin the registry's own
+  invariants: unique dotted names, every arg described, every `do` has an
+  `apply` and no `ask` does, and `actionsFor` refuses on both `false` and
+  `undefined` (not-yet-loaded is not permission).
+- **The store, as things you can say** (first registry module) —
+  `store.add_product` ("add a water bottle for £1", "sell hoodies at £35,
+  we have 20", "add the technique guide as a £12 download" — a download
+  goes up hidden, since a digital product with no file attached would be
+  a broken purchase), `store.set_price` ("make the water bottle £2" —
+  resolves the product by what the owner called it, refuses to choose
+  between two that both answer to "bottle", and drops the cached Stripe
+  price id on a recurring product so new subscribers don't sign up at the
+  old rate), and `store.sales` ("what are sales like in the store") over
+  `store_revenue_summary` + `list_store_products`. All three write and
+  read exactly what the store screen does.
 - **Changing classes that already exist** — "cap Saturdays at 20", "move
   the Tuesday 6am half an hour later", "make Wednesday spin 45 minutes".
   `edit_classes` on the change tool names the target (weekday list, class

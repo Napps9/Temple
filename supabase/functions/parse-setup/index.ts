@@ -279,22 +279,106 @@ const PLANS_PROMPT =
   'cancel"), set notice_period_days; otherwise null.\n' +
   '- Never invent plans, prices or notice periods that were not described.';
 
+// The registry's half of the vocabulary. The client sends the actions
+// this particular person is allowed to use, so the tool's action list and
+// the prompt's catalogue are built per call — an action nobody can
+// perform is never described, and adding one to the app's registry is the
+// whole of adding it here.
+type ActionArg = {
+  name: string;
+  type: string;
+  desc: string;
+  required?: boolean;
+  values?: string[];
+  min?: number;
+  max?: number;
+};
+type ActionWire = {
+  name: string;
+  kind: 'do' | 'ask';
+  says: string;
+  args: ActionArg[];
+};
+
+function sanitiseActions(raw: unknown): ActionWire[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ActionWire[] = [];
+  for (const a of raw.slice(0, 200)) {
+    const it = a as Partial<ActionWire>;
+    if (
+      typeof it?.name !== 'string' ||
+      typeof it?.says !== 'string' ||
+      !Array.isArray(it?.args)
+    ) {
+      continue;
+    }
+    out.push({
+      name: it.name,
+      kind: it.kind === 'ask' ? 'ask' : 'do',
+      says: it.says,
+      args: it.args as ActionArg[],
+    });
+  }
+  return out;
+}
+
+function argLine(a: ActionArg): string {
+  const bits = [`${a.name} (${a.type}`];
+  if (a.values) bits.push(`: ${a.values.join(' | ')}`);
+  if (a.min !== undefined || a.max !== undefined) {
+    bits.push(`, ${a.min ?? ''}–${a.max ?? ''}`);
+  }
+  bits.push(a.required ? ', required)' : ')');
+  return `     ${bits.join('')} — ${a.desc}`;
+}
+
+function actionCatalogue(actions: ActionWire[]): string {
+  return (
+    '\nNamed actions. If the sentence is one of these, set `action` to its ' +
+    'name and `args` to the arguments it names — nothing else, and never ' +
+    'an argument they did not state. Prefer a named action over the ' +
+    'general kinds above when both would fit.\n' +
+    actions
+      .map(
+        (a) =>
+          `   ${a.name}${a.kind === 'ask' ? ' (a question, not a change)' : ''} — ${a.says}\n` +
+          a.args.map(argLine).join('\n'),
+      )
+      .join('\n')
+  );
+}
+
 async function parse(
   step: 'timetable' | 'plans' | 'change',
   text: string,
+  actions: ActionWire[] = [],
 ): Promise<unknown | null> {
+  const changeTool =
+    actions.length === 0
+      ? CHANGE_TOOL
+      : {
+          ...CHANGE_TOOL,
+          input_schema: {
+            ...CHANGE_TOOL.input_schema,
+            properties: {
+              ...CHANGE_TOOL.input_schema.properties,
+              action: { type: 'string', enum: actions.map((a) => a.name) },
+              args: { type: 'object' },
+            },
+          },
+        };
   const tool =
     step === 'timetable'
       ? TIMETABLE_TOOL
       : step === 'plans'
         ? PLANS_TOOL
-        : CHANGE_TOOL;
+        : changeTool;
   const system =
     step === 'timetable'
       ? TIMETABLE_PROMPT
       : step === 'plans'
         ? PLANS_PROMPT
-        : changePrompt();
+        : changePrompt() + (actions.length ? actionCatalogue(actions) : '');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -323,7 +407,12 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
 
-  let body: { gym_id?: unknown; step?: unknown; text?: unknown };
+  let body: {
+    gym_id?: unknown;
+    step?: unknown;
+    text?: unknown;
+    actions?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
@@ -354,7 +443,11 @@ Deno.serve(async (req: Request) => {
   if (!API_KEY) return json({ error: 'unavailable' }, 503);
 
   try {
-    const proposal = await parse(step, text);
+    // The client filters the catalogue by the caller's own capabilities
+    // before sending it. That is a convenience for the model, not the
+    // authorisation: the write itself still runs in the owner's session
+    // against RLS, which is what actually decides.
+    const proposal = await parse(step, text, sanitiseActions(body.actions));
     if (!proposal) return json({ error: 'could_not_parse' }, 422);
     return json({ proposal });
   } catch {

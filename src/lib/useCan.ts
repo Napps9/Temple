@@ -80,18 +80,26 @@ export function useMyMemberCapabilities() {
 // `if (canAccessStaff === false)` redirect does not fire on the very
 // first render after a route-group transition.
 export function useCan(capability: Capability): boolean | undefined {
+  return useCanFn()(capability);
+}
+
+// The same decision, as a function, for callers asking about a set rather
+// than a single key — the action registry filters its whole catalogue
+// through this before the bar's vocabulary is sent anywhere.
+export function useCanFn(): (capability: Capability) => boolean | undefined {
   const session = useSession();
   const { data: membership, isLoading: membershipLoading } = useGymMembership();
   const { data: overrides, isLoading: overridesLoading } = useGymCapabilities();
   const { data: memberOverrides, isLoading: memberOverridesLoading } =
     useMyMemberCapabilities();
-  return computeCan(capability, {
-    sessionPending: session === undefined,
-    membershipLoading,
-    role: membership?.role ?? null,
-    overridesLoading,
-    overrides,
-    memberOverridesLoading,
-    memberOverrides,
-  });
+  return (capability) =>
+    computeCan(capability, {
+      sessionPending: session === undefined,
+      membershipLoading,
+      role: membership?.role ?? null,
+      overridesLoading,
+      overrides,
+      memberOverridesLoading,
+      memberOverrides,
+    });
 }

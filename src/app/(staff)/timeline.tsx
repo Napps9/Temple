@@ -22,6 +22,13 @@ import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { REQUIRED_SETUP_KEYS } from './setup';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import {
+  actionsFor,
+  findAction,
+  type ActionPreview,
+  type AnyAction,
+} from '@/lib/actions';
+import type { Capability } from '@/lib/can';
 import { dateRangeWindow } from '@/lib/date-range';
 import { DEFAULT_AUDIENCE } from '@/lib/email/audience';
 import { formatDate } from '@/lib/format-date';
@@ -72,6 +79,7 @@ import {
 } from '@/lib/newsletter-draft';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
+import { useCanFn } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 import {
   formatClock,
@@ -174,6 +182,13 @@ type LocalMsg =
     }
   | { kind: 'add-plans'; proposal: PlansProposal; open: boolean }
   | { kind: 'newsletter'; draft: NewsletterDraft; open: boolean }
+  | {
+      kind: 'action';
+      spec: AnyAction;
+      args: never;
+      preview: ActionPreview;
+      open: boolean;
+    }
   | { kind: 'member-picks'; picks: { profileId: string; name: string }[] }
   | { kind: 'member-card'; member: MemberCard }
   | {
@@ -288,6 +303,7 @@ export default function Timeline() {
   const session = useSession();
   const role = useRole();
   const isOwner = role === 'owner';
+  const can = useCanFn();
   const colors = useThemeColors();
   const brand = useGymBrand();
   const qc = useQueryClient();
@@ -485,7 +501,12 @@ export default function Timeline() {
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke('parse-setup', {
-        body: { gym_id: gymId, step: 'change', text },
+        body: {
+          gym_id: gymId,
+          step: 'change',
+          text,
+          actions: actionsFor((c) => can(c as Capability)),
+        },
       });
       if (error) throw error;
       const p = (data as { proposal?: Record<string, unknown> })?.proposal ?? {};
@@ -520,6 +541,30 @@ export default function Timeline() {
       if (p.find_member) {
         const query = sanitiseMemberQuery(p.find_member);
         if (query) cards.push(...(await lookupMember(query)));
+      }
+      // Registry actions. One dispatch for every module that lands here,
+      // rather than a branch per verb.
+      const spec = findAction(p.action);
+      if (spec && session?.user.id) {
+        const parsed = spec.sanitise((p.args ?? {}) as Record<string, unknown>);
+        if (parsed === null || parsed === undefined) {
+          cards.push({
+            kind: 'temple',
+            text: 'I got the gist but not the details — say it again with the name and the number in it.',
+          });
+        } else {
+          // Type-erased on the way in, checked on the way out: the spec's
+          // own sanitiser is what guarantees this matches its preview.
+          const args = parsed as never;
+          const ctx = { supabase, gymId, userId: session.user.id };
+          cards.push({
+            kind: 'action',
+            spec,
+            args,
+            preview: await spec.preview(args, ctx),
+            open: spec.kind === 'do',
+          });
+        }
       }
 
       if (cards.length > 0) push(...cards);
@@ -719,6 +764,29 @@ export default function Timeline() {
     }
   };
 
+  const confirmAction = async (
+    index: number,
+    msg: Extract<LocalMsg, { kind: 'action' }>,
+  ) => {
+    if (!gymId || !session?.user.id || busy || !msg.spec.apply) return;
+    setBusy(true);
+    try {
+      const receipt = await msg.spec.apply(msg.args, {
+        supabase,
+        gymId,
+        userId: session.user.id,
+      });
+      closeCard(index);
+      push({ kind: 'receipt', text: receipt });
+      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
+      qc.invalidateQueries({ queryKey: ['store-products', gymId] });
+    } catch {
+      push({ kind: 'temple', text: "That didn't save — try again." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const openMemberPick = async (profileId: string, name: string) => {
     if (!gymId || busy) return;
     setBusy(true);
@@ -837,6 +905,7 @@ export default function Timeline() {
               onConfirmClosure={confirmClosure}
               onConfirmNewsletter={confirmNewsletter}
               onConfirmClassEdit={confirmClassEdit}
+              onConfirmAction={confirmAction}
               onPickMember={openMemberPick}
               onDismiss={closeCard}
               onEditRule={applySingleRule}
@@ -931,6 +1000,7 @@ function LocalRow({
   onConfirmClosure,
   onConfirmNewsletter,
   onConfirmClassEdit,
+  onConfirmAction,
   onPickMember,
   onDismiss,
   onEditRule,
@@ -950,6 +1020,10 @@ function LocalRow({
   onConfirmClassEdit: (
     index: number,
     msg: Extract<LocalMsg, { kind: 'class-edit' }>,
+  ) => void;
+  onConfirmAction: (
+    index: number,
+    msg: Extract<LocalMsg, { kind: 'action' }>,
   ) => void;
   onPickMember: (profileId: string, name: string) => void;
   onDismiss: (index: number) => void;
@@ -1075,6 +1149,47 @@ function LocalRow({
         yes="Yes, change them"
         busy={busy}
         onYes={() => onConfirmClassEdit(index, msg)}
+        onNo={() => onDismiss(index)}
+      />
+    );
+  }
+  // One card for every registry action. A `do` keeps the two choices; an
+  // `ask` is already the answer, so it renders as one.
+  if (msg.kind === 'action') {
+    if (msg.spec.kind === 'ask') {
+      return (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+            {msg.preview.title}
+          </Text>
+          {msg.preview.lines.map((l) => (
+            <Text
+              key={l}
+              className="text-gray-500 dark:text-gray-400 text-[13.5px] leading-[19px]">
+              {l}
+            </Text>
+          ))}
+        </View>
+      );
+    }
+    if (!msg.open) return null;
+    // A preview with nothing to show is the action saying it couldn't
+    // find what was named — the title carries that, and there is nothing
+    // to confirm.
+    if (msg.preview.lines.length === 0) {
+      return (
+        <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
+          {msg.preview.title}
+        </Text>
+      );
+    }
+    return (
+      <ProposalCard
+        title={msg.preview.title}
+        lines={msg.preview.lines}
+        yes="Yes, do it"
+        busy={busy}
+        onYes={() => onConfirmAction(index, msg)}
         onNo={() => onDismiss(index)}
       />
     );
