@@ -230,17 +230,23 @@ approvals*. Settings screens don't get redesigned; they get outgrown.
 
 ### Model 3 — The interface is the exception handler
 
-In a system of action, a screen is an admission of failure. UI exists for
-exactly three things: judgement the AI must not exercise (human-reserved
-decisions), trust it hasn't earned yet (approval cards), and evidence
-(the record of what happened). Everything else is a loop that should have
-closed silently.
+In a system of action, an *admin* screen is an admission of failure. UI
+exists for exactly four things: judgement the AI must not exercise
+(human-reserved decisions), trust it hasn't earned yet (approval cards),
+evidence (the record of what happened), and tools — surfaces for work that
+is physical and immediate, where a screen is a hand tool, not a filing
+cabinet. A class roster at six o'clock is a tool: the coach glances at
+who's booked, ticks people in, reads the whiteboard. What dies is the
+admin residue around it — the marking, the transcribing, the chasing — not
+the tool itself. Everything else is a loop that should have closed
+silently.
 
 Three consequences. First, the roadmap inverts: progress is measured in
-screens *deleted*, and the Manage hub's twenty cards become a burndown
-chart. Second, the north-star metric becomes **owner interventions per
-member per month**, driven down release by release. Third, every surviving
-screen must justify itself as one of the three exception types, or die.
+admin screens *deleted*, and the Manage hub's twenty cards become a
+burndown chart. Second, the north-star metric becomes **owner
+interventions per member per month**, driven down release by release.
+Third, every surviving screen must justify itself as one of the four
+types, or die.
 
 The models nest: *teammates* (who) run *loops* (what) under the *approval
 economy* (how much authority), and the *interface* renders only the
@@ -402,14 +408,22 @@ colleague.
 
 ## 7. Navigation
 
-Three destinations. **Timeline** (home), **Roster**, **Goals**. Nothing
-else at the top level.
+For the office: three destinations. **Timeline** (home), **Roster**,
+**Goals**. Nothing else at the top level.
+
+For the floor: one. **Today** — the coach's landing. Today's classes as an
+agenda with fill at a glance, then the roster: check-in with big targets,
+first-timer flags, the whiteboard. The Timeline replaces the admin, not
+the tools — a roster at six o'clock is not admin, it is the job. What the
+Timeline takes from this screen is the residue: attendance marks itself
+from bookings and check-ins (the coach corrects exceptions with a tap),
+and no-show patterns flow to Retention without anyone transcribing them.
 
 Everything else is reachable by asking. The talk bar — type or speak — is
 the primary navigation: "show me Marcus's payment history" beats
 remembering which of twenty cards holds it. Navigation stops being a map of
-the database and becomes a conversation with your staff, plus two places
-to check their work.
+the database and becomes a conversation with your staff, plus a handful of
+places to check their work or run the room.
 
 The honest second half: today's ~70 routes do not vanish on day one. They
 demote to the Back Office — reachable, unloved, each screen carrying a

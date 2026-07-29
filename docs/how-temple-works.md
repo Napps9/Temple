@@ -6,7 +6,7 @@ Companion to `docs/vision.md` (the argument) and
 
 ## The shape
 
-Three places and a talk bar.
+Three places, a talk bar — and Today, for whoever is coaching.
 
 - **Timeline** — home. What happened, as short messages from Temple; what
   needs you, as a question with two choices; what got resolved, as one
@@ -15,6 +15,10 @@ Three places and a talk bar.
   its own versus what it asks about, and where you coach it.
 - **Goals** — what you're aiming at. "200 members by December" as a brief
   you've given an employee, with a weekly note on how it's going.
+- **Today** — the coach's landing. Today's classes with fill at a glance,
+  then the class roster: check-in, first-timer flags, the whiteboard.
+  The Timeline replaces the admin, not the tools; running a class keeps
+  a screen because the work is physical and immediate.
 
 Everything else is a conversation. The owner never learns an admin
 interface; they describe what they want and confirm what comes back.
@@ -55,6 +59,17 @@ its own, it only builds what it was told. Upgrades and downgrades stop
 being a policy screen: a member asks their own Temple "can I move up to
 unlimited?", the pro-rata answer is computed and applied within the rules,
 and the owner sees a line in the Timeline.
+
+### Run today's classes
+
+The coach opens Today and sees the day: who's booked, how full each class
+is, who's on the waitlist, who's brand new. In the class, the roster has
+big tick targets and the workout underneath — the register and the
+whiteboard in one place. The admin around it disappears rather than the
+screen: everyone booked is marked as attended unless the coach unticks
+them, no-shows resolve after class without transcription, and the
+patterns (a regular gone quiet, a first-timer who didn't show) flow to
+Retention on their own.
 
 ### Programming
 
