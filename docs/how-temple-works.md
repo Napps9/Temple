@@ -138,6 +138,40 @@ owner reads about it afterwards. Today's machinery (range requests,
 qualification gating, nightly warnings) becomes the loop's sensors; the
 daily nag emails become unnecessary.
 
+### Reach your members
+
+Nobody wants to build emails — they want things said to members, in the
+gym's clothes. Branding is a standing guarantee, not a workflow: every
+email Temple writes carries the gym's logo, colours and footer
+automatically, and the one real button (the sending domain's DNS) lives
+at go-live. From there, three shapes:
+
+- **A newsletter is a sentence.** "Send a newsletter this week —
+  Christmas hours, the new barbell club, a shout-out for Sarah." The
+  draft *is* the preview card, adjusted in words, sent or scheduled with
+  one tap. Subject testing just happens; the receipt says which line won
+  and what people tapped. To all members, a cohort, or an audience said
+  in words ("everyone who hasn't been in for three weeks") — resolved by
+  the tag machinery that already exists, with new audiences always
+  approval-gated.
+- **A sequence is described.** "When someone joins, welcome them, nudge
+  them to book, check in after two weeks." Temple lays it out as steps,
+  writes each email in the gym's voice, the owner reads and turns it on
+  — and it only applies to people who join from then on, exactly as the
+  automation engine already behaves. Changes are sentences: "make the
+  check-in a week later."
+- **The front desk already talks.** Its voice — taught by interview,
+  corrected turn by turn — becomes the shared voice everything above
+  writes in. One gym, one voice, taught once.
+
+What survives as machinery is everything the Comms Suite shipped this
+quarter: branded compile-to-HTML, frozen scheduled sends, A/B splits,
+idempotent fan-out, topics and one-click unsubscribe, sending domains.
+What demotes to the Back Office is the authoring: the block builder (kept
+for pixel control), the audience builder, the automation editor, and the
+funnel screens — replaced by drafts, steps, and one-line receipts in the
+Timeline.
+
 ### A member is fading
 
 Attendance slides; Temple notices, reaches out in the gym's voice, tracks
