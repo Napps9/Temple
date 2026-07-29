@@ -591,10 +591,13 @@ export const CUSTOM_RULE_UNITS: Partial<Record<RuleField, CustomUnit[]>> = {
 // The cancel rule takes a shape as well as a number, so its custom entry
 // asks which kind first. `abs` reads the amount as an hour of the
 // evening before; the two relative units read it as an amount of time.
+// Labels sit after the number in the chip, so they have to read that
+// way round: "2 hours before", "30 minutes before", "22:00 the night
+// before".
 export const LATE_CANCEL_UNITS: CustomUnit[] = [
   { label: 'hours before', per: 60 },
   { label: 'minutes before', per: 1 },
-  { label: 'the night before, from', per: 0 },
+  { label: ':00 the night before', per: 0 },
 ];
 
 export function customRuleValue(

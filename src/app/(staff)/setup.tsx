@@ -26,7 +26,7 @@ import {
   validateRecurrence,
   type RecurrenceForm,
 } from '@/components/RecurrenceEditor';
-import { CustomRuleValue } from '@/components/CustomRuleValue';
+import { CustomRuleChip } from '@/components/CustomRuleValue';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { StatusDisk } from '@/components/StatusDisk';
@@ -53,7 +53,6 @@ import {
   sanitiseRuleChanges,
   sanitiseTimetable,
   timetableSummary,
-  unitsFor,
   type PlansProposal,
   type RuleChoices,
   type RuleField,
@@ -1113,7 +1112,6 @@ function RuleQuestion({
   onAnswer: (q: number, optionIndex: number) => void;
   onCustom: (q: number, value: RuleChoices[RuleField]) => void;
 }) {
-  const [custom, setCustom] = useState(false);
   const q = RULE_QUESTIONS[msg.q];
   return (
     <View className="gap-2.5">
@@ -1123,19 +1121,8 @@ function RuleQuestion({
           {q.prompt}
         </Text>
       </View>
-      {!msg.open ? null : custom ? (
-        <View className="pl-9">
-          <CustomRuleValue
-            field={q.id}
-            onSet={(value) => {
-              setCustom(false);
-              onCustom(msg.q, value);
-            }}
-            onCancel={() => setCustom(false)}
-          />
-        </View>
-      ) : (
-        <View className="flex-row flex-wrap gap-2 pl-9">
+      {msg.open ? (
+        <View className="flex-row flex-wrap items-start gap-2 pl-9">
           {q.options.map((o, i) => (
             <Pressable
               key={o.label}
@@ -1153,17 +1140,9 @@ function RuleQuestion({
               </Text>
             </Pressable>
           ))}
-          {unitsFor(q.id) ? (
-            <Pressable
-              onPress={() => setCustom(true)}
-              className="px-4 py-2.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
-              <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                Something else
-              </Text>
-            </Pressable>
-          ) : null}
+          <CustomRuleChip field={q.id} onSet={(v) => onCustom(msg.q, v)} />
         </View>
-      )}
+      ) : null}
     </View>
   );
 }

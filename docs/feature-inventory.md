@@ -1058,13 +1058,19 @@ The staff area shows up when `can_access_staff_area` is on.
   start booking stays open, membership-to-book, and week start — with
   the best practice as the first (pre-lit) chip and each answer echoed
   as a chat bubble. **The presets are the fast answer, not the whole
-  answer**: every rule whose column takes an off-menu value carries a
-  "Something else" chip opening `CustomRuleValue` — a number plus the
-  unit the owner would say it in (days/weeks/hours, minutes/hours,
-  months), converted to whatever the column stores and *refused with the
-  range* rather than clamped, since a booking window quietly halved is
-  worse than being told the limit. The same editor opens from the rule
-  sheet's value tokens, so a value reads identically however it was set.
+  answer**: every rule whose column takes an off-menu value ends its chip
+  row with `CustomRuleChip` — a number, the unit the owner would say it in
+  (tap to cycle: days/weeks/hours, minutes/hours, months), and an arrow.
+  It is **one more chip, not a mode**: the presets stay visible and
+  tappable throughout, because a picker that hides the choices in order to
+  let you type is worse than the short menu it was meant to widen. One
+  component, two sizes, so it sits level with the question chips or the
+  sheet's smaller ones; a field with a single sensible unit shows it as
+  plain text with nothing to cycle. Values convert to whatever the column
+  stores and are *refused with the range* rather than clamped, since a
+  booking window quietly halved is worse than being told the limit. The
+  same chip closes the rule sheet's token options, so a value reads
+  identically however it was set.
   **Late-cancel became a value rather than three presets**: the
   class-type columns behind it hold either an absolute time the night
   before or any number of minutes, and the old three-option enum was our

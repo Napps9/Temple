@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
@@ -5,103 +6,112 @@ import {
   customRuleHint,
   customRuleValue,
   unitsFor,
-  type CustomUnit,
   type RuleChoices,
   type RuleField,
 } from '@/lib/setup-flow';
 
-// The presets answer most gyms; this answers the rest. Opened from the
-// "Something else" chip on a rule question or a sheet token, it takes a
-// number and the unit the owner would say it in and converts to whatever
-// the column stores. A value outside what the column can hold is refused
-// here rather than silently clamped, because a booking window quietly
-// halved is worse than being told the limit.
-export function CustomRuleValue({
+// The off-menu answer, as one more chip in the same row. It is not a mode
+// you enter: the presets stay tappable the whole time, because a picker
+// that hides the choices to let you type is worse than the short menu it
+// was meant to widen. Number, then the unit you'd say it in — tap the
+// unit to cycle — then the arrow, or just press enter.
+export function CustomRuleChip({
   field,
   onSet,
-  onCancel,
+  size = 'lg',
 }: {
   field: RuleField;
   onSet: (value: RuleChoices[RuleField]) => void;
-  onCancel: () => void;
+  // Sized to sit level with the chips beside it: the question chips are
+  // roomier than the rule sheet's.
+  size?: 'sm' | 'lg';
 }) {
   const units = unitsFor(field);
   const [amount, setAmount] = useState('');
-  const [unit, setUnit] = useState<CustomUnit | null>(units?.[0] ?? null);
+  const [unitIndex, setUnitIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  if (!units || !unit) return null;
+  if (!units) return null;
 
-  const hint = customRuleHint(field);
-  // The cancel rule's absolute shape asks for an hour of the evening, not
-  // a length of time, so the field's own prompt changes with the unit.
-  const absolute = unit.per === 0;
+  const unit = units[unitIndex % units.length];
+  const ready = amount.trim().length > 0;
+  const big = size === 'lg';
 
   function submit() {
     const n = Number(amount.trim());
-    if (!amount.trim() || !Number.isFinite(n)) {
-      setError('Give me a number');
+    if (!ready || !Number.isFinite(n)) {
+      setError('That needs to be a number');
       return;
     }
-    const value = customRuleValue(field, n, unit!);
+    const value = customRuleValue(field, n, unit);
     if (value === null) {
-      setError(hint ? `That one has to be ${hint}` : "That's outside what I can set");
+      const hint = customRuleHint(field);
+      setError(hint ? `Has to be ${hint}` : "That's outside what I can set");
       return;
     }
+    setAmount('');
+    setError(null);
     onSet(value);
   }
 
   return (
-    <View className="gap-2 pb-1">
-      <View className="flex-row flex-wrap gap-1.5">
-        {units.map((u) => {
-          const on = u.label === unit.label;
-          return (
-            <Pressable
-              key={u.label}
-              onPress={() => {
-                setUnit(u);
-                setError(null);
-              }}
-              className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
-                on
-                  ? 'bg-primary/10 border-primary'
-                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-              }`}>
-              <Text
-                className={`text-[13px] font-semibold ${
-                  on ? 'text-primary' : 'text-gray-700 dark:text-gray-300'
-                }`}>
-                {u.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      <View className="flex-row items-center gap-2">
+    <View className="gap-1">
+      <View
+        className={`flex-row items-center gap-1 rounded-full border border-dashed ${
+          big ? 'pl-4 pr-1.5 py-1.5' : 'pl-3 pr-1 py-1'
+        } ${
+          error
+            ? 'border-red-400 dark:border-red-500'
+            : 'border-gray-300 dark:border-gray-600'
+        }`}>
         <TextInput
           value={amount}
           onChangeText={(t) => {
-            setAmount(t);
+            setAmount(t.replace(/[^\d]/g, ''));
             setError(null);
           }}
           keyboardType="number-pad"
-          autoFocus
-          placeholder={absolute ? 'Hour, 0–23' : hint ?? ''}
+          placeholder="00"
           placeholderTextColor="#9CA3AF"
           onSubmitEditing={submit}
-          className="w-28 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50"
+          accessibilityLabel="A different amount"
+          className={`text-center text-gray-900 dark:text-gray-50 font-semibold ${
+            big ? 'w-10 text-[15px]' : 'w-9 text-[13px]'
+          }`}
         />
         <Pressable
-          onPress={submit}
-          className="px-4 py-2 rounded-full bg-primary active:opacity-70">
-          <Text className="text-white text-[13px] font-semibold">Set it</Text>
+          onPress={() => {
+            setUnitIndex((i) => i + 1);
+            setError(null);
+          }}
+          disabled={units.length === 1}
+          hitSlop={6}
+          accessibilityLabel={`Unit: ${unit.label}. Tap to change.`}>
+          <Text
+            className={`text-gray-500 dark:text-gray-400 font-semibold ${
+              big ? 'text-sm' : 'text-[13px]'
+            }`}>
+            {unit.label}
+            {units.length > 1 ? ' ⌄' : ''}
+          </Text>
         </Pressable>
-        <Pressable onPress={onCancel} hitSlop={6}>
-          <Text className="text-gray-400 dark:text-gray-500 text-[13px]">Cancel</Text>
+        <Pressable
+          onPress={submit}
+          disabled={!ready}
+          accessibilityLabel="Use this"
+          className={`rounded-full items-center justify-center ${
+            big ? 'w-8 h-8' : 'w-6 h-6'
+          } ${ready ? 'bg-primary' : 'bg-gray-100 dark:bg-gray-800'}`}>
+          <Ionicons
+            name="arrow-forward"
+            size={big ? 15 : 13}
+            color={ready ? '#FFFFFF' : '#9CA3AF'}
+          />
         </Pressable>
       </View>
       {error ? (
-        <Text className="text-red-600 dark:text-red-400 text-[12.5px]">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-[11.5px] pl-3">
+          {error}
+        </Text>
       ) : null}
     </View>
   );
