@@ -776,12 +776,39 @@ The staff area shows up when `can_access_staff_area` is on.
   completes it. The card disappears once every required step is done.
   Backed by `get_gym_setup_progress(gym_id)` so it never drifts from
   reality — delete a class type and the step flips back open. A new
-  owner with required steps still pending is also redirected to a
-  dedicated full-screen `/onboarding` version of the same checklist on
-  sign-in; **Skip for now** permanently dismisses it
-  (`gyms.onboarding_dismissed_at`, set via `dismiss_gym_onboarding`) so
-  it doesn't reappear next sign-in — the inline Manage card stays
-  available regardless, for whenever they want to finish.
+  owner with required steps still pending is redirected to
+  **conversational setup at `/setup`** on sign-in (below); the
+  full-screen `/onboarding` checklist survives as its escape hatch
+  ("Prefer the checklist?") and via **Skip for now**, which permanently
+  dismisses the redirect (`gyms.onboarding_dismissed_at`, set via
+  `dismiss_gym_onboarding`) — the inline Manage card stays available
+  regardless, for whenever they want to finish.
+- **Conversational setup** (`/setup`, owner-only) — day one as a
+  conversation, not forms. A fixed script (timetable → prices → rules →
+  go live): the owner describes their week ("CrossFit at 6, 7 and 9:30
+  weekday mornings, 6pm evenings, 9am Saturday, cap 16") and their
+  prices in plain English; the `parse-setup` edge function
+  (Claude Sonnet, tool-forced JSON, gated on
+  `effective_can(gym, 'can_edit_classes')`, 503 without an API key)
+  turns each into a proposal; the client sanitises it
+  (`src/lib/setup-flow.ts` — clamped times/days/prices, no invented
+  classes, a recurring plan with no price is dropped rather than sold
+  free) and renders a preview card with exactly two choices. **Nothing
+  is written until the owner confirms, and every write then runs
+  through the owner's own session on the manual editors' exact paths**
+  (`src/lib/setup-apply.ts`: `class_types` + `class_recurrences`
+  inserts + `extend_recurrence`, `membership_plans` inserts,
+  `set_gym_operating_defaults`) — setup holds no write power of its
+  own. The rules step offers the best-practice bundle ("book up to 7
+  days ahead, free cancel until 9pm the night before") — the booking
+  window lands on the gym row, the 9pm-night-before cancel policy on
+  the class types, since gym-level `day_before` is retired. Steps whose
+  setup-progress rows are already done are skipped, so a returning
+  owner isn't re-asked. Go-live lists what still needs a real button
+  (Stripe, waiver, logo) as deep links, then "Go to your gym" or "I'll
+  finish these later" (the same permanent dismiss). Parse failures and
+  the no-API-key path degrade honestly to the checklist. Pure logic
+  unit-tested (`setup-flow.test.ts`, `setup-apply.test.ts`).
 
 The Manage page presents a tab strip:
 

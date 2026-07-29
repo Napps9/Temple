@@ -174,7 +174,9 @@ export default function Index() {
         (r) => REQUIRED_SETUP_KEYS.has(r.step_key) && !r.done,
       );
       if (requiredPending && !onboardingDismissed.data) {
-        return <Redirect href="/onboarding" />;
+        // Conversational setup is the front door; /onboarding survives as
+        // the checklist escape hatch linked from inside it.
+        return <Redirect href="/setup" />;
       }
     }
     return <Redirect href="/classes" />;
