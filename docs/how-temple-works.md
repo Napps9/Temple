@@ -104,48 +104,45 @@ Retention on their own.
 
 ### Programming
 
-One rule anchors everything here: **Temple never rewrites a coach's
-programming or invents a workout unasked.** Programming is the coach's
-craft; Temple's job is to make writing it frictionless and reading it
-universal. Five shapes:
+Two rules anchor this. **Temple never rewrites a coach's programming or
+invents a workout unasked** — the craft stays the coach's. And
+**authoring keeps its existing UI**: writing a week is spatial,
+iterative, tool work — the programming calendar editor coaches already
+know stays the writing surface, same as Today kept the class calendar.
+Chat earns its keep at the edges, never as the pen.
 
-- **The week, pasted once.** The coach writes wherever they already
-  write — a doc, notes, dictation — and pastes the lot. Temple structures
-  it onto the calendar: days, class types, sections, with the format,
-  category and length read automatically (the `classify-programming`
-  reader is live today) and the coach's words untouched. Every
-  percentage resolves to each member's own numbers (live today);
-  leaderboards default on for scored pieces and off for strength, said
-  otherwise in words. One paste replaces eleven section forms.
-- **Programming you buy.** A gym on PRVN, Mayhem or CrossFit Affiliate
-  Programming pastes or forwards the provider's week and it lands the
-  same way — structuring is provider-agnostic. Stated demand from the
-  interviews.
-- **The block and the roadmap.** "Eight-week squat cycle after
-  Christmas, deload every fourth week" becomes a shared plan coaches
-  see against the calendar — the year overview owners asked for. Later,
-  Temple drafts each week from the block for the coach to read and post:
-  drafting from a template the coach set is the plausible rung on the
-  ladder; adapting to the cohort stays the flagged bet, aggregate
-  signals only.
-- **Keeping it healthy.** The verdicts become messages with hands:
-  "Thursday is shoulder-heavy right after Tuesday's push day — want a
-  swap suggestion?" Aggregate counts of closed categories only, never an
-  individual's health — the same discipline the front desk obeys. The
+- **Writing the week** — the existing calendar editor, made lighter
+  invisibly: the format/category pickers and untagged-sections
+  housekeeping disappear because the classifier reads what the coach
+  wrote (live today); percentages resolve to each member's own numbers
+  (live today); leaderboards default sensibly with a per-section
+  override where it always was. Nothing about how a coach writes
+  changes; the admin around the writing evaporates.
+- **The roadmap — the missing workflow.** A year overview of named
+  blocks ("Squat strength — 8 weeks, deload week 4", "Open prep",
+  "Engine block"), set by the owner or head coach, shared with the
+  team — the thing the interviews asked for twice. It lives as a view
+  on the programming calendar: a block strip above the week the coach
+  is writing ("Squat cycle · week 3 of 8 · deload next week"), and a
+  zoomed-out year. Coaches always know where in the plan they are, and
+  programming in advance finally has somewhere to live.
+- **Block-aware analysis.** The roadmap makes the verdicts smarter: a
+  high heavy-share in week 3 of a strength cycle is the plan working,
+  not a flag. Suggestions come as messages with hands ("Thursday is
+  shoulder-heavy right after Tuesday's push day — want a swap?"),
+  aggregate closed categories only, never an individual's health. The
   Analysis page survives in the Back Office for the deep dive.
-- **Individual programming.** "Put Marcus on a 3-day upper/lower block
-  for six weeks, nothing overhead" drafts the whole block from the
-  coach's constraints, weights filled from Marcus's own lifts, read in
-  full before it ships — drafting happens only on request, and paid
-  programme access keeps its existing store wiring. Programming talk
-  never writes to health records; the injury tracker remains the only
-  health surface.
-
-What demotes: the per-section category/format pickers (inferred from the
-text), the untagged-sections housekeeping (tagged on arrival), and
-per-section leaderboard toggles (a default plus a sentence). The
-programming calendar and the whiteboard stay — they are tools, and the
-whiteboard is Today's in-class card.
+- **Programming you buy.** A gym on PRVN, Mayhem or CrossFit Affiliate
+  Programming pastes the provider's week and it lands *in the calendar
+  editor as a draft* for the coach to review and post — intake by
+  paste, review in the tool.
+- **Individual programming** — the existing per-member calendar editor
+  stays. On request ("put Marcus on a 3-day upper/lower block, nothing
+  overhead") Temple drafts into that editor from the coach's stated
+  constraints, weights from the member's own lifts — the coach finishes
+  and ships it from the tool. Paid access keeps its store wiring, and
+  programming talk never writes to health records; the injury tracker
+  remains the only health surface.
 
 ### Look after one member
 
