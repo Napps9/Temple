@@ -14,13 +14,17 @@ import {
   View,
 } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { MemberTagChip } from '@/components/MemberTagChip';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { REQUIRED_SETUP_KEYS } from './setup';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import { dateRangeWindow } from '@/lib/date-range';
 import { DEFAULT_AUDIENCE } from '@/lib/email/audience';
+import { formatDate } from '@/lib/format-date';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
 import {
   choicesFromGym,
@@ -28,6 +32,22 @@ import {
   type ClassTypeCancelRow,
   type GymRulesRow,
 } from '@/lib/rules-read';
+import {
+  classEditWindow,
+  DEFAULT_EDIT_WEEKS,
+  describeEditTarget,
+  matchMembers,
+  memberStatus,
+  sanitiseClassEdit,
+  sanitiseMemberQuery,
+  type ClassEditRequest,
+  type MemberStatus,
+} from '@/lib/chat-lookup';
+import {
+  describeBulkEdit,
+  describeBulkEditResult,
+  type BulkEditResult,
+} from '@/lib/bulk-class-edit';
 import { applyPlans, applyRules, applyTimetable } from '@/lib/setup-apply';
 import {
   fieldLabel,
@@ -63,10 +83,14 @@ import type { Json } from '@/types/database';
 
 // The Timeline (docs/roadmap.md phases 1, 3 and 4): the staff home. The
 // stream is the gym's existing activity, read-only; the talk bar is the
-// owner's pen — rules, new classes, new plans and closures as sentences,
-// parsed to a proposal, confirmed on a card, applied through the same
-// writes the manual editors use. Scope is narrow and honest: anything
-// else gets a plain "not from here yet", never a guess.
+// owner's pen — rules, new classes, new plans, closures and edits to the
+// classes already on the calendar, as sentences, parsed to a proposal,
+// confirmed on a card, applied through the same writes the manual editors
+// use. The bar also answers: asking about a member resolves the name and
+// brings the member back as a card, with the profile a tap behind it.
+// Reads run in the owner's own session under RLS, so the bar sees exactly
+// what the screens see. Scope is narrow and honest: anything else gets a
+// plain "not from here yet", never a guess.
 
 function useTimelineFeed(gymId: string | undefined) {
   return useQuery({
@@ -150,13 +174,37 @@ type LocalMsg =
     }
   | { kind: 'add-plans'; proposal: PlansProposal; open: boolean }
   | { kind: 'newsletter'; draft: NewsletterDraft; open: boolean }
+  | { kind: 'member-picks'; picks: { profileId: string; name: string }[] }
+  | { kind: 'member-card'; member: MemberCard }
+  | {
+      kind: 'class-edit';
+      req: ClassEditRequest;
+      window: { start: string; end: string; bounded: boolean };
+      sessionIds: string[];
+      sample: string[];
+      open: boolean;
+    }
   | { kind: 'rules-sheet' };
+
+type MemberCard = {
+  profileId: string;
+  name: string;
+  joinedAt: string;
+  status: MemberStatus;
+  planName: string | null;
+  priceCents: number | null;
+  creditBalance: number | null;
+  compCredits: number | null;
+  pastDueSince: string | null;
+  tags: { label: string; color: string; source: 'manual' | 'auto' }[];
+};
 
 const CANNOT_COPY =
   "That's not something I can change from here yet — the Manage screens still cover it.";
 const NO_CHANGE_COPY =
-  "I didn't catch a change in that. Try it like: 'free cancel until 2 hours " +
-  "before', 'add a 7am Wednesday spin class', 'close the gym 24 to 28 " +
+  "I didn't catch that one. Try it like: 'show me Marcus', 'cap Saturdays " +
+  "at 20', 'move the Tuesday 6am half an hour later', 'free cancel until 2 " +
+  "hours before', 'add a 7am Wednesday spin class', 'close the gym 24 to 28 " +
   "December', 'send a newsletter — Christmas hours and the new barbell club', " +
   "or 'continue setup'.";
 
@@ -165,6 +213,47 @@ const SETUP_INTENT =
   /^(continue|finish|resume|carry on with|back to|go to|open|complete)?\s*(the\s+)?set\s?up$|^set\s?up\s+(please|again)$/i;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+type CohortRow = {
+  profile_id: string;
+  joined_at: string;
+  is_intro: boolean;
+  is_active: boolean;
+  is_expiring_soon: boolean;
+  is_expired: boolean;
+  days_until_expiry: number | null;
+  profiles: { full_name: string | null } | null;
+};
+
+type SubLookupRow = {
+  status: string;
+  credit_balance: number | null;
+  price_cents: number | null;
+  membership_plans: { name: string } | null;
+};
+
+type SessionLookupRow = {
+  id: string;
+  name: string | null;
+  starts_at: string;
+  capacity: number;
+  duration_minutes: number;
+  class_types: { name: string } | null;
+};
+
+function sessionLine(s: SessionLookupRow): string {
+  const at = new Date(s.starts_at);
+  const day = at.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+  const time = at.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${day}, ${time} — ${s.class_types?.name ?? s.name ?? 'Class'} (cap ${s.capacity})`;
+}
 
 function closureFromProposal(
   raw: unknown,
@@ -251,6 +340,136 @@ export default function Timeline() {
       l.map((m, i) => (i === index && 'open' in m ? { ...m, open: false } : m)),
     );
 
+  // The reads. Every one runs in the owner's own session, so RLS decides
+  // what the bar can see exactly as it decides what the members screen
+  // can see — the bar gains no reach of its own.
+  const lookupMember = async (query: string): Promise<LocalMsg[]> => {
+    const { data, error } = await supabase
+      .from('v_member_cohort')
+      .select(
+        'profile_id, joined_at, is_intro, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name)',
+      )
+      .eq('gym_id', gymId!);
+    if (error) throw error;
+    const named = ((data ?? []) as unknown as CohortRow[])
+      .filter((r) => r.profiles?.full_name?.trim())
+      .map((r) => ({ ...r, name: r.profiles!.full_name!.trim() }));
+    const hits = matchMembers(named, query);
+    if (hits.length === 0) {
+      return [{ kind: 'temple', text: `No one called “${query}” on your books.` }];
+    }
+    if (hits.length > 1) {
+      return [
+        {
+          kind: 'temple',
+          text: `A few people could be “${query}” — which one did you mean?`,
+        },
+        {
+          kind: 'member-picks',
+          picks: hits.map((h) => ({ profileId: h.profile_id, name: h.name })),
+        },
+      ];
+    }
+    return [{ kind: 'member-card', member: await memberCard(hits[0]) }];
+  };
+
+  const memberCard = async (
+    row: CohortRow & { name: string },
+  ): Promise<MemberCard> => {
+    // Each extra fact is best-effort: a staff member whose capabilities
+    // don't stretch to plans or tags gets a card without them, not an
+    // error where the answer should be.
+    const [subs, comps, tags, dun] = await Promise.all([
+      supabase
+        .from('plan_subscriptions')
+        .select('status, credit_balance, price_cents, membership_plans(name)')
+        .eq('gym_id', gymId!)
+        .eq('profile_id', row.profile_id)
+        .order('created_at', { ascending: false })
+        .limit(1),
+      supabase
+        .from('comp_grants')
+        .select('credits_remaining')
+        .eq('gym_id', gymId!)
+        .eq('profile_id', row.profile_id),
+      supabase
+        .from('member_tags')
+        .select('label, color, source')
+        .eq('gym_id', gymId!)
+        .eq('profile_id', row.profile_id),
+      supabase
+        .from('plan_subscription_dunning')
+        .select('past_due_since')
+        .eq('gym_id', gymId!)
+        .eq('profile_id', row.profile_id)
+        .maybeSingle(),
+    ]);
+    const sub = ((subs.data ?? []) as unknown as SubLookupRow[])[0] ?? null;
+    const compCredits = ((comps.data ?? []) as { credits_remaining: number | null }[])
+      .reduce((sum, c) => sum + (c.credits_remaining ?? 0), 0);
+    return {
+      profileId: row.profile_id,
+      name: row.name,
+      joinedAt: row.joined_at,
+      status: memberStatus({
+        isIntro: row.is_intro,
+        isActive: row.is_active,
+        isExpiringSoon: row.is_expiring_soon,
+        isExpired: row.is_expired,
+        daysUntilExpiry: row.days_until_expiry,
+      }),
+      planName: sub?.membership_plans?.name ?? null,
+      priceCents: sub?.price_cents ?? null,
+      creditBalance: sub?.credit_balance ?? null,
+      compCredits: compCredits > 0 ? compCredits : null,
+      pastDueSince:
+        (dun.data as { past_due_since: string | null } | null)?.past_due_since ?? null,
+      tags: (tags.data ?? []) as MemberCard['tags'],
+    };
+  };
+
+  const resolveClassEdit = async (req: ClassEditRequest): Promise<LocalMsg> => {
+    const today = new Date().toISOString().slice(0, 10);
+    const w = classEditWindow(req, today);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const range = dateRangeWindow(w.start, w.end, tz);
+    if (!range) {
+      return { kind: 'temple', text: "I couldn't work out which dates you meant." };
+    }
+    const { data, error } = await supabase
+      .from('class_sessions')
+      .select('id, name, starts_at, capacity, duration_minutes, class_types(name)')
+      .eq('gym_id', gymId!)
+      .gte('starts_at', range.startIso)
+      .lt('starts_at', range.endIso)
+      .order('starts_at');
+    if (error) throw error;
+    const rows = (data ?? []) as unknown as SessionLookupRow[];
+    const wanted = rows.filter((s) => {
+      const at = new Date(s.starts_at);
+      if (req.days && !req.days.includes(at.getDay())) return false;
+      if (req.classType) {
+        const name = (s.class_types?.name ?? s.name ?? '').toLowerCase();
+        if (!name.includes(req.classType.toLowerCase())) return false;
+      }
+      return true;
+    });
+    if (wanted.length === 0) {
+      return {
+        kind: 'temple',
+        text: 'Nothing on the calendar matches that — check the day and the class name.',
+      };
+    }
+    return {
+      kind: 'class-edit',
+      req,
+      window: w,
+      sessionIds: wanted.map((s) => s.id),
+      sample: wanted.slice(0, 3).map(sessionLine),
+      open: true,
+    };
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || busy || !gymId) return;
@@ -293,6 +512,14 @@ export default function Timeline() {
       if (p.newsletter) {
         const draft = sanitiseNewsletter(p.newsletter);
         if (draft) cards.push({ kind: 'newsletter', draft, open: true });
+      }
+      if (p.edit_classes) {
+        const req = sanitiseClassEdit(p.edit_classes);
+        if (req) cards.push(await resolveClassEdit(req));
+      }
+      if (p.find_member) {
+        const query = sanitiseMemberQuery(p.find_member);
+        if (query) cards.push(...(await lookupMember(query)));
       }
 
       if (cards.length > 0) push(...cards);
@@ -462,6 +689,59 @@ export default function Timeline() {
     }
   };
 
+  const confirmClassEdit = async (
+    index: number,
+    msg: Extract<LocalMsg, { kind: 'class-edit' }>,
+  ) => {
+    if (!gymId || busy) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc('bulk_edit_sessions', {
+        p_gym_id: gymId,
+        p_start: msg.window.start,
+        p_end: msg.window.end,
+        p_session_ids: msg.sessionIds,
+        p_capacity: msg.req.capacity,
+        p_duration_minutes: msg.req.durationMinutes,
+        p_shift_minutes: msg.req.shiftMinutes,
+      });
+      if (error) throw error;
+      closeCard(index);
+      push({
+        kind: 'receipt',
+        text: describeBulkEditResult(data as unknown as BulkEditResult),
+      });
+      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
+    } catch {
+      push({ kind: 'temple', text: "That didn't save — try again." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openMemberPick = async (profileId: string, name: string) => {
+    if (!gymId || busy) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase
+        .from('v_member_cohort')
+        .select(
+          'profile_id, joined_at, is_intro, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name)',
+        )
+        .eq('gym_id', gymId)
+        .eq('profile_id', profileId)
+        .single();
+      if (error) throw error;
+      const row = data as unknown as CohortRow;
+      push({ kind: 'mine', text: name });
+      push({ kind: 'member-card', member: await memberCard({ ...row, name }) });
+    } catch {
+      push({ kind: 'temple', text: "I couldn't pull that up — try again." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const showRulesSheet = () => {
     setLocal((l) =>
       l.some((m) => m.kind === 'rules-sheet')
@@ -556,6 +836,8 @@ export default function Timeline() {
               onConfirmPlans={confirmPlans}
               onConfirmClosure={confirmClosure}
               onConfirmNewsletter={confirmNewsletter}
+              onConfirmClassEdit={confirmClassEdit}
+              onPickMember={openMemberPick}
               onDismiss={closeCard}
               onEditRule={applySingleRule}
             />
@@ -595,7 +877,7 @@ export default function Timeline() {
                 value={input}
                 onChangeText={setInput}
                 editable={!busy}
-                placeholder="Change a rule, add a class, send a newsletter…"
+                placeholder="Show me a member, change a class, send a newsletter…"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] max-h-24 py-1.5"
@@ -648,6 +930,8 @@ function LocalRow({
   onConfirmPlans,
   onConfirmClosure,
   onConfirmNewsletter,
+  onConfirmClassEdit,
+  onPickMember,
   onDismiss,
   onEditRule,
 }: {
@@ -663,6 +947,11 @@ function LocalRow({
     c: { starts_on: string; ends_on: string; reason: string | null },
   ) => void;
   onConfirmNewsletter: (index: number, draft: NewsletterDraft) => void;
+  onConfirmClassEdit: (
+    index: number,
+    msg: Extract<LocalMsg, { kind: 'class-edit' }>,
+  ) => void;
+  onPickMember: (profileId: string, name: string) => void;
   onDismiss: (index: number) => void;
   onEditRule: (field: RuleField, value: RuleChoices[RuleField]) => void;
 }) {
@@ -760,6 +1049,56 @@ function LocalRow({
       />
     );
   }
+  if (msg.kind === 'class-edit') {
+    if (!msg.open) return null;
+    const count = msg.sessionIds.length;
+    return (
+      <ProposalCard
+        title={`Change ${describeEditTarget(msg.req, count)}?`}
+        lines={[
+          describeBulkEdit(
+            {
+              capacity: msg.req.capacity,
+              durationMinutes: msg.req.durationMinutes,
+              shiftMinutes: msg.req.shiftMinutes,
+            },
+            count,
+          ),
+          ...msg.sample,
+          ...(count > msg.sample.length
+            ? [`…and ${count - msg.sample.length} more`]
+            : []),
+          msg.window.bounded
+            ? `Everything in the next ${DEFAULT_EDIT_WEEKS} weeks. Say the dates if you want a different stretch.`
+            : `${msg.window.start} to ${msg.window.end}.`,
+        ]}
+        yes="Yes, change them"
+        busy={busy}
+        onYes={() => onConfirmClassEdit(index, msg)}
+        onNo={() => onDismiss(index)}
+      />
+    );
+  }
+  if (msg.kind === 'member-picks') {
+    return (
+      <View className="flex-row flex-wrap gap-2 px-1">
+        {msg.picks.map((p) => (
+          <Pressable
+            key={p.profileId}
+            onPress={() => onPickMember(p.profileId, p.name)}
+            disabled={busy}
+            className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+            <Text className="text-gray-700 dark:text-gray-300 text-sm font-semibold">
+              {p.name}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    );
+  }
+  if (msg.kind === 'member-card') {
+    return <MemberSummaryCard member={msg.member} />;
+  }
   // closure
   if (!msg.open) return null;
   const range =
@@ -783,6 +1122,103 @@ function LocalRow({
       }
       onNo={() => onDismiss(index)}
     />
+  );
+}
+
+const STATUS_TONE: Record<
+  MemberStatus['tone'],
+  { bg: string; text: string }
+> = {
+  good: { bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300' },
+  warn: { bg: 'bg-amber-50 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300' },
+  bad: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300' },
+  neutral: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-300' },
+};
+
+// The member, in the chat. A summary and not the profile: who they are,
+// where they stand, what they're on, what's gone wrong if anything. The
+// profile screen stays the deep dive — this is the answer to "show me
+// Marcus", with the way through to the work attached.
+function MemberSummaryCard({ member }: { member: MemberCard }) {
+  const tone = STATUS_TONE[member.status.tone];
+  const facts: { label: string; value: string }[] = [
+    {
+      label: 'On',
+      value: member.planName
+        ? member.priceCents !== null
+          ? `${member.planName} · ${formatPrice(member.priceCents)}`
+          : member.planName
+        : 'No membership',
+    },
+  ];
+  if (member.creditBalance !== null) {
+    facts.push({
+      label: 'Credits',
+      value: `${member.creditBalance} left this period`,
+    });
+  }
+  if (member.compCredits !== null) {
+    facts.push({ label: 'Comped', value: `${member.compCredits} classes` });
+  }
+  if (member.pastDueSince) {
+    facts.push({
+      label: 'Payment',
+      value: `Failed — past due since ${formatDate(member.pastDueSince)}`,
+    });
+  }
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-3">
+      <View className="flex-row items-center gap-3">
+        <Avatar name={member.name} size={40} />
+        <View className="flex-1">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+            {member.name}
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Member since {formatDate(member.joinedAt)}
+          </Text>
+        </View>
+        <View className={`px-2.5 py-1 rounded-full ${tone.bg}`}>
+          <Text className={`text-[10.5px] font-bold uppercase tracking-wide ${tone.text}`}>
+            {member.status.label}
+          </Text>
+        </View>
+      </View>
+
+      <View className="gap-1">
+        {facts.map((f) => (
+          <View key={f.label} className="flex-row items-baseline gap-2">
+            <Text className="text-gray-400 dark:text-gray-500 text-xs w-16">
+              {f.label}
+            </Text>
+            <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[13.5px]">
+              {f.value}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {member.tags.length > 0 ? (
+        <View className="flex-row flex-wrap gap-1.5">
+          {member.tags.map((t) => (
+            <MemberTagChip
+              key={t.label}
+              label={t.label}
+              color={t.color}
+              source={t.source}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      <Button
+        variant="secondary"
+        onPress={() =>
+          router.push(`/management/members/${member.profileId}` as never)
+        }>
+        Open their profile
+      </Button>
+    </View>
   );
 }
 

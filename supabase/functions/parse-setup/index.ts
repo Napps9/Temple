@@ -171,6 +171,23 @@ const CHANGE_TOOL = {
         },
         required: ['subject', 'sections'],
       },
+      edit_classes: {
+        type: 'object',
+        properties: {
+          class_type: { type: ['string', 'null'] },
+          days: { type: ['array', 'null'], items: { type: 'integer' } },
+          from: { type: ['string', 'null'] },
+          to: { type: ['string', 'null'] },
+          capacity: { type: ['integer', 'null'] },
+          duration_minutes: { type: ['integer', 'null'] },
+          shift_minutes: { type: ['integer', 'null'] },
+        },
+      },
+      find_member: {
+        type: 'object',
+        properties: { query: { type: 'string' } },
+        required: ['query'],
+      },
       cannot: { type: ['string', 'null'] },
     },
   },
@@ -218,9 +235,22 @@ function changePrompt(): string {
     'owner stated — never invent dates, times, prices or names; if the ' +
     'brief only names a topic, write copy that introduces the topic and ' +
     'tells members to watch this space or ask at the gym.\n' +
-    'Anything else — editing or moving existing classes, changing an ' +
-    'existing plan\'s price, member changes, refunds — set `cannot` to ' +
-    'one short plain sentence naming what they asked for. Do not guess.'
+    '6. edit_classes — changing classes that ALREADY exist, in bulk: ' +
+    'capacity, length, or moving the start time. days 0=Sunday…6=Saturday ' +
+    'picks which weekdays ("Saturdays"→[6], "weekdays"→[1,2,3,4,5]); ' +
+    'class_type narrows to one kind by name; from/to are YYYY-MM-DD and ' +
+    'stay null when the owner named no dates ("cap Saturdays at 20" is ' +
+    'ongoing). shift_minutes moves the start — positive is later, ' +
+    'negative earlier ("move the 6am half an hour later"→30, "bring ' +
+    'Tuesday forward 15 minutes"→-15). Set only the fields they changed; ' +
+    'leave the rest null. Use add_classes, not this, for a NEW class.\n' +
+    '7. find_member — the owner asking about a person ("show me Marcus", ' +
+    '"what\'s Sarah Jones on", "is Dan still paying"). query is just the ' +
+    'name as they said it. Use this whenever the sentence is a question ' +
+    'about one member rather than an instruction.\n' +
+    'Anything else — changing an existing plan\'s price, adding or ' +
+    'cancelling one person\'s membership, refunds — set `cannot` to one ' +
+    'short plain sentence naming what they asked for. Do not guess.'
   );
 }
 

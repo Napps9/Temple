@@ -426,6 +426,38 @@ The staff area shows up when `can_access_staff_area` is on.
   reuses an existing class type by name instead of duplicating it),
   `applyPlans`, and `close_gym_dates` for closures. Anything else gets a
   fixed "not from here yet" reply — never a guess.
+- **Changing classes that already exist** — "cap Saturdays at 20", "move
+  the Tuesday 6am half an hour later", "make Wednesday spin 45 minutes".
+  `edit_classes` on the change tool names the target (weekday list, class
+  type, optional date range) and the change (capacity / duration /
+  shift); `sanitiseClassEdit` (`src/lib/chat-lookup.ts`, pure + tested)
+  re-checks every field against the bulk editor's own bounds and drops a
+  request that changes nothing. The client resolves the actual sessions
+  in the owner's session, previews them (`describeBulkEdit` + three real
+  classes + the count), and confirming calls `bulk_edit_sessions` with
+  explicit session ids — so the receipt is that RPC's own counters
+  (`describeBulkEditResult`): what changed, what was left alone because
+  more members are booked than the new capacity, what clashed, who was
+  told. An open-ended request is capped at twelve weeks and the card says
+  so before anyone confirms.
+- **Asking about a member** — "show me Marcus", "what's Sarah on". The
+  bar's first *read*: `find_member` returns the name as said, the client
+  matches it against the gym's own cohort (`matchMembers` — ranked, so
+  an exact first or last name answers outright and a fragment offers the
+  candidates as chips instead of guessing), and one match renders a
+  member card: status (`memberStatus` — lapsed / expiring in N days /
+  on an intro / active / none), plan and price, credits, comps, a failed
+  payment with its past-due date, tags, and the full profile a tap
+  behind. A summary, not the profile — and deliberately no health or
+  injury data, which stays behind the audited surfaces. Every read runs
+  in the owner's own session under RLS, so the bar sees exactly what the
+  screens see; each supporting fact is best-effort, so a staff member
+  whose capabilities don't stretch to plans or tags gets a card without
+  them rather than an error. **Still not from the bar**: changing an
+  existing plan's price, and adding or cancelling one person's
+  membership — Temple has no staff-side "put X on plan Y" anywhere yet
+  (members self-serve through Stripe), so there is nothing for the bar
+  to wrap.
 - **A newsletter is a sentence** (roadmap phase 6) — "send a newsletter
   — Christmas hours and the new barbell club" drafts subject + sections
   in the same `parse-setup` call (`newsletter` on the change tool;
