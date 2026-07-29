@@ -187,6 +187,11 @@ signatures are NOT (they're liability records, retained as such).
 
 ## Standing user preferences
 
+- **Talk in jobs and workflows, not features and screens.** Frame
+  proposals as the work to be done — the owner or member job and the
+  workflow that completes it — and name surfaces after the job they
+  serve. Screens are implementation detail, and fewer of them is
+  progress.
 - **Push to main directly**, no PRs unless explicitly asked. This
   applies even when the session environment defaults you onto a
   different branch — switch to `main` (or merge your branch into it)

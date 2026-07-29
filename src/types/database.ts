@@ -610,6 +610,27 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      agent_actions: {
+        Row: {
+          id: string;
+          gym_id: string;
+          teammate: 'revenue';
+          action_kind: 'chase_message' | 'plan_adjustment_offer';
+          subject_profile: string | null;
+          subject_subscription: string | null;
+          payload: Json;
+          evidence: Json;
+          status: 'proposed' | 'approved' | 'rejected' | 'executed' | 'expired';
+          proposed_at: string;
+          decided_by: string | null;
+          decided_at: string | null;
+          executed_at: string | null;
+        };
+        // No client write path — every write is a service-role RPC (0204).
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       agent_conversations: {
         Row: {
           id: string;
@@ -4010,6 +4031,16 @@ export type Database = {
       accept_invite: {
         Args: { invite_code: string };
         Returns: { gym_id: string; role: GymRole }[];
+      };
+      timeline_feed: {
+        Args: { p_gym_id: string; p_before?: string | null; p_limit?: number };
+        Returns: {
+          item_id: string;
+          kind: string;
+          occurred_at: string;
+          subject: string;
+          detail: Json;
+        }[];
       };
       set_membership_change_policies: {
         Args: {
