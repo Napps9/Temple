@@ -10,8 +10,8 @@ mission statement — "see them, chase them, stop counting them" — and deliver
 exactly that: the system sees the failure, notifies the member once, splits
 the money out of the forecast, and then renders a staff list named "Needs
 chasing". This loop closes the gap between *seen* and *chased*: the agent
-works the case, the owner approves the judgement calls in the Queue, and the
-outcome lands as a receipt ("Recovered £74") instead of a to-do.
+works the case, the owner approves the judgement calls in the Timeline, and
+the outcome lands as a receipt ("Recovered £74") instead of a to-do.
 
 ---
 
@@ -44,15 +44,16 @@ memory     outcome per case, so "what worked here" compounds
 | Worker auth: Vault worker secret + shared caller | `_shared/caller.ts`, 0199 | The new worker authorises exactly like the existing dispatchers |
 | Queue-as-audit-log pattern, idempotency keys, `skipped`-not-dropped | `cover_notifications` (0165) | The shape of `agent_messages` |
 | Sweep observability | `cron_run_log` (0189/0190) | The new cron logs what it did like every other |
-| Capability resolution | `effective_can`, `src/lib/can.ts` | Gates the Queue surface; `can_see_money` for v1 |
+| Capability resolution | `effective_can`, `src/lib/can.ts` | Gates the Timeline surface; `can_see_money` for v1 |
 | Tool-loop + Anthropic client conventions | `_shared/lead-agent.ts` | Copy drafting reuses the client util and the brief-reading pattern |
 | Retention purge discipline | `purge_expired_payment_data` (0177) | Model for TTLs on the new tables |
 
 ## New schema (one migration)
 
-**`agent_actions`** — the ledger seed. One table serves both surfaces: the
-Queue is `status = 'proposed'`, the Ledger is everything terminal. A decision
-can therefore never escape the audit trail — they are the same row.
+**`agent_actions`** — the ledger seed. The Timeline renders this table
+directly: `status = 'proposed'` rows are inline approval cards, terminal
+rows collapse to one-line receipts. A decision can therefore never escape
+the audit trail — the ask and the record are the same row.
 
 - `id`, `gym_id`, `teammate` (`'revenue'` for now), `action_kind`
   (`'chase_message' | 'plan_adjustment_offer'`), `subject_profile`,
@@ -68,7 +69,7 @@ can therefore never escape the audit trail — they are the same row.
 (`'autonomous' | 'approval' | 'reserved'`), `updated_by`, `updated_at`.
 Seeded `'approval'` for both kinds when the teammate is enabled. The row's
 existence doubles as the per-gym feature flag: no rows, no Revenue teammate.
-"Always allow" in the Queue flips one kind to `'autonomous'` — an owner
+"Always allow" in the Timeline flips one kind to `'autonomous'` — an owner
 action through an RPC, never automatic.
 
 **`agent_cases`** — case state across Stripe's two-week retry window.
@@ -88,7 +89,7 @@ unsubscribe.
 **Message templates** live on the gym (`agent_message_templates`: kind,
 body, `approved_by`, `approved_at`). The model drafts a template from the
 operating brief and the 0176 wording rules; the owner approves it once in
-the Queue; after that, sends fill placeholders (name, plan, link) with no
+the Timeline; after that, sends fill placeholders (name, plan, link) with no
 model in the send path. No model-improvised text ever reaches a member.
 
 ## RPCs
@@ -127,9 +128,9 @@ Authenticated, capability-gated:
    than routine"): propose either a final personal note or a plan
    adjustment — a cheaper existing plan chosen from actual attendance
    (booking history / class-type usage, the same data the affinity model
-   reads). This is the Queue card in the mockup. Authority: `approval`,
-   and plan adjustments stay approval-gated until the owner explicitly
-   says otherwise.
+   reads). This is the approval card in the Timeline mockup. Authority:
+   `approval`, and plan adjustments stay approval-gated until the owner
+   explicitly says otherwise.
 
 Hard rules, enforced in SQL not prompts: never cancel a membership; offers
 are existing cheaper plans only, no invented discounts; maximum 2 agent
@@ -137,22 +138,35 @@ touches per case (3 messages total including the system notice); sends only
 09:00–20:00 gym-local; one open case per subscription; respect the
 `payment_final_notice` — the agent's touch 3 replaces nothing, it follows.
 
-## Surfaces (v1)
+## Surface (v1): the Timeline
 
-- **`/queue`** in the staff group, a new pill in the staff `TopNav`
-  sections with a badge for `proposed` count. Decision cards exactly as
-  mocked: teammate chip, claim, reasoning, deterministic evidence rows,
-  Approve / Adjust / Reject, and the "Always allow" affordance once the
-  same kind has been approved 3 times (count from `agent_actions`).
-  "Adjust" v1 = edit the payload (pick a different plan, edit the message)
-  then approve.
-- **Done tab** on the same screen — the Ledger seed: terminal actions,
-  newest first, filter by teammate later.
+The owner's work here is one workflow — catch up on what happened, decide
+what needs me, see what the AI did — so it gets one surface, not three.
+Catch-up, approvals and the audit trail are the same chronological stream.
+
+- **`/timeline`** in the staff group, a new pill in the staff `TopNav`
+  (badge = open approvals). The stream renders straight off `agent_actions`
+  and `agent_messages`, newest at the bottom like a conversation:
+  - **Updates** — teammate chip + short prose ("Recovered £74 from two
+    failed payments"), no card chrome. Derived from executed actions and
+    closed cases; nothing is authored separately for display.
+  - **Approval cards inline** — `proposed` rows render where they arose:
+    claim, reasoning, deterministic evidence rows, Approve / Adjust /
+    Reject, and the "Always allow" affordance once the same kind has been
+    approved 3 times (count from `agent_actions`). "Adjust" v1 = edit the
+    payload (pick a different plan, edit the message) then approve.
+  - **Receipts** — terminal rows collapse to one line ("You approved —
+    Marcus's pause plus 2 comp classes"). Scrolling back is the record;
+    there is no separate audit screen to build or forget.
+- **The talk bar** is the stream's input. v1 scope is narrow and honest:
+  free text files onto the relevant case and the agent answers on its next
+  tick, reusing the lead-conversation machinery — case questions and
+  "hold off on messaging her" work; general gym admin does not yet.
 - **Money block** gains one line: "Recovered £X this month" from
-  `agent_cases` outcomes — the first brief-style receipt, living where the
-  money already lives.
-- No Morning Brief yet. A brief with one loop is a notification; it ships
-  when three loops can report (vision, Bridge phase 3).
+  `agent_cases` outcomes — the same receipt, where the money already lives.
+- No separate morning brief: the vision's Brief is simply the Timeline's
+  opening entry of the day, and it gets rich when more loops can report
+  (Bridge phase 3).
 
 ## Worker + cron
 
@@ -160,8 +174,8 @@ touches per case (3 messages total including the system notice); sends only
 `cron_run_log`, per-message idempotency, 3 retries). One new pg_cron job,
 `agent-revenue-tick`, hourly: advances cases past their stage gates, opens
 new ones from dunning rows, expires proposals older than 7 days
-(`status = 'expired'`, surfaced in Done — silence is not allowed to look
-like a decision).
+(`status = 'expired'`, surfaced as a Timeline receipt — silence is not
+allowed to look like a decision).
 
 ## Tests
 
