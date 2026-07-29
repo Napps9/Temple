@@ -7,6 +7,10 @@ first loop's engineering). This document is a full review of
 `docs/feature-inventory.md` — every live area is accounted for below, so
 the migration can't quietly orphan something that works today.
 
+The sorting rule and the inventory below are unchanged since the first
+draft; they held up. What changed is the mechanism and therefore the
+order — see "Where we got to" and "What changed on the way".
+
 ## The sorting rule
 
 The Timeline replaces the admin, not the tools. A screen survives when it
@@ -180,53 +184,124 @@ badge sources fold into the same stream. The two dead capability switches
 light/dark, the crash screen, BackLink, RLS, the capability matrix: load-
 bearing substrate, untouched.
 
-## The order
+## Where we got to
 
-Sequenced by what each phase unlocks, grounded in what already exists on
-`agent-main`. No dates — each phase is small enough to ship and prove
-before the next.
+The first nine phases are built and live. They were sequenced by what
+each unlocked, and in order:
 
-**Now — merge what's built.** PR #20: the vision, the one-pager, the
-loop-1 spec, and the working day-one `/setup` flow. Merging deploys
-everything, including the parse function — the key is already live.
+- **The Timeline** is the staff home. `timeline_feed` unions eight kinds
+  of thing that happen in a gym — someone joined, a payment failed, the
+  front desk took a lead, a class needs cover, the sweeps ran — into one
+  stream, gated per kind by capability. The gym's existing activity
+  became legible in one place before anything new was asked to act.
+- **Three jobs act, on a rope.** Payment recovery, keeping members and
+  finding cover each run as a proposal on `agent_actions`: at `approval`
+  it's a question with exactly two choices and its evidence behind "see
+  the details"; "always allow this" flips the same job to `autonomous` in
+  the same transaction. Hard rules live in SQL, not in a prompt — one
+  open question at a time, a rejection ends that case's asks for good,
+  never cancel a membership, never invent a discount, quiet hours
+  enforced at the send. "Needs chasing" was the first list deleted.
+- **Rules are sentences.** The whole settings surface reads as grouped
+  sentences with tappable values, and changing one in the bar applies
+  through the same setter RPCs the forms used.
+- **Day one is a conversation.** `/setup` runs the checklist's nine steps
+  in the checklist's order, each with the real component embedded — the
+  branding picker, the schedule editor, the invite section — and each
+  answerable by tapping or by typing.
+- **The programming roadmap** — blocks, the strip, the Year view —
+  inside the kept editor, which is what the coaches asked for.
+- **A newsletter is a sentence**, drafted into the comms suite's own
+  document and opened for the owner to send.
+- **The Roster and Goals** — Temple's jobs in plain names with rope
+  dials, and "200 members by December" scored off the live roster.
 
-**1 — The Timeline lights up (read-only).** Build the Timeline surface
-and the `agent_actions` ledger from the loop-1 spec, then feed it with
-what already happens: front desk receipts, dunning notices, cover events,
-class-change digests, the sweeps' `cron_run_log`. No new autonomy — the
-gym's existing activity becomes legible in one place, and the Timeline
-becomes the staff home. Everything conversational builds on this.
+## What changed on the way
 
-**2 — The money loop acts.** Loop 1 per the committed spec: the authority
-dial, question cards, "always allow", receipts. The first list dies.
+Two things we learned by building it, both of which redraw the rest.
 
-**3 — Rules stay sentences.** The `/setup` rule sheet becomes the
-permanent settings surface — change any rule in chat, applied through the
-same setter RPCs the cards use today. The settings cards demote.
+**The chat is the spine; the containers are the hands.** The first
+version of setup asked for everything in prose. Describing a logo upload
+is slower than tapping one, and listing a week of classes out loud is
+worse than the schedule editor that already exists. The conversation is
+right for sequencing, context and the record; the existing components are
+right for the work. Every conversational surface now embeds real
+components rather than replacing them.
 
-**4 — Timetable and memberships by sentence.** The ongoing versions of
-the setup steps: schedule changes, closures, plan and price changes as
-sentences with preview cards. The class-types and plans editors demote.
+**Hand-built verbs don't reach a platform.** Each thing the bar could do
+cost a field on the tool schema, a sanitiser, a resolver, a card and an
+apply path. That's fine for five verbs and hopeless for a hundred, and
+"run your gym by saying what you want" is a promise about everything. So
+actions now declare themselves once — what an owner would say, the typed
+arguments, the capability, how to preview, how to apply — and the
+parser's vocabulary is generated from the registry at call time, filtered
+to what that person may actually do. Adding an action is adding one
+entry. The store is the first module: add a product, change a price, ask
+how sales are going.
 
-**5 — The programming roadmap.** Blocks, the strip, the Year view, share
-with coaches — inside the kept editor, from the same kit. Independent of
-the Timeline work, so it can run in parallel whenever; it's the thing the
-interviews asked for twice.
+This is the change that matters for everything below. The roadmap is no
+longer a sequence of features to design; it is a catalogue to fill.
 
-**6 — Reach your members.** Newsletter-as-sentence, sequences described,
-one voice — over the comms machinery that shipped this quarter.
+## The order from here
 
-**7 — Ops finds cover.** From nagging humans to placing cover itself;
-the warning emails become unnecessary.
+### 1 — One path
 
-**8 — Keeping members.** The retention loop plus "show me Marcus" — the
-member in hand, acting in the gym's voice, outcomes tracked.
+Migrate the five hand-built verbs — rules, new classes, new plans,
+closures, newsletters — plus the member lookup and the class edit onto
+the registry, and delete the bespoke branches. Two dispatch paths is one
+too many, and every module after this inherits whichever is left.
 
-**9 — The Roster and Goals.** The jobs page with plain names and rope
-dials; Goal Threads on the targets schema that's been waiting for a
-screen since it was built.
+### 2 — The modules, in the order an owner meets them
 
-**Throughout — the Back Office burndown.** Every demoted screen is
-counted, and the two public measures are routes retired and owner
-interventions per member per month. A screen deleted is progress; a
-screen rebuilt prettier is not.
+Each is a file of registry entries over writes that already exist and are
+already authorised. Roughly in order of how often an owner touches them:
+
+- **Members** — put someone on a plan, pause, cancel, comp, tag, message.
+  This is the biggest gap in the platform, not just in the bar: there is
+  no staff-side "put Marcus on Unlimited" anywhere in Temple today.
+  Members self-serve through Stripe and comp grants are displayed but
+  never issued. Building it means deciding the money question first —
+  does assigning charge them, comp them, or send a checkout link — which
+  is an owner's decision, not an implementation detail.
+- **Classes and bookings** — cancel one class, move it, change its coach,
+  book someone in, take someone off, open the waitlist.
+- **Money** — refund an order, refund a booking, change a plan's price,
+  read the month back.
+- **Comms** — send to a tag, schedule it, describe a sequence.
+- **Leads** — the front desk's own settings and the pipeline as sentences.
+- **Programming, team, website, tags** — the long tail, same shape.
+
+### 3 — Ask anything
+
+The bar answers about one member. It doesn't answer about the gym:
+"how busy was Saturday", "who hasn't been in for a month", "what did we
+take last week", "which class is dying". Every one of these is a query
+that already exists behind a screen. As `ask` actions they need no new
+data — only an entry each, and a way to render a number, a list and a
+short series without inventing a chart language per question.
+
+### 4 — Fewer things to say
+
+The endpoint is not an owner typing more. It's the gym telling them what
+needs deciding, and the answer being one tap. Every job that graduates
+from asking to acting removes sentences. The measures stay what they
+were: **routes retired** and **owner interventions per member per
+month**. A screen deleted is progress; a screen rebuilt prettier is not.
+
+## What deliberately doesn't move
+
+Worth restating, because a catalogue this general invites overreach:
+
+- **The member app.** Members feeding the system its data is what makes
+  every loop possible, and it works. Anything new there is additive.
+- **Craft surfaces.** Writing programming, building a page, authoring a
+  product, listening to a call. The bar reaches them; it doesn't replace
+  them.
+- **Health and the law.** Consent, waivers, PAR-Q, erasure, the access
+  audit log. No loop touches any of it, no action wraps any of it, and
+  the member card in the chat carries no health data by design.
+- **Authorisation.** The capability filter on the registry is a courtesy
+  to the model — it stops the bar offering what someone can't do. The
+  write still runs in that person's own session against RLS, which is
+  what actually decides. That stays true however large the catalogue
+  gets.
