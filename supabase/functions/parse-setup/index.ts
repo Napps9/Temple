@@ -153,6 +153,24 @@ const CHANGE_TOOL = {
         },
         required: ['starts_on', 'ends_on'],
       },
+      newsletter: {
+        type: 'object',
+        properties: {
+          subject: { type: 'string' },
+          sections: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                heading: { type: 'string' },
+                body: { type: 'string' },
+              },
+              required: ['heading', 'body'],
+            },
+          },
+        },
+        required: ['subject', 'sections'],
+      },
       cannot: { type: ['string', 'null'] },
     },
   },
@@ -187,6 +205,14 @@ function changePrompt(): string {
     '4. closure — the gym shutting for a date range. starts_on/ends_on ' +
     'as YYYY-MM-DD, resolved forward from today ("22 Dec to 3 Jan" is ' +
     'the next December). reason is the owner\'s stated reason or null.\n' +
+    '5. newsletter — the owner asking to send/write a newsletter or ' +
+    'email to members ("send a newsletter this week — Christmas hours, ' +
+    'the new barbell club"). DRAFT it for them: a short subject line and ' +
+    '2-4 sections, each a heading plus 1-3 sentences of warm, plain ' +
+    'British English written from the owner\'s brief. Use ONLY facts the ' +
+    'owner stated — never invent dates, times, prices or names; if the ' +
+    'brief only names a topic, write copy that introduces the topic and ' +
+    'tells members to watch this space or ask at the gym.\n' +
     'Anything else — editing or moving existing classes, changing an ' +
     'existing plan\'s price, member changes, refunds — set `cannot` to ' +
     'one short plain sentence naming what they asked for. Do not guess.'

@@ -18,7 +18,8 @@ import { Button } from '@/components/Button';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole } from '@/lib/auth';
+import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import { DEFAULT_AUDIENCE } from '@/lib/email/audience';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
 import {
   choicesFromGym,
@@ -43,14 +44,21 @@ import {
   type RuleField,
   type TimetableProposal,
 } from '@/lib/setup-flow';
+import {
+  newsletterDocument,
+  sanitiseNewsletter,
+  type NewsletterDraft,
+} from '@/lib/newsletter-draft';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
+import { useGymBrand } from '@/lib/useGymBrand';
 import {
   formatClock,
   formatTimelineLine,
   groupTimelineByDay,
   type TimelineEvent,
 } from '@/lib/timeline';
+import type { Json } from '@/types/database';
 
 // The Timeline (docs/roadmap.md phases 1, 3 and 4): the staff home. The
 // stream is the gym's existing activity, read-only; the talk bar is the
@@ -140,13 +148,15 @@ type LocalMsg =
       open: boolean;
     }
   | { kind: 'add-plans'; proposal: PlansProposal; open: boolean }
+  | { kind: 'newsletter'; draft: NewsletterDraft; open: boolean }
   | { kind: 'rules-sheet' };
 
 const CANNOT_COPY =
   "That's not something I can change from here yet — the Manage screens still cover it.";
 const NO_CHANGE_COPY =
   "I didn't catch a change in that. Try it like: 'free cancel until 2 hours " +
-  "before', 'add a 7am Wednesday spin class', or 'close the gym 24 to 28 December'.";
+  "before', 'add a 7am Wednesday spin class', 'close the gym 24 to 28 " +
+  "December', or 'send a newsletter — Christmas hours and the new barbell club'.";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -180,9 +190,11 @@ function formatClosureDay(iso: string): string {
 export default function Timeline() {
   const { data: membership } = useGymMembership();
   const gymId = membership?.gymId;
+  const session = useSession();
   const role = useRole();
   const isOwner = role === 'owner';
   const colors = useThemeColors();
+  const brand = useGymBrand();
   const qc = useQueryClient();
 
   const feed = useTimelineFeed(gymId);
@@ -249,6 +261,10 @@ export default function Timeline() {
       }
       const closure = closureFromProposal(p.closure);
       if (closure) cards.push({ kind: 'closure', ...closure, open: true });
+      if (p.newsletter) {
+        const draft = sanitiseNewsletter(p.newsletter);
+        if (draft) cards.push({ kind: 'newsletter', draft, open: true });
+      }
 
       if (cards.length > 0) push(...cards);
       else if (typeof p.cannot === 'string' && p.cannot.trim()) {
@@ -377,6 +393,46 @@ export default function Timeline() {
     }
   };
 
+  const confirmNewsletter = async (index: number, draft: NewsletterDraft) => {
+    if (!gymId || !session?.user.id || busy) return;
+    setBusy(true);
+    try {
+      const doc = newsletterDocument(
+        {
+          primaryColor: brand.primaryColor,
+          secondaryColor: brand.secondaryColor,
+          textColor: brand.textColor,
+        },
+        { gymName: brand.gymName, logoUrl: brand.logoUrl },
+        draft,
+      );
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .insert({
+          gym_id: gymId,
+          created_by: session.user.id,
+          title: draft.subject,
+          subject: draft.subject,
+          design: doc as unknown as Json,
+          audience: DEFAULT_AUDIENCE as unknown as Json,
+        })
+        .select('id')
+        .single();
+      if (error || !data) throw error ?? new Error('Could not draft');
+      closeCard(index);
+      push({
+        kind: 'receipt',
+        text: `Drafted — “${draft.subject}”. Have a read, pick who it goes to, and send it from there.`,
+      });
+      qc.invalidateQueries({ queryKey: ['comms-campaigns'] });
+      router.push(`/management/communications/${(data as { id: string }).id}` as never);
+    } catch {
+      push({ kind: 'temple', text: "That didn't save — try again." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const showRulesSheet = () => {
     setLocal((l) =>
       l.some((m) => m.kind === 'rules-sheet')
@@ -463,6 +519,7 @@ export default function Timeline() {
               onConfirmClasses={confirmClasses}
               onConfirmPlans={confirmPlans}
               onConfirmClosure={confirmClosure}
+              onConfirmNewsletter={confirmNewsletter}
               onDismiss={closeCard}
               onEditRule={applySingleRule}
             />
@@ -502,7 +559,7 @@ export default function Timeline() {
                 value={input}
                 onChangeText={setInput}
                 editable={!busy}
-                placeholder="Change a rule, add a class, close some dates…"
+                placeholder="Change a rule, add a class, send a newsletter…"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] max-h-24 py-1.5"
@@ -554,6 +611,7 @@ function LocalRow({
   onConfirmClasses,
   onConfirmPlans,
   onConfirmClosure,
+  onConfirmNewsletter,
   onDismiss,
   onEditRule,
 }: {
@@ -568,6 +626,7 @@ function LocalRow({
     index: number,
     c: { starts_on: string; ends_on: string; reason: string | null },
   ) => void;
+  onConfirmNewsletter: (index: number, draft: NewsletterDraft) => void;
   onDismiss: (index: number) => void;
   onEditRule: (field: RuleField, value: RuleChoices[RuleField]) => void;
 }) {
@@ -645,6 +704,22 @@ function LocalRow({
         yes="Yes, create them"
         busy={busy}
         onYes={() => onConfirmPlans(index, msg.proposal)}
+        onNo={() => onDismiss(index)}
+      />
+    );
+  }
+  if (msg.kind === 'newsletter') {
+    if (!msg.open) return null;
+    return (
+      <ProposalCard
+        title={`Draft this newsletter? — “${msg.draft.subject}”`}
+        lines={msg.draft.sections.map(
+          (s) =>
+            `${s.heading} — ${s.body.length > 90 ? `${s.body.slice(0, 90)}…` : s.body}`,
+        )}
+        yes="Yes, draft it"
+        busy={busy}
+        onYes={() => onConfirmNewsletter(index, msg.draft)}
         onNo={() => onDismiss(index)}
       />
     );

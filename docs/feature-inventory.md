@@ -426,6 +426,17 @@ The staff area shows up when `can_access_staff_area` is on.
   reuses an existing class type by name instead of duplicating it),
   `applyPlans`, and `close_gym_dates` for closures. Anything else gets a
   fixed "not from here yet" reply — never a guess.
+- **A newsletter is a sentence** (roadmap phase 6) — "send a newsletter
+  — Christmas hours and the new barbell club" drafts subject + sections
+  in the same `parse-setup` call (`newsletter` on the change tool;
+  prompt forbids invented dates/prices/names — only the owner's stated
+  facts). `sanitiseNewsletter` + `newsletterDocument`
+  (`src/lib/newsletter-draft.ts`, pure + tested) turn the surviving
+  draft into the comms suite's own block document; "Yes, draft it"
+  inserts an ordinary draft `email_campaigns` row (brand palette, logo,
+  `DEFAULT_AUDIENCE`) and opens the existing editor — audience, topic,
+  A/B, suppression and one-click unsubscribe all unchanged. The send
+  button remains the approval; nothing sends from the bar.
 - **Your rules, permanently** — the day-one rule sheet (extracted to
   `src/components/RuleSheet.tsx`, shared with `/setup`) opens from a
   chip above the bar with the gym's *current* settings, read back by
