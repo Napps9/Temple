@@ -17,12 +17,13 @@ begin
   perform set_config('test.gym', v_gym::text, true);
 end $$;
 
+-- A data-modifying statement is only allowed in a WITH clause, not a
+-- bare subquery — so insert first, then assert on the stored row.
+insert into public.stripe_oauth_states (state, gym_id, origin)
+values ('s-default', current_setting('test.gym')::uuid, 'https://app.example');
+
 select is(
-  (select return_path from (
-     insert into public.stripe_oauth_states (state, gym_id, origin)
-     values ('s-default', current_setting('test.gym')::uuid, 'https://app.example')
-     returning return_path
-   ) t),
+  (select return_path from public.stripe_oauth_states where state = 's-default'),
   '/management/billing',
   'existing callers keep the billing screen without changing'
 );
