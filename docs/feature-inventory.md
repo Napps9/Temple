@@ -950,6 +950,14 @@ The staff area shows up when `can_access_staff_area` is on.
   (the same PDF → `gym-waivers` → `publish_waiver` path, with "Build a
   PAR-Q instead" one tap away), settings (rule chips + sheet) and
   **inviting the team** (the Team screen's own `InviteSection`, verbatim).
+  **Setup is never lost**: while any required step is outstanding the
+  Timeline carries the same progress header with a "Carry on setting up"
+  button, and typing "continue setup" (finish / resume / back to setup…)
+  in the talk bar routes there — matched client-side, no model
+  round-trip, with the pattern's negative cases pinned in
+  `src/lib/setup-intent.test.ts` so "set up a new class type" still
+  reaches the parser. Either way the conversation resumes at the right
+  step, since its position derives from `get_gym_setup_progress`.
   Only the CSV/Stripe import wizards stay link-outs — they are judgement
   surfaces (column mapping, fuzzy duplicates) the roadmap deliberately
   keeps as screens. For the described path the `parse-setup` edge function

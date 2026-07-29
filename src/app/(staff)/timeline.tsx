@@ -18,6 +18,7 @@ import { Button } from '@/components/Button';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
+import { REQUIRED_SETUP_KEYS } from './setup';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { DEFAULT_AUDIENCE } from '@/lib/email/audience';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
@@ -156,7 +157,12 @@ const CANNOT_COPY =
 const NO_CHANGE_COPY =
   "I didn't catch a change in that. Try it like: 'free cancel until 2 hours " +
   "before', 'add a 7am Wednesday spin class', 'close the gym 24 to 28 " +
-  "December', or 'send a newsletter — Christmas hours and the new barbell club'.";
+  "December', 'send a newsletter — Christmas hours and the new barbell club', " +
+  "or 'continue setup'.";
+
+// "continue setup", "finish setting up", "back to setup", "setup"…
+const SETUP_INTENT =
+  /^(continue|finish|resume|carry on with|back to|go to|open|complete)?\s*(the\s+)?set\s?up$|^set\s?up\s+(please|again)$/i;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -199,6 +205,22 @@ export default function Timeline() {
 
   const feed = useTimelineFeed(gymId);
   const rules = useGymRules(gymId, isOwner);
+  const setupProgress = useQuery({
+    queryKey: ['gym-setup-progress', gymId],
+    enabled: !!gymId && isOwner,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_gym_setup_progress', {
+        p_gym_id: gymId!,
+      });
+      if (error) throw error;
+      return (data ?? []) as { step_key: string; done: boolean }[];
+    },
+  });
+  const setupDone = (setupProgress.data ?? []).filter(
+    (r) =>
+      (REQUIRED_SETUP_KEYS as readonly string[]).includes(r.step_key) && r.done,
+  ).length;
+  const setupOutstanding = isOwner && setupDone < REQUIRED_SETUP_KEYS.length;
   const authority = useMoneyAuthority(gymId, isOwner);
   const [jobDismissed, setJobDismissed] = useState(false);
 
@@ -234,6 +256,13 @@ export default function Timeline() {
     if (!text || busy || !gymId) return;
     setInput('');
     push({ kind: 'mine', text });
+    // "continue setup" is unambiguous enough to answer without a model
+    // round-trip — and the owner asking for it is usually mid-task.
+    if (SETUP_INTENT.test(text)) {
+      push({ kind: 'temple', text: 'Picking up where we left off…' });
+      setTimeout(() => router.push('/setup' as never), 400);
+      return;
+    }
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke('parse-setup', {
@@ -492,6 +521,13 @@ export default function Timeline() {
               </View>
             ))
           )}
+
+          {setupOutstanding ? (
+            <SetupCard
+              done={setupDone}
+              total={REQUIRED_SETUP_KEYS.length}
+            />
+          ) : null}
 
           {showMoneyJobCard ? (
             <MoneyJobCard
@@ -1070,6 +1106,43 @@ function RequestCard({
           That didn&apos;t go through — try again.
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+// Setup is never lost: while any required step is outstanding, the
+// Timeline carries the checklist's own progress header with a way back
+// in. (Typing "continue setup" in the bar does the same thing.)
+function SetupCard({ done, total }: { done: number; total: number }) {
+  const colors = useThemeColors();
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="flex-row items-center gap-2.5">
+        <View className="w-8 h-8 rounded-xl bg-primary/15 items-center justify-center">
+          <Ionicons name="rocket-outline" size={17} color={colors.primary} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
+            Setting up
+          </Text>
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+            {done} of {total} done
+          </Text>
+        </View>
+      </View>
+      <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+        <View
+          style={{ width: `${(done / total) * 100}%` }}
+          className="h-full bg-primary rounded-full"
+        />
+      </View>
+      <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+        A few things left before members can join and book. It picks up right
+        where you left off.
+      </Text>
+      <Button onPress={() => router.push('/setup' as never)}>
+        Carry on setting up
+      </Button>
     </View>
   );
 }

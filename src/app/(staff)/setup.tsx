@@ -93,7 +93,7 @@ type Msg =
 
 // Mirrors /onboarding's required list, in this conversation's order, so
 // the progress bar counts the same things the checklist counts.
-const REQUIRED_SETUP_KEYS = [
+export const REQUIRED_SETUP_KEYS = [
   'logo',
   'class_type_and_schedule',
   'stripe',
