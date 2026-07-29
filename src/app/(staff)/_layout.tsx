@@ -51,6 +51,7 @@ export default function StaffLayout() {
         <Tabs.Screen name="classes" options={{ title: 'Classes' }} />
         <Tabs.Screen name="management" options={{ title: 'Management' }} />
         <Tabs.Screen name="programming" options={{ title: 'Programming' }} />
+        <Tabs.Screen name="setup" options={{ title: 'Setup' }} />
         <Tabs.Screen name="timeline" options={{ title: 'Timeline' }} />
       </Tabs>
     </View>

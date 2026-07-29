@@ -320,7 +320,7 @@ export default function SetupScreen() {
   if (membership && role && role !== 'owner') return <Redirect href="/classes" />;
   if (!membership || progress.isLoading) {
     return (
-      <Screen>
+      <Screen edges={['bottom', 'left', 'right']}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -334,7 +334,7 @@ export default function SetupScreen() {
   const busy = parse.isPending || applying.isPending;
 
   return (
-    <Screen>
+    <Screen edges={['bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">

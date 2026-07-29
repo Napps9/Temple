@@ -445,7 +445,7 @@ export default function Timeline() {
   const groups = groupTimelineByDay(feed.data ?? []);
 
   return (
-    <Screen className="px-0">
+    <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">
