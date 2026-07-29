@@ -306,8 +306,12 @@ structure is visible, because here it is useful: what Temple handles, what
 it may do on its own versus what it asks about, this week's numbers, and a
 coaching view — which already exists for the Front Desk as the
 conversation review screen, where the owner corrects an answer and the
-correction becomes a standing rule. Hiring a teammate is enabling a loop
-bundle, presented as an offer letter, not a settings page.
+correction becomes a standing rule. The jobs wear plain names on the
+surface — the front desk, the money, keeping members — never org-chart
+titles; Front Desk/Revenue/Retention/Ops is how we build it, not how the
+owner reads it. Hiring a teammate is enabling a loop bundle, presented as
+an offer letter — what I'll do, what I'll ask you about, what I'll never
+do — not a settings page.
 
 **4. Goal Threads.** "Get to 200 members by December" as a persistent
 object with an owner (a teammate), a plan, a running action log, and a
@@ -326,7 +330,10 @@ today — and they arrive as the agent's voice, not a marketing cannon. The
 hard rule: the member's teammate serves the member's goals; retention is
 the by-product. Owners told us the incumbents are "focused on the business
 side and not on the member side." The member side is where retention
-actually lives.
+actually lives. Scope note: none of this changes the member app's shape.
+Sign up, buy, book, track — the inputs the whole system runs on — already
+work and stay as they are; the teammate arrives as an additive layer over
+them, and the redesign effort goes to the staff experience.
 
 **6. Every chart ends in a verb.** Reports become claims with drafted
 actions attached. The verdict tiles were the halfway house — a flag with no

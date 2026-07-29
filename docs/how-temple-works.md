@@ -11,8 +11,12 @@ Three places, a talk bar — and Today, for whoever is coaching.
 - **Timeline** — home. What happened, as short messages from Temple; what
   needs you, as a question with two choices; what got resolved, as one
   soft line. Scrolling back is the record.
-- **Roster** — who works for you. What Temple handles, what it may do on
-  its own versus what it asks about, and where you coach it.
+- **Roster** — who works for you: the coaches with their real
+  qualifications and limits, and Temple's jobs in plain names — the front
+  desk, the money, keeping members — each with one line of description,
+  this week's number, and how much rope it has ("on its own" / "asks
+  first"). Taking on a new job is an offer letter — what I'll do, what
+  I'll ask you about, what I'll never do — not a settings page.
 - **Goals** — what you're aiming at. "200 members by December" as a brief
   you've given an employee, with a weekly note on how it's going.
 - **Today** — the coach's landing, and deliberately the calendar they
@@ -20,6 +24,12 @@ Three places, a talk bar — and Today, for whoever is coaching.
   fill at a glance, then the class roster — check-in, first-timer flags,
   the whiteboard. The Timeline replaces the admin, not the tools; running
   a class keeps its screen, and keeps its look.
+
+The member app stays as it is. Signing up, buying, booking and tracking
+are how members feed the system its data, they already work, and members
+already get recommendations (quick-book). Anything new on the member side
+is additive — a push nudge, a milestone message — never a redesign. The
+redesign is the staff experience.
 
 Everything else is a conversation. The owner never learns an admin
 interface; they describe what they want and confirm what comes back.
@@ -56,10 +66,11 @@ Same shape: "Unlimited is £89. An 8-class pack is £59. Students £45,
 off-peak only." Temple drafts the plans — Stripe products, booking rules,
 the lot — and answers with the list and one question. Prices are the
 owner's judgement, permanently: Temple never invents or changes a price on
-its own, it only builds what it was told. Upgrades and downgrades stop
-being a policy screen: a member asks their own Temple "can I move up to
-unlimited?", the pro-rata answer is computed and applied within the rules,
-and the owner sees a line in the Timeline.
+its own, it only builds what it was told. On the member side, joining and
+plan changes keep today's self-serve flows; what changes is the staff
+side — routine change requests approve themselves against the owner's
+precedent, the odd ones become a question, and the owner sees a line in
+the Timeline either way.
 
 ### Run today's classes
 
@@ -82,6 +93,17 @@ is that analysis stops being a page and becomes a message with hands:
 "Thursday is shoulder-heavy right after Tuesday's push day. Want a swap
 suggestion?" Aggregate signals only, never an individual's health — the
 same closed-category discipline the front desk already obeys.
+
+### Look after one member
+
+Any member is one sentence away — "show me Marcus" brings back the
+picture, not a profile page: plan, tenure, the thing worth knowing
+("fading — 3 classes a week in March, less than 1 now"), and an offer to
+act. Acting is words too: "give him 2 free guest passes and tell him we
+miss him" comes back as a drafted note in the gym's voice, sent on
+approval, with the outcome returning as a receipt. The full profile — and
+every other Back Office screen — stays one tap deeper for when it's
+genuinely needed.
 
 ### The money
 
