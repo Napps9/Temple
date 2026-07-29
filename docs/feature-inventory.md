@@ -804,7 +804,9 @@ The staff area shows up when `can_access_staff_area` is on.
   charging (9pm night before / 2h before / never), how close to the
   start booking stays open, membership-to-book, and week start — with
   the best practice as the first (pre-lit) chip and each answer echoed
-  as a chat bubble. The read-back is the **rule sheet**: the whole
+  as a chat bubble. The read-back is one sentence — "Everything else is
+  set the way most gyms run it" — with **Carry on** applying the lot and
+  **Have a look** opening the **rule sheet** on demand: the whole
   settings surface as grouped sentences (Booking / Your gym / The small
   print, that last collapsed behind "5 sensible defaults") where every
   value is a tappable token — tap "7 days" in "Classes can be booked

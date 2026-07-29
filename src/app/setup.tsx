@@ -57,6 +57,7 @@ type Msg =
   | { kind: 'timetable-card'; proposal: TimetableProposal; open: boolean }
   | { kind: 'plans-card'; proposal: PlansProposal; open: boolean }
   | { kind: 'rule-question'; q: number; open: boolean }
+  | { kind: 'rules-gate'; open: boolean }
   | { kind: 'rules-summary'; choices: RuleChoices; open: boolean };
 
 const ASK: Record<Exclude<Step, 'golive'>, string> = {
@@ -248,10 +249,27 @@ export default function SetupScreen() {
       pushMsgs({ kind: 'rule-question', q: q + 1, open: true });
     } else {
       pushMsgs(
-        { kind: 'temple', text: 'Here’s the lot — look right?' },
-        { kind: 'rules-summary', choices: mergeRuleAnswers(ruleAnswers.current), open: true },
+        {
+          kind: 'temple',
+          text: 'That’s the big five done. Everything else is set the way most gyms run it.',
+        },
+        { kind: 'rules-gate', open: true },
       );
     }
+  }
+
+  function carryOn() {
+    setMessages((m) => [...closeCards(m), { kind: 'mine', text: 'Carry on' }]);
+    confirmRules(mergeRuleAnswers(ruleAnswers.current));
+  }
+
+  function haveALook() {
+    setMessages((m) => [...closeCards(m), { kind: 'mine', text: 'Have a look' }]);
+    pushMsgs({
+      kind: 'rules-summary',
+      choices: mergeRuleAnswers(ruleAnswers.current),
+      open: true,
+    });
   }
 
   function editRule(field: RuleField, value: RuleChoices[RuleField]) {
@@ -343,6 +361,8 @@ export default function SetupScreen() {
               onConfirmRules={confirmRules}
               onAnswerRule={answerRule}
               onEditRule={editRule}
+              onCarryOn={carryOn}
+              onHaveALook={haveALook}
               onReword={rewordCard}
             />
           ))}
@@ -410,6 +430,8 @@ function MessageRow({
   onConfirmRules,
   onAnswerRule,
   onEditRule,
+  onCarryOn,
+  onHaveALook,
   onReword,
 }: {
   msg: Msg;
@@ -419,6 +441,8 @@ function MessageRow({
   onConfirmRules: (choices: RuleChoices) => void;
   onAnswerRule: (q: number, optionIndex: number) => void;
   onEditRule: (field: RuleField, value: RuleChoices[RuleField]) => void;
+  onCarryOn: () => void;
+  onHaveALook: () => void;
   onReword: () => void;
 }) {
   if (msg.kind === 'mine') {
@@ -500,6 +524,21 @@ function MessageRow({
       </View>,
       'Yes, create them',
       () => onConfirmPlans(msg.proposal),
+    );
+  }
+  if (msg.kind === 'rules-gate') {
+    if (!msg.open) return null;
+    return (
+      <View className="flex-row gap-2.5 pl-9">
+        <View className="flex-1">
+          <Button onPress={onCarryOn} loading={busy}>Carry on</Button>
+        </View>
+        <View className="flex-1">
+          <Button variant="secondary" onPress={onHaveALook} disabled={busy}>
+            Have a look
+          </Button>
+        </View>
+      </View>
     );
   }
   if (msg.kind === 'rule-question') {
