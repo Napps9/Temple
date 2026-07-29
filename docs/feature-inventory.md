@@ -943,7 +943,16 @@ The staff area shows up when `can_access_staff_area` is on.
   bar (counting the same required keys `/onboarding` counts), each step
   opening with its shared `StatusDisk`, checklist label and `~N min`
   estimate, and each finished step collapsing to the emerald tick with
-  the label struck through — the completed-row treatment verbatim. For the described path the `parse-setup` edge function
+  the label struck through — the completed-row treatment verbatim.
+  **Every checklist step now has a container in the chat**: logo
+  (branding's picker), classes (`RecurrenceEditor`), payments (handoff
+  to billing's OAuth), plans (kind chips + price), **health screening**
+  (the same PDF → `gym-waivers` → `publish_waiver` path, with "Build a
+  PAR-Q instead" one tap away), settings (rule chips + sheet) and
+  **inviting the team** (the Team screen's own `InviteSection`, verbatim).
+  Only the CSV/Stripe import wizards stay link-outs — they are judgement
+  surfaces (column mapping, fuzzy duplicates) the roadmap deliberately
+  keeps as screens. For the described path the `parse-setup` edge function
   (Claude Sonnet, tool-forced JSON, gated on
   `effective_can(gym, 'can_edit_classes')`, 503 without an API key)
   turns each into a proposal; the client sanitises it

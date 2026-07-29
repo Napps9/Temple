@@ -13,10 +13,12 @@ import {
   View,
 } from 'react-native';
 
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Button } from '@/components/Button';
 import { GymLogo } from '@/components/GymLogo';
+import { InviteSection } from '@/components/InviteSection';
 import {
   EMPTY_RECURRENCE,
   RecurrenceEditor,
@@ -62,7 +64,15 @@ import { useGymBrand } from '@/lib/useGymBrand';
 // paths as the manual editors. /onboarding stays as the checklist escape
 // hatch throughout.
 
-type Step = 'logo' | 'timetable' | 'stripe' | 'plans' | 'rules' | 'golive';
+type Step =
+  | 'logo'
+  | 'timetable'
+  | 'stripe'
+  | 'plans'
+  | 'parq'
+  | 'rules'
+  | 'team'
+  | 'golive';
 
 type Msg =
   | { kind: 'temple'; text: string }
@@ -73,6 +83,8 @@ type Msg =
   | { kind: 'class-builder'; open: boolean }
   | { kind: 'stripe-card'; open: boolean }
   | { kind: 'plan-builder'; open: boolean }
+  | { kind: 'waiver-card'; open: boolean }
+  | { kind: 'team-card'; open: boolean }
   | { kind: 'timetable-card'; proposal: TimetableProposal; open: boolean }
   | { kind: 'plans-card'; proposal: PlansProposal; open: boolean }
   | { kind: 'rule-question'; q: number; open: boolean }
@@ -109,10 +121,20 @@ const STEP_META: Record<
     label: 'Create a membership plan',
     estimate: '2 min',
   },
+  parq: {
+    icon: 'medkit-outline',
+    label: 'Set up health screening',
+    estimate: '2 min',
+  },
   rules: {
     icon: 'settings-outline',
     label: 'Set your gym settings',
     estimate: '2 min',
+  },
+  team: {
+    icon: 'people-outline',
+    label: 'Invite your team',
+    estimate: '1 min',
   },
 };
 
@@ -129,6 +151,10 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
     'Payments before prices — connect your Stripe and members pay you directly; Temple takes no cut. Plans become buyable the moment it\'s live.',
   plans:
     'Prices next: add each membership below — or describe them ("Unlimited is £89 with 30 days notice, an 8-class pack is £59") and I\'ll build them.',
+  parq:
+    'Members sign something before their first class — upload your waiver as a PDF and they sign it in the app. One is enough; a PAR-Q can come later.',
+  team:
+    'Last one, and it\u2019s optional — invite your coaches so they can take classes and write programming.',
   rules:
     'A few quick rules — tap what fits. The first answer is what most gyms like yours do, and you can change any of it later just by telling me.',
 };
@@ -172,14 +198,25 @@ export default function SetupScreen() {
   ).length;
 
   function stepsRemaining(from: Step | null): Step[] {
-    const all: Step[] = ['logo', 'timetable', 'stripe', 'plans', 'rules', 'golive'];
+    const all: Step[] = [
+      'logo',
+      'timetable',
+      'stripe',
+      'plans',
+      'parq',
+      'rules',
+      'team',
+      'golive',
+    ];
     const start = from ? all.indexOf(from) + 1 : 0;
     return all.slice(start).filter((s) => {
       if (s === 'logo') return !doneKeys.has('logo');
       if (s === 'timetable') return !doneKeys.has('class_type_and_schedule');
       if (s === 'stripe') return !doneKeys.has('stripe');
       if (s === 'plans') return !doneKeys.has('plan');
+      if (s === 'parq') return !doneKeys.has('parq');
       if (s === 'rules') return !doneKeys.has('settings');
+      if (s === 'team') return !doneKeys.has('team');
       return true;
     });
   }
@@ -223,6 +260,16 @@ export default function SetupScreen() {
         { kind: 'step-ask', step: 'plans', text: ASK.plans },
         { kind: 'plan-builder', open: true },
       );
+    } else if (next === 'parq') {
+      pushMsgs(
+        { kind: 'step-ask', step: 'parq', text: ASK.parq },
+        { kind: 'waiver-card', open: true },
+      );
+    } else if (next === 'team') {
+      pushMsgs(
+        { kind: 'step-ask', step: 'team', text: ASK.team },
+        { kind: 'team-card', open: true },
+      );
     } else {
       pushMsgs({ kind: 'temple', text: ASK[next] });
     }
@@ -262,7 +309,14 @@ export default function SetupScreen() {
     if (!text || !step) return;
     // The bar never disappears — steps whose fast path is a tap still
     // answer a typed message instead of presenting a dead input.
-    if (step === 'logo' || step === 'stripe' || step === 'rules' || step === 'golive') {
+    if (
+      step === 'logo' ||
+      step === 'stripe' ||
+      step === 'parq' ||
+      step === 'team' ||
+      step === 'rules' ||
+      step === 'golive'
+    ) {
       setInput('');
       pushMsgs(
         { kind: 'mine', text },
@@ -273,9 +327,13 @@ export default function SetupScreen() {
               ? 'This one’s a tap — choose your logo above, or skip and we’ll move on.'
               : step === 'stripe'
                 ? 'Stripe needs its own secure page — tap Connect above, or do it later.'
-                : step === 'rules'
-                  ? 'Tap an answer above — the chips are quicker than typing for these.'
-                  : 'These last few need real buttons — tap through the list above.',
+                : step === 'parq'
+                  ? 'This one’s a file — upload your waiver above, or skip it for now.'
+                  : step === 'team'
+                    ? 'Pop a coach’s email in the box above, or skip if you run solo.'
+                    : step === 'rules'
+                      ? 'Tap an answer above — the chips are quicker than typing for these.'
+                      : 'These last few need real buttons — tap through the list above.',
         },
       );
       return;
@@ -550,6 +608,29 @@ export default function SetupScreen() {
               m.open ? (
                 <PlanBuilderCard key={i} busy={busy} onApply={confirmPlans} />
               ) : null
+            ) : m.kind === 'waiver-card' ? (
+              m.open ? (
+                <WaiverCard
+                  key={i}
+                  gymId={membership.gymId}
+                  onDone={(receipt) => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({ kind: 'receipt', step: 'parq', text: receipt });
+                    advance('parq');
+                  }}
+                />
+              ) : null
+            ) : m.kind === 'team-card' ? (
+              m.open ? (
+                <TeamCard
+                  key={i}
+                  onDone={(receipt) => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({ kind: 'receipt', step: 'team', text: receipt });
+                    advance('team');
+                  }}
+                />
+              ) : null
             ) : (
               <MessageRow
                 key={i}
@@ -651,7 +732,9 @@ function MessageRow({
     msg.kind === 'logo-card' ||
     msg.kind === 'class-builder' ||
     msg.kind === 'stripe-card' ||
-    msg.kind === 'plan-builder'
+    msg.kind === 'plan-builder' ||
+    msg.kind === 'waiver-card' ||
+    msg.kind === 'team-card'
   ) {
     return null;
   }
@@ -1399,6 +1482,116 @@ function PlanBuilderCard({
           </Button>
         </View>
       </View>
+    </View>
+  );
+}
+
+// The health-screening step: the same PDF pick → gym-waivers upload →
+// publish_waiver path the health screening screen uses, in one tap. A
+// PAR-Q questionnaire is the deeper surface and stays one tap away —
+// one of the two satisfies the requirement.
+function WaiverCard({
+  gymId,
+  onDone,
+}: {
+  gymId: string;
+  onDone: (receipt: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+
+  const upload = useMutation({
+    mutationFn: async () => {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled || !res.assets?.length) return false;
+      const asset = res.assets[0];
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const path = `${gymId}/${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from('gym-waivers')
+        .upload(path, blob, { contentType: 'application/pdf', upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('gym-waivers').getPublicUrl(path);
+      const { error: pErr } = await supabase.rpc('publish_waiver', {
+        p_gym_id: gymId,
+        p_title: 'Liability waiver',
+        p_file_path: path,
+        p_file_url: pub.publicUrl,
+      });
+      if (pErr) throw pErr;
+      return true;
+    },
+    onSuccess: (published) => {
+      if (!published) return;
+      queryClient.invalidateQueries({ queryKey: ['waiver-active'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+      onDone('Waiver published — members sign it before their first class.');
+    },
+    onError: () => setError('That upload didn’t take — PDFs only, and try again.'),
+  });
+
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+        A PDF is all it takes — members sign it with their finger in the app,
+        and it’s kept as a liability record.
+      </Text>
+      {error ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+      <Button onPress={() => upload.mutate()} loading={upload.isPending}>
+        Upload your waiver
+      </Button>
+      <Pressable
+        onPress={() => router.push('/management/parq?backTo=setup' as never)}
+        hitSlop={6}>
+        <Text className="text-link text-sm font-medium text-center">
+          Build a PAR-Q instead
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() =>
+          onDone('Health screening skipped — members can’t book until one is published.')
+        }
+        disabled={upload.isPending}
+        hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+          Do this later
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// The team step: the Team screen's own InviteSection, dropped into the
+// conversation — same code minting the same single-use invite, same
+// manual-link fallback when email isn't configured.
+function TeamCard({ onDone }: { onDone: (receipt: string) => void }) {
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+      <InviteSection
+        title="Invite a coach"
+        subtitle="They'll get a link to join with the right access."
+        roles={['coach', 'staff', 'admin']}
+        initialRole="coach"
+      />
+      <Pressable onPress={() => onDone('Team invites done — you can add more any time.')} hitSlop={6}>
+        <Text className="text-link text-sm font-medium text-center">
+          That’s everyone
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => onDone('No invites for now — it’s a two-tap job whenever you need it.')}
+        hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+          I run solo
+        </Text>
+      </Pressable>
     </View>
   );
 }
