@@ -411,13 +411,16 @@ colleague.
 For the office: three destinations. **Timeline** (home), **Roster**,
 **Goals**. Nothing else at the top level.
 
-For the floor: one. **Today** — the coach's landing. Today's classes as an
-agenda with fill at a glance, then the roster: check-in with big targets,
-first-timer flags, the whiteboard. The Timeline replaces the admin, not
-the tools — a roster at six o'clock is not admin, it is the job. What the
-Timeline takes from this screen is the residue: attendance marks itself
-from bookings and check-ins (the coach corrects exceptions with a tap),
-and no-show patterns flow to Retention without anyone transcribing them.
+For the floor: one. **Today** — the coach's landing, and deliberately the
+calendar they already know: the same day grid, class blocks, colours and
+Day/Week/Month controls that exist now, with fill at a glance, then the
+roster — check-in with big targets, first-timer flags, the whiteboard.
+Familiarity is a feature; nothing to relearn. The Timeline replaces the
+admin, not the tools — a roster at six o'clock is not admin, it is the
+job. What changes on this screen is what disappears from it: attendance
+marks itself from bookings and check-ins (the coach corrects exceptions
+with a tap), and no-show patterns flow to Retention without anyone
+transcribing them.
 
 Everything else is reachable by asking. The talk bar — type or speak — is
 the primary navigation: "show me Marcus's payment history" beats

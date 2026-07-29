@@ -15,10 +15,11 @@ Three places, a talk bar — and Today, for whoever is coaching.
   its own versus what it asks about, and where you coach it.
 - **Goals** — what you're aiming at. "200 members by December" as a brief
   you've given an employee, with a weekly note on how it's going.
-- **Today** — the coach's landing. Today's classes with fill at a glance,
-  then the class roster: check-in, first-timer flags, the whiteboard.
-  The Timeline replaces the admin, not the tools; running a class keeps
-  a screen because the work is physical and immediate.
+- **Today** — the coach's landing, and deliberately the calendar they
+  already know: the same day grid, class blocks and colours as now, with
+  fill at a glance, then the class roster — check-in, first-timer flags,
+  the whiteboard. The Timeline replaces the admin, not the tools; running
+  a class keeps its screen, and keeps its look.
 
 Everything else is a conversation. The owner never learns an admin
 interface; they describe what they want and confirm what comes back.
