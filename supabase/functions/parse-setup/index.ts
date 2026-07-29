@@ -197,6 +197,11 @@ function changePrompt(): string {
     '   expiring_within_days / lead_conversion_window_days / ' +
     'parq_expiry_days: days as integer. health_retention_months: months. ' +
     'cover_warning_hours: hours, 0 = off.\n' +
+    '   Enum and boolean fields must land on one of the listed values ' +
+    'exactly. If the owner names something else — a different time, or a ' +
+    'rule that varies by class, day or member — do NOT round to the ' +
+    'nearest value: leave that field out and name it in `cannot`. A ' +
+    'sentence can do both: take the parts that fit and name the rest.\n' +
     '2. add_classes — NEW classes on the timetable. Same conventions as ' +
     'a timetable: days 0=Sunday…6=Saturday, times 24-hour "HH:MM", ' +
     'duration_minutes default 60, capacity default 16.\n' +

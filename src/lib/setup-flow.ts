@@ -569,16 +569,28 @@ export function sanitiseRuleChanges(
   return changes.length > 0 ? changes : null;
 }
 
+// The rule's own sheet sentence, so a rule reads the same whether it was
+// tapped, typed, or edited in the sheet.
+export function ruleSentence(field: RuleField, choices: RuleChoices): string {
+  const sheetLine = ruleSheet(choices)
+    .flatMap((g) => g.lines)
+    .find((l) => l.parts.some((p) => 'f' in p && p.f === field));
+  return sheetLine ? sheetLineText(sheetLine, choices) : '';
+}
+
 // "Cancelling costs the credit: from 9pm the night before → from 2 hours
 // before" — the confirm card's line per change.
 export function ruleChangeLine(change: RuleChange, current: RuleChoices): string {
   const next = { ...current, [change.field]: change.value } as RuleChoices;
-  const sheetLine = ruleSheet(next)
-    .flatMap((g) => g.lines)
-    .find((l) => l.parts.some((p) => 'f' in p && p.f === change.field));
-  const sentence = sheetLine ? sheetLineText(sheetLine, next) : '';
-  const from = fieldLabel(change.field, current);
-  return `${sentence} (was ${from})`;
+  return `${ruleSentence(change.field, next)} (was ${fieldLabel(change.field, current)})`;
+}
+
+// A typed answer can settle a question that hasn't been asked yet, so the
+// run always resumes at the first question still unanswered rather than
+// marching to the next one in line.
+export function nextRuleQuestion(answers: Partial<RuleChoices>): number | null {
+  const i = RULE_QUESTIONS.findIndex((q) => !(q.id in answers));
+  return i === -1 ? null : i;
 }
 
 export function timetableSummary(p: TimetableProposal): string {

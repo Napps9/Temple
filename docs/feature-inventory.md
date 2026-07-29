@@ -993,7 +993,23 @@ The staff area shows up when `can_access_staff_area` is on.
   charging (9pm night before / 2h before / never), how close to the
   start booking stays open, membership-to-book, and week start — with
   the best practice as the first (pre-lit) chip and each answer echoed
-  as a chat bubble. The read-back is one sentence — "Everything else is
+  as a chat bubble. **Chips and typing are the same conversation**: an
+  answer that isn't on the menu goes to `parse-setup`'s `change` step
+  carrying *the question it answers*, so "30 minutes before" can't be
+  read as a booking cutoff when what was asked about was cancelling.
+  The parser is instructed not to round an off-menu enum onto the
+  nearest option — it names what it couldn't take in `cannot` — and
+  `sanitiseRuleChanges` drops anything that doesn't validate anyway, so
+  what survives is read back in the rule sheet's own sentences
+  (`ruleSentence`). Nothing is written until the end of the step, so a
+  mis-read shows up in the read-back before it reaches the gym. One
+  sentence can settle several rules, including questions not yet asked,
+  so the run resumes at the first question still open
+  (`nextRuleQuestion`) rather than the next in line. When the cancel
+  question is the one that can't be answered from the menu, the reply
+  names the real escape: that rule lives on the class type, so a single
+  class can have its own once the timetable is in. The read-back is one
+  sentence — "Everything else is
   set the way most gyms run it" — with **Carry on** applying the lot and
   **Have a look** opening the **rule sheet** on demand: the whole
   settings surface as grouped sentences (Booking / Your gym / The small

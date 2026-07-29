@@ -42,10 +42,13 @@ import {
   formatDays,
   formatPrice,
   mergeRuleAnswers,
+  nextRuleQuestion,
   RULE_FIELD_OPTIONS,
   RULE_QUESTIONS,
+  ruleSentence,
   ruleSheet,
   sanitisePlans,
+  sanitiseRuleChanges,
   sanitiseTimetable,
   timetableSummary,
   type PlansProposal,
@@ -180,7 +183,7 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
   workouts:
     'Last one — if you have workout history, import it and members walk in to their own PRs and leaderboards rather than an empty app.',
   rules:
-    'Next, a few rules — tap what fits. The first answer is what most gyms like yours do, and your classes will pick these up as their defaults. Change any of it later just by telling me.',
+    'Next, a few rules — tap what fits, or say it in your own words if your answer isn\u2019t on the list. The first chip is what most gyms like yours do, and your classes will pick these up as their defaults.',
 };
 
 // Steps whose fast path is a tap. The bar never disappears, so a typed
@@ -193,7 +196,6 @@ const TAP_ONLY: Partial<Record<Step, string>> = {
   members:
     'The importer has its own screen for matching up your columns — tap above, or skip it.',
   workouts: 'Same again — the importer has its own screen; tap above, or skip it.',
-  rules: 'Tap an answer above — the chips are quicker than typing for these.',
   golive: 'Setup’s done — head into your gym, or pick up anything you left above.',
 };
 
@@ -215,6 +217,9 @@ export default function SetupScreen() {
   // what the owner actually runs, not a guess.
   const confirmedDefaults = useRef({ capacity: 16, minutes: 60 });
   const ruleAnswers = useRef<Partial<RuleChoices>>({});
+  // Which rule question is on screen, so a typed answer reaches the
+  // parser with the question it is answering.
+  const openRuleQ = useRef<number | null>(null);
 
   const progress = useQuery({
     queryKey: ['gym-setup-progress', membership?.gymId],
@@ -278,6 +283,7 @@ export default function SetupScreen() {
       pushMsgs({ kind: 'temple', text: 'That’s the walk-through done.' });
     } else if (next === 'rules') {
       ruleAnswers.current = {};
+      openRuleQ.current = 0;
       pushMsgs(
         { kind: 'step-ask', step: 'rules', text: ASK.rules },
         { kind: 'rule-question', q: 0, open: true },
@@ -340,12 +346,15 @@ export default function SetupScreen() {
   }, [progress.data, seeded, membership]);
 
   const parse = useMutation({
-    mutationFn: async (text: string) => {
+    mutationFn: async (args: {
+      step: 'timetable' | 'plans' | 'change';
+      text: string;
+    }) => {
       const { data, error } = await supabase.functions.invoke('parse-setup', {
-        body: { gym_id: membership!.gymId, step, text },
+        body: { gym_id: membership!.gymId, step: args.step, text: args.text },
       });
       if (error) throw error;
-      return data as { proposal?: unknown };
+      return data as { proposal?: Record<string, unknown> };
     },
   });
 
@@ -367,8 +376,15 @@ export default function SetupScreen() {
     }
     setInput('');
     setMessages((m) => [...closeCards(m), { kind: 'mine', text }]);
+    if (step === 'rules') {
+      await answerRulesByText(text);
+      return;
+    }
     try {
-      const res = await parse.mutateAsync(text);
+      const res = await parse.mutateAsync({
+        step: step === 'timetable' ? 'timetable' : 'plans',
+        text,
+      });
       const proposal =
         step === 'timetable'
           ? sanitiseTimetable(res.proposal)
@@ -451,15 +467,13 @@ export default function SetupScreen() {
     );
   }
 
-  function answerRule(q: number, optionIndex: number) {
-    const question = RULE_QUESTIONS[q];
-    const option = question.options[optionIndex];
-    (ruleAnswers.current as Record<string, unknown>)[question.id] = option.value;
-    setMessages((m) => closeCards(m));
-    pushMsgs({ kind: 'mine', text: option.label });
-    if (q + 1 < RULE_QUESTIONS.length) {
-      pushMsgs({ kind: 'rule-question', q: q + 1, open: true });
-    } else {
+  // Chips and typing feed the same draft, and a sentence can settle a
+  // question that hasn't been asked yet, so the run always resumes at
+  // whatever is still unanswered rather than the next one in line.
+  function askRule() {
+    const q = nextRuleQuestion(ruleAnswers.current);
+    openRuleQ.current = q;
+    if (q === null) {
       pushMsgs(
         {
           kind: 'temple',
@@ -467,7 +481,82 @@ export default function SetupScreen() {
         },
         { kind: 'rules-gate', open: true },
       );
+      return;
     }
+    pushMsgs({ kind: 'rule-question', q, open: true });
+  }
+
+  function answerRule(q: number, optionIndex: number) {
+    const question = RULE_QUESTIONS[q];
+    const option = question.options[optionIndex];
+    (ruleAnswers.current as Record<string, unknown>)[question.id] = option.value;
+    setMessages((m) => closeCards(m));
+    pushMsgs({ kind: 'mine', text: option.label });
+    askRule();
+  }
+
+  // The chips are the fast path, not the only path. An answer that isn't
+  // on the menu goes to the parser carrying the question it answers, so
+  // "30 minutes before" can't be read as a booking cutoff when what was
+  // asked about was cancelling. Nothing is written until the end of the
+  // step, so a mis-read is visible in the read-back before it reaches the
+  // gym — and the parser is told to name what it couldn't take rather
+  // than round a typed answer onto the nearest chip.
+  async function answerRulesByText(text: string) {
+    const asked = openRuleQ.current;
+    const current = mergeRuleAnswers(ruleAnswers.current);
+    try {
+      const res = await parse.mutateAsync({
+        step: 'change',
+        text: asked === null ? text : `${RULE_QUESTIONS[asked].prompt} ${text}`,
+      });
+      const p = res.proposal ?? {};
+      const changes = Array.isArray(p.rule_changes)
+        ? sanitiseRuleChanges({ changes: p.rule_changes }, current)
+        : null;
+      const cannot =
+        typeof p.cannot === 'string' && p.cannot.trim() ? p.cannot.trim() : null;
+      if (changes) {
+        const next = { ...current };
+        for (const c of changes) {
+          (ruleAnswers.current as Record<string, unknown>)[c.field] = c.value;
+          (next as Record<string, unknown>)[c.field] = c.value;
+        }
+        pushMsgs({
+          kind: 'temple',
+          text: `Taken as: ${changes.map((c) => ruleSentence(c.field, next)).join('. ')}.`,
+        });
+        if (cannot) {
+          pushMsgs({
+            kind: 'temple',
+            text: `Not all of it, though — ${cannot} isn’t something I can set as one gym-wide rule.`,
+          });
+        }
+      } else {
+        pushMsgs({
+          kind: 'temple',
+          text: cannot
+            ? `${cannot} isn’t one of these rules, so I’ve left it — pick what’s closest below and we can get exact later.`
+            : 'I couldn’t map that onto one of these rules — tap what fits, or say it another way.',
+        });
+        // The cancel charge is the one rule here that lives on the class
+        // type rather than the gym, so "different for the 6am" is a real
+        // answer once there's a timetable — worth saying instead of
+        // leaving them with three chips that don't fit.
+        if (asked !== null && RULE_QUESTIONS[asked].id === 'late_cancel') {
+          pushMsgs({
+            kind: 'temple',
+            text: 'This one is set per class type, so once your timetable is in you can give a single class its own rule.',
+          });
+        }
+      }
+    } catch {
+      pushMsgs({
+        kind: 'temple',
+        text: 'I couldn’t work that out just now — tap an answer below instead.',
+      });
+    }
+    askRule();
   }
 
   function carryOn() {

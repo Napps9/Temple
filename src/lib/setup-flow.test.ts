@@ -7,8 +7,10 @@ import {
   formatDays,
   formatPrice,
   mergeRuleAnswers,
+  nextRuleQuestion,
   RULE_FIELD_OPTIONS,
   RULE_QUESTIONS,
+  ruleSentence,
   ruleSentences,
   ruleSheet,
   sanitisePlans,
@@ -219,6 +221,35 @@ describe('rule questions and the rule sheet', () => {
     expect(
       ruleSentences(mergeRuleAnswers({ booking_window_hours_ahead: 336 })),
     ).toContain('Classes can be booked 2 weeks ahead');
+  });
+
+  it('reads a single rule back as its own sheet sentence', () => {
+    expect(ruleSentence('late_cancel', DEFAULT_RULE_CHOICES)).toBe(
+      'Cancelling costs the credit from 9pm the night before',
+    );
+    expect(
+      ruleSentence(
+        'booking_window_hours_ahead',
+        mergeRuleAnswers({ booking_window_hours_ahead: 336 }),
+      ),
+    ).toBe('Classes can be booked 2 weeks ahead');
+  });
+
+  it('resumes at the first question still unanswered, not the next in line', () => {
+    expect(nextRuleQuestion({})).toBe(0);
+    // A typed sentence can settle a later question first; the run must
+    // still come back for the ones it skipped over.
+    expect(nextRuleQuestion({ week_starts_on: 'sun' })).toBe(0);
+    expect(
+      nextRuleQuestion({
+        booking_window_hours_ahead: 336,
+        late_cancel: 'two_hours',
+      }),
+    ).toBe(2);
+    const all = Object.fromEntries(
+      RULE_QUESTIONS.map((q) => [q.id, DEFAULT_RULE_CHOICES[q.id]]),
+    );
+    expect(nextRuleQuestion(all)).toBeNull();
   });
 
   it('labels the current value of a field', () => {
