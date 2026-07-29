@@ -48,28 +48,122 @@ export const CLASS_TYPE_PALETTE = [
   '#14B8A6',
 ];
 
-// "How gyms like yours usually run bookings." Booking window and cutoff
-// live on the gym; the 9pm-night-before cancel policy lives on each
-// class type, because the gym-level day_before mode is retired — the
-// booking trigger only honours the class-type override now.
-export const BEST_PRACTICE_RULES = {
-  booking_window_hours_ahead: 168,
-  booking_cutoff_minutes_before: 0,
-  class_cancel: {
-    cancel_cutoff_mode: 'day_before' as const,
-    cancel_cutoff_time: '21:00',
-    cancel_cutoff_days_before: 1,
-    cancel_cutoff_minutes_before: 0,
-  },
+// The rules step is a short run of one-tap questions, each mapping onto
+// a real setting: booking window and close-cutoff live on the gym, the
+// late-cancel charge lives on each class type (gym-level day_before is
+// retired — the booking trigger only honours the class-type override),
+// membership-to-book is its own RPC, week start rides the operating
+// defaults. The first option of each question is the best practice, so
+// tapping straight down the list is the recommended setup.
+
+export type LateCancel = 'day_before_21' | 'two_hours' | 'never';
+
+export type RuleChoices = {
+  booking_window_hours_ahead: number | null;
+  late_cancel: LateCancel;
+  booking_cutoff_minutes_before: number;
+  require_membership_to_book: boolean;
+  week_starts_on: 'mon' | 'sun';
 };
 
-export const RULE_SENTENCES = [
-  'Book up to 7 days ahead',
-  'Free cancel until 9pm the night before',
-  'Late cancel uses the class credit',
-  'Waitlist fills empty spots automatically',
-  'Waiver signed before the first class',
+export const DEFAULT_RULE_CHOICES: RuleChoices = {
+  booking_window_hours_ahead: 168,
+  late_cancel: 'day_before_21',
+  booking_cutoff_minutes_before: 0,
+  require_membership_to_book: true,
+  week_starts_on: 'mon',
+};
+
+export type RuleQuestion = {
+  id: keyof RuleChoices;
+  prompt: string;
+  options: { label: string; value: RuleChoices[keyof RuleChoices] }[];
+};
+
+export const RULE_QUESTIONS: RuleQuestion[] = [
+  {
+    id: 'booking_window_hours_ahead',
+    prompt: 'How far ahead can members book a class?',
+    options: [
+      { label: '7 days', value: 168 },
+      { label: '3 days', value: 72 },
+      { label: '2 weeks', value: 336 },
+      { label: 'No limit', value: null },
+    ],
+  },
+  {
+    id: 'late_cancel',
+    prompt: 'When does cancelling start to cost the class credit?',
+    options: [
+      { label: 'From 9pm the night before', value: 'day_before_21' },
+      { label: 'From 2 hours before', value: 'two_hours' },
+      { label: 'Never — cancelling is always free', value: 'never' },
+    ],
+  },
+  {
+    id: 'booking_cutoff_minutes_before',
+    prompt: 'How close to the start can people still book on?',
+    options: [
+      { label: 'Right up to the start', value: 0 },
+      { label: 'Up to 30 minutes before', value: 30 },
+      { label: 'Up to an hour before', value: 60 },
+    ],
+  },
+  {
+    id: 'require_membership_to_book',
+    prompt: 'Can people book before they have a membership?',
+    options: [
+      { label: 'No — membership first', value: true },
+      { label: 'Yes — anyone can book', value: false },
+    ],
+  },
+  {
+    id: 'week_starts_on',
+    prompt: 'What day does your week start on?',
+    options: [
+      { label: 'Monday', value: 'mon' },
+      { label: 'Sunday', value: 'sun' },
+    ],
+  },
 ];
+
+export function mergeRuleAnswers(
+  answers: Partial<RuleChoices>,
+): RuleChoices {
+  return { ...DEFAULT_RULE_CHOICES, ...answers };
+}
+
+export function ruleSentences(c: RuleChoices): string[] {
+  const window =
+    c.booking_window_hours_ahead === null
+      ? 'Book any time — no limit'
+      : c.booking_window_hours_ahead === 336
+        ? 'Book up to 2 weeks ahead'
+        : `Book up to ${Math.round(c.booking_window_hours_ahead / 24)} days ahead`;
+  const cancel =
+    c.late_cancel === 'day_before_21'
+      ? 'Free cancel until 9pm the night before — later uses the class credit'
+      : c.late_cancel === 'two_hours'
+        ? 'Free cancel until 2 hours before — later uses the class credit'
+        : 'Cancelling never costs a credit';
+  const close =
+    c.booking_cutoff_minutes_before === 0
+      ? 'Book right up to the start'
+      : `Booking closes ${c.booking_cutoff_minutes_before} minutes before`;
+  const memb = c.require_membership_to_book
+    ? 'Membership needed to book'
+    : 'Anyone can book a class';
+  const week = c.week_starts_on === 'mon' ? 'Week starts Monday' : 'Week starts Sunday';
+  return [
+    window,
+    cancel,
+    close,
+    memb,
+    week,
+    'Waitlist fills empty spots automatically',
+    'Waiver signed before the first class',
+  ];
+}
 
 const MAX_CLASS_TYPES = 6;
 const MAX_SCHEDULES = 20;

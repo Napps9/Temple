@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CLASS_TYPE_PALETTE,
+  DEFAULT_RULE_CHOICES,
   formatDays,
   formatPrice,
+  mergeRuleAnswers,
+  RULE_QUESTIONS,
+  ruleSentences,
   sanitisePlans,
   sanitiseTimetable,
   timetableSummary,
@@ -143,5 +147,39 @@ describe('summaries and formatting', () => {
     expect(formatDays([1, 2, 3, 4, 5, 6])).toBe('Mon–Sat');
     expect(formatDays([6])).toBe('Sat');
     expect(formatDays([0, 3])).toBe('Sun, Wed');
+  });
+});
+
+describe('rule questions', () => {
+  it('offers the best practice as the first option of every question', () => {
+    for (const q of RULE_QUESTIONS) {
+      expect(mergeRuleAnswers({})[q.id]).toEqual(q.options[0].value);
+    }
+  });
+
+  it('merges partial answers over the defaults', () => {
+    const c = mergeRuleAnswers({ late_cancel: 'never', week_starts_on: 'sun' });
+    expect(c.late_cancel).toBe('never');
+    expect(c.week_starts_on).toBe('sun');
+    expect(c.booking_window_hours_ahead).toBe(168);
+  });
+
+  it('speaks each choice as a plain sentence', () => {
+    expect(ruleSentences(DEFAULT_RULE_CHOICES)).toContain('Book up to 7 days ahead');
+    expect(ruleSentences(DEFAULT_RULE_CHOICES)).toContain(
+      'Free cancel until 9pm the night before — later uses the class credit',
+    );
+    const open = mergeRuleAnswers({
+      booking_window_hours_ahead: null,
+      late_cancel: 'never',
+      require_membership_to_book: false,
+    });
+    const lines = ruleSentences(open);
+    expect(lines).toContain('Book any time — no limit');
+    expect(lines).toContain('Cancelling never costs a credit');
+    expect(lines).toContain('Anyone can book a class');
+    expect(ruleSentences(mergeRuleAnswers({ booking_window_hours_ahead: 336 }))).toContain(
+      'Book up to 2 weeks ahead',
+    );
   });
 });

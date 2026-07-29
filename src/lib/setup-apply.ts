@@ -7,10 +7,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
-  BEST_PRACTICE_RULES,
   type PlansProposal,
   type ProposedPlan,
   type ProposedSchedule,
+  type RuleChoices,
   type TimetableProposal,
 } from './setup-flow';
 
@@ -102,10 +102,11 @@ export function operatingDefaultsArgs(
   gymId: string,
   current: GymOperatingRow,
   defaults: { capacity: number; minutes: number },
+  choices: RuleChoices,
 ) {
   return {
     p_gym_id: gymId,
-    p_week_starts_on: current.week_starts_on,
+    p_week_starts_on: choices.week_starts_on,
     p_timezone: current.timezone,
     p_default_class_capacity: defaults.capacity,
     p_default_class_minutes: defaults.minutes,
@@ -114,10 +115,8 @@ export function operatingDefaultsArgs(
     p_health_retention_months: current.health_retention_months,
     p_lead_conversion_window_days: current.lead_conversion_window_days,
     p_subscription_resolution: current.subscription_resolution,
-    p_booking_window_hours_ahead:
-      BEST_PRACTICE_RULES.booking_window_hours_ahead,
-    p_booking_cutoff_minutes_before:
-      BEST_PRACTICE_RULES.booking_cutoff_minutes_before,
+    p_booking_window_hours_ahead: choices.booking_window_hours_ahead,
+    p_booking_cutoff_minutes_before: choices.booking_cutoff_minutes_before,
     p_cancel_cutoff_minutes_before: 0,
     // Gym-level day_before is retired — the class-type override owns the
     // absolute cutoff (see operating.tsx), so the gym row stays relative.
@@ -128,13 +127,21 @@ export function operatingDefaultsArgs(
   };
 }
 
-export function classCancelPolicyUpdate() {
-  const c = BEST_PRACTICE_RULES.class_cancel;
+export function classCancelPolicyUpdate(choices: RuleChoices) {
+  if (choices.late_cancel === 'day_before_21') {
+    return {
+      cancel_cutoff_mode: 'day_before',
+      cancel_cutoff_time: '21:00',
+      cancel_cutoff_days_before: 1,
+      cancel_cutoff_minutes_before: 0,
+    };
+  }
   return {
-    cancel_cutoff_mode: c.cancel_cutoff_mode,
-    cancel_cutoff_time: c.cancel_cutoff_time,
-    cancel_cutoff_days_before: c.cancel_cutoff_days_before,
-    cancel_cutoff_minutes_before: c.cancel_cutoff_minutes_before,
+    cancel_cutoff_mode: 'relative',
+    cancel_cutoff_time: null,
+    cancel_cutoff_days_before: 1,
+    cancel_cutoff_minutes_before:
+      choices.late_cancel === 'two_hours' ? 120 : 0,
   };
 }
 
@@ -207,6 +214,7 @@ export async function applyRules(
   supabase: SupabaseClient,
   gymId: string,
   defaults: { capacity: number; minutes: number },
+  choices: RuleChoices,
 ): Promise<void> {
   const { data, error } = await supabase
     .from('gyms')
@@ -219,13 +227,19 @@ export async function applyRules(
 
   const { error: rpcErr } = await supabase.rpc(
     'set_gym_operating_defaults',
-    operatingDefaultsArgs(gymId, data as GymOperatingRow, defaults),
+    operatingDefaultsArgs(gymId, data as GymOperatingRow, defaults, choices),
   );
   if (rpcErr) throw rpcErr;
 
   const { error: updErr } = await supabase
     .from('class_types')
-    .update(classCancelPolicyUpdate())
+    .update(classCancelPolicyUpdate(choices))
     .eq('gym_id', gymId);
   if (updErr) throw updErr;
+
+  const { error: reqErr } = await supabase.rpc(
+    'set_require_membership_to_book',
+    { p_gym_id: gymId, p_enabled: choices.require_membership_to_book },
+  );
+  if (reqErr) throw reqErr;
 }

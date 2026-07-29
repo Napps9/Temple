@@ -799,10 +799,16 @@ The staff area shows up when `can_access_staff_area` is on.
   (`src/lib/setup-apply.ts`: `class_types` + `class_recurrences`
   inserts + `extend_recurrence`, `membership_plans` inserts,
   `set_gym_operating_defaults`) — setup holds no write power of its
-  own. The rules step offers the best-practice bundle ("book up to 7
-  days ahead, free cancel until 9pm the night before") — the booking
-  window lands on the gym row, the 9pm-night-before cancel policy on
-  the class types, since gym-level `day_before` is retired. Steps whose
+  own. The rules step is five one-tap chip questions asked inline in
+  the chat — booking window (3d/7d/2w/no limit), when late-cancel starts
+  charging (9pm night before / 2h before / never), how close to the
+  start booking stays open, membership-to-book, and week start — with
+  the best practice as the first (pre-lit) chip, each answer echoed as
+  a chat bubble, and the chosen set read back as plain sentences before
+  "Use these" commits: booking window + close cutoff + week start via
+  `set_gym_operating_defaults`, the late-cancel policy onto every class
+  type (gym-level `day_before` is retired), membership-to-book via
+  `set_require_membership_to_book`. Steps whose
   setup-progress rows are already done are skipped, so a returning
   owner isn't re-asked. Go-live lists what still needs a real button
   (Stripe, waiver, logo) as deep links, then "Go to your gym" or "I'll

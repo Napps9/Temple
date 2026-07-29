@@ -24,11 +24,14 @@ import {
 import {
   formatDays,
   formatPrice,
-  RULE_SENTENCES,
+  mergeRuleAnswers,
+  RULE_QUESTIONS,
+  ruleSentences,
   sanitisePlans,
   sanitiseTimetable,
   timetableSummary,
   type PlansProposal,
+  type RuleChoices,
   type TimetableProposal,
 } from '@/lib/setup-flow';
 import { supabase } from '@/lib/supabase';
@@ -50,7 +53,8 @@ type Msg =
   | { kind: 'receipt'; text: string }
   | { kind: 'timetable-card'; proposal: TimetableProposal; open: boolean }
   | { kind: 'plans-card'; proposal: PlansProposal; open: boolean }
-  | { kind: 'rules-card'; open: boolean };
+  | { kind: 'rule-question'; q: number; open: boolean }
+  | { kind: 'rules-summary'; choices: RuleChoices; open: boolean };
 
 const ASK: Record<Exclude<Step, 'golive'>, string> = {
   timetable:
@@ -58,7 +62,7 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
   plans:
     'Prices next: what does membership cost? For example — "Unlimited is £89. An 8-class pack is £59."',
   rules:
-    'Here’s how gyms like yours usually run bookings. Start with these — change any of it, now or later, just by telling me.',
+    'A few quick rules — tap what fits. The first answer is what most gyms like yours do, and you can change any of it later just by telling me.',
 };
 
 export default function SetupScreen() {
@@ -78,6 +82,7 @@ export default function SetupScreen() {
   // Captured at confirm time so the rules step can set gym defaults to
   // what the owner actually runs, not a guess.
   const confirmedDefaults = useRef({ capacity: 16, minutes: 60 });
+  const ruleAnswers = useRef<Partial<RuleChoices>>({});
 
   const progress = useQuery({
     queryKey: ['gym-setup-progress', membership?.gymId],
@@ -120,7 +125,8 @@ export default function SetupScreen() {
     if (next === 'golive') {
       pushMsgs({ kind: 'temple', text: 'That’s the big pieces. A couple of things need a real button:' });
     } else if (next === 'rules') {
-      pushMsgs({ kind: 'temple', text: ASK.rules }, { kind: 'rules-card', open: true });
+      ruleAnswers.current = {};
+      pushMsgs({ kind: 'temple', text: ASK.rules }, { kind: 'rule-question', q: 0, open: true });
     } else {
       pushMsgs({ kind: 'temple', text: ASK[next] });
     }
@@ -229,9 +235,34 @@ export default function SetupScreen() {
     );
   }
 
-  function confirmRules() {
+  function answerRule(q: number, optionIndex: number) {
+    const question = RULE_QUESTIONS[q];
+    const option = question.options[optionIndex];
+    (ruleAnswers.current as Record<string, unknown>)[question.id] = option.value;
+    setMessages((m) => closeCards(m));
+    pushMsgs({ kind: 'mine', text: option.label });
+    if (q + 1 < RULE_QUESTIONS.length) {
+      pushMsgs({ kind: 'rule-question', q: q + 1, open: true });
+    } else {
+      pushMsgs(
+        { kind: 'temple', text: 'Here’s the lot — look right?' },
+        { kind: 'rules-summary', choices: mergeRuleAnswers(ruleAnswers.current), open: true },
+      );
+    }
+  }
+
+  function restartRules() {
+    ruleAnswers.current = {};
+    setMessages((m) => closeCards(m));
+    pushMsgs(
+      { kind: 'temple', text: 'No problem — let’s run through them again.' },
+      { kind: 'rule-question', q: 0, open: true },
+    );
+  }
+
+  function confirmRules(choices: RuleChoices) {
     applying.mutate(
-      () => applyRules(supabase, membership!.gymId, confirmedDefaults.current),
+      () => applyRules(supabase, membership!.gymId, confirmedDefaults.current, choices),
       {
         onSuccess: () => {
           setMessages((m) => closeCards(m));
@@ -305,6 +336,8 @@ export default function SetupScreen() {
               onConfirmTimetable={confirmTimetable}
               onConfirmPlans={confirmPlans}
               onConfirmRules={confirmRules}
+              onAnswerRule={answerRule}
+              onRestartRules={restartRules}
               onReword={rewordCard}
             />
           ))}
@@ -370,13 +403,17 @@ function MessageRow({
   onConfirmTimetable,
   onConfirmPlans,
   onConfirmRules,
+  onAnswerRule,
+  onRestartRules,
   onReword,
 }: {
   msg: Msg;
   busy: boolean;
   onConfirmTimetable: (p: TimetableProposal) => void;
   onConfirmPlans: (p: PlansProposal) => void;
-  onConfirmRules: () => void;
+  onConfirmRules: (choices: RuleChoices) => void;
+  onAnswerRule: (q: number, optionIndex: number) => void;
+  onRestartRules: () => void;
   onReword: () => void;
 }) {
   if (msg.kind === 'mine') {
@@ -414,7 +451,12 @@ function MessageRow({
             <Button onPress={onConfirm} loading={busy}>{confirmLabel}</Button>
           </View>
           <View className="flex-1">
-            <Button variant="secondary" onPress={onReword} disabled={busy}>Not quite</Button>
+            <Button
+              variant="secondary"
+              onPress={msg.kind === 'rules-summary' ? onRestartRules : onReword}
+              disabled={busy}>
+              Not quite
+            </Button>
           </View>
         </View>
       ) : null}
@@ -458,18 +500,52 @@ function MessageRow({
       () => onConfirmPlans(msg.proposal),
     );
   }
+  if (msg.kind === 'rule-question') {
+    const q = RULE_QUESTIONS[msg.q];
+    return (
+      <View className="gap-2.5">
+        <View className="flex-row gap-2.5 pr-7">
+          <TempleAvatar />
+          <Text className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] leading-6">
+            {q.prompt}
+          </Text>
+        </View>
+        {msg.open ? (
+          <View className="flex-row flex-wrap gap-2 pl-9">
+            {q.options.map((o, i) => (
+              <Pressable
+                key={o.label}
+                onPress={() => onAnswerRule(msg.q, i)}
+                className={`px-4 py-2.5 rounded-full border active:opacity-70 ${
+                  i === 0
+                    ? 'bg-primary border-primary'
+                    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                }`}>
+                <Text
+                  className={`text-sm font-semibold ${
+                    i === 0 ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                  }`}>
+                  {o.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+      </View>
+    );
+  }
   return card(
     <View className="gap-2">
       <Text className="text-gray-900 dark:text-gray-50 text-base font-bold">Your rules</Text>
-      {RULE_SENTENCES.map((r) => (
+      {ruleSentences(msg.choices).map((r) => (
         <View key={r} className="flex-row items-center gap-2">
           <Ionicons name="checkmark" size={15} color="#10B981" />
-          <Text className="text-gray-700 dark:text-gray-300 text-sm">{r}</Text>
+          <Text className="flex-1 text-gray-700 dark:text-gray-300 text-sm">{r}</Text>
         </View>
       ))}
     </View>,
     'Use these',
-    onConfirmRules,
+    () => onConfirmRules(msg.choices),
   );
 }
 
