@@ -97,6 +97,102 @@ const PLANS_TOOL = {
   },
 };
 
+// The Timeline's talk bar: one sentence from the owner becomes rule
+// changes, new classes, new plans, or a closure — never anything else.
+// Values are validated client-side against the same option table the
+// rule sheet renders (sanitiseRuleChanges), so an invented enum dies
+// before it is shown, let alone applied.
+const RULE_FIELDS = [
+  'booking_window_hours_ahead',
+  'late_cancel',
+  'booking_cutoff_minutes_before',
+  'require_membership_to_book',
+  'week_starts_on',
+  'allow_minors',
+  'weight_unit',
+  'dm_scope',
+  'leaderboards_on',
+  'public_signup',
+  'public_lead_capture',
+  'expiring_within_days',
+  'parq_expiry_days',
+  'health_retention_months',
+  'cover_warning_hours',
+  'lead_conversion_window_days',
+];
+
+const CHANGE_TOOL = {
+  name: 'emit_change',
+  description:
+    "Emit the change the gym owner asked for. Fill only the parts they described; use `cannot` when the request is none of these.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      rule_changes: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            field: { type: 'string', enum: RULE_FIELDS },
+            value: { type: ['string', 'integer', 'boolean', 'null'] },
+          },
+          required: ['field', 'value'],
+        },
+      },
+      add_classes: (TIMETABLE_TOOL.input_schema.properties as {
+        schedules: unknown;
+      }).schedules,
+      add_plans: (PLANS_TOOL.input_schema.properties as { plans: unknown })
+        .plans,
+      closure: {
+        type: 'object',
+        properties: {
+          starts_on: { type: 'string' },
+          ends_on: { type: 'string' },
+          reason: { type: ['string', 'null'] },
+        },
+        required: ['starts_on', 'ends_on'],
+      },
+      cannot: { type: ['string', 'null'] },
+    },
+  },
+};
+
+function changePrompt(): string {
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    'You parse a gym owner\'s sentence into the change they asked for. ' +
+    `Today is ${today}.\n` +
+    'Emit ONLY what was described — never invent classes, prices, dates ' +
+    'or settings. Kinds of change:\n' +
+    '1. rule_changes — settings. Fields and values:\n' +
+    '   booking_window_hours_ahead: hours as integer ("2 weeks"→336, ' +
+    '"5 days"→120), or null for no limit.\n' +
+    '   late_cancel: "day_before_21" (9pm night before) | "two_hours" | ' +
+    '"never".\n' +
+    '   booking_cutoff_minutes_before: minutes as integer, 0 = up to ' +
+    'the start.\n' +
+    '   require_membership_to_book / allow_minors / leaderboards_on / ' +
+    'public_signup / public_lead_capture: boolean.\n' +
+    '   week_starts_on: "mon" | "sun". weight_unit: "kg" | "lb".\n' +
+    '   dm_scope: "full_gym" | "member_coach_only".\n' +
+    '   expiring_within_days / lead_conversion_window_days / ' +
+    'parq_expiry_days: days as integer. health_retention_months: months. ' +
+    'cover_warning_hours: hours, 0 = off.\n' +
+    '2. add_classes — NEW classes on the timetable. Same conventions as ' +
+    'a timetable: days 0=Sunday…6=Saturday, times 24-hour "HH:MM", ' +
+    'duration_minutes default 60, capacity default 16.\n' +
+    '3. add_plans — NEW membership plans. monthly_price_cents in pence ' +
+    '("£89"→8900); N-classes-a-month is credit_period with credit_count.\n' +
+    '4. closure — the gym shutting for a date range. starts_on/ends_on ' +
+    'as YYYY-MM-DD, resolved forward from today ("22 Dec to 3 Jan" is ' +
+    'the next December). reason is the owner\'s stated reason or null.\n' +
+    'Anything else — editing or moving existing classes, changing an ' +
+    'existing plan\'s price, member changes, refunds — set `cannot` to ' +
+    'one short plain sentence naming what they asked for. Do not guess.'
+  );
+}
+
 const TIMETABLE_PROMPT =
   'You parse a gym owner\'s description of their weekly class timetable ' +
   'into structured schedules. Rules:\n' +
@@ -123,10 +219,21 @@ const PLANS_PROMPT =
   '- Never invent plans, prices or notice periods that were not described.';
 
 async function parse(
-  step: 'timetable' | 'plans',
+  step: 'timetable' | 'plans' | 'change',
   text: string,
 ): Promise<unknown | null> {
-  const tool = step === 'timetable' ? TIMETABLE_TOOL : PLANS_TOOL;
+  const tool =
+    step === 'timetable'
+      ? TIMETABLE_TOOL
+      : step === 'plans'
+        ? PLANS_TOOL
+        : CHANGE_TOOL;
+  const system =
+    step === 'timetable'
+      ? TIMETABLE_PROMPT
+      : step === 'plans'
+        ? PLANS_PROMPT
+        : changePrompt();
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -137,7 +244,7 @@ async function parse(
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 2048,
-      system: step === 'timetable' ? TIMETABLE_PROMPT : PLANS_PROMPT,
+      system,
       tools: [tool],
       tool_choice: { type: 'tool', name: tool.name },
       messages: [{ role: 'user', content: text }],
@@ -164,7 +271,9 @@ Deno.serve(async (req: Request) => {
 
   const gymId = typeof body.gym_id === 'string' ? body.gym_id : null;
   const step =
-    body.step === 'timetable' || body.step === 'plans' ? body.step : null;
+    body.step === 'timetable' || body.step === 'plans' || body.step === 'change'
+      ? body.step
+      : null;
   const text =
     typeof body.text === 'string' ? body.text.trim().slice(0, MAX_TEXT_CHARS) : '';
   if (!gymId || !step || text.length < 4) {

@@ -167,8 +167,21 @@ export async function applyTimetable(
   const todayStr = fmtDateLocal(today);
   const untilDate = horizonEnd(today, weeks);
 
+  // A proposed type whose name matches one the gym already has reuses it
+  // — "add a Saturday CrossFit at 10" on a live gym must not mint a
+  // second CrossFit. On day one this map is simply empty.
   const idByName = new Map<string, string>();
+  const { data: existing } = await supabase
+    .from('class_types')
+    .select('id, name')
+    .eq('gym_id', gymId)
+    .is('archived_at', null);
+  for (const row of (existing ?? []) as { id: string; name: string }[]) {
+    idByName.set(row.name.toLowerCase(), row.id);
+  }
+
   for (const ct of proposal.class_types) {
+    if (idByName.has(ct.name.toLowerCase())) continue;
     const { data, error } = await supabase
       .from('class_types')
       .insert(classTypeInsert(gymId, ct))
@@ -215,7 +228,12 @@ export async function applyRules(
   gymId: string,
   defaults: { capacity: number; minutes: number },
   choices: RuleChoices,
+  // The class-type cancel rewrite is opt-out: day-one setup always wants
+  // it, but a Timeline change to an unrelated field must not flatten
+  // per-type overrides the editor has since customised.
+  opts: { touchCancelPolicy?: boolean } = {},
 ): Promise<void> {
+  const touchCancelPolicy = opts.touchCancelPolicy ?? true;
   const { data, error } = await supabase
     .from('gyms')
     .select(
@@ -231,11 +249,13 @@ export async function applyRules(
   );
   if (rpcErr) throw rpcErr;
 
-  const { error: updErr } = await supabase
-    .from('class_types')
-    .update(classCancelPolicyUpdate(choices))
-    .eq('gym_id', gymId);
-  if (updErr) throw updErr;
+  if (touchCancelPolicy) {
+    const { error: updErr } = await supabase
+      .from('class_types')
+      .update(classCancelPolicyUpdate(choices))
+      .eq('gym_id', gymId);
+    if (updErr) throw updErr;
+  }
 
   const { error: reqErr } = await supabase.rpc(
     'set_require_membership_to_book',

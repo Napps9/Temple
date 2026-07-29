@@ -414,6 +414,25 @@ The staff area shows up when `can_access_staff_area` is on.
   "See the details", decided through the existing
   `stripe-modify-subscription` path (`useDecideChangeRequest`) — the
   standalone queue screen is unchanged underneath.
+- **The talk bar** (owner only; roadmap phases 3+4) — a sentence becomes
+  a change: `parse-setup`'s `change` step returns rule changes
+  (validated against `RULE_FIELD_OPTIONS` by `sanitiseRuleChanges` —
+  numeric fields accept off-menu values within bounds, enums must land
+  on a real option), new classes (`sanitiseTimetable`), new plans
+  (`sanitisePlans`), or a closure. Each renders as a proposal card with
+  exactly two choices; confirming applies through the same writes the
+  editors use — `applyRules` (which now only rewrites class-type cancel
+  policy when `late_cancel` itself changed), `applyTimetable` (which now
+  reuses an existing class type by name instead of duplicating it),
+  `applyPlans`, and `close_gym_dates` for closures. Anything else gets a
+  fixed "not from here yet" reply — never a guess.
+- **Your rules, permanently** — the day-one rule sheet (extracted to
+  `src/components/RuleSheet.tsx`, shared with `/setup`) opens from a
+  chip above the bar with the gym's *current* settings, read back by
+  `choicesFromGym` (`src/lib/rules-read.ts`, pure + tested; late-cancel
+  derived from the class types' effective policies by majority, ties
+  strictest-first). Tapping a value applies that one field immediately —
+  per-action saves, a receipt line in the stream, the sheet refetches.
 - **The ledger seed** — `agent_actions` (loop-1 spec's table) exists and
   is unioned into the feed: staff read behind `can_see_money`, no client
   write path at all (`Insert: never`). Empty until the first loop writes

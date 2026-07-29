@@ -183,9 +183,53 @@ export const RULE_FIELD_OPTIONS: Record<RuleField, FieldOption[]> = {
   ],
 };
 
+// Off-menu values (a gym configured before the sheet existed, or a
+// sentence like "make it 5 days") still read as English, not as a bare
+// number mid-sentence.
+export function formatRuleValue(
+  field: RuleField,
+  value: RuleChoices[RuleField],
+): string {
+  if (typeof value !== 'number') return String(value);
+  switch (field) {
+    case 'booking_window_hours_ahead':
+      if (value % 168 === 0) {
+        const w = value / 168;
+        return w === 1 ? '1 week' : `${w} weeks`;
+      }
+      if (value % 24 === 0 && value >= 48) return `${value / 24} days`;
+      return value === 1 ? '1 hour' : `${value} hours`;
+    case 'booking_cutoff_minutes_before':
+      if (value === 0) return 'right up to the start';
+      if (value % 60 === 0) {
+        const h = value / 60;
+        return h === 1 ? 'until an hour before' : `until ${h} hours before`;
+      }
+      return `until ${value} minutes before`;
+    case 'cover_warning_hours':
+      if (value === 0) return 'never';
+      if (value % 168 === 0) return value === 168 ? 'a week' : `${value / 168} weeks`;
+      if (value % 24 === 0 && value >= 48) return `${value / 24} days`;
+      return `${value} hours`;
+    case 'parq_expiry_days':
+      if (value % 365 === 0) {
+        const y = value / 365;
+        return y === 1 ? 'year' : `${y} years`;
+      }
+      return `${value} days`;
+    case 'health_retention_months':
+      return value === 1 ? '1 month' : `${value} months`;
+    case 'expiring_within_days':
+    case 'lead_conversion_window_days':
+      return value === 1 ? '1 day' : `${value} days`;
+    default:
+      return String(value);
+  }
+}
+
 export function fieldLabel(field: RuleField, c: RuleChoices): string {
   const opt = RULE_FIELD_OPTIONS[field].find((o) => o.value === c[field]);
-  return opt ? opt.label : String(c[field]);
+  return opt ? opt.label : formatRuleValue(field, c[field]);
 }
 
 export type RuleQuestion = {
@@ -465,6 +509,76 @@ export function sanitisePlans(raw: unknown): PlansProposal | null {
 
   if (plans.length === 0) return null;
   return { plans };
+}
+
+export type RuleChange = { field: RuleField; value: RuleChoices[RuleField] };
+
+// Numeric fields accept off-menu values from a sentence ("make it 5
+// days"), clamped to sane bounds; enum and boolean fields must land on a
+// real option. booking_window_hours_ahead additionally accepts null
+// ("no limit").
+const NUMERIC_RULE_BOUNDS: Partial<Record<RuleField, [number, number]>> = {
+  booking_window_hours_ahead: [1, 2160],
+  booking_cutoff_minutes_before: [0, 1440],
+  expiring_within_days: [1, 90],
+  parq_expiry_days: [30, 1095],
+  health_retention_months: [1, 24],
+  cover_warning_hours: [0, 336],
+  lead_conversion_window_days: [7, 365],
+};
+
+// Model output is untrusted: every change is re-validated against the
+// option table (or the numeric bounds), no-ops are dropped, and a
+// request that survives with nothing left returns null so the UI never
+// shows an empty "confirm this" card.
+export function sanitiseRuleChanges(
+  raw: unknown,
+  current: RuleChoices,
+): RuleChange[] | null {
+  const r = raw as { changes?: unknown } | null;
+  if (!r || !Array.isArray(r.changes)) return null;
+
+  const byField = new Map<RuleField, RuleChange>();
+  for (const item of r.changes.slice(0, 16)) {
+    const it = item as { field?: unknown; value?: unknown };
+    const field = it.field as RuleField;
+    if (typeof field !== 'string' || !(field in RULE_FIELD_OPTIONS)) continue;
+
+    let value: RuleChoices[RuleField] | undefined;
+    const bounds = NUMERIC_RULE_BOUNDS[field];
+    if (bounds) {
+      if (it.value === null && field === 'booking_window_hours_ahead') {
+        value = null;
+      } else if (
+        typeof it.value === 'number' &&
+        Number.isFinite(it.value)
+      ) {
+        const n = Math.round(it.value);
+        if (n >= bounds[0] && n <= bounds[1]) value = n;
+      }
+    } else {
+      const opt = RULE_FIELD_OPTIONS[field].find((o) => o.value === it.value);
+      if (opt) value = opt.value;
+    }
+    if (value === undefined) continue;
+    if (value === current[field]) continue;
+    byField.set(field, { field, value });
+  }
+
+  const changes = [...byField.values()];
+  return changes.length > 0 ? changes : null;
+}
+
+// "Cancelling costs the credit: from 9pm the night before → from 2 hours
+// before" — the confirm card's line per change.
+export function ruleChangeLine(change: RuleChange, current: RuleChoices): string {
+  const next = { ...current, [change.field]: change.value } as RuleChoices;
+  const sheetLine = ruleSheet(next)
+    .flatMap((g) => g.lines)
+    .find((l) => l.parts.some((p) => 'f' in p && p.f === change.field));
+  const sentence = sheetLine ? sheetLineText(sheetLine, next) : '';
+  const from = fieldLabel(change.field, current);
+  return `${sentence} (was ${from})`;
 }
 
 export function timetableSummary(p: TimetableProposal): string {
