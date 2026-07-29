@@ -918,10 +918,21 @@ The staff area shows up when `can_access_staff_area` is on.
   `dismiss_gym_onboarding`) — the inline Manage card stays available
   regardless, for whenever they want to finish.
 - **Conversational setup** (`/setup`, owner-only) — day one as a
-  conversation, not forms. A fixed script (timetable → prices → rules →
-  go live): the owner describes their week ("CrossFit at 6, 7 and 9:30
-  weekday mornings, 6pm evenings, 9am Saturday, cap 16") and their
-  prices in plain English; the `parse-setup` edge function
+  conversation that takes the fastest input per step, not prose for
+  everything. A fixed script (logo → classes → prices → rules → go
+  live), rendered inside the staff shell (TopNav encases it; the thread
+  anchors to the ask bar on tall viewports). The **logo step** is an
+  inline card reusing the branding screen's picker, upload and
+  `set_gym_branding` write — one tap, or "Skip for now" (the checklist
+  keeps the step open). The **class step** embeds the real
+  `RecurrenceEditor` (the class-types screen's own component, with a
+  `hideRepeat` prop since day-one schedules are ongoing) in a builder
+  card — name, colour, day chips, times, duration, capacity; "Add this
+  class" stacks the week, "That's my week" applies the lot — while
+  *describing* the week in the bar remains the alternative ("CrossFit
+  at 6, 7 and 9:30 weekday mornings, 6pm evenings, 9am Saturday, cap
+  16"; a failed parse re-offers the builder). Both paths land on the
+  same apply. For the described path the `parse-setup` edge function
   (Claude Sonnet, tool-forced JSON, gated on
   `effective_can(gym, 'can_edit_classes')`, 503 without an API key)
   turns each into a proposal; the client sanitises it
