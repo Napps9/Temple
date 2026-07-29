@@ -65,13 +65,18 @@ import { useGymBrand } from '@/lib/useGymBrand';
 // paths as the manual editors. /onboarding stays as the checklist escape
 // hatch throughout.
 
+// Order is the checklist's order, deliberately: settings before
+// classes (so a class inherits the defaults just set), screening before
+// payments, payments before plans (a plan can only sell on a connected
+// account). /onboarding and this conversation must never disagree about
+// what comes next.
 type Step =
   | 'logo'
+  | 'rules'
   | 'timetable'
+  | 'parq'
   | 'stripe'
   | 'plans'
-  | 'parq'
-  | 'rules'
   | 'team'
   | 'golive';
 
@@ -92,15 +97,15 @@ type Msg =
   | { kind: 'rules-gate'; open: boolean }
   | { kind: 'rules-summary'; choices: RuleChoices; open: boolean };
 
-// Mirrors /onboarding's required list, in this conversation's order, so
-// the progress bar counts the same things the checklist counts.
+// The checklist's required list, in the checklist's order, so the
+// progress bar counts exactly what /onboarding counts.
 export const REQUIRED_SETUP_KEYS = [
   'logo',
+  'settings',
   'class_type_and_schedule',
+  'parq',
   'stripe',
   'plan',
-  'settings',
-  'parq',
 ] as const;
 
 // Each step wears the checklist's own icon, label and time estimate, so
@@ -147,17 +152,17 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
   logo:
     'First, make it yours — add your logo and the whole app wears it. Not to hand? Skip it; everything runs fine without.',
   timetable:
-    'Now your week. Add each class below — or just describe the whole thing in the box ("CrossFit at 6, 7 and 9:30 weekday mornings, 6pm evenings, cap of 16") and I\'ll build it.',
+    'Now your week — add each class below — or just describe the whole thing in the box ("CrossFit at 6, 7 and 9:30 weekday mornings, 6pm evenings, cap of 16") and I\'ll build it.',
   stripe:
-    'Payments before prices — connect your Stripe and members pay you directly; Temple takes no cut. Plans become buyable the moment it\'s live.',
+    'Payments next, before prices — connect your Stripe and members pay you directly; Temple takes no cut and adds nothing on top.',
   plans:
     'Prices next: add each membership below — or describe them ("Unlimited is £89 with 30 days notice, an 8-class pack is £59") and I\'ll build them.',
   parq:
-    'Members sign something before their first class — upload your waiver as a PDF and they sign it in the app. One is enough; a PAR-Q can come later.',
+    'Before anyone can book, members sign something — upload your waiver as a PDF and they sign it in the app. One is enough; a PAR-Q can come later.',
   team:
     'Last one, and it\u2019s optional — invite your coaches so they can take classes and write programming.',
   rules:
-    'A few quick rules — tap what fits. The first answer is what most gyms like yours do, and you can change any of it later just by telling me.',
+    'Next, a few rules — tap what fits. The first answer is what most gyms like yours do, and your classes will pick these up as their defaults. Change any of it later just by telling me.',
 };
 
 export default function SetupScreen() {
@@ -201,11 +206,11 @@ export default function SetupScreen() {
   function stepsRemaining(from: Step | null): Step[] {
     const all: Step[] = [
       'logo',
+      'rules',
       'timetable',
+      'parq',
       'stripe',
       'plans',
-      'parq',
-      'rules',
       'team',
       'golive',
     ];
@@ -1129,9 +1134,12 @@ function ClassBuilderCard({
   const [entries, setEntries] = useState<BuilderEntry[]>([]);
   const [name, setName] = useState('');
   const [color, setColor] = useState(CLASS_TYPE_PALETTE[0]);
+  // The settings step runs first (checklist order), so a class starts
+  // from the defaults the owner just chose rather than a hard-coded 16.
   const [form, setForm] = useState<RecurrenceForm>({
     ...EMPTY_RECURRENCE,
-    capacity: '16',
+    capacity: String(gymDefaults?.default_class_capacity ?? 16),
+    durationMinutes: String(gymDefaults?.default_class_minutes ?? 60),
   });
   const [error, setError] = useState<string | null>(null);
 

@@ -919,10 +919,14 @@ The staff area shows up when `can_access_staff_area` is on.
   regardless, for whenever they want to finish.
 - **Conversational setup** (`/setup`, owner-only) — day one as a
   conversation that takes the fastest input per step, not prose for
-  everything. A fixed script (logo → classes → payments → prices → rules → go
-  live; **Stripe comes before plans** because a plan can only sell on
-  the gym's own connected account — the card hands off to the billing
-  screen's OAuth round-trip with `?backTo=setup` and returns here), rendered inside the staff shell (TopNav encases it; the thread
+  everything. A fixed script in **the checklist's own order** — logo → settings →
+  classes → health screening → payments → plans → team → go live — so
+  `/onboarding` and the conversation can never disagree about what comes
+  next. Settings before classes earns its place: the class builder seeds
+  its capacity and duration from the defaults just saved. Payments
+  before plans because a plan can only sell on the gym's own connected
+  account; the card starts the OAuth itself and the state row's
+  `return_path` (0210) brings the owner back to the conversation, rendered inside the staff shell (TopNav encases it; the thread
   anchors to the ask bar on tall viewports). The **logo step** is an
   inline card reusing the branding screen's picker, upload and
   `set_gym_branding` write — one tap, or "Skip for now" (the checklist
