@@ -98,7 +98,7 @@ Service-role only, tenancy derived server-side, the `agent_capture_lead`
 shape:
 
 - `agent_open_payment_case(subscription)` — idempotent; refuses if no
-  authority rows (teammate not hired).
+  authority rows (job not switched on).
 - `agent_propose_action(case, kind, payload, evidence)` — writes
   `agent_actions`; if the kind's authority is `'autonomous'`, marks approved
   and returns immediately executable.
@@ -224,10 +224,10 @@ Vitest: always-allow counting, card payload rendering, evidence formatting.
 ## Rollout
 
 Demo gym first (`@demo-ironworks.temple.test` accounts, nothing routes out),
-with a manufactured failing invoice via Stripe test clocks. Then hired
-per-gym: enabling the Revenue teammate writes the `agent_authority` rows —
-presented as the Roster's offer-letter moment, even before the Roster screen
-exists.
+with a manufactured failing invoice via Stripe test clocks. Then enabled
+per-gym: switching on the money job writes the `agent_authority` rows —
+presented as reading the job's rules and saying "sounds right", even before
+the Roster screen exists.
 
 ## Out of scope (v1, deliberately)
 

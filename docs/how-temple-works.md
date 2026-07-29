@@ -15,8 +15,9 @@ Three places, a talk bar — and Today, for whoever is coaching.
   qualifications and limits, and Temple's jobs in plain names — the front
   desk, the money, keeping members — each with one line of description,
   this week's number, and how much rope it has ("on its own" / "asks
-  first"). Taking on a new job is an offer letter — what I'll do, what
-  I'll ask you about, what I'll never do — not a settings page.
+  first"). Each job shows its rules — what it does, what it asks about,
+  what it never does — and taking one on is reading them and saying
+  "sounds right", not filling in settings.
 - **Goals** — what you're aiming at. "200 members by December" as a brief
   you've given an employee, with a weekly note on how it's going.
 - **Today** — the coach's landing, and deliberately the calendar they
@@ -36,6 +37,24 @@ interface; they describe what they want and confirm what comes back.
 Today's ~70 routes demote to the Back Office and burn down from there.
 
 ## The jobs
+
+### Day one — the flow we start with
+
+Setup is the owner's first conversation with Temple, in the Timeline
+itself — the same place they'll live from then on. Four steps, about
+fifteen minutes, talk or type: describe your week of classes; say your
+prices; confirm the **best-practice rules** ("book up to 7 days ahead,
+free cancel until 9pm the night before, waitlist fills spots
+automatically") — offered ready-made from how gyms like yours run, changed
+by saying so, now or forever after; then read what Temple handles out of
+the box and the rules it follows ("I never talk about health, I never
+cancel anyone, prices are always yours — anything unusual, I ask first"),
+and say "sounds right". Go live: the number answering, the website up, the
+join link ready. Switching platforms is a sentence too — "send me your
+member list" runs the import machinery that already exists. There is no
+"hiring" and no configuration: owners set up rules and best practices,
+and every rule stays a sentence — "make the 6am cancel cutoff 2 hours" —
+for the life of the gym.
 
 ### A new lead comes in
 

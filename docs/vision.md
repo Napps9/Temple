@@ -207,6 +207,11 @@ Four teammates, not forty features. And recall the empty desks: the matrix
 already holds capabilities nothing exercises. The org chart was waiting for
 the staff.
 
+One caution, learned in review: the org chart is *ours*. Owners don't want
+to hire software — they want rules and best practices they can trust. The
+model shapes how we build; the surface shows plain-named jobs with rules
+(section 4), and nothing an owner meets ever asks them to play HR.
+
 ### Model 2 — The approval economy: settings are fossilised decisions
 
 Every action in a gym sits at one of three authority levels: **autonomous**,
@@ -309,9 +314,10 @@ conversation review screen, where the owner corrects an answer and the
 correction becomes a standing rule. The jobs wear plain names on the
 surface — the front desk, the money, keeping members — never org-chart
 titles; Front Desk/Revenue/Retention/Ops is how we build it, not how the
-owner reads it. Hiring a teammate is enabling a loop bundle, presented as
-an offer letter — what I'll do, what I'll ask you about, what I'll never
-do — not a settings page.
+owner reads it. Owners don't "hire" anything — that's our metaphor, not
+theirs. Taking on a job is reading its rules — what it does, what it asks
+about, what it never does — and saying "sounds right". Rules and best
+practices, not employment theatre, and never a settings page.
 
 **4. Goal Threads.** "Get to 200 members by December" as a persistent
 object with an owner (a teammate), a plan, a running action log, and a
@@ -536,7 +542,8 @@ Ordered nearest to furthest. Plausible means we would start it inside two
 years; provocative means it sounds slightly mad today and will read as
 obvious in hindsight.
 
-**1. Setup by conversation.** [Plausible] A new gym onboards in a
+**1. Setup by conversation.** [Pulled forward — this is now the first
+flow we design and build, not a bet] A new gym onboards in a
 40-minute phone call — plans, schedule, policies come out the other side as
 a draft the owner approves. No forms. This is a direct extension of the
 interview that already writes the front desk's brief. Owners begged us for
@@ -604,6 +611,13 @@ We need to stamp it.
 | 2 — Three loops | Revenue: payment recovery, worked not listed. Retention: churn-risk plus tracked outreach, and the first durable per-member memory (with TTLs on the model of the existing purge discipline). Ops: class-fill, which forces the push build with a genuinely useful first message. The Timeline ships with the first loop. | The whole dunning pipeline (detection, notices, invoice links) as Revenue's sensors; the inactivity automation and the new attendance-based tag predicates as Retention's signals; the waitlist trigger and the quick-book affinity model as Ops's instincts | The "Needs chasing" list is the first screen to gain the superseded marker |
 | 3 — The flip | The Timeline as owner homepage (a stream fed by one loop is a notification feed; fed by three it is an employee). Goal Threads on the orphaned targets schema. The Roster, generalising the conversation-review screen to every teammate. | The front desk's coaching surface, brief-interview flow, and QC patterns, generalised | The Manage hub collapses into the three destinations; the Back Office burndown is published and worked |
 
+And one flow pulled forward from the bets, to run alongside the loops:
+**day-one setup by conversation**. It is the first thing a new owner ever
+meets, it is the acquisition wedge, and it is buildable now — the
+brief-interview machinery exists, the setter RPCs exist, and every
+best-practice rule it writes is a sentence the talk bar must learn to
+understand anyway. Same machinery, highest-leverage surface.
+
 Why these three loops first: payment recovery has the highest direct pain
 (gyms have switched platforms over it), its substrate is fully built, its
 worst failure mode is a polite message, and recovered pounds are the trust
@@ -622,7 +636,7 @@ every new memory the teammates acquire. Two commercial questions are
 flagged and deliberately not designed here: metering and billing for agent
 usage, and the go-to-market wedge — noting only that the Front Desk can
 answer a gym's phone while that gym still runs MindBody, which means the
-first teammate can be hired before Temple is the system of record it
+front desk can be switched on before Temple is the system of record it
 replaces.
 
 ---
