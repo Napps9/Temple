@@ -1,18 +1,62 @@
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ProgrammingCalendar } from '@/components/ProgrammingCalendar';
+import { ProgrammingRoadmap } from '@/components/ProgrammingRoadmap';
+import { Screen } from '@/components/Screen';
+import { useGymMembership } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 
 export default function StaffProgramming() {
   const canEdit = useCan('can_edit_classes') ?? false;
   const canProgramMembers = useCan('can_program_members') ?? false;
+  const { data: membership } = useGymMembership();
+  const [view, setView] = useState<'week' | 'year'>('week');
+
+  const toggle = (
+    <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-0.5">
+      {(['week', 'year'] as const).map((v) => (
+        <Pressable
+          key={v}
+          onPress={() => setView(v)}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: view === v }}
+          className={`px-3 py-1 rounded-full ${
+            view === v ? 'bg-white dark:bg-gray-700 shadow-pill' : ''
+          }`}>
+          <Text
+            className={`text-[13px] font-semibold ${
+              view === v
+                ? 'text-gray-900 dark:text-gray-50'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}>
+            {v === 'week' ? 'Week' : 'Year'}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+
+  if (view === 'year') {
+    return (
+      <Screen edges={['bottom', 'left', 'right']}>
+        <View className="w-full max-w-5xl mx-auto px-2 pt-3 pb-1 items-center">
+          {toggle}
+        </View>
+        <ProgrammingRoadmap gymId={membership?.gymId} canEdit={canEdit} />
+      </Screen>
+    );
+  }
+
   return (
     <ProgrammingCalendar
       mode={canEdit ? 'manage' : 'view'}
+      roadmap
       headerAction={
-        <View className="flex-row gap-2">
+        <View className="flex-row items-center gap-2">
+          {toggle}
           {canProgramMembers ? (
             <ChipButton
               label="Individuals"

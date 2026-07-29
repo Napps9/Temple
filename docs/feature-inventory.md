@@ -441,6 +441,18 @@ The staff area shows up when `can_access_staff_area` is on.
   which the AI front desk already owns.
 
 ### Programming
+- **The roadmap** (roadmap phase 5, 0205 — `programming_blocks`) — a year
+  of named training blocks ("Squat strength — 8 weeks", "Open prep") set
+  by the owner or head coach, visible to the whole team. Lives inside
+  the programming calendar, not a new surface: a Week | Year toggle on
+  the staff Programming screen; Week shows a block strip above the day
+  circles ("Squat strength · week 3 of 8" + the block's note) computed
+  by `blockForDate`/`blockStripText` (`src/lib/programming-roadmap.ts`,
+  pure + tested); Year is a twelve-month band plus the block list with
+  add/edit/delete (`ProgrammingRoadmap.tsx`, name/dates/note/colour).
+  Reads and writes both behind `user_can_manage_classes` — coaching
+  material, RLS-hidden from members. Sharing is existence: a block saved
+  in Year is on every coach's strip immediately.
 - **Programming calendar (manage mode)** — author day-by-day sections
   per class type. Each section is category + format + title + body.
   Categories: Strength & Skill / WOD / Primer / Mobility / Accessories

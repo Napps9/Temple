@@ -13,10 +13,12 @@ import {
   ProgrammingModal,
   type ProgrammingTarget,
 } from '@/components/ProgrammingModal';
+import { useProgrammingBlocks } from '@/components/ProgrammingRoadmap';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { TodayButton } from '@/components/TodayButton';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { blockForDate, blockStripText } from '@/lib/programming-roadmap';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -121,11 +123,15 @@ export function ProgrammingCalendar({
   memberScope,
   topBar,
   showMyPercentages,
+  roadmap,
 }: {
   mode: 'manage' | 'view';
   // Optional control rendered beside the month header (right-aligned
   // on desktop, its own row on mobile) — staff use it for Analysis.
   headerAction?: React.ReactNode;
+  // Show the roadmap block strip above the week (staff surfaces only —
+  // blocks are coaching material, RLS-hidden from members anyway).
+  roadmap?: boolean;
   // Scopes the calendar to ONE member's individual programming (the
   // staff member-programming screen). Class sessions/programming stop
   // being fetched; each day is that member's personal card instead.
@@ -169,6 +175,13 @@ export function ProgrammingCalendar({
     setPickerMonth(startOfMonth(date));
     setPickerOpen(true);
   };
+
+  const blocksQuery = useProgrammingBlocks(
+    roadmap ? membership?.gymId : undefined,
+  );
+  const activeBlock = roadmap
+    ? blockForDate(blocksQuery.data ?? [], fmtDateLocal(date))
+    : null;
 
   const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
     .toString()
@@ -352,6 +365,25 @@ export function ProgrammingCalendar({
         {headerAction ? (
           <View className="md:hidden flex-row flex-wrap justify-center gap-2 pb-4 -mt-1">
             {headerAction}
+          </View>
+        ) : null}
+
+        {activeBlock ? (
+          <View className="flex-row items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 mb-4 -mt-1">
+            <View
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: activeBlock.color }}
+            />
+            <Text className="flex-1 text-primary text-[13px] font-semibold">
+              {blockStripText(activeBlock, fmtDateLocal(date))}
+            </Text>
+            {activeBlock.note ? (
+              <Text
+                className="text-gray-500 dark:text-gray-400 text-xs max-w-[45%]"
+                numberOfLines={1}>
+                {activeBlock.note}
+              </Text>
+            ) : null}
           </View>
         ) : null}
 

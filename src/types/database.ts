@@ -631,6 +631,38 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      programming_blocks: {
+        Row: {
+          id: string;
+          gym_id: string;
+          name: string;
+          starts_on: string;
+          ends_on: string;
+          color: string;
+          note: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          name: string;
+          starts_on: string;
+          ends_on: string;
+          color?: string;
+          note?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          name: string;
+          starts_on: string;
+          ends_on: string;
+          color: string;
+          note: string | null;
+        }>;
+        Relationships: [];
+      };
       agent_conversations: {
         Row: {
           id: string;
