@@ -34,7 +34,8 @@ begin
   v_past := _test_mk_session(v_gym, v_coach, now() - interval '30 days');
   v_book := _test_mk_booking(v_past, v_member);
   update public.class_bookings
-    set attended_at = now() - interval '30 days' where id = v_book;
+    set attended_at = now() - interval '30 days', marked_by = v_coach
+    where id = v_book;
 
   -- An unclaimed cover offer on a class 24h out (inside the default
   -- 48-hour warning window).
