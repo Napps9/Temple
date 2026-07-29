@@ -1,8 +1,10 @@
 # How Temple comes together
 
 The whole product, on one page, organised by the work — not the screens.
-Companion to `docs/vision.md` (the argument) and
-`docs/loop-1-payment-recovery.md` (the first loop's engineering).
+Companion to `docs/vision.md` (the argument),
+`docs/loop-1-payment-recovery.md` (the first loop's engineering) and
+`docs/roadmap.md` (what keeps its screen, what moves to the Timeline,
+and in what order).
 
 ## The shape
 
