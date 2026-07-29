@@ -37,9 +37,13 @@ export const EMPTY_RECURRENCE: RecurrenceForm = {
 export function RecurrenceEditor({
   value,
   onChange,
+  hideRepeat,
 }: {
   value: RecurrenceForm;
   onChange: (next: RecurrenceForm) => void;
+  // Day-one setup embeds this editor in the chat where every schedule is
+  // ongoing — the repeat controls would only add questions.
+  hideRepeat?: boolean;
 }) {
   const colors = useThemeColors();
   const { data: gymDefaults } = useGymOperatingDefaults();
@@ -155,7 +159,7 @@ export function RecurrenceEditor({
         keyboardType="numeric"
       />
 
-      {!value.indefinite ? (
+      {!hideRepeat && !value.indefinite ? (
         <Input
           label="Repeat for (weeks)"
           value={value.weeks}
@@ -165,6 +169,7 @@ export function RecurrenceEditor({
         />
       ) : null}
 
+      {hideRepeat ? null : (
       <Pressable
         onPress={() => onChange({ ...value, indefinite: !value.indefinite })}
         className="flex-row items-center gap-2">
@@ -180,6 +185,7 @@ export function RecurrenceEditor({
         </View>
         <Text className="text-gray-900 dark:text-gray-50">Repeat indefinitely</Text>
       </Pressable>
+      )}
     </View>
   );
 }

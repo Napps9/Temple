@@ -13,7 +13,17 @@ import {
   View,
 } from 'react-native';
 
+import * as ImagePicker from 'expo-image-picker';
+
 import { Button } from '@/components/Button';
+import { GymLogo } from '@/components/GymLogo';
+import {
+  EMPTY_RECURRENCE,
+  RecurrenceEditor,
+  summariseRecurrence,
+  validateRecurrence,
+  type RecurrenceForm,
+} from '@/components/RecurrenceEditor';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useMyProfile, useRole, useSession } from '@/lib/auth';
@@ -23,6 +33,7 @@ import {
   applyTimetable,
 } from '@/lib/setup-apply';
 import {
+  CLASS_TYPE_PALETTE,
   fieldLabel,
   formatDays,
   formatPrice,
@@ -38,6 +49,7 @@ import {
   type RuleField,
   type TimetableProposal,
 } from '@/lib/setup-flow';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
@@ -49,21 +61,29 @@ import { useGymBrand } from '@/lib/useGymBrand';
 // paths as the manual editors. /onboarding stays as the checklist escape
 // hatch throughout.
 
-type Step = 'timetable' | 'plans' | 'rules' | 'golive';
+type Step = 'logo' | 'timetable' | 'plans' | 'rules' | 'golive';
 
 type Msg =
   | { kind: 'temple'; text: string }
   | { kind: 'mine'; text: string }
   | { kind: 'receipt'; text: string }
+  | { kind: 'logo-card'; open: boolean }
+  | { kind: 'class-builder'; open: boolean }
   | { kind: 'timetable-card'; proposal: TimetableProposal; open: boolean }
   | { kind: 'plans-card'; proposal: PlansProposal; open: boolean }
   | { kind: 'rule-question'; q: number; open: boolean }
   | { kind: 'rules-gate'; open: boolean }
   | { kind: 'rules-summary'; choices: RuleChoices; open: boolean };
 
+// The checklist's sequencing survives as this script; each step takes
+// whichever input is fastest — a tap for the logo, the real schedule
+// editor for classes (typing the week out stays as the alternative in
+// the bar), sentences for prices, chips for rules.
 const ASK: Record<Exclude<Step, 'golive'>, string> = {
+  logo:
+    'First, make it yours — add your logo and the whole app wears it. Not to hand? Skip it; everything runs fine without.',
   timetable:
-    'First, your week: what classes do you run, when, and how many people fit? Say it like you would to a friend — "CrossFit at 6, 7 and 9:30 weekday mornings, 6pm evenings, 9am Saturday, cap of 16."',
+    'Now your week. Add each class below — or just describe the whole thing in the box ("CrossFit at 6, 7 and 9:30 weekday mornings, 6pm evenings, cap of 16") and I\'ll build it.',
   plans:
     'Prices next: what does membership cost? For example — "Unlimited is £89 with 30 days notice. An 8-class pack is £59."',
   rules:
@@ -106,9 +126,10 @@ export default function SetupScreen() {
   );
 
   function stepsRemaining(from: Step | null): Step[] {
-    const all: Step[] = ['timetable', 'plans', 'rules', 'golive'];
+    const all: Step[] = ['logo', 'timetable', 'plans', 'rules', 'golive'];
     const start = from ? all.indexOf(from) + 1 : 0;
     return all.slice(start).filter((s) => {
+      if (s === 'logo') return !doneKeys.has('logo');
       if (s === 'timetable') return !doneKeys.has('class_type_and_schedule');
       if (s === 'plans') return !doneKeys.has('plan');
       if (s === 'rules') return !doneKeys.has('settings');
@@ -132,6 +153,10 @@ export default function SetupScreen() {
     } else if (next === 'rules') {
       ruleAnswers.current = {};
       pushMsgs({ kind: 'temple', text: ASK.rules }, { kind: 'rule-question', q: 0, open: true });
+    } else if (next === 'logo') {
+      pushMsgs({ kind: 'temple', text: ASK.logo }, { kind: 'logo-card', open: true });
+    } else if (next === 'timetable') {
+      pushMsgs({ kind: 'temple', text: ASK.timetable }, { kind: 'class-builder', open: true });
     } else {
       pushMsgs({ kind: 'temple', text: ASK[next] });
     }
@@ -168,7 +193,9 @@ export default function SetupScreen() {
 
   async function submitText() {
     const text = input.trim();
-    if (!text || !step || step === 'rules' || step === 'golive') return;
+    if (!text || !step || step === 'rules' || step === 'golive' || step === 'logo') {
+      return;
+    }
     setInput('');
     setMessages((m) => [...closeCards(m), { kind: 'mine', text }]);
     try {
@@ -182,6 +209,9 @@ export default function SetupScreen() {
           kind: 'temple',
           text: 'I couldn’t quite follow that — try again with days, times and prices spelled out, or use the checklist below.',
         });
+        if (step === 'timetable') {
+          pushMsgs({ kind: 'class-builder', open: true });
+        }
         return;
       }
       if (step === 'timetable') {
@@ -356,21 +386,43 @@ export default function SetupScreen() {
           // pins to the top with a screen of dead space); once the thread
           // outgrows the viewport it scrolls exactly as before.
           contentContainerClassName="flex-grow justify-end gap-4 py-4 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          {messages.map((m, i) => (
-            <MessageRow
-              key={i}
-              msg={m}
-              busy={busy}
-              onConfirmTimetable={confirmTimetable}
-              onConfirmPlans={confirmPlans}
-              onConfirmRules={confirmRules}
-              onAnswerRule={answerRule}
-              onEditRule={editRule}
-              onCarryOn={carryOn}
-              onHaveALook={haveALook}
-              onReword={rewordCard}
-            />
-          ))}
+          {messages.map((m, i) =>
+            m.kind === 'logo-card' ? (
+              m.open ? (
+                <LogoCard
+                  key={i}
+                  gymId={membership.gymId}
+                  onDone={(receipt) => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({ kind: 'receipt', text: receipt });
+                    advance('logo');
+                  }}
+                />
+              ) : null
+            ) : m.kind === 'class-builder' ? (
+              m.open ? (
+                <ClassBuilderCard
+                  key={i}
+                  busy={busy}
+                  onApply={confirmTimetable}
+                />
+              ) : null
+            ) : (
+              <MessageRow
+                key={i}
+                msg={m}
+                busy={busy}
+                onConfirmTimetable={confirmTimetable}
+                onConfirmPlans={confirmPlans}
+                onConfirmRules={confirmRules}
+                onAnswerRule={answerRule}
+                onEditRule={editRule}
+                onCarryOn={carryOn}
+                onHaveALook={haveALook}
+                onReword={rewordCard}
+              />
+            ),
+          )}
 
           {step === 'golive' ? (
             <GoLive
@@ -391,7 +443,7 @@ export default function SetupScreen() {
           ) : null}
         </ScrollView>
 
-        {step !== 'golive' && step !== 'rules' ? (
+        {step !== 'golive' && step !== 'rules' && step !== 'logo' ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
             <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
               <TextInput
@@ -450,6 +502,8 @@ function MessageRow({
   onHaveALook: () => void;
   onReword: () => void;
 }) {
+  // Rendered by the parent's special cases, never here.
+  if (msg.kind === 'logo-card' || msg.kind === 'class-builder') return null;
   if (msg.kind === 'mine') {
     return (
       <View className="self-end max-w-[82%] bg-primary rounded-2xl rounded-br-md px-4 py-2.5">
@@ -665,6 +719,247 @@ function GoLive({
       <Button onPress={onFinish} loading={finishing}>
         {allDone ? 'Go to your gym' : 'I’ll finish these later'}
       </Button>
+    </View>
+  );
+}
+
+// The logo step: the branding screen's own picker, upload and
+// set_gym_branding write, placed in the conversation. Skipping is a
+// first-class answer — the checklist keeps the step open for later.
+function LogoCard({
+  gymId,
+  onDone,
+}: {
+  gymId: string;
+  onDone: (receipt: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [preview, setPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const upload = useMutation({
+    mutationFn: async () => {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) throw new Error('Photo library permission denied');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+      if (result.canceled || result.assets.length === 0) return false;
+      const asset = result.assets[0];
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const ext = asset.uri.split('.').pop()?.toLowerCase() || 'png';
+      const path = `${gymId}/light-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('gym-logos')
+        .upload(path, blob, {
+          contentType: asset.mimeType ?? `image/${ext}`,
+          upsert: false,
+        });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('gym-logos').getPublicUrl(path);
+
+      // Per-card save discipline: send the server's values for every
+      // other branding field so this write can only change the logo.
+      const { data: gym, error: gErr } = await supabase
+        .from('gyms')
+        .select(
+          'logo_url, primary_color, secondary_color, text_color, logo_url_dark, primary_color_dark, secondary_color_dark, text_color_dark',
+        )
+        .eq('id', gymId)
+        .single();
+      if (gErr || !gym) throw gErr ?? new Error('Could not read branding');
+      const { error: sErr } = await supabase.rpc('set_gym_branding', {
+        p_gym_id: gymId,
+        p_logo_url: pub.publicUrl,
+        p_primary_color: gym.primary_color,
+        p_secondary_color: gym.secondary_color,
+        p_text_color: gym.text_color,
+        p_logo_url_dark: gym.logo_url_dark,
+        p_primary_color_dark: gym.primary_color_dark,
+        p_secondary_color_dark: gym.secondary_color_dark,
+        p_text_color_dark: gym.text_color_dark,
+      });
+      if (sErr) throw sErr;
+      setPreview(pub.publicUrl);
+      return true;
+    },
+    onSuccess: (uploaded) => {
+      if (!uploaded) return;
+      queryClient.invalidateQueries({ queryKey: ['gym-row'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+      onDone('Logo’s in — the app is wearing it.');
+    },
+    onError: () => setError('That upload didn’t take — try again.'),
+  });
+
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+      <View className="flex-row items-center gap-3">
+        <GymLogo size={56} logoUrl={preview} name="?" primaryColor="#2563EB" />
+        <Text className="flex-1 text-gray-500 dark:text-gray-400 text-sm leading-5">
+          Square works best — it becomes the app icon your members install.
+        </Text>
+      </View>
+      {error ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+      <Button onPress={() => upload.mutate()} loading={upload.isPending}>
+        Choose your logo
+      </Button>
+      <Pressable
+        onPress={() => onDone('No logo for now — add it any time; the checklist keeps the step open.')}
+        disabled={upload.isPending}
+        hitSlop={6}>
+        <Text className="text-link text-sm font-medium text-center">Skip for now</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// The class step's structured path: the real schedule editor
+// (RecurrenceEditor — the same component the class-types screen uses),
+// embedded in the conversation. Each added class stacks up in the card;
+// "That's my week" hands the lot to the same apply path the described
+// week uses.
+type BuilderEntry = { name: string; color: string; form: RecurrenceForm };
+
+function ClassBuilderCard({
+  busy,
+  onApply,
+}: {
+  busy: boolean;
+  onApply: (p: TimetableProposal) => void;
+}) {
+  const colors = useThemeColors();
+  const { data: gymDefaults } = useGymOperatingDefaults();
+  const weekStartsOn = gymDefaults?.week_starts_on ?? 'mon';
+  const [entries, setEntries] = useState<BuilderEntry[]>([]);
+  const [name, setName] = useState('');
+  const [color, setColor] = useState(CLASS_TYPE_PALETTE[0]);
+  const [form, setForm] = useState<RecurrenceForm>({
+    ...EMPTY_RECURRENCE,
+    capacity: '16',
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  function addEntry() {
+    const cleanName = name.trim().replace(/\s+/g, ' ');
+    if (cleanName.length < 2) {
+      setError('Give the class a name — "CrossFit", "Spin", "Open Gym"…');
+      return;
+    }
+    const invalid = validateRecurrence(form);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+    setError(null);
+    setEntries((e) => [...e, { name: cleanName, color, form }]);
+    setName('');
+    setColor(CLASS_TYPE_PALETTE[(entries.length + 1) % CLASS_TYPE_PALETTE.length]);
+    setForm({ ...EMPTY_RECURRENCE, capacity: form.capacity, durationMinutes: form.durationMinutes });
+  }
+
+  function applyAll() {
+    const typeByName = new Map<string, { name: string; color: string }>();
+    for (const e of entries) {
+      if (!typeByName.has(e.name.toLowerCase())) {
+        typeByName.set(e.name.toLowerCase(), { name: e.name, color: e.color });
+      }
+    }
+    onApply({
+      class_types: [...typeByName.values()],
+      schedules: entries.map((e) => ({
+        class_type: e.name,
+        days: e.form.days,
+        times: e.form.times.map((t) => t.trim()).filter(Boolean),
+        duration_minutes: parseInt(e.form.durationMinutes, 10),
+        capacity: parseInt(e.form.capacity, 10),
+      })),
+    });
+  }
+
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-4">
+      {entries.length > 0 ? (
+        <View className="gap-2">
+          {entries.map((e, i) => (
+            <View key={i} className="flex-row items-start gap-2.5">
+              <View
+                className="w-3 h-3 rounded-full mt-1"
+                style={{ backgroundColor: e.color }}
+              />
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold text-sm">
+                  {e.name}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {summariseRecurrence(e.form, weekStartsOn)}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setEntries((prev) => prev.filter((_, j) => j !== i))}
+                hitSlop={6}
+                accessibilityLabel={`Remove ${e.name}`}>
+                <Ionicons name="close" size={16} color={colors.iconSecondary} />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <View className="gap-1.5">
+        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          Class name
+        </Text>
+        <View className="flex-row items-center gap-2">
+          <View className="flex-1">
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="CrossFit"
+              placeholderTextColor="#9CA3AF"
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+            />
+          </View>
+          {CLASS_TYPE_PALETTE.map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => setColor(c)}
+              accessibilityLabel={`Colour ${c}`}
+              className={`w-6 h-6 rounded-full ${
+                color === c ? 'border-2 border-gray-900 dark:border-gray-50' : ''
+              }`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </View>
+      </View>
+
+      <RecurrenceEditor value={form} onChange={setForm} hideRepeat />
+
+      {error ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1">
+          <Button variant="secondary" onPress={addEntry} disabled={busy}>
+            Add this class
+          </Button>
+        </View>
+        <View className="flex-1">
+          <Button onPress={applyAll} disabled={busy || entries.length === 0} loading={busy}>
+            That’s my week
+          </Button>
+        </View>
+      </View>
     </View>
   );
 }
