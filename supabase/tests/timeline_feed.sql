@@ -23,6 +23,10 @@ declare
   v_req    uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
+  perform set_config('test.gym',   v_gym::text,   true);
+  perform set_config('test.owner', v_owner::text, true);
+  perform set_config('test.coach', v_coach::text, true);
+  perform set_config('test.member', v_member::text, true);
   perform _test_mk_membership(v_gym, v_coach, 'coach');
   v_mship := _test_mk_membership(v_gym, v_member, 'member');
   perform _test_mk_membership(v_gym, v_joiner, 'member');
@@ -66,10 +70,10 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- A member cannot read the feed at all.
 -- ---------------------------------------------------------------------------
-select _test_act_as((select id from auth.users where email = 'member@timeline.test'));
+select _test_act_as(current_setting('test.member')::uuid);
 
 select throws_ok(
-  $$ select * from timeline_feed((select id from public.gyms where slug = 'timeline-gym')) $$,
+  $$ select * from timeline_feed(current_setting('test.gym')::uuid) $$,
   'Not allowed',
   'member cannot call timeline_feed'
 );
@@ -83,38 +87,38 @@ select is(
 -- ---------------------------------------------------------------------------
 -- The owner sees every kind, scoped to their gym.
 -- ---------------------------------------------------------------------------
-select _test_act_as((select id from auth.users where email = 'owner@timeline.test'));
+select _test_act_as(current_setting('test.owner')::uuid);
 
 select is(
-  (select count(*)::int from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
     where kind = 'member_joined'),
   2,
   'owner sees members joining'
 );
 
 select is(
-  (select count(*)::int from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
     where kind = 'lead_captured'),
   1,
   'owner sees the lead — and only this gym''s'
 );
 
 select is(
-  (select count(*)::int from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
     where kind = 'payment_failing'),
   1,
   'owner sees the failing payment'
 );
 
 select is(
-  (select count(*)::int from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
     where kind = 'membership_request'),
   1,
   'owner sees the pending membership request'
 );
 
 select is(
-  (select count(*)::int from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
     where kind = 'agent_action'),
   1,
   'owner sees the ledger receipt'
@@ -122,7 +126,7 @@ select is(
 
 select is(
   (select detail->>'request_kind'
-     from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+     from timeline_feed(current_setting('test.gym')::uuid)
     where kind = 'membership_request'),
   'cancel',
   'request card carries its kind'
@@ -131,16 +135,16 @@ select is(
 -- Feed is newest-first and respects the limit.
 select is(
   (select count(*)::int from timeline_feed(
-     (select id from public.gyms where slug = 'timeline-gym'), null, 2)),
+     current_setting('test.gym')::uuid, null, 2)),
   2,
   'limit caps the feed'
 );
 
 select is(
   (select occurred_at from timeline_feed(
-     (select id from public.gyms where slug = 'timeline-gym')) limit 1),
+     current_setting('test.gym')::uuid) limit 1),
   (select max(occurred_at) from timeline_feed(
-     (select id from public.gyms where slug = 'timeline-gym'))),
+     current_setting('test.gym')::uuid)),
   'newest row first'
 );
 
@@ -148,17 +152,17 @@ select is(
 -- A coach (default capabilities: cover + plan-assign, but not money) sees
 -- the cover request and the lead, but no money rows.
 -- ---------------------------------------------------------------------------
-select _test_act_as((select id from auth.users where email = 'coach@timeline.test'));
+select _test_act_as(current_setting('test.coach')::uuid);
 
 select is(
-  (select count(*)::int from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
     where kind in ('cover_requested', 'lead_captured')),
   2,
   'coach sees cover + lead rows'
 );
 
 select is(
-  (select count(*)::int from timeline_feed((select id from public.gyms where slug = 'timeline-gym'))
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
     where kind in ('payment_failing', 'agent_action')),
   0,
   'coach without can_see_money sees no money rows'
