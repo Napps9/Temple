@@ -351,7 +351,11 @@ export default function SetupScreen() {
           ref={scrollRef}
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           className="flex-1"
-          contentContainerClassName="gap-4 py-4 px-4 md:max-w-2xl md:mx-auto md:w-full">
+          // flex-grow + justify-end anchors a short conversation to the
+          // ask bar (a two-message thread on a desktop viewport otherwise
+          // pins to the top with a screen of dead space); once the thread
+          // outgrows the viewport it scrolls exactly as before.
+          contentContainerClassName="flex-grow justify-end gap-4 py-4 px-4 md:max-w-2xl md:mx-auto md:w-full">
           {messages.map((m, i) => (
             <MessageRow
               key={i}
