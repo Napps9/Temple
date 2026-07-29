@@ -919,8 +919,10 @@ The staff area shows up when `can_access_staff_area` is on.
   regardless, for whenever they want to finish.
 - **Conversational setup** (`/setup`, owner-only) — day one as a
   conversation that takes the fastest input per step, not prose for
-  everything. A fixed script (logo → classes → prices → rules → go
-  live), rendered inside the staff shell (TopNav encases it; the thread
+  everything. A fixed script (logo → classes → payments → prices → rules → go
+  live; **Stripe comes before plans** because a plan can only sell on
+  the gym's own connected account — the card hands off to the billing
+  screen's OAuth round-trip with `?backTo=setup` and returns here), rendered inside the staff shell (TopNav encases it; the thread
   anchors to the ask bar on tall viewports). The **logo step** is an
   inline card reusing the branding screen's picker, upload and
   `set_gym_branding` write — one tap, or "Skip for now" (the checklist
@@ -931,8 +933,12 @@ The staff area shows up when `can_access_staff_area` is on.
   class" stacks the week, "That's my week" applies the lot — while
   *describing* the week in the bar remains the alternative ("CrossFit
   at 6, 7 and 9:30 weekday mornings, 6pm evenings, 9am Saturday, cap
-  16"; a failed parse re-offers the builder). Both paths land on the
-  same apply. For the described path the `parse-setup` edge function
+  16"; a failed parse re-offers the builder). The **plans step** repeats that container shape — name, kind chips
+  (Unlimited / Classes a month / Class pack), price, classes, notice —
+  stacking plans before one apply. Both paths land on the same apply,
+  and the **ask bar is persistent through every step**: tap-first steps
+  answer a typed message by pointing at the faster control rather than
+  presenting a dead box. For the described path the `parse-setup` edge function
   (Claude Sonnet, tool-forced JSON, gated on
   `effective_can(gym, 'can_edit_classes')`, 503 without an API key)
   turns each into a proposal; the client sanitises it

@@ -61,7 +61,7 @@ import { useGymBrand } from '@/lib/useGymBrand';
 // paths as the manual editors. /onboarding stays as the checklist escape
 // hatch throughout.
 
-type Step = 'logo' | 'timetable' | 'plans' | 'rules' | 'golive';
+type Step = 'logo' | 'timetable' | 'stripe' | 'plans' | 'rules' | 'golive';
 
 type Msg =
   | { kind: 'temple'; text: string }
@@ -69,6 +69,8 @@ type Msg =
   | { kind: 'receipt'; text: string }
   | { kind: 'logo-card'; open: boolean }
   | { kind: 'class-builder'; open: boolean }
+  | { kind: 'stripe-card'; open: boolean }
+  | { kind: 'plan-builder'; open: boolean }
   | { kind: 'timetable-card'; proposal: TimetableProposal; open: boolean }
   | { kind: 'plans-card'; proposal: PlansProposal; open: boolean }
   | { kind: 'rule-question'; q: number; open: boolean }
@@ -84,8 +86,10 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
     'First, make it yours — add your logo and the whole app wears it. Not to hand? Skip it; everything runs fine without.',
   timetable:
     'Now your week. Add each class below — or just describe the whole thing in the box ("CrossFit at 6, 7 and 9:30 weekday mornings, 6pm evenings, cap of 16") and I\'ll build it.',
+  stripe:
+    'Payments before prices — connect your Stripe and members pay you directly; Temple takes no cut. Plans become buyable the moment it\'s live.',
   plans:
-    'Prices next: what does membership cost? For example — "Unlimited is £89 with 30 days notice. An 8-class pack is £59."',
+    'Prices next: add each membership below — or describe them ("Unlimited is £89 with 30 days notice, an 8-class pack is £59") and I\'ll build them.',
   rules:
     'A few quick rules — tap what fits. The first answer is what most gyms like yours do, and you can change any of it later just by telling me.',
 };
@@ -126,11 +130,12 @@ export default function SetupScreen() {
   );
 
   function stepsRemaining(from: Step | null): Step[] {
-    const all: Step[] = ['logo', 'timetable', 'plans', 'rules', 'golive'];
+    const all: Step[] = ['logo', 'timetable', 'stripe', 'plans', 'rules', 'golive'];
     const start = from ? all.indexOf(from) + 1 : 0;
     return all.slice(start).filter((s) => {
       if (s === 'logo') return !doneKeys.has('logo');
       if (s === 'timetable') return !doneKeys.has('class_type_and_schedule');
+      if (s === 'stripe') return !doneKeys.has('stripe');
       if (s === 'plans') return !doneKeys.has('plan');
       if (s === 'rules') return !doneKeys.has('settings');
       return true;
@@ -157,6 +162,10 @@ export default function SetupScreen() {
       pushMsgs({ kind: 'temple', text: ASK.logo }, { kind: 'logo-card', open: true });
     } else if (next === 'timetable') {
       pushMsgs({ kind: 'temple', text: ASK.timetable }, { kind: 'class-builder', open: true });
+    } else if (next === 'stripe') {
+      pushMsgs({ kind: 'temple', text: ASK.stripe }, { kind: 'stripe-card', open: true });
+    } else if (next === 'plans') {
+      pushMsgs({ kind: 'temple', text: ASK.plans }, { kind: 'plan-builder', open: true });
     } else {
       pushMsgs({ kind: 'temple', text: ASK[next] });
     }
@@ -196,7 +205,7 @@ export default function SetupScreen() {
     if (!text || !step) return;
     // The bar never disappears — steps whose fast path is a tap still
     // answer a typed message instead of presenting a dead input.
-    if (step === 'logo' || step === 'rules' || step === 'golive') {
+    if (step === 'logo' || step === 'stripe' || step === 'rules' || step === 'golive') {
       setInput('');
       pushMsgs(
         { kind: 'mine', text },
@@ -205,9 +214,11 @@ export default function SetupScreen() {
           text:
             step === 'logo'
               ? 'This one’s a tap — choose your logo above, or skip and we’ll move on.'
-              : step === 'rules'
-                ? 'Tap an answer above — the chips are quicker than typing for these.'
-                : 'These last few need real buttons — tap through the list above.',
+              : step === 'stripe'
+                ? 'Stripe needs its own secure page — tap Connect above, or do it later.'
+                : step === 'rules'
+                  ? 'Tap an answer above — the chips are quicker than typing for these.'
+                  : 'These last few need real buttons — tap through the list above.',
         },
       );
       return;
@@ -227,6 +238,8 @@ export default function SetupScreen() {
         });
         if (step === 'timetable') {
           pushMsgs({ kind: 'class-builder', open: true });
+        } else if (step === 'plans') {
+          pushMsgs({ kind: 'plan-builder', open: true });
         }
         return;
       }
@@ -278,7 +291,12 @@ export default function SetupScreen() {
       {
         onSuccess: () => {
           setMessages((m) => closeCards(m));
-          pushMsgs({ kind: 'receipt', text: 'Plans created. Connecting payments (coming up) makes them buyable.' });
+          pushMsgs({
+            kind: 'receipt',
+            text: doneKeys.has('stripe')
+              ? 'Plans created — they’re on sale the moment you’re live.'
+              : 'Plans created — they go on sale once Stripe is connected.',
+          });
           advance('plans');
         },
         onError: () => pushMsgs({ kind: 'temple', text: 'That didn’t save — try again, or use the checklist below.' }),
@@ -423,6 +441,24 @@ export default function SetupScreen() {
                   onApply={confirmTimetable}
                 />
               ) : null
+            ) : m.kind === 'stripe-card' ? (
+              m.open ? (
+                <StripeCard
+                  key={i}
+                  onSkip={() => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({
+                      kind: 'receipt',
+                      text: 'Stripe can wait — plans become buyable once it’s connected.',
+                    });
+                    advance('stripe');
+                  }}
+                />
+              ) : null
+            ) : m.kind === 'plan-builder' ? (
+              m.open ? (
+                <PlanBuilderCard key={i} busy={busy} onApply={confirmPlans} />
+              ) : null
             ) : (
               <MessageRow
                 key={i}
@@ -519,7 +555,14 @@ function MessageRow({
   onReword: () => void;
 }) {
   // Rendered by the parent's special cases, never here.
-  if (msg.kind === 'logo-card' || msg.kind === 'class-builder') return null;
+  if (
+    msg.kind === 'logo-card' ||
+    msg.kind === 'class-builder' ||
+    msg.kind === 'stripe-card' ||
+    msg.kind === 'plan-builder'
+  ) {
+    return null;
+  }
   if (msg.kind === 'mine') {
     return (
       <View className="self-end max-w-[82%] bg-primary rounded-2xl rounded-br-md px-4 py-2.5">
@@ -973,6 +1016,242 @@ function ClassBuilderCard({
         <View className="flex-1">
           <Button onPress={applyAll} disabled={busy || entries.length === 0} loading={busy}>
             That’s my week
+          </Button>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// The payments step: Stripe needs its own secure page, so this card
+// hands off to the billing screen's proven OAuth round-trip
+// (?backTo=setup returns here afterwards, and progress skips the step
+// once the account is connected).
+function StripeCard({ onSkip }: { onSkip: () => void }) {
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+        Your own Stripe account takes the money and pays out to your bank —
+        Temple never touches it and takes no cut.
+      </Text>
+      <Button
+        onPress={() => router.push('/management/billing?backTo=setup' as never)}>
+        Connect Stripe
+      </Button>
+      <Pressable onPress={onSkip} hitSlop={6}>
+        <Text className="text-link text-sm font-medium text-center">Do this later</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// The plans step's structured path: the same container shape as the
+// class builder — kind chips, price, credits, notice — stacking plans
+// and applying through the same path as described prices.
+type PlanEntry = {
+  name: string;
+  kind: 'unlimited' | 'credit_period' | 'credit_pack';
+  pounds: string;
+  credits: string;
+  notice: string;
+};
+
+const PLAN_KIND_LABEL: Record<PlanEntry['kind'], string> = {
+  unlimited: 'Unlimited',
+  credit_period: 'Classes a month',
+  credit_pack: 'Class pack',
+};
+
+function PlanBuilderCard({
+  busy,
+  onApply,
+}: {
+  busy: boolean;
+  onApply: (p: PlansProposal) => void;
+}) {
+  const colors = useThemeColors();
+  const [entries, setEntries] = useState<PlanEntry[]>([]);
+  const [draft, setDraft] = useState<PlanEntry>({
+    name: '',
+    kind: 'unlimited',
+    pounds: '',
+    credits: '8',
+    notice: '30',
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  const creditKind = draft.kind !== 'unlimited';
+  const recurringKind = draft.kind !== 'credit_pack';
+
+  function addEntry() {
+    const name = draft.name.trim().replace(/\s+/g, ' ');
+    const pounds = Number(draft.pounds.replace(',', '.'));
+    const credits = parseInt(draft.credits, 10);
+    const notice = draft.notice.trim() === '' ? 0 : parseInt(draft.notice, 10);
+    if (name.length < 2) {
+      setError('Give the plan a name — "Unlimited", "8-class pack"…');
+      return;
+    }
+    if (!Number.isFinite(pounds) || pounds <= 0) {
+      setError('Set a price — a plan with no price can’t be sold.');
+      return;
+    }
+    if (creditKind && (!Number.isInteger(credits) || credits < 1 || credits > 100)) {
+      setError('How many classes does it include? 1–100.');
+      return;
+    }
+    if (recurringKind && (!Number.isInteger(notice) || notice < 0 || notice > 90)) {
+      setError('Notice must be 0–90 days.');
+      return;
+    }
+    setError(null);
+    setEntries((e) => [...e, { ...draft, name }]);
+    setDraft({ name: '', kind: draft.kind, pounds: '', credits: draft.credits, notice: draft.notice });
+  }
+
+  function applyAll() {
+    onApply({
+      plans: entries.map((e) => ({
+        name: e.name,
+        kind: e.kind,
+        monthly_price_cents: Math.round(Number(e.pounds.replace(',', '.')) * 100),
+        credit_count: e.kind === 'unlimited' ? null : parseInt(e.credits, 10),
+        notice_period_days:
+          e.kind === 'credit_pack' || e.notice.trim() === ''
+            ? null
+            : parseInt(e.notice, 10),
+        blurb: '',
+      })),
+    });
+  }
+
+  function entrySummary(e: PlanEntry): string {
+    const bits = [`£${e.pounds}`];
+    if (e.kind !== 'unlimited') bits.push(`${e.credits} classes`);
+    if (e.kind !== 'credit_pack' && e.notice.trim() !== '' && e.notice !== '0') {
+      bits.push(`${e.notice} days notice`);
+    }
+    return `${PLAN_KIND_LABEL[e.kind]} · ${bits.join(' · ')}`;
+  }
+
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-4">
+      {entries.length > 0 ? (
+        <View className="gap-2">
+          {entries.map((e, i) => (
+            <View key={i} className="flex-row items-start gap-2.5">
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold text-sm">
+                  {e.name}
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {entrySummary(e)}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setEntries((prev) => prev.filter((_, j) => j !== i))}
+                hitSlop={6}
+                accessibilityLabel={`Remove ${e.name}`}>
+                <Ionicons name="close" size={16} color={colors.iconSecondary} />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <View className="gap-1.5">
+        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          Plan name
+        </Text>
+        <TextInput
+          value={draft.name}
+          onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
+          placeholder="Unlimited"
+          placeholderTextColor="#9CA3AF"
+          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+        />
+      </View>
+
+      <View className="flex-row flex-wrap gap-1.5">
+        {(Object.keys(PLAN_KIND_LABEL) as PlanEntry['kind'][]).map((k) => {
+          const sel = draft.kind === k;
+          return (
+            <Pressable
+              key={k}
+              onPress={() => setDraft((d) => ({ ...d, kind: k }))}
+              className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
+                sel
+                  ? 'bg-primary border-primary'
+                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+              }`}>
+              <Text
+                className={`text-[13px] font-semibold ${
+                  sel ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                }`}>
+                {PLAN_KIND_LABEL[k]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View className="flex-row gap-2">
+        <View className="flex-1 gap-1.5">
+          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            {draft.kind === 'credit_pack' ? 'Price (£)' : 'Price (£ / month)'}
+          </Text>
+          <TextInput
+            value={draft.pounds}
+            onChangeText={(pounds) => setDraft((d) => ({ ...d, pounds }))}
+            placeholder="89"
+            keyboardType="decimal-pad"
+            placeholderTextColor="#9CA3AF"
+            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+          />
+        </View>
+        {creditKind ? (
+          <View className="flex-1 gap-1.5">
+            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              Classes
+            </Text>
+            <TextInput
+              value={draft.credits}
+              onChangeText={(credits) => setDraft((d) => ({ ...d, credits }))}
+              keyboardType="number-pad"
+              placeholderTextColor="#9CA3AF"
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+            />
+          </View>
+        ) : null}
+        {recurringKind ? (
+          <View className="flex-1 gap-1.5">
+            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              Notice (days)
+            </Text>
+            <TextInput
+              value={draft.notice}
+              onChangeText={(notice) => setDraft((d) => ({ ...d, notice }))}
+              keyboardType="number-pad"
+              placeholderTextColor="#9CA3AF"
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+            />
+          </View>
+        ) : null}
+      </View>
+
+      {error ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1">
+          <Button variant="secondary" onPress={addEntry} disabled={busy}>
+            Add this plan
+          </Button>
+        </View>
+        <View className="flex-1">
+          <Button onPress={applyAll} disabled={busy || entries.length === 0} loading={busy}>
+            That’s the lot
           </Button>
         </View>
       </View>

@@ -53,7 +53,9 @@ export default function BillingScreen() {
       // sessionStorage unavailable — the manual back link still works
     }
     if (flagged && params.stripe === 'connected') {
-      router.replace('/onboarding');
+      // The conversational setup is the front door now; it re-derives its
+      // place from progress, so returning lands on the next open step.
+      router.replace('/setup');
     }
   }, [params.stripe]);
 
