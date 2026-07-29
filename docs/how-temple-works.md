@@ -104,14 +104,48 @@ Retention on their own.
 
 ### Programming
 
-The coach writes the week the way they always have — typed, pasted, or
-dictated. Temple reads it: movements, time domains, load (the
-`classify-programming` reader is live today), and every member sees their
-own numbers where the coach wrote percentages (live today). What changes
-is that analysis stops being a page and becomes a message with hands:
-"Thursday is shoulder-heavy right after Tuesday's push day. Want a swap
-suggestion?" Aggregate signals only, never an individual's health — the
-same closed-category discipline the front desk already obeys.
+One rule anchors everything here: **Temple never rewrites a coach's
+programming or invents a workout unasked.** Programming is the coach's
+craft; Temple's job is to make writing it frictionless and reading it
+universal. Five shapes:
+
+- **The week, pasted once.** The coach writes wherever they already
+  write — a doc, notes, dictation — and pastes the lot. Temple structures
+  it onto the calendar: days, class types, sections, with the format,
+  category and length read automatically (the `classify-programming`
+  reader is live today) and the coach's words untouched. Every
+  percentage resolves to each member's own numbers (live today);
+  leaderboards default on for scored pieces and off for strength, said
+  otherwise in words. One paste replaces eleven section forms.
+- **Programming you buy.** A gym on PRVN, Mayhem or CrossFit Affiliate
+  Programming pastes or forwards the provider's week and it lands the
+  same way — structuring is provider-agnostic. Stated demand from the
+  interviews.
+- **The block and the roadmap.** "Eight-week squat cycle after
+  Christmas, deload every fourth week" becomes a shared plan coaches
+  see against the calendar — the year overview owners asked for. Later,
+  Temple drafts each week from the block for the coach to read and post:
+  drafting from a template the coach set is the plausible rung on the
+  ladder; adapting to the cohort stays the flagged bet, aggregate
+  signals only.
+- **Keeping it healthy.** The verdicts become messages with hands:
+  "Thursday is shoulder-heavy right after Tuesday's push day — want a
+  swap suggestion?" Aggregate counts of closed categories only, never an
+  individual's health — the same discipline the front desk obeys. The
+  Analysis page survives in the Back Office for the deep dive.
+- **Individual programming.** "Put Marcus on a 3-day upper/lower block
+  for six weeks, nothing overhead" drafts the whole block from the
+  coach's constraints, weights filled from Marcus's own lifts, read in
+  full before it ships — drafting happens only on request, and paid
+  programme access keeps its existing store wiring. Programming talk
+  never writes to health records; the injury tracker remains the only
+  health surface.
+
+What demotes: the per-section category/format pickers (inferred from the
+text), the untagged-sections housekeeping (tagged on arrival), and
+per-section leaderboard toggles (a default plus a sentence). The
+programming calendar and the whiteboard stay — they are tools, and the
+whiteboard is Today's in-class card.
 
 ### Look after one member
 
