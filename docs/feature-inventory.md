@@ -477,6 +477,26 @@ The staff area shows up when `can_access_staff_area` is on.
   membership or invents a discount. Cases close from the dunning row
   vanishing: recovered / lapsed / left by subscription + membership
   state. pgTAP: `money_loop.sql` (18 assertions).
+- **Keeping members** (roadmap phase 8, 0208) — `set_retention_job`
+  (owner-only, Roster take-on card) writes a `retention_message`
+  authority row + owner-approved template. The daily
+  `agent-retention-tick` finds regulars gone quiet — attended within 90
+  days, nothing for 21+, still on an active plan — and proposes one
+  warm note each: three per gym per day at most, never the same member
+  twice inside 45 days (a rejection blocks the window too), never about
+  health, and writing anyone off stays human. Approval/autonomous flows,
+  execution and the send worker are the money loop's, unchanged.
+- **Finding cover** (roadmap phase 7, 0208) — `set_cover_job` writes a
+  `cover_ask` authority row (no template: the execution isn't a member
+  email). The hourly `agent-cover-tick` finds cover offers nobody has
+  claimed on classes inside the gym's own `cover_warning_hours` window
+  and proposes re-asking; execution (`_agent_cover_reask`) inserts
+  targeted `cover_notifications` for the claimable coaches (0165's
+  recipient rule verbatim, date-stamped idempotency, blanket-unsub
+  honoured on email only) — drained by the existing worker into the
+  same Cover inbox and email as a fresh request. The agent never
+  assigns a coach, never moves or cancels a class; one ask per request
+  per day. pgTAP: `more_jobs.sql`.
 
 ### The Roster and Goals
 - **The Roster** (`/management/roster`, chip beside the Timeline's talk

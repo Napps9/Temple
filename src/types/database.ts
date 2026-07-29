@@ -614,8 +614,12 @@ export type Database = {
         Row: {
           id: string;
           gym_id: string;
-          teammate: 'revenue';
-          action_kind: 'chase_message' | 'plan_adjustment_offer';
+          teammate: 'revenue' | 'retention' | 'ops';
+          action_kind:
+            | 'chase_message'
+            | 'plan_adjustment_offer'
+            | 'retention_message'
+            | 'cover_ask';
           subject_profile: string | null;
           subject_subscription: string | null;
           payload: Json;
@@ -694,7 +698,11 @@ export type Database = {
       agent_authority: {
         Row: {
           gym_id: string;
-          action_kind: 'chase_message' | 'plan_adjustment_offer';
+          action_kind:
+            | 'chase_message'
+            | 'plan_adjustment_offer'
+            | 'retention_message'
+            | 'cover_ask';
           level: 'autonomous' | 'approval' | 'reserved';
           updated_by: string | null;
           updated_at: string;
@@ -743,7 +751,7 @@ export type Database = {
       agent_message_templates: {
         Row: {
           gym_id: string;
-          kind: 'chase_message' | 'plan_adjustment_offer';
+          kind: 'chase_message' | 'plan_adjustment_offer' | 'retention_message';
           body: string;
           approved_by: string | null;
           approved_at: string;
@@ -4164,6 +4172,14 @@ export type Database = {
         }[];
       };
       set_money_job: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_retention_job: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_cover_job: {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;
       };

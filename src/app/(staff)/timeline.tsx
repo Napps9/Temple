@@ -864,9 +864,22 @@ function AgentActionCard({
   const actionId = event.item_id.split(':')[1];
 
   const line = formatTimelineLine(event);
-  const reasoning = isOffer
-    ? `Stripe has stopped trying${offerPlan ? ` — ${offerPlan}${offerPrice ? ` at ${offerPrice}` : ''} might keep them` : ''}.`
-    : 'A friendly note with their pay link usually sorts it.';
+  const reasoning =
+    kind === 'retention_message'
+      ? 'One warm note from the gym usually brings a regular back.'
+      : kind === 'cover_ask'
+        ? 'Every coach who could claim gets the same nudge; the claim stays first-come.'
+        : isOffer
+          ? `Stripe has stopped trying${offerPlan ? ` — ${offerPlan}${offerPrice ? ` at ${offerPrice}` : ''} might keep them` : ''}.`
+          : 'A friendly note with their pay link usually sorts it.';
+  const yesLabel =
+    kind === 'retention_message'
+      ? 'Yes, reach out'
+      : kind === 'cover_ask'
+        ? 'Yes, ask them'
+        : isOffer
+          ? 'Yes, offer it'
+          : 'Yes, send it';
 
   const decide = async (decision: 'approve' | 'reject') => {
     if (!actionId || busy) return;
@@ -895,10 +908,14 @@ function AgentActionCard({
         tone="neutral"
         text={
           decided === 'approve'
-            ? isOffer
-              ? `Offered — ${first} has it in their inbox.`
-              : `Sent — ${first} has the note.`
-            : `Left alone — nothing was sent to ${first}.`
+            ? kind === 'cover_ask'
+              ? 'Asked — the coaches have a fresh nudge.'
+              : isOffer
+                ? `Offered — ${first} has it in their inbox.`
+                : `Sent — ${first} has the note.`
+            : kind === 'cover_ask'
+              ? 'Left alone — no one was nudged.'
+              : `Left alone — nothing was sent to ${first}.`
         }
       />
     );
@@ -936,7 +953,7 @@ function AgentActionCard({
       <View className="flex-row items-center gap-2">
         <View className="flex-1">
           <Button onPress={() => decide('approve')} loading={busy}>
-            {isOffer ? 'Yes, offer it' : 'Yes, send it'}
+            {yesLabel}
           </Button>
         </View>
         <View className="flex-1">

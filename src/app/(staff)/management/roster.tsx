@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
+import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { Screen } from '@/components/Screen';
@@ -22,7 +23,11 @@ type StaffRow = {
 };
 
 type AuthorityRow = {
-  action_kind: 'chase_message' | 'plan_adjustment_offer';
+  action_kind:
+    | 'chase_message'
+    | 'plan_adjustment_offer'
+    | 'retention_message'
+    | 'cover_ask';
   level: 'autonomous' | 'approval' | 'reserved';
 };
 
@@ -108,9 +113,9 @@ export default function Roster() {
     }
   };
 
-  const moneyOn = (authority.data ?? []).length > 0;
   const levelFor = (kind: AuthorityRow['action_kind']) =>
     (authority.data ?? []).find((a) => a.action_kind === kind)?.level;
+  const moneyOn = levelFor('chase_message') !== undefined;
 
   return (
     <Screen className="px-0">
@@ -219,12 +224,153 @@ export default function Roster() {
           />
         ) : null}
 
-        <Text className="text-gray-400 dark:text-gray-500 text-sm px-1">
-          More jobs — keeping members, finding cover — arrive the same way:
-          read the rules, say &ldquo;sounds right&rdquo;.
-        </Text>
+        <SimpleJob
+          gymId={gymId}
+          isOwner={isOwner}
+          kind="retention_message"
+          name="Keeping members"
+          onDescription="Notices a regular gone quiet and sends one warm note — three a day at most, never the same person twice in six weeks, never about health. Writing anyone off stays yours."
+          offTitle="Fading members — want me to reach out?"
+          offLines={[
+            "When a regular hasn't been in for three weeks, I'd send one warm note — and I ask you before each until you say otherwise.",
+            'Three people a day at most, never the same person twice in six weeks, and never about health.',
+            'Writing a member off stays yours — I only ever say we miss them.',
+          ]}
+          enableRpc="set_retention_job"
+          disableRpc="set_retention_job"
+          level={levelFor('retention_message')}
+          onSetLevel={(l) => setLevel('retention_message', l)}
+          authorityLoaded={authority.data !== undefined}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
+          }
+        />
+
+        <SimpleJob
+          gymId={gymId}
+          isOwner={isOwner}
+          kind="cover_ask"
+          name="Finding cover"
+          onDescription="When a class inside your warning window still has no coach, asks every coach who could claim it — again. Never moves or cancels a class; the claim stays first-come."
+          offTitle="Uncovered classes — want me to chase the cover?"
+          offLines={[
+            "When a class inside your warning window still has no coach, I'd nudge the qualified coaches again — you approve each ask until you say otherwise.",
+            'I never move or cancel a class, and the claim stays first-come.',
+          ]}
+          enableRpc="set_cover_job"
+          disableRpc="set_cover_job"
+          level={levelFor('cover_ask')}
+          onSetLevel={(l) => setLevel('cover_ask', l)}
+          authorityLoaded={authority.data !== undefined}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
+          }
+        />
       </ScrollView>
     </Screen>
+  );
+}
+
+function SimpleJob({
+  gymId,
+  isOwner,
+  name,
+  onDescription,
+  offTitle,
+  offLines,
+  enableRpc,
+  disableRpc,
+  level,
+  onSetLevel,
+  authorityLoaded,
+  onChanged,
+}: {
+  gymId: string | undefined;
+  isOwner: boolean;
+  kind: AuthorityRow['action_kind'];
+  name: string;
+  onDescription: string;
+  offTitle: string;
+  offLines: string[];
+  enableRpc: 'set_retention_job' | 'set_cover_job';
+  disableRpc: 'set_retention_job' | 'set_cover_job';
+  level: 'autonomous' | 'approval' | 'reserved' | undefined;
+  onSetLevel: (l: 'approval' | 'autonomous') => void;
+  authorityLoaded: boolean;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [confirmOff, setConfirmOff] = useState(false);
+
+  const flip = async (enabled: boolean) => {
+    if (!gymId || busy) return;
+    if (!enabled && !confirmOff) {
+      setConfirmOff(true);
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc(enabled ? enableRpc : disableRpc, {
+        p_gym_id: gymId,
+        p_enabled: enabled,
+      });
+      if (error) throw error;
+      setConfirmOff(false);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!authorityLoaded) return null;
+
+  if (level === undefined) {
+    if (!isOwner) return null;
+    return (
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+          {offTitle}
+        </Text>
+        <View className="gap-1.5">
+          {offLines.map((l, i) => (
+            <Text key={i} className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+              {l}
+            </Text>
+          ))}
+        </View>
+        <View className="flex-row">
+          <Button onPress={() => flip(true)} loading={busy}>
+            Sounds right — take it on
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="flex-row items-center gap-3">
+        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base">
+          {name}
+        </Text>
+        <RopePill label={level === 'autonomous' ? 'on its own' : 'asks first'} />
+      </View>
+      <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+        {onDescription}
+      </Text>
+      {isOwner ? (
+        <View className="gap-2.5">
+          <DialRow label="Its asks" level={level} onPick={onSetLevel} />
+          <Pressable onPress={() => flip(false)} hitSlop={6}>
+            <Text className="text-red-600 dark:text-red-400 text-sm font-semibold">
+              {confirmOff
+                ? 'Tap again — the job stops and open questions are dropped'
+                : 'Switch this job off'}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
   );
 }
 

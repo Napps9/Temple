@@ -135,6 +135,55 @@ function agentActionLine(e: TimelineEvent): TimelineLine {
     typeof payload.offer_price === 'string' ? payload.offer_price : null;
   const isOffer = kind === 'plan_adjustment_offer';
 
+  if (kind === 'retention_message') {
+    const weeks =
+      typeof payload.weeks_absent === 'number' ? payload.weeks_absent : null;
+    switch (status) {
+      case 'proposed':
+        return {
+          text: weeks
+            ? `Reach out to ${first}? They've not been in for ${weeks} week${weeks === 1 ? '' : 's'}.`
+            : `Reach out to ${first}? They've gone quiet.`,
+          tone: 'amber',
+        };
+      case 'approved':
+      case 'executed':
+        return {
+          text: `I've dropped ${first} a note — we've missed them.`,
+          tone: 'neutral',
+        };
+      case 'rejected':
+        return { text: `${first} — you said leave it, so I did.`, tone: 'neutral' };
+      default:
+        return {
+          text: `The question about ${first} lapsed — nothing was sent.`,
+          tone: 'neutral',
+        };
+    }
+  }
+
+  if (kind === 'cover_ask') {
+    const requester = str(payload as Record<string, unknown>, 'requester_name');
+    const who = requester ? firstName(requester) : 'a coach';
+    switch (status) {
+      case 'proposed':
+        return {
+          text: `${who === 'a coach' ? 'A class' : `${who}'s class`} is still uncovered — ask the coaches again?`,
+          tone: 'amber',
+        };
+      case 'approved':
+      case 'executed':
+        return {
+          text: `Asked — every coach who could take ${who === 'a coach' ? 'it' : `${who}'s class`} has a fresh nudge.`,
+          tone: 'neutral',
+        };
+      case 'rejected':
+        return { text: `The cover ask — you said leave it, so I did.`, tone: 'neutral' };
+      default:
+        return { text: `The cover ask lapsed — nothing was sent.`, tone: 'neutral' };
+    }
+  }
+
   switch (status) {
     case 'proposed':
       return {
