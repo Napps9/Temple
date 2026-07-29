@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
@@ -479,18 +481,21 @@ export default function Timeline() {
         {isOwner ? (
           <View className="px-4 pb-4 pt-1 gap-2 md:max-w-2xl md:mx-auto md:w-full">
             <View className="flex-row gap-2">
-              <Pressable
+              <BarChip
+                icon="document-text-outline"
+                label="Your rules"
                 onPress={showRulesSheet}
-                className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:opacity-70">
-                <Ionicons
-                  name="document-text-outline"
-                  size={14}
-                  color={colors.iconSecondary}
-                />
-                <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
-                  Your rules
-                </Text>
-              </Pressable>
+              />
+              <BarChip
+                icon="people-outline"
+                label="The team"
+                onPress={() => router.push('/management/roster' as never)}
+              />
+              <BarChip
+                icon="flag-outline"
+                label="Goals"
+                onPress={() => router.push('/management/goals' as never)}
+              />
             </View>
             <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
               <TextInput
@@ -515,6 +520,28 @@ export default function Timeline() {
         ) : null}
       </KeyboardAvoidingView>
     </Screen>
+  );
+}
+
+function BarChip({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+}) {
+  const colors = useThemeColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:opacity-70">
+      <Ionicons name={icon} size={14} color={colors.iconSecondary} />
+      <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -848,81 +875,6 @@ function AgentActionCard({
           <Text className="text-link text-sm font-semibold">See the details</Text>
         </Pressable>
       ) : null}
-      {failed ? (
-        <Text className="text-red-600 dark:text-red-400 text-sm">
-          That didn&apos;t go through — try again.
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-// The switch-on card: taking the money job on is reading its rules and
-// saying "sounds right" — never a settings form. Shown to the owner only
-// while a payment is failing and no authority rows exist.
-function MoneyJobCard({
-  gymId,
-  onDismiss,
-  onTakenOn,
-}: {
-  gymId: string | undefined;
-  onDismiss: () => void;
-  onTakenOn: () => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  const takeOn = async () => {
-    if (!gymId || busy) return;
-    setBusy(true);
-    setFailed(false);
-    try {
-      const { error } = await supabase.rpc('set_money_job', {
-        p_gym_id: gymId,
-        p_enabled: true,
-      });
-      if (error) throw error;
-      onTakenOn();
-    } catch {
-      setFailed(true);
-      setBusy(false);
-    }
-  };
-
-  return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
-        Failed payments — want me to chase them?
-      </Text>
-      <View className="gap-1.5">
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
-          When a card fails, Stripe retries and the member already gets one
-          notice from Temple.
-        </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
-          Three days in, I&apos;d send a warm nudge with their pay link — and I
-          ask you before each one until you say otherwise.
-        </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
-          If Stripe gives up, I ask before offering the smaller plan.
-        </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
-          I never cancel anyone, never invent discounts, and stop after two
-          messages.
-        </Text>
-      </View>
-      <View className="flex-row items-center gap-2">
-        <View className="flex-1">
-          <Button onPress={takeOn} loading={busy}>
-            Sounds right — take it on
-          </Button>
-        </View>
-        <View className="flex-1">
-          <Button variant="secondary" onPress={onDismiss} disabled={busy}>
-            Not now
-          </Button>
-        </View>
-      </View>
       {failed ? (
         <Text className="text-red-600 dark:text-red-400 text-sm">
           That didn&apos;t go through — try again.

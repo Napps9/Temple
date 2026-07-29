@@ -467,6 +467,23 @@ The staff area shows up when `can_access_staff_area` is on.
   vanishing: recovered / lapsed / left by subscription + membership
   state. pgTAP: `money_loop.sql` (18 assertions).
 
+### The Roster and Goals
+- **The Roster** (`/management/roster`, chip beside the Timeline's talk
+  bar) — people (with a Manage chip into the Team editor) and Temple's
+  jobs in plain names: the front desk ("on its own", links to its
+  screens) and the money job — one line of what it does, a rope pill,
+  and for the owner two dials (payment nudges / plan offers, "asks
+  first" ↔ "on its own") backed by `set_agent_job_level` (0207,
+  owner-only, refuses when the job isn't on) plus a two-tap switch-off
+  via `set_money_job(false)`. When the money job isn't on, the shared
+  `MoneyJobCard` renders inline.
+- **Goals** (`/management/goals`, chip beside the talk bar) — "200
+  members by December" as a brief: `gym_goals` (0207; kind `members`
+  only for now, owner writes, admin reads — the audience the old
+  `gym_insight_targets` had). The score is computed from the live
+  roster (active member count), never typed; the card reads "143 today
+  — 57 to go, 5 months left." pgTAP: `roster_and_goals.sql`.
+
 ### Programming
 - **The roadmap** (roadmap phase 5, 0205 — `programming_blocks`) — a year
   of named training blocks ("Squat strength — 8 weeks", "Open prep") set

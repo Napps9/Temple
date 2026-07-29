@@ -128,6 +128,17 @@ select ok(
   'message text comes from the approved template'
 );
 
+-- Stash gym 1's proposed action id while still superuser: the member and
+-- coach tests below must prove a caller holding a REAL id is refused —
+-- their own RLS-blocked reads would only prove they can't find one.
+do $$
+begin
+  perform set_config('test.action',
+    (select id::text from public.agent_actions
+      where gym_id = current_setting('test.gym')::uuid limit 1),
+    true);
+end $$;
+
 -- Recovery: the dunning row disappears, the next tick closes the case.
 delete from public.plan_subscription_dunning
   where plan_subscription_id = current_setting('test.sub2')::uuid;
@@ -153,9 +164,9 @@ select is(
 
 select throws_ok(
   $$ select decide_agent_action(
-       (select id from public.agent_actions limit 1), 'approve') $$,
+       current_setting('test.action')::uuid, 'approve') $$,
   'Not allowed',
-  'member cannot decide'
+  'member cannot decide even with a real action id'
 );
 
 -- ---------------------------------------------------------------------------
@@ -165,9 +176,7 @@ select _test_act_as(current_setting('test.coach')::uuid);
 
 select throws_ok(
   $$ select decide_agent_action(
-       (select a.id from public.agent_actions a
-         join public.gyms g on g.id = a.gym_id
-        where g.slug = 'money-gym' limit 1), 'approve') $$,
+       current_setting('test.action')::uuid, 'approve') $$,
   'Not allowed',
   'coach without can_see_money cannot decide'
 );

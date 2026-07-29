@@ -663,6 +663,34 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      gym_goals: {
+        Row: {
+          id: string;
+          gym_id: string;
+          kind: 'members';
+          target_value: number;
+          due_on: string;
+          created_by: string;
+          created_at: string;
+          achieved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          kind?: 'members';
+          target_value: number;
+          due_on: string;
+          created_by: string;
+          created_at?: string;
+          achieved_at?: string | null;
+        };
+        Update: Partial<{
+          target_value: number;
+          due_on: string;
+          achieved_at: string | null;
+        }>;
+        Relationships: [];
+      };
       agent_authority: {
         Row: {
           gym_id: string;
@@ -4137,6 +4165,14 @@ export type Database = {
       };
       set_money_job: {
         Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_agent_job_level: {
+        Args: {
+          p_gym_id: string;
+          p_action_kind: string;
+          p_level: 'autonomous' | 'approval' | 'reserved';
+        };
         Returns: null;
       };
       decide_agent_action: {
