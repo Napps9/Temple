@@ -803,12 +803,24 @@ The staff area shows up when `can_access_staff_area` is on.
   the chat — booking window (3d/7d/2w/no limit), when late-cancel starts
   charging (9pm night before / 2h before / never), how close to the
   start booking stays open, membership-to-book, and week start — with
-  the best practice as the first (pre-lit) chip, each answer echoed as
-  a chat bubble, and the chosen set read back as plain sentences before
-  "Use these" commits: booking window + close cutoff + week start via
-  `set_gym_operating_defaults`, the late-cancel policy onto every class
-  type (gym-level `day_before` is retired), membership-to-book via
-  `set_require_membership_to_book`. Steps whose
+  the best practice as the first (pre-lit) chip and each answer echoed
+  as a chat bubble. The read-back is the **rule sheet**: the whole
+  settings surface as grouped sentences (Booking / Your gym / The small
+  print, that last collapsed behind "5 sensible defaults") where every
+  value is a tappable token — tap "7 days" in "Classes can be booked
+  7 days ahead" and that field's options open as chips under the
+  sentence, current value filled, one tap to change, sentence rewrites.
+  Sixteen fields, one token each (pinned by test), sharing one option
+  table (`RULE_FIELD_OPTIONS`) with the question chips, and every
+  field's default is its first option (also pinned). "Use these"
+  commits the lot through the same setters the Settings cards use:
+  `set_gym_operating_defaults` (window, close cutoff, week start,
+  expiring-soon window, PAR-Q expiry, health retention, lead window,
+  cover warning), the late-cancel policy onto every class type
+  (gym-level `day_before` is retired), plus
+  `set_require_membership_to_book`, `set_allow_minors`,
+  `set_gym_weight_unit`, `set_dm_scope`, `set_leaderboard_config`,
+  `set_gym_public_signup` and `set_gym_public_lead_capture`. Steps whose
   setup-progress rows are already done are skipped, so a returning
   owner isn't re-asked. Go-live lists what still needs a real button
   (Stripe, waiver, logo) as deep links, then "Go to your gym" or "I'll

@@ -3,14 +3,18 @@ import { describe, expect, it } from 'vitest';
 import {
   CLASS_TYPE_PALETTE,
   DEFAULT_RULE_CHOICES,
+  fieldLabel,
   formatDays,
   formatPrice,
   mergeRuleAnswers,
+  RULE_FIELD_OPTIONS,
   RULE_QUESTIONS,
   ruleSentences,
+  ruleSheet,
   sanitisePlans,
   sanitiseTimetable,
   timetableSummary,
+  type RuleField,
 } from './setup-flow';
 
 describe('sanitiseTimetable', () => {
@@ -150,10 +154,18 @@ describe('summaries and formatting', () => {
   });
 });
 
-describe('rule questions', () => {
+describe('rule questions and the rule sheet', () => {
   it('offers the best practice as the first option of every question', () => {
     for (const q of RULE_QUESTIONS) {
       expect(mergeRuleAnswers({})[q.id]).toEqual(q.options[0].value);
+    }
+  });
+
+  it('makes every field default the first option of its token picker', () => {
+    for (const field of Object.keys(RULE_FIELD_OPTIONS) as RuleField[]) {
+      expect(DEFAULT_RULE_CHOICES[field]).toEqual(
+        RULE_FIELD_OPTIONS[field][0].value,
+      );
     }
   });
 
@@ -164,22 +176,42 @@ describe('rule questions', () => {
     expect(c.booking_window_hours_ahead).toBe(168);
   });
 
-  it('speaks each choice as a plain sentence', () => {
-    expect(ruleSentences(DEFAULT_RULE_CHOICES)).toContain('Book up to 7 days ahead');
-    expect(ruleSentences(DEFAULT_RULE_CHOICES)).toContain(
-      'Free cancel until 9pm the night before — later uses the class credit',
+  it('covers every choice field with exactly one sheet token', () => {
+    const tokens = ruleSheet(DEFAULT_RULE_CHOICES)
+      .flatMap((g) => g.lines)
+      .flatMap((l) => l.parts)
+      .filter((p): p is { f: RuleField } => 'f' in p)
+      .map((p) => p.f);
+    expect([...tokens].sort()).toEqual(
+      (Object.keys(RULE_FIELD_OPTIONS) as RuleField[]).sort(),
     );
+    expect(new Set(tokens).size).toBe(tokens.length);
+  });
+
+  it('speaks each choice as a plain sentence', () => {
+    const lines = ruleSentences(DEFAULT_RULE_CHOICES);
+    expect(lines).toContain('Classes can be booked 7 days ahead');
+    expect(lines).toContain('Cancelling costs the credit from 9pm the night before');
+    expect(lines).toContain('People need a membership to book');
+    expect(lines).toContain('Health data is deleted 3 months after someone leaves');
     const open = mergeRuleAnswers({
       booking_window_hours_ahead: null,
       late_cancel: 'never',
       require_membership_to_book: false,
     });
-    const lines = ruleSentences(open);
-    expect(lines).toContain('Book any time — no limit');
-    expect(lines).toContain('Cancelling never costs a credit');
-    expect(lines).toContain('Anyone can book a class');
-    expect(ruleSentences(mergeRuleAnswers({ booking_window_hours_ahead: 336 }))).toContain(
-      'Book up to 2 weeks ahead',
-    );
+    const openLines = ruleSentences(open);
+    expect(openLines).toContain('Classes can be booked with no limit');
+    expect(openLines).toContain('Cancelling never costs the credit');
+    expect(openLines).toContain('People can book without a membership');
+    expect(
+      ruleSentences(mergeRuleAnswers({ booking_window_hours_ahead: 336 })),
+    ).toContain('Classes can be booked 2 weeks ahead');
+  });
+
+  it('labels the current value of a field', () => {
+    expect(fieldLabel('weight_unit', DEFAULT_RULE_CHOICES)).toBe('kilograms');
+    expect(
+      fieldLabel('dm_scope', mergeRuleAnswers({ dm_scope: 'member_coach_only' })),
+    ).toBe('coaches and staff only');
   });
 });

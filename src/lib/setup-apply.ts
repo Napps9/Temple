@@ -110,10 +110,10 @@ export function operatingDefaultsArgs(
     p_timezone: current.timezone,
     p_default_class_capacity: defaults.capacity,
     p_default_class_minutes: defaults.minutes,
-    p_expiring_within_days: current.expiring_within_days,
-    p_parq_expiry_days: current.parq_expiry_days,
-    p_health_retention_months: current.health_retention_months,
-    p_lead_conversion_window_days: current.lead_conversion_window_days,
+    p_expiring_within_days: choices.expiring_within_days,
+    p_parq_expiry_days: choices.parq_expiry_days,
+    p_health_retention_months: choices.health_retention_months,
+    p_lead_conversion_window_days: choices.lead_conversion_window_days,
     p_subscription_resolution: current.subscription_resolution,
     p_booking_window_hours_ahead: choices.booking_window_hours_ahead,
     p_booking_cutoff_minutes_before: choices.booking_cutoff_minutes_before,
@@ -123,7 +123,7 @@ export function operatingDefaultsArgs(
     p_cancel_cutoff_mode: 'relative',
     p_cancel_cutoff_time: null,
     p_cancel_cutoff_days_before: current.cancel_cutoff_days_before ?? 1,
-    p_cover_warning_hours: current.cover_warning_hours ?? 48,
+    p_cover_warning_hours: choices.cover_warning_hours,
   };
 }
 
@@ -242,4 +242,29 @@ export async function applyRules(
     { p_gym_id: gymId, p_enabled: choices.require_membership_to_book },
   );
   if (reqErr) throw reqErr;
+
+  // The rest of the sheet, each through its own existing setter — the
+  // same calls the Settings cards make, one per decision.
+  const calls: [string, Record<string, unknown>][] = [
+    ['set_allow_minors', { p_gym_id: gymId, p_enabled: choices.allow_minors }],
+    ['set_gym_weight_unit', { p_gym_id: gymId, p_unit: choices.weight_unit }],
+    ['set_dm_scope', { p_gym_id: gymId, p_scope: choices.dm_scope }],
+    [
+      'set_leaderboard_config',
+      {
+        p_gym_id: gymId,
+        p_class_enabled: choices.leaderboards_on,
+        p_strength_enabled: choices.leaderboards_on,
+      },
+    ],
+    ['set_gym_public_signup', { p_gym_id: gymId, p_enabled: choices.public_signup }],
+    [
+      'set_gym_public_lead_capture',
+      { p_gym_id: gymId, p_enabled: choices.public_lead_capture },
+    ],
+  ];
+  for (const [fn, args] of calls) {
+    const { error: e } = await supabase.rpc(fn, args);
+    if (e) throw e;
+  }
 }

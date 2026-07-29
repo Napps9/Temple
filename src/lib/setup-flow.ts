@@ -64,22 +64,138 @@ export type RuleChoices = {
   booking_cutoff_minutes_before: number;
   require_membership_to_book: boolean;
   week_starts_on: 'mon' | 'sun';
+  allow_minors: boolean;
+  weight_unit: 'kg' | 'lb';
+  dm_scope: 'full_gym' | 'member_coach_only';
+  leaderboards_on: boolean;
+  public_signup: boolean;
+  public_lead_capture: boolean;
+  expiring_within_days: number;
+  parq_expiry_days: number;
+  health_retention_months: number;
+  cover_warning_hours: number;
+  lead_conversion_window_days: number;
 };
 
+// Defaults mirror what a fresh gym gets today, so an owner who taps
+// straight through changes nothing they didn't choose to change.
 export const DEFAULT_RULE_CHOICES: RuleChoices = {
   booking_window_hours_ahead: 168,
   late_cancel: 'day_before_21',
   booking_cutoff_minutes_before: 0,
   require_membership_to_book: true,
   week_starts_on: 'mon',
+  allow_minors: false,
+  weight_unit: 'kg',
+  dm_scope: 'full_gym',
+  leaderboards_on: true,
+  public_signup: true,
+  public_lead_capture: true,
+  expiring_within_days: 14,
+  parq_expiry_days: 365,
+  health_retention_months: 3,
+  cover_warning_hours: 48,
+  lead_conversion_window_days: 30,
 };
+
+export type RuleField = keyof RuleChoices;
+
+type FieldOption = { label: string; value: RuleChoices[RuleField] };
+
+// One option set per field. These power both the question chips and the
+// tappable value tokens in the rule sheet — same values, same labels, so
+// a rule reads identically whether it was answered or edited.
+export const RULE_FIELD_OPTIONS: Record<RuleField, FieldOption[]> = {
+  booking_window_hours_ahead: [
+    { label: '7 days', value: 168 },
+    { label: '3 days', value: 72 },
+    { label: '2 weeks', value: 336 },
+    { label: 'no limit', value: null },
+  ],
+  late_cancel: [
+    { label: 'from 9pm the night before', value: 'day_before_21' },
+    { label: 'from 2 hours before', value: 'two_hours' },
+    { label: 'never', value: 'never' },
+  ],
+  booking_cutoff_minutes_before: [
+    { label: 'right up to the start', value: 0 },
+    { label: 'until 30 minutes before', value: 30 },
+    { label: 'until an hour before', value: 60 },
+  ],
+  require_membership_to_book: [
+    { label: 'need a membership to book', value: true },
+    { label: 'can book without a membership', value: false },
+  ],
+  week_starts_on: [
+    { label: 'Monday', value: 'mon' },
+    { label: 'Sunday', value: 'sun' },
+  ],
+  allow_minors: [
+    { label: 'not allowed', value: false },
+    { label: 'allowed, with a guardian', value: true },
+  ],
+  weight_unit: [
+    { label: 'kilograms', value: 'kg' },
+    { label: 'pounds', value: 'lb' },
+  ],
+  dm_scope: [
+    { label: 'anyone in the gym', value: 'full_gym' },
+    { label: 'coaches and staff only', value: 'member_coach_only' },
+  ],
+  leaderboards_on: [
+    { label: 'on', value: true },
+    { label: 'off', value: false },
+  ],
+  public_signup: [
+    { label: 'can join', value: true },
+    { label: 'cannot join', value: false },
+  ],
+  public_lead_capture: [
+    { label: 'on', value: true },
+    { label: 'off', value: false },
+  ],
+  expiring_within_days: [
+    { label: '14 days', value: 14 },
+    { label: '7 days', value: 7 },
+    { label: '30 days', value: 30 },
+  ],
+  parq_expiry_days: [
+    { label: 'year', value: 365 },
+    { label: '6 months', value: 182 },
+    { label: '2 years', value: 730 },
+  ],
+  health_retention_months: [
+    { label: '3 months', value: 3 },
+    { label: '1 month', value: 1 },
+    { label: '6 months', value: 6 },
+  ],
+  cover_warning_hours: [
+    { label: '48 hours', value: 48 },
+    { label: '24 hours', value: 24 },
+    { label: 'a week', value: 168 },
+    { label: 'never', value: 0 },
+  ],
+  lead_conversion_window_days: [
+    { label: '30 days', value: 30 },
+    { label: '14 days', value: 14 },
+    { label: '60 days', value: 60 },
+  ],
+};
+
+export function fieldLabel(field: RuleField, c: RuleChoices): string {
+  const opt = RULE_FIELD_OPTIONS[field].find((o) => o.value === c[field]);
+  return opt ? opt.label : String(c[field]);
+}
 
 export type RuleQuestion = {
-  id: keyof RuleChoices;
+  id: RuleField;
   prompt: string;
-  options: { label: string; value: RuleChoices[keyof RuleChoices] }[];
+  options: FieldOption[];
 };
 
+// The five big rules stay one-tap questions; everything else lives in
+// the rule sheet as an editable default. Question chips are Sentence
+// case where the token labels are mid-sentence, hence the overrides.
 export const RULE_QUESTIONS: RuleQuestion[] = [
   {
     id: 'booking_window_hours_ahead',
@@ -133,36 +249,71 @@ export function mergeRuleAnswers(
   return { ...DEFAULT_RULE_CHOICES, ...answers };
 }
 
-export function ruleSentences(c: RuleChoices): string[] {
-  const window =
+// A rule sentence with its editable value marked: text runs and tokens.
+export type SheetPart = { t: string } | { f: RuleField };
+export type SheetLine = { parts: SheetPart[] };
+export type SheetGroup = { group: string; fine: boolean; lines: SheetLine[] };
+
+function line(...parts: SheetPart[]): SheetLine {
+  return { parts };
+}
+
+// Every configurable the old checklists scattered across Settings,
+// grouped and spoken as sentences. `fine: true` groups collapse behind
+// "the small print" — sensible defaults an owner can ignore on day one.
+export function ruleSheet(c: RuleChoices): SheetGroup[] {
+  const bookingLines: SheetLine[] = [
     c.booking_window_hours_ahead === null
-      ? 'Book any time — no limit'
-      : c.booking_window_hours_ahead === 336
-        ? 'Book up to 2 weeks ahead'
-        : `Book up to ${Math.round(c.booking_window_hours_ahead / 24)} days ahead`;
-  const cancel =
-    c.late_cancel === 'day_before_21'
-      ? 'Free cancel until 9pm the night before — later uses the class credit'
-      : c.late_cancel === 'two_hours'
-        ? 'Free cancel until 2 hours before — later uses the class credit'
-        : 'Cancelling never costs a credit';
-  const close =
-    c.booking_cutoff_minutes_before === 0
-      ? 'Book right up to the start'
-      : `Booking closes ${c.booking_cutoff_minutes_before} minutes before`;
-  const memb = c.require_membership_to_book
-    ? 'Membership needed to book'
-    : 'Anyone can book a class';
-  const week = c.week_starts_on === 'mon' ? 'Week starts Monday' : 'Week starts Sunday';
-  return [
-    window,
-    cancel,
-    close,
-    memb,
-    week,
-    'Waitlist fills empty spots automatically',
-    'Waiver signed before the first class',
+      ? line({ t: 'Classes can be booked with ' }, { f: 'booking_window_hours_ahead' })
+      : line({ t: 'Classes can be booked ' }, { f: 'booking_window_hours_ahead' }, { t: ' ahead' }),
+    line({ t: 'Booking stays open ' }, { f: 'booking_cutoff_minutes_before' }),
+    c.late_cancel === 'never'
+      ? line({ t: 'Cancelling ' }, { f: 'late_cancel' }, { t: ' costs the credit' })
+      : line({ t: 'Cancelling costs the credit ' }, { f: 'late_cancel' }),
+    line({ t: 'People ' }, { f: 'require_membership_to_book' }),
   ];
+  return [
+    { group: 'Booking', fine: false, lines: bookingLines },
+    {
+      group: 'Your gym',
+      fine: false,
+      lines: [
+        line({ t: 'The week starts on ' }, { f: 'week_starts_on' }),
+        line({ t: 'Weights are shown in ' }, { f: 'weight_unit' }),
+        line({ t: 'Under-18s are ' }, { f: 'allow_minors' }),
+        line({ t: 'Members can message ' }, { f: 'dm_scope' }),
+        line({ t: 'Leaderboards are ' }, { f: 'leaderboards_on' }),
+        line({ t: 'People ' }, { f: 'public_signup' }, { t: ' from your website' }),
+        line({ t: 'The enquiry form is ' }, { f: 'public_lead_capture' }),
+      ],
+    },
+    {
+      group: 'The small print',
+      fine: true,
+      lines: [
+        line({ t: 'Memberships show as expiring ' }, { f: 'expiring_within_days' }, { t: ' out' }),
+        line({ t: 'Health questionnaires renew every ' }, { f: 'parq_expiry_days' }),
+        line({ t: 'Health data is deleted ' }, { f: 'health_retention_months' }, { t: ' after someone leaves' }),
+        line({ t: 'Uncovered classes raise a warning ' }, { f: 'cover_warning_hours' }, { t: ' ahead' }),
+        line({ t: 'Leads count as converted within ' }, { f: 'lead_conversion_window_days' }),
+      ],
+    },
+  ];
+}
+
+export function sheetLineText(l: SheetLine, c: RuleChoices): string {
+  return l.parts
+    .map((p) => ('t' in p ? p.t : fieldLabel(p.f, c)))
+    .join('');
+}
+
+export function ruleSentences(c: RuleChoices): string[] {
+  const out = ruleSheet(c).flatMap((g) =>
+    g.lines.map((l) => sheetLineText(l, c)),
+  );
+  out.push('Waitlist fills empty spots automatically');
+  out.push('Waiver signed before the first class');
+  return out;
 }
 
 const MAX_CLASS_TYPES = 6;
