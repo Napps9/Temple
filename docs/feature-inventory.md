@@ -919,10 +919,11 @@ The staff area shows up when `can_access_staff_area` is on.
   regardless, for whenever they want to finish.
 - **Conversational setup** (`/setup`, owner-only) — day one as a
   conversation that takes the fastest input per step, not prose for
-  everything. A fixed script in **the checklist's own order** — logo → settings →
-  classes → health screening → payments → plans → team → go live — so
-  `/onboarding` and the conversation can never disagree about what comes
-  next. Settings before classes earns its place: the class builder seeds
+  everything. A fixed script running **the checklist's nine steps in the
+  checklist's own order** — logo → settings → classes → health screening
+  → payments → plans, then the optional three (team → members across →
+  workout history) → go live — so `/onboarding` and the conversation can
+  never disagree about what comes next. Settings before classes earns its place: the class builder seeds
   its capacity and duration from the defaults just saved. Payments
   before plans because a plan can only sell on the gym's own connected
   account; the card starts the OAuth itself and the state row's
@@ -947,13 +948,26 @@ The staff area shows up when `can_access_staff_area` is on.
   bar (counting the same required keys `/onboarding` counts), each step
   opening with its shared `StatusDisk`, checklist label and `~N min`
   estimate, and each finished step collapsing to the emerald tick with
-  the label struck through — the completed-row treatment verbatim.
-  **Every checklist step now has a container in the chat**: logo
+  the label struck through — the completed-row treatment verbatim. A
+  *skipped* step gets the receipt without the struck label, so the
+  strike only ever means done and the finish card can list the rest.
+  **Every checklist step has a container in the chat**: logo
   (branding's picker), classes (`RecurrenceEditor`), payments (handoff
   to billing's OAuth), plans (kind chips + price), **health screening**
   (the same PDF → `gym-waivers` → `publish_waiver` path, with "Build a
-  PAR-Q instead" one tap away), settings (rule chips + sheet) and
-  **inviting the team** (the Team screen's own `InviteSection`, verbatim).
+  PAR-Q instead" one tap away), settings (rule chips + sheet), and the
+  optional three: **inviting the team** (the Team screen's own
+  `InviteSection`, verbatim), **bringing members across** (CSV, or
+  "Pull them from Stripe instead" once Stripe is connected) and
+  **importing workout history**. The two importers keep their own
+  screens — matching columns, spotting duplicates and resolving movement
+  names are judgement work — so those containers frame the job and hand
+  over, and `?backTo=setup` returns the owner to the conversation.
+  `backTo` now names which surface sent them: `setup` back to the chat,
+  `checklist` back to `/onboarding` (`BackLink`, `useSetupAutoReturn`,
+  and the Stripe round-trip's `sessionStorage` hand-off all read it).
+  The **finish card** lists only what was actually left, each row opening
+  its Manage page and returning here.
   **Setup is never lost**: while any required step is outstanding the
   Timeline carries the same progress header with a "Carry on setting up"
   button, and typing "continue setup" (finish / resume / back to setup…)
@@ -962,9 +976,7 @@ The staff area shows up when `can_access_staff_area` is on.
   `src/lib/setup-intent.test.ts` so "set up a new class type" still
   reaches the parser. Either way the conversation resumes at the right
   step, since its position derives from `get_gym_setup_progress`.
-  Only the CSV/Stripe import wizards stay link-outs — they are judgement
-  surfaces (column mapping, fuzzy duplicates) the roadmap deliberately
-  keeps as screens. For the described path the `parse-setup` edge function
+  For the described path the `parse-setup` edge function
   (Claude Sonnet, tool-forced JSON, gated on
   `effective_can(gym, 'can_edit_classes')`, 503 without an API key)
   turns each into a proposal; the client sanitises it

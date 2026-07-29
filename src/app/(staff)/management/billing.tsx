@@ -39,23 +39,23 @@ export default function BillingScreen() {
   const volumeCents = parseRateToCents(volumeInput) ?? 0;
   const elsewhere = estimateElsewhereMarkup(volumeCents);
 
-  // Returning from Stripe's OAuth round-trip: if we came from the setup
-  // checklist, bounce back to it now the account is connected. The ?backTo
-  // param is lost across Stripe's redirect, so connect() stashed a flag.
+  // Returning from Stripe's OAuth round-trip: if we came from setup, bounce
+  // back to it now the account is connected. The ?backTo param is lost
+  // across Stripe's redirect, so connect() stashed which surface it was.
   useEffect(() => {
     if (params.stripe !== 'connected' && params.stripe !== 'error') return;
     if (typeof window === 'undefined') return;
-    let flagged = false;
+    let flagged: string | null = null;
     try {
-      flagged = window.sessionStorage.getItem('temple-setup-stripe') === '1';
+      flagged = window.sessionStorage.getItem('temple-setup-stripe');
       if (flagged) window.sessionStorage.removeItem('temple-setup-stripe');
     } catch {
       // sessionStorage unavailable — the manual back link still works
     }
     if (flagged && params.stripe === 'connected') {
-      // The conversational setup is the front door now; it re-derives its
-      // place from progress, so returning lands on the next open step.
-      router.replace('/setup');
+      // Setup re-derives its place from progress, so returning lands on
+      // the next open step either way.
+      router.replace(flagged === 'checklist' ? '/onboarding' : '/setup');
     }
   }, [params.stripe]);
 
@@ -175,9 +175,9 @@ export default function BillingScreen() {
         // Remember we came from the setup checklist so we can return there
         // after the OAuth round-trip — ?backTo doesn't survive Stripe's
         // redirect, so stash it where the return handler above can read it.
-        if (params.backTo === 'setup') {
+        if (params.backTo === 'setup' || params.backTo === 'checklist') {
           try {
-            window.sessionStorage.setItem('temple-setup-stripe', '1');
+            window.sessionStorage.setItem('temple-setup-stripe', params.backTo);
           } catch {
             // sessionStorage unavailable — the manual back link still works
           }

@@ -304,7 +304,7 @@ function StepRow({
   const partial = !step.done && step.complete > 0 && step.complete < step.target;
   return (
     <Pressable
-      onPress={() => router.push(`${step.href}?backTo=setup` as never)}
+      onPress={() => router.push(`${step.href}?backTo=checklist` as never)}
       className={`flex-row items-center gap-3 rounded-xl px-3 py-3 active:opacity-70 ${
         step.done ? 'bg-gray-50 dark:bg-gray-800/40' : 'bg-gray-50 dark:bg-gray-800'
       }`}>

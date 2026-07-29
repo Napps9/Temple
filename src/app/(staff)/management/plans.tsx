@@ -160,6 +160,10 @@ function coverageDiffers(r: EditablePlan): boolean {
 export function PlansPanel() {
   const colors = useThemeColors();
   const { backTo } = useLocalSearchParams<{ backTo?: string }>();
+  // Opened mid-setup, the two hops out of here stay inside setup — and
+  // return to whichever of the two setup surfaces sent the owner in.
+  const carryBackTo =
+    backTo === 'setup' || backTo === 'checklist' ? `?backTo=${backTo}` : '';
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditablePlan[]>([]);
@@ -622,11 +626,7 @@ export function PlansPanel() {
               variant="secondary"
               icon="link-outline"
               onPress={() =>
-                router.push(
-                  (backTo === 'setup'
-                    ? '/management/billing?backTo=setup'
-                    : '/management/billing') as never,
-                )
+                router.push(`/management/billing${carryBackTo}` as never)
               }>
               {stripeGate === 'attention' ? 'Fix in Billing' : 'Connect Stripe'}
             </Button>
@@ -658,11 +658,7 @@ export function PlansPanel() {
             icon="cloud-download-outline"
             tone="primary"
             onPress={() =>
-              router.push(
-                (backTo === 'setup'
-                  ? '/management/members/import-stripe?backTo=setup'
-                  : '/management/members/import-stripe') as never,
-              )
+              router.push(`/management/members/import-stripe${carryBackTo}` as never)
             }
           />
         ) : null}

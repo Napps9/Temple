@@ -12,12 +12,13 @@ type ProgressRow = {
   target: number;
 };
 
-// Bounces an owner back to the /onboarding checklist the moment a setup
-// step they opened from it (deep-linked with ?backTo=setup) is complete,
-// so first-time setup reads as one guided flow rather than a tour of
-// Manage pages you have to navigate back from yourself.
+// Bounces an owner back to setup the moment a step they opened from it
+// (deep-linked with ?backTo) is complete, so first-time setup reads as
+// one guided flow rather than a tour of Manage pages you have to
+// navigate back from yourself. `setup` returns to the conversation,
+// `checklist` to the manual list.
 //
-// Inert unless the page was opened from the checklist. Watches the same
+// Inert unless the page was opened from setup. Watches the same
 // gym-setup-progress query the checklist itself renders from — the step
 // pages invalidate it on save — and only reacts to a false -> true
 // transition, so re-opening an already-done step to review it never
@@ -30,7 +31,10 @@ export function useSetupAutoReturn(stepKey: string, requireFullRing = false) {
   const { backTo } = useLocalSearchParams<{ backTo?: string }>();
   const { data: membership } = useGymMembership();
   const role = useRole();
-  const active = backTo === 'setup' && role === 'owner' && !!membership?.gymId;
+  const active =
+    (backTo === 'setup' || backTo === 'checklist') &&
+    role === 'owner' &&
+    !!membership?.gymId;
 
   const seeded = useRef<boolean | null>(null);
   const navigated = useRef(false);
@@ -58,7 +62,7 @@ export function useSetupAutoReturn(stepKey: string, requireFullRing = false) {
     }
     if (!seeded.current && complete) {
       navigated.current = true;
-      router.replace('/onboarding');
+      router.replace(backTo === 'checklist' ? '/onboarding' : '/setup');
     }
-  }, [active, progress.data, stepKey, requireFullRing]);
+  }, [active, backTo, progress.data, stepKey, requireFullRing]);
 }

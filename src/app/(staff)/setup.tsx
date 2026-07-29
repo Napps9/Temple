@@ -78,6 +78,8 @@ type Step =
   | 'stripe'
   | 'plans'
   | 'team'
+  | 'members'
+  | 'workouts'
   | 'golive';
 
 type Msg =
@@ -91,6 +93,8 @@ type Msg =
   | { kind: 'plan-builder'; open: boolean }
   | { kind: 'waiver-card'; open: boolean }
   | { kind: 'team-card'; open: boolean }
+  | { kind: 'members-card'; open: boolean }
+  | { kind: 'workouts-card'; open: boolean }
   | { kind: 'timetable-card'; proposal: TimetableProposal; open: boolean }
   | { kind: 'plans-card'; proposal: PlansProposal; open: boolean }
   | { kind: 'rule-question'; q: number; open: boolean }
@@ -142,6 +146,16 @@ const STEP_META: Record<
     label: 'Invite your team',
     estimate: '1 min',
   },
+  members: {
+    icon: 'cloud-upload-outline',
+    label: 'Bring your members across',
+    estimate: '3 min',
+  },
+  workouts: {
+    icon: 'stats-chart-outline',
+    label: 'Import workout history',
+    estimate: '3 min',
+  },
 };
 
 // The checklist's sequencing survives as this script; each step takes
@@ -160,9 +174,27 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
   parq:
     'Before anyone can book, members sign something — upload your waiver as a PDF and they sign it in the app. One is enough; a PAR-Q can come later.',
   team:
-    'Last one, and it\u2019s optional — invite your coaches so they can take classes and write programming.',
+    'That\u2019s the required list done. The last three are optional — first, invite your coaches so they can take classes and write programming.',
+  members:
+    'Coming from another platform? Bring your members across — a CSV of names, emails and plans, or pull them straight out of Stripe.',
+  workouts:
+    'Last one — if you have workout history, import it and members walk in to their own PRs and leaderboards rather than an empty app.',
   rules:
     'Next, a few rules — tap what fits. The first answer is what most gyms like yours do, and your classes will pick these up as their defaults. Change any of it later just by telling me.',
+};
+
+// Steps whose fast path is a tap. The bar never disappears, so a typed
+// message gets pointed back at the card rather than meeting a dead input.
+const TAP_ONLY: Partial<Record<Step, string>> = {
+  logo: 'This one’s a tap — choose your logo above, or skip and we’ll move on.',
+  stripe: 'Stripe needs its own secure page — tap Connect above, or do it later.',
+  parq: 'This one’s a file — upload your waiver above, or skip it for now.',
+  team: 'Pop a coach’s email in the box above, or skip if you run solo.',
+  members:
+    'The importer has its own screen for matching up your columns — tap above, or skip it.',
+  workouts: 'Same again — the importer has its own screen; tap above, or skip it.',
+  rules: 'Tap an answer above — the chips are quicker than typing for these.',
+  golive: 'Setup’s done — head into your gym, or pick up anything you left above.',
 };
 
 export default function SetupScreen() {
@@ -212,6 +244,8 @@ export default function SetupScreen() {
       'stripe',
       'plans',
       'team',
+      'members',
+      'workouts',
       'golive',
     ];
     const start = from ? all.indexOf(from) + 1 : 0;
@@ -223,6 +257,8 @@ export default function SetupScreen() {
       if (s === 'parq') return !doneKeys.has('parq');
       if (s === 'rules') return !doneKeys.has('settings');
       if (s === 'team') return !doneKeys.has('team');
+      if (s === 'members') return !doneKeys.has('members_imported');
+      if (s === 'workouts') return !doneKeys.has('workouts_imported');
       return true;
     });
   }
@@ -239,7 +275,7 @@ export default function SetupScreen() {
     const next = stepsRemaining(from)[0] ?? 'golive';
     setStep(next);
     if (next === 'golive') {
-      pushMsgs({ kind: 'temple', text: 'That’s the big pieces. A couple of things need a real button:' });
+      pushMsgs({ kind: 'temple', text: 'That’s the walk-through done.' });
     } else if (next === 'rules') {
       ruleAnswers.current = {};
       pushMsgs(
@@ -275,6 +311,16 @@ export default function SetupScreen() {
       pushMsgs(
         { kind: 'step-ask', step: 'team', text: ASK.team },
         { kind: 'team-card', open: true },
+      );
+    } else if (next === 'members') {
+      pushMsgs(
+        { kind: 'step-ask', step: 'members', text: ASK.members },
+        { kind: 'members-card', open: true },
+      );
+    } else if (next === 'workouts') {
+      pushMsgs(
+        { kind: 'step-ask', step: 'workouts', text: ASK.workouts },
+        { kind: 'workouts-card', open: true },
       );
     } else {
       pushMsgs({ kind: 'temple', text: ASK[next] });
@@ -313,35 +359,10 @@ export default function SetupScreen() {
   async function submitText() {
     const text = input.trim();
     if (!text || !step) return;
-    // The bar never disappears — steps whose fast path is a tap still
-    // answer a typed message instead of presenting a dead input.
-    if (
-      step === 'logo' ||
-      step === 'stripe' ||
-      step === 'parq' ||
-      step === 'team' ||
-      step === 'rules' ||
-      step === 'golive'
-    ) {
+    const nudge = TAP_ONLY[step];
+    if (nudge) {
       setInput('');
-      pushMsgs(
-        { kind: 'mine', text },
-        {
-          kind: 'temple',
-          text:
-            step === 'logo'
-              ? 'This one’s a tap — choose your logo above, or skip and we’ll move on.'
-              : step === 'stripe'
-                ? 'Stripe needs its own secure page — tap Connect above, or do it later.'
-                : step === 'parq'
-                  ? 'This one’s a file — upload your waiver above, or skip it for now.'
-                  : step === 'team'
-                    ? 'Pop a coach’s email in the box above, or skip if you run solo.'
-                    : step === 'rules'
-                      ? 'Tap an answer above — the chips are quicker than typing for these.'
-                      : 'These last few need real buttons — tap through the list above.',
-        },
-      );
+      pushMsgs({ kind: 'mine', text }, { kind: 'temple', text: nudge });
       return;
     }
     setInput('');
@@ -603,7 +624,6 @@ export default function SetupScreen() {
                     setMessages((prev) => closeCards(prev));
                     pushMsgs({
                       kind: 'receipt',
-                      step: 'stripe',
                       text: 'Stripe can wait — plans become buyable once it’s connected.',
                     });
                     advance('stripe');
@@ -624,6 +644,14 @@ export default function SetupScreen() {
                     pushMsgs({ kind: 'receipt', step: 'parq', text: receipt });
                     advance('parq');
                   }}
+                  onSkip={() => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({
+                      kind: 'receipt',
+                      text: 'Health screening skipped — members can’t book until one is published.',
+                    });
+                    advance('parq');
+                  }}
                 />
               ) : null
             ) : m.kind === 'team-card' ? (
@@ -632,8 +660,37 @@ export default function SetupScreen() {
                   key={i}
                   onDone={(receipt) => {
                     setMessages((prev) => closeCards(prev));
-                    pushMsgs({ kind: 'receipt', step: 'team', text: receipt });
+                    pushMsgs({ kind: 'receipt', text: receipt });
                     advance('team');
+                  }}
+                />
+              ) : null
+            ) : m.kind === 'members-card' ? (
+              m.open ? (
+                <MembersCard
+                  key={i}
+                  stripeConnected={doneKeys.has('stripe')}
+                  onSkip={() => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({
+                      kind: 'receipt',
+                      text: 'Starting fresh — members join themselves from your link.',
+                    });
+                    advance('members');
+                  }}
+                />
+              ) : null
+            ) : m.kind === 'workouts-card' ? (
+              m.open ? (
+                <WorkoutsCard
+                  key={i}
+                  onSkip={() => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({
+                      kind: 'receipt',
+                      text: 'No history to bring — members start logging from day one.',
+                    });
+                    advance('workouts');
                   }}
                 />
               ) : null
@@ -740,7 +797,9 @@ function MessageRow({
     msg.kind === 'stripe-card' ||
     msg.kind === 'plan-builder' ||
     msg.kind === 'waiver-card' ||
-    msg.kind === 'team-card'
+    msg.kind === 'team-card' ||
+    msg.kind === 'members-card' ||
+    msg.kind === 'workouts-card'
   ) {
     return null;
   }
@@ -762,7 +821,9 @@ function MessageRow({
     );
   }
   // A finished step reads exactly like a ticked checklist row: emerald
-  // disk, the step's own label struck through, the outcome beneath.
+  // disk, the step's own label struck through, the outcome beneath. A
+  // skipped one carries no step and so gets no struck label — the strike
+  // means done, and the finish card lists the rest.
   if (msg.kind === 'receipt') {
     const meta = msg.step ? STEP_META[msg.step] : null;
     return (
@@ -941,6 +1002,33 @@ function MessageRow({
   );
 }
 
+// Every step has now been offered in the conversation, so the finish is
+// only about what the owner chose to leave: the checklist's own rows for
+// exactly those, each opening its Manage page and returning here.
+const FINISH_ROWS: { key: string; label: string; href: string }[] = [
+  { key: 'logo', label: 'Add your gym logo', href: '/management/branding' },
+  { key: 'settings', label: 'Set your gym settings', href: '/management/operating' },
+  {
+    key: 'class_type_and_schedule',
+    label: 'Add a class type & schedule',
+    href: '/management/class-types',
+  },
+  { key: 'parq', label: 'Set up health screening', href: '/management/parq' },
+  { key: 'stripe', label: 'Connect payments', href: '/management/billing' },
+  { key: 'plan', label: 'Create a membership plan', href: '/management/plans' },
+  { key: 'team', label: 'Invite your team', href: '/management/team' },
+  {
+    key: 'members_imported',
+    label: 'Bring your members across',
+    href: '/management/members/import',
+  },
+  {
+    key: 'workouts_imported',
+    label: 'Import workout history',
+    href: '/management/members/import-workouts',
+  },
+];
+
 function GoLive({
   doneKeys,
   allDone,
@@ -952,57 +1040,21 @@ function GoLive({
   finishing: boolean;
   onFinish: () => void;
 }) {
-  const items: { key: string; label: string; href: string }[] = [
-    { key: 'stripe', label: 'Connect payments (Stripe)', href: '/management/billing' },
-    { key: 'parq', label: 'Add your waiver and health questions', href: '/management/parq' },
-    { key: 'logo', label: 'Add your logo and colours', href: '/management/branding' },
-  ];
-  const optional: { key: string; label: string; href: string }[] = [
-    { key: 'team', label: 'Invite your coaches', href: '/management/team' },
-    { key: 'members_imported', label: 'Bring your members across', href: '/management/members/import' },
-    { key: 'members_imported_stripe', label: 'Pull plans and members from Stripe', href: '/management/members/import-stripe' },
-    { key: 'workouts_imported', label: 'Import workout history', href: '/management/members/import-workouts' },
-  ];
-  const optDone = (key: string) =>
-    doneKeys.has(key === 'members_imported_stripe' ? 'members_imported' : key);
+  const left = FINISH_ROWS.filter((r) => !doneKeys.has(r.key));
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      {items.map((it) => (
-        <Pressable
-          key={it.key}
-          onPress={() => router.push(it.href as never)}
-          disabled={doneKeys.has(it.key)}
-          className="flex-row items-center gap-2.5 active:opacity-70">
-          <Ionicons
-            name={doneKeys.has(it.key) ? 'checkmark-circle' : 'ellipse-outline'}
-            size={20}
-            color={doneKeys.has(it.key) ? '#10B981' : '#9CA3AF'}
-          />
-          <Text
-            className={`flex-1 text-[15px] font-medium ${doneKeys.has(it.key) ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-50'}`}>
-            {it.label}
-          </Text>
-          {!doneKeys.has(it.key) ? (
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          ) : null}
-        </Pressable>
-      ))}
-      <View className="h-px bg-gray-100 dark:bg-gray-800" />
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wide">
-        Switching from another platform?
+      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+        {left.length === 0
+          ? 'Everything’s set. Members can find you, book, sign and pay.'
+          : 'You left these — each one is a couple of taps whenever you want it.'}
       </Text>
-      {optional.map((it) => (
+      {left.map((it) => (
         <Pressable
           key={it.key}
-          onPress={() => router.push(it.href as never)}
+          onPress={() => router.push(`${it.href}?backTo=setup` as never)}
           className="flex-row items-center gap-2.5 active:opacity-70">
-          <Ionicons
-            name={optDone(it.key) ? 'checkmark-circle' : 'ellipse-outline'}
-            size={20}
-            color={optDone(it.key) ? '#10B981' : '#9CA3AF'}
-          />
-          <Text
-            className={`flex-1 text-[15px] font-medium ${optDone(it.key) ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-50'}`}>
+          <Ionicons name="ellipse-outline" size={20} color="#9CA3AF" />
+          <Text className="flex-1 text-[15px] font-medium text-gray-900 dark:text-gray-50">
             {it.label}
           </Text>
           <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
@@ -1011,6 +1063,77 @@ function GoLive({
       <Button onPress={onFinish} loading={finishing}>
         {allDone ? 'Go to your gym' : 'I’ll finish these later'}
       </Button>
+    </View>
+  );
+}
+
+// The member-import step. The wizard proper is judgement work — matching
+// columns, spotting duplicates, mapping old plans onto new ones — so the
+// container frames the job and picks the route; ?backTo=setup brings the
+// owner back to this conversation when they're done.
+function MembersCard({
+  stripeConnected,
+  onSkip,
+}: {
+  stripeConnected: boolean;
+  onSkip: () => void;
+}) {
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+        Export a CSV from wherever you are now — we match the columns, flag
+        anything that looks like a duplicate, and show you the lot before
+        anything is created.
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+        Nobody is charged and nobody is emailed until you say so.
+      </Text>
+      <Button
+        onPress={() => router.push('/management/members/import?backTo=setup' as never)}>
+        Import a CSV
+      </Button>
+      {stripeConnected ? (
+        <Pressable
+          onPress={() =>
+            router.push('/management/members/import-stripe?backTo=setup' as never)
+          }
+          hitSlop={6}>
+          <Text className="text-link text-sm font-medium text-center">
+            Pull them from Stripe instead
+          </Text>
+        </Pressable>
+      ) : null}
+      <Pressable onPress={onSkip} hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+          I’m starting fresh
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// The workout-history step. Same shape as the member import and the same
+// reason: resolving movement names against Temple's vocabulary is a
+// screenful of judgement, not a chat message.
+function WorkoutsCard({ onSkip }: { onSkip: () => void }) {
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+        Past sets, times and scores from your old platform. We line the
+        movement names up with Temple’s, and members open the app to their own
+        PRs and leaderboards rather than an empty history.
+      </Text>
+      <Button
+        onPress={() =>
+          router.push('/management/members/import-workouts?backTo=setup' as never)
+        }>
+        Import workout history
+      </Button>
+      <Pressable onPress={onSkip} hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+          Nothing to bring across
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -1286,7 +1409,7 @@ function StripeCard({ onSkip }: { onSkip: () => void }) {
       if (!url) throw new Error('Could not start the Stripe connection');
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         try {
-          window.sessionStorage.setItem('temple-setup-stripe', '1');
+          window.sessionStorage.setItem('temple-setup-stripe', 'setup');
         } catch {
           // sessionStorage unavailable — billing's own back link still works
         }
@@ -1544,9 +1667,11 @@ function PlanBuilderCard({
 function WaiverCard({
   gymId,
   onDone,
+  onSkip,
 }: {
   gymId: string;
   onDone: (receipt: string) => void;
+  onSkip: () => void;
 }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -1605,12 +1730,7 @@ function WaiverCard({
           Build a PAR-Q instead
         </Text>
       </Pressable>
-      <Pressable
-        onPress={() =>
-          onDone('Health screening skipped — members can’t book until one is published.')
-        }
-        disabled={upload.isPending}
-        hitSlop={6}>
+      <Pressable onPress={onSkip} disabled={upload.isPending} hitSlop={6}>
         <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
           Do this later
         </Text>

@@ -50,21 +50,21 @@ export function BackLink({
   preferBack?: boolean;
 }) {
   const colors = useThemeColors();
-  // A sub-page opened from the setup checklist carries ?backTo=setup so its
-  // back affordance returns to the checklist the owner was working through,
-  // not the page's usual parent. It re-points to /onboarding via a fixed
-  // replace and takes precedence over preferBack: /onboarding is
-  // cross-group, where router.back() pops to whatever unrelated screen the
-  // owner last visited (the exact failure the named-destination default
-  // avoids).
+  // A sub-page opened from setup carries ?backTo so its back affordance
+  // returns to the flow the owner was working through, not the page's usual
+  // parent: `setup` is the conversation, `checklist` the manual list. It
+  // re-points via a fixed replace and takes precedence over preferBack —
+  // both are cross-group, where router.back() pops to whatever unrelated
+  // screen the owner last visited (the exact failure the named-destination
+  // default avoids).
   const { backTo } = useLocalSearchParams<{ backTo?: string }>();
-  const toSetup = backTo === 'setup';
+  const toSetup = backTo === 'setup' || backTo === 'checklist';
   const effLabel = toSetup ? 'Setup' : label;
 
   function onPress() {
     haptic.selection();
     if (toSetup) {
-      router.replace('/onboarding');
+      router.replace(backTo === 'checklist' ? '/onboarding' : '/setup');
       return;
     }
     if (preferBack) {
