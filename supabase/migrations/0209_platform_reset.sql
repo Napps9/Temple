@@ -23,7 +23,18 @@
 -- On a fresh database (pgTAP, local dev) every statement is a no-op —
 -- migrations run before seeding, so the CI seed gym is unaffected.
 -- cron_run_log is left as platform ops history; it holds no tenant data.
+--
+-- billing_events goes FIRST, explicitly: its gym FK is `set null` under a
+-- CHECK that ties gym_id to provider_account_id (so the gyms cascade
+-- violates it — the first deploy of this migration failed exactly there),
+-- and its NOT NULL member FK has no delete action, which would block the
+-- users delete besides. The 6-year retention stance (0010) protects real
+-- financial records; every row here is a cs_test_ checkout the owner has
+-- asked to clear. security_alerts nulls its FKs harmlessly but is swept
+-- too — a blank slate should not open on stale alerts about deleted data.
 
+delete from public.billing_events;
+delete from public.security_alerts;
 delete from public.gyms;
 delete from auth.users;
 delete from public.import_inference_corrections;
