@@ -26,6 +26,7 @@ import {
 } from '@/components/RecurrenceEditor';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
+import { StatusDisk } from '@/components/StatusDisk';
 import { useGymMembership, useMyProfile, useRole, useSession } from '@/lib/auth';
 import {
   applyPlans,
@@ -66,7 +67,8 @@ type Step = 'logo' | 'timetable' | 'stripe' | 'plans' | 'rules' | 'golive';
 type Msg =
   | { kind: 'temple'; text: string }
   | { kind: 'mine'; text: string }
-  | { kind: 'receipt'; text: string }
+  | { kind: 'receipt'; text: string; step?: Exclude<Step, 'golive'> }
+  | { kind: 'step-ask'; step: Exclude<Step, 'golive'>; text: string }
   | { kind: 'logo-card'; open: boolean }
   | { kind: 'class-builder'; open: boolean }
   | { kind: 'stripe-card'; open: boolean }
@@ -76,6 +78,43 @@ type Msg =
   | { kind: 'rule-question'; q: number; open: boolean }
   | { kind: 'rules-gate'; open: boolean }
   | { kind: 'rules-summary'; choices: RuleChoices; open: boolean };
+
+// Mirrors /onboarding's required list, in this conversation's order, so
+// the progress bar counts the same things the checklist counts.
+const REQUIRED_SETUP_KEYS = [
+  'logo',
+  'class_type_and_schedule',
+  'stripe',
+  'plan',
+  'settings',
+  'parq',
+] as const;
+
+// Each step wears the checklist's own icon, label and time estimate, so
+// a step opening in the chat and a row in the checklist read as the
+// same object.
+const STEP_META: Record<
+  Exclude<Step, 'golive'>,
+  { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; estimate: string }
+> = {
+  logo: { icon: 'image-outline', label: 'Add your gym logo', estimate: '1 min' },
+  timetable: {
+    icon: 'pricetag-outline',
+    label: 'Add a class type & schedule',
+    estimate: '3 min',
+  },
+  stripe: { icon: 'card-outline', label: 'Connect payments', estimate: '2 min' },
+  plans: {
+    icon: 'card-outline',
+    label: 'Create a membership plan',
+    estimate: '2 min',
+  },
+  rules: {
+    icon: 'settings-outline',
+    label: 'Set your gym settings',
+    estimate: '2 min',
+  },
+};
 
 // The checklist's sequencing survives as this script; each step takes
 // whichever input is fastest — a tap for the logo, the real schedule
@@ -128,6 +167,9 @@ export default function SetupScreen() {
   const doneKeys = new Set(
     (progress.data ?? []).filter((r) => r.done).map((r) => r.step_key),
   );
+  const requiredDoneCount = REQUIRED_SETUP_KEYS.filter((k) =>
+    doneKeys.has(k),
+  ).length;
 
   function stepsRemaining(from: Step | null): Step[] {
     const all: Step[] = ['logo', 'timetable', 'stripe', 'plans', 'rules', 'golive'];
@@ -157,15 +199,30 @@ export default function SetupScreen() {
       pushMsgs({ kind: 'temple', text: 'That’s the big pieces. A couple of things need a real button:' });
     } else if (next === 'rules') {
       ruleAnswers.current = {};
-      pushMsgs({ kind: 'temple', text: ASK.rules }, { kind: 'rule-question', q: 0, open: true });
+      pushMsgs(
+        { kind: 'step-ask', step: 'rules', text: ASK.rules },
+        { kind: 'rule-question', q: 0, open: true },
+      );
     } else if (next === 'logo') {
-      pushMsgs({ kind: 'temple', text: ASK.logo }, { kind: 'logo-card', open: true });
+      pushMsgs(
+        { kind: 'step-ask', step: 'logo', text: ASK.logo },
+        { kind: 'logo-card', open: true },
+      );
     } else if (next === 'timetable') {
-      pushMsgs({ kind: 'temple', text: ASK.timetable }, { kind: 'class-builder', open: true });
+      pushMsgs(
+        { kind: 'step-ask', step: 'timetable', text: ASK.timetable },
+        { kind: 'class-builder', open: true },
+      );
     } else if (next === 'stripe') {
-      pushMsgs({ kind: 'temple', text: ASK.stripe }, { kind: 'stripe-card', open: true });
+      pushMsgs(
+        { kind: 'step-ask', step: 'stripe', text: ASK.stripe },
+        { kind: 'stripe-card', open: true },
+      );
     } else if (next === 'plans') {
-      pushMsgs({ kind: 'temple', text: ASK.plans }, { kind: 'plan-builder', open: true });
+      pushMsgs(
+        { kind: 'step-ask', step: 'plans', text: ASK.plans },
+        { kind: 'plan-builder', open: true },
+      );
     } else {
       pushMsgs({ kind: 'temple', text: ASK[next] });
     }
@@ -277,7 +334,11 @@ export default function SetupScreen() {
       {
         onSuccess: () => {
           setMessages((m) => closeCards(m));
-          pushMsgs({ kind: 'receipt', text: 'Timetable set — members can book as soon as you’re live.' });
+          pushMsgs({
+            kind: 'receipt',
+            step: 'timetable',
+            text: 'Timetable set — members can book as soon as you’re live.',
+          });
           advance('timetable');
         },
         onError: () => pushMsgs({ kind: 'temple', text: 'That didn’t save — try again, or use the checklist below.' }),
@@ -293,6 +354,7 @@ export default function SetupScreen() {
           setMessages((m) => closeCards(m));
           pushMsgs({
             kind: 'receipt',
+            step: 'plans',
             text: doneKeys.has('stripe')
               ? 'Plans created — they’re on sale the moment you’re live.'
               : 'Plans created — they go on sale once Stripe is connected.',
@@ -402,13 +464,41 @@ export default function SetupScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">
-        <View className="flex-row items-center justify-between px-4 pt-2 pb-1 md:max-w-2xl md:mx-auto md:w-full">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
-            Setting up {brand.gymName}
-          </Text>
-          <Pressable onPress={() => router.replace('/onboarding')} hitSlop={6}>
-            <Text className="text-link text-sm font-medium">Prefer the checklist?</Text>
-          </Pressable>
+        {/* The checklist's progress header, compacted for a conversation:
+            same "N of M done · REQUIRED" line and primary-filled bar, so
+            the chat reads as the same piece of software. */}
+        <View className="px-4 pt-2 pb-2 gap-2 md:max-w-2xl md:mx-auto md:w-full">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2.5">
+              <View className="w-8 h-8 rounded-xl bg-primary/15 items-center justify-center">
+                <Ionicons name="rocket-outline" size={17} color={colors.primary} />
+              </View>
+              <View>
+                <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
+                  Setting up
+                </Text>
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+                  {brand.gymName}
+                </Text>
+              </View>
+            </View>
+            <View className="items-end gap-0.5">
+              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                {requiredDoneCount} of {REQUIRED_SETUP_KEYS.length} done
+              </Text>
+              <Pressable onPress={() => router.replace('/onboarding')} hitSlop={6}>
+                <Text className="text-link text-xs font-medium">Prefer the checklist?</Text>
+              </Pressable>
+            </View>
+          </View>
+          <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <View
+              style={{
+                width: `${(requiredDoneCount / REQUIRED_SETUP_KEYS.length) * 100}%`,
+              }}
+              className="h-full bg-primary rounded-full"
+            />
+          </View>
         </View>
 
         <ScrollView
@@ -449,6 +539,7 @@ export default function SetupScreen() {
                     setMessages((prev) => closeCards(prev));
                     pushMsgs({
                       kind: 'receipt',
+                      step: 'stripe',
                       text: 'Stripe can wait — plans become buyable once it’s connected.',
                     });
                     advance('stripe');
@@ -554,6 +645,7 @@ function MessageRow({
   onHaveALook: () => void;
   onReword: () => void;
 }) {
+  const accent = useThemeColors().primary;
   // Rendered by the parent's special cases, never here.
   if (
     msg.kind === 'logo-card' ||
@@ -580,11 +672,63 @@ function MessageRow({
       </View>
     );
   }
+  // A finished step reads exactly like a ticked checklist row: emerald
+  // disk, the step's own label struck through, the outcome beneath.
   if (msg.kind === 'receipt') {
+    const meta = msg.step ? STEP_META[msg.step] : null;
     return (
-      <View className="flex-row items-center gap-2 pl-9">
-        <Ionicons name="checkmark-circle-outline" size={16} color="#10B981" />
-        <Text className="flex-1 text-gray-500 dark:text-gray-400 text-[13px]">{msg.text}</Text>
+      <View className="flex-row items-start gap-3">
+        <StatusDisk
+          size={28}
+          done
+          partial={false}
+          complete={1}
+          target={1}
+          icon="checkmark"
+          accent="#10B981"
+        />
+        <View className="flex-1">
+          {meta ? (
+            <Text className="text-gray-400 dark:text-gray-500 text-[13px] font-medium line-through">
+              {meta.label}
+            </Text>
+          ) : null}
+          <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+            {msg.text}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // A step opening: the checklist row's disk, label and ~estimate, with
+  // the conversation's own prose underneath.
+  if (msg.kind === 'step-ask') {
+    const meta = STEP_META[msg.step];
+    return (
+      <View className="flex-row items-start gap-3">
+        <StatusDisk
+          size={28}
+          done={false}
+          partial={false}
+          complete={0}
+          target={1}
+          icon={meta.icon}
+          accent={accent}
+        />
+        <View className="flex-1 gap-1">
+          <View className="flex-row items-center gap-2">
+            <Text className="text-gray-900 dark:text-gray-50 text-[13px] font-semibold">
+              {meta.label}
+            </Text>
+            <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-mono">
+              ~{meta.estimate}
+            </Text>
+          </View>
+          <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-5">
+            {msg.text}
+          </Text>
+        </View>
       </View>
     );
   }

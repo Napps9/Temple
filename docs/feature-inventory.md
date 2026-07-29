@@ -938,7 +938,12 @@ The staff area shows up when `can_access_staff_area` is on.
   stacking plans before one apply. Both paths land on the same apply,
   and the **ask bar is persistent through every step**: tap-first steps
   answer a typed message by pointing at the faster control rather than
-  presenting a dead box. For the described path the `parse-setup` edge function
+  presenting a dead box. The feed wears the **checklist's own design
+  language**: the `N of 6 done` progress header with the primary-filled
+  bar (counting the same required keys `/onboarding` counts), each step
+  opening with its shared `StatusDisk`, checklist label and `~N min`
+  estimate, and each finished step collapsing to the emerald tick with
+  the label struck through — the completed-row treatment verbatim. For the described path the `parse-setup` edge function
   (Claude Sonnet, tool-forced JSON, gated on
   `effective_can(gym, 'can_edit_classes')`, 503 without an API key)
   turns each into a proposal; the client sanitises it
