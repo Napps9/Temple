@@ -415,38 +415,57 @@ The staff area shows up when `can_access_staff_area` is on.
   `stripe-modify-subscription` path (`useDecideChangeRequest`) — the
   standalone queue screen is unchanged underneath.
 - **The talk bar** (owner only; roadmap phases 3+4) — a sentence becomes
-  a change: `parse-setup`'s `change` step returns rule changes
-  (validated against `RULE_FIELD_OPTIONS` by `sanitiseRuleChanges` —
-  numeric fields accept off-menu values within bounds, enums must land
-  on a real option), new classes (`sanitiseTimetable`), new plans
-  (`sanitisePlans`), or a closure. Each renders as a proposal card with
-  exactly two choices; confirming applies through the same writes the
-  editors use — `applyRules` (which now only rewrites class-type cancel
-  policy when `late_cancel` itself changed), `applyTimetable` (which now
-  reuses an existing class type by name instead of duplicating it),
-  `applyPlans`, and `close_gym_dates` for closures. Anything else gets a
-  fixed "not from here yet" reply — never a guess.
+  a change. One dispatch path, and only one: `parse-setup`'s `change`
+  step names an action from the registry and fills its arguments, the
+  Timeline sanitises them with that action's own sanitiser, previews it,
+  and applies it on Yes. The screen holds no knowledge of any module —
+  no per-verb branch, one card kind, one confirm handler. A sentence the
+  registry doesn't cover gets a fixed "not from here yet" reply, never a
+  guess. One sentence resolves to one action; sequencing several from one
+  sentence is roadmap phase 3, where the order between them has to mean
+  something.
 - **The action registry** (`src/lib/actions/`) — the bar's verbs were
   hand-built: a field on the tool schema, a sanitiser, a resolver, a card
   and an apply path, per verb. That reaches five things, not a platform.
   An action now declares itself once — `name`, `kind` (`do` | `ask`),
   `capability`, `says` (when it's the right one, written as an owner
-  would say it), typed `args`, `sanitise`, `preview`, `apply` — and
-  everything else derives. The client filters the catalogue through
-  `useCanFn` and sends only what this person may do, so `parse-setup`
-  builds the tool's action enum and the prompt's catalogue per call and
-  the model is never told about an action it couldn't perform. Dispatch
-  is one branch in the Timeline and one card: a `do` gets the two-choice
-  confirm and a receipt, an `ask` renders as the answer. The capability
-  filter is a convenience for the model, never the authorisation — the
-  write still runs in the owner's session against RLS. Shared arg
-  readers (`argMoney` takes 1, "1", "1.50", "£1.50" and refuses a third
-  decimal rather than rounding someone's price; `argInt`, `argString`,
-  `argEnum`) mean model output is re-validated per action. **Adding an
-  action to the bar is adding one entry.** Tests pin the registry's own
-  invariants: unique dotted names, every arg described, every `do` has an
-  `apply` and no `ask` does, and `actionsFor` refuses on both `false` and
-  `undefined` (not-yet-loaded is not permission).
+  would say it), typed `args`, `sanitise`, `preview`, `apply`,
+  `invalidate` (which cached queries its write makes stale) — and
+  everything else derives. `parse-setup` holds no vocabulary of its own:
+  the client filters the catalogue through `useCanFn` and sends only what
+  this person may do, so the tool's action enum, the argument shapes and
+  the value conventions are built per call and the model is never told
+  about an action it couldn't perform. Dispatch is one branch in the
+  Timeline and one card: a `do` gets the two-choice confirm (labelled by
+  the action — "Yes, close it") and a receipt, an `ask` renders as the
+  answer. Two escapes from title-and-lines, both earned by moving real
+  verbs across rather than guessed in advance: a preview may name a
+  `card` the feed renders and hand it `data` (a member is a face and a
+  standing, not two lines of prose), and it may return `choices` instead
+  of an answer — one chip per candidate, each re-running the same action
+  with the ambiguity settled. Both are generic. An `apply` that throws
+  `ActionError` has its message shown as written; anything else is
+  plumbing and gets the feed's own words. The capability filter is a
+  convenience for the model, never the authorisation — the write still
+  runs in the owner's session against RLS. Shared arg readers (`argMoney`
+  takes 1, "1", "1.50", "£1.50" and refuses a third decimal rather than
+  rounding someone's price; `argInt`, `argString`, `argEnum`) mean model
+  output is re-validated per action. **Adding an action to the bar is
+  adding one entry, and touches no screen.** Tests pin the registry's own
+  invariants: unique dotted names, unique arg names per action, every arg
+  described, every `do` has an `apply` and no `ask` does, `actionsFor`
+  refuses on both `false` and `undefined` (not-yet-loaded is not
+  permission), and every verb the bar answers to is present.
+- **The modules on it** — `gym.ts` (`gym.change_rules`,
+  `gym.add_classes`, `gym.add_plans`, `gym.close_dates`,
+  `comms.draft_newsletter`), `classes.ts` (`classes.edit`), `members.ts`
+  (`members.find`) and `store.ts`. Each spec reads what it needs through
+  its context rather than being handed it, which costs a query per
+  preview and buys the property that matters: an action works wherever
+  the registry is dispatched from. Two of them re-resolve on both sides
+  — a rule change filters no-ops against the live settings in preview
+  *and* in apply, and a class edit re-finds its sessions before writing —
+  so a card left open can't act on a gym that has since moved.
 - **The store, as things you can say** (first registry module) —
   `store.add_product` ("add a water bottle for £1", "sell hoodies at £35,
   we have 20", "add the technique guide as a £12 download" — a download
@@ -460,24 +479,26 @@ The staff area shows up when `can_access_staff_area` is on.
   read exactly what the store screen does.
 - **Changing classes that already exist** — "cap Saturdays at 20", "move
   the Tuesday 6am half an hour later", "make Wednesday spin 45 minutes".
-  `edit_classes` on the change tool names the target (weekday list, class
-  type, optional date range) and the change (capacity / duration /
-  shift); `sanitiseClassEdit` (`src/lib/chat-lookup.ts`, pure + tested)
-  re-checks every field against the bulk editor's own bounds and drops a
-  request that changes nothing. The client resolves the actual sessions
-  in the owner's session, previews them (`describeBulkEdit` + three real
-  classes + the count), and confirming calls `bulk_edit_sessions` with
-  explicit session ids — so the receipt is that RPC's own counters
+  `classes.edit` names the target (weekday list, class type, optional
+  date range) and the change (capacity / duration / shift);
+  `sanitiseClassEdit` (`src/lib/chat-lookup.ts`, pure + tested) re-checks
+  every field against the bulk editor's own bounds and drops a request
+  that changes nothing. The action resolves the actual sessions in the
+  owner's session, previews them (`describeBulkEdit` + three real
+  classes + the count), and confirming re-resolves and calls
+  `bulk_edit_sessions` with explicit session ids — so the receipt is that
+  RPC's own counters
   (`describeBulkEditResult`): what changed, what was left alone because
   more members are booked than the new capacity, what clashed, who was
   told. An open-ended request is capped at twelve weeks and the card says
   so before anyone confirms.
 - **Asking about a member** — "show me Marcus", "what's Sarah on". The
-  bar's first *read*: `find_member` returns the name as said, the client
-  matches it against the gym's own cohort (`matchMembers` — ranked, so
-  an exact first or last name answers outright and a fragment offers the
-  candidates as chips instead of guessing), and one match renders a
-  member card: status (`memberStatus` — lapsed / expiring in N days /
+  bar's first *read*, and the registry's only `ask` that isn't prose:
+  `members.find` takes the name as said and matches it against the gym's
+  own cohort (`matchMembers` — ranked, so an exact first or last name
+  answers outright and a fragment comes back as `choices`, one chip per
+  candidate, each re-running the action with the person's id instead of
+  guessing), and one match renders a member card: status (`memberStatus` — lapsed / expiring in N days /
   on an intro / active / none), plan and price, credits, comps, a failed
   payment with its past-due date, tags, and the full profile a tap
   behind. A summary, not the profile — and deliberately no health or
@@ -492,9 +513,9 @@ The staff area shows up when `can_access_staff_area` is on.
   to wrap.
 - **A newsletter is a sentence** (roadmap phase 6) — "send a newsletter
   — Christmas hours and the new barbell club" drafts subject + sections
-  in the same `parse-setup` call (`newsletter` on the change tool;
-  prompt forbids invented dates/prices/names — only the owner's stated
-  facts). `sanitiseNewsletter` + `newsletterDocument`
+  in the same `parse-setup` call (`comms.draft_newsletter`, whose own
+  argument description forbids invented dates/prices/names — only the
+  owner's stated facts). `sanitiseNewsletter` + `newsletterDocument`
   (`src/lib/newsletter-draft.ts`, pure + tested) turn the surviving
   draft into the comms suite's own block document; "Yes, draft it"
   inserts an ordinary draft `email_campaigns` row (brand palette, logo,
@@ -508,6 +529,9 @@ The staff area shows up when `can_access_staff_area` is on.
   derived from the class types' effective policies by majority, ties
   strictest-first). Tapping a value applies that one field immediately —
   per-action saves, a receipt line in the stream, the sheet refetches.
+  The tap goes through `gym.change_rules` like a spoken change does, so
+  there is one path to a rule change rather than a tap path and a
+  sentence path.
 - **The ledger seed** — `agent_actions` (loop-1 spec's table) exists and
   is unioned into the feed: staff read behind `can_see_money`, no client
   write path at all (`Insert: never`).

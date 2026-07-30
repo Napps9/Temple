@@ -23,14 +23,14 @@ import { Screen } from '@/components/Screen';
 import { REQUIRED_SETUP_KEYS } from './setup';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import {
+  ActionError,
   actionsFor,
   findAction,
   type ActionPreview,
   type AnyAction,
+  type MemberCard,
 } from '@/lib/actions';
 import type { Capability } from '@/lib/can';
-import { dateRangeWindow } from '@/lib/date-range';
-import { DEFAULT_AUDIENCE } from '@/lib/email/audience';
 import { formatDate } from '@/lib/format-date';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
 import {
@@ -39,66 +39,36 @@ import {
   type ClassTypeCancelRow,
   type GymRulesRow,
 } from '@/lib/rules-read';
+import type { MemberStatus } from '@/lib/chat-lookup';
 import {
-  classEditWindow,
-  DEFAULT_EDIT_WEEKS,
-  describeEditTarget,
-  matchMembers,
-  memberStatus,
-  sanitiseClassEdit,
-  sanitiseMemberQuery,
-  type ClassEditRequest,
-  type MemberStatus,
-} from '@/lib/chat-lookup';
-import {
-  describeBulkEdit,
-  describeBulkEditResult,
-  type BulkEditResult,
-} from '@/lib/bulk-class-edit';
-import { applyPlans, applyRules, applyTimetable } from '@/lib/setup-apply';
-import {
-  fieldLabel,
-  formatDays,
   formatPrice,
-  ruleChangeLine,
-  ruleSheet,
-  sanitisePlans,
-  sanitiseRuleChanges,
-  sanitiseTimetable,
-  sheetLineText,
-  type PlansProposal,
-  type RuleChange,
   type RuleChoices,
   type RuleField,
-  type TimetableProposal,
 } from '@/lib/setup-flow';
-import {
-  newsletterDocument,
-  sanitiseNewsletter,
-  type NewsletterDraft,
-} from '@/lib/newsletter-draft';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useCanFn } from '@/lib/useCan';
-import { useGymBrand } from '@/lib/useGymBrand';
 import {
   formatClock,
   formatTimelineLine,
   groupTimelineByDay,
   type TimelineEvent,
 } from '@/lib/timeline';
-import type { Json } from '@/types/database';
 
 // The Timeline (docs/roadmap.md phases 1, 3 and 4): the staff home. The
 // stream is the gym's existing activity, read-only; the talk bar is the
-// owner's pen — rules, new classes, new plans, closures and edits to the
-// classes already on the calendar, as sentences, parsed to a proposal,
-// confirmed on a card, applied through the same writes the manual editors
-// use. The bar also answers: asking about a member resolves the name and
-// brings the member back as a card, with the profile a tap behind it.
-// Reads run in the owner's own session under RLS, so the bar sees exactly
-// what the screens see. Scope is narrow and honest: anything else gets a
-// plain "not from here yet", never a guess.
+// owner's pen.
+//
+// One dispatch, and only one. A sentence goes to the parser, comes back
+// naming an action from the registry (src/lib/actions), and from there
+// every action is handled identically: sanitise the arguments, ask the
+// spec to preview itself, show that, and on Yes let the spec apply itself
+// and hand back the receipt. This screen knows nothing about rules,
+// classes, plans, closures, newsletters, members or the shop — adding a
+// module adds no code here. Reads and writes run in the owner's own
+// session under RLS, so the bar reaches exactly as far as the screens do.
+// Anything the registry doesn't cover gets a plain "not from here yet",
+// never a guess.
 
 function useTimelineFeed(gymId: string | undefined) {
   return useQuery({
@@ -171,17 +141,6 @@ type LocalMsg =
   | { kind: 'mine'; text: string }
   | { kind: 'temple'; text: string }
   | { kind: 'receipt'; text: string }
-  | { kind: 'rule-changes'; changes: RuleChange[]; open: boolean }
-  | { kind: 'add-classes'; proposal: TimetableProposal; open: boolean }
-  | {
-      kind: 'closure';
-      starts_on: string;
-      ends_on: string;
-      reason: string | null;
-      open: boolean;
-    }
-  | { kind: 'add-plans'; proposal: PlansProposal; open: boolean }
-  | { kind: 'newsletter'; draft: NewsletterDraft; open: boolean }
   | {
       kind: 'action';
       spec: AnyAction;
@@ -189,30 +148,7 @@ type LocalMsg =
       preview: ActionPreview;
       open: boolean;
     }
-  | { kind: 'member-picks'; picks: { profileId: string; name: string }[] }
-  | { kind: 'member-card'; member: MemberCard }
-  | {
-      kind: 'class-edit';
-      req: ClassEditRequest;
-      window: { start: string; end: string; bounded: boolean };
-      sessionIds: string[];
-      sample: string[];
-      open: boolean;
-    }
   | { kind: 'rules-sheet' };
-
-type MemberCard = {
-  profileId: string;
-  name: string;
-  joinedAt: string;
-  status: MemberStatus;
-  planName: string | null;
-  priceCents: number | null;
-  creditBalance: number | null;
-  compCredits: number | null;
-  pastDueSince: string | null;
-  tags: { label: string; color: string; source: 'manual' | 'auto' }[];
-};
 
 const CANNOT_COPY =
   "That's not something I can change from here yet — the Manage screens still cover it.";
@@ -222,80 +158,19 @@ const NO_CHANGE_COPY =
   "hours before', 'add a 7am Wednesday spin class', 'close the gym 24 to 28 " +
   "December', 'send a newsletter — Christmas hours and the new barbell club', " +
   "or 'continue setup'.";
+const MISSING_DETAIL =
+  'I got the gist but not the details — say it again with the name and the number in it.';
+const FAILED_COPY = "That didn't save — try again.";
+
+// An action can say why it failed in words the owner should read; anything
+// else that got this far is plumbing.
+function failureText(e: unknown): string {
+  return e instanceof ActionError ? e.message : FAILED_COPY;
+}
 
 // "continue setup", "finish setting up", "back to setup", "setup"…
 const SETUP_INTENT =
   /^(continue|finish|resume|carry on with|back to|go to|open|complete)?\s*(the\s+)?set\s?up$|^set\s?up\s+(please|again)$/i;
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-type CohortRow = {
-  profile_id: string;
-  joined_at: string;
-  is_intro: boolean;
-  is_active: boolean;
-  is_expiring_soon: boolean;
-  is_expired: boolean;
-  days_until_expiry: number | null;
-  profiles: { full_name: string | null } | null;
-};
-
-type SubLookupRow = {
-  status: string;
-  credit_balance: number | null;
-  price_cents: number | null;
-  membership_plans: { name: string } | null;
-};
-
-type SessionLookupRow = {
-  id: string;
-  name: string | null;
-  starts_at: string;
-  capacity: number;
-  duration_minutes: number;
-  class_types: { name: string } | null;
-};
-
-function sessionLine(s: SessionLookupRow): string {
-  const at = new Date(s.starts_at);
-  const day = at.toLocaleDateString('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
-  const time = at.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  return `${day}, ${time} — ${s.class_types?.name ?? s.name ?? 'Class'} (cap ${s.capacity})`;
-}
-
-function closureFromProposal(
-  raw: unknown,
-): { starts_on: string; ends_on: string; reason: string | null } | null {
-  const c = raw as
-    | { starts_on?: unknown; ends_on?: unknown; reason?: unknown }
-    | null
-    | undefined;
-  if (!c || typeof c.starts_on !== 'string' || typeof c.ends_on !== 'string') {
-    return null;
-  }
-  if (!DATE_RE.test(c.starts_on) || !DATE_RE.test(c.ends_on)) return null;
-  if (c.ends_on < c.starts_on) return null;
-  const reason =
-    typeof c.reason === 'string' && c.reason.trim()
-      ? c.reason.trim().slice(0, 120)
-      : null;
-  return { starts_on: c.starts_on, ends_on: c.ends_on, reason };
-}
-
-function formatClosureDay(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-  });
-}
 
 export default function Timeline() {
   const { data: membership } = useGymMembership();
@@ -305,7 +180,6 @@ export default function Timeline() {
   const isOwner = role === 'owner';
   const can = useCanFn();
   const colors = useThemeColors();
-  const brand = useGymBrand();
   const qc = useQueryClient();
 
   const feed = useTimelineFeed(gymId);
@@ -369,139 +243,50 @@ export default function Timeline() {
       l.map((m, i) => (i === index && 'open' in m ? { ...m, open: false } : m)),
     );
 
-  // The reads. Every one runs in the owner's own session, so RLS decides
-  // what the bar can see exactly as it decides what the members screen
-  // can see — the bar gains no reach of its own.
-  const lookupMember = async (query: string): Promise<LocalMsg[]> => {
-    const { data, error } = await supabase
-      .from('v_member_cohort')
-      .select(
-        'profile_id, joined_at, is_intro, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name)',
-      )
-      .eq('gym_id', gymId!);
-    if (error) throw error;
-    const named = ((data ?? []) as unknown as CohortRow[])
-      .filter((r) => r.profiles?.full_name?.trim())
-      .map((r) => ({ ...r, name: r.profiles!.full_name!.trim() }));
-    const hits = matchMembers(named, query);
-    if (hits.length === 0) {
-      return [{ kind: 'temple', text: `No one called “${query}” on your books.` }];
+  // Everything the bar can do arrives here. The action's own sanitiser
+  // judges the arguments — model output and chip taps alike — and the
+  // action's own preview says what it is about to do. Reads inside it run
+  // in the owner's session, so RLS decides what it can see exactly as it
+  // decides what the screens can see.
+  const runAction = async (
+    spec: AnyAction,
+    raw: Record<string, unknown>,
+  ): Promise<LocalMsg> => {
+    const parsed = spec.sanitise(raw);
+    if (parsed === null || parsed === undefined) {
+      return { kind: 'temple', text: MISSING_DETAIL };
     }
-    if (hits.length > 1) {
-      return [
-        {
-          kind: 'temple',
-          text: `A few people could be “${query}” — which one did you mean?`,
-        },
-        {
-          kind: 'member-picks',
-          picks: hits.map((h) => ({ profileId: h.profile_id, name: h.name })),
-        },
-      ];
-    }
-    return [{ kind: 'member-card', member: await memberCard(hits[0]) }];
-  };
-
-  const memberCard = async (
-    row: CohortRow & { name: string },
-  ): Promise<MemberCard> => {
-    // Each extra fact is best-effort: a staff member whose capabilities
-    // don't stretch to plans or tags gets a card without them, not an
-    // error where the answer should be.
-    const [subs, comps, tags, dun] = await Promise.all([
-      supabase
-        .from('plan_subscriptions')
-        .select('status, credit_balance, price_cents, membership_plans(name)')
-        .eq('gym_id', gymId!)
-        .eq('profile_id', row.profile_id)
-        .order('created_at', { ascending: false })
-        .limit(1),
-      supabase
-        .from('comp_grants')
-        .select('credits_remaining')
-        .eq('gym_id', gymId!)
-        .eq('profile_id', row.profile_id),
-      supabase
-        .from('member_tags')
-        .select('label, color, source')
-        .eq('gym_id', gymId!)
-        .eq('profile_id', row.profile_id),
-      supabase
-        .from('plan_subscription_dunning')
-        .select('past_due_since')
-        .eq('gym_id', gymId!)
-        .eq('profile_id', row.profile_id)
-        .maybeSingle(),
-    ]);
-    const sub = ((subs.data ?? []) as unknown as SubLookupRow[])[0] ?? null;
-    const compCredits = ((comps.data ?? []) as { credits_remaining: number | null }[])
-      .reduce((sum, c) => sum + (c.credits_remaining ?? 0), 0);
+    // Type-erased on the way in, checked on the way out: the spec's own
+    // sanitiser is what guarantees this matches its preview and apply.
+    const args = parsed as never;
     return {
-      profileId: row.profile_id,
-      name: row.name,
-      joinedAt: row.joined_at,
-      status: memberStatus({
-        isIntro: row.is_intro,
-        isActive: row.is_active,
-        isExpiringSoon: row.is_expiring_soon,
-        isExpired: row.is_expired,
-        daysUntilExpiry: row.days_until_expiry,
-      }),
-      planName: sub?.membership_plans?.name ?? null,
-      priceCents: sub?.price_cents ?? null,
-      creditBalance: sub?.credit_balance ?? null,
-      compCredits: compCredits > 0 ? compCredits : null,
-      pastDueSince:
-        (dun.data as { past_due_since: string | null } | null)?.past_due_since ?? null,
-      tags: (tags.data ?? []) as MemberCard['tags'],
+      kind: 'action',
+      spec,
+      args,
+      preview: await spec.preview(args, actionCtx()),
+      open: spec.kind === 'do',
     };
   };
 
-  const resolveClassEdit = async (req: ClassEditRequest): Promise<LocalMsg> => {
-    const today = new Date().toISOString().slice(0, 10);
-    const w = classEditWindow(req, today);
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    const range = dateRangeWindow(w.start, w.end, tz);
-    if (!range) {
-      return { kind: 'temple', text: "I couldn't work out which dates you meant." };
+  const actionCtx = () => ({
+    supabase,
+    gymId: gymId!,
+    userId: session!.user.id,
+    navigate: (href: string) => router.push(href as never),
+  });
+
+  const freshen = (spec: AnyAction) => {
+    // The stream is this screen's own concern; what else went stale is the
+    // module's, and it says so.
+    qc.invalidateQueries({ queryKey: ['timeline-feed'] });
+    for (const key of spec.invalidate ?? []) {
+      qc.invalidateQueries({ queryKey: [key] });
     }
-    const { data, error } = await supabase
-      .from('class_sessions')
-      .select('id, name, starts_at, capacity, duration_minutes, class_types(name)')
-      .eq('gym_id', gymId!)
-      .gte('starts_at', range.startIso)
-      .lt('starts_at', range.endIso)
-      .order('starts_at');
-    if (error) throw error;
-    const rows = (data ?? []) as unknown as SessionLookupRow[];
-    const wanted = rows.filter((s) => {
-      const at = new Date(s.starts_at);
-      if (req.days && !req.days.includes(at.getDay())) return false;
-      if (req.classType) {
-        const name = (s.class_types?.name ?? s.name ?? '').toLowerCase();
-        if (!name.includes(req.classType.toLowerCase())) return false;
-      }
-      return true;
-    });
-    if (wanted.length === 0) {
-      return {
-        kind: 'temple',
-        text: 'Nothing on the calendar matches that — check the day and the class name.',
-      };
-    }
-    return {
-      kind: 'class-edit',
-      req,
-      window: w,
-      sessionIds: wanted.map((s) => s.id),
-      sample: wanted.slice(0, 3).map(sessionLine),
-      open: true,
-    };
   };
 
   const send = async () => {
     const text = input.trim();
-    if (!text || busy || !gymId) return;
+    if (!text || busy || !gymId || !session?.user.id) return;
     setInput('');
     push({ kind: 'mine', text });
     // "continue setup" is unambiguous enough to answer without a model
@@ -523,65 +308,10 @@ export default function Timeline() {
       });
       if (error) throw error;
       const p = (data as { proposal?: Record<string, unknown> })?.proposal ?? {};
-      const cards: LocalMsg[] = [];
-      const current = rules.data?.choices;
-
-      if (current && Array.isArray(p.rule_changes)) {
-        const changes = sanitiseRuleChanges(
-          { changes: p.rule_changes },
-          current,
-        );
-        if (changes) cards.push({ kind: 'rule-changes', changes, open: true });
-      }
-      if (Array.isArray(p.add_classes)) {
-        const proposal = sanitiseTimetable({ schedules: p.add_classes });
-        if (proposal) cards.push({ kind: 'add-classes', proposal, open: true });
-      }
-      if (Array.isArray(p.add_plans)) {
-        const proposal = sanitisePlans({ plans: p.add_plans });
-        if (proposal) cards.push({ kind: 'add-plans', proposal, open: true });
-      }
-      const closure = closureFromProposal(p.closure);
-      if (closure) cards.push({ kind: 'closure', ...closure, open: true });
-      if (p.newsletter) {
-        const draft = sanitiseNewsletter(p.newsletter);
-        if (draft) cards.push({ kind: 'newsletter', draft, open: true });
-      }
-      if (p.edit_classes) {
-        const req = sanitiseClassEdit(p.edit_classes);
-        if (req) cards.push(await resolveClassEdit(req));
-      }
-      if (p.find_member) {
-        const query = sanitiseMemberQuery(p.find_member);
-        if (query) cards.push(...(await lookupMember(query)));
-      }
-      // Registry actions. One dispatch for every module that lands here,
-      // rather than a branch per verb.
       const spec = findAction(p.action);
-      if (spec && session?.user.id) {
-        const parsed = spec.sanitise((p.args ?? {}) as Record<string, unknown>);
-        if (parsed === null || parsed === undefined) {
-          cards.push({
-            kind: 'temple',
-            text: 'I got the gist but not the details — say it again with the name and the number in it.',
-          });
-        } else {
-          // Type-erased on the way in, checked on the way out: the spec's
-          // own sanitiser is what guarantees this matches its preview.
-          const args = parsed as never;
-          const ctx = { supabase, gymId, userId: session.user.id };
-          cards.push({
-            kind: 'action',
-            spec,
-            args,
-            preview: await spec.preview(args, ctx),
-            open: spec.kind === 'do',
-          });
-        }
-      }
-
-      if (cards.length > 0) push(...cards);
-      else if (typeof p.cannot === 'string' && p.cannot.trim()) {
+      if (spec) {
+        push(await runAction(spec, (p.args ?? {}) as Record<string, unknown>));
+      } else if (typeof p.cannot === 'string' && p.cannot.trim()) {
         push({ kind: 'temple', text: CANNOT_COPY });
       } else {
         push({ kind: 'temple', text: NO_CHANGE_COPY });
@@ -596,187 +326,6 @@ export default function Timeline() {
     }
   };
 
-  const confirmRules = async (index: number, changes: RuleChange[]) => {
-    if (!gymId || !rules.data || busy) return;
-    setBusy(true);
-    try {
-      const next = { ...rules.data.choices } as RuleChoices;
-      for (const c of changes) {
-        (next as Record<string, unknown>)[c.field] = c.value;
-      }
-      await applyRules(supabase, gymId, rules.data.defaults, next, {
-        touchCancelPolicy: changes.some((c) => c.field === 'late_cancel'),
-      });
-      closeCard(index);
-      const lines = changes.map((c) => {
-        const sheetLine = ruleSheet(next)
-          .flatMap((g) => g.lines)
-          .find((l) => l.parts.some((pt) => 'f' in pt && pt.f === c.field));
-        return sheetLine ? sheetLineText(sheetLine, next) : fieldLabel(c.field, next);
-      });
-      push({ kind: 'receipt', text: `Done. ${lines.join('. ')}.` });
-      qc.invalidateQueries({ queryKey: ['gym-rules', gymId] });
-    } catch {
-      push({ kind: 'temple', text: "That didn't save — try again." });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const applySingleRule = async (
-    field: RuleField,
-    value: RuleChoices[RuleField],
-  ) => {
-    if (!gymId || !rules.data || busy) return;
-    await confirmRules(-1, [{ field, value }]);
-  };
-
-  const confirmClasses = async (index: number, proposal: TimetableProposal) => {
-    if (!gymId || busy) return;
-    setBusy(true);
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      await applyTimetable(supabase, gymId, tz, proposal);
-      closeCard(index);
-      const lines = proposal.schedules.map(
-        (s) => `${s.class_type} — ${formatDays(s.days)} at ${s.times.join(', ')}`,
-      );
-      push({ kind: 'receipt', text: `On the timetable. ${lines.join('. ')}.` });
-      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
-    } catch {
-      push({ kind: 'temple', text: "That didn't save — try again." });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const confirmPlans = async (index: number, proposal: PlansProposal) => {
-    if (!gymId || busy) return;
-    setBusy(true);
-    try {
-      await applyPlans(supabase, gymId, proposal);
-      closeCard(index);
-      const names = proposal.plans
-        .map((p) => `${p.name} at ${formatPrice(p.monthly_price_cents)}`)
-        .join(', ');
-      push({ kind: 'receipt', text: `Created. ${names}.` });
-    } catch (e) {
-      const msg = e instanceof Error && /already exists|duplicate/i.test(e.message)
-        ? 'One of those plans already exists — nothing was created.'
-        : "That didn't save — try again.";
-      push({ kind: 'temple', text: msg });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const confirmClosure = async (
-    index: number,
-    c: { starts_on: string; ends_on: string; reason: string | null },
-  ) => {
-    if (!gymId || busy) return;
-    setBusy(true);
-    try {
-      const { data, error } = await supabase.rpc('close_gym_dates', {
-        p_gym_id: gymId,
-        p_start: c.starts_on,
-        p_end: c.ends_on,
-        p_reason: c.reason,
-        p_exclude_session_ids: null,
-      });
-      if (error) throw error;
-      closeCard(index);
-      const result = data as { cancelled: number; notified: number } | null;
-      const range =
-        c.starts_on === c.ends_on
-          ? `on ${formatClosureDay(c.starts_on)}`
-          : `${formatClosureDay(c.starts_on)} to ${formatClosureDay(c.ends_on)}`;
-      const cancelled = result?.cancelled ?? 0;
-      push({
-        kind: 'receipt',
-        text:
-          cancelled > 0
-            ? `The gym is closed ${range}. ${cancelled} ${cancelled === 1 ? 'class' : 'classes'} cancelled — everyone booked has been refunded and told.`
-            : `The gym is closed ${range}. Nothing was scheduled in those dates yet.`,
-      });
-      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
-    } catch {
-      push({ kind: 'temple', text: "That didn't save — try again." });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const confirmNewsletter = async (index: number, draft: NewsletterDraft) => {
-    if (!gymId || !session?.user.id || busy) return;
-    setBusy(true);
-    try {
-      const doc = newsletterDocument(
-        {
-          primaryColor: brand.primaryColor,
-          secondaryColor: brand.secondaryColor,
-          textColor: brand.textColor,
-        },
-        { gymName: brand.gymName, logoUrl: brand.logoUrl },
-        draft,
-      );
-      const { data, error } = await supabase
-        .from('email_campaigns')
-        .insert({
-          gym_id: gymId,
-          created_by: session.user.id,
-          title: draft.subject,
-          subject: draft.subject,
-          design: doc as unknown as Json,
-          audience: DEFAULT_AUDIENCE as unknown as Json,
-        })
-        .select('id')
-        .single();
-      if (error || !data) throw error ?? new Error('Could not draft');
-      closeCard(index);
-      push({
-        kind: 'receipt',
-        text: `Drafted — “${draft.subject}”. Have a read, pick who it goes to, and send it from there.`,
-      });
-      qc.invalidateQueries({ queryKey: ['comms-campaigns'] });
-      router.push(`/management/communications/${(data as { id: string }).id}` as never);
-    } catch {
-      push({ kind: 'temple', text: "That didn't save — try again." });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const confirmClassEdit = async (
-    index: number,
-    msg: Extract<LocalMsg, { kind: 'class-edit' }>,
-  ) => {
-    if (!gymId || busy) return;
-    setBusy(true);
-    try {
-      const { data, error } = await supabase.rpc('bulk_edit_sessions', {
-        p_gym_id: gymId,
-        p_start: msg.window.start,
-        p_end: msg.window.end,
-        p_session_ids: msg.sessionIds,
-        p_capacity: msg.req.capacity,
-        p_duration_minutes: msg.req.durationMinutes,
-        p_shift_minutes: msg.req.shiftMinutes,
-      });
-      if (error) throw error;
-      closeCard(index);
-      push({
-        kind: 'receipt',
-        text: describeBulkEditResult(data as unknown as BulkEditResult),
-      });
-      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
-    } catch {
-      push({ kind: 'temple', text: "That didn't save — try again." });
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const confirmAction = async (
     index: number,
     msg: Extract<LocalMsg, { kind: 'action' }>,
@@ -784,40 +333,53 @@ export default function Timeline() {
     if (!gymId || !session?.user.id || busy || !msg.spec.apply) return;
     setBusy(true);
     try {
-      const receipt = await msg.spec.apply(msg.args, {
-        supabase,
-        gymId,
-        userId: session.user.id,
-      });
+      const receipt = await msg.spec.apply(msg.args, actionCtx());
       closeCard(index);
       push({ kind: 'receipt', text: receipt });
-      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
-      qc.invalidateQueries({ queryKey: ['store-products', gymId] });
-    } catch {
-      push({ kind: 'temple', text: "That didn't save — try again." });
+      freshen(msg.spec);
+    } catch (e) {
+      push({ kind: 'temple', text: failureText(e) });
     } finally {
       setBusy(false);
     }
   };
 
-  const openMemberPick = async (profileId: string, name: string) => {
-    if (!gymId || busy) return;
+  // A clarifying question answered: the same action again, with the
+  // ambiguity settled. It reads as the owner having said the name.
+  const pickChoice = async (
+    spec: AnyAction,
+    label: string,
+    args: Record<string, unknown>,
+  ) => {
+    if (busy || !gymId || !session?.user.id) return;
     setBusy(true);
+    push({ kind: 'mine', text: label });
     try {
-      const { data, error } = await supabase
-        .from('v_member_cohort')
-        .select(
-          'profile_id, joined_at, is_intro, is_active, is_expiring_soon, is_expired, days_until_expiry, profiles!profile_id(full_name)',
-        )
-        .eq('gym_id', gymId)
-        .eq('profile_id', profileId)
-        .single();
-      if (error) throw error;
-      const row = data as unknown as CohortRow;
-      push({ kind: 'mine', text: name });
-      push({ kind: 'member-card', member: await memberCard({ ...row, name }) });
+      push(await runAction(spec, args));
     } catch {
       push({ kind: 'temple', text: "I couldn't pull that up — try again." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Tapping a value in the rule sheet is the same write as saying it out
+  // loud, so it goes through the same action — there is one path to a
+  // rule change, not a tap path and a sentence path.
+  const applySingleRule = async (
+    field: RuleField,
+    value: RuleChoices[RuleField],
+  ) => {
+    const spec = findAction('gym.change_rules');
+    if (!spec?.apply || !gymId || !session?.user.id || busy) return;
+    const parsed = spec.sanitise({ rule_changes: [{ field, value }] });
+    if (parsed === null || parsed === undefined) return;
+    setBusy(true);
+    try {
+      push({ kind: 'receipt', text: await spec.apply(parsed as never, actionCtx()) });
+      freshen(spec);
+    } catch (e) {
+      push({ kind: 'temple', text: failureText(e) });
     } finally {
       setBusy(false);
     }
@@ -913,14 +475,8 @@ export default function Timeline() {
               index={i}
               busy={busy}
               choices={rules.data?.choices}
-              onConfirmRules={confirmRules}
-              onConfirmClasses={confirmClasses}
-              onConfirmPlans={confirmPlans}
-              onConfirmClosure={confirmClosure}
-              onConfirmNewsletter={confirmNewsletter}
-              onConfirmClassEdit={confirmClassEdit}
               onConfirmAction={confirmAction}
-              onPickMember={openMemberPick}
+              onPickChoice={pickChoice}
               onDismiss={closeCard}
               onEditRule={applySingleRule}
             />
@@ -1008,14 +564,8 @@ function LocalRow({
   index,
   busy,
   choices,
-  onConfirmRules,
-  onConfirmClasses,
-  onConfirmPlans,
-  onConfirmClosure,
-  onConfirmNewsletter,
-  onConfirmClassEdit,
   onConfirmAction,
-  onPickMember,
+  onPickChoice,
   onDismiss,
   onEditRule,
 }: {
@@ -1023,23 +573,15 @@ function LocalRow({
   index: number;
   busy: boolean;
   choices: RuleChoices | undefined;
-  onConfirmRules: (index: number, changes: RuleChange[]) => void;
-  onConfirmClasses: (index: number, proposal: TimetableProposal) => void;
-  onConfirmPlans: (index: number, proposal: PlansProposal) => void;
-  onConfirmClosure: (
-    index: number,
-    c: { starts_on: string; ends_on: string; reason: string | null },
-  ) => void;
-  onConfirmNewsletter: (index: number, draft: NewsletterDraft) => void;
-  onConfirmClassEdit: (
-    index: number,
-    msg: Extract<LocalMsg, { kind: 'class-edit' }>,
-  ) => void;
   onConfirmAction: (
     index: number,
     msg: Extract<LocalMsg, { kind: 'action' }>,
   ) => void;
-  onPickMember: (profileId: string, name: string) => void;
+  onPickChoice: (
+    spec: AnyAction,
+    label: string,
+    args: Record<string, unknown>,
+  ) => void;
   onDismiss: (index: number) => void;
   onEditRule: (field: RuleField, value: RuleChoices[RuleField]) => void;
 }) {
@@ -1069,186 +611,69 @@ function LocalRow({
     );
   }
 
-  if (msg.kind === 'rule-changes') {
-    if (!msg.open || !choices) return null;
+  // One card for every registry action, whatever the module. A preview
+  // asking a clarifying question comes with chips; one naming a renderer
+  // gets that renderer; otherwise it is a title and its evidence, with
+  // the two choices underneath if there is something to do.
+  if (msg.preview.choices?.length) {
     return (
-      <ProposalCard
-        title={msg.changes.length === 1 ? 'Change this rule?' : 'Change these rules?'}
-        lines={msg.changes.map((c) => ruleChangeLine(c, choices))}
-        yes="Yes, change it"
-        busy={busy}
-        onYes={() => onConfirmRules(index, msg.changes)}
-        onNo={() => onDismiss(index)}
-      />
-    );
-  }
-  if (msg.kind === 'add-classes') {
-    if (!msg.open) return null;
-    return (
-      <ProposalCard
-        title="Add this to the timetable?"
-        lines={msg.proposal.schedules.map(
-          (s) =>
-            `${s.class_type} — ${formatDays(s.days)} at ${s.times.join(', ')}, ` +
-            `${s.duration_minutes} min, cap ${s.capacity}`,
-        )}
-        yes="Yes, add it"
-        busy={busy}
-        onYes={() => onConfirmClasses(index, msg.proposal)}
-        onNo={() => onDismiss(index)}
-      />
-    );
-  }
-  if (msg.kind === 'add-plans') {
-    if (!msg.open) return null;
-    return (
-      <ProposalCard
-        title="Create these memberships?"
-        lines={msg.proposal.plans.map((p) => {
-          const price = formatPrice(p.monthly_price_cents);
-          const credits =
-            p.credit_count !== null ? `, ${p.credit_count} classes` : '';
-          const notice =
-            p.notice_period_days !== null && p.notice_period_days > 0
-              ? `, ${p.notice_period_days} days notice`
-              : '';
-          return `${p.name} — ${price}${credits}${notice}`;
-        })}
-        yes="Yes, create them"
-        busy={busy}
-        onYes={() => onConfirmPlans(index, msg.proposal)}
-        onNo={() => onDismiss(index)}
-      />
-    );
-  }
-  if (msg.kind === 'newsletter') {
-    if (!msg.open) return null;
-    return (
-      <ProposalCard
-        title={`Draft this newsletter? — “${msg.draft.subject}”`}
-        lines={msg.draft.sections.map(
-          (s) =>
-            `${s.heading} — ${s.body.length > 90 ? `${s.body.slice(0, 90)}…` : s.body}`,
-        )}
-        yes="Yes, draft it"
-        busy={busy}
-        onYes={() => onConfirmNewsletter(index, msg.draft)}
-        onNo={() => onDismiss(index)}
-      />
-    );
-  }
-  if (msg.kind === 'class-edit') {
-    if (!msg.open) return null;
-    const count = msg.sessionIds.length;
-    return (
-      <ProposalCard
-        title={`Change ${describeEditTarget(msg.req, count)}?`}
-        lines={[
-          describeBulkEdit(
-            {
-              capacity: msg.req.capacity,
-              durationMinutes: msg.req.durationMinutes,
-              shiftMinutes: msg.req.shiftMinutes,
-            },
-            count,
-          ),
-          ...msg.sample,
-          ...(count > msg.sample.length
-            ? [`…and ${count - msg.sample.length} more`]
-            : []),
-          msg.window.bounded
-            ? `Everything in the next ${DEFAULT_EDIT_WEEKS} weeks. Say the dates if you want a different stretch.`
-            : `${msg.window.start} to ${msg.window.end}.`,
-        ]}
-        yes="Yes, change them"
-        busy={busy}
-        onYes={() => onConfirmClassEdit(index, msg)}
-        onNo={() => onDismiss(index)}
-      />
-    );
-  }
-  // One card for every registry action. A `do` keeps the two choices; an
-  // `ask` is already the answer, so it renders as one.
-  if (msg.kind === 'action') {
-    if (msg.spec.kind === 'ask') {
-      return (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
-            {msg.preview.title}
-          </Text>
-          {msg.preview.lines.map((l) => (
-            <Text
-              key={l}
-              className="text-gray-500 dark:text-gray-400 text-[13.5px] leading-[19px]">
-              {l}
-            </Text>
-          ))}
-        </View>
-      );
-    }
-    if (!msg.open) return null;
-    // A preview with nothing to show is the action saying it couldn't
-    // find what was named — the title carries that, and there is nothing
-    // to confirm.
-    if (msg.preview.lines.length === 0) {
-      return (
+      <View className="gap-3">
         <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
           {msg.preview.title}
         </Text>
-      );
-    }
-    return (
-      <ProposalCard
-        title={msg.preview.title}
-        lines={msg.preview.lines}
-        yes="Yes, do it"
-        busy={busy}
-        onYes={() => onConfirmAction(index, msg)}
-        onNo={() => onDismiss(index)}
-      />
+        <View className="flex-row flex-wrap gap-2 px-1">
+          {msg.preview.choices.map((c) => (
+            <Pressable
+              key={c.label}
+              onPress={() => onPickChoice(msg.spec, c.label, c.args)}
+              disabled={busy}
+              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+              <Text className="text-gray-700 dark:text-gray-300 text-sm font-semibold">
+                {c.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
     );
   }
-  if (msg.kind === 'member-picks') {
+  if (msg.preview.card === 'member') {
+    return <MemberSummaryCard member={msg.preview.data as MemberCard} />;
+  }
+  if (msg.spec.kind === 'ask') {
     return (
-      <View className="flex-row flex-wrap gap-2 px-1">
-        {msg.picks.map((p) => (
-          <Pressable
-            key={p.profileId}
-            onPress={() => onPickMember(p.profileId, p.name)}
-            disabled={busy}
-            className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
-            <Text className="text-gray-700 dark:text-gray-300 text-sm font-semibold">
-              {p.name}
-            </Text>
-          </Pressable>
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+          {msg.preview.title}
+        </Text>
+        {msg.preview.lines.map((l) => (
+          <Text
+            key={l}
+            className="text-gray-500 dark:text-gray-400 text-[13.5px] leading-[19px]">
+            {l}
+          </Text>
         ))}
       </View>
     );
   }
-  if (msg.kind === 'member-card') {
-    return <MemberSummaryCard member={msg.member} />;
-  }
-  // closure
   if (!msg.open) return null;
-  const range =
-    msg.starts_on === msg.ends_on
-      ? formatClosureDay(msg.starts_on)
-      : `${formatClosureDay(msg.starts_on)} to ${formatClosureDay(msg.ends_on)}`;
+  // A preview with nothing to show is the action saying it couldn't find
+  // what was named — the title carries that, and there is nothing to
+  // confirm.
+  if (msg.preview.lines.length === 0) {
+    return (
+      <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
+        {msg.preview.title}
+      </Text>
+    );
+  }
   return (
     <ProposalCard
-      title={`Close the gym ${range}?`}
-      lines={[
-        'Every class in those dates is cancelled, everyone booked is refunded and told, and nothing new can be scheduled into them.',
-      ]}
-      yes="Yes, close it"
+      title={msg.preview.title}
+      lines={msg.preview.lines}
+      yes={msg.preview.yes ?? 'Yes, do it'}
       busy={busy}
-      onYes={() =>
-        onConfirmClosure(index, {
-          starts_on: msg.starts_on,
-          ends_on: msg.ends_on,
-          reason: msg.reason,
-        })
-      }
+      onYes={() => onConfirmAction(index, msg)}
       onNo={() => onDismiss(index)}
     />
   );

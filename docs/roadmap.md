@@ -244,12 +244,29 @@ longer a sequence of features to design; it is a catalogue to fill.
 
 ## The order from here
 
-### 1 — One path
+### 1 — One path — done
 
 Migrate the five hand-built verbs — rules, new classes, new plans,
 closures, newsletters — plus the member lookup and the class edit onto
 the registry, and delete the bespoke branches. Two dispatch paths is one
 too many, and every module after this inherits whichever is left.
+
+Shipped as `src/lib/actions/{gym,classes,members,store}.ts`. The Timeline
+now knows one card kind and one confirm handler; the parser's tool holds
+no vocabulary of its own — the catalogue, argument shapes and value
+conventions are all sent per call from the registry, filtered to what the
+person asking may actually do. Two things the migration earned, rather
+than guessed in advance: a preview may name a **card** the feed renders
+(a member is a face and a standing, not two lines of prose), and it may
+come back with **choices** instead of an answer — one chip per candidate,
+each re-running the same action with the ambiguity settled. Both are
+generic; nothing about either is member-specific.
+
+One narrowing, stated: a sentence now resolves to one action. The old
+tool could fill several of its fixed fields at once, so "close 24 to 28
+December and cap Saturdays at 20" would have raised two cards and now
+raises one. Sequencing several actions from one sentence belongs with
+step 3, where the ordering between them has to mean something.
 
 ### 2 — The modules, in the order an owner meets them
 

@@ -1,11 +1,20 @@
+import { CLASS_ACTIONS } from './classes';
+import { GYM_ACTIONS } from './gym';
+import { MEMBER_ACTIONS } from './members';
 import { STORE_ACTIONS } from './store';
 import { toWire, type AnyAction, type ActionWire } from './types';
 
 export * from './types';
+export type { MemberCard } from './members';
 
 // Every action the bar can reach. Modules land here one at a time; the
 // bar's vocabulary is whatever this list says it is.
-export const ACTIONS: AnyAction[] = [...STORE_ACTIONS];
+export const ACTIONS: AnyAction[] = [
+  ...GYM_ACTIONS,
+  ...CLASS_ACTIONS,
+  ...MEMBER_ACTIONS,
+  ...STORE_ACTIONS,
+];
 
 export function findAction(name: unknown): AnyAction | null {
   if (typeof name !== 'string') return null;

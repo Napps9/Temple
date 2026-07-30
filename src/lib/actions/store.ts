@@ -70,6 +70,7 @@ export const addStoreProduct: ActionSpec<AddProduct> = {
           ? `${a.stock} in stock, and it stops selling at zero.`
           : 'Stock is not tracked, so it never sells out.',
     ],
+    yes: 'Yes, add it',
   }),
   apply: async (a, ctx) => {
     const { error } = await ctx.supabase.from('store_products').insert({
@@ -129,6 +130,7 @@ export const setStoreProductPrice: ActionSpec<SetPrice> = {
           ? 'A subscription: new subscribers pay the new price, everyone already on it keeps theirs.'
           : 'Anyone mid-checkout pays what they were shown.',
       ],
+      yes: 'Yes, change it',
     };
   },
   apply: async (a, ctx) => {

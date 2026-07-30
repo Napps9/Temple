@@ -97,97 +97,24 @@ const PLANS_TOOL = {
   },
 };
 
-// The Timeline's talk bar: one sentence from the owner becomes rule
-// changes, new classes, new plans, or a closure — never anything else.
-// Values are validated client-side against the same option table the
-// rule sheet renders (sanitiseRuleChanges), so an invented enum dies
-// before it is shown, let alone applied.
-const RULE_FIELDS = [
-  'booking_window_hours_ahead',
-  'late_cancel',
-  'booking_cutoff_minutes_before',
-  'require_membership_to_book',
-  'week_starts_on',
-  'allow_minors',
-  'weight_unit',
-  'dm_scope',
-  'leaderboards_on',
-  'public_signup',
-  'public_lead_capture',
-  'expiring_within_days',
-  'parq_expiry_days',
-  'health_retention_months',
-  'cover_warning_hours',
-  'lead_conversion_window_days',
-];
-
+// The Timeline's talk bar: one sentence from the owner becomes one named
+// action from the app's registry, or nothing. The catalogue of actions,
+// their arguments and the conventions for filling them are all sent by
+// the client per call (see actionCatalogue below) — this function holds
+// no list of its own, so an action added to src/lib/actions is available
+// here the moment it exists. Every argument is re-validated client-side
+// by the action's own sanitiser, so an invented value dies before it is
+// shown, let alone applied.
 const CHANGE_TOOL = {
   name: 'emit_change',
   description:
-    "Emit the change the gym owner asked for. Fill only the parts they described; use `cannot` when the request is none of these.",
+    'Emit the action the gym owner asked for. Set `action` to its name and ' +
+    '`args` to only the arguments they actually named; use `cannot` when ' +
+    'the request is none of the actions offered.',
   input_schema: {
     type: 'object',
     properties: {
-      rule_changes: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            field: { type: 'string', enum: RULE_FIELDS },
-            value: { type: ['string', 'integer', 'boolean', 'null'] },
-          },
-          required: ['field', 'value'],
-        },
-      },
-      add_classes: (TIMETABLE_TOOL.input_schema.properties as {
-        schedules: unknown;
-      }).schedules,
-      add_plans: (PLANS_TOOL.input_schema.properties as { plans: unknown })
-        .plans,
-      closure: {
-        type: 'object',
-        properties: {
-          starts_on: { type: 'string' },
-          ends_on: { type: 'string' },
-          reason: { type: ['string', 'null'] },
-        },
-        required: ['starts_on', 'ends_on'],
-      },
-      newsletter: {
-        type: 'object',
-        properties: {
-          subject: { type: 'string' },
-          sections: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                heading: { type: 'string' },
-                body: { type: 'string' },
-              },
-              required: ['heading', 'body'],
-            },
-          },
-        },
-        required: ['subject', 'sections'],
-      },
-      edit_classes: {
-        type: 'object',
-        properties: {
-          class_type: { type: ['string', 'null'] },
-          days: { type: ['array', 'null'], items: { type: 'integer' } },
-          from: { type: ['string', 'null'] },
-          to: { type: ['string', 'null'] },
-          capacity: { type: ['integer', 'null'] },
-          duration_minutes: { type: ['integer', 'null'] },
-          shift_minutes: { type: ['integer', 'null'] },
-        },
-      },
-      find_member: {
-        type: 'object',
-        properties: { query: { type: 'string' } },
-        required: ['query'],
-      },
+      args: { type: 'object' },
       cannot: { type: ['string', 'null'] },
     },
   },
@@ -196,65 +123,16 @@ const CHANGE_TOOL = {
 function changePrompt(): string {
   const today = new Date().toISOString().slice(0, 10);
   return (
-    'You parse a gym owner\'s sentence into the change they asked for. ' +
+    'You parse a gym owner\'s sentence into the one action they asked for. ' +
     `Today is ${today}.\n` +
-    'Emit ONLY what was described — never invent classes, prices, dates ' +
-    'or settings. Kinds of change:\n' +
-    '1. rule_changes — settings. Fields and values:\n' +
-    '   booking_window_hours_ahead: hours as integer ("2 weeks"→336, ' +
-    '"5 days"→120), or null for no limit.\n' +
-    '   late_cancel: when cancelling starts to cost the credit. ' +
-    '"never", or "abs:HH:MM" for a set time the evening before ' +
-    '("9pm the night before"→"abs:21:00", "10pm"→"abs:22:00"), or ' +
-    '"rel:N" for N minutes before the class ("2 hours before"→"rel:120", ' +
-    '"30 minutes before"→"rel:30"). Any time and any number of minutes ' +
-    'are valid — this one is not a fixed menu.\n' +
-    '   booking_cutoff_minutes_before: minutes as integer, 0 = up to ' +
-    'the start.\n' +
-    '   require_membership_to_book / allow_minors / leaderboards_on / ' +
-    'public_signup / public_lead_capture: boolean.\n' +
-    '   week_starts_on: "mon" | "sun". weight_unit: "kg" | "lb".\n' +
-    '   dm_scope: "full_gym" | "member_coach_only".\n' +
-    '   expiring_within_days / lead_conversion_window_days / ' +
-    'parq_expiry_days: days as integer. health_retention_months: months. ' +
-    'cover_warning_hours: hours, 0 = off.\n' +
-    '   Enum and boolean fields must land on one of the listed values ' +
-    'exactly. If the owner names something else — a different time, or a ' +
-    'rule that varies by class, day or member — do NOT round to the ' +
-    'nearest value: leave that field out and name it in `cannot`. A ' +
-    'sentence can do both: take the parts that fit and name the rest.\n' +
-    '2. add_classes — NEW classes on the timetable. Same conventions as ' +
-    'a timetable: days 0=Sunday…6=Saturday, times 24-hour "HH:MM", ' +
-    'duration_minutes default 60, capacity default 16.\n' +
-    '3. add_plans — NEW membership plans. monthly_price_cents in pence ' +
-    '("£89"→8900); N-classes-a-month is credit_period with credit_count.\n' +
-    '4. closure — the gym shutting for a date range. starts_on/ends_on ' +
-    'as YYYY-MM-DD, resolved forward from today ("22 Dec to 3 Jan" is ' +
-    'the next December). reason is the owner\'s stated reason or null.\n' +
-    '5. newsletter — the owner asking to send/write a newsletter or ' +
-    'email to members ("send a newsletter this week — Christmas hours, ' +
-    'the new barbell club"). DRAFT it for them: a short subject line and ' +
-    '2-4 sections, each a heading plus 1-3 sentences of warm, plain ' +
-    'British English written from the owner\'s brief. Use ONLY facts the ' +
-    'owner stated — never invent dates, times, prices or names; if the ' +
-    'brief only names a topic, write copy that introduces the topic and ' +
-    'tells members to watch this space or ask at the gym.\n' +
-    '6. edit_classes — changing classes that ALREADY exist, in bulk: ' +
-    'capacity, length, or moving the start time. days 0=Sunday…6=Saturday ' +
-    'picks which weekdays ("Saturdays"→[6], "weekdays"→[1,2,3,4,5]); ' +
-    'class_type narrows to one kind by name; from/to are YYYY-MM-DD and ' +
-    'stay null when the owner named no dates ("cap Saturdays at 20" is ' +
-    'ongoing). shift_minutes moves the start — positive is later, ' +
-    'negative earlier ("move the 6am half an hour later"→30, "bring ' +
-    'Tuesday forward 15 minutes"→-15). Set only the fields they changed; ' +
-    'leave the rest null. Use add_classes, not this, for a NEW class.\n' +
-    '7. find_member — the owner asking about a person ("show me Marcus", ' +
-    '"what\'s Sarah Jones on", "is Dan still paying"). query is just the ' +
-    'name as they said it. Use this whenever the sentence is a question ' +
-    'about one member rather than an instruction.\n' +
-    'Anything else — changing an existing plan\'s price, adding or ' +
-    'cancelling one person\'s membership, refunds — set `cannot` to one ' +
-    'short plain sentence naming what they asked for. Do not guess.'
+    'Emit ONLY what was described — never invent classes, prices, dates, ' +
+    'names or settings. Dates are YYYY-MM-DD and resolve forward from ' +
+    'today. Money in pounds unless an argument says otherwise.\n' +
+    'If the sentence is none of the actions below — changing an existing ' +
+    'plan\'s price, adding or cancelling one person\'s membership, refunds — ' +
+    'set `cannot` to one short plain sentence naming what they asked for, ' +
+    'and set no action. Do not guess, and do not bend a sentence onto the ' +
+    'nearest action that half fits.'
   );
 }
 
@@ -338,10 +216,7 @@ function argLine(a: ActionArg): string {
 
 function actionCatalogue(actions: ActionWire[]): string {
   return (
-    '\nNamed actions. If the sentence is one of these, set `action` to its ' +
-    'name and `args` to the arguments it names — nothing else, and never ' +
-    'an argument they did not state. Prefer a named action over the ' +
-    'general kinds above when both would fit.\n' +
+    '\nThe actions available to this person, and the arguments each takes:\n' +
     actions
       .map(
         (a) =>
@@ -357,6 +232,9 @@ async function parse(
   text: string,
   actions: ActionWire[] = [],
 ): Promise<unknown | null> {
+  // With no catalogue there is no `action` to name, so the tool can only
+  // come back with `cannot` — which is the honest answer when the caller's
+  // capabilities haven't loaded.
   const changeTool =
     actions.length === 0
       ? CHANGE_TOOL
@@ -367,7 +245,6 @@ async function parse(
             properties: {
               ...CHANGE_TOOL.input_schema.properties,
               action: { type: 'string', enum: actions.map((a) => a.name) },
-              args: { type: 'object' },
             },
           },
         };

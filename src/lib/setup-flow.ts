@@ -655,9 +655,14 @@ const NUMERIC_RULE_BOUNDS: Partial<Record<RuleField, [number, number]>> = {
 // option table (or the numeric bounds), no-ops are dropped, and a
 // request that survives with nothing left returns null so the UI never
 // shows an empty "confirm this" card.
+// `current` is optional so the same validator serves both halves of a
+// registry action: the shape check happens with no gym read at all, and
+// the no-op filter happens later in preview and apply, each reading the
+// live rules for itself. Omitting it keeps every change, including ones
+// that match what the gym already has.
 export function sanitiseRuleChanges(
   raw: unknown,
-  current: RuleChoices,
+  current?: RuleChoices,
 ): RuleChange[] | null {
   const r = raw as { changes?: unknown } | null;
   if (!r || !Array.isArray(r.changes)) return null;
@@ -689,7 +694,7 @@ export function sanitiseRuleChanges(
       if (opt) value = opt.value;
     }
     if (value === undefined) continue;
-    if (value === current[field]) continue;
+    if (current && value === current[field]) continue;
     byField.set(field, { field, value });
   }
 
