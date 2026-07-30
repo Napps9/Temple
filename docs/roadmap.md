@@ -273,22 +273,73 @@ step 3, where the ordering between them has to mean something.
 Each is a file of registry entries over writes that already exist and are
 already authorised. Roughly in order of how often an owner touches them:
 
-- **Members** — put someone on a plan, pause, cancel, comp, tag, message.
-  This is the biggest gap in the platform, not just in the bar: there is
-  no staff-side "put Marcus on Unlimited" anywhere in Temple today.
-  Members self-serve through Stripe and comp grants are displayed but
-  never issued. Building it means deciding the money question first —
-  does assigning charge them, comp them, or send a checkout link — which
-  is an owner's decision, not an implementation detail.
-- **Classes and bookings** — cancel one class, move it, change its coach,
-  book someone in, take someone off, open the waitlist.
+- **Members** — done (0211). It was the biggest gap in the platform, not
+  just in the bar: there was no staff-side "put Marcus on Unlimited"
+  anywhere in Temple, members self-served through Stripe, and comp grants
+  were displayed but never issued. The money question was the owner's to
+  settle and they settled it — assignment is a **continuation**, the same
+  semantics the CSV importer already produced, so nobody re-signs-up and
+  nobody re-pays. Assign, comp, tag and message all ship over it.
+- **Classes and bookings** — done, except two things that turned out to
+  have no write behind them at all (0212–0214). Cancel a class, book
+  someone in, take them out, work the waitlist. Cancelling a class
+  notified nobody before this and class-change emails had no dispatcher,
+  so both were fixed underneath rather than papered over. **Still absent:**
+  changing a class's coach — claim_cover is self-claim only and there is
+  no reassignment write anywhere — and a single-class reschedule, which
+  today can only be expressed as a relative shift that silently rewrites
+  the whole recurrence. Both need their own fix before the bar offers
+  them.
 - **Money** — refund an order, refund a booking, change a plan's price,
   read the month back.
 - **Comms** — send to a tag, schedule it, describe a sequence.
 - **Leads** — the front desk's own settings and the pipeline as sentences.
 - **Programming, team, website, tags** — the long tail, same shape.
 
-### 3 — Ask anything
+### 3 — It remembers what you just said
+
+Every sentence currently goes up alone. The bar sends the text and the
+catalogue and nothing else — no previous turn, no subject, no history. So
+"show me Marcus" followed by "put him on Unlimited" cannot work, and the
+owner has to name him twice. That is the single largest gap between what
+this is and what it feels like it should be, and it is not a model
+problem: the conversation is simply never sent.
+
+Three things, in order of how much they change the feel:
+
+- **The last few turns travel with the sentence.** Pronouns and ellipsis
+  resolve — "him", "that one", "the same again", "make it 20 instead".
+  The subject of the last card becomes the default subject, which is most
+  of what makes something feel like talking rather than typing commands.
+- **The conversation survives.** Today it lives in React state and dies
+  on refresh: a card left open vanishes, and there is no answer to "what
+  did I ask it yesterday". Persisting it also gives the Timeline the one
+  thing it currently lacks as a home — a past.
+- **One sentence, several actions.** "Cancel Friday's 6am and move
+  everyone to Saturday" is two actions with an order between them.
+  Chaining needs memory to sequence, which is why it belongs here rather
+  than in the module work.
+
+Two costs, both real and both decisions rather than implementation:
+
+- **A stale subject is worse than no subject.** If the last card is three
+  days old, "put him on Unlimited" must not quietly resolve to whoever
+  was on screen then. That needs a freshness window and a visibly named
+  subject on the card, so the owner can see who "him" is before
+  confirming rather than after.
+- **A persisted conversation is a record of which staff member asked
+  what about which member.** That sits next to health-adjacent surfaces
+  and must not become a way around the access audit log — asking the bar
+  about someone has to leave the same trace that opening their profile
+  does. It needs a retention answer before it is written, not after.
+
+Placed here because asking about the gym is where follow-ups are worth
+most: "how busy was Saturday" wants "and Sunday?" to work. But it is
+independent of the module work and can be pulled forward the moment the
+current verbs start feeling like a command line rather than a
+conversation.
+
+### 4 — Ask anything
 
 The bar answers about one member. It doesn't answer about the gym:
 "how busy was Saturday", "who hasn't been in for a month", "what did we
@@ -297,7 +348,7 @@ that already exists behind a screen. As `ask` actions they need no new
 data — only an entry each, and a way to render a number, a list and a
 short series without inventing a chart language per question.
 
-### 4 — Fewer things to say
+### 5 — Fewer things to say
 
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
