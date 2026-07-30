@@ -675,6 +675,23 @@ The staff area shows up when `can_access_staff_area` is on.
   `DEFAULT_AUDIENCE`) and opens the existing editor — audience, topic,
   A/B, suppression and one-click unsubscribe all unchanged. The send
   button remains the approval; nothing sends from the bar.
+- **"Send invites" now sends invites** (0218) — the fifth capability
+  mismatch and the only one that *widened* access, which is why it was the
+  owner's decision rather than a reading of a label. Two switches sit next
+  to each other on the Team screen: `can_invite` ("Email invites to new
+  members and staff") and `can_manage_staff`. The invite box on the
+  Members screen shows itself on `can_invite`; `create_invite` asked for
+  `can_manage_staff`. Both default to owner and admin, so nothing looked
+  wrong until an owner turned "Send invites" on for coaches — the only
+  situation the switch exists for — at which point the coach saw the box,
+  typed an address, and the database refused. The gate is now `can_invite`.
+  **The owner-only ladder does not move**: minting an owner or an admin
+  stays owner-only, structurally, regardless of any capability, because it
+  is now the only thing between the widened gate and a coach granting
+  themselves admin. pgTAP `send_invites_means_send_invites.sql` (plan(10))
+  spends six of its ten assertions on what did *not* widen, including that
+  handing the coach every staff capability an owner could give them still
+  does not open the ladder.
 - **The team, and the labels that sort the members** (roadmap step 2) —
   `team.invite` ("invite Sam as a coach, sam@example.com") over the
   existing `send-invite` function, so the code is still minted as the

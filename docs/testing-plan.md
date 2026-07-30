@@ -677,6 +677,9 @@ Worth doing once, because it never worked before and the screen said it did.
 | invite sam | Refused — that is not an email |
 | invite dan@example.com as the owner | Owner is not offered at all; it should land as coach or be refused, never mint an owner |
 | invite someone as an admin *(as an admin, not the owner)* | The card warns first, and the RPC refuses. Only owners mint admins |
+| turn **Send invites** on for coaches, then invite as a coach | Works now (0218). Before it showed the box and failed |
+| …then try to invite an admin as that coach | Still refused. The ladder is structural — this is the assertion that matters most |
+| turn **Send invites** back off | Refused again |
 | tag anyone who hasn't been in as Ghosting *(no number)* | Refused rather than defaulted — the table's CHECK would reject it anyway |
 | tag everyone on a plan as Gold *(no plan named)* | Refused |
 | tag anyone who books CrossFit as Barbell | Not offered — class-type rules stay on the tags screen |

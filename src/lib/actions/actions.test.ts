@@ -852,9 +852,9 @@ describe('the team', () => {
     expect(inviteToTeam.sanitise({})).toBeNull();
   });
 
-  // create_invite has an owner-only ladder for owner and admin that is
-  // structural and not overridable. Offering "owner" would be offering
-  // something nobody can do from here.
+  // The database would let an owner mint another owner. Handing your gym
+  // to somebody is still not a thing to do by saying a sentence, so it is
+  // left off the vocabulary and a request for it falls back to coach.
   it('never offers to mint an owner', () => {
     const arg = inviteToTeam.args.find((a) => a.name === 'role')!;
     expect(arg.values).not.toContain('owner');

@@ -334,14 +334,15 @@ already authorised. Roughly in order of how often an owner touches them:
   say how many it caught. **Still absent:** changing somebody's role and
   taking somebody off the team. Neither has a write anywhere in Temple —
   no RPC, no screen, no client update — so both are in the known list
-  below rather than offered as verbs that would fail. **Open question:**
-  `create_invite` gates on `can_manage_staff`, but the invite form on the
-  members screen reads `can_invite`, which the Team screen describes as
-  "Email invites to new members and staff". They agree by default, so the
-  switch only diverges for the case it exists to allow — an owner granting
-  `can_invite` to a coach finds it does nothing. Making `can_invite` the
-  gate would *widen* who can invite, which is not a change to make by
-  reading a label.
+  below rather than offered as verbs that would fail. **Settled, and the one
+  capability change that widened rather than tightened** (0218):
+  `create_invite` gated on `can_manage_staff` while the invite form read
+  `can_invite`, so an owner who granted "Send invites" to a coach gave
+  them a button that failed — the switch's entire effect. The owner's call
+  was that the label meant what it said, so the gate is now `can_invite`
+  and somebody granted it can invite members and staff. The owner-only
+  ladder does not move and now matters more, not less: it is the only
+  thing between the widened gate and a coach making themselves an admin.
 - **Programming and website** — the rest of the long tail, same shape.
 
 ### 3 — It remembers what you just said — half done

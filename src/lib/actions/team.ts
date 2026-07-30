@@ -32,13 +32,17 @@ import {
 // team.invite
 // ============================================================================
 //
-// Gated on can_manage_staff rather than can_invite, which is the switch
-// the invite form on the members screen reads. The two agree by default
-// (owner + admin) and create_invite asks for can_manage_staff, so gating
-// on can_invite would put a verb in the catalogue that the database then
-// refuses — the exact shape of bug this session has been closing. The
-// mismatch itself is a decision for the owner, not for me: see
-// docs/roadmap.md.
+// Gated on can_invite, which is the switch the invite form on the members
+// screen reads and, as of 0218, the one create_invite enforces. The two
+// used to disagree: the screen showed the box on can_invite and the
+// database asked for can_manage_staff, so an owner who granted "Send
+// invites" to a coach gave them a button that failed.
+//
+// `admin` stays in the enum because an owner can legitimately invite one,
+// and the card warns anybody else before they try — create_invite's
+// owner-only ladder is structural and cannot be granted. `owner` is left
+// off on purpose: handing your gym to somebody is not a thing to do by
+// saying a sentence, even though the database would allow it.
 
 type Invite = { email: string; role: 'admin' | 'coach' | 'staff' | 'member' };
 
@@ -56,7 +60,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const inviteToTeam: ActionSpec<Invite> = {
   name: 'team.invite',
   kind: 'do',
-  capability: 'can_manage_staff',
+  capability: 'can_invite',
   says:
     'Bring someone onto the team — "invite Sam as a coach, ' +
     'sam@example.com", "add jo@example.com to the front desk", "invite ' +
