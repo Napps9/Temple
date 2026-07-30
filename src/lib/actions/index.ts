@@ -1,6 +1,7 @@
 import { CLASS_ACTIONS } from './classes';
 import { GYM_ACTIONS } from './gym';
 import { MEMBER_ACTIONS } from './members';
+import { MONEY_ACTIONS } from './money';
 import { STORE_ACTIONS } from './store';
 import { toWire, type AnyAction, type ActionWire } from './types';
 
@@ -13,6 +14,7 @@ export const ACTIONS: AnyAction[] = [
   ...GYM_ACTIONS,
   ...CLASS_ACTIONS,
   ...MEMBER_ACTIONS,
+  ...MONEY_ACTIONS,
   ...STORE_ACTIONS,
 ];
 

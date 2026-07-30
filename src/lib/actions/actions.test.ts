@@ -7,6 +7,7 @@ import { bookMemberIn, cancelClass, editClasses, removeMemberFrom } from './clas
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
+import { moneySummary, periodLabel } from './money';
 import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
 import { argInt, argMoney, argString } from './types';
 
@@ -72,6 +73,7 @@ describe('the registry', () => {
         'members.comp',
         'members.tag',
         'members.message',
+        'money.summary',
         'store.add_product',
         'store.set_price',
         'store.sales',
@@ -479,6 +481,49 @@ describe('classes on the calendar', () => {
     expect(
       bookMemberIn.sanitise({ member: 'M', session_id: 'the 6am one' })?.sessionId,
     ).toBeNull();
+  });
+});
+
+describe('what the gym took', () => {
+  it('takes a period only when both ends were named', () => {
+    expect(moneySummary.sanitise({ from: '2026-07-01', to: '2026-07-31' })).toEqual({
+      from: '2026-07-01',
+      to: '2026-07-31',
+      defaulted: false,
+    });
+  });
+
+  // Half a period is not a period. Pairing a stated start with today would
+  // answer a question nobody asked, and the number would look right.
+  it('falls back to thirty days rather than inventing the other end', () => {
+    expect(moneySummary.sanitise({ from: '2026-07-01' })?.defaulted).toBe(true);
+    expect(moneySummary.sanitise({ to: '2026-07-31' })?.defaulted).toBe(true);
+    expect(moneySummary.sanitise({})?.defaulted).toBe(true);
+    expect(moneySummary.sanitise({ from: 'last month', to: 'now' })?.defaulted).toBe(true);
+    // Backwards is not a period either.
+    expect(
+      moneySummary.sanitise({ from: '2026-07-31', to: '2026-07-01' })?.defaulted,
+    ).toBe(true);
+  });
+
+  it('reads the period back the way it was asked for', () => {
+    expect(periodLabel({ from: '2026-07-01', to: '2026-07-31' }, false)).toBe(
+      '1 to 31 July 2026',
+    );
+    expect(periodLabel({ from: '2026-06-28', to: '2026-07-04' }, false)).toBe(
+      '28 June 2026 to 4 July 2026',
+    );
+    expect(periodLabel({ from: '2026-07-04', to: '2026-07-04' }, false)).toBe(
+      'on 4 July 2026',
+    );
+    expect(periodLabel({ from: '2026-07-01', to: '2026-07-31' }, true)).toBe(
+      'in the last 30 days',
+    );
+  });
+
+  it('is a question, so it never writes', () => {
+    expect(moneySummary.kind).toBe('ask');
+    expect(moneySummary.apply).toBeUndefined();
   });
 });
 

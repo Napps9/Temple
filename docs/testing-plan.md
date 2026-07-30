@@ -422,4 +422,42 @@ break it" rows below are about whether the card was honest about which.
 
 ---
 
+## Cross-module: does it remember?
+
+New, and worth ten minutes on its own because it changes every module at
+once.
+
+| Do this | Expect |
+|---|---|
+| "show me Marcus" then "put him on Unlimited" | The second should know who "him" is, and the card should name **Marcus Webb in full** before you confirm |
+| "show me Marcus" then "comp him for a month" | Same |
+| "cancel tomorrow's 6am" then "actually make it Friday's instead" | Should re-resolve the class, not re-cancel the first |
+| **"show me Marcus", wait 15 minutes, then "put him on Off-peak"** | Should **not** know who you mean. This is the important one — the window is ten minutes, and a cold subject must fail to understand rather than act on the wrong person. |
+| Say seven or eight unrelated things, then use a pronoun | Only the last six turns are carried, so it should have let go |
+| Refresh the page mid-conversation | The conversation is gone — it lives in memory, not the database. Expected today; persisting it is the unbuilt half of roadmap step 3. |
+
+If a pronoun resolves to the **wrong** person at any point, stop and tell
+me immediately. That is the one failure mode here worse than not
+understanding.
+
+## Module: the money — `money.summary`
+
+| Say | Expect |
+|---|---|
+| what did we take last month | The whole previous calendar month, named back ("1 to 31 July 2026") |
+| how much came in last week | The week, memberships and shop split out |
+| how did July go | Same |
+| what are we making | No period named, so the last 30 days — and it should say so |
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| what did we take between the 1st and the 31st *(no month)* | Should fall back to 30 days rather than guessing a month |
+| what did we take in 2019 | An honest zero, not an error |
+| ask it as a coach | Not offered at all — `can_see_money` is owner-only by default |
+| check the failing-payments line against the money screen | The count and the at-risk figure should agree |
+
+---
+
 *Module sections are added here as each ships.*
