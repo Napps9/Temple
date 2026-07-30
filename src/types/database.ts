@@ -5036,6 +5036,56 @@ export type Database = {
         };
         Returns: { closure_id: string; cancelled: number; notified: number };
       };
+      assign_member_plan: {
+        Args: {
+          p_gym_id: string;
+          p_profile_id: string;
+          p_plan_id: string;
+          p_until?: string | null;
+          p_mode?: string;
+        };
+        Returns: {
+          subscription_id: string;
+          switched: boolean;
+          plan_name: string;
+          plan_kind: string;
+          price_cents: number | null;
+          credit_balance: number | null;
+          ends_at: string | null;
+          runs_to: string | null;
+        };
+      };
+      earmark_pending_member_plan: {
+        Args: {
+          p_gym_id: string;
+          p_pending_id: string;
+          p_plan_id: string;
+          p_until?: string | null;
+        };
+        Returns: {
+          pending_id: string;
+          email: string;
+          plan_name: string;
+          plan_kind: string;
+          price_cents: number | null;
+          runs_to: string | null;
+        };
+      };
+      grant_member_comp: {
+        Args: {
+          p_gym_id: string;
+          p_profile_id: string;
+          p_days?: number;
+          p_credits?: number | null;
+          p_reason?: string | null;
+        };
+        Returns: {
+          grant_id: string;
+          days: number;
+          credits: number | null;
+          ends_at: string;
+        };
+      };
       preview_closure_reopen: {
         Args: { p_closure_id: string };
         Returns: {

@@ -287,4 +287,94 @@ Worth one pass after any module ships.
 
 ---
 
-*Module sections are added here as each ships. The next one is members.*
+## Module: members — `members.assign_plan`, `members.comp`,
+`members.tag`, `members.message`
+
+New, and the first module with writes that did not exist before, so this
+section is longer than the others. Read the two paragraphs before the
+tables — they explain what the cards are claiming, which is what you are
+checking.
+
+**What "not billed" means.** An assigned membership is a *continuation*,
+the same thing the CSV importer has always produced: the member is
+genuinely on the plan and can book from the moment you confirm, but no
+money moves and Stripe is never involved. When they later want to start
+paying, their own membership screen adopts that same row rather than
+opening a second one — so no second membership, no double charge, and
+their history stays in one piece. That is the promise the card makes with
+the words "not billed", and it is the thing most worth trying to break.
+
+**How long it runs.** The plan's own period, per your answer: a monthly
+plan runs a month, a `credit_period` plan runs its own period length, and
+a class pack has *no* end date because the credits are the limit. Saying
+"until the end of March" overrides all of it. When an assignment reaches
+its end date a nightly job lapses it — so if you assign something with a
+short window, come back the next day and check the member's access
+actually stopped.
+
+### Say this — putting someone on a plan
+
+| Say | Expect |
+|---|---|
+| put Marcus on Unlimited | If he's on nothing: a confirm card, "£89 a month, not billed", "a month from today" |
+| put Marcus on Unlimited *(when he's already on Off-peak)* | **Not a card — a question.** "Marcus is on Off-peak, £59 a month." plus two chips: move them, or add it as well |
+| *then tap* Move them to Unlimited | The confirm card, with "the same membership changes plan — nothing restarts" |
+| *then tap* Add Unlimited as well | Same card, but it should NOT say anything about moving — he'll end up with two |
+| move Sarah to off-peak | The same flow, phrased as a move from the start |
+| give Dan the ten-class pack | 10 credits, and **no end date** — the card should say the credits are the limit |
+| put Jo on Unlimited until the end of March | Runs to 31 March, said in words on the card |
+| put Marcus on the student plan | Matches the plan by what you called it, not what you typed it as |
+
+After confirming, open that member's profile and check the membership
+reads the way the receipt said. Then, as the member, check they can
+actually book a class — that is the one thing a passing test cannot fully
+prove for you.
+
+### Say this — comping, tagging, messaging
+
+| Say | Expect |
+|---|---|
+| comp Sarah for a month | Unmetered inside the window, ends a month out, and the card warns she'll read as "On an intro" |
+| give Dan 5 free classes | 5 credits rather than a window's worth |
+| put Jo on us for two weeks while she's injured | 14 days, reason carried onto the card |
+| tag Jo as injured | Staff-only by default, and the card says the tag rules will see it |
+| tag Marcus as a competitor, he should see it | Member-visible |
+| message Marcus that his 6am is moved to 6:30 | The card shows the exact words before sending; nothing is embellished |
+
+### Try to break it
+
+This is the important table. Every row is a case where refusing, or
+saying something specific, is the correct answer.
+
+| Say / do | Correct answer |
+|---|---|
+| put Marcus on Unlimited *(when Marcus pays by card through Stripe)* | **Must refuse in words.** "He pays by card, so moving him is a billing change I can't make from here yet." Never a silent row edit — that would leave him paying the old price forever. |
+| put Marcus on Unlimited *(twice, confirming both)* | The second should move the same membership, not open a second one. Check his profile shows one. |
+| put Marcus on a plan you archived last week | "You don't have a plan called …" — a retired plan is not assignable |
+| put Marcus on Gold *(when you have "Gold" and "Gold Plus")* | A question listing both, not a guess |
+| put someone from another gym on your plan | "No one called … on your books." |
+| put Marcus on Unlimited *(as a coach)* | Should work — `can_assign_plan` covers coaches. Then switch it off for coaches in the team screen and check the bar stops offering it. |
+| comp Marcus *(as a coach, then as an admin)* | Both should work. An admin being refused is the bug this shipped to fix. |
+| comp Sarah for 5 years | Refuse the window rather than comp her until 2031 |
+| put Marcus on Unlimited *(when Marcus hasn't claimed his account yet)* | **Earmark, not assign.** "It lands the moment they claim their account — nothing to pay, and no signing up again." Then have him claim it and check the membership is there. |
+| earmark a plan for someone who already joined | Refuse — "they've already claimed their account, put them on the plan directly" |
+| tag Jo as injured, twice | "Jo already has that tag" — not an error, and not a duplicate |
+| tag Jo as Injured *(different capitalisation)* | Should also say she already has it, rather than creating a second |
+| message someone who hasn't claimed their account | "There's nowhere to message them" |
+| put Jo on the programming-only plan, then have Jo try to book a class | She should be refused at booking — that plan doesn't cover classes. Check the refusal is comprehensible. |
+| assign a `credit_period` plan, then wait for the month to turn | The credits will **not** top up on their own while it's unbilled. The card says so; check it does. |
+| assign with a short end date, then come back tomorrow | Access should have stopped. |
+
+### The one to watch
+
+Assigning a plan or issuing a comp changes what the member's cohort flags
+say, which the nightly tag-rule sweep reads, which the email automations
+read. So a plan assigned today can cause an automated email tomorrow if
+you have an automation watching an auto tag. Worth one deliberate check:
+assign a plan, then look at the automations queue the next day and
+confirm nothing went out that you didn't intend.
+
+---
+
+*Module sections are added here as each ships. The next one is classes and
+bookings.*

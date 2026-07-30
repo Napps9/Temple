@@ -511,6 +511,72 @@ The staff area shows up when `can_access_staff_area` is on.
   membership — Temple has no staff-side "put X on plan Y" anywhere yet
   (members self-serve through Stripe), so there is nothing for the bar
   to wrap.
+- **Putting a member on a plan** (0211, roadmap phase 2) — the first
+  staff-side membership write Temple has ever had. `can_assign_plan` was
+  sold to owners as "Put members onto plans and adjust subscriptions"
+  since 0020 and nothing could do it: members self-served through Stripe,
+  comp grants were displayed and never issued, and the only staff-side
+  membership mutations were approving a member's own change request and
+  refunding. `members.assign_plan` ("put Marcus on Unlimited", "give Dan
+  the ten-class pack until the end of March") is a **continuation**, not a
+  new signup — the same semantics the CSV importer has always produced:
+  `status active`, no Stripe subscription, `imported_legacy` set, so the
+  member can book immediately, no money moves, and their own membership
+  screen later adopts *that row* through the existing `stripe-checkout`
+  legacy branch rather than opening a second one. Already on something?
+  The card names what they're on and offers two `choices` chips — move
+  them, or add it as well — because a programming add-on alongside classes
+  is a real second membership and guessing either way is wrong. Not yet
+  claimed their account? It earmarks
+  `pending_members.linked_membership_plan_id` instead, and the existing
+  claim trigger lands the membership when they sign up. Card-billed
+  members are **refused in words**: swapping the row behind Stripe's back
+  would bill the old price forever, so that path stays with
+  `stripe-modify-subscription`. How long it runs follows the plan's own
+  shape — `period_length` where there is one, a month where there isn't,
+  and no end date for a `credit_pack` because its credits are the limit,
+  which is also why 0125's nightly lapse sweep already excludes packs.
+  Four traps the migration's header documents because each is laid by
+  existing code: the row must be **entitling**, never staged, because
+  `_book_class_for`'s require-membership gate (0103:198-204) tests for the
+  mere *existence* of a subscription row with no status filter, so a
+  'pending' placeholder would permanently stop that member self-booking;
+  `price_cents` must be written explicitly on a switch because its
+  snapshot trigger is INSERT-only; the gate is `effective_can`, not
+  `user_can_assign_plan` (raw role, no `left_at` guard); and the plan is
+  validated against the gym, which `apply_pending_member_data` and
+  `import_pending_members` do not do. pgTAP (`assign_member_plan.sql`,
+  plan(29)) proves the assigned member can actually **book a class** —
+  reading the columns back is not enough — and that a switch moves the
+  price with the plan.
+- **Comping, at last** — `members.comp` ("comp Sarah for a month", "give
+  Dan 5 free classes", "put Jo on us for two weeks while she's injured")
+  over `grant_member_comp`. `comp_grants` has existed since 0009 with
+  nothing able to create one. It also settles a disagreement rather than
+  inheriting it: the capability says owner + admin + coach but the only
+  enforcement was `user_can_issue_comp_grant`, raw role owner|coach, so an
+  admin with the capability ticked was refused by RLS — the RPC goes
+  through `effective_can` so the capability means what the Team screen
+  says. A comp with no credit count is unmetered inside its window; the
+  card says up front that comping relabels them "On an intro" on the
+  roster (`v_member_cohort.is_intro` is `has_live_comp and not
+  is_paying`), because that is better said than discovered.
+- **Tagging and messaging one member** — `members.tag` and
+  `members.message` wrap writes that already existed as client inserts
+  under RLS. The tag write checks for an existing label first rather than
+  using `ON CONFLICT`: the unique index is case-*sensitive*
+  `(gym_id, profile_id, label)` and 0047 exists because someone used
+  `lower(label)` as the arbiter and turned the whole pgTAP suite red. The
+  card notes that tag rules and any automation watching that tag pick it
+  up on the next sweep, so a tag is not always a private note.
+- **The parser's gate widened** — `parse-setup` checked
+  `effective_can(gym, 'can_edit_classes')` for every call, which locked
+  staff out of actions they were explicitly granted (the shop, assigning
+  a plan). It now checks `can_access_staff_area`: the function holds no
+  write power and reveals nothing the caller didn't type, the per-action
+  authorisation is the capability-filtered catalogue plus RLS on the write
+  itself, and gating a whole registry on one feature's capability was the
+  wrong shape.
 - **A newsletter is a sentence** (roadmap phase 6) — "send a newsletter
   — Christmas hours and the new barbell club" drafts subject + sections
   in the same `parse-setup` call (`comms.draft_newsletter`, whose own

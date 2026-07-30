@@ -5,9 +5,15 @@
 // created until the owner confirms, at which point the owner's own
 // session applies it through the same RLS paths as the manual editors.
 //
-// Auth mirrors classify-programming: the caller's JWT is forwarded and
-// checked against effective_can(gym, 'can_edit_classes') — parsing costs
-// tokens but reveals nothing the caller didn't type.
+// Auth: the caller's JWT is forwarded and checked against
+// effective_can(gym, 'can_access_staff_area'). Deliberately the weakest
+// staff gate, because this function holds no write power and reveals
+// nothing the caller didn't type — parsing costs tokens, that is all. The
+// real authorisation is per action: the client sends only the catalogue
+// this person's capabilities allow, and the write itself runs in their own
+// session against RLS. Gating the parse on one feature's capability
+// (it was can_edit_classes) locked staff out of actions they were
+// explicitly granted, like the shop and putting a member on a plan.
 //
 // Env:
 //   ANTHROPIC_API_KEY — absent means 503; the setup screen then offers
@@ -129,10 +135,10 @@ function changePrompt(): string {
     'names or settings. Dates are YYYY-MM-DD and resolve forward from ' +
     'today. Money in pounds unless an argument says otherwise.\n' +
     'If the sentence is none of the actions below — changing an existing ' +
-    'plan\'s price, adding or cancelling one person\'s membership, refunds — ' +
-    'set `cannot` to one short plain sentence naming what they asked for, ' +
-    'and set no action. Do not guess, and do not bend a sentence onto the ' +
-    'nearest action that half fits.'
+    'plan\'s price, cancelling a membership, refunds — set `cannot` to one ' +
+    'short plain sentence naming what they asked for, and set no action. Do ' +
+    'not guess, and do not bend a sentence onto the nearest action that half ' +
+    'fits.'
   );
 }
 
@@ -317,7 +323,7 @@ Deno.serve(async (req: Request) => {
   });
   const { data: allowed, error: aErr } = await caller.rpc('effective_can', {
     p_gym_id: gymId,
-    p_capability: 'can_edit_classes',
+    p_capability: 'can_access_staff_area',
   });
   if (aErr || allowed !== true) return json({ error: 'Not authorised' }, 403);
 

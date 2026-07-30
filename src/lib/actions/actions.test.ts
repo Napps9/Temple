@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { editClasses } from './classes';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
 import { ACTIONS, actionsFor, findAction } from './index';
-import { findMember } from './members';
+import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
 import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
 import { argInt, argMoney, argString } from './types';
 
@@ -62,6 +62,10 @@ describe('the registry', () => {
         'comms.draft_newsletter',
         'classes.edit',
         'members.find',
+        'members.assign_plan',
+        'members.comp',
+        'members.tag',
+        'members.message',
         'store.add_product',
         'store.set_price',
         'store.sales',
@@ -266,6 +270,106 @@ describe('members.find', () => {
   it('is a question, so it never applies anything', () => {
     expect(findMember.kind).toBe('ask');
     expect(findMember.apply).toBeUndefined();
+  });
+});
+
+describe('putting a member on a plan', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+
+  it('needs both a person and a plan', () => {
+    expect(assignPlan.sanitise({ member: 'Marcus', plan: 'Unlimited' })).toEqual({
+      member: 'Marcus',
+      plan: 'Unlimited',
+      until: null,
+      mode: null,
+      profileId: null,
+      pendingId: null,
+    });
+    expect(assignPlan.sanitise({ member: 'Marcus' })).toBeNull();
+    expect(assignPlan.sanitise({ plan: 'Unlimited' })).toBeNull();
+    expect(assignPlan.sanitise({})).toBeNull();
+  });
+
+  it('takes an end date only when it is a real one', () => {
+    expect(
+      assignPlan.sanitise({ member: 'Marcus', plan: 'Unlimited', until: '2027-03-31' })?.until,
+    ).toBe('2027-03-31');
+    // "the end of March" never reaches sanitise as prose, but if it did it
+    // must not become an end date.
+    expect(
+      assignPlan.sanitise({ member: 'Marcus', plan: 'Unlimited', until: 'end of March' })?.until,
+    ).toBeNull();
+  });
+
+  // The card asks "move them or add it as well" and the chips answer. A
+  // mode the model invented is not an answer.
+  it('only accepts a mode the card offered', () => {
+    expect(
+      assignPlan.sanitise({ member: 'M', plan: 'U', mode: 'move' })?.mode,
+    ).toBe('move');
+    expect(assignPlan.sanitise({ member: 'M', plan: 'U', mode: 'add' })?.mode).toBe('add');
+    expect(assignPlan.sanitise({ member: 'M', plan: 'U', mode: 'replace' })?.mode).toBeNull();
+    expect(assignPlan.sanitise({ member: 'M', plan: 'U' })?.mode).toBeNull();
+  });
+
+  it('carries the ids the chips send and ignores anything that is not one', () => {
+    const picked = assignPlan.sanitise({ member: 'Marcus Webb', plan: 'U', profile_id: id });
+    expect(picked?.profileId).toBe(id);
+    expect(assignPlan.sanitise({ member: 'M', plan: 'U', pending_id: id })?.pendingId).toBe(id);
+    expect(
+      assignPlan.sanitise({ member: 'M', plan: 'U', profile_id: 'the first one' })?.profileId,
+    ).toBeNull();
+  });
+});
+
+describe('comping', () => {
+  it('defaults to a month and takes a count of classes when one was said', () => {
+    expect(compMember.sanitise({ member: 'Sarah' })).toEqual({
+      member: 'Sarah',
+      days: null,
+      credits: null,
+      reason: null,
+      profileId: null,
+      pendingId: null,
+    });
+    expect(compMember.sanitise({ member: 'Sarah', days: 14 })?.days).toBe(14);
+    expect(compMember.sanitise({ member: 'Sarah', credits: 5 })?.credits).toBe(5);
+    expect(compMember.sanitise({ member: 'Sarah', reason: ' injured ' })?.reason).toBe('injured');
+  });
+
+  it('refuses a window or a count it would have to invent', () => {
+    // Out of range falls back to the default rather than comping someone
+    // for three years by accident.
+    expect(compMember.sanitise({ member: 'Sarah', days: 5000 })?.days).toBeNull();
+    expect(compMember.sanitise({ member: 'Sarah', credits: 0 })?.credits).toBeNull();
+    expect(compMember.sanitise({ member: 'Sarah', credits: 9999 })?.credits).toBeNull();
+    expect(compMember.sanitise({})).toBeNull();
+  });
+});
+
+describe('tagging and messaging one member', () => {
+  it('needs a person and a label, and keeps tags staff-only unless told', () => {
+    expect(tagMember.sanitise({ member: 'Jo', label: 'injured' })).toEqual({
+      member: 'Jo',
+      label: 'injured',
+      memberVisible: false,
+      profileId: null,
+      pendingId: null,
+    });
+    expect(tagMember.sanitise({ member: 'Jo', label: 'injured', visible: true })?.memberVisible)
+      .toBe(true);
+    // Anything other than a real true stays staff-only.
+    expect(tagMember.sanitise({ member: 'Jo', label: 'injured', visible: 'yes' })?.memberVisible)
+      .toBe(false);
+    expect(tagMember.sanitise({ member: 'Jo' })).toBeNull();
+  });
+
+  it('will not send an empty message', () => {
+    expect(messageMember.sanitise({ member: 'Marcus', body: 'Your 6am moved' })?.body).toBe(
+      'Your 6am moved',
+    );
+    expect(messageMember.sanitise({ member: 'Marcus', body: '   ' })).toBeNull();
+    expect(messageMember.sanitise({ member: 'Marcus' })).toBeNull();
   });
 });
 
