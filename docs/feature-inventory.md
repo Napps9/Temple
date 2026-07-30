@@ -1021,12 +1021,26 @@ The staff area shows up when `can_access_staff_area` is on.
   (the same PDF → `gym-waivers` → `publish_waiver` path, with "Build a
   PAR-Q instead" one tap away), settings (rule chips + sheet), and the
   optional three: **inviting the team** (the Team screen's own
-  `InviteSection`, verbatim), **bringing members across** (CSV, or
-  "Pull them from Stripe instead" once Stripe is connected) and
-  **importing workout history**. The two importers keep their own
-  screens — matching columns, spotting duplicates and resolving movement
-  names are judgement work — so those containers frame the job and hand
-  over, and `?backTo=setup` returns the owner to the conversation.
+  `InviteSection`, verbatim), **bringing members across** and
+  **importing workout history**. The member CSV import **runs in the
+  chat**: `MembersImportCard` picks or pastes the file, then drives the
+  wizard's own libs — `parseCsv` reads it, `autoDetect` matches the
+  columns, `buildImportRow` shapes each row, `import_pending_members`
+  stages them — and reads the file back as a sentence ("84 rows in
+  mindbody-export.csv. Matched: Email, First name, …"). Unrecognised
+  columns are chips: tap one, tap what it holds, done. An email column is
+  the one hard requirement, so the button names the missing piece rather
+  than sitting inert. When Stripe is connected the card says to bring
+  Stripe subscribers across from Stripe first, since that path adopts the
+  subscription and avoids a double bill. The receipt carries the join
+  link, because staged rows attach themselves to whoever signs up through
+  it. The full wizard keeps its screen for the fussy cases it exists for —
+  plan mapping, fuzzy duplicates, the cross-gym corrections learning —
+  reached from a quiet line at the bottom of the card, and `?backTo=setup`
+  returns the owner to the conversation. Workout history still hands off
+  to its own screen: four row kinds (weighted / sections / Hyrox /
+  deferred), each with its own RPC, plus movement-name resolution that is
+  the judgement the screen exists for.
   `backTo` now names which surface sent them: `setup` back to the chat,
   `checklist` back to `/onboarding` (`BackLink`, `useSetupAutoReturn`,
   and the Stripe round-trip's `sessionStorage` hand-off all read it).

@@ -18,6 +18,14 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { Button } from '@/components/Button';
 import { GymLogo } from '@/components/GymLogo';
+import { joinUrl } from '@/lib/brand';
+import {
+  autoDetect,
+  buildImportRow,
+  TEMPLE_FIELD_LABELS,
+  type TempleField,
+} from '@/lib/import/columns';
+import { parseCsv } from '@/lib/import/csv';
 import { InviteSection } from '@/components/InviteSection';
 import {
   EMPTY_RECURRENCE,
@@ -62,6 +70,7 @@ import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
+import type { Json } from '@/types/database';
 
 // Day-one setup as a conversation. The script is fixed — timetable →
 // prices → rules → go live — and the model only parses the owner's
@@ -766,9 +775,15 @@ export default function SetupScreen() {
               ) : null
             ) : m.kind === 'members-card' ? (
               m.open ? (
-                <MembersCard
+                <MembersImportCard
                   key={i}
+                  gymId={membership.gymId}
                   stripeConnected={doneKeys.has('stripe')}
+                  onDone={(receipt) => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({ kind: 'receipt', step: 'members', text: receipt });
+                    advance('members');
+                  }}
                   onSkip={() => {
                     setMessages((prev) => closeCards(prev));
                     pushMsgs({
@@ -1185,45 +1200,252 @@ function GoLive({
   );
 }
 
-// The member-import step. The wizard proper is judgement work — matching
-// columns, spotting duplicates, mapping old plans onto new ones — so the
-// container frames the job and picks the route; ?backTo=setup brings the
-// owner back to this conversation when they're done.
-function MembersCard({
+// The member-import step, in the conversation. The wizard's judgement
+// work — plan mapping, cross-gym inference, the Stripe double-bill guard
+// — keeps its screen for the fussy cases, but the ordinary path is a file
+// and a confirm, so it runs here over the same libs: parseCsv reads it,
+// autoDetect matches the columns, buildImportRow shapes each row, and
+// import_pending_members stages them. Staging only: nobody is charged and
+// nobody is emailed until the owner says so.
+function MembersImportCard({
+  gymId,
   stripeConnected,
+  onDone,
   onSkip,
 }: {
+  gymId: string;
   stripeConnected: boolean;
+  onDone: (receipt: string) => void;
   onSkip: () => void;
 }) {
-  return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
-        Export a CSV from wherever you are now — we match the columns, flag
-        anything that looks like a duplicate, and show you the lot before
-        anything is created.
-      </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
-        Nobody is charged and nobody is emailed until you say so.
-      </Text>
-      <Button
-        onPress={() => router.push('/management/members/import?backTo=setup' as never)}>
-        Import a CSV
-      </Button>
-      {stripeConnected ? (
-        <Pressable
-          onPress={() =>
-            router.push('/management/members/import-stripe?backTo=setup' as never)
-          }
-          hitSlop={6}>
-          <Text className="text-link text-sm font-medium text-center">
-            Pull them from Stripe instead
+  const queryClient = useQueryClient();
+  const [paste, setPaste] = useState('');
+  const [file, setFile] = useState<{
+    name: string | null;
+    headers: string[];
+    rows: string[][];
+  } | null>(null);
+  const [mapping, setMapping] = useState<(TempleField | null)[]>([]);
+  const [assigning, setAssigning] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function take(text: string, name: string | null) {
+    const grid = parseCsv(text);
+    const headers = (grid[0] ?? []).map((h) => h.trim());
+    const rows = grid.slice(1).filter((r) => r.some((c) => c.trim()));
+    if (headers.length === 0 || rows.length === 0) {
+      setError('That file had no rows I could read — headers in the first row.');
+      return;
+    }
+    setError(null);
+    setFile({ name, headers, rows });
+    setMapping(autoDetect(headers));
+  }
+
+  const pick = useMutation({
+    mutationFn: async () => {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['text/csv', 'text/comma-separated-values', 'text/plain'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled || !res.assets?.length) return;
+      const asset = res.assets[0];
+      const text = await (await fetch(asset.uri)).text();
+      take(text, asset.name ?? null);
+    },
+    onError: () => setError("I couldn't read that file — a .csv export works best."),
+  });
+
+  const commit = useMutation({
+    mutationFn: async () => {
+      const built = file!.rows
+        .map((cells) => buildImportRow(file!.headers, mapping, cells))
+        .filter((r) => typeof r.email === 'string' && (r.email as string).length > 0);
+      if (built.length === 0) throw new Error('no rows');
+      const { data, error: e } = await supabase.rpc('import_pending_members', {
+        p_gym_id: gymId,
+        p_rows: built as unknown as Json,
+      });
+      if (e) throw e;
+      const result = ((data ?? []) as { inserted: number; updated: number; skipped: number }[])[0];
+      // The join link is what the owner needs next — staged rows link
+      // themselves to a member when that member signs up through it.
+      const { data: gym } = await supabase
+        .from('gyms')
+        .select('slug')
+        .eq('id', gymId)
+        .single();
+      return { result, slug: (gym as { slug: string } | null)?.slug ?? null };
+    },
+    onSuccess: ({ result, slug }) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['members-pending'] });
+      const n = result?.inserted ?? 0;
+      const skipped = result?.skipped ?? 0;
+      const origin =
+        Platform.OS === 'web' && typeof window !== 'undefined'
+          ? window.location.origin
+          : 'https://app.jointemple.io';
+      onDone(
+        `${n} member${n === 1 ? '' : 's'} brought across${
+          skipped > 0 ? `, ${skipped} already here` : ''
+        }. They link to their history when they join${slug ? ` at ${joinUrl(origin, slug)}` : ''}.`,
+      );
+    },
+    onError: () =>
+      setError(
+        'That didn’t save — check there’s an email in every row, or use the full importer.',
+      ),
+  });
+
+  const used = new Set(mapping.filter(Boolean) as TempleField[]);
+  const matched = file
+    ? file.headers
+        .map((h, i) => ({ h, f: mapping[i] }))
+        .filter((x): x is { h: string; f: TempleField } => x.f !== null)
+    : [];
+  const unmatched = file
+    ? file.headers.map((h, i) => ({ h, i })).filter((x) => mapping[x.i] === null)
+    : [];
+  const hasEmail = used.has('email');
+
+  if (!file) {
+    return (
+      <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+        <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+          Export a CSV from wherever you are now — Mindbody, PushPress, Glofox,
+          Wodify, a spreadsheet. I’ll match the columns and show you everything
+          before a single row is saved.
+        </Text>
+        {stripeConnected ? (
+          <Text className="text-amber-700 dark:text-amber-400 text-[13px] leading-5">
+            If any of these already pay you through Stripe, bring those across
+            from Stripe first — their subscription carries over and nobody gets
+            billed twice.
+          </Text>
+        ) : null}
+        {error ? (
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
+        <Button onPress={() => pick.mutate()} loading={pick.isPending}>
+          Choose your CSV
+        </Button>
+        <TextInput
+          value={paste}
+          onChangeText={setPaste}
+          onBlur={() => paste.trim() && take(paste, null)}
+          multiline
+          placeholder="…or paste it here: Email,First Name,Last Name,Plan"
+          placeholderTextColor="#9CA3AF"
+          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 h-20 text-gray-900 dark:text-gray-50 text-[13px]"
+        />
+        {stripeConnected ? (
+          <Pressable
+            onPress={() =>
+              router.push('/management/members/import-stripe?backTo=setup' as never)
+            }
+            hitSlop={6}>
+            <Text className="text-link text-sm font-medium text-center">
+              Pull them from Stripe instead
+            </Text>
+          </Pressable>
+        ) : null}
+        <Pressable onPress={onSkip} hitSlop={6}>
+          <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+            I’m starting fresh
           </Text>
         </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">
+        {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
+        {file.name ? ` in ${file.name}` : ''}
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
+        Matched: {matched.map((m) => TEMPLE_FIELD_LABELS[m.f]).join(', ')}
+      </Text>
+
+      {unmatched.length > 0 ? (
+        <View className="gap-2">
+          <Text className="text-gray-400 dark:text-gray-500 text-[12px]">
+            {hasEmail
+              ? 'Ignoring these — tap one to bring it in:'
+              : 'I need an email column. Tap the one that holds it:'}
+          </Text>
+          <View className="flex-row flex-wrap items-start gap-1.5">
+            {unmatched.map((u) => (
+              <Pressable
+                key={u.i}
+                onPress={() => setAssigning(assigning === u.i ? null : u.i)}
+                className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
+                  assigning === u.i
+                    ? 'border-primary bg-primary/10'
+                    : 'border-dashed border-gray-300 dark:border-gray-600'
+                }`}>
+                <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">
+                  {u.h || `Column ${u.i + 1}`}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {assigning !== null ? (
+            <View className="flex-row flex-wrap items-start gap-1.5">
+              {(Object.keys(TEMPLE_FIELD_LABELS) as TempleField[])
+                .filter((f) => !used.has(f))
+                .map((f) => (
+                  <Pressable
+                    key={f}
+                    onPress={() => {
+                      setMapping((m) => m.map((x, i) => (i === assigning ? f : x)));
+                      setAssigning(null);
+                    }}
+                    className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 active:opacity-70">
+                    <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">
+                      {TEMPLE_FIELD_LABELS[f]}
+                    </Text>
+                  </Pressable>
+                ))}
+            </View>
+          ) : null}
+        </View>
       ) : null}
-      <Pressable onPress={onSkip} hitSlop={6}>
+
+      <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
+        Nobody is charged and nobody is emailed. Each row waits until that
+        person signs up, then attaches itself to them.
+      </Text>
+      {error ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+      <Button
+        onPress={() => commit.mutate()}
+        disabled={!hasEmail || commit.isPending}
+        loading={commit.isPending}>
+        {hasEmail
+          ? `Bring ${file.rows.length} across`
+          : 'Pick the email column first'}
+      </Button>
+      <Pressable
+        onPress={() => {
+          setFile(null);
+          setPaste('');
+          setError(null);
+        }}
+        hitSlop={6}>
         <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
-          I’m starting fresh
+          Use a different file
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => router.push('/management/members/import?backTo=setup' as never)}
+        hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-[13px] text-center">
+          Plans to map or duplicates to sort? Open the full importer
         </Text>
       </Pressable>
     </View>
