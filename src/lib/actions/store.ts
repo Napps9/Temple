@@ -49,6 +49,7 @@ export const addStoreProduct: ActionSpec<AddProduct> = {
       max: 100000,
     },
   ],
+  invalidate: ['store-products', 'admin-store-products'],
   sanitise: (raw) => {
     const name = argString(raw, 'name', 80);
     const priceCents = argMoney(raw, 'price');
@@ -112,6 +113,7 @@ export const setStoreProductPrice: ActionSpec<SetPrice> = {
     { name: 'name', type: 'string', desc: 'The product, as they named it', required: true },
     { name: 'price', type: 'money', desc: 'The new price in pounds', required: true },
   ],
+  invalidate: ['store-products', 'admin-store-products'],
   sanitise: (raw) => {
     const name = argString(raw, 'name', 80);
     const priceCents = argMoney(raw, 'price');

@@ -1,3 +1,6 @@
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { editClasses } from './classes';
@@ -71,6 +74,41 @@ describe('the registry', () => {
         'store.sales',
       ]),
     );
+  });
+});
+
+// An invalidate key that names no real query is a write whose screens never
+// refresh — and it fails silently, which is how four of them went unnoticed.
+// So the list is checked against the app's own queryKey literals.
+describe('what each action says it staled', () => {
+  function sourceFiles(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) sourceFiles(full, out);
+      else if (/\.tsx?$/.test(entry) && !entry.endsWith('.test.ts')) out.push(full);
+    }
+    return out;
+  }
+
+  it('names queries that actually exist', () => {
+    const keys = new Set<string>();
+    for (const file of sourceFiles('src')) {
+      const text = readFileSync(file, 'utf8');
+      for (const m of text.matchAll(/queryKey:\s*\[\s*'([a-z0-9-]+)'/g)) {
+        keys.add(m[1]);
+      }
+    }
+    expect(keys.size).toBeGreaterThan(50);
+    const unknown = ACTIONS.flatMap((a) => a.invalidate ?? []).filter(
+      (k) => !keys.has(k),
+    );
+    expect(unknown).toEqual([]);
+  });
+
+  it('gives every write something to refresh', () => {
+    for (const a of ACTIONS) {
+      if (a.kind === 'do') expect((a.invalidate ?? []).length).toBeGreaterThan(0);
+    }
   });
 });
 

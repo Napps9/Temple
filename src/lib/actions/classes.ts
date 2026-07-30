@@ -125,7 +125,7 @@ export const editClasses: ActionSpec<{ req: ClassEditRequest }> = {
       max: 720,
     },
   ],
-  invalidate: ['class-sessions', 'today-classes'],
+  invalidate: ['class-sessions-month', 'my-upcoming-sessions'],
   sanitise: (raw) => {
     const req = sanitiseClassEdit(raw);
     return req ? { req } : null;

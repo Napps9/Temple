@@ -173,7 +173,7 @@ export const closeGym: ActionSpec<Closure> = {
     { name: 'ends_on', type: 'date', desc: 'Last day closed, YYYY-MM-DD', required: true },
     { name: 'reason', type: 'string', desc: 'Their stated reason, if they gave one' },
   ],
-  invalidate: ['class-sessions', 'today-classes'],
+  invalidate: ['class-sessions-month', 'my-upcoming-sessions'],
   sanitise: (raw) => {
     const startsOn = typeof raw.starts_on === 'string' ? raw.starts_on : '';
     const endsOn = typeof raw.ends_on === 'string' ? raw.ends_on : '';
@@ -241,7 +241,7 @@ export const addClasses: ActionSpec<{ proposal: TimetableProposal }> = {
       required: true,
     },
   ],
-  invalidate: ['class-sessions', 'class-types', 'today-classes'],
+  invalidate: ['class-sessions-month', 'class-types', 'my-upcoming-sessions'],
   sanitise: (raw) => {
     const proposal = sanitiseTimetable({ schedules: raw.schedules });
     return proposal ? { proposal } : null;

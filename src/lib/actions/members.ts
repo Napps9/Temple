@@ -83,7 +83,13 @@ async function buildCard(
       .from('comp_grants')
       .select('credits_remaining')
       .eq('gym_id', ctx.gymId)
-      .eq('profile_id', row.profile_id),
+      .eq('profile_id', row.profile_id)
+      // Live only, the same three filters the members list uses. Without
+      // them a revoked or long-expired grant reads back as comped classes
+      // the member does not have.
+      .is('revoked_at', null)
+      .lte('starts_at', new Date().toISOString())
+      .gte('ends_at', new Date().toISOString()),
     ctx.supabase
       .from('member_tags')
       .select('label, color, source')
@@ -213,7 +219,7 @@ export const findMember: ActionSpec<{ query: string | null; profileId: string | 
 
 type Target =
   | { kind: 'member'; profileId: string; name: string }
-  | { kind: 'pending'; pendingId: string; name: string; email: string }
+  | { kind: 'pending'; pendingId: string; name: string; billedByCard: boolean }
   | { kind: 'unresolved'; preview: ActionPreview };
 
 type PendingRow = {
@@ -221,7 +227,11 @@ type PendingRow = {
   email: string;
   full_name: string | null;
   status: string;
+  imported_stripe_subscription_id: string | null;
 };
+
+const PENDING_SELECT =
+  'id, email, full_name, status, imported_stripe_subscription_id';
 
 // `carry` is the rest of the sentence — the plan, the number of days, the
 // message. A chip has to re-run the whole action, not just the name.
@@ -243,7 +253,7 @@ async function resolveTarget(
   if (ids.pendingId) {
     const { data } = await ctx.supabase
       .from('pending_members')
-      .select('id, email, full_name, status')
+      .select(PENDING_SELECT)
       .eq('gym_id', ctx.gymId)
       .eq('id', ids.pendingId)
       .maybeSingle();
@@ -253,7 +263,7 @@ async function resolveTarget(
       kind: 'pending',
       pendingId: row.id,
       name: row.full_name?.trim() || row.email,
-      email: row.email,
+      billedByCard: !!row.imported_stripe_subscription_id,
     };
   }
 
@@ -290,13 +300,13 @@ async function resolveTarget(
   // sentence.
   const { data: pending } = await ctx.supabase
     .from('pending_members')
-    .select('id, email, full_name, status')
+    .select(PENDING_SELECT)
     .eq('gym_id', ctx.gymId)
     .neq('status', 'linked');
   const waiting = ((pending ?? []) as PendingRow[]).map((r) => ({
     id: r.id,
     name: r.full_name?.trim() || r.email,
-    email: r.email,
+    billedByCard: !!r.imported_stripe_subscription_id,
   }));
   const pendingHits = matchMembers(waiting, query);
   if (pendingHits.length === 1) {
@@ -304,7 +314,7 @@ async function resolveTarget(
       kind: 'pending',
       pendingId: pendingHits[0].id,
       name: pendingHits[0].name,
-      email: pendingHits[0].email,
+      billedByCard: pendingHits[0].billedByCard,
     };
   }
   if (pendingHits.length > 1) {
@@ -327,6 +337,14 @@ async function resolveTarget(
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Local, not UTC: an owner in Auckland saying "until today" must not have it
+// read as yesterday and dropped.
+function localToday(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 function readTarget(raw: Record<string, unknown>) {
   const profileId = argString(raw, 'profile_id', 64);
@@ -413,11 +431,19 @@ async function currentMembership(
   return ((data ?? []) as unknown as SubRowLite[])[0] ?? null;
 }
 
+// A pack is bought once and a credit period renews; only an unlimited plan
+// is "a month". Getting this wrong puts a price on the card that no other
+// screen in the app agrees with.
+function pricePhrase(kind: string, cents: number | null): string {
+  if (cents === null || cents === 0) return 'free';
+  const money = formatPrice(cents);
+  if (kind === 'credit_pack') return `${money} one off`;
+  if (kind === 'credit_period') return `${money} a period`;
+  return `${money} a month`;
+}
+
 function priceLine(plan: PlanRow): string {
-  const price =
-    plan.monthly_price_cents !== null && plan.monthly_price_cents > 0
-      ? `${formatPrice(plan.monthly_price_cents)} a month`
-      : 'free';
+  const price = pricePhrase(plan.kind, plan.monthly_price_cents);
   return plan.kind === 'credit_pack'
     ? `${plan.name} — ${plan.credit_count} classes, ${price}, not billed`
     : `${plan.name} — ${price}, not billed`;
@@ -451,7 +477,14 @@ export const assignPlan: ActionSpec<Assign> = {
         'Omit otherwise — the plan\'s own period is the default.',
     },
   ],
-  invalidate: ['member-cohort', 'member-subscriptions', 'members-pending'],
+  invalidate: [
+    'members-cohort',
+    'member-detail-cohort',
+    'members-subs',
+    'member-detail-subs',
+    'member-detail-membership',
+    'members-pending',
+  ],
   // profile_id, pending_id and mode are not advertised: nobody types a
   // uuid, and "move him or add it as well" is a question the card asks
   // rather than something a sentence answers. The chips send them.
@@ -461,10 +494,11 @@ export const assignPlan: ActionSpec<Assign> = {
     if (!member || !plan) return null;
     const until = argString(raw, 'until', 10);
     const mode = argString(raw, 'mode', 8);
+    const today = localToday();
     return {
       member,
       plan,
-      until: until && ISO_DATE.test(until) ? until : null,
+      until: until && ISO_DATE.test(until) && until >= today ? until : null,
       mode: mode === 'move' || mode === 'add' ? mode : null,
       ...readTarget(raw),
     };
@@ -490,6 +524,15 @@ export const assignPlan: ActionSpec<Assign> = {
     }
     if (target.kind === 'unresolved') return target.preview;
     const plan = found.plan;
+    // A programming-only plan is not a class entitlement, and putting someone
+    // on one would stop them booking classes altogether (see 0211's header).
+    // Refuse here so the card never offers what the RPC will reject.
+    if (plan.kind === 'programming_only') {
+      return {
+        title: `${plan.name} doesn't cover class booking, so putting someone on it from here would stop them booking classes at all.`,
+        lines: [],
+      };
+    }
     const runs = a.until
       ? `Runs until ${dayLabel(a.until)}, then stops.`
       : plan.kind === 'credit_pack'
@@ -497,6 +540,16 @@ export const assignPlan: ActionSpec<Assign> = {
         : 'A month from today, then it stops. Say "until X" for a different stretch.';
 
     if (target.kind === 'pending') {
+      // An adopt-mode import carries a live Stripe subscription, which the
+      // claim trigger copies onto whatever plan is earmarked — so they would
+      // keep paying the old price under a new name, and "nothing to pay"
+      // would be false.
+      if (target.billedByCard) {
+        return {
+          title: `${target.name} came across with a live card payment, so changing their plan is a billing change I can't make from here yet.`,
+          lines: [],
+        };
+      }
       return {
         title: `Earmark ${plan.name} for ${target.name}?`,
         lines: [
@@ -509,6 +562,17 @@ export const assignPlan: ActionSpec<Assign> = {
     }
 
     const now = await currentMembership(target.profileId, ctx);
+    // Refused whichever was asked for, and before the two chips are offered:
+    // moving them would bill the old price forever, and adding a newer
+    // unbilled membership beside it would take over the one recurring
+    // subscription their own screen resolves, so they could no longer cancel
+    // or switch the thing they are actually paying for.
+    if (now?.stripe_subscription_id) {
+      return {
+        title: `${target.name} pays ${now.membership_plans?.name ?? 'their membership'} by card, so changing it is a billing change I can't make from here yet.`,
+        lines: [],
+      };
+    }
     if (now && a.mode === null) {
       const on = now.membership_plans?.name ?? 'a membership';
       const price = now.price_cents !== null ? `, ${formatPrice(now.price_cents)} a month` : '';
@@ -525,15 +589,6 @@ export const assignPlan: ActionSpec<Assign> = {
             args: { ...carry, member: target.name, profile_id: target.profileId, mode: 'add' },
           },
         ],
-      };
-    }
-    // A card-billed membership is a billing change, and Stripe has to hear
-    // about it or they keep paying the old price. Say so rather than let
-    // the write fail behind a generic error.
-    if (now && a.mode === 'move' && now.stripe_subscription_id) {
-      return {
-        title: `${target.name} pays ${now.membership_plans?.name ?? 'their membership'} by card, so moving them is a billing change I can't make from here yet.`,
-        lines: [],
       };
     }
     const moving = now && a.mode === 'move';
@@ -593,7 +648,7 @@ export const assignPlan: ActionSpec<Assign> = {
     };
     const price =
       r.price_cents !== null && r.price_cents > 0
-        ? `${formatPrice(r.price_cents)} a month, not billed`
+        ? `${pricePhrase(r.plan_kind, r.price_cents)}, not billed`
         : 'no charge';
     const until = r.runs_to ? ` Runs to ${dayLabel(r.runs_to)}.` : '';
     return r.switched
@@ -610,6 +665,12 @@ function receiptFor(message: string): string {
   }
   if (/Already joined/i.test(message)) {
     return 'They have already claimed their account, so there is nothing to earmark — put them on the plan directly.';
+  }
+  if (/does not cover classes/i.test(message)) {
+    return "That plan doesn't cover class booking, so it can't be assigned from here.";
+  }
+  if (/End date out of range/i.test(message)) {
+    return 'That end date is either in the past or more than a year out.';
   }
   if (/Not a member/i.test(message)) return 'They are not a member of this gym.';
   if (/No such plan/i.test(message)) return 'That plan is no longer there.';
@@ -657,7 +718,12 @@ export const compMember: ActionSpec<Comp> = {
     },
     { name: 'reason', type: 'string', desc: 'Why, if they said' },
   ],
-  invalidate: ['member-cohort', 'member-comps'],
+  invalidate: [
+    'members-cohort',
+    'member-detail-cohort',
+    'members-comps',
+    'member-detail-comps',
+  ],
   sanitise: (raw) => {
     const member = argString(raw, 'member', 60);
     if (!member) return null;
@@ -746,7 +812,7 @@ export const tagMember: ActionSpec<Tag> = {
       desc: 'True only if they said the member should see it. Tags are staff-only by default.',
     },
   ],
-  invalidate: ['member-tags', 'member-cohort'],
+  invalidate: ['member-tags', 'member-tags-for', 'member-detail-tags', 'members-cohort'],
   sanitise: (raw) => {
     const member = argString(raw, 'member', 60);
     const label = argString(raw, 'label', 40);
@@ -759,7 +825,12 @@ export const tagMember: ActionSpec<Tag> = {
     };
   },
   preview: async (a, ctx) => {
-    const target = await resolveTarget(a.member, a, { label: a.label }, ctx);
+    const target = await resolveTarget(
+      a.member,
+      a,
+      { label: a.label, ...(a.memberVisible ? { visible: true } : {}) },
+      ctx,
+    );
     if (target.kind === 'unresolved') return target.preview;
     if (target.kind === 'pending') {
       return {
@@ -838,7 +909,7 @@ export const messageMember: ActionSpec<Message> = {
       required: true,
     },
   ],
-  invalidate: ['inbox-threads', 'inbox-unread'],
+  invalidate: ['dm-inbox', 'dm-thread', 'inbox-unread-summary'],
   sanitise: (raw) => {
     const member = argString(raw, 'member', 60);
     const body = argString(raw, 'body', 1000);

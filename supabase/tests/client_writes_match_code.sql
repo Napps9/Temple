@@ -8,7 +8,7 @@
 -- closed a hole.
 
 begin;
-select plan(9);
+select plan(11);
 
 \ir _helpers.psql
 
@@ -34,6 +34,23 @@ select ok(
 select ok(
   not has_table_privilege('authenticated', 'public.class_sessions', 'update'),
   'authenticated cannot UPDATE class_sessions directly'
+);
+
+-- 0211 carried the same argument to comp_grants: grant_member_comp checks
+-- effective_can(gym, 'can_issue_comp_grant'), and that gate is decoration
+-- while the table still takes a direct insert guarded by a raw-role
+-- predicate that excludes admin and ignores left_at.
+select ok(
+  not has_table_privilege('authenticated', 'public.comp_grants', 'insert')
+  and not has_table_privilege('authenticated', 'public.comp_grants', 'update'),
+  'authenticated cannot write comp_grants directly either'
+);
+
+select is(
+  (select count(*)::int from pg_policy
+    where polrelid = 'public.comp_grants'::regclass and polcmd in ('a', 'w')),
+  0,
+  'and its raw-role write policies went with the grant'
 );
 
 -- The dead policies are gone too, so a later re-grant cannot silently

@@ -16,7 +16,7 @@
 -- reviewer.
 
 begin;
-select plan(32);
+select plan(39);
 
 \ir _helpers.psql
 
@@ -36,10 +36,12 @@ declare
   v_pack    uuid;
   v_off     uuid;
   v_arch    uuid;
+  v_prog    uuid;
   v_foreign uuid;
   v_mid     uuid;
   v_pend    uuid;
   v_linked  uuid;
+  v_adopted uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   perform _test_mk_membership(v_gym, v_admin, 'admin');
@@ -65,6 +67,9 @@ begin
     values (v_gym, 'Retired', 'unlimited', 4900, now())
     returning plan_id into v_arch;
   insert into public.membership_plans (gym_id, name, kind, monthly_price_cents)
+    values (v_gym, 'PT programming', 'programming_only', 2000)
+    returning plan_id into v_prog;
+  insert into public.membership_plans (gym_id, name, kind, monthly_price_cents)
     values (v_other, 'Someone else''s plan', 'unlimited', 9900)
     returning plan_id into v_foreign;
 
@@ -87,9 +92,17 @@ begin
       now() + interval '20 days', 'sub_live_card');
 
   insert into public.pending_members
-      (gym_id, email, full_name, plan_name, created_by)
-    values (v_gym, 'notyet@assignplan.test', 'Not Yet', 'Legacy monthly', v_owner)
+      (gym_id, email, full_name, plan_name, credits_remaining,
+       next_bill_date, created_by)
+    values (v_gym, 'notyet@assignplan.test', 'Not Yet', 'Legacy monthly', 7,
+       (current_date + 5), v_owner)
     returning id into v_pend;
+  -- Came across in adopt mode, still paying by card.
+  insert into public.pending_members
+      (gym_id, email, full_name, imported_stripe_subscription_id, created_by)
+    values (v_gym, 'adopted@assignplan.test', 'Still Paying', 'sub_imported',
+       v_owner)
+    returning id into v_adopted;
   insert into public.pending_members (gym_id, email, full_name, status, created_by)
     values (v_gym, 'alreadyin@assignplan.test', 'Already In', 'linked', v_owner)
     returning id into v_linked;
@@ -107,9 +120,11 @@ begin
   perform set_config('test.pack',    v_pack::text,    true);
   perform set_config('test.off',     v_off::text,     true);
   perform set_config('test.arch',    v_arch::text,    true);
+  perform set_config('test.prog',    v_prog::text,    true);
   perform set_config('test.foreign', v_foreign::text, true);
   perform set_config('test.pend',    v_pend::text,    true);
   perform set_config('test.linked',  v_linked::text,  true);
+  perform set_config('test.adopted', v_adopted::text, true);
   perform set_config(
     'test.sess',
     _test_mk_session(v_gym, v_owner, now() + interval '2 days')::text,
@@ -213,13 +228,17 @@ select ok(
   'a pack has no end date and its credits are the limit — which is why 0125 skips packs'
 );
 
-select ok(
-  (select (public.assign_member_plan(
-             current_setting('test.gym')::uuid,
-             current_setting('test.packer')::uuid,
-             current_setting('test.off')::uuid,
-             null, 'add') ->> 'ends_at')::timestamptz
-          between now() + interval '27 days' and now() + interval '32 days'),
+-- Mentioned ONCE, deliberately. `a BETWEEN x AND y` is rewritten to
+-- `a >= x AND a <= y`, which copies the left operand — so a mutating RPC on
+-- the left of a BETWEEN runs twice and inserts twice. That is invisible at
+-- the assertion that causes it and surfaces as a wrong count later.
+select is(
+  (public.assign_member_plan(
+     current_setting('test.gym')::uuid,
+     current_setting('test.packer')::uuid,
+     current_setting('test.off')::uuid,
+     null, 'add') ->> 'runs_to')::date,
+  (now() + interval '1 month')::date,
   'a credit_period plan runs its own period_length'
 );
 
@@ -281,6 +300,20 @@ select throws_ok(
   'a card-billed membership is refused rather than quietly edited behind Stripe''s back'
 );
 
+-- Adding beside a Stripe subscription is worse than moving it: the member's
+-- own membership screen resolves ONE recurring subscription and would pick
+-- the newer unbilled row, taking away their ability to cancel or switch the
+-- thing they are actually paying for.
+select throws_ok(
+  $$ select public.assign_member_plan(
+       current_setting('test.gym')::uuid,
+       current_setting('test.carded')::uuid,
+       current_setting('test.unl')::uuid,
+       null, 'add') $$,
+  'Membership is billed by card',
+  'and adding one beside it is refused too, not just moving it'
+);
+
 -- ============================================================================
 -- What it refuses
 -- ============================================================================
@@ -312,6 +345,38 @@ select throws_ok(
   'and neither can someone who is not a member'
 );
 
+-- The row would exist without entitling, and the require-membership gate
+-- tests for mere existence — so this would stop them booking classes they
+-- can book for free today.
+select throws_ok(
+  $$ select public.assign_member_plan(
+       current_setting('test.gym')::uuid,
+       current_setting('test.fresh')::uuid,
+       current_setting('test.prog')::uuid) $$,
+  'Plan does not cover classes',
+  'a programming-only plan is refused rather than silently locking them out of booking'
+);
+
+select throws_ok(
+  $$ select public.assign_member_plan(
+       current_setting('test.gym')::uuid,
+       current_setting('test.fresh')::uuid,
+       current_setting('test.unl')::uuid,
+       (current_date - 1)) $$,
+  'End date out of range',
+  'an end date already gone is refused rather than written dead'
+);
+
+select throws_ok(
+  $$ select public.assign_member_plan(
+       current_setting('test.gym')::uuid,
+       current_setting('test.fresh')::uuid,
+       current_setting('test.unl')::uuid,
+       (current_date + 400)) $$,
+  'End date out of range',
+  'and so is a perpetual one the nightly sweep could never reach'
+);
+
 select _test_act_as(current_setting('test.fresh')::uuid);
 
 select throws_ok(
@@ -332,6 +397,17 @@ select lives_ok(
        current_setting('test.off')::uuid,
        null, 'move') $$,
   'a coach can, because can_assign_plan says so'
+);
+
+-- The import list is a can_manage_staff surface (0046), and a coach who may
+-- put an existing member on a plan is not thereby someone who may touch it.
+select throws_ok(
+  $$ select public.earmark_pending_member_plan(
+       current_setting('test.gym')::uuid,
+       current_setting('test.pend')::uuid,
+       current_setting('test.unl')::uuid) $$,
+  'Not authorised',
+  'but a coach cannot reach into the import list to earmark one'
 );
 
 -- ============================================================================
@@ -381,6 +457,26 @@ select is(
     where id = current_setting('test.pend')::uuid),
   '2027-04-01'::date,
   'and stores the midnight after it, so the claim does not cut that day short'
+);
+
+-- apply_pending_member_data prefers the imported credits_remaining over the
+-- plan's credit_count, and falls back to next_bill_date for paid_period_end.
+-- An earmark that left the import's values would land the member on the old
+-- provider's balance — and on a stale 0, unable to book at all.
+select ok(
+  (select credits_remaining is null and next_bill_date is null
+     from public.pending_members
+     where id = current_setting('test.pend')::uuid),
+  'an unlimited earmark clears the imported credits and bill date the claim would otherwise prefer'
+);
+
+select throws_ok(
+  $$ select public.earmark_pending_member_plan(
+       current_setting('test.gym')::uuid,
+       current_setting('test.adopted')::uuid,
+       current_setting('test.unl')::uuid) $$,
+  'Membership is billed by card',
+  'and someone who came across still paying by card is refused, since the claim would carry that subscription onto the new plan'
 );
 
 select throws_ok(

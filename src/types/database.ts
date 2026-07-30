@@ -3866,6 +3866,8 @@ export type Database = {
           phone: string | null;
           emergency_contact: string | null;
           next_bill_date: string | null;
+          imported_stripe_subscription_id: string | null;
+          imported_stripe_customer_id: string | null;
         };
         Insert: {
           id?: string;
@@ -3892,6 +3894,8 @@ export type Database = {
           phone?: string | null;
           emergency_contact?: string | null;
           next_bill_date?: string | null;
+          imported_stripe_subscription_id?: string | null;
+          imported_stripe_customer_id?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -3918,6 +3922,8 @@ export type Database = {
           phone: string | null;
           emergency_contact: string | null;
           next_bill_date: string | null;
+          imported_stripe_subscription_id: string | null;
+          imported_stripe_customer_id: string | null;
         }>;
         Relationships: [];
       };

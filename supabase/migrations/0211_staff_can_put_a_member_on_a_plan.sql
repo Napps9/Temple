@@ -97,6 +97,14 @@ begin
   if p_mode not in ('move', 'add') then
     raise exception 'Unknown mode';
   end if;
+  -- Bounded like a comp's window is. Unbounded, the lowest staff tier could
+  -- write a perpetual unbilled membership that 0125's sweep can never reach
+  -- (it only lapses rows whose end has passed), or a date already gone,
+  -- which lands dead the same night.
+  if p_until is not null
+     and (p_until < current_date or p_until > current_date + 366) then
+    raise exception 'End date out of range';
+  end if;
 
   select * into v_plan
     from public.membership_plans
@@ -105,6 +113,16 @@ begin
       and archived_at is null;
   if v_plan.plan_id is null then
     raise exception 'No such plan';
+  end if;
+  -- programming_only carries credit_count is null by CHECK (0123:104-111), so
+  -- it can never satisfy the eligibility predicate's credit test and is not a
+  -- class entitlement. Creating one would be actively harmful rather than
+  -- merely useless: _book_class_for's require-membership gate (0103:198-204)
+  -- tests for the mere EXISTENCE of a subscription row, so this row would
+  -- permanently stop the member self-booking classes they can book for free
+  -- today. Until that gate learns about plan kinds, this path refuses.
+  if v_plan.kind = 'programming_only' then
+    raise exception 'Plan does not cover classes';
   end if;
 
   -- left_at is null matters: the parent-match trigger (0008:152-178)
@@ -142,27 +160,33 @@ begin
     else null
   end;
 
-  if p_mode = 'move' then
-    -- The newest entitling membership is the one they are on. Statuses
-    -- match the booking predicate's (0050:118-127) so "what they're on"
-    -- means the same thing here as it does at the door.
-    select * into v_existing
-      from public.plan_subscriptions
-      where gym_id = p_gym_id
-        and profile_id = p_profile_id
-        and status in ('active', 'cancelled_at_period_end', 'refunded_retained')
-      order by created_at desc
-      limit 1;
+  -- The newest entitling membership is the one they are on. Statuses match
+  -- the booking predicate's (0050:118-127) so "what they're on" means the
+  -- same thing here as it does at the door. Read in BOTH modes, because a
+  -- card-billed member has to be refused whichever was asked for.
+  select * into v_existing
+    from public.plan_subscriptions
+    where gym_id = p_gym_id
+      and profile_id = p_profile_id
+      and status in ('active', 'cancelled_at_period_end', 'refunded_retained')
+    order by created_at desc
+    limit 1;
+
+  -- A live Stripe subscription is a billing change, not a row edit.
+  -- Swapping it would bill the old amount forever, and adding a NEWER
+  -- unbilled row beside it is worse than useless: the member's own
+  -- membership screen resolves one recurring subscription and would pick
+  -- this one, taking away their ability to cancel or switch the thing they
+  -- are actually paying for. Both modes refuse; stripe-modify-subscription
+  -- owns that path.
+  if v_existing.id is not null
+     and v_existing.stripe_subscription_id is not null then
+    raise exception 'Membership is billed by card'
+      using hint = v_existing.id::text;
   end if;
 
-  if v_existing.id is not null then
-    -- A live Stripe subscription is a billing change, not a row edit:
-    -- swapping the price without telling Stripe would bill the old
-    -- amount forever. stripe-modify-subscription owns that path.
-    if v_existing.stripe_subscription_id is not null then
-      raise exception 'Membership is billed by card'
-        using hint = v_existing.id::text;
-    end if;
+  -- Adding means leaving what they have alone; only a move edits it.
+  if p_mode = 'move' and v_existing.id is not null then
     update public.plan_subscriptions
       set plan_id         = v_plan.plan_id,
           status          = 'active'::public.plan_sub_state,
@@ -254,8 +278,17 @@ begin
   if auth.uid() is null then
     raise exception 'Not authenticated';
   end if;
-  if not public.effective_can(p_gym_id, 'can_assign_plan') then
+  -- Both capabilities. Assigning a plan is can_assign_plan's job, but this
+  -- one writes pending_members, whose entire client surface is gated on
+  -- can_manage_staff (0046:59-69) — a coach who may put an existing member
+  -- on a plan is not thereby someone who may touch the import list.
+  if not (public.effective_can(p_gym_id, 'can_assign_plan')
+          and public.effective_can(p_gym_id, 'can_manage_staff')) then
     raise exception 'Not authorised';
+  end if;
+  if p_until is not null
+     and (p_until < current_date or p_until > current_date + 366) then
+    raise exception 'End date out of range';
   end if;
 
   select * into v_plan
@@ -265,6 +298,9 @@ begin
       and archived_at is null;
   if v_plan.plan_id is null then
     raise exception 'No such plan';
+  end if;
+  if v_plan.kind = 'programming_only' then
+    raise exception 'Plan does not cover classes';
   end if;
 
   select * into v_pending
@@ -276,6 +312,14 @@ begin
   end if;
   if v_pending.status = 'linked' then
     raise exception 'Already joined';
+  end if;
+  -- An adopt-mode import carries a live Stripe subscription id, which the
+  -- claim trigger copies onto the new membership (0179:214-215) — so this
+  -- member would keep paying their old price under a new plan name, and the
+  -- card's "nothing to pay" would be a lie. Same refusal as the card-billed
+  -- branch above.
+  if nullif(v_pending.imported_stripe_subscription_id, '') is not null then
+    raise exception 'Membership is billed by card';
   end if;
 
   -- Exclusive, matching assign_member_plan: apply_pending_member_data
@@ -292,22 +336,36 @@ begin
 
   update public.pending_members
     set linked_membership_plan_id = v_plan.plan_id,
-        -- Overwrite rather than coalesce. An imported row already carries
-        -- the old provider's free text here, and the whole point of an
-        -- earmark is that the owner has decided it is wrong — leaving it
-        -- would have the import list say "Legacy monthly" under a receipt
-        -- saying Unlimited, and carry that string onto the membership at
-        -- claim time.
+        -- Overwrite rather than coalesce, on all three. An imported row
+        -- already carries the old provider's plan name, credit balance and
+        -- bill date, and the whole point of an earmark is that the owner has
+        -- decided which plan they land on instead. Leaving any of them would
+        -- have the claim trigger honour the import over the decision:
+        -- apply_pending_member_data prefers credits_remaining over the
+        -- plan's own credit_count (0179:200-204) — so a stale 0 would land
+        -- them non-entitling and unable to book — and falls back to
+        -- next_bill_date for paid_period_end (0179:206-210), which for a
+        -- pack (plan_end null) would resurrect the old bill date as an end.
         plan_name = v_plan.name,
-        plan_end  = v_end
+        plan_end  = v_end,
+        credits_remaining = case
+          when v_plan.kind in ('credit_pack', 'credit_period')
+            then v_plan.credit_count
+          else null
+        end,
+        next_bill_date = null
     where id = v_pending.id;
 
   return jsonb_build_object(
     'pending_id', v_pending.id,
-    'email', v_pending.email,
     'plan_name', v_plan.name,
     'plan_kind', v_plan.kind,
     'price_cents', v_plan.monthly_price_cents,
+    'credit_count', case
+      when v_plan.kind in ('credit_pack', 'credit_period')
+        then v_plan.credit_count
+      else null
+    end,
     'runs_to', case when v_end is not null then v_end - 1 end
   );
 end;
@@ -404,5 +462,28 @@ revoke execute on function public.grant_member_comp(uuid, uuid, integer, integer
   from public, anon;
 grant execute on function public.grant_member_comp(uuid, uuid, integer, integer, text)
   to authenticated;
+
+-- ============================================================================
+-- 4. comp_grants: close the client path the new gate would otherwise sit beside
+-- ============================================================================
+--
+-- grant_member_comp checks effective_can(gym, 'can_issue_comp_grant'), but
+-- comp_grants still carries its original INSERT/UPDATE policies from 0009,
+-- whose predicate is user_can_issue_comp_grant — raw role owner|coach, with
+-- no left_at guard and no relation to the capability. Leaving both means the
+-- new gate is decoration: anyone who can reach PostgREST with the anon key
+-- can insert a grant directly and skip it, and a soft-removed coach still
+-- passes. This is 0195's argument applied to the table 0195 missed.
+--
+-- Nothing in the app writes comp_grants from the client — every reference in
+-- src/ is a SELECT (MembersList, RemoveMemberDialog, the member profile, and
+-- the new member card) — so the revoke costs no working feature. The dead
+-- policies are dropped rather than left, for 0195's stated reason: a
+-- misleading guard is what a future re-grant silently inherits.
+
+revoke insert, update on public.comp_grants from anon, authenticated;
+
+drop policy if exists comp_grants_owner_coach_insert on public.comp_grants;
+drop policy if exists comp_grants_owner_coach_update on public.comp_grants;
 
 commit;
