@@ -1012,9 +1012,24 @@ The staff area shows up when `can_access_staff_area` is on.
   bar (counting the same required keys `/onboarding` counts), each step
   opening with its shared `StatusDisk`, checklist label and `~N min`
   estimate, and each finished step collapsing to the emerald tick with
-  the label struck through — the completed-row treatment verbatim. A
-  *skipped* step gets the receipt without the struck label, so the
-  strike only ever means done and the finish card can list the rest.
+  the label struck through — the completed-row treatment verbatim.
+  **A step that failed is not a step that happened**, and the
+  strike-through means done exactly: a *skipped* step gets the receipt
+  without the struck label, a *failed* one gets no receipt at all and its
+  card stays open with the reason. Two holes were fixed to make that
+  true. Stripe's OAuth leaves the app, and on failure the billing return
+  handler consumed the "came from setup" flag *without* navigating —
+  stranding the owner on Billing with the flag spent, so a retry wouldn't
+  return either; it now lands on `/setup?stripe=error`, which adds one
+  sentence to the conversation ("nothing was saved, so that step is still
+  open") while the script reopens the step by itself, since its place
+  derives from `get_gym_setup_progress` and a failed step was never
+  recorded. And the CSV import treated a zero-row result as success —
+  `import_pending_members` returns without error when every row is a
+  duplicate — so it ticked the step off having staged nothing; it now
+  keeps the card open and says which it was. The same audit fixed the
+  inverse: a logo that uploaded and rules that saved weren't striking
+  their labels, so the tick understated real work.
   **Every checklist step has a container in the chat**: logo
   (branding's picker), classes (`RecurrenceEditor`), payments (handoff
   to billing's OAuth), plans (kind chips + price), **health screening**
