@@ -191,7 +191,7 @@ module, below.
 | Say | Correct answer |
 |---|---|
 | an off-peak membership at £59 *(twice)* | "One of those plans already exists — nothing was created." |
-| drop the unlimited plan to £79 | refuse for now — changing an existing plan's price is the money module, and the reply should say so rather than creating a second plan |
+| drop the unlimited plan to £79 | should be read as a price change, not a second plan — `money.set_plan_price`, with the existing members' price stated |
 | make the student plan £45 a week | refuse or name it — Temple plans are monthly |
 | a free trial plan | £0 should be accepted; check it reads back as free, not as blank |
 
@@ -457,6 +457,81 @@ understanding.
 | what did we take in 2019 | An honest zero, not an error |
 | ask it as a coach | Not offered at all — `can_see_money` is owner-only by default |
 | check the failing-payments line against the money screen | The count and the at-risk figure should agree |
+
+---
+
+## Module: what a plan costs — `money.set_plan_price`
+
+The whole point of this one is the sentence about who *doesn't* pay the
+new price. Read it on every card.
+
+| Say | Expect |
+|---|---|
+| put unlimited up to £60 | £50 → £60 a month, the count of members already on it, and that they keep £50 |
+| drop off-peak to £35 | Same shape, going down |
+| make the ten class pack £90 | "£90 one off" — a pack is bought once, not billed monthly |
+| make the intro plan free | £0 accepted, and it should read back as £0 rather than blank |
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| put unlimited up to £60 *(twice)* | The second time: "Unlimited is already £60." No confirm card |
+| change the price of the gold plan *(no such plan)* | "You don't have a plan called 'the gold plan'." |
+| put the membership up to £60 *(two plans match)* | Chips naming both, not a guess |
+| put unlimited up to £59.999 | Refused rather than rounded |
+| as an admin the owner has NOT granted "Manage plans" | Not offered — and if forced, refused by the database, not just the screen |
+| as an admin the owner HAS granted it | Works. This is 0215's point: the Team screen's switch now governs the table |
+
+### The one that only shows up in Stripe
+
+This is the bug 0215 exists for, and it is invisible in the app.
+
+1. Connect Stripe, put a plan at £50, and let one member sign up through
+   Checkout (that first checkout is what mints the Stripe Price).
+2. Change the price to £60 — from the chat *or* the plans screen; both
+   go through the same trigger.
+3. Sign up a second member. **They must be charged £60.** Before 0215
+   they were charged £50 for ever, and no screen in Temple disagreed.
+4. The first member's next invoice must still be £50. A price rise is
+   never backdated, and `plan_subscriptions.price_cents` is what proves
+   it.
+
+---
+
+## Module: giving money back — `money.refund`
+
+The only verb in the registry that moves money out of the gym's account.
+The mode is deliberately not something the parser can choose — the card
+asks every time, with the real arithmetic on each option.
+
+| Say | Expect |
+|---|---|
+| refund Marcus | Four chips (or three), each with its own amount: the unused part / all of it to period end / all of it now / goodwill |
+| pick "the unused part" | A confirm naming the amount, that access ends now, that they get an email, and that it does not come off revenue |
+| pick "goodwill" | The confirm should say the membership carries on |
+| give Dan £20 back | The goodwill chip should read £20, not the full charge |
+| refund Sarah and don't tell her | The confirm should say no email goes out |
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| refund Marcus *(already refunded)* | "…has already been refunded or cancelled." No chips |
+| refund someone who has never paid | "No settled payment on their membership, so there is nothing to give back." |
+| refund someone still on the import list | "…has not claimed their account yet, so there is no payment of theirs to refund." |
+| refund Marcus *(period fully elapsed)* | The pro-rata chip should be **absent** — £0 back while ending access is not a refund |
+| as a coach granted `can_refund` but not `can_see_money` | "I cannot see the payments on this account" — not "they never paid" |
+| refund a member at a gym with no Stripe connected | The edge function's own words: "This gym has not connected Stripe yet" |
+| leave the card open, refund from the member screen, then confirm the card | The second one should be refused by the server, not double-refund |
+
+### Check it landed
+
+- Stripe dashboard shows the refund on the **connected** account.
+- `billing_events` has a `kind='refund'` row and the money summary is
+  **unchanged** — refunds are excluded from revenue by design (0019).
+- The member's own screen shows the right thing: gone, ending on a date,
+  or unchanged, matching the mode picked.
 
 ---
 

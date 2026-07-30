@@ -134,8 +134,11 @@ function changePrompt(): string {
     'Emit ONLY what was described — never invent classes, prices, dates, ' +
     'names or settings. Dates are YYYY-MM-DD and resolve forward from ' +
     'today. Money in pounds unless an argument says otherwise.\n' +
-    'If the sentence is none of the actions below — changing an existing ' +
-    'plan\'s price, cancelling a membership, refunds — set `cannot` to one ' +
+    // Deliberately no examples of what it cannot do. The catalogue is
+    // built per call from the registry and grows every week; a list of
+    // refusals written here goes stale silently and teaches the model to
+    // refuse things that shipped. The actions below are the whole truth.
+    'If the sentence is none of the actions below, set `cannot` to one ' +
     'short plain sentence naming what they asked for, and set no action. Do ' +
     'not guess, and do not bend a sentence onto the nearest action that half ' +
     'fits.'

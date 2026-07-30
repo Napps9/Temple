@@ -290,8 +290,21 @@ already authorised. Roughly in order of how often an owner touches them:
   today can only be expressed as a relative shift that silently rewrites
   the whole recurrence. Both need their own fix before the bar offers
   them.
-- **Money** — refund an order, refund a booking, change a plan's price,
-  read the month back.
+- **Money** — done for memberships (0215). Read the month back
+  (`money.summary`, per currency, with what is failing right now),
+  change a plan's price, and refund a member. Two of the three needed
+  nothing new underneath; the price change needed a migration, because
+  the cached Stripe Price was never invalidated and an owner who put a
+  plan up kept selling it at the old rate with no screen disagreeing.
+  The refund is the one place a chip is not a convenience: four refunds
+  hide behind "refund Marcus" and they differ by tens of pounds and by
+  whether he trains tomorrow, so the mode is kept out of the parser's
+  vocabulary entirely and the card asks with the arithmetic already on
+  each option. **Still absent:** refunding a shop order — `store_orders`
+  has no refund path at all, in the app or in an edge function, so
+  there is nothing to wrap — and refunding a single booking's credit,
+  which `remove_member_booking` already does as part of taking someone
+  out rather than as a verb of its own.
 - **Comms** — send to a tag, schedule it, describe a sequence.
 - **Leads** — the front desk's own settings and the pipeline as sentences.
 - **Programming, team, website, tags** — the long tail, same shape.

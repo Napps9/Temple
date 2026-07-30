@@ -506,11 +506,7 @@ The staff area shows up when `can_access_staff_area` is on.
   in the owner's own session under RLS, so the bar sees exactly what the
   screens see; each supporting fact is best-effort, so a staff member
   whose capabilities don't stretch to plans or tags gets a card without
-  them rather than an error. **Still not from the bar**: changing an
-  existing plan's price, and adding or cancelling one person's
-  membership — Temple has no staff-side "put X on plan Y" anywhere yet
-  (members self-serve through Stripe), so there is nothing for the bar
-  to wrap.
+  them rather than an error.
 - **Putting a member on a plan** (0211, roadmap phase 2) — the first
   staff-side membership write Temple has ever had. `can_assign_plan` was
   sold to owners as "Put members onto plans and adjust subscriptions"
@@ -569,6 +565,60 @@ The staff area shows up when `can_access_staff_area` is on.
   `lower(label)` as the arbiter and turned the whole pgTAP suite red. The
   card notes that tag rules and any automation watching that tag pick it
   up on the next sweep, so a tag is not always a private note.
+- **What the gym took** (roadmap phase 2) — `money.summary` ("what did we
+  take last month", "how much came in last week", "what are we making")
+  over `compute_revenue_summary` + `store_revenue_summary`, the same two
+  RPCs the Money screen calls, plus a live join on
+  `plan_subscription_dunning`. Three things, because an owner asking how
+  the month went means all three: memberships, shop, and what is failing
+  *right now* — a revenue figure with a broken direct debit behind it is
+  a half-answer. Per currency throughout: both RPCs group by currency and
+  adding two together produces a number that is not money in any
+  currency. Both ends of a period or neither (`from` with no `to` falls
+  back to 30 days rather than silently pairing a stated start with
+  today), and the period is read back in words so the number is never
+  floating free of what it counts.
+- **What a plan costs** (0215, roadmap phase 2) — `money.set_plan_price`
+  ("put Unlimited up to £60", "drop off-peak to £35"). The card's real
+  content is the sentence about who *doesn't* pay the new price: members
+  already on the plan keep their `plan_subscriptions.price_cents`
+  snapshot, and the card says how many that is. The migration behind it
+  fixes a bug that was invisible in the app and only visible in Stripe:
+  `membership_plans.stripe_price_id` caches a Stripe Price minted at the
+  first checkout, and nothing cleared it when the price changed — so an
+  owner who put Unlimited up to £60 kept *selling* it at £50, with the
+  plans screen, the website and Checkout all disagreeing and no surface
+  saying so. A `before update` trigger clears the cache when
+  `monthly_price_cents` moves and leaves it alone when the caller sets
+  both (that write is the checkout filling it in). Same migration makes
+  `can_manage_plans` real: the Team screen has offered "Create / edit /
+  archive membership plans" per-role since 0020 while the table's RLS
+  asked `user_is_owner_of`, so a granted admin was told yes by the screen
+  and no by the database — the third of these found (`can_assign_plan`
+  0211, `can_issue_override` 0213). Policies now ask `effective_can`,
+  which is identical for a gym that granted nothing and stricter besides
+  (it requires `left_at is null`). pgTAP `plan_price_changes.sql`
+  (plan(11)) pins both halves, including the same admin refused before
+  the grant and allowed after it.
+- **Giving money back** (roadmap phase 2) — `money.refund` ("refund
+  Marcus", "give Dan £20 back"), the only verb in the registry that moves
+  money out of the gym's account. "Refund Marcus" is four different
+  refunds — the unused part, all of it with access ending now, all of it
+  with access running to the period end, or the money back with the
+  membership untouched — differing by tens of pounds and by whether he
+  can train tomorrow, so the mode is **not in the vocabulary the parser
+  sees**: only the card's chips can send it, and each chip carries its own
+  computed amount. A pro-rata that comes to £0 is dropped rather than
+  offered, because refunding nothing while ending someone's access is not
+  a refund. The maths is `src/lib/refunds.ts`, the same module the refund
+  dialog previews with; `stripe-refund` recomputes server-side and this
+  path adds no trust. The confirm says the refund does **not** come off
+  revenue (`is_revenue_event` excludes `kind='refund'`, 0019) because an
+  owner who expects the summary to drop will otherwise think it failed,
+  and it distinguishes "I cannot see the payments on this account" from
+  "they never paid" — `billing_events` SELECT is gated on `can_see_money`
+  while `can_refund` is independent, so a coach who may refund but may
+  not see revenue reads nothing and needs to be told which.
 - **The parser's gate widened** — `parse-setup` checked
   `effective_can(gym, 'can_edit_classes')` for every call, which locked
   staff out of actions they were explicitly granted (the shop, assigning

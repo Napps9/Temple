@@ -7,7 +7,7 @@ import { bookMemberIn, cancelClass, editClasses, removeMemberFrom } from './clas
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
-import { moneySummary, periodLabel } from './money';
+import { moneySummary, periodLabel, refundMember, setPlanPrice } from './money';
 import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
 import { argInt, argMoney, argString } from './types';
 
@@ -74,6 +74,8 @@ describe('the registry', () => {
         'members.tag',
         'members.message',
         'money.summary',
+        'money.set_plan_price',
+        'money.refund',
         'store.add_product',
         'store.set_price',
         'store.sales',
@@ -524,6 +526,66 @@ describe('what the gym took', () => {
   it('is a question, so it never writes', () => {
     expect(moneySummary.kind).toBe('ask');
     expect(moneySummary.apply).toBeUndefined();
+  });
+});
+
+describe('changing what a plan costs', () => {
+  it('needs a plan and a price it can read as money', () => {
+    expect(setPlanPrice.sanitise({ plan: 'Unlimited', price: '£60' })).toEqual({
+      plan: 'Unlimited',
+      cents: 6000,
+    });
+    expect(setPlanPrice.sanitise({ plan: 'Off-peak', price: 35.5 })?.cents).toBe(3550);
+    expect(setPlanPrice.sanitise({ plan: 'Unlimited' })).toBeNull();
+    expect(setPlanPrice.sanitise({ price: 60 })).toBeNull();
+  });
+
+  // A third decimal place is somebody's price being silently rounded.
+  it('refuses a price it would have to round', () => {
+    expect(setPlanPrice.sanitise({ plan: 'Unlimited', price: '59.999' })).toBeNull();
+    expect(setPlanPrice.sanitise({ plan: 'Unlimited', price: 'sixty quid' })).toBeNull();
+  });
+
+  it('is free, which is a price', () => {
+    expect(setPlanPrice.sanitise({ plan: 'Intro', price: 0 })?.cents).toBe(0);
+  });
+});
+
+describe('refunding a member', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+
+  it('needs only a person, and emails them unless told not to', () => {
+    expect(refundMember.sanitise({ member: 'Marcus' })).toEqual({
+      member: 'Marcus',
+      mode: null,
+      amountCents: null,
+      notify: true,
+      profileId: null,
+      pendingId: null,
+    });
+    expect(refundMember.sanitise({ member: 'Marcus', notify: false })?.notify).toBe(false);
+    expect(refundMember.sanitise({})).toBeNull();
+  });
+
+  // Four refunds hide behind "refund Marcus" and they differ by tens of
+  // pounds and by whether he can train tomorrow. The card asks; the model
+  // is never shown the question, so it cannot answer it.
+  it('never lets the parser choose the kind of refund', () => {
+    expect(refundMember.args.map((a) => a.name)).not.toContain('mode');
+    expect(refundMember.sanitise({ member: 'M', mode: 'full_revoke' })?.mode).toBe(
+      'full_revoke',
+    );
+    expect(refundMember.sanitise({ member: 'M', mode: 'everything' })?.mode).toBeNull();
+    expect(refundMember.sanitise({ member: 'M' })?.mode).toBeNull();
+  });
+
+  it('takes a named goodwill amount and the id a chip sends', () => {
+    expect(refundMember.sanitise({ member: 'Dan', amount: '£20' })?.amountCents).toBe(2000);
+    expect(refundMember.sanitise({ member: 'Dan', amount: 'some of it' })?.amountCents).toBeNull();
+    expect(refundMember.sanitise({ member: 'Dan', profile_id: id })?.profileId).toBe(id);
+    expect(
+      refundMember.sanitise({ member: 'Dan', profile_id: 'the first one' })?.profileId,
+    ).toBeNull();
   });
 });
 

@@ -217,7 +217,7 @@ export const findMember: ActionSpec<{ query: string | null; profileId: string | 
 // he is on the import list rather than the roster, and the work lands
 // somewhere else entirely.
 
-type Target =
+export type Target =
   | { kind: 'member'; profileId: string; name: string }
   | { kind: 'pending'; pendingId: string; name: string; billedByCard: boolean }
   | { kind: 'unresolved'; preview: ActionPreview };
@@ -235,7 +235,7 @@ const PENDING_SELECT =
 
 // `carry` is the rest of the sentence — the plan, the number of days, the
 // message. A chip has to re-run the whole action, not just the name.
-async function resolveTarget(
+export async function resolveTarget(
   query: string,
   ids: { profileId: string | null; pendingId: string | null },
   carry: Record<string, unknown>,
@@ -346,7 +346,7 @@ function localToday(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function readTarget(raw: Record<string, unknown>) {
+export function readTarget(raw: Record<string, unknown>) {
   const profileId = argString(raw, 'profile_id', 64);
   const pendingId = argString(raw, 'pending_id', 64);
   return {
@@ -358,7 +358,7 @@ function readTarget(raw: Record<string, unknown>) {
 // Takes a bare YYYY-MM-DD or the date half of an ISO timestamp, and reads
 // the parts rather than handing the string to Date: `new Date('2026-08-30')`
 // is UTC midnight, which renders as the 29th for anyone west of Greenwich.
-function dayLabel(value: string): string {
+export function dayLabel(value: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
   if (!m) return value;
   return new Date(
@@ -372,7 +372,7 @@ function dayLabel(value: string): string {
 // members.assign_plan
 // ============================================================================
 
-type PlanRow = {
+export type PlanRow = {
   plan_id: string;
   name: string;
   kind: 'unlimited' | 'credit_period' | 'credit_pack' | 'programming_only';
@@ -380,7 +380,7 @@ type PlanRow = {
   monthly_price_cents: number | null;
 };
 
-type PlanMatch =
+export type PlanMatch =
   | { kind: 'one'; plan: PlanRow }
   | { kind: 'none' }
   | { kind: 'many'; names: string[] };
@@ -389,7 +389,7 @@ type PlanMatch =
 // what the owner said, the right move is to name them rather than refuse
 // silently, because the owner can only fix it if they know what the
 // choices were.
-async function matchPlan(query: string, ctx: ActionContext): Promise<PlanMatch> {
+export async function matchPlan(query: string, ctx: ActionContext): Promise<PlanMatch> {
   const { data } = await ctx.supabase
     .from('membership_plans')
     .select('plan_id, name, kind, credit_count, monthly_price_cents')
