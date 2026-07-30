@@ -26,6 +26,15 @@ import {
   type TempleField,
 } from '@/lib/import/columns';
 import { parseCsv } from '@/lib/import/csv';
+import {
+  overridesFrom,
+  resolveMovements,
+} from '@/lib/import/resolve-movements';
+import {
+  autoDetect as workoutAutoDetect,
+  buildResults,
+  type WorkoutField,
+} from '@/lib/import/workout-columns';
 import { InviteSection } from '@/components/InviteSection';
 import {
   EMPTY_RECURRENCE,
@@ -293,8 +302,14 @@ export default function SetupScreen() {
   }
 
   function advance(from: Step | null) {
-    const next = stepsRemaining(from)[0] ?? 'golive';
+    openStep(stepsRemaining(from)[0] ?? 'golive');
+  }
+
+  // Opening a named step, rather than only the next one — the finish card
+  // reopens whatever the owner left, in place.
+  function openStep(next: Step) {
     setStep(next);
+    setMessages((m) => closeCards(m));
     if (next === 'golive') {
       pushMsgs({ kind: 'temple', text: 'That’s the walk-through done.' });
     } else if (next === 'rules') {
@@ -819,8 +834,14 @@ export default function SetupScreen() {
               ) : null
             ) : m.kind === 'workouts-card' ? (
               m.open ? (
-                <WorkoutsCard
+                <WorkoutsImportCard
                   key={i}
+                  gymId={membership.gymId}
+                  onDone={(receipt) => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({ kind: 'receipt', step: 'workouts', text: receipt });
+                    advance('workouts');
+                  }}
                   onSkip={() => {
                     setMessages((prev) => closeCards(prev));
                     pushMsgs({
@@ -857,6 +878,7 @@ export default function SetupScreen() {
               onFinish={() =>
                 allRequiredDone ? router.replace('/classes') : dismiss.mutate()
               }
+              onReopen={openStep}
             />
           ) : null}
 
@@ -1111,31 +1133,20 @@ function MessageRow({
   );
 }
 
-// Every step has now been offered in the conversation, so the finish is
-// only about what the owner chose to leave: the checklist's own rows for
-// exactly those, each opening its Manage page and returning here.
-const FINISH_ROWS: { key: string; label: string; href: string }[] = [
-  { key: 'logo', label: 'Add your gym logo', href: '/management/branding' },
-  { key: 'settings', label: 'Set your gym settings', href: '/management/operating' },
-  {
-    key: 'class_type_and_schedule',
-    label: 'Add a class type & schedule',
-    href: '/management/class-types',
-  },
-  { key: 'parq', label: 'Set up health screening', href: '/management/parq' },
-  { key: 'stripe', label: 'Connect payments', href: '/management/billing' },
-  { key: 'plan', label: 'Create a membership plan', href: '/management/plans' },
-  { key: 'team', label: 'Invite your team', href: '/management/team' },
-  {
-    key: 'members_imported',
-    label: 'Bring your members across',
-    href: '/management/members/import',
-  },
-  {
-    key: 'workouts_imported',
-    label: 'Import workout history',
-    href: '/management/members/import-workouts',
-  },
+// Every step is offered in the conversation, so the finish is only about
+// what the owner chose to leave — and picking one up reopens that step
+// here rather than sending them to a Manage page. Leaving the chat to
+// finish a chat step was the whole thing we were trying not to do.
+const FINISH_ROWS: { key: string; step: Exclude<Step, 'golive'> }[] = [
+  { key: 'logo', step: 'logo' },
+  { key: 'settings', step: 'rules' },
+  { key: 'class_type_and_schedule', step: 'timetable' },
+  { key: 'parq', step: 'parq' },
+  { key: 'stripe', step: 'stripe' },
+  { key: 'plan', step: 'plans' },
+  { key: 'team', step: 'team' },
+  { key: 'members_imported', step: 'members' },
+  { key: 'workouts_imported', step: 'workouts' },
 ];
 
 // A rule question: the presets as chips, plus "Something else" wherever
@@ -1190,11 +1201,13 @@ function GoLive({
   allDone,
   finishing,
   onFinish,
+  onReopen,
 }: {
   doneKeys: Set<string>;
   allDone: boolean;
   finishing: boolean;
   onFinish: () => void;
+  onReopen: (step: Exclude<Step, 'golive'>) => void;
 }) {
   const left = FINISH_ROWS.filter((r) => !doneKeys.has(r.key));
   return (
@@ -1207,11 +1220,11 @@ function GoLive({
       {left.map((it) => (
         <Pressable
           key={it.key}
-          onPress={() => router.push(`${it.href}?backTo=setup` as never)}
+          onPress={() => onReopen(it.step)}
           className="flex-row items-center gap-2.5 active:opacity-70">
           <Ionicons name="ellipse-outline" size={20} color="#9CA3AF" />
           <Text className="flex-1 text-[15px] font-medium text-gray-900 dark:text-gray-50">
-            {it.label}
+            {STEP_META[it.step].label}
           </Text>
           <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
         </Pressable>
@@ -1497,6 +1510,12 @@ function MembersImportCard({
           placeholderTextColor="#9CA3AF"
           className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 h-20 text-gray-900 dark:text-gray-50 text-[13px]"
         />
+        {/* The only step that deliberately keeps a screen. A CSV only
+            stages rows — nobody is charged and nothing is adopted — but
+            pulling from Stripe creates plans and takes over live
+            subscriptions, so every price needs a decision and every
+            decision is somebody's money. That review belongs on a page,
+            and saying so is better than pretending it's the same job. */}
         {stripeConnected ? (
           <Pressable
             onPress={() =>
@@ -1504,7 +1523,7 @@ function MembersImportCard({
             }
             hitSlop={6}>
             <Text className="text-link text-sm font-medium text-center">
-              Pull them from Stripe instead
+              Already charging them on Stripe? Adopt those subscriptions
             </Text>
           </Pressable>
         ) : null}
@@ -1573,26 +1592,232 @@ function MembersImportCard({
   );
 }
 
-// The workout-history step. Same shape as the member import and the same
-// reason: resolving movement names against Temple's vocabulary is a
-// screenful of judgement, not a chat message.
-function WorkoutsCard({ onSkip }: { onSkip: () => void }) {
+// The workout-history step, in the conversation. Same shape as the member
+// import over the same wizard libs: parseCsv reads it, workout autoDetect
+// matches the columns, buildResults sorts every row into weighted lifts /
+// scored WODs / Hyrox splits, and the three import RPCs take them.
+//
+// Movement names are the one genuinely hard part — an old platform's
+// "Bench Press (BB)" has to become Temple's `bench_press` — so the card
+// does what the screen did: asks the resolver, applies what it's confident
+// about, and says plainly what's left. Anything unresolved is staged by
+// the RPC rather than dropped, so the import is never all-or-nothing.
+function WorkoutsImportCard({
+  gymId,
+  onDone,
+  onSkip,
+}: {
+  gymId: string;
+  onDone: (receipt: string) => void;
+  onSkip: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [paste, setPaste] = useState('');
+  const [file, setFile] = useState<{
+    name: string | null;
+    headers: string[];
+    rows: string[][];
+  } | null>(null);
+  const [mapping, setMapping] = useState<(WorkoutField | null)[]>([]);
+  const [overrides, setOverrides] = useState<Map<string, string>>(new Map());
+  const [resolved, setResolved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function take(text: string, name: string | null) {
+    const grid = parseCsv(text);
+    const headers = (grid[0] ?? []).map((h) => h.trim());
+    const rows = grid.slice(1).filter((r) => r.some((c) => c.trim()));
+    if (headers.length === 0 || rows.length === 0) {
+      setError('That file had no rows I could read — headers in the first row.');
+      return;
+    }
+    setError(null);
+    setOverrides(new Map());
+    setResolved(false);
+    setFile({ name, headers, rows });
+    setMapping(workoutAutoDetect(headers));
+  }
+
+  const pick = useMutation({
+    mutationFn: async () => {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['text/csv', 'text/comma-separated-values', 'text/plain'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled || !res.assets?.length) return;
+      const asset = res.assets[0];
+      const text = await (await fetch(asset.uri)).text();
+      take(text, asset.name ?? null);
+    },
+    onError: () => setError("I couldn't read that file — a .csv export works best."),
+  });
+
+  const built = file
+    ? buildResults(file.headers, mapping, file.rows, overrides)
+    : null;
+  const missNames = built
+    ? [...new Set(built.misses.map((m) => m.value))].sort()
+    : [];
+  const ready = built
+    ? built.weighted.length + built.sections.length + built.hyrox.length
+    : 0;
+
+  const resolve = useMutation({
+    mutationFn: () => resolveMovements(gymId, missNames),
+    onSuccess: (resolutions) => {
+      setResolved(true);
+      if (resolutions.length > 0) setOverrides(overridesFrom(resolutions));
+    },
+    onError: () => setResolved(true),
+  });
+
+  const commit = useMutation({
+    mutationFn: async () => {
+      const acc = { workouts: 0, results: 0, staged: 0, noMember: 0, noMovement: 0 };
+      const add = (row: Record<string, number> | undefined) => {
+        if (!row) return;
+        acc.workouts += row.inserted_workouts ?? 0;
+        acc.results +=
+          (row.inserted_results ?? 0) + (row.inserted_sections ?? 0);
+        acc.staged += row.staged ?? 0;
+        acc.noMember += row.skipped_no_member ?? 0;
+        acc.noMovement += row.skipped_no_movement ?? 0;
+      };
+      const run = async (fn: string, rows: unknown[]) => {
+        if (rows.length === 0) return;
+        const { data, error: e } = await supabase.rpc(fn as 'import_member_workouts', {
+          p_gym_id: gymId,
+          p_rows: rows as unknown as Json,
+        });
+        if (e) throw e;
+        add((data ?? [])[0] as unknown as Record<string, number> | undefined);
+      };
+      await run('import_member_workouts', built!.weighted);
+      await run('import_member_results', built!.sections);
+      await run('import_member_hyrox_results', built!.hyrox);
+      return acc;
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+      // Nothing landed is not a finished step, whatever the RPCs returned.
+      if (r.workouts === 0 && r.results === 0 && r.staged === 0) {
+        setError(
+          r.noMember > 0
+            ? `None of those matched a member — ${r.noMember} rows had emails I don't know yet. Bring your members across first.`
+            : 'Nothing came through. Check the email and date columns are the right ones.',
+        );
+        return;
+      }
+      const bits = [`${r.results} result${r.results === 1 ? '' : 's'} across ${r.workouts} workout${r.workouts === 1 ? '' : 's'}`];
+      if (r.staged > 0) bits.push(`${r.staged} held for members who haven't joined yet`);
+      if (r.noMember > 0) bits.push(`${r.noMember} skipped — no member with that email`);
+      if (r.noMovement > 0) bits.push(`${r.noMovement} skipped — movement I couldn't place`);
+      onDone(`${bits.join('. ')}.`);
+    },
+    onError: () => setError('That didn’t save — try again, or use the full importer.'),
+  });
+
+  if (!file) {
+    return (
+      <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+        <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+          One row per result — weighted lifts, WODs scored for time or AMRAP,
+          Hyrox splits. Members open the app to their own PRs and leaderboards
+          rather than an empty history.
+        </Text>
+        {error ? (
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+        ) : null}
+        <Button onPress={() => pick.mutate()} loading={pick.isPending}>
+          Choose your CSV
+        </Button>
+        <TextInput
+          value={paste}
+          onChangeText={setPaste}
+          onBlur={() => paste.trim() && take(paste, null)}
+          multiline
+          placeholder="…or paste it here: email,date,movement,weight,reps,unit"
+          placeholderTextColor="#9CA3AF"
+          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 h-20 text-gray-900 dark:text-gray-50 text-[13px]"
+        />
+        <Pressable onPress={onSkip} hitSlop={6}>
+          <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+            Nothing to bring across
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  const kinds = [
+    built!.weighted.length > 0 ? `${built!.weighted.length} lifts` : null,
+    built!.sections.length > 0 ? `${built!.sections.length} scored WODs` : null,
+    built!.hyrox.length > 0 ? `${built!.hyrox.length} Hyrox results` : null,
+  ].filter(Boolean);
+
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
-        Past sets, times and scores from your old platform. We line the
-        movement names up with Temple’s, and members open the app to their own
-        PRs and leaderboards rather than an empty history.
+      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">
+        {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
+        {file.name ? ` in ${file.name}` : ''}
       </Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
+        {kinds.length > 0
+          ? `Ready: ${kinds.join(', ')}.`
+          : 'I couldn’t read any results out of that — check the movement and score columns.'}
+      </Text>
+
+      {missNames.length > 0 ? (
+        <View className="gap-2">
+          <Text className="text-gray-500 dark:text-gray-400 text-[12.5px] leading-5">
+            {missNames.length} movement{missNames.length === 1 ? '' : 's'} I don’t
+            recognise: {missNames.slice(0, 6).join(', ')}
+            {missNames.length > 6 ? `, +${missNames.length - 6} more` : ''}.
+          </Text>
+          {resolved ? (
+            <Text className="text-gray-400 dark:text-gray-500 text-[12.5px] leading-5">
+              Still unplaced — those rows get held rather than dropped, and you
+              can name them later on the full importer.
+            </Text>
+          ) : (
+            <Button
+              variant="secondary"
+              onPress={() => resolve.mutate()}
+              loading={resolve.isPending}>
+              Match them for me
+            </Button>
+          )}
+        </View>
+      ) : null}
+
+      {error ? (
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
       <Button
+        onPress={() => commit.mutate()}
+        disabled={ready === 0 || commit.isPending}
+        loading={commit.isPending}>
+        {ready === 0 ? 'Nothing to import' : `Import ${ready} result${ready === 1 ? '' : 's'}`}
+      </Button>
+      <Pressable
+        onPress={() => {
+          setFile(null);
+          setPaste('');
+          setError(null);
+        }}
+        hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+          Use a different file
+        </Text>
+      </Pressable>
+      <Pressable
         onPress={() =>
           router.push('/management/members/import-workouts?backTo=setup' as never)
-        }>
-        Import workout history
-      </Button>
-      <Pressable onPress={onSkip} hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
-          Nothing to bring across
+        }
+        hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-[13px] text-center">
+          Movements to name by hand? Open the full importer
         </Text>
       </Pressable>
     </View>
@@ -2120,6 +2345,19 @@ function PlanBuilderCard({
   );
 }
 
+// The PAR-Q as the ACSM/PARmed-X screening seven, which is what a gym
+// means when it says "a PAR-Q". Every one flags on yes: a yes is a
+// conversation with a coach, not a refusal.
+const STANDARD_PARQ = [
+  'Has your doctor ever said that you have a heart condition, or that you should only do physical activity recommended by a doctor?',
+  'Do you feel pain in your chest when you do physical activity?',
+  'In the past month, have you had chest pain when you were not doing physical activity?',
+  'Do you lose your balance because of dizziness, or do you ever lose consciousness?',
+  'Do you have a bone or joint problem that could be made worse by a change in your physical activity?',
+  'Is your doctor currently prescribing drugs for your blood pressure or a heart condition?',
+  'Do you know of any other reason why you should not do physical activity?',
+];
+
 // The health-screening step: the same PDF pick → gym-waivers upload →
 // publish_waiver path the health screening screen uses, in one tap. A
 // PAR-Q questionnaire is the deeper surface and stays one tap away —
@@ -2171,11 +2409,68 @@ function WaiverCard({
     onError: () => setError('That upload didn’t take — PDFs only, and try again.'),
   });
 
+  // The other half of the step. A questionnaire is a builder screen when
+  // the wording is yours, but the standard PAR-Q is seven fixed questions
+  // every gym asks — so it's one tap here, on the same two inserts the
+  // builder publishes with (version bumped, prior version left intact so
+  // historical answers keep pointing at the wording the member saw).
+  const parq = useMutation({
+    mutationFn: async () => {
+      const { data: userResp } = await supabase.auth.getUser();
+      const userId = userResp?.user?.id;
+      if (!userId) throw new Error('Missing context');
+      const { data: prior } = await supabase
+        .from('parq_questionnaires')
+        .select('id, version')
+        .eq('gym_id', gymId)
+        .eq('is_active', true)
+        .maybeSingle();
+      const previous = prior as { id: string; version: number } | null;
+      if (previous) {
+        const { error: e1 } = await supabase
+          .from('parq_questionnaires')
+          .update({ is_active: false })
+          .eq('id', previous.id);
+        if (e1) throw e1;
+      }
+      const { data: inserted, error: e2 } = await supabase
+        .from('parq_questionnaires')
+        .insert({
+          gym_id: gymId,
+          version: (previous?.version ?? 0) + 1,
+          is_active: true,
+          published_by: userId,
+        })
+        .select('id')
+        .single();
+      if (e2 || !inserted) throw e2 ?? new Error('Could not publish');
+      const { error: e3 } = await supabase.from('parq_questions').insert(
+        STANDARD_PARQ.map((prompt, i) => ({
+          questionnaire_id: (inserted as { id: string }).id,
+          sort_order: i + 1,
+          prompt,
+          flag_on_yes: true,
+        })),
+      );
+      if (e3) throw e3;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parq-active'] });
+      queryClient.invalidateQueries({ queryKey: ['parq-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
+      onDone(
+        `Standard PAR-Q published — ${STANDARD_PARQ.length} questions, answered once before a member's first class.`,
+      );
+    },
+    onError: () => setError('That didn’t publish — try again.'),
+  });
+
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
       <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
         A PDF is all it takes — members sign it with their finger in the app,
-        and it’s kept as a liability record.
+        and it’s kept as a liability record. Or ask the standard health
+        questions instead; either one satisfies the step.
       </Text>
       {error ? (
         <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
@@ -2183,11 +2478,18 @@ function WaiverCard({
       <Button onPress={() => upload.mutate()} loading={upload.isPending}>
         Upload your waiver
       </Button>
+      <Button
+        variant="secondary"
+        onPress={() => parq.mutate()}
+        loading={parq.isPending}
+        disabled={upload.isPending}>
+        Use the standard PAR-Q instead
+      </Button>
       <Pressable
         onPress={() => router.push('/management/parq?backTo=setup' as never)}
         hitSlop={6}>
-        <Text className="text-link text-sm font-medium text-center">
-          Build a PAR-Q instead
+        <Text className="text-gray-400 dark:text-gray-500 text-[13px] text-center">
+          Own wording? Write your own questions
         </Text>
       </Pressable>
       <Pressable onPress={onSkip} disabled={upload.isPending} hitSlop={6}>

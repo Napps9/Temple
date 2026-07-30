@@ -1061,10 +1061,32 @@ The staff area shows up when `can_access_staff_area` is on.
   it. The full wizard keeps its screen for the fussy cases it exists for —
   plan mapping, fuzzy duplicates, the cross-gym corrections learning —
   reached from a quiet line at the bottom of the card, and `?backTo=setup`
-  returns the owner to the conversation. Workout history still hands off
-  to its own screen: four row kinds (weighted / sections / Hyrox /
-  deferred), each with its own RPC, plus movement-name resolution that is
-  the judgement the screen exists for.
+  returns the owner to the conversation. **Workout history runs in the chat too**:
+  `WorkoutsImportCard` over the same libs — `buildResults` sorts every row
+  into weighted lifts / scored WODs / Hyrox splits and the three import
+  RPCs take them — reading the file back as "312 rows. Ready: 208 lifts,
+  104 scored WODs." Movement names are the hard part, so it does what the
+  screen did: names the ones it doesn't recognise, offers "Match them for
+  me" (`resolveMovements` + `overridesFrom`), and anything still unplaced
+  is *held* by the RPC rather than dropped, so an import is never
+  all-or-nothing and the receipt says how many were held and why.
+  **The finish card reopens a step in the thread** rather than pushing to
+  a Manage page — its rows carry a `Step` instead of a URL and the
+  conversation gained `openStep`, since leaving the chat to finish a chat
+  step was the thing being avoided. **Health screening is fully
+  conversational**: the waiver PDF, or "Use the standard PAR-Q instead",
+  which publishes the ACSM screening seven on the builder's own two
+  inserts (version bumped, prior version left intact so historical answers
+  keep pointing at the wording the member saw).
+  **The one step that deliberately keeps a screen is Stripe adoption.**
+  A CSV only stages rows — nobody is charged, nothing is adopted — but
+  pulling from Stripe creates a Temple plan per Stripe price and takes
+  over live subscriptions, so every price needs a name, a kind and a
+  credit count and every one is somebody's money. That review belongs on
+  a page, and the link says which job it is rather than pretending it's
+  the same as dropping in a CSV. Everything else that still leaves the
+  thread is a labelled deep case at the bottom of its card: name movements
+  by hand, map plans or sort duplicates, write your own PAR-Q wording.
   `backTo` now names which surface sent them: `setup` back to the chat,
   `checklist` back to `/onboarding` (`BackLink`, `useSetupAutoReturn`,
   and the Stripe round-trip's `sessionStorage` hand-off all read it).
