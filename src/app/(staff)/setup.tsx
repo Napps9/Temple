@@ -208,6 +208,8 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
 
 // Steps whose fast path is a tap. The bar never disappears, so a typed
 // message gets pointed back at the card rather than meeting a dead input.
+const GOLIVE_LINE = 'That’s the walk-through done.';
+
 const TAP_ONLY: Partial<Record<Step, string>> = {
   logo: 'This one’s a tap — choose your logo above, or skip and we’ll move on.',
   stripe: 'Stripe needs its own secure page — tap Connect above, or do it later.',
@@ -242,6 +244,15 @@ export default function SetupScreen() {
   // what the owner actually runs, not a guess.
   const confirmedDefaults = useRef({ capacity: 16, minutes: 60 });
   const ruleAnswers = useRef<Partial<RuleChoices>>({});
+  // Steps the owner has already dealt with this session, finished or
+  // skipped. Server progress says what's *done*, and that is the right
+  // source of truth for the checklist — but it can lag behind what
+  // actually happened. Importing 60 workout results for members who
+  // haven't signed up yet stages every row and creates no
+  // `tracked_workouts`, so `workouts_imported` stays false and the step
+  // would be offered again forever. Having dealt with a step is its own
+  // fact, and the conversation is the thing that knows it.
+  const handled = useRef<Set<Step>>(new Set());
   // Which rule question is on screen, so a typed answer reaches the
   // parser with the question it is answering.
   const openRuleQ = useRef<number | null>(null);
@@ -290,7 +301,7 @@ export default function SetupScreen() {
       if (s === 'members') return !doneKeys.has('members_imported');
       if (s === 'workouts') return !doneKeys.has('workouts_imported');
       return true;
-    });
+    }).filter((s) => s === 'golive' || !handled.current.has(s));
   }
 
   function pushMsgs(...msgs: Msg[]) {
@@ -302,6 +313,7 @@ export default function SetupScreen() {
   }
 
   function advance(from: Step | null) {
+    if (from) handled.current.add(from);
     openStep(stepsRemaining(from)[0] ?? 'golive');
   }
 
@@ -311,7 +323,14 @@ export default function SetupScreen() {
     setStep(next);
     setMessages((m) => closeCards(m));
     if (next === 'golive') {
-      pushMsgs({ kind: 'temple', text: 'That’s the walk-through done.' });
+      // Reopening a step and finishing it lands back here, and the line
+      // is a summary, not an event — saying it twice reads like the
+      // conversation lost its place.
+      setMessages((m) =>
+        m.some((x) => x.kind === 'temple' && x.text === GOLIVE_LINE)
+          ? m
+          : [...m, { kind: 'temple', text: GOLIVE_LINE }],
+      );
     } else if (next === 'rules') {
       ruleAnswers.current = {};
       openRuleQ.current = 0;
@@ -879,6 +898,7 @@ export default function SetupScreen() {
                 allRequiredDone ? router.replace('/classes') : dismiss.mutate()
               }
               onReopen={openStep}
+              handled={handled.current}
             />
           ) : null}
 
@@ -1202,14 +1222,18 @@ function GoLive({
   finishing,
   onFinish,
   onReopen,
+  handled,
 }: {
   doneKeys: Set<string>;
   allDone: boolean;
   finishing: boolean;
   onFinish: () => void;
   onReopen: (step: Exclude<Step, 'golive'>) => void;
+  handled: Set<Step>;
 }) {
-  const left = FINISH_ROWS.filter((r) => !doneKeys.has(r.key));
+  const left = FINISH_ROWS.filter(
+    (r) => !doneKeys.has(r.key) && !handled.has(r.step),
+  );
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
       <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
@@ -1709,8 +1733,22 @@ function WorkoutsImportCard({
         );
         return;
       }
-      const bits = [`${r.results} result${r.results === 1 ? '' : 's'} across ${r.workouts} workout${r.workouts === 1 ? '' : 's'}`];
-      if (r.staged > 0) bits.push(`${r.staged} held for members who haven't joined yet`);
+      const bits: string[] = [];
+      if (r.results > 0 || r.workouts > 0) {
+        bits.push(
+          `${r.results} result${r.results === 1 ? '' : 's'} across ${r.workouts} workout${r.workouts === 1 ? '' : 's'}`,
+        );
+      }
+      // Every row staged and nothing inserted is the normal outcome before
+      // anyone has signed up, so it leads the sentence rather than trailing
+      // "0 results across 0 workouts", which reads like it failed.
+      if (r.staged > 0) {
+        bits.push(
+          bits.length === 0
+            ? `${r.staged} result${r.staged === 1 ? '' : 's'} held — each one attaches to its member the moment they join`
+            : `${r.staged} held for members who haven't joined yet`,
+        );
+      }
       if (r.noMember > 0) bits.push(`${r.noMember} skipped — no member with that email`);
       if (r.noMovement > 0) bits.push(`${r.noMovement} skipped — movement I couldn't place`);
       onDone(`${bits.join('. ')}.`);
