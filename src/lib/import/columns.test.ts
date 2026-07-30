@@ -257,3 +257,62 @@ describe('columnHints', () => {
     expect(notes.distinct_ratio).toBe(0);
   });
 });
+
+// A real export, headers verbatim. Every platform wraps its column names
+// — "(optional)" suffixes, "Pass number of..." prefixes — and matching
+// only exact aliases silently ignored four columns of real data here:
+// the plan, the credits, the renewal date and the end date.
+describe('autoDetect on a real member export', () => {
+  const HEADERS = [
+    'Name', 'Email', 'Phone Number', 'Address Line 1', 'Address Line 2',
+    'City', 'Region', 'Postcode', 'Country Code', 'Gender', 'Date of Birth',
+    'Member Since', 'Emergency Contact Name', 'Emergency Contact Number',
+    'Products', 'End date (optional)',
+    'Membership next bill date (optional)', 'Pass number of sessions remaining',
+  ];
+  const map = () => {
+    const m = autoDetect(HEADERS);
+    return (h: string) => m[HEADERS.indexOf(h)];
+  };
+
+  it('reads the columns wrapped in longer names', () => {
+    const f = map();
+    expect(f('Products')).toBe('plan_name');
+    expect(f('End date (optional)')).toBe('plan_end');
+    expect(f('Membership next bill date (optional)')).toBe('next_bill_date');
+    expect(f('Pass number of sessions remaining')).toBe('credits_remaining');
+    expect(f('Member Since')).toBe('plan_start');
+  });
+
+  it('still reads the plain ones, and takes the name over the number', () => {
+    const f = map();
+    expect(f('Name')).toBe('full_name');
+    expect(f('Email')).toBe('email');
+    expect(f('Phone Number')).toBe('phone');
+    expect(f('Date of Birth')).toBe('date_of_birth');
+    // Both emergency columns are aliases; the first claims the field and
+    // the second is left alone rather than overwriting it.
+    expect(f('Emergency Contact Name')).toBe('emergency_contact');
+    expect(f('Emergency Contact Number')).toBeNull();
+  });
+
+  it('ignores what Temple has no home for, rather than guessing', () => {
+    const f = map();
+    for (const h of ['Address Line 1', 'Address Line 2', 'City', 'Region',
+                     'Postcode', 'Country Code', 'Gender']) {
+      expect(f(h)).toBeNull();
+    }
+  });
+
+  it('never assigns one field to two columns', () => {
+    const m = autoDetect(HEADERS).filter(Boolean);
+    expect(new Set(m).size).toBe(m.length);
+  });
+
+  it('does not let a short alias match inside an unrelated header', () => {
+    // "end" is a plan_end alias and "pass" a plan_name one; neither should
+    // claim these.
+    expect(autoDetect(['Weekend attendance'])[0]).not.toBe('plan_end');
+    expect(autoDetect(['Password reset at'])[0]).not.toBe('plan_name');
+  });
+});

@@ -20,7 +20,7 @@ import { Button } from '@/components/Button';
 import { GymLogo } from '@/components/GymLogo';
 import { joinUrl } from '@/lib/brand';
 import {
-  autoDetect,
+  autoDetect as memberAutoDetect,
   buildImportRow,
   TEMPLE_FIELD_LABELS,
   type TempleField,
@@ -253,6 +253,11 @@ export default function SetupScreen() {
   // would be offered again forever. Having dealt with a step is its own
   // fact, and the conversation is the thing that knows it.
   const handled = useRef<Set<Step>>(new Set());
+  // A CSV dropped on the wrong step travels to the right one rather than
+  // being handed back with an error. Making someone find the file again
+  // to fix a mistake the app already understood is the rudest possible
+  // way to be correct.
+  const handoff = useRef<{ csv: string; name: string | null } | null>(null);
   // Which rule question is on screen, so a typed answer reaches the
   // parser with the question it is answering.
   const openRuleQ = useRef<number | null>(null);
@@ -835,6 +840,7 @@ export default function SetupScreen() {
                 <MembersImportCard
                   key={i}
                   gymId={membership.gymId}
+                  initial={handoff.current}
                   stripeConnected={doneKeys.has('stripe')}
                   onDone={(receipt) => {
                     setMessages((prev) => closeCards(prev));
@@ -856,6 +862,11 @@ export default function SetupScreen() {
                 <WorkoutsImportCard
                   key={i}
                   gymId={membership.gymId}
+                  onWrongStep={(csv, name) => {
+                    handoff.current = { csv, name };
+                    handled.current.delete('members');
+                    openStep('members');
+                  }}
                   onDone={(receipt) => {
                     setMessages((prev) => closeCards(prev));
                     pushMsgs({ kind: 'receipt', step: 'workouts', text: receipt });
@@ -1396,11 +1407,14 @@ function MembersImportCard({
   stripeConnected,
   onDone,
   onSkip,
+  initial,
 }: {
   gymId: string;
   stripeConnected: boolean;
   onDone: (receipt: string) => void;
   onSkip: () => void;
+  // A file the workout step recognised as a member list and sent here.
+  initial?: { csv: string; name: string | null } | null;
 }) {
   const queryClient = useQueryClient();
   const [paste, setPaste] = useState('');
@@ -1411,6 +1425,7 @@ function MembersImportCard({
   } | null>(null);
   const [mapping, setMapping] = useState<(TempleField | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const tookInitial = useRef(false);
 
   function take(text: string, name: string | null) {
     const grid = parseCsv(text);
@@ -1422,7 +1437,7 @@ function MembersImportCard({
     }
     setError(null);
     setFile({ name, headers, rows });
-    setMapping(autoDetect(headers));
+    setMapping(memberAutoDetect(headers));
   }
 
   const pick = useMutation({
@@ -1439,6 +1454,17 @@ function MembersImportCard({
     },
     onError: () => setError("I couldn't read that file — a .csv export works best."),
   });
+
+  // Once, on the way in: a file the workout step recognised as a member
+  // list arrives already parsed. In an effect rather than in render —
+  // take() sets four pieces of state and doing that mid-render is a
+  // re-entrancy bug waiting for a slower device.
+  useEffect(() => {
+    if (!initial || tookInitial.current) return;
+    tookInitial.current = true;
+    take(initial.csv, initial.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial]);
 
   const commit = useMutation({
     mutationFn: async () => {
@@ -1630,15 +1656,18 @@ function WorkoutsImportCard({
   gymId,
   onDone,
   onSkip,
+  onWrongStep,
 }: {
   gymId: string;
   onDone: (receipt: string) => void;
   onSkip: () => void;
+  onWrongStep: (csv: string, name: string | null) => void;
 }) {
   const queryClient = useQueryClient();
   const [paste, setPaste] = useState('');
   const [file, setFile] = useState<{
     name: string | null;
+    raw: string;
     headers: string[];
     rows: string[][];
   } | null>(null);
@@ -1658,7 +1687,7 @@ function WorkoutsImportCard({
     setError(null);
     setOverrides(new Map());
     setResolved(false);
-    setFile({ name, headers, rows });
+    setFile({ name, raw: text, headers, rows });
     setMapping(workoutAutoDetect(headers));
   }
 
@@ -1788,6 +1817,20 @@ function WorkoutsImportCard({
     );
   }
 
+  // Nothing readable as a result is usually not a broken workout export —
+  // it's the member list, dropped one step too late. The columns say so
+  // plainly, so read them rather than blaming the movement column.
+  const looksLikeMembers =
+    ready === 0 &&
+    (() => {
+      const asMembers = memberAutoDetect(file!.headers).filter(Boolean);
+      return (
+        asMembers.includes('email') &&
+        asMembers.length >= 4 &&
+        !asMembers.includes('notes')
+      );
+    })();
+
   const kinds = [
     built!.weighted.length > 0 ? `${built!.weighted.length} lifts` : null,
     built!.sections.length > 0 ? `${built!.sections.length} scored WODs` : null,
@@ -1803,8 +1846,16 @@ function WorkoutsImportCard({
       <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
         {kinds.length > 0
           ? `Ready: ${kinds.join(', ')}.`
-          : 'I couldn’t read any results out of that — check the movement and score columns.'}
+          : looksLikeMembers
+            ? 'That’s your member list, not workout history — names, emails and plans, no dates or movements. It belongs in the step before this one.'
+            : 'I couldn’t read any results out of that — a workout file needs a date, a movement and a score or weight per row.'}
       </Text>
+
+      {looksLikeMembers ? (
+        <Button onPress={() => onWrongStep(file!.raw, file!.name)}>
+          Bring them in as members instead
+        </Button>
+      ) : null}
 
       {missNames.length > 0 ? (
         <View className="gap-2">

@@ -77,12 +77,12 @@ const FIELD_HEADERS: Record<TempleField, string[]> = {
   plan_name: [
     'plan', 'membership', 'membership plan', 'membership type',
     'pass', 'package', 'pricing option', 'pricing', 'product',
-    'subscription', 'plan name',
+    'products', 'subscription', 'plan name',
   ],
   plan_start: [
     'start', 'start date', 'startdate', 'membership start',
     'active since', 'joined', 'join date', 'signup date',
-    'signupdate', 'plan start',
+    'signupdate', 'plan start', 'member since', 'membership since',
   ],
   plan_end: [
     'end', 'end date', 'enddate', 'expiry', 'expires',
@@ -92,7 +92,7 @@ const FIELD_HEADERS: Record<TempleField, string[]> = {
   credits_remaining: [
     'credits', 'credits remaining', 'sessions remaining',
     'sessions left', 'visits remaining', 'visits left',
-    'classes remaining', 'remaining',
+    'classes remaining', 'remaining', 'sessions', 'passes remaining',
   ],
   imported_status: [
     'status', 'membership status', 'state', 'active',
@@ -115,22 +115,73 @@ function normalise(s: string): string {
   return s.toLowerCase().replace(/[\s_\-./]+/g, ' ').trim();
 }
 
-// For each CSV header, pick the Temple field whose alias set contains
-// an exact normalised match. Headers we can't map come back as null —
-// the UI will show them as "ignore" so the owner can wire them up.
+// Does `alias` appear in `header` as whole words? Both are already
+// normalised to single-spaced lowercase, so padding with spaces makes
+// "end date" match "end date (optional)" without "end" matching "weekend".
+function containsPhrase(header: string, alias: string): boolean {
+  return ` ${header} `.includes(` ${alias} `);
+}
+
+// For each CSV header, pick the Temple field it names.
+//
+// Two passes, because real exports don't hand you bare column names. Pass
+// one is exact: a header that *is* an alias wins outright, which is what
+// keeps a file carrying both "Emergency Contact Name" and "Emergency
+// Contact Number" resolving in the order the alias list intends. Pass two
+// then looks inside the headers nothing claimed, since platforms wrap
+// their columns — "Membership next bill date (optional)", "Pass number of
+// sessions remaining" — and those are the same column wearing a longer
+// name. Longest alias wins there so "sessions remaining" beats "remaining"
+// and the specific field gets the column.
+//
+// Aliases shorter than four characters are skipped in the second pass
+// only: "end" and "pass" are fine as whole headers and far too eager
+// inside a sentence.
 export function autoDetect(headers: string[]): (TempleField | null)[] {
+  const fields = Object.keys(FIELD_HEADERS) as TempleField[];
   const used = new Set<TempleField>();
-  return headers.map((h) => {
+  const out: (TempleField | null)[] = headers.map(() => null);
+
+  headers.forEach((h, i) => {
     const n = normalise(h);
-    for (const field of Object.keys(FIELD_HEADERS) as TempleField[]) {
+    for (const field of fields) {
       if (used.has(field)) continue;
       if (FIELD_HEADERS[field].some((alias) => normalise(alias) === n)) {
         used.add(field);
-        return field;
+        out[i] = field;
+        return;
       }
     }
-    return null;
   });
+
+  headers.forEach((h, i) => {
+    if (out[i]) return;
+    const n = normalise(h);
+    // A header that IS an alias of a field already taken has said what it
+    // is; it just lost the race. Leave it for the owner rather than
+    // reassigning it to whatever else it happens to contain — "Emergency
+    // Contact Number" contains "contact number", and filing a next of
+    // kin's number as the member's phone is worse than not filing it.
+    const namesATakenField = fields.some(
+      (f) => used.has(f) && FIELD_HEADERS[f].some((a) => normalise(a) === n),
+    );
+    if (namesATakenField) return;
+    let best: { field: TempleField; len: number } | null = null;
+    for (const field of fields) {
+      if (used.has(field)) continue;
+      for (const alias of FIELD_HEADERS[field]) {
+        const a = normalise(alias);
+        if (a.length < 4 || !containsPhrase(n, a)) continue;
+        if (!best || a.length > best.len) best = { field, len: a.length };
+      }
+    }
+    if (best) {
+      used.add(best.field);
+      out[i] = best.field;
+    }
+  });
+
+  return out;
 }
 
 // Privacy-safe per-column profile for AI-assisted mapping. We never send
