@@ -325,7 +325,20 @@ export default function Timeline() {
     (r) =>
       (REQUIRED_SETUP_KEYS as readonly string[]).includes(r.step_key) && r.done,
   ).length;
-  const setupOutstanding = isOwner && setupDone < REQUIRED_SETUP_KEYS.length;
+  const requiredLeft = isOwner && setupDone < REQUIRED_SETUP_KEYS.length;
+  // The optional three (team, members across, workout history) are still
+  // steps in the conversation, so the card has to survive the required
+  // list being finished — otherwise finishing six of nine closes the only
+  // visible door back in. It reads quieter once nothing is blocking.
+  const optionalLeft =
+    isOwner &&
+    !requiredLeft &&
+    (setupProgress.data ?? []).some(
+      (r) =>
+        !r.done &&
+        !(REQUIRED_SETUP_KEYS as readonly string[]).includes(r.step_key),
+    );
+  const setupOutstanding = requiredLeft || optionalLeft;
   const authority = useMoneyAuthority(gymId, isOwner);
   const [jobDismissed, setJobDismissed] = useState(false);
 
@@ -874,6 +887,7 @@ export default function Timeline() {
             <SetupCard
               done={setupDone}
               total={REQUIRED_SETUP_KEYS.length}
+              blocking={requiredLeft}
             />
           ) : null}
 
@@ -1664,8 +1678,33 @@ function RequestCard({
 // Setup is never lost: while any required step is outstanding, the
 // Timeline carries the checklist's own progress header with a way back
 // in. (Typing "continue setup" in the bar does the same thing.)
-function SetupCard({ done, total }: { done: number; total: number }) {
+function SetupCard({
+  done,
+  total,
+  blocking,
+}: {
+  done: number;
+  total: number;
+  blocking: boolean;
+}) {
   const colors = useThemeColors();
+  // Once nothing is blocking, this is an offer rather than a warning: one
+  // line and a link, no progress bar counting a list that's finished.
+  if (!blocking) {
+    return (
+      <Pressable
+        onPress={() => router.push('/setup' as never)}
+        className="flex-row items-center gap-2.5 px-1 active:opacity-70">
+        <Ionicons name="rocket-outline" size={15} color={colors.iconSecondary} />
+        <Text className="flex-1 text-gray-500 dark:text-gray-400 text-[13.5px]">
+          Your gym is ready. A few optional bits are still there if you want
+          them —{' '}
+          <Text className="text-link font-medium">pick up where you left off</Text>
+          .
+        </Text>
+      </Pressable>
+    );
+  }
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2.5">

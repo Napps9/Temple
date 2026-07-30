@@ -1046,9 +1046,20 @@ The staff area shows up when `can_access_staff_area` is on.
   and the Stripe round-trip's `sessionStorage` hand-off all read it).
   The **finish card** lists only what was actually left, each row opening
   its Manage page and returning here.
-  **Setup is never lost**: while any required step is outstanding the
-  Timeline carries the same progress header with a "Carry on setting up"
-  button, and typing "continue setup" (finish / resume / back to setup…)
+  **Setup is never lost** — and that took fixing, because every route in
+  was conditional on setup being *unfinished*: the Timeline card hid once
+  the required six were done, the Manage checklist hid when dismissed,
+  and the root redirect only fires while something required is missing, so
+  finishing six of nine steps closed the last visible door. Now
+  **Manage → Settings carries a permanent owner-only "Set up your gym"**
+  card that never hides; the Timeline's card **survives the required
+  list**, staying a full card with the progress bar while something
+  required is missing (a real warning — members can't join yet) and
+  collapsing to one quiet line once only optional steps remain; and
+  `GymSetupChecklist` now offers "Rather be walked through it?" so the two
+  setup surfaces point at each other instead of the list only ever
+  leading down into Manage pages. Beyond those, typing "continue setup"
+  (finish / resume / back to setup…)
   in the talk bar routes there — matched client-side, no model
   round-trip, with the pattern's negative cases pinned in
   `src/lib/setup-intent.test.ts` so "set up a new class type" still

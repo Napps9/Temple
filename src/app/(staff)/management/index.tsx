@@ -325,6 +325,19 @@ export default function ManagementHome() {
       href: '/management/operating',
       visible: !!canManageStaff,
     },
+    // Setup is a place, not a nag. Every other route into it is
+    // conditional on being unfinished — the Timeline card hides once the
+    // required steps are done, the checklist hides when dismissed — which
+    // left an owner who finished the required six with no way back to the
+    // optional three except knowing to type "continue setup".
+    {
+      category: 'settings',
+      title: 'Set up your gym',
+      description:
+        'The setup conversation — walks you through anything you left, whenever you want it.',
+      href: '/setup',
+      visible: role === 'owner',
+    },
     {
       category: 'members',
       title: 'Members',

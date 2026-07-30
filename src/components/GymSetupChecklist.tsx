@@ -291,11 +291,22 @@ export function GymSetupChecklist() {
             />
           </Pressable>
         ))}
+        {/* The two setup surfaces point at each other. Without this the
+            list only ever leads down into Manage pages, and an owner who
+            started in the conversation has no way back to it from here. */}
+        <Pressable
+          onPress={() => router.replace('/setup' as never)}
+          hitSlop={8}
+          className="self-center pt-1 active:opacity-70">
+          <Text className="text-link text-xs font-medium">
+            Rather be walked through it?
+          </Text>
+        </Pressable>
         <Pressable
           onPress={() => dismiss.mutate()}
           disabled={dismiss.isPending}
           hitSlop={8}
-          className="self-center pt-1 active:opacity-70">
+          className="self-center active:opacity-70">
           <Text className="text-gray-400 dark:text-gray-500 text-xs">
             {dismiss.isPending ? 'Hiding…' : 'I’ll finish setup later'}
           </Text>
