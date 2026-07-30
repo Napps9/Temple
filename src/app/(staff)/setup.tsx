@@ -556,6 +556,18 @@ export default function SetupScreen() {
     askRule();
   }
 
+  // The defaults already are what most gyms run, and they're already on
+  // the gym row — so skipping writes nothing rather than writing the same
+  // values back, and the step stays open for whenever they care.
+  function skipRules() {
+    setMessages((m) => closeCards(m));
+    pushMsgs({
+      kind: 'receipt',
+      text: 'Left as they are — change any rule later by telling me.',
+    });
+    advance('rules');
+  }
+
   function customRule(q: number, value: RuleChoices[RuleField]) {
     const question = RULE_QUESTIONS[q];
     (ruleAnswers.current as Record<string, unknown>)[question.id] = value;
@@ -784,6 +796,14 @@ export default function SetupScreen() {
                   key={i}
                   busy={busy}
                   onApply={confirmTimetable}
+                  onSkip={() => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({
+                      kind: 'receipt',
+                      text: 'No classes yet — members can’t book until there are, so it’s worth coming back to.',
+                    });
+                    advance('timetable');
+                  }}
                 />
               ) : null
             ) : m.kind === 'stripe-card' ? (
@@ -802,7 +822,19 @@ export default function SetupScreen() {
               ) : null
             ) : m.kind === 'plan-builder' ? (
               m.open ? (
-                <PlanBuilderCard key={i} busy={busy} onApply={confirmPlans} />
+                <PlanBuilderCard
+                  key={i}
+                  busy={busy}
+                  onApply={confirmPlans}
+                  onSkip={() => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({
+                      kind: 'receipt',
+                      text: 'No prices yet — nobody can subscribe until there’s a plan to buy.',
+                    });
+                    advance('plans');
+                  }}
+                />
               ) : null
             ) : m.kind === 'waiver-card' ? (
               m.open ? (
@@ -892,6 +924,7 @@ export default function SetupScreen() {
                 onConfirmRules={confirmRules}
                 onAnswerRule={answerRule}
                 onCustomRule={customRule}
+                onSkipRules={skipRules}
                 onEditRule={editRule}
                 onCarryOn={carryOn}
                 onHaveALook={haveALook}
@@ -949,6 +982,30 @@ export default function SetupScreen() {
   );
 }
 
+// Every step needs a way past it, and it has to be there the whole time —
+// not only before you've engaged with the card. Picking a CSV and then
+// deciding against importing it is an ordinary thing to do, and the first
+// version of the import cards dropped the skip the moment a file loaded,
+// which left the owner with no move except closing the tab. Same shape and
+// same place on every card so it's findable without reading.
+function StepSkip({
+  label,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable onPress={onPress} disabled={disabled} hitSlop={6}>
+      <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function TempleAvatar() {
   return (
     <View className="w-7 h-7 rounded-full bg-primary items-center justify-center mt-0.5">
@@ -965,6 +1022,7 @@ function MessageRow({
   onConfirmRules,
   onAnswerRule,
   onCustomRule,
+  onSkipRules,
   onEditRule,
   onCarryOn,
   onHaveALook,
@@ -977,6 +1035,7 @@ function MessageRow({
   onConfirmRules: (choices: RuleChoices) => void;
   onAnswerRule: (q: number, optionIndex: number) => void;
   onCustomRule: (q: number, value: RuleChoices[RuleField]) => void;
+  onSkipRules: () => void;
   onEditRule: (field: RuleField, value: RuleChoices[RuleField]) => void;
   onCarryOn: () => void;
   onHaveALook: () => void;
@@ -1150,7 +1209,14 @@ function MessageRow({
     );
   }
   if (msg.kind === 'rule-question') {
-    return <RuleQuestion msg={msg} onAnswer={onAnswerRule} onCustom={onCustomRule} />;
+    return (
+      <RuleQuestion
+        msg={msg}
+        onAnswer={onAnswerRule}
+        onCustom={onCustomRule}
+        onSkipAll={onSkipRules}
+      />
+    );
   }
   return (
     <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
@@ -1187,10 +1253,12 @@ function RuleQuestion({
   msg,
   onAnswer,
   onCustom,
+  onSkipAll,
 }: {
   msg: Extract<Msg, { kind: 'rule-question' }>;
   onAnswer: (q: number, optionIndex: number) => void;
   onCustom: (q: number, value: RuleChoices[RuleField]) => void;
+  onSkipAll: () => void;
 }) {
   const q = RULE_QUESTIONS[msg.q];
   return (
@@ -1221,6 +1289,11 @@ function RuleQuestion({
             </Pressable>
           ))}
           <CustomRuleChip field={q.id} onSet={(v) => onCustom(msg.q, v)} />
+        </View>
+      ) : null}
+      {msg.open ? (
+        <View className="pl-9">
+          <StepSkip label="These are all fine as they are" onPress={onSkipAll} />
         </View>
       ) : null}
     </View>
@@ -1577,11 +1650,7 @@ function MembersImportCard({
             </Text>
           </Pressable>
         ) : null}
-        <Pressable onPress={onSkip} hitSlop={6}>
-          <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
-            I’m starting fresh
-          </Text>
-        </Pressable>
+        <StepSkip label="I’m starting fresh" onPress={onSkip} />
       </View>
     );
   }
@@ -1631,6 +1700,7 @@ function MembersImportCard({
           Use a different file
         </Text>
       </Pressable>
+      <StepSkip label="I’m starting fresh" onPress={onSkip} />
       <Pressable
         onPress={() => router.push('/management/members/import?backTo=setup' as never)}
         hitSlop={6}>
@@ -1844,11 +1914,7 @@ function WorkoutsImportCard({
           placeholderTextColor="#9CA3AF"
           className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 h-20 text-gray-900 dark:text-gray-50 text-[13px]"
         />
-        <Pressable onPress={onSkip} hitSlop={6}>
-          <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
-            Nothing to bring across
-          </Text>
-        </Pressable>
+        <StepSkip label="Nothing to bring across" onPress={onSkip} />
       </View>
     );
   }
@@ -1940,6 +2006,7 @@ function WorkoutsImportCard({
           Use a different file
         </Text>
       </Pressable>
+      <StepSkip label="Nothing to bring across" onPress={onSkip} />
       <Pressable
         onPress={() =>
           router.push('/management/members/import-workouts?backTo=setup' as never)
@@ -2044,9 +2111,7 @@ function LogoCard({
       <Button onPress={() => upload.mutate()} loading={upload.isPending}>
         Choose your logo
       </Button>
-      <Pressable onPress={onSkip} disabled={upload.isPending} hitSlop={6}>
-        <Text className="text-link text-sm font-medium text-center">Skip for now</Text>
-      </Pressable>
+      <StepSkip label="Skip for now" onPress={onSkip} disabled={upload.isPending} />
     </View>
   );
 }
@@ -2061,9 +2126,11 @@ type BuilderEntry = { name: string; color: string; form: RecurrenceForm };
 function ClassBuilderCard({
   busy,
   onApply,
+  onSkip,
 }: {
   busy: boolean;
   onApply: (p: TimetableProposal) => void;
+  onSkip: () => void;
 }) {
   const colors = useThemeColors();
   const { data: gymDefaults } = useGymOperatingDefaults();
@@ -2192,6 +2259,7 @@ function ClassBuilderCard({
           </Button>
         </View>
       </View>
+      <StepSkip label="I’ll add classes later" onPress={onSkip} disabled={busy} />
     </View>
   );
 }
@@ -2253,9 +2321,7 @@ function StripeCard({ onSkip }: { onSkip: () => void }) {
       <Button onPress={() => connect.mutate()} loading={connect.isPending}>
         Connect Stripe
       </Button>
-      <Pressable onPress={onSkip} disabled={connect.isPending} hitSlop={6}>
-        <Text className="text-link text-sm font-medium text-center">Do this later</Text>
-      </Pressable>
+      <StepSkip label="Do this later" onPress={onSkip} disabled={connect.isPending} />
     </View>
   );
 }
@@ -2280,9 +2346,11 @@ const PLAN_KIND_LABEL: Record<PlanEntry['kind'], string> = {
 function PlanBuilderCard({
   busy,
   onApply,
+  onSkip,
 }: {
   busy: boolean;
   onApply: (p: PlansProposal) => void;
+  onSkip: () => void;
 }) {
   const colors = useThemeColors();
   const [entries, setEntries] = useState<PlanEntry[]>([]);
@@ -2470,6 +2538,7 @@ function PlanBuilderCard({
           </Button>
         </View>
       </View>
+      <StepSkip label="I’ll set prices later" onPress={onSkip} disabled={busy} />
     </View>
   );
 }
@@ -2621,11 +2690,7 @@ function WaiverCard({
           Own wording? Write your own questions
         </Text>
       </Pressable>
-      <Pressable onPress={onSkip} disabled={upload.isPending} hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
-          Do this later
-        </Text>
-      </Pressable>
+      <StepSkip label="Do this later" onPress={onSkip} disabled={upload.isPending} />
     </View>
   );
 }
@@ -2647,13 +2712,10 @@ function TeamCard({ onDone }: { onDone: (receipt: string) => void }) {
           That’s everyone
         </Text>
       </Pressable>
-      <Pressable
+      <StepSkip
+        label="I run solo"
         onPress={() => onDone('No invites for now — it’s a two-tap job whenever you need it.')}
-        hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
-          I run solo
-        </Text>
-      </Pressable>
+      />
     </View>
   );
 }
