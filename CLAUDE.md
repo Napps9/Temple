@@ -61,6 +61,19 @@ Practical implications:
   fast-forward it into `main` and push before ending the session.
 - **Push to `main` directly** for every change unless the user
   explicitly asks for a PR.
+- **`main` is the only branch. Push there and nowhere else.** No mirror
+  branch, no `agent-main`, no session branch left behind — one ref, one
+  environment, production. This is enforced, not just advised:
+  `vercel.json`'s `ignoreCommand` skips any ref that isn't `main` before
+  a build starts. It's there because Vercel is on the Hobby plan, which
+  caps deployments per day, and a second branch mirroring every push was
+  doubling the count. When that quota ran out, pushes to `main` simply
+  stopped producing a deployment — no error on GitHub, no failed check,
+  nothing in CI. Green checks and a live site are different claims, so
+  after a push confirm the deployment exists, not only that CI passed:
+  `curl -s "https://api.github.com/repos/Napps9/Temple/deployments?per_page=3"`
+  should show your SHA. A missing deployment record with green CI means
+  Vercel never got asked to build.
 - **The CI run is the verification step**. After every push, watch CI
   via the GitHub MCP tools (`mcp__github__actions_list`,
   `actions_get`, `get_job_logs`). Wait for both jobs to be green
