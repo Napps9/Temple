@@ -675,6 +675,38 @@ The staff area shows up when `can_access_staff_area` is on.
   `DEFAULT_AUDIENCE`) and opens the existing editor — audience, topic,
   A/B, suppression and one-click unsubscribe all unchanged. The send
   button remains the approval; nothing sends from the bar.
+- **The people who haven't joined yet** (0217, roadmap step 2) — the
+  pipeline is the one board in Temple that is genuinely a queue of small
+  decisions, and every card on it is one sentence of news whose only home
+  was a form. `leads.add` ("someone rang, Sarah Jones, 07700 900123, found
+  us on Instagram" — matching an existing enquiry first, because someone
+  who rang twice is one person and not two rows), `leads.set_status`
+  ("Sarah's booked her intro", "we lost Marcus"),
+  `leads.assign` ("give Priya to Marcus") and `leads.pipeline` — the board
+  as an answer, which surfaces the thing a board is worst at: who has been
+  sitting untouched for more than two days. Nothing underneath changes;
+  assignment rules still fire on capture, the notification queue still
+  goes out, and the AI front desk works the same rows. `converted` is
+  deliberately not a status the bar can set — `set_lead_status` refuses it
+  without a member profile because a conversion is a link to a real
+  account rather than a label, and a verb that could only ever fail is
+  worse than no verb.
+- **…and the pipeline honours its own switch** (0217) — fourth instance of
+  the same class, and the last one on this capability. The leads screen
+  gates on `useCan('can_assign_plan')`; all five RPCs behind it gated on
+  `user_can_assign_plan`, a raw role test (owner/admin/coach/staff) that
+  is not the capability at all. For a gym that has overridden nothing the
+  two agree exactly — the capability's defaults are the same four roles —
+  so the differences are the two that matter: an owner's override did
+  nothing (turn "Assign plans" off for coaches and the board disappears
+  from their screen while every write behind it still succeeds), and the
+  raw helper has no `left_at` guard, so somebody who has left the gym kept
+  write access to the names, emails and phone numbers of people who never
+  joined. `record_lead`, `set_lead_status`, `set_lead_assignee`,
+  `nudge_lead` and `clear_lead_follow_up` now ask `effective_can`. pgTAP
+  `lead_pipeline_capability.sql` (plan(9)) proves the coach is allowed by
+  default, refused once the switch is turned off, that the owner is never
+  overridable, and that leaving the gym takes the pipeline with it.
 - **A newsletter knows who it is for** (roadmap phase 6/step 2) — the
   newsletter has been a sentence since phase 6 and always drafted to
   `all_members`, so "tell the lapsed lot we miss them" produced a campaign

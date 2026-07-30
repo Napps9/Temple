@@ -602,4 +602,50 @@ Every card must say it arrives switched off, and it must actually be off.
 
 ---
 
+## Module: the enquiries — `leads.add`, `leads.set_status`, `leads.assign`, `leads.pipeline`
+
+This is the module you can test fastest, because taking an enquiry down
+while someone is still on the phone is the actual job.
+
+| Say | Expect |
+|---|---|
+| someone rang, Sarah Jones, 07700 900123 | Name and phone, no source, and the line about the assignment rule |
+| add a lead, Dan Webb, dan@example.com, found us on Instagram | Source matched to your real Instagram source |
+| a walk-in came in asking about memberships, Jo Patel | Takes it with no contact details, and says so plainly |
+| Sarah's booked her intro | `intro_booked`, with what she was before |
+| I spoke to Dan | `contacted` |
+| Jo came in for her trial | `trial_attended` |
+| we lost Marcus, he went elsewhere | `lost`, and the card says they come off the board |
+| give Priya to Marcus | Handover card naming both |
+| how's the pipeline looking | Counts by stage, plus anyone waiting more than two days |
+| who has enquired this week | Same, scoped to seven days |
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| someone rang, Sarah Jones *(already on the list)* | "Sarah Jones is already on your list — …". No second row |
+| Sarah's booked her intro *(two Sarahs)* | Chips naming both with their current stage, not a guess |
+| mark Dan as joined / converted | Refused — a conversion needs their member account, so that stays on the leads screen |
+| Sarah's booked her intro *(said twice)* | Second time: "already down as booked in for an intro" |
+| give Sarah to Beyoncé | "Nobody on your team answers to that" |
+| add a lead with a source you don't have | Takes it down without a source and says so, rather than inventing one |
+| ask about the pipeline with no leads at all | "Nobody is on your enquiries list" |
+
+### The permission pass (0217)
+
+Worth doing once, because it never worked before and the screen said it did.
+
+1. Team → role permissions → turn **Assign plans** off for coaches.
+2. Sign in as a coach. The leads board should be gone from their screen —
+   that part always worked.
+3. Now have them try it from the chat: "someone rang, Test Person". It
+   must be **refused**. Before 0217 the screen hid the board and every
+   write behind it still succeeded.
+4. Turn it back on and confirm they can again.
+5. Remove a coach from the gym entirely, then check they cannot reach the
+   enquiries — the old gate had no left-the-gym check at all.
+
+---
+
 *Module sections are added here as each ships.*

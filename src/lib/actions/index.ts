@@ -1,6 +1,7 @@
 import { CLASS_ACTIONS } from './classes';
 import { COMMS_ACTIONS } from './comms';
 import { GYM_ACTIONS } from './gym';
+import { LEAD_ACTIONS } from './leads';
 import { MEMBER_ACTIONS } from './members';
 import { MONEY_ACTIONS } from './money';
 import { STORE_ACTIONS } from './store';
@@ -14,6 +15,7 @@ export type { MemberCard } from './members';
 // bar's vocabulary is whatever this list says it is.
 export const ACTIONS: AnyAction[] = [
   ...GYM_ACTIONS,
+  ...LEAD_ACTIONS,
   ...CLASS_ACTIONS,
   ...COMMS_ACTIONS,
   ...MEMBER_ACTIONS,

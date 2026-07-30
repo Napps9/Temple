@@ -314,7 +314,17 @@ already authorised. Roughly in order of how often an owner touches them:
   the standing rule is that nothing sends from the bar — the send button
   is the approval — and "send it Monday at 9" is a send with a delay, not
   a draft. Worth a decision before it is built rather than after.
-- **Leads** — the front desk's own settings and the pipeline as sentences.
+- **Leads** — done for the pipeline (0217). Take an enquiry down while
+  they are still on the phone, move one along, hand one over, and ask how
+  the week is going — including who has been left untouched, which is
+  what a board is worst at showing. The front desk's own settings are
+  still a screen and stay one for now: they are the owner teaching a
+  voice, which is closer to craft than to admin. **Open question:** the
+  whole pipeline is gated on `can_assign_plan`, described to owners as
+  "Put members onto plans and adjust subscriptions". That is the wrong
+  capability for a sales board, and splitting it out is a new key, a
+  default per role and a row on the Team screen — a change owners would
+  see, so it wants deciding rather than assuming.
 - **Programming, team, website, tags** — the long tail, same shape.
 
 ### 3 — It remembers what you just said — half done

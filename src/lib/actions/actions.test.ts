@@ -14,6 +14,7 @@ import {
 import { sanitiseSequence } from '../sequence-draft';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
 import { ACTIONS, actionsFor, findAction } from './index';
+import { addLead, assignLeadTo, leadPipeline, moveLead } from './leads';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
 import { moneySummary, periodLabel, refundMember, setPlanPrice } from './money';
 import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
@@ -82,6 +83,10 @@ describe('the registry', () => {
         'members.comp',
         'members.tag',
         'members.message',
+        'leads.add',
+        'leads.set_status',
+        'leads.assign',
+        'leads.pipeline',
         'money.summary',
         'money.set_plan_price',
         'money.refund',
@@ -751,6 +756,81 @@ describe('nothing walks the owner out of the chat', () => {
       const src = readFileSync(join('src/lib/actions', file), 'utf8');
       expect(src).not.toMatch(/router\.(push|replace)|ctx\.navigate/);
     }
+  });
+});
+
+describe('the enquiries', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+
+  it('takes an enquiry with only a name, and keeps what else was said', () => {
+    expect(addLead.sanitise({ name: 'Sarah Jones' })).toEqual({
+      name: 'Sarah Jones',
+      email: null,
+      phone: null,
+      source: null,
+      notes: null,
+    });
+    const full = addLead.sanitise({
+      name: 'Dan Webb',
+      email: 'dan@example.com',
+      phone: '07700 900123',
+      source: 'Instagram',
+      notes: 'wants evenings',
+    });
+    expect(full?.email).toBe('dan@example.com');
+    expect(full?.source).toBe('Instagram');
+    expect(addLead.sanitise({ email: 'nobody@example.com' })).toBeNull();
+  });
+
+  it('only moves an enquiry to a stage the pipeline has', () => {
+    expect(moveLead.sanitise({ lead: 'Sarah', status: 'intro_booked' })).toEqual({
+      lead: 'Sarah',
+      status: 'intro_booked',
+      leadId: null,
+    });
+    expect(moveLead.sanitise({ lead: 'Sarah', status: 'warm' })).toBeNull();
+    expect(moveLead.sanitise({ lead: 'Sarah' })).toBeNull();
+    expect(moveLead.sanitise({ status: 'lost' })).toBeNull();
+  });
+
+  // set_lead_status refuses `converted` without a member profile, because a
+  // conversion is a link to a real account rather than a label. A verb that
+  // could only ever fail is worse than no verb.
+  it('never offers converted, which needs a member account', () => {
+    const arg = moveLead.args.find((a) => a.name === 'status')!;
+    expect(arg.values).not.toContain('converted');
+    expect(moveLead.sanitise({ lead: 'Sarah', status: 'converted' })).toBeNull();
+  });
+
+  it('carries the id a disambiguation chip sends, and ignores a fake one', () => {
+    expect(
+      moveLead.sanitise({ lead: 'Sarah Jones', status: 'contacted', lead_id: id })?.leadId,
+    ).toBe(id);
+    expect(
+      moveLead.sanitise({ lead: 'Sarah', status: 'contacted', lead_id: 'the first' })?.leadId,
+    ).toBeNull();
+  });
+
+  it('needs both halves of a handover', () => {
+    expect(assignLeadTo.sanitise({ lead: 'Sarah', coach: 'Marcus' })).toEqual({
+      lead: 'Sarah',
+      coach: 'Marcus',
+      leadId: null,
+    });
+    expect(assignLeadTo.sanitise({ lead: 'Sarah' })).toBeNull();
+    expect(assignLeadTo.sanitise({ coach: 'Marcus' })).toBeNull();
+  });
+
+  it('defaults the pipeline question to a week', () => {
+    expect(leadPipeline.sanitise({})).toEqual({ days: 7 });
+    expect(leadPipeline.sanitise({ days: 30 })).toEqual({ days: 30 });
+    expect(leadPipeline.sanitise({ days: 9999 })).toEqual({ days: 7 });
+    expect(leadPipeline.sanitise({ days: 'this week' })).toEqual({ days: 7 });
+  });
+
+  it('is a question, so it never writes', () => {
+    expect(leadPipeline.kind).toBe('ask');
+    expect(leadPipeline.apply).toBeUndefined();
   });
 });
 
