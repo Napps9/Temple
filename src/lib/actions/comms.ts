@@ -20,6 +20,7 @@ import {
   type AudienceDefinition,
   type CohortKey,
 } from '../email/audience';
+import { FALLBACK_BRAND_SEED } from '../email/blocks';
 import { renderEmailHtml, renderEmailText } from '../email/render';
 import { newsletterDocument } from '../newsletter-draft';
 import {
@@ -124,7 +125,7 @@ type Brand = {
   text_color: string | null;
 };
 
-async function brandOf(ctx: ActionContext): Promise<Brand | null> {
+export async function brandOf(ctx: ActionContext): Promise<Brand | null> {
   const { data } = await ctx.supabase
     .from('gyms')
     .select('name, logo_url, primary_color, secondary_color, text_color')
@@ -133,16 +134,26 @@ async function brandOf(ctx: ActionContext): Promise<Brand | null> {
   return (data as Brand | null) ?? null;
 }
 
-function docFor(
+// One builder for the card and for the write. They used to be two copies
+// of the same four lines, which is how the preview and the thing actually
+// saved get to disagree without anybody noticing.
+//
+// The fallbacks are the block kit's own (#0F172A text), not white. The
+// previous copy fell back to #FFFFFF, which is white body text on the
+// white content panel — unreadable. gyms.text_color is NOT NULL so it
+// never bit in production, but it fires the moment that select comes back
+// empty, and an unreadable draft is not something a fallback should be
+// able to produce.
+export function docFor(
   g: Brand | null,
   subject: string,
   sections: { heading: string; body: string }[],
 ) {
   return newsletterDocument(
     {
-      primaryColor: g?.primary_color ?? '#2563EB',
-      secondaryColor: g?.secondary_color ?? '#0F172A',
-      textColor: g?.text_color ?? '#FFFFFF',
+      primaryColor: g?.primary_color ?? FALLBACK_BRAND_SEED.primaryColor,
+      secondaryColor: g?.secondary_color ?? FALLBACK_BRAND_SEED.secondaryColor,
+      textColor: g?.text_color ?? FALLBACK_BRAND_SEED.textColor,
     },
     { gymName: g?.name ?? 'Your gym', logoUrl: g?.logo_url ?? null },
     { subject, sections },
@@ -175,6 +186,11 @@ export type EmailDraftCard = {
     when: string | null;
     subject: string;
     sections: { heading: string; body: string }[];
+    // The compiled email itself — the same HTML the send worker posts,
+    // logo and all. Rendered in an iframe on web, where it is exact.
+    // Native has no WebView in this app, so the card falls back to the
+    // sections above, which is why both are carried.
+    html: string;
   }[];
   // The thing an owner must not discover later, if there is one.
   note: string | null;
@@ -193,10 +209,20 @@ export async function newsletterCard(
   audience: string,
   ctx: ActionContext,
 ): Promise<EmailDraftCard> {
+  const g = await brandOf(ctx);
   return {
-    ...cardBase(await brandOf(ctx)),
+    ...cardBase(g),
     audience,
-    emails: [{ when: null, subject: draft.subject, sections: draft.sections }],
+    emails: [
+      {
+        when: null,
+        subject: draft.subject,
+        sections: draft.sections,
+        // Built with the same function apply will use, so what is on the
+        // card is not a rendering of the draft — it is the draft.
+        html: renderEmailHtml(docFor(g, draft.subject, draft.sections)),
+      },
+    ],
     note: null,
   };
 }
@@ -205,14 +231,19 @@ export async function sequenceCard(
   d: SequenceDraft,
   ctx: ActionContext,
 ): Promise<EmailDraftCard> {
+  const g = await brandOf(ctx);
   return {
-    ...cardBase(await brandOf(ctx)),
+    ...cardBase(g),
     audience: triggerSentence(d),
-    emails: d.emails.map((e) => ({
-      when: whenLine(e.afterDays),
-      subject: e.subject,
-      sections: [{ heading: e.heading, body: e.body }],
-    })),
+    emails: d.emails.map((e) => {
+      const sections = [{ heading: e.heading, body: e.body }];
+      return {
+        when: whenLine(e.afterDays),
+        subject: e.subject,
+        sections,
+        html: renderEmailHtml(docFor(g, e.subject, sections)),
+      };
+    }),
     note: 'It goes in switched off. Read it through, then turn it on.',
   };
 }

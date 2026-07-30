@@ -715,15 +715,30 @@ The staff area shows up when `can_access_staff_area` is on.
   Monday — A new small-group session for anyone…" told an owner it was
   roughly about the right thing, which is not the question they have. Both
   comms cards now render the draft through the registry's generic `card`
-  escape (`card: 'email'`, the second renderer after `member`): the gym's
-  own colour and logo at the top, the subject as a subject, every section
-  in full, and for a sequence each email stamped with when it goes. Near
-  enough to what lands in the inbox to be worth reading, and deliberately
-  not an email client — the campaign screen's iframe preview is still
-  where "does it render in Outlook" gets answered. `ProposalCard` gained an
+  escape (`card: 'email'`, the second renderer after `member`). On web it
+  is **the email**: the compiled HTML the send worker will post, in the
+  same sandboxed read-only iframe the campaign editor previews with, so
+  the logo is the logo, the widths are the widths and the brand colours
+  are the brand's. On native there is no WebView in this app, so the card
+  shows the subject and the sections as text — a downgrade in fidelity,
+  not in content, which is the right way round for a surface whose
+  question is "does this say the right thing". A sequence renders every
+  email in it, each stamped with when it goes. `ProposalCard` gained an
   optional body so a named renderer and the two choices can live on the
   same card; a `do` with a renderer is no longer mistaken for a preview
   with nothing to show.
+- **One builder for the card and the write** — the preview and the apply
+  each had their own copy of the four lines that turn a draft into the
+  block document, which is how a preview and the thing actually saved get
+  to disagree without anyone noticing. They are now one function, so the
+  campaign stored is byte-for-byte the email that was on screen.
+  Rendering the real thing immediately found what the summary had been
+  hiding: that copy fell back to `textColor: '#FFFFFF'` — white body text
+  on the white content panel. `gyms.text_color` is `NOT NULL` so it never
+  bit in production, but it fires the moment that select comes back empty,
+  and an unreadable draft is not something a fallback should be able to
+  produce. The fallbacks are now the block kit's own
+  (`FALLBACK_BRAND_SEED`), and a test pins the rendered body colour.
 - **Nothing walks the owner out of the chat** — `ActionContext.navigate`
   is gone, replaced by `offer(label, href)`. Every use of it was comms
   (the newsletter and the sequence both jumped to their editor on Yes),

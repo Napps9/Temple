@@ -707,6 +707,18 @@ describe('the draft, in the chat', () => {
     expect(card.note).toBeNull();
     expect(card.primaryColor).toBe('#2563EB');
     expect(card.gymName).toBe('Your gym');
+    // Not a rendering of the draft — the draft. Same builder apply uses,
+    // so what the owner reads is what the send worker posts. The subject
+    // lives on the campaign rather than in the body, which is why the card
+    // shows it separately above the frame.
+    expect(card.emails[0].html).toContain('What it is');
+    expect(card.emails[0].html).toContain('A small-group session.');
+    expect(card.emails[0].html).toMatch(/<html|<table/i);
+    // Rendering the real thing is how this was found: the fallback used to
+    // be white, so the body text was white on the white content panel.
+    expect(card.emails[0].html).toContain(
+      'color:#0F172A;text-align:left;">A small-group session.',
+    );
   });
 
   it('renders a sequence as its steps, stamped with when each one goes', async () => {
@@ -721,6 +733,9 @@ describe('the draft, in the chat', () => {
     const card = await sequenceCard(draft, NO_BRAND);
     expect(card.audience).toBe('Starts when someone joins the gym.');
     expect(card.emails.map((e) => e.when)).toEqual(['Straight away', 'A week later']);
+    // Each step compiles to its own email, not one document with both.
+    expect(card.emails[0].html).toContain('You are in');
+    expect(card.emails[0].html).not.toContain('How is it going');
     // The one thing the owner must not discover later.
     expect(card.note).toContain('switched off');
   });

@@ -17,6 +17,7 @@ import {
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { RuleSheet } from '@/components/RuleSheet';
@@ -720,14 +721,24 @@ function LocalRow({
   );
 }
 
+const WEB = Platform.OS === 'web';
+
+// Tall enough that a short newsletter doesn't sit in a letterbox, short
+// enough that three of them in a sequence card don't bury the two
+// choices underneath. The iframe scrolls past this either way.
+function frameHeight(sections: number): number {
+  return Math.min(520, 230 + sections * 105);
+}
+
 // The drafted email, in the chat.
 //
-// Near enough to what lands in the member's inbox to be worth reading —
-// the gym's colour and logo at the top, the subject as a subject, the
-// sections in full — and deliberately not an email client. What an owner
-// is checking here is whether it says the right thing, not whether it
-// renders in Outlook; the campaign screen's iframe preview is still where
-// that question gets answered.
+// On web this is the email — the compiled HTML the send worker will post,
+// in the same sandboxed iframe the campaign editor previews with, so the
+// logo is the logo and the styling is the styling. On native there is no
+// WebView in this app, so the card shows the subject and the sections as
+// text; that is a downgrade in fidelity and not in content, which is the
+// right way round for a surface whose question is "does this say the
+// right thing".
 //
 // One card for both verbs. A newsletter is one email with no timing on
 // it; a sequence is several, each stamped with when it goes.
@@ -770,16 +781,27 @@ function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
             <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
               {e.subject}
             </Text>
-            {e.sections.map((sec, j) => (
-              <View key={`${sec.heading}-${j}`} className="gap-0.5">
-                <Text className="text-gray-800 dark:text-gray-100 text-[13.5px] font-semibold">
-                  {sec.heading}
-                </Text>
-                <Text className="text-gray-600 dark:text-gray-300 text-[13.5px] leading-[19px]">
-                  {sec.body}
-                </Text>
-              </View>
-            ))}
+            {WEB ? (
+              // The compiled email in a sandboxed iframe: the real logo,
+              // the real block styling, the real widths. Same component
+              // the campaign editor previews with, read-only.
+              <HtmlPreview html={e.html} height={frameHeight(e.sections.length)} />
+            ) : (
+              // No WebView in this app, so native reads the words instead
+              // of the email. Better than the stock "open Temple on the
+              // web" placeholder, which answers a question nobody asked
+              // while sitting on top of the draft they wanted to read.
+              e.sections.map((sec, j) => (
+                <View key={`${sec.heading}-${j}`} className="gap-0.5">
+                  <Text className="text-gray-800 dark:text-gray-100 text-[13.5px] font-semibold">
+                    {sec.heading}
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-300 text-[13.5px] leading-[19px]">
+                    {sec.body}
+                  </Text>
+                </View>
+              ))
+            )}
           </View>
         ))}
       </View>

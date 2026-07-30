@@ -48,6 +48,8 @@ import { describeAudience } from '../email/audience';
 import {
   AUDIENCE_ARGS,
   audienceLine,
+  brandOf,
+  docFor,
   newsletterCard,
   readAudienceArgs,
   type NewsletterAudience,
@@ -380,27 +382,9 @@ export const draftNewsletter: ActionSpec<{
     // renamed between the card opening and Yes should change who this goes
     // to, and the campaign screen is where they'd find out otherwise.
     const { def } = await audienceLine(a.audience, ctx);
-    const { data: gym } = await ctx.supabase
-      .from('gyms')
-      .select('name, logo_url, primary_color, secondary_color, text_color')
-      .eq('id', ctx.gymId)
-      .single();
-    const g = gym as {
-      name: string;
-      logo_url: string | null;
-      primary_color: string | null;
-      secondary_color: string | null;
-      text_color: string | null;
-    } | null;
-    const doc = newsletterDocument(
-      {
-        primaryColor: g?.primary_color ?? '#2563EB',
-        secondaryColor: g?.secondary_color ?? '#0F172A',
-        textColor: g?.text_color ?? '#FFFFFF',
-      },
-      { gymName: g?.name ?? 'Your gym', logoUrl: g?.logo_url ?? null },
-      a.draft,
-    );
+    // The same builder the card rendered with, so the campaign saved is
+    // byte-for-byte the email that was on screen.
+    const doc = docFor(await brandOf(ctx), a.draft.subject, a.draft.sections);
     const { data, error } = await ctx.supabase
       .from('email_campaigns')
       .insert({
