@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { bookMemberIn, cancelClass, editClasses, removeMemberFrom } from './classes';
+import { audienceFrom, describeSequenceAction, readAudienceArgs } from './comms';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
@@ -64,6 +65,7 @@ describe('the registry', () => {
         'gym.add_plans',
         'gym.close_dates',
         'comms.draft_newsletter',
+        'comms.describe_sequence',
         'classes.edit',
         'classes.cancel',
         'classes.book_member',
@@ -586,6 +588,83 @@ describe('refunding a member', () => {
     expect(
       refundMember.sanitise({ member: 'Dan', profile_id: 'the first one' })?.profileId,
     ).toBeNull();
+  });
+});
+
+describe('who a newsletter is for', () => {
+  it('reads tags and cohorts off the sentence, and everybody by default', () => {
+    expect(readAudienceArgs({ tags: ['injured'] })).toEqual({
+      tags: ['injured'],
+      cohorts: [],
+    });
+    expect(readAudienceArgs({ cohorts: ['expired'] })).toEqual({
+      tags: [],
+      cohorts: ['expired'],
+    });
+    expect(readAudienceArgs({})).toEqual({ tags: [], cohorts: [] });
+    // Whatever the model felt like sending is not a tag list.
+    expect(readAudienceArgs({ tags: 'injured' }).tags).toEqual([]);
+    expect(readAudienceArgs({ tags: [1, null, 'ok'] }).tags).toEqual(['ok']);
+  });
+
+  // Naming a tag is more specific than naming a group, so a sentence that
+  // does both means the tag.
+  it('prefers a tag over a cohort, and drops a cohort it does not know', () => {
+    expect(audienceFrom(['injured'], ['expired'])).toEqual({
+      kind: 'tags',
+      tags: ['injured'],
+    });
+    expect(audienceFrom([], ['expired'])).toEqual({
+      kind: 'cohort',
+      cohorts: ['expired'],
+    });
+    expect(audienceFrom([], ['lapsed'])).toEqual({ kind: 'all_members' });
+    expect(audienceFrom([], [])).toEqual({ kind: 'all_members' });
+  });
+
+  it('offers the audience to the parser as part of the newsletter', () => {
+    const names = draftNewsletter.args.map((a) => a.name);
+    expect(names).toContain('tags');
+    expect(names).toContain('cohorts');
+  });
+});
+
+describe('describing a sequence', () => {
+  const ok = {
+    sequence: {
+      name: 'Welcome',
+      trigger: 'member_joined',
+      emails: [
+        {
+          after_days: 0,
+          subject: 'Welcome to Temple',
+          heading: 'You are in',
+          body: 'Great to have you with us.',
+        },
+      ],
+    },
+  };
+
+  it('takes a sequence it can actually build', () => {
+    const a = describeSequenceAction.sanitise(ok);
+    expect(a?.draft.name).toBe('Welcome');
+    expect(a?.draft.emails).toHaveLength(1);
+  });
+
+  it('refuses one it would have to invent the trigger for', () => {
+    expect(
+      describeSequenceAction.sanitise({
+        sequence: { ...ok.sequence, trigger: undefined },
+      }),
+    ).toBeNull();
+    expect(describeSequenceAction.sanitise({})).toBeNull();
+  });
+
+  // The one promise on the card that has to hold: describing a program is
+  // drafting it, turning it on is a human act.
+  it('never sets enabled, so it can only arrive switched off', () => {
+    const src = readFileSync('src/lib/actions/comms.ts', 'utf8');
+    expect(src).not.toMatch(/enabled\s*:/);
   });
 });
 

@@ -44,7 +44,13 @@ import {
   sanitiseNewsletter,
   type NewsletterDraft,
 } from '../newsletter-draft';
-import { DEFAULT_AUDIENCE } from '../email/audience';
+import { describeAudience } from '../email/audience';
+import {
+  AUDIENCE_ARGS,
+  audienceLine,
+  readAudienceArgs,
+  type NewsletterAudience,
+} from './comms';
 import type { Json } from '../../types/database';
 
 // The gym's live settings, read the same way the rule sheet reads them.
@@ -322,13 +328,17 @@ export const addPlans: ActionSpec<{ proposal: PlansProposal }> = {
   },
 };
 
-export const draftNewsletter: ActionSpec<{ draft: NewsletterDraft }> = {
+export const draftNewsletter: ActionSpec<{
+  draft: NewsletterDraft;
+  audience: NewsletterAudience;
+}> = {
   name: 'comms.draft_newsletter',
   kind: 'do',
   capability: 'can_manage_comms',
   says:
     'Write to the members — "send a newsletter, Christmas hours and the ' +
-    'new barbell club".',
+    'new barbell club", "email everyone on the injured tag about the ' +
+    'rehab class", "tell the lapsed lot we miss them".',
   args: [
     {
       name: 'newsletter',
@@ -342,21 +352,34 @@ export const draftNewsletter: ActionSpec<{ draft: NewsletterDraft }> = {
         'to watch this space or ask at the gym.',
       required: true,
     },
+    ...AUDIENCE_ARGS,
   ],
   invalidate: ['comms-campaigns'],
   sanitise: (raw) => {
     const draft = sanitiseNewsletter(raw.newsletter);
-    return draft ? { draft } : null;
+    return draft ? { draft, audience: readAudienceArgs(raw) } : null;
   },
-  preview: async (a) => ({
-    title: `Draft this newsletter? — “${a.draft.subject}”`,
-    lines: a.draft.sections.map(
-      (s) =>
-        `${s.heading} — ${s.body.length > 90 ? `${s.body.slice(0, 90)}…` : s.body}`,
-    ),
-    yes: 'Yes, draft it',
-  }),
+  preview: async (a, ctx) => {
+    // Who it goes to is the first line, not a detail: a draft addressed to
+    // the wrong people reads exactly like one addressed to the right ones.
+    const { line } = await audienceLine(a.audience, ctx);
+    return {
+      title: `Draft this newsletter? — “${a.draft.subject}”`,
+      lines: [
+        line,
+        ...a.draft.sections.map(
+          (s) =>
+            `${s.heading} — ${s.body.length > 90 ? `${s.body.slice(0, 90)}…` : s.body}`,
+        ),
+      ],
+      yes: 'Yes, draft it',
+    };
+  },
   apply: async (a, ctx) => {
+    // Re-resolved rather than carried from the preview: a tag added or
+    // renamed between the card opening and Yes should change who this goes
+    // to, and the campaign screen is where they'd find out otherwise.
+    const { def } = await audienceLine(a.audience, ctx);
     const { data: gym } = await ctx.supabase
       .from('gyms')
       .select('name, logo_url, primary_color, secondary_color, text_color')
@@ -386,7 +409,7 @@ export const draftNewsletter: ActionSpec<{ draft: NewsletterDraft }> = {
         title: a.draft.subject,
         subject: a.draft.subject,
         design: doc as unknown as Json,
-        audience: DEFAULT_AUDIENCE as unknown as Json,
+        audience: def as unknown as Json,
       })
       .select('id')
       .single();
@@ -394,7 +417,10 @@ export const draftNewsletter: ActionSpec<{ draft: NewsletterDraft }> = {
     ctx.navigate?.(
       `/management/communications/${(data as { id: string }).id}`,
     );
-    return `Drafted — “${a.draft.subject}”. Have a read, pick who it goes to, and send it from there.`;
+    return (
+      `Drafted — “${a.draft.subject}”, to ${describeAudience(def).toLowerCase()}. ` +
+      `Have a read and send it from there.`
+    );
   },
 };
 

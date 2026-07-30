@@ -675,6 +675,42 @@ The staff area shows up when `can_access_staff_area` is on.
   `DEFAULT_AUDIENCE`) and opens the existing editor — audience, topic,
   A/B, suppression and one-click unsubscribe all unchanged. The send
   button remains the approval; nothing sends from the bar.
+- **A newsletter knows who it is for** (roadmap phase 6/step 2) — the
+  newsletter has been a sentence since phase 6 and always drafted to
+  `all_members`, so "tell the lapsed lot we miss them" produced a campaign
+  addressed to everyone and the owner went to the screen to fix it, which
+  was most of the work the sentence removed. `comms.draft_newsletter` now
+  takes `tags` and `cohorts` and the card leads with who it goes to and
+  how many that is (`comms_audience_count`, the same RPC the campaign
+  screen's live count uses). Tags are matched case-insensitively against
+  the gym's real labels, and a tag nobody has **does not fall back to
+  everybody** — falling back would mail the whole gym because one word was
+  misheard, so the audience stays empty and the card says "no tag here
+  called X — nobody would get this". Naming a tag beats naming a cohort,
+  because a tag is the more specific thing to have said. The audience is
+  re-resolved on Yes rather than carried from the preview.
+- **A sequence is described, not built** (roadmap step 2) —
+  `comms.describe_sequence` ("when someone joins, welcome them and check
+  in after a week", "email members who have not been in for a month",
+  "when I tag someone VIP, send them the members' guide") over the
+  automations engine (0116–0201) exactly as it stands: five triggers,
+  per-email delays measured from the anchor, the comms suite's sending
+  identity, topic suppression, unsubscribe. `sanitiseSequence` +
+  `primaryRow` + `stepRows` (`src/lib/sequence-draft.ts`, pure + tested)
+  are the untrusted-output boundary and the mapping — the first email
+  becomes the automation row (0119's "the automation row stays the PRIMARY
+  email"), the rest become `email_automation_steps`. **It lands switched
+  off and the card says so**: this is the first thing the bar drafts that
+  keeps running after the conversation ends, so describing a program is
+  drafting it and turning it on stays a human act — the same rule as the
+  newsletter's send button. Two traps the module encodes: for
+  `member_inactive` and `lead_cold` the wait *is* the trigger
+  (`knobToStorage` pins `delay_minutes` to 0 and puts the number in
+  `params`), so a primary email claiming to go "14 days after" would have
+  fired at the threshold instead — the number is read as the threshold;
+  and a `member_tagged` sequence with no tag is refused outright rather
+  than created, because it would match nobody for ever while looking like
+  it worked. The card also refuses a tag no member actually holds.
 - **Your rules, permanently** — the day-one rule sheet (extracted to
   `src/components/RuleSheet.tsx`, shared with `/setup`) opens from a
   chip above the bar with the gym's *current* settings, read back by

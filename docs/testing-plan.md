@@ -535,4 +535,71 @@ asks every time, with the real arithmetic on each option.
 
 ---
 
+## Module: reaching members — `comms.draft_newsletter`, `comms.describe_sequence`
+
+The newsletter's audience line is the thing to read on every card. A
+draft addressed to the wrong people looks exactly like one addressed to
+the right ones.
+
+| Say | Expect |
+|---|---|
+| send a newsletter — Christmas hours and the new barbell club | "To All members — N people." then the sections |
+| email everyone on the injured tag about the new rehab class | "To Injured — N people." N should match the tag on the members screen |
+| tell the lapsed lot we miss them | Cohort `expired`, not a tag |
+| email the members about to run out | Cohort `expiring_soon` |
+| open the draft and check the audience | The campaign screen must show the same audience the card promised |
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| email the powerlifters *(no such tag)* | "No tag here called 'powerlifters' — nobody would get this." It must **not** quietly become everybody |
+| email everyone on the INJURED tag *(wrong case)* | Should still resolve — matching is case-insensitive |
+| email the injured members and the lapsed ones | Tag wins; naming a tag is the more specific thing to have said |
+| delete the tag, then confirm a card that was already open | The receipt should reflect the audience as it is at Yes, not as it was at preview |
+
+---
+
+## Module: sequences — `comms.describe_sequence`
+
+The first thing the bar drafts that keeps running after you close it.
+Every card must say it arrives switched off, and it must actually be off.
+
+| Say | Expect |
+|---|---|
+| when someone joins, welcome them and check in after a week | Two emails, "Straight away" and "A week later", starts on join |
+| when someone joins, welcome them, then a week later, then at a month | Three, at 0 / 7 / 28 days |
+| email members who have not been in for a month | Trigger is inactivity, threshold 30 days |
+| when I tag someone VIP, send them the members' guide | Starts on the tag, and only if someone holds it |
+| chase an enquiry that has gone quiet for two days | Lead cold, 48 hours |
+
+### Check it landed
+
+- The automations screen shows it **disabled**. Turning it on is a
+  separate, deliberate act.
+- Open it: the trigger, the wait and every follow-up's delay match what
+  the card said.
+- **The delays are from the trigger, not from each other.** "Welcome,
+  then a week later" is day 0 and day 7 — if the second one reads day 14
+  the anchor arithmetic is wrong.
+- **Inactivity and cold-lead sequences must show delay 0 on the primary
+  email** with the number in the threshold instead. This is the trap: for
+  those two the wait *is* the trigger, so a primary that stored "14 days
+  after" would fire at the threshold and the screen would disagree with
+  the card.
+- Turn one on with a test member and confirm it actually sends — the
+  engine is a cron sweep, so allow a cycle.
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| when I tag someone VIP… *(no member holds "VIP")* | Refused with "nobody at your gym is tagged VIP, so this would never fire" |
+| set up a sequence *(no trigger stated)* | Refused rather than defaulted — when a program fires is not something to guess |
+| when someone joins, send them eight emails | Capped at five |
+| welcome them in 4000 days | Falls back to straight away rather than scheduling it eleven years out |
+| as a coach without `can_manage_comms` | Not offered at all |
+
+---
+
 *Module sections are added here as each ships.*

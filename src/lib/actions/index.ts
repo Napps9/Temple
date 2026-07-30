@@ -1,4 +1,5 @@
 import { CLASS_ACTIONS } from './classes';
+import { COMMS_ACTIONS } from './comms';
 import { GYM_ACTIONS } from './gym';
 import { MEMBER_ACTIONS } from './members';
 import { MONEY_ACTIONS } from './money';
@@ -13,6 +14,7 @@ export type { MemberCard } from './members';
 export const ACTIONS: AnyAction[] = [
   ...GYM_ACTIONS,
   ...CLASS_ACTIONS,
+  ...COMMS_ACTIONS,
   ...MEMBER_ACTIONS,
   ...MONEY_ACTIONS,
   ...STORE_ACTIONS,

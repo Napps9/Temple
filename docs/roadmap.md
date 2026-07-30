@@ -305,7 +305,15 @@ already authorised. Roughly in order of how often an owner touches them:
   there is nothing to wrap — and refunding a single booking's credit,
   which `remove_member_booking` already does as part of taking someone
   out rather than as a verb of its own.
-- **Comms** — send to a tag, schedule it, describe a sequence.
+- **Comms** — done for the two that matter. Send to a tag (the
+  newsletter finally carries an audience, resolved against the gym's real
+  labels and counted on the card) and describe a sequence, which lands as
+  a disabled automation over the engine that already had five triggers,
+  step delays and suppression and no way in but a form. **Still absent:**
+  scheduling a send from a sentence. The machinery exists (0183/0184), but
+  the standing rule is that nothing sends from the bar — the send button
+  is the approval — and "send it Monday at 9" is a send with a delay, not
+  a draft. Worth a decision before it is built rather than after.
 - **Leads** — the front desk's own settings and the pipeline as sentences.
 - **Programming, team, website, tags** — the long tail, same shape.
 
