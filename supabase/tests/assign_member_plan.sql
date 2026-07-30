@@ -66,8 +66,11 @@ begin
       (gym_id, name, kind, monthly_price_cents, archived_at)
     values (v_gym, 'Retired', 'unlimited', 4900, now())
     returning plan_id into v_arch;
-  insert into public.membership_plans (gym_id, name, kind, monthly_price_cents)
-    values (v_gym, 'PT programming', 'programming_only', 2000)
+  -- includes_individual_programming is required for this kind by
+  -- membership_plans_programming_only_includes (0123:115-117).
+  insert into public.membership_plans
+      (gym_id, name, kind, monthly_price_cents, includes_individual_programming)
+    values (v_gym, 'PT programming', 'programming_only', 2000, true)
     returning plan_id into v_prog;
   insert into public.membership_plans (gym_id, name, kind, monthly_price_cents)
     values (v_other, 'Someone else''s plan', 'unlimited', 9900)

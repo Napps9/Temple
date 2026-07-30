@@ -92,9 +92,23 @@ Practical implications:
   `actions_get`, `get_job_logs`). Wait for both jobs to be green
   before claiming a change is live. Use a single
   `sleep 130 && echo done` in the background; don't poll.
-- **`supabase` CLI is NOT installed locally** in this remote-execution
-  environment. Local validation of migrations / pgTAP isn't possible —
-  trust CI.
+- **`supabase` CLI is NOT installed locally**, but migrations and pgTAP
+  CAN be run locally anyway — Postgres 16 is installed, and
+  `scripts/pgtap-local/` replays every migration into a scratch database
+  and runs the suite against a pgTAP shim:
+
+  ```bash
+  scripts/pgtap-local/start.sh                          # once per session
+  scripts/pgtap-local/runtest.sh assign_member_plan.sql # one file
+  scripts/pgtap-local/runall.sh                         # all of them
+  ```
+
+  Do this before pushing any migration or pgTAP file. It exists because
+  "trust CI" cost a red deploy: a fixture violated a CHECK in its setup
+  block, the file aborted, `pgTAP` planned 39 tests and ran 0, and
+  `db-deploy` never ran — eleven seconds to find locally. Four files fail
+  in the harness for the shim's own reasons (listed in its README); a
+  failure anywhere else is real.
 - **Don't comment on GitHub PRs unless the user asks.** Be frugal.
 
 ### Common commands
