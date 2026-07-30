@@ -4,7 +4,14 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { bookMemberIn, cancelClass, editClasses, removeMemberFrom } from './classes';
-import { audienceFrom, describeSequenceAction, readAudienceArgs } from './comms';
+import {
+  audienceFrom,
+  describeSequenceAction,
+  newsletterCard,
+  readAudienceArgs,
+  sequenceCard,
+} from './comms';
+import { sanitiseSequence } from '../sequence-draft';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
@@ -665,6 +672,70 @@ describe('describing a sequence', () => {
   it('never sets enabled, so it can only arrive switched off', () => {
     const src = readFileSync('src/lib/actions/comms.ts', 'utf8');
     expect(src).not.toMatch(/enabled\s*:/);
+  });
+});
+
+// brandOf is the only read either card makes, and a gym with no branding
+// set is the shape that must not crash — every colour has a fallback.
+const NO_BRAND = {
+  supabase: {
+    from: () => ({
+      select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }),
+    }),
+  },
+  gymId: 'gym',
+  userId: 'user',
+} as never;
+
+describe('the draft, in the chat', () => {
+  it('renders a newsletter as one email with who it is for and no timing', async () => {
+    const card = await newsletterCard(
+      {
+        subject: 'Rehab class starts Monday',
+        sections: [{ heading: 'What it is', body: 'A small-group session.' }],
+      },
+      'To Injured — 14 people.',
+      NO_BRAND,
+    );
+    expect(card.audience).toBe('To Injured — 14 people.');
+    expect(card.emails).toHaveLength(1);
+    expect(card.emails[0].when).toBeNull();
+    expect(card.emails[0].subject).toBe('Rehab class starts Monday');
+    // Full text, not the 90-character truncation the card used to show —
+    // whether the wording is any good is the whole question.
+    expect(card.emails[0].sections[0].body).toBe('A small-group session.');
+    expect(card.note).toBeNull();
+    expect(card.primaryColor).toBe('#2563EB');
+    expect(card.gymName).toBe('Your gym');
+  });
+
+  it('renders a sequence as its steps, stamped with when each one goes', async () => {
+    const draft = sanitiseSequence({
+      name: 'Welcome',
+      trigger: 'member_joined',
+      emails: [
+        { after_days: 0, subject: 'Welcome', heading: 'You are in', body: 'Good to have you.' },
+        { after_days: 7, subject: 'Week one', heading: 'How is it going', body: 'Tell us how you got on.' },
+      ],
+    })!;
+    const card = await sequenceCard(draft, NO_BRAND);
+    expect(card.audience).toBe('Starts when someone joins the gym.');
+    expect(card.emails.map((e) => e.when)).toEqual(['Straight away', 'A week later']);
+    // The one thing the owner must not discover later.
+    expect(card.note).toContain('switched off');
+  });
+});
+
+// An action that navigated on the owner's behalf would empty the
+// conversation they were in the middle of, which is the thing this whole
+// surface exists to stop. Actions offer; the receipt carries the chip.
+describe('nothing walks the owner out of the chat', () => {
+  it('has no navigation anywhere in the registry', () => {
+    for (const file of readdirSync('src/lib/actions')) {
+      if (!file.endsWith('.ts') || file.endsWith('.test.ts')) continue;
+      const src = readFileSync(join('src/lib/actions', file), 'utf8');
+      expect(src).not.toMatch(/router\.(push|replace)|ctx\.navigate/);
+    }
   });
 });
 

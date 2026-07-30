@@ -141,7 +141,7 @@ export function triggerSentence(d: SequenceDraft): string {
   }
 }
 
-function whenLine(days: number): string {
+export function whenLine(days: number): string {
   if (days === 0) return 'Straight away';
   if (days === 1) return 'A day later';
   if (days === 7) return 'A week later';

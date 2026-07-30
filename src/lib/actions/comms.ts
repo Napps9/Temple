@@ -25,8 +25,9 @@ import { newsletterDocument } from '../newsletter-draft';
 import {
   primaryRow,
   sanitiseSequence,
-  sequenceLines,
   stepRows,
+  triggerSentence,
+  whenLine,
   type SequenceDraft,
 } from '../sequence-draft';
 
@@ -149,6 +150,74 @@ function docFor(
 }
 
 // ============================================================================
+// The draft, in the chat
+// ============================================================================
+//
+// A confirm card that says "Rehab class starts Monday — A new small-group
+// session for anyone…" tells an owner it is roughly about the right thing.
+// It does not tell them whether it is any good, which is the only question
+// they actually have. So the card renders the draft: the gym's own colour
+// and logo at the top, the subject as a subject, and every section in
+// full — near enough to what lands in the member's inbox to be worth
+// reading, without pretending to be an email client.
+//
+// One shape for both verbs. A newsletter is one email with no timing; a
+// sequence is several, each with the moment it goes.
+
+export type EmailDraftCard = {
+  gymName: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  // Who it reaches, already counted — null for a sequence, where the
+  // trigger is the audience.
+  audience: string | null;
+  emails: {
+    when: string | null;
+    subject: string;
+    sections: { heading: string; body: string }[];
+  }[];
+  // The thing an owner must not discover later, if there is one.
+  note: string | null;
+};
+
+function cardBase(g: Brand | null): Omit<EmailDraftCard, 'emails' | 'audience' | 'note'> {
+  return {
+    gymName: g?.name ?? 'Your gym',
+    logoUrl: g?.logo_url ?? null,
+    primaryColor: g?.primary_color ?? '#2563EB',
+  };
+}
+
+export async function newsletterCard(
+  draft: { subject: string; sections: { heading: string; body: string }[] },
+  audience: string,
+  ctx: ActionContext,
+): Promise<EmailDraftCard> {
+  return {
+    ...cardBase(await brandOf(ctx)),
+    audience,
+    emails: [{ when: null, subject: draft.subject, sections: draft.sections }],
+    note: null,
+  };
+}
+
+export async function sequenceCard(
+  d: SequenceDraft,
+  ctx: ActionContext,
+): Promise<EmailDraftCard> {
+  return {
+    ...cardBase(await brandOf(ctx)),
+    audience: triggerSentence(d),
+    emails: d.emails.map((e) => ({
+      when: whenLine(e.afterDays),
+      subject: e.subject,
+      sections: [{ heading: e.heading, body: e.body }],
+    })),
+    note: 'It goes in switched off. Read it through, then turn it on.',
+  };
+}
+
+// ============================================================================
 // comms.describe_sequence
 // ============================================================================
 
@@ -198,7 +267,9 @@ export const describeSequenceAction: ActionSpec<{ draft: SequenceDraft }> = {
     }
     return {
       title: `Set up “${a.draft.name}”?`,
-      lines: sequenceLines(a.draft),
+      lines: [],
+      card: 'email',
+      data: await sequenceCard(a.draft, ctx),
       yes: 'Yes, set it up',
     };
   },
@@ -260,14 +331,14 @@ export const describeSequenceAction: ActionSpec<{ draft: SequenceDraft }> = {
       // The automation itself is real and disabled, so a half-written
       // sequence is safe — but the owner has to be told which half.
       if (stepErr) {
-        ctx.navigate?.(`/management/communications/automations/${automationId}`);
+        ctx.offer?.('Open it', `/management/communications/automations/${automationId}`);
         throw new ActionError(
           `“${d.name}” was created with its first email, but the follow-ups did not save. It is switched off — open it and add them.`,
         );
       }
     }
 
-    ctx.navigate?.(`/management/communications/automations/${automationId}`);
+    ctx.offer?.('Open it', `/management/communications/automations/${automationId}`);
     const n = d.emails.length;
     return (
       `“${d.name}” is set up — ${n} email${n === 1 ? '' : 's'}, switched off. ` +

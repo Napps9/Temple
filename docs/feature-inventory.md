@@ -711,6 +711,29 @@ The staff area shows up when `can_access_staff_area` is on.
   and a `member_tagged` sequence with no tag is refused outright rather
   than created, because it would match nobody for ever while looking like
   it worked. The card also refuses a tag no member actually holds.
+- **The draft, in the chat** — a confirm card that read "Rehab class starts
+  Monday — A new small-group session for anyone…" told an owner it was
+  roughly about the right thing, which is not the question they have. Both
+  comms cards now render the draft through the registry's generic `card`
+  escape (`card: 'email'`, the second renderer after `member`): the gym's
+  own colour and logo at the top, the subject as a subject, every section
+  in full, and for a sequence each email stamped with when it goes. Near
+  enough to what lands in the inbox to be worth reading, and deliberately
+  not an email client — the campaign screen's iframe preview is still
+  where "does it render in Outlook" gets answered. `ProposalCard` gained an
+  optional body so a named renderer and the two choices can live on the
+  same card; a `do` with a renderer is no longer mistaken for a preview
+  with nothing to show.
+- **Nothing walks the owner out of the chat** — `ActionContext.navigate`
+  is gone, replaced by `offer(label, href)`. Every use of it was comms
+  (the newsletter and the sequence both jumped to their editor on Yes),
+  and navigating on the owner's behalf empties the conversation they were
+  in the middle of — the exact complaint that shaped this surface when the
+  import did it. The action now offers the way through and the receipt
+  carries it as a chip ("Open it to send"), so the send button stays the
+  approval without the chat being abandoned to reach it. A test walks
+  `src/lib/actions/` and fails on any `router.push` or `ctx.navigate`, so
+  it cannot come back by accident.
 - **Your rules, permanently** — the day-one rule sheet (extracted to
   `src/components/RuleSheet.tsx`, shared with `/setup`) opens from a
   chip above the bar with the gym's *current* settings, read back by

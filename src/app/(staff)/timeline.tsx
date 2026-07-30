@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -28,6 +29,7 @@ import {
   findAction,
   type ActionPreview,
   type AnyAction,
+  type EmailDraftCard,
   type MemberCard,
 } from '@/lib/actions';
 import type { Capability } from '@/lib/can';
@@ -141,7 +143,7 @@ function useGymRules(gymId: string | undefined, enabled: boolean) {
 type LocalMsg =
   | { kind: 'mine'; text: string }
   | { kind: 'temple'; text: string }
-  | { kind: 'receipt'; text: string }
+  | { kind: 'receipt'; text: string; offer?: { label: string; href: string } }
   | {
       kind: 'action';
       spec: AnyAction;
@@ -277,11 +279,16 @@ export default function Timeline() {
     };
   };
 
-  const actionCtx = () => ({
+  // `offer` is collected during apply and rides on the receipt as a chip.
+  // Nothing here navigates: an action that moved the owner to another
+  // screen would empty the conversation they were in the middle of.
+  const actionCtx = (
+    offer?: (label: string, href: string) => void,
+  ) => ({
     supabase,
     gymId: gymId!,
     userId: session!.user.id,
-    navigate: (href: string) => router.push(href as never),
+    offer,
   });
 
   const freshen = (spec: AnyAction) => {
@@ -348,9 +355,15 @@ export default function Timeline() {
     if (!gymId || !session?.user.id || busy || !msg.spec.apply) return;
     setBusy(true);
     try {
-      const receipt = await msg.spec.apply(msg.args, actionCtx());
+      let offer: { label: string; href: string } | undefined;
+      const receipt = await msg.spec.apply(
+        msg.args,
+        actionCtx((label, href) => {
+          offer = { label, href };
+        }),
+      );
       closeCard(index);
-      push({ kind: 'receipt', text: receipt });
+      push({ kind: 'receipt', text: receipt, offer });
       remember('gym', receipt);
       freshen(msg.spec);
     } catch (e) {
@@ -395,7 +408,10 @@ export default function Timeline() {
     if (parsed === null || parsed === undefined) return;
     setBusy(true);
     try {
-      push({ kind: 'receipt', text: await spec.apply(parsed as never, actionCtx()) });
+      push({
+        kind: 'receipt',
+        text: await spec.apply(parsed as never, actionCtx()),
+      });
       freshen(spec);
     } catch (e) {
       push({ kind: 'temple', text: failureText(e) });
@@ -619,7 +635,7 @@ function LocalRow({
     );
   }
   if (msg.kind === 'receipt') {
-    return <SoftLine text={msg.text} tone="neutral" />;
+    return <SoftLine text={msg.text} tone="neutral" offer={msg.offer} />;
   }
   if (msg.kind === 'rules-sheet') {
     if (!choices) return null;
@@ -678,8 +694,9 @@ function LocalRow({
   if (!msg.open) return null;
   // A preview with nothing to show is the action saying it couldn't find
   // what was named — the title carries that, and there is nothing to
-  // confirm.
-  if (msg.preview.lines.length === 0) {
+  // confirm. A named renderer IS something to show, so it does not count
+  // as nothing.
+  if (msg.preview.lines.length === 0 && !msg.preview.card) {
     return (
       <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
         {msg.preview.title}
@@ -690,11 +707,91 @@ function LocalRow({
     <ProposalCard
       title={msg.preview.title}
       lines={msg.preview.lines}
+      body={
+        msg.preview.card === 'email' ? (
+          <EmailDraftPreview draft={msg.preview.data as EmailDraftCard} />
+        ) : null
+      }
       yes={msg.preview.yes ?? 'Yes, do it'}
       busy={busy}
       onYes={() => onConfirmAction(index, msg)}
       onNo={() => onDismiss(index)}
     />
+  );
+}
+
+// The drafted email, in the chat.
+//
+// Near enough to what lands in the member's inbox to be worth reading —
+// the gym's colour and logo at the top, the subject as a subject, the
+// sections in full — and deliberately not an email client. What an owner
+// is checking here is whether it says the right thing, not whether it
+// renders in Outlook; the campaign screen's iframe preview is still where
+// that question gets answered.
+//
+// One card for both verbs. A newsletter is one email with no timing on
+// it; a sequence is several, each stamped with when it goes.
+function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
+  return (
+    <View className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <View
+        className="px-4 py-3 flex-row items-center gap-2.5"
+        style={{ backgroundColor: draft.primaryColor }}>
+        {draft.logoUrl ? (
+          <Image
+            source={{ uri: draft.logoUrl }}
+            style={{ width: 22, height: 22, borderRadius: 5 }}
+            resizeMode="contain"
+          />
+        ) : null}
+        <Text className="text-white text-[13px] font-bold flex-1" numberOfLines={1}>
+          {draft.gymName}
+        </Text>
+      </View>
+
+      {draft.audience ? (
+        <View className="px-4 py-2 bg-gray-50 dark:bg-gray-800/60">
+          <Text className="text-gray-600 dark:text-gray-300 text-xs font-semibold">
+            {draft.audience}
+          </Text>
+        </View>
+      ) : null}
+
+      <View className="bg-white dark:bg-gray-950">
+        {draft.emails.map((e, i) => (
+          <View
+            key={`${e.subject}-${i}`}
+            className={`px-4 py-3 gap-2 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-800' : ''}`}>
+            {e.when ? (
+              <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+                {e.when}
+              </Text>
+            ) : null}
+            <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
+              {e.subject}
+            </Text>
+            {e.sections.map((sec, j) => (
+              <View key={`${sec.heading}-${j}`} className="gap-0.5">
+                <Text className="text-gray-800 dark:text-gray-100 text-[13.5px] font-semibold">
+                  {sec.heading}
+                </Text>
+                <Text className="text-gray-600 dark:text-gray-300 text-[13.5px] leading-[19px]">
+                  {sec.body}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+
+      {draft.note ? (
+        <View className="px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-100 dark:border-amber-900/40">
+          <Text className="text-amber-800 dark:text-amber-300 text-xs leading-[17px]">
+            {draft.note}
+          </Text>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -798,6 +895,7 @@ function MemberSummaryCard({ member }: { member: MemberCard }) {
 function ProposalCard({
   title,
   lines,
+  body,
   yes,
   busy,
   onYes,
@@ -805,6 +903,10 @@ function ProposalCard({
 }: {
   title: string;
   lines: string[];
+  // A preview that named a renderer shows it here, in place of prose. The
+  // two choices underneath are the same either way — what is being agreed
+  // to doesn't change because it can be seen properly.
+  body?: ReactNode;
   yes: string;
   busy: boolean;
   onYes: () => void;
@@ -815,6 +917,7 @@ function ProposalCard({
       <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
         {title}
       </Text>
+      {body ?? null}
       <View className="gap-1.5">
         {lines.map((l, i) => (
           <Text key={i} className="text-gray-600 dark:text-gray-300 text-sm leading-5">
@@ -847,25 +950,40 @@ function SoftLine({
   text,
   tone,
   at,
+  offer,
 }: {
   text: string;
   tone: 'neutral' | 'amber';
   at?: string;
+  offer?: { label: string; href: string };
 }) {
   return (
-    <View className="flex-row items-start gap-3 px-1">
-      <View
-        className={`w-2 h-2 rounded-full mt-[7px] ${
-          tone === 'amber' ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
-        }`}
-      />
-      <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px]">
-        {text}
-      </Text>
-      {at ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[3px]">
-          {formatClock(at)}
+    <View className="gap-2">
+      <View className="flex-row items-start gap-3 px-1">
+        <View
+          className={`w-2 h-2 rounded-full mt-[7px] ${
+            tone === 'amber' ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+          }`}
+        />
+        <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px]">
+          {text}
         </Text>
+        {at ? (
+          <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[3px]">
+            {formatClock(at)}
+          </Text>
+        ) : null}
+      </View>
+      {offer ? (
+        <View className="flex-row pl-5">
+          <Pressable
+            onPress={() => router.push(offer.href as never)}
+            className="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+            <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
+              {offer.label}
+            </Text>
+          </Pressable>
+        </View>
       ) : null}
     </View>
   );

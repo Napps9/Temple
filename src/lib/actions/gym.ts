@@ -48,6 +48,7 @@ import { describeAudience } from '../email/audience';
 import {
   AUDIENCE_ARGS,
   audienceLine,
+  newsletterCard,
   readAudienceArgs,
   type NewsletterAudience,
 } from './comms';
@@ -360,18 +361,17 @@ export const draftNewsletter: ActionSpec<{
     return draft ? { draft, audience: readAudienceArgs(raw) } : null;
   },
   preview: async (a, ctx) => {
-    // Who it goes to is the first line, not a detail: a draft addressed to
-    // the wrong people reads exactly like one addressed to the right ones.
+    // Who it goes to is the first thing on the card, not a detail: a draft
+    // addressed to the wrong people reads exactly like one addressed to the
+    // right ones. And the draft itself renders rather than being summarised
+    // — whether the wording is any good is the only question the owner
+    // actually has, and a truncation cannot answer it.
     const { line } = await audienceLine(a.audience, ctx);
     return {
       title: `Draft this newsletter? — “${a.draft.subject}”`,
-      lines: [
-        line,
-        ...a.draft.sections.map(
-          (s) =>
-            `${s.heading} — ${s.body.length > 90 ? `${s.body.slice(0, 90)}…` : s.body}`,
-        ),
-      ],
+      lines: [],
+      card: 'email',
+      data: await newsletterCard(a.draft, line, ctx),
       yes: 'Yes, draft it',
     };
   },
@@ -414,7 +414,8 @@ export const draftNewsletter: ActionSpec<{
       .select('id')
       .single();
     if (error || !data) throw error ?? new Error('Could not draft');
-    ctx.navigate?.(
+    ctx.offer?.(
+      'Open it to send',
       `/management/communications/${(data as { id: string }).id}`,
     );
     return (

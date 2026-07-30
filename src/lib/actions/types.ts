@@ -48,10 +48,13 @@ export type ActionContext = {
   supabase: SupabaseClient<Database>;
   gymId: string;
   userId: string;
-  // Some actions finish somewhere else — drafting a newsletter lands the
-  // owner in the campaign editor. Applying returns a receipt either way;
-  // this is how it asks to move as well.
-  navigate?: (href: string) => void;
+  // Some actions finish somewhere else — a drafted newsletter is sent from
+  // the campaign screen, because the send button is the approval and always
+  // has been. So the action OFFERS the way through and the receipt carries
+  // it as a chip; it never takes it. Navigating on the owner's behalf
+  // empties the conversation they were having, which is the exact thing
+  // this surface exists to stop.
+  offer?: (label: string, href: string) => void;
 };
 
 // What the card shows. `lines` is the evidence; a `do` action gets the

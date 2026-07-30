@@ -7,6 +7,7 @@ import { STORE_ACTIONS } from './store';
 import { toWire, type AnyAction, type ActionWire } from './types';
 
 export * from './types';
+export type { EmailDraftCard } from './comms';
 export type { MemberCard } from './members';
 
 // Every action the bar can reach. Modules land here one at a time; the
