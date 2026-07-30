@@ -1043,9 +1043,18 @@ The staff area shows up when `can_access_staff_area` is on.
   columns, `buildImportRow` shapes each row, `import_pending_members`
   stages them — and reads the file back as a sentence ("84 rows in
   mindbody-export.csv. Matched: Email, First name, …"). Unrecognised
-  columns are chips: tap one, tap what it holds, done. An email column is
-  the one hard requirement, so the button names the missing piece rather
-  than sitting inert. When Stripe is connected the card says to bring
+  columns are the quiet part: a count with a "bring one in" link, not a
+  cloud, because an export full of postcodes and country codes needs no
+  decision from anyone. Expanding shows the columns; tapping one replaces
+  that list with Temple's fields under "Bring 'X' in as…", so **only one
+  list is ever on screen** and each sits under a line naming it (the first
+  version stacked two identically-styled clouds of 25 chips with nothing
+  to distinguish a source column from a destination field). An email column is
+  the one hard requirement, so it is the only loud thing in the card: it
+  never hides behind the disclosure, the button names the missing piece
+  rather than sitting inert, and tapping a column assigns it as the email
+  directly rather than opening a picker whose answer the prompt already
+  gave. When Stripe is connected the card says to bring
   Stripe subscribers across from Stripe first, since that path adopts the
   subscription and avoids a double bill. The receipt carries the join
   link, because staged rows attach themselves to whoever signs up through

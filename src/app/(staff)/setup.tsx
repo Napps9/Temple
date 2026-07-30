@@ -1223,6 +1223,130 @@ function GoLive({
   );
 }
 
+// "Full name (single column)" earns its parenthetical in a mapping table
+// and loses it in a sentence.
+function shortFieldLabel(f: TempleField): string {
+  return TEMPLE_FIELD_LABELS[f].replace(/\s*\(.*\)$/, '');
+}
+
+// The columns autoDetect didn't place.
+//
+// The first version put every one of them on screen as a chip, next to a
+// second, identically-styled cloud of Temple fields — twenty-five chips
+// with nothing to say which list was which, and nine address columns
+// shouting as loudly as the one column that's actually required. So:
+// exactly one list is visible at a time, each under a heading that says
+// what it is, and the required column is the only loud thing here. An
+// export full of postcodes and country codes needs no decision from
+// anyone, and it now takes one line to say so.
+function ColumnMapper({
+  unmatched,
+  used,
+  hasEmail,
+  onAssign,
+}: {
+  unmatched: { h: string; i: number }[];
+  used: Set<TempleField>;
+  hasEmail: boolean;
+  onAssign: (index: number, field: TempleField) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [assigning, setAssigning] = useState<number | null>(null);
+  if (unmatched.length === 0) return null;
+
+  const name = (u: { h: string; i: number }) => u.h || `Column ${u.i + 1}`;
+
+  const columnChips = (
+    <View className="flex-row flex-wrap items-start gap-1.5">
+      {unmatched.map((u) => (
+        <Pressable
+          key={u.i}
+          onPress={() =>
+            hasEmail ? setAssigning(u.i) : onAssign(u.i, 'email')
+          }
+          className="px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
+          <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">
+            {name(u)}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+
+  // No email is a blocker, so it never hides behind a disclosure — and
+  // tapping a column assigns it straight away rather than opening a
+  // picker whose answer we already know.
+  if (!hasEmail) {
+    return (
+      <View className="gap-2">
+        <Text className="text-red-600 dark:text-red-400 text-[13px] leading-5">
+          I need an email column — every row hangs off it. Tap the one that
+          holds it.
+        </Text>
+        {columnChips}
+      </View>
+    );
+  }
+
+  if (!expanded) {
+    return (
+      <Pressable onPress={() => setExpanded(true)} hitSlop={4}>
+        <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+          {unmatched.length} other column{unmatched.length === 1 ? '' : 's'}{' '}
+          ignored — <Text className="text-link font-medium">bring one in</Text>
+        </Text>
+      </Pressable>
+    );
+  }
+
+  if (assigning !== null) {
+    const col = unmatched.find((u) => u.i === assigning);
+    return (
+      <View className="gap-2">
+        <Text className="text-gray-500 dark:text-gray-400 text-[12.5px]">
+          Bring “{col ? name(col) : ''}” in as…
+        </Text>
+        <View className="flex-row flex-wrap items-start gap-1.5">
+          {(Object.keys(TEMPLE_FIELD_LABELS) as TempleField[])
+            .filter((f) => !used.has(f))
+            .map((f) => (
+              <Pressable
+                key={f}
+                onPress={() => {
+                  onAssign(assigning, f);
+                  setAssigning(null);
+                }}
+                className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 active:opacity-70">
+                <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">
+                  {TEMPLE_FIELD_LABELS[f]}
+                </Text>
+              </Pressable>
+            ))}
+        </View>
+        <Pressable onPress={() => setAssigning(null)} hitSlop={6}>
+          <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+            Pick a different column
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View className="gap-2">
+      <Text className="text-gray-500 dark:text-gray-400 text-[12.5px]">
+        Which one do you want?
+      </Text>
+      {columnChips}
+      <Pressable onPress={() => setExpanded(false)} hitSlop={6}>
+        <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+          Leave them out
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 // The member-import step, in the conversation. The wizard's judgement
 // work — plan mapping, cross-gym inference, the Stripe double-bill guard
 // — keeps its screen for the fussy cases, but the ordinary path is a file
@@ -1249,7 +1373,6 @@ function MembersImportCard({
     rows: string[][];
   } | null>(null);
   const [mapping, setMapping] = useState<(TempleField | null)[]>([]);
-  const [assigning, setAssigning] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function take(text: string, name: string | null) {
@@ -1401,53 +1524,17 @@ function MembersImportCard({
         {file.name ? ` in ${file.name}` : ''}
       </Text>
       <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
-        Matched: {matched.map((m) => TEMPLE_FIELD_LABELS[m.f]).join(', ')}
+        Matched: {matched.map((m) => shortFieldLabel(m.f)).join(', ')}
       </Text>
 
-      {unmatched.length > 0 ? (
-        <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-[12px]">
-            {hasEmail
-              ? 'Ignoring these — tap one to bring it in:'
-              : 'I need an email column. Tap the one that holds it:'}
-          </Text>
-          <View className="flex-row flex-wrap items-start gap-1.5">
-            {unmatched.map((u) => (
-              <Pressable
-                key={u.i}
-                onPress={() => setAssigning(assigning === u.i ? null : u.i)}
-                className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
-                  assigning === u.i
-                    ? 'border-primary bg-primary/10'
-                    : 'border-dashed border-gray-300 dark:border-gray-600'
-                }`}>
-                <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">
-                  {u.h || `Column ${u.i + 1}`}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          {assigning !== null ? (
-            <View className="flex-row flex-wrap items-start gap-1.5">
-              {(Object.keys(TEMPLE_FIELD_LABELS) as TempleField[])
-                .filter((f) => !used.has(f))
-                .map((f) => (
-                  <Pressable
-                    key={f}
-                    onPress={() => {
-                      setMapping((m) => m.map((x, i) => (i === assigning ? f : x)));
-                      setAssigning(null);
-                    }}
-                    className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 active:opacity-70">
-                    <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">
-                      {TEMPLE_FIELD_LABELS[f]}
-                    </Text>
-                  </Pressable>
-                ))}
-            </View>
-          ) : null}
-        </View>
-      ) : null}
+      <ColumnMapper
+        unmatched={unmatched}
+        used={used}
+        hasEmail={hasEmail}
+        onAssign={(index, field) =>
+          setMapping((m) => m.map((x, i) => (i === index ? field : x)))
+        }
+      />
 
       <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
         Nobody is charged and nobody is emailed. Each row waits until that
