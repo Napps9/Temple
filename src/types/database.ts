@@ -4420,8 +4420,9 @@ export type Database = {
           p_entitlement_kind?: 'comp_grant' | 'plan_subscription' | null;
           p_entitlement_id?: string | null;
           p_no_charge?: boolean;
+          p_over_capacity?: boolean;
         };
-        Returns: string | null;
+        Returns: string;
       };
       swap_booking_subscription: {
         Args: {
@@ -5041,6 +5042,28 @@ export type Database = {
           p_exclude_session_ids: string[] | null;
         };
         Returns: { closure_id: string; cancelled: number; notified: number };
+      };
+      remove_member_booking: {
+        Args: {
+          p_gym_id: string;
+          p_session_id: string;
+          p_profile_id: string;
+          p_refund?: boolean;
+        };
+        Returns: {
+          removed: boolean;
+          refunded: boolean;
+          promoted_profile_id: string | null;
+          promoted_name: string | null;
+        };
+      };
+      staff_join_waitlist: {
+        Args: { p_gym_id: string; p_session_id: string; p_profile_id: string };
+        Returns: number;
+      };
+      staff_leave_waitlist: {
+        Args: { p_gym_id: string; p_session_id: string; p_profile_id: string };
+        Returns: boolean;
       };
       assign_member_plan: {
         Args: {

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { editClasses } from './classes';
+import { bookMemberIn, cancelClass, editClasses, removeMemberFrom } from './classes';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
@@ -64,6 +64,9 @@ describe('the registry', () => {
         'gym.close_dates',
         'comms.draft_newsletter',
         'classes.edit',
+        'classes.cancel',
+        'classes.book_member',
+        'classes.remove_member',
         'members.find',
         'members.assign_plan',
         'members.comp',
@@ -408,6 +411,74 @@ describe('tagging and messaging one member', () => {
     );
     expect(messageMember.sanitise({ member: 'Marcus', body: '   ' })).toBeNull();
     expect(messageMember.sanitise({ member: 'Marcus' })).toBeNull();
+  });
+});
+
+describe('classes on the calendar', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+
+  it('takes a day and a time only when they are real ones', () => {
+    expect(cancelClass.sanitise({ day: '2026-08-14', time: '06:00' })).toMatchObject({
+      day: '2026-08-14',
+      time: '06:00',
+      series: false,
+    });
+    // Prose that reached sanitise must not become a date or a clock time.
+    expect(cancelClass.sanitise({ day: 'tomorrow', time: '6am' })).toMatchObject({
+      day: null,
+      time: null,
+    });
+    expect(cancelClass.sanitise({ time: '25:00' })?.time).toBeNull();
+  });
+
+  // Naming nothing is legitimate — "cancel the barbell club" when there is
+  // only one coming up — so this one never refuses on shape.
+  it('accepts a class named only by kind', () => {
+    expect(cancelClass.sanitise({ class_type: 'spin' })).toMatchObject({
+      classType: 'spin',
+      day: null,
+      time: null,
+    });
+  });
+
+  it('only cancels a series when that was actually said', () => {
+    expect(cancelClass.sanitise({ day: '2026-08-14', series: true })?.series).toBe(true);
+    expect(cancelClass.sanitise({ day: '2026-08-14' })?.series).toBe(false);
+    expect(cancelClass.sanitise({ day: '2026-08-14', series: 'yes' })?.series).toBe(false);
+  });
+
+  it('needs a person before it will book or unbook one', () => {
+    expect(bookMemberIn.sanitise({ member: 'Marcus', day: '2026-08-14' })).toMatchObject({
+      member: 'Marcus',
+      mode: null,
+    });
+    expect(bookMemberIn.sanitise({ day: '2026-08-14' })).toBeNull();
+    expect(removeMemberFrom.sanitise({ day: '2026-08-14' })).toBeNull();
+  });
+
+  // The chips answer the two questions the cards ask; a mode or a refund
+  // flag the model invented is not an answer.
+  it('only accepts the answers its own cards offered', () => {
+    expect(bookMemberIn.sanitise({ member: 'M', mode: 'over_capacity' })?.mode).toBe(
+      'over_capacity',
+    );
+    expect(bookMemberIn.sanitise({ member: 'M', mode: 'waitlist' })?.mode).toBe('waitlist');
+    expect(bookMemberIn.sanitise({ member: 'M', mode: 'force' })?.mode).toBeNull();
+
+    expect(removeMemberFrom.sanitise({ member: 'S', refund: true })?.refund).toBe(true);
+    expect(removeMemberFrom.sanitise({ member: 'S', refund: false })?.refund).toBe(false);
+    // Unanswered stays unanswered — the card asks rather than assuming.
+    expect(removeMemberFrom.sanitise({ member: 'S' })?.refund).toBeNull();
+    expect(removeMemberFrom.sanitise({ member: 'S', refund: 'yes' })?.refund).toBeNull();
+  });
+
+  it('carries the ids its chips send, and ignores anything that is not one', () => {
+    expect(
+      bookMemberIn.sanitise({ member: 'M', profile_id: id, session_id: id }),
+    ).toMatchObject({ profileId: id, sessionId: id });
+    expect(
+      bookMemberIn.sanitise({ member: 'M', session_id: 'the 6am one' })?.sessionId,
+    ).toBeNull();
   });
 });
 

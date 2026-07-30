@@ -376,5 +376,50 @@ confirm nothing went out that you didn't intend.
 
 ---
 
-*Module sections are added here as each ships. The next one is classes and
-bookings.*
+## Module: classes and bookings — `classes.cancel`,
+`classes.book_member`, `classes.remove_member`
+
+Three things happen underneath these that no other module does: members get
+told, credits move, and the waitlist fills the space. Most of the "try to
+break it" rows below are about whether the card was honest about which.
+
+### Say this
+
+| Say | Expect |
+|---|---|
+| cancel tomorrow's 6am | The class, how many are booked, that they get their credit and a note, and that it cannot be undone |
+| no spin on Friday | Same, matched by class name |
+| cancel the Tuesday 7pm from now on | The series — and it should say the repeat is ended too |
+| put Marcus in Saturday's 9am | Booked, no credit taken |
+| book Sarah into tonight's spin | Same |
+| take Sarah out of tonight's class | **Two chips** — credit back, or keep the credit |
+| Marcus can't make Saturday's 9am | Same |
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| cancel tomorrow's 6am *(when two classes run at 6am)* | A chip per class, not a guess |
+| cancel a class that has already started | Refused — "too late to cancel it" |
+| cancel the same class twice | The second says it's not there any more |
+| cancel the Tuesday 7pm from now on *(on a one-off)* | "That one is a one-off, so there is no repeat to cancel" |
+| **cancel a class, then check a booked member's phone** | They should have an in-app notice naming the class and the date. This is the one worth actually verifying on a second device. |
+| put Marcus in a full class | Two chips: over the cap, or the waitlist |
+| *then* over the cap, as a coach with the override switched off | Refused — "you do not have permission to go over a class cap" |
+| put Marcus in a class he's already in | "They are already in that class", not a silent second booking |
+| put Marcus on the waitlist for a class with room | Refused — book him in instead |
+| put someone with no PAR-Q into a class | Refused, naming the PAR-Q |
+| take someone out who isn't in it | "They are not in that class" |
+| take someone out, keep the credit, then check their balance | It should be unchanged. This is the half that had no write at all before. |
+| take someone out of a class with a waitlist | The receipt names who came off it — or doesn't, if nobody eligible was waiting |
+
+### Not yet, and the bar should say so
+
+| Say | Expect |
+|---|---|
+| Dan is covering Tuesday's 6am | Should NOT claim to reassign — `claim_cover` is self-claim only and there is no reassignment write anywhere |
+| move Friday's 7pm to 7:30 | Not offered as a single-class move; doing it through the bulk editor silently rewrites the whole recurrence |
+
+---
+
+*Module sections are added here as each ships.*
