@@ -1675,6 +1675,27 @@ function WorkoutsImportCard({
   const [overrides, setOverrides] = useState<Map<string, string>>(new Map());
   const [resolved, setResolved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Whether the gym has anybody at all, member or pending. It's the
+  // difference between "bring your members across first" and "you did —
+  // these just aren't them", and only one of those is useful advice.
+  const roster = useQuery({
+    queryKey: ['setup-roster-count', gymId],
+    queryFn: async () => {
+      const [m, p] = await Promise.all([
+        supabase
+          .from('gym_memberships')
+          .select('profile_id', { count: 'exact', head: true })
+          .eq('gym_id', gymId)
+          .is('left_at', null),
+        supabase
+          .from('pending_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('gym_id', gymId),
+      ]);
+      return (m.count ?? 0) + (p.count ?? 0);
+    },
+  });
+  const memberCount = roster.data ?? 0;
 
   function take(text: string, name: string | null) {
     const grid = parseCsv(text);
@@ -1755,11 +1776,26 @@ function WorkoutsImportCard({
       queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
       // Nothing landed is not a finished step, whatever the RPCs returned.
       if (r.workouts === 0 && r.results === 0 && r.staged === 0) {
-        setError(
-          r.noMember > 0
-            ? `None of those matched a member — ${r.noMember} rows had emails I don't know yet. Bring your members across first.`
-            : 'Nothing came through. Check the email and date columns are the right ones.',
-        );
+        if (r.noMember > 0) {
+          // "Bring your members across first" is the wrong advice when they
+          // already have — it just isn't these people. Naming the emails
+          // makes a mismatched export obvious in one glance, which a count
+          // never does.
+          const emails = [...new Set(
+            file!.rows
+              .map((c) => c[file!.headers.findIndex((_, i) => mapping[i] === 'email')] ?? '')
+              .map((e) => e.trim().toLowerCase())
+              .filter(Boolean),
+          )];
+          const shown = emails.slice(0, 2).join(', ');
+          setError(
+            memberCount === 0
+              ? `Nobody's in your gym yet, so there's nothing for these ${r.noMember} results to attach to. Bring your members across first — then this file will land.`
+              : `None of these emails are in your gym — not as members, not as pending imports${shown ? ` (${shown}…)` : ''}. ${emails.length} ${emails.length === 1 ? 'person' : 'people'} here, and none of them match the ones you brought across. Different export?`,
+          );
+        } else {
+          setError('Nothing came through. Check the email and date columns are the right ones.');
+        }
         return;
       }
       const bits: string[] = [];
@@ -1845,7 +1881,11 @@ function WorkoutsImportCard({
       </Text>
       <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
         {kinds.length > 0
-          ? `Ready: ${kinds.join(', ')}.`
+          ? `Ready: ${kinds.join(', ')}.${
+              built!.deferred > 0
+                ? ` ${built!.deferred} row${built!.deferred === 1 ? '' : 's'} left out — an 8×1km run total and Roxzone transitions aren't single stations, so there's no PB for them to be.`
+                : ''
+            }`
           : looksLikeMembers
             ? 'That’s your member list, not workout history — names, emails and plans, no dates or movements. It belongs in the step before this one.'
             : 'I couldn’t read any results out of that — a workout file needs a date, a movement and a score or weight per row.'}
