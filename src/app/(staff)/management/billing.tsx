@@ -52,11 +52,18 @@ export default function BillingScreen() {
     } catch {
       // sessionStorage unavailable — the manual back link still works
     }
-    if (flagged && params.stripe === 'connected') {
-      // Setup re-derives its place from progress, so returning lands on
-      // the next open step either way.
-      router.replace(flagged === 'checklist' ? '/onboarding' : '/setup');
+    if (!flagged) return;
+    // A failed connection returns to setup too. Stranding the owner here
+    // is how a *failed* step ends up feeling finished: they came from the
+    // conversation, nothing was saved, and the retry belongs where they
+    // were — so the outcome rides back on the query string.
+    if (flagged === 'checklist') {
+      router.replace('/onboarding');
+      return;
     }
+    router.replace(
+      params.stripe === 'connected' ? '/setup' : '/setup?stripe=error',
+    );
   }, [params.stripe]);
 
   const account = useQuery({

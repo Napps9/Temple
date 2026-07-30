@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -212,6 +212,11 @@ const TAP_ONLY: Partial<Record<Step, string>> = {
 
 export default function SetupScreen() {
   const session = useSession();
+  // Stripe's OAuth has to leave the app, so a failure comes back as a
+  // param rather than a thrown error. A step that failed is not a step
+  // that happened: progress still says it's open, so the script reopens
+  // it, and this only adds the sentence saying why.
+  const { stripe: stripeOutcome } = useLocalSearchParams<{ stripe?: string }>();
   const { data: membership } = useGymMembership();
   const role = useRole();
   const { data: profile } = useMyProfile();
@@ -352,6 +357,12 @@ export default function SetupScreen() {
       kind: 'temple',
       text: `Welcome${first ? `, ${first}` : ''}. Let’s get ${brand.gymName} running — it takes about 15 minutes, and you can change anything later just by telling me.`,
     });
+    if (stripeOutcome === 'error') {
+      pushMsgs({
+        kind: 'temple',
+        text: 'Stripe didn’t connect — nothing was saved, so that step is still open. Worth another go; it usually just needs the right Stripe login.',
+      });
+    }
     advance(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress.data, seeded, membership]);
@@ -609,7 +620,11 @@ export default function SetupScreen() {
       {
         onSuccess: () => {
           setMessages((m) => closeCards(m));
-          pushMsgs({ kind: 'receipt', text: 'Rules set. Change any of them later by telling me.' });
+          pushMsgs({
+            kind: 'receipt',
+            step: 'rules',
+            text: 'Rules set. Change any of them later by telling me.',
+          });
           advance('rules');
         },
         onError: () => pushMsgs({ kind: 'temple', text: 'That didn’t save — try again, or use the checklist below.' }),
@@ -711,7 +726,15 @@ export default function SetupScreen() {
                   gymId={membership.gymId}
                   onDone={(receipt) => {
                     setMessages((prev) => closeCards(prev));
-                    pushMsgs({ kind: 'receipt', text: receipt });
+                    pushMsgs({ kind: 'receipt', step: 'logo', text: receipt });
+                    advance('logo');
+                  }}
+                  onSkip={() => {
+                    setMessages((prev) => closeCards(prev));
+                    pushMsgs({
+                      kind: 'receipt',
+                      text: 'No logo for now — add it any time; the checklist keeps the step open.',
+                    });
                     advance('logo');
                   }}
                 />
@@ -1283,6 +1306,17 @@ function MembersImportCard({
       queryClient.invalidateQueries({ queryKey: ['members-pending'] });
       const n = result?.inserted ?? 0;
       const skipped = result?.skipped ?? 0;
+      // Nothing staged is not a completed step, whatever the RPC's exit
+      // code says — every row was a duplicate or was rejected. Say so and
+      // leave the card open rather than ticking it off.
+      if (n === 0) {
+        setError(
+          skipped > 0
+            ? `Nothing new — all ${skipped} of those are already here. Try a different export, or skip this step.`
+            : 'Nothing came through. Check the email column is the right one, or try the full importer.',
+        );
+        return;
+      }
       const origin =
         Platform.OS === 'web' && typeof window !== 'undefined'
           ? window.location.origin
@@ -1484,9 +1518,11 @@ function WorkoutsCard({ onSkip }: { onSkip: () => void }) {
 function LogoCard({
   gymId,
   onDone,
+  onSkip,
 }: {
   gymId: string;
   onDone: (receipt: string) => void;
+  onSkip: () => void;
 }) {
   const queryClient = useQueryClient();
   const [preview, setPreview] = useState<string | null>(null);
@@ -1567,10 +1603,7 @@ function LogoCard({
       <Button onPress={() => upload.mutate()} loading={upload.isPending}>
         Choose your logo
       </Button>
-      <Pressable
-        onPress={() => onDone('No logo for now — add it any time; the checklist keeps the step open.')}
-        disabled={upload.isPending}
-        hitSlop={6}>
+      <Pressable onPress={onSkip} disabled={upload.isPending} hitSlop={6}>
         <Text className="text-link text-sm font-medium text-center">Skip for now</Text>
       </Pressable>
     </View>
