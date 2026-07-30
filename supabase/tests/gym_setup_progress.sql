@@ -148,18 +148,18 @@ select is(
   'team step flips done when an invite code has been generated'
 );
 
--- 9. members_imported flips once a pending_members row exists.
+-- 9. members_imported flips once a pending_members row exists. Staged
+-- through the RPC rather than a direct insert: 0216 revoked the client's
+-- table-wide write on pending_members, and every real staging path in the
+-- app goes through this function anyway.
 do $$
 begin
-  insert into public.pending_members
-    (gym_id, email, full_name, status, created_by)
-    values (
-      current_setting('test.gym')::uuid,
-      'imported@setup.test',
-      'Imported Member',
-      'pending',
-      current_setting('test.owner')::uuid
-    );
+  perform public.import_pending_members(
+    current_setting('test.gym')::uuid,
+    jsonb_build_array(jsonb_build_object(
+      'email', 'imported@setup.test',
+      'full_name', 'Imported Member'))
+  );
 end $$;
 
 select is(

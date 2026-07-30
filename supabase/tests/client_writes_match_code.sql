@@ -8,7 +8,7 @@
 -- closed a hole.
 
 begin;
-select plan(11);
+select plan(13);
 
 \ir _helpers.psql
 
@@ -51,6 +51,26 @@ select is(
     where polrelid = 'public.comp_grants'::regclass and polcmd in ('a', 'w')),
   0,
   'and its raw-role write policies went with the grant'
+);
+
+-- 0216 carried it to pending_members, which 0195 missed. The update
+-- policy names no column, so the grant was the whole of the decision and
+-- it said "every field" — including imported_stripe_subscription_id,
+-- which the claim trigger copies onto a plan_subscriptions row.
+select ok(
+  not has_table_privilege('authenticated', 'public.pending_members', 'insert')
+  and not has_table_privilege('authenticated', 'public.pending_members', 'update'),
+  'authenticated holds no table-wide write on pending_members'
+);
+
+-- Column-level, so the list is exhaustive rather than additive: a column
+-- added later is refused by default until someone grants it on purpose.
+select is(
+  (select count(*)::int from information_schema.column_privileges
+    where table_schema = 'public' and table_name = 'pending_members'
+      and grantee = 'authenticated' and privilege_type = 'UPDATE'),
+  13,
+  'only the thirteen fields the imported-member screen edits'
 );
 
 -- The dead policies are gone too, so a later re-grant cannot silently

@@ -373,6 +373,40 @@ from asking to acting removes sentences. The measures stay what they
 were: **routes retired** and **owner interventions per member per
 month**. A screen deleted is progress; a screen rebuilt prettier is not.
 
+## Known and not yet fixed
+
+Bugs found while building the modules that could not be closed in the
+same change, either because there is no write to fix or because the fix
+is a feature. Written down rather than left in a commit message, so the
+next session finds them.
+
+- **No way to change a class's coach.** `claim_cover` is self-claim only
+  — a coach takes an open cover request. Nothing anywhere reassigns a
+  session from one coach to another, so "give Tuesday 6am to Sam" has
+  nothing to wrap. Needs an RPC before it can be a sentence.
+- **No single-class reschedule.** Moving one class can only be expressed
+  today as a relative shift through `bulk_edit_sessions`, which rewrites
+  the whole recurrence — so "move next Tuesday's 6am to 7am" silently
+  moves every Tuesday. The bar refuses it rather than doing the wrong
+  thing; the fix is a per-session move that leaves the pattern alone.
+- **Shop orders cannot be refunded at all.** `store_orders` has a
+  `refunded` status that nothing writes: no screen, no RPC, no edge
+  function. Membership refunds go through `stripe-refund`; the shop has
+  no equivalent. Until it does, `money.refund` is deliberately scoped to
+  memberships and says so.
+- **Plan and setup prices are hard-coded to sterling.** `formatPrice` in
+  `setup-flow.ts` prints `£` regardless of `gyms.currency`, and every
+  plans, setup and website surface uses it. The money summary and the
+  refund card both read the real currency off the row they are
+  describing, so the two now disagree on a non-sterling gym. The fix is
+  one function and roughly forty call sites, and it should happen in one
+  pass rather than a card at a time.
+- **Four pgTAP files fail in the local harness for the harness's own
+  reasons** (storage path helpers, recurrence pattern rewrite, closure
+  reopen, ordered onboarding responses) — listed in
+  `scripts/pgtap-local/README.md`. They pass in CI against real Supabase.
+  A failure anywhere else is real.
+
 ## What deliberately doesn't move
 
 Worth restating, because a catalogue this general invites overreach:

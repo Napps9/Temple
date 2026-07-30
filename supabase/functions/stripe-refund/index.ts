@@ -157,8 +157,20 @@ async function stripePost(
   return data as Record<string, unknown>;
 }
 
-function money(cents: number): string {
-  return `£${(cents / 100).toFixed(2)}`;
+// The gym's own currency, not the platform's. The charge being refunded
+// records what it was taken in; recording the refund as GBP regardless
+// mislabelled every non-sterling gym's refund in billing_events, and put
+// a pound sign in the member's email on top of it.
+function money(cents: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+    }).format(cents / 100);
+  } catch {
+    return `${(cents / 100).toFixed(2)} ${currency}`;
+  }
 }
 
 function fmtDate(iso: string | null): string {
@@ -182,6 +194,7 @@ async function sendRefundEmail(
     profileId: string;
     planName: string;
     refundCents: number;
+    currency: string;
     access: 'revoke_now' | 'until_period_end' | 'unchanged';
     periodEnd: string | null;
     refundId: string;
@@ -236,15 +249,15 @@ async function sendRefundEmail(
 
     const html = templeEmailHtml({
       title: 'You’ve been refunded',
-      preheader: `${gymName} has refunded ${money(args.refundCents)}.`,
+      preheader: `${gymName} has refunded ${money(args.refundCents, args.currency)}.`,
       bodyHtml: `<p style="margin:0 0 16px;">Hi ${escapeHtml(firstName)},</p>
-        <p style="margin:0 0 16px;"><strong>${escapeHtml(gymName)}</strong> has refunded <strong>${money(args.refundCents)}</strong> to your original payment method. It can take a few days to appear on your statement, depending on your bank.</p>
+        <p style="margin:0 0 16px;"><strong>${escapeHtml(gymName)}</strong> has refunded <strong>${money(args.refundCents, args.currency)}</strong> to your original payment method. It can take a few days to appear on your statement, depending on your bank.</p>
         <p style="margin:0 0 16px;">${accessLine}</p>
         <p style="margin:0;">Any questions, just reply to this email.</p>`,
       footerNote: `Sent by ${gymName} via Temple.`,
     });
     const text =
-      `Hi ${firstName},\n\n${gymName} has refunded ${money(args.refundCents)} to your original payment method (it can take a few days to appear).\n\n${accessText}\n\nQuestions? Just reply to this email.`;
+      `Hi ${firstName},\n\n${gymName} has refunded ${money(args.refundCents, args.currency)} to your original payment method (it can take a few days to appear).\n\n${accessText}\n\nQuestions? Just reply to this email.`;
 
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -369,7 +382,7 @@ Deno.serve(async (req: Request) => {
     // maths, and its payment_intent/charge is what Stripe refunds against.
     const { data: beRow } = await service
       .from('billing_events')
-      .select('amount_cents, occurred_at, payload')
+      .select('amount_cents, currency, occurred_at, payload')
       .eq('plan_subscription_id', ps.id)
       .in('kind', ['checkout', 'invoice'])
       .order('occurred_at', { ascending: false })
@@ -386,6 +399,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const chargeCents = beRow.amount_cents as number;
+    const currency = ((beRow.currency as string | null) ?? 'GBP').toUpperCase();
     const now = new Date().toISOString();
     const outcome = computeOutcome(mode, chargeCents, {
       kind: ps.membership_plans?.kind ?? 'unlimited',
@@ -463,7 +477,7 @@ Deno.serve(async (req: Request) => {
           member_id: ps.profile_id,
           kind: 'refund',
           amount_cents: outcome.refundCents,
-          currency: 'GBP',
+          currency,
           occurred_at: now,
           payload: { mode, refund_id: refundId, source_charge_cents: chargeCents },
         },
@@ -480,6 +494,7 @@ Deno.serve(async (req: Request) => {
           profileId: ps.profile_id,
           planName: ps.membership_plans?.name ?? 'membership',
           refundCents: outcome.refundCents,
+          currency,
           access: outcome.access,
           periodEnd: ps.paid_period_end,
           refundId,
@@ -491,6 +506,7 @@ Deno.serve(async (req: Request) => {
     return json({
       ok: true,
       refund_cents: outcome.refundCents,
+      currency,
       access: outcome.access,
       status: update.status,
     });

@@ -619,6 +619,43 @@ The staff area shows up when `can_access_staff_area` is on.
   "they never paid" — `billing_events` SELECT is gated on `can_see_money`
   while `can_refund` is independent, so a coach who may refund but may
   not see revenue reads nothing and needs to be told which.
+- **Four checks that named one thing and tested another** (0216) — found
+  while wiring the money verbs, none of them new, all reachable long
+  before the chat existed. **A former member could never drop in again**:
+  `_book_class_for`'s "already holds a plan here" guard was an EXISTS with
+  no status filter, so a gym that allows drop-ins refused anyone who had
+  once paid and cancelled, while a stranger with no history walked in. The
+  right predicate was already in the database and had been since 0015 —
+  `is_terminal_subscription_status`, whose complement is exactly the app's
+  own `CURRENT_SUB_STATUSES`. What the guard is actually for, no free
+  booking past your credits, is untouched: a credit plan at zero balance
+  is still `active` and `active` is not terminal. **`pending_members`
+  could point at another gym's plan**: both plan columns are plain FKs to
+  `membership_plans(plan_id)` with no gym constraint, and neither reader
+  checked — `apply_pending_member_data` looks the plan up by id alone and
+  creates a `plan_subscriptions` row for *this* gym carrying *that* gym's
+  plan, and `my_agreed_plan` (security definer) shows a member the other
+  gym's plan name. A trigger now refuses it on both columns whatever the
+  path, existing mismatches are cleared, and `my_agreed_plan` joins on the
+  gym as well. Not a composite foreign key, which is the obvious answer:
+  its `ON DELETE SET NULL` would have to null `gym_id` too, and `gym_id`
+  is NOT NULL, so deleting a plan would fail instead of clearing the link.
+  **And the write grant on `pending_members` named no column**, which is
+  the 0195 argument on a table 0195 missed: the update policy asks
+  `effective_can(gym_id, 'can_manage_staff')` and nothing about *which*
+  field, so a staff account could PATCH `imported_stripe_subscription_id`
+  — the column the claim trigger copies onto a real subscription row —
+  straight through PostgREST. INSERT is revoked outright (every staging
+  path in the app is a definer RPC) and UPDATE is now column-level, listing
+  the thirteen fields the imported-member screen actually edits. pgTAP
+  `tenancy_and_entitlement_checks.sql` (plan(12)) covers all four, and
+  `client_writes_match_code.sql` grew the standing privilege assertions.
+- **Refunds are recorded in the currency they were taken in** — the
+  refund edge function wrote `currency: 'GBP'` on every `billing_events`
+  row it created and formatted the member's email with a hard-coded pound
+  sign, regardless of what the original charge was in. It now reads the
+  currency off the charge being refunded, records it, formats with it, and
+  returns it so the chat receipt agrees.
 - **The parser's gate widened** — `parse-setup` checked
   `effective_can(gym, 'can_edit_classes')` for every call, which locked
   staff out of actions they were explicitly granted (the shop, assigning

@@ -102,18 +102,26 @@ type FailingRow = {
 // it is the thing an owner actually wants to know next, and leaving it out
 // makes a good month read better than it is.
 async function failingNow(ctx: ActionContext): Promise<string | null> {
-  const { data, error } = await ctx.supabase
-    .from('plan_subscriptions')
-    .select('price_cents, plan_subscription_dunning!inner(past_due_since)')
-    .eq('gym_id', ctx.gymId)
-    .eq('status', 'active');
-  if (error) return null;
-  const rows = (data ?? []) as unknown as FailingRow[];
+  // plan_subscriptions carries no currency of its own — the gym's is the
+  // one these are billed in, and hard-coding GBP here would have put a
+  // pound sign on a euro gym's at-risk figure while every other line on
+  // this card read its currency off the summary rows.
+  const [subs, gym] = await Promise.all([
+    ctx.supabase
+      .from('plan_subscriptions')
+      .select('price_cents, plan_subscription_dunning!inner(past_due_since)')
+      .eq('gym_id', ctx.gymId)
+      .eq('status', 'active'),
+    ctx.supabase.from('gyms').select('currency').eq('id', ctx.gymId).maybeSingle(),
+  ]);
+  if (subs.error) return null;
+  const rows = (subs.data ?? []) as unknown as FailingRow[];
   if (rows.length === 0) return null;
+  const currency = (gym.data as { currency: string } | null)?.currency ?? 'GBP';
   const atRisk = rows.reduce((sum, r) => sum + (r.price_cents ?? 0), 0);
   const n = rows.length;
   return atRisk > 0
-    ? `${n} membership${n === 1 ? '' : 's'} failing right now — ${formatMoney(atRisk, 'GBP')} a month at risk.`
+    ? `${n} membership${n === 1 ? '' : 's'} failing right now — ${formatMoney(atRisk, currency)} a month at risk.`
     : `${n} membership${n === 1 ? '' : 's'} failing right now.`;
 }
 
@@ -427,7 +435,7 @@ export const refundMember: ActionSpec<Refund> = {
     // wrong place.
     const { data: charge, error } = await ctx.supabase
       .from('billing_events')
-      .select('amount_cents, occurred_at')
+      .select('amount_cents, currency, occurred_at')
       .eq('plan_subscription_id', sub.id)
       .in('kind', ['checkout', 'invoice'])
       .order('occurred_at', { ascending: false })
@@ -439,7 +447,9 @@ export const refundMember: ActionSpec<Refund> = {
         lines: [],
       };
     }
-    const paid = (charge as { amount_cents: number; occurred_at: string } | null) ?? null;
+    const paid =
+      (charge as { amount_cents: number; currency: string | null; occurred_at: string } | null) ??
+      null;
     if (!paid) {
       return {
         title: `No settled payment on ${target.name}'s ${sub.membership_plans?.name ?? 'membership'}, so there is nothing to give back.`,
@@ -447,6 +457,9 @@ export const refundMember: ActionSpec<Refund> = {
       };
     }
 
+    // The currency the charge was taken in, not the platform's. Every
+     // figure on this card is a slice of that one payment.
+    const cur = (paid.currency ?? 'GBP').toUpperCase();
     const now = new Date().toISOString();
     const ent = {
       planKind: (sub.membership_plans?.kind ?? 'unlimited') as PlanKind,
@@ -466,23 +479,23 @@ export const refundMember: ActionSpec<Refund> = {
       });
       const prorata = amountFor('prorata_revoke');
       return {
-        title: `${target.name} last paid ${formatPrice(paid.amount_cents)} for ${sub.membership_plans?.name ?? 'their membership'}. What kind of refund?`,
+        title: `${target.name} last paid ${formatMoney(paid.amount_cents, cur)} for ${sub.membership_plans?.name ?? 'their membership'}. What kind of refund?`,
         lines: [],
         choices: [
           // A pro-rata of nothing is not a refund — it is ending someone's
           // membership under a heading that says otherwise. Dropped rather
           // than offered at £0.
           ...(prorata > 0
-            ? [chip('prorata_revoke', `${formatPrice(prorata)} — the unused part, access ends now`)]
+            ? [chip('prorata_revoke', `${formatMoney(prorata, cur)} — the unused part, access ends now`)]
             : []),
           chip(
             'full_period_end',
-            `${formatPrice(amountFor('full_period_end'))} — all of it, access runs${sub.paid_period_end ? ` to ${dayLabel(sub.paid_period_end)}` : ' to the period end'}`,
+            `${formatMoney(amountFor('full_period_end'), cur)} — all of it, access runs${sub.paid_period_end ? ` to ${dayLabel(sub.paid_period_end)}` : ' to the period end'}`,
           ),
-          chip('full_revoke', `${formatPrice(amountFor('full_revoke'))} — all of it, access ends now`),
+          chip('full_revoke', `${formatMoney(amountFor('full_revoke'), cur)} — all of it, access ends now`),
           chip(
             'keep',
-            `${formatPrice(amountFor('keep'))} — goodwill, membership carries on`,
+            `${formatMoney(amountFor('keep'), cur)} — goodwill, membership carries on`,
           ),
         ],
       };
@@ -496,9 +509,9 @@ export const refundMember: ActionSpec<Refund> = {
           ? `They keep training${sub.paid_period_end ? ` until ${dayLabel(sub.paid_period_end)}` : ' to the end of the period they paid for'}, then it ends. Renewals stop.`
           : 'Access ends the moment this goes through, and renewals stop.';
     return {
-      title: `Refund ${target.name} ${formatPrice(cents)}?`,
+      title: `Refund ${target.name} ${formatMoney(cents, cur)}?`,
       lines: [
-        `Back to the card they paid with, out of ${formatPrice(paid.amount_cents)} taken on ${dayLabel(paid.occurred_at)}.`,
+        `Back to the card they paid with, out of ${formatMoney(paid.amount_cents, cur)} taken on ${dayLabel(paid.occurred_at)}.`,
         access,
         a.notify
           ? 'They get an email saying they have been refunded and what happens to their access.'
@@ -509,7 +522,7 @@ export const refundMember: ActionSpec<Refund> = {
         // refund failed.
         'It does not come off your revenue figures — refunds are recorded separately.',
       ],
-      yes: `Yes, refund ${formatPrice(cents)}`,
+      yes: `Yes, refund ${formatMoney(cents, cur)}`,
     };
   },
   apply: async (a, ctx) => {
@@ -528,14 +541,18 @@ export const refundMember: ActionSpec<Refund> = {
       },
     });
     if (error) throw new ActionError(await refundFailure(error));
-    const r = (data ?? {}) as { refund_cents: number; access: string };
+    const r = (data ?? {}) as {
+      refund_cents: number;
+      currency?: string;
+      access: string;
+    };
     const kept =
       r.access === 'unchanged'
         ? ' Their membership carries on.'
         : r.access === 'until_period_end'
           ? ' They keep access to the end of the period they paid for.'
           : ' Their access has ended.';
-    return `${formatPrice(r.refund_cents)} refunded to ${target.name}.${kept}`;
+    return `${formatMoney(r.refund_cents, r.currency ?? 'GBP')} refunded to ${target.name}.${kept}`;
   },
 };
 
