@@ -648,4 +648,41 @@ Worth doing once, because it never worked before and the screen said it did.
 
 ---
 
+## Module: the team and the tags — `team.invite`, `team.who`, `tags.add_rule`
+
+| Say | Expect |
+|---|---|
+| invite Sam as a coach, sam@example.com | Role coach, and the count of who's on the team |
+| add jo@example.com to the front desk | Role `staff`, read back as "front desk" |
+| invite dan@example.com | Defaults to coach, and says so |
+| who works here | Grouped by role, names sorted |
+| tag anyone who hasn't been in for 30 days as Ghosting | Threshold rule, 30 days |
+| tag everyone on an intro as New | `intro` |
+| tag anyone who has given notice as Leaving | `cancelling` |
+| tag everyone on Unlimited as Gold | `on_plan`, matched to the real plan |
+
+### Check it landed
+
+- The invite arrives, and the link actually accepts into the right role.
+- **The tag rule shows a count in the receipt.** It runs immediately
+  rather than waiting for the nightly sweep, so "on 12 members now"
+  should match what the members screen shows when you filter by it.
+- The rule keeps working: let someone lapse past the threshold and check
+  they gain the tag on the next sweep, and lose it when they come back.
+
+### Try to break it
+
+| Say / do | Correct answer |
+|---|---|
+| invite sam | Refused — that is not an email |
+| invite dan@example.com as the owner | Owner is not offered at all; it should land as coach or be refused, never mint an owner |
+| invite someone as an admin *(as an admin, not the owner)* | The card warns first, and the RPC refuses. Only owners mint admins |
+| tag anyone who hasn't been in as Ghosting *(no number)* | Refused rather than defaulted — the table's CHECK would reject it anyway |
+| tag everyone on a plan as Gold *(no plan named)* | Refused |
+| tag anyone who books CrossFit as Barbell | Not offered — class-type rules stay on the tags screen |
+| tag everyone on an intro as New *(twice)* | "You already have a rule tagging people 'New'" |
+| make Jo an admin | Refused — there is no write for it yet, and the reply should say so rather than pretend |
+
+---
+
 *Module sections are added here as each ships.*

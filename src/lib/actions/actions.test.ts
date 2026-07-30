@@ -18,6 +18,7 @@ import { addLead, assignLeadTo, leadPipeline, moveLead } from './leads';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
 import { moneySummary, periodLabel, refundMember, setPlanPrice } from './money';
 import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
+import { addTagRule, inviteToTeam, whoIsOnTheTeam } from './team';
 import { argInt, argMoney, argString } from './types';
 
 describe('the registry', () => {
@@ -90,6 +91,9 @@ describe('the registry', () => {
         'money.summary',
         'money.set_plan_price',
         'money.refund',
+        'team.invite',
+        'team.who',
+        'tags.add_rule',
         'store.add_product',
         'store.set_price',
         'store.sales',
@@ -831,6 +835,79 @@ describe('the enquiries', () => {
   it('is a question, so it never writes', () => {
     expect(leadPipeline.kind).toBe('ask');
     expect(leadPipeline.apply).toBeUndefined();
+  });
+});
+
+describe('the team', () => {
+  it('needs a real email, and defaults the role to coach', () => {
+    expect(inviteToTeam.sanitise({ email: 'Sam@Example.com ' })).toEqual({
+      email: 'sam@example.com',
+      role: 'coach',
+    });
+    expect(inviteToTeam.sanitise({ email: 'sam@example.com', role: 'staff' })?.role).toBe(
+      'staff',
+    );
+    expect(inviteToTeam.sanitise({ email: 'sam' })).toBeNull();
+    expect(inviteToTeam.sanitise({ email: 'sam at example dot com' })).toBeNull();
+    expect(inviteToTeam.sanitise({})).toBeNull();
+  });
+
+  // create_invite has an owner-only ladder for owner and admin that is
+  // structural and not overridable. Offering "owner" would be offering
+  // something nobody can do from here.
+  it('never offers to mint an owner', () => {
+    const arg = inviteToTeam.args.find((a) => a.name === 'role')!;
+    expect(arg.values).not.toContain('owner');
+    expect(inviteToTeam.sanitise({ email: 'a@b.co', role: 'owner' })?.role).toBe('coach');
+  });
+
+  it('asks who is here without needing anything said', () => {
+    expect(whoIsOnTheTeam.sanitise({})).toEqual({});
+    expect(whoIsOnTheTeam.kind).toBe('ask');
+    expect(whoIsOnTheTeam.apply).toBeUndefined();
+  });
+});
+
+describe('tag rules', () => {
+  it('needs a label and a predicate it recognises', () => {
+    expect(addTagRule.sanitise({ label: 'New', predicate: 'intro' })).toEqual({
+      label: 'New',
+      predicate: 'intro',
+      days: null,
+      plan: null,
+    });
+    expect(addTagRule.sanitise({ label: 'New', predicate: 'rich' })).toBeNull();
+    expect(addTagRule.sanitise({ predicate: 'intro' })).toBeNull();
+  });
+
+  // The table's CHECK refuses these two without a number, so a rule the
+  // database would reject must never reach a confirm card.
+  it('refuses a threshold rule with no number', () => {
+    expect(addTagRule.sanitise({ label: 'Ghosting', predicate: 'no_recent_attendance' })).toBeNull();
+    expect(addTagRule.sanitise({ label: 'Fresh', predicate: 'joined_within' })).toBeNull();
+    expect(
+      addTagRule.sanitise({ label: 'Ghosting', predicate: 'no_recent_attendance', days: 30 })?.days,
+    ).toBe(30);
+  });
+
+  it('refuses an on_plan rule with no plan, and drops a plan that means nothing', () => {
+    expect(addTagRule.sanitise({ label: 'Gold', predicate: 'on_plan' })).toBeNull();
+    expect(
+      addTagRule.sanitise({ label: 'Gold', predicate: 'on_plan', plan: 'Unlimited' })?.plan,
+    ).toBe('Unlimited');
+    // A plan named alongside a predicate that takes no plan would violate
+    // the same CHECK from the other side.
+    expect(addTagRule.sanitise({ label: 'New', predicate: 'intro', plan: 'Unlimited' })?.plan)
+      .toBeNull();
+    expect(addTagRule.sanitise({ label: 'New', predicate: 'intro', days: 30 })?.days).toBeNull();
+  });
+
+  // Resolving a class type is a second name to get wrong, and the screen
+  // does it better. Left off the enum rather than half-supported.
+  it('does not offer the predicates that need a class type', () => {
+    const arg = addTagRule.args.find((a) => a.name === 'predicate')!;
+    expect(arg.values).not.toContain('booked_class_type');
+    expect(arg.values).not.toContain('attended_class_type');
   });
 });
 

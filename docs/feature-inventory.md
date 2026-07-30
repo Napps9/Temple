@@ -675,6 +675,27 @@ The staff area shows up when `can_access_staff_area` is on.
   `DEFAULT_AUDIENCE`) and opens the existing editor — audience, topic,
   A/B, suppression and one-click unsubscribe all unchanged. The send
   button remains the approval; nothing sends from the bar.
+- **The team, and the labels that sort the members** (roadmap step 2) —
+  `team.invite` ("invite Sam as a coach, sam@example.com") over the
+  existing `send-invite` function, so the code is still minted as the
+  caller and `create_invite`'s owner-only ladder still applies; the card
+  warns about that ladder before an admin tries to invite an admin, and
+  the receipt distinguishes "sent" from "the invite is ready but email
+  sending is not set up" because the second is not a failure. `team.who`
+  reads the roster back grouped by role. `tags.add_rule` is the other half
+  of `members.tag`: that one labels a person, this one describes a kind of
+  person — ten of the tag editor's twelve predicates, with the two that
+  need a class type left off the enum rather than half-supported, so a
+  sentence about one falls through to "not from here yet" instead of into
+  a failing insert. The sanitiser mirrors the table's own CHECK
+  (`no_recent_attendance` and `joined_within` need a number, `on_plan`
+  needs a plan, and a number or plan supplied alongside a predicate that
+  takes neither is dropped), so a rule the database would reject never
+  becomes a confirm card. The rule is applied immediately via
+  `apply_tag_rules` rather than waiting for the nightly sweep, so the
+  receipt says how many it caught. **Not offered, because there is no
+  write:** changing a role and removing somebody from the team — see the
+  roadmap's known list.
 - **The people who haven't joined yet** (0217, roadmap step 2) — the
   pipeline is the one board in Temple that is genuinely a queue of small
   decisions, and every card on it is one sentence of news whose only home

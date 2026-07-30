@@ -325,7 +325,24 @@ already authorised. Roughly in order of how often an owner touches them:
   capability for a sales board, and splitting it out is a new key, a
   default per role and a row on the Team screen — a change owners would
   see, so it wants deciding rather than assuming.
-- **Programming, team, website, tags** — the long tail, same shape.
+- **Team and tags** — done for what has a write. `team.invite` ("invite
+  Sam as a coach, sam@example.com") over the existing `send-invite`
+  function, `team.who`, and `tags.add_rule` — the other half of
+  `members.tag`, which labels one person where this describes a kind of
+  person and lets the sweep find them from now on. The rule runs
+  immediately rather than waiting for the nightly pass, so the receipt can
+  say how many it caught. **Still absent:** changing somebody's role and
+  taking somebody off the team. Neither has a write anywhere in Temple —
+  no RPC, no screen, no client update — so both are in the known list
+  below rather than offered as verbs that would fail. **Open question:**
+  `create_invite` gates on `can_manage_staff`, but the invite form on the
+  members screen reads `can_invite`, which the Team screen describes as
+  "Email invites to new members and staff". They agree by default, so the
+  switch only diverges for the case it exists to allow — an owner granting
+  `can_invite` to a coach finds it does nothing. Making `can_invite` the
+  gate would *widen* who can invite, which is not a change to make by
+  reading a label.
+- **Programming and website** — the rest of the long tail, same shape.
 
 ### 3 — It remembers what you just said — half done
 
@@ -407,6 +424,13 @@ next session finds them.
   the whole recurrence — so "move next Tuesday's 6am to 7am" silently
   moves every Tuesday. The bar refuses it rather than doing the wrong
   thing; the fix is a per-session move that leaves the pattern alone.
+- **No way to change somebody's role, or take them off the team.**
+  Nothing in Temple writes `gym_memberships.role` after the invite is
+  accepted, and nothing sets `left_at` from a staff surface — `leave_gym`
+  is the member's own door. So "make Jo an admin" and "Marcus has left"
+  both have nothing to wrap. Two RPCs, and the role one needs the same
+  owner-only ladder `create_invite` already has, or an admin could
+  promote themselves.
 - **Shop orders cannot be refunded at all.** `store_orders` has a
   `refunded` status that nothing writes: no screen, no RPC, no edge
   function. Membership refunds go through `stripe-refund`; the shop has
