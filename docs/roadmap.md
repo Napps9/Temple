@@ -296,7 +296,7 @@ already authorised. Roughly in order of how often an owner touches them:
 - **Leads** — the front desk's own settings and the pipeline as sentences.
 - **Programming, team, website, tags** — the long tail, same shape.
 
-### 3 — It remembers what you just said
+### 3 — It remembers what you just said — half done
 
 Every sentence currently goes up alone. The bar sends the text and the
 catalogue and nothing else — no previous turn, no subject, no history. So
@@ -307,12 +307,15 @@ problem: the conversation is simply never sent.
 
 Three things, in order of how much they change the feel:
 
-- **The last few turns travel with the sentence.** Pronouns and ellipsis
-  resolve — "him", "that one", "the same again", "make it 20 instead".
-  The subject of the last card becomes the default subject, which is most
-  of what makes something feel like talking rather than typing commands.
-- **The conversation survives.** Today it lives in React state and dies
-  on refresh: a card left open vanishes, and there is no answer to "what
+- **The last few turns travel with the sentence.** Done. Pronouns and
+  ellipsis resolve — "him", "that one", "the same again". The subject of
+  the last card becomes the default subject, which is most of what makes
+  something feel like talking rather than typing commands.
+  `src/lib/chat-memory.ts` bounds it by both count and recency and is
+  pure, so the freshness rule below is tested rather than trusted.
+- **The conversation survives.** Not done, and deliberately: this is the
+  half that needs the retention answer first. Today it lives in React
+  state and dies on refresh: a card left open vanishes, and there is no answer to "what
   did I ask it yesterday". Persisting it also gives the Timeline the one
   thing it currently lacks as a home — a past.
 - **One sentence, several actions.** "Cancel Friday's 6am and move
@@ -322,11 +325,12 @@ Three things, in order of how much they change the feel:
 
 Two costs, both real and both decisions rather than implementation:
 
-- **A stale subject is worse than no subject.** If the last card is three
-  days old, "put him on Unlimited" must not quietly resolve to whoever
-  was on screen then. That needs a freshness window and a visibly named
-  subject on the card, so the owner can see who "him" is before
-  confirming rather than after.
+- **A stale subject is worse than no subject.** Settled: ten minutes and
+  six turns, whichever runs out first, because an owner who walked away
+  and came back is a different context on the same screen. Acting on the
+  wrong person is not recoverable; failing to understand is. The card
+  names the subject in full ("Put Marcus Webb on Unlimited?"), so who
+  "him" resolved to is visible before confirming rather than after.
 - **A persisted conversation is a record of which staff member asked
   what about which member.** That sits next to health-adjacent surfaces
   and must not become a way around the access audit log — asking the bar

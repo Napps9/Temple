@@ -31,6 +31,7 @@ import {
   type MemberCard,
 } from '@/lib/actions';
 import type { Capability } from '@/lib/can';
+import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
 import { formatDate } from '@/lib/format-date';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
 import {
@@ -227,6 +228,14 @@ export default function Timeline() {
     authority.data.length === 0;
 
   const [local, setLocal] = useState<LocalMsg[]>([]);
+  // What was said, as words. Kept alongside the rendered feed rather than
+  // read back out of it, because a card is a component and what carries a
+  // subject forward is the sentence it amounts to. src/lib/chat-memory
+  // bounds it by both recency and count before any of it is sent.
+  const said = useRef<Turn[]>([]);
+  const remember = (role: Turn['role'], text: string) => {
+    said.current = [...said.current.slice(-20), { role, text, at: Date.now() }];
+  };
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -289,6 +298,8 @@ export default function Timeline() {
     if (!text || busy || !gymId || !session?.user.id) return;
     setInput('');
     push({ kind: 'mine', text });
+    const history = toWireTurns(recentTurns(said.current, Date.now()));
+    remember('owner', text);
     // "continue setup" is unambiguous enough to answer without a model
     // round-trip — and the owner asking for it is usually mid-task.
     if (SETUP_INTENT.test(text)) {
@@ -304,13 +315,17 @@ export default function Timeline() {
           step: 'change',
           text,
           actions: actionsFor((c) => can(c as Capability)),
+          history,
         },
       });
       if (error) throw error;
       const p = (data as { proposal?: Record<string, unknown> })?.proposal ?? {};
       const spec = findAction(p.action);
       if (spec) {
-        push(await runAction(spec, (p.args ?? {}) as Record<string, unknown>));
+        const msg = await runAction(spec, (p.args ?? {}) as Record<string, unknown>);
+        if (msg.kind === 'action') remember('gym', msg.preview.title);
+        else if (msg.kind === 'temple') remember('gym', msg.text);
+        push(msg);
       } else if (typeof p.cannot === 'string' && p.cannot.trim()) {
         push({ kind: 'temple', text: CANNOT_COPY });
       } else {
@@ -336,6 +351,7 @@ export default function Timeline() {
       const receipt = await msg.spec.apply(msg.args, actionCtx());
       closeCard(index);
       push({ kind: 'receipt', text: receipt });
+      remember('gym', receipt);
       freshen(msg.spec);
     } catch (e) {
       push({ kind: 'temple', text: failureText(e) });
@@ -354,8 +370,11 @@ export default function Timeline() {
     if (busy || !gymId || !session?.user.id) return;
     setBusy(true);
     push({ kind: 'mine', text: label });
+    remember('owner', label);
     try {
-      push(await runAction(spec, args));
+      const msg = await runAction(spec, args);
+      if (msg.kind === 'action') remember('gym', msg.preview.title);
+      push(msg);
     } catch {
       push({ kind: 'temple', text: "I couldn't pull that up — try again." });
     } finally {

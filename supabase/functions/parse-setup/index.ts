@@ -233,10 +233,33 @@ function actionCatalogue(actions: ActionWire[]): string {
   );
 }
 
+// The conversation so far, already bounded by the client (src/lib/chat-memory
+// enforces both how many turns and how recent). Re-checked here anyway,
+// because the client is not a trust boundary and an unbounded history is a
+// bill as well as a confusion.
+type WireTurn = { role: 'user' | 'assistant'; content: string };
+
+function sanitiseHistory(raw: unknown): WireTurn[] {
+  if (!Array.isArray(raw)) return [];
+  const out: WireTurn[] = [];
+  for (const t of raw.slice(-8)) {
+    const it = t as Partial<WireTurn>;
+    if (typeof it?.content !== 'string' || !it.content.trim()) continue;
+    const role = it.role === 'assistant' ? 'assistant' : 'user';
+    const content = it.content.trim().slice(0, 400);
+    const last = out[out.length - 1];
+    if (last && last.role === role) last.content += `\n${content}`;
+    else out.push({ role, content });
+  }
+  while (out.length > 0 && out[0].role === 'assistant') out.shift();
+  return out;
+}
+
 async function parse(
   step: 'timetable' | 'plans' | 'change',
   text: string,
   actions: ActionWire[] = [],
+  history: WireTurn[] = [],
 ): Promise<unknown | null> {
   // With no catalogue there is no `action` to name, so the tool can only
   // come back with `cannot` — which is the honest answer when the caller's
@@ -279,7 +302,7 @@ async function parse(
       system,
       tools: [tool],
       tool_choice: { type: 'tool', name: tool.name },
-      messages: [{ role: 'user', content: text }],
+      messages: [...(step === 'change' ? history : []), { role: 'user', content: text }],
     }),
   });
   if (!res.ok) return null;
@@ -299,6 +322,7 @@ Deno.serve(async (req: Request) => {
     step?: unknown;
     text?: unknown;
     actions?: unknown;
+    history?: unknown;
   };
   try {
     body = await req.json();
@@ -334,7 +358,12 @@ Deno.serve(async (req: Request) => {
     // before sending it. That is a convenience for the model, not the
     // authorisation: the write itself still runs in the owner's session
     // against RLS, which is what actually decides.
-    const proposal = await parse(step, text, sanitiseActions(body.actions));
+    const proposal = await parse(
+      step,
+      text,
+      sanitiseActions(body.actions),
+      sanitiseHistory(body.history),
+    );
     if (!proposal) return json({ error: 'could_not_parse' }, 422);
     return json({ proposal });
   } catch {
