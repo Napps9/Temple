@@ -111,14 +111,19 @@ do $$
 declare v_cnt int;
 begin
   perform _test_act_as(current_setting('test.off_owner')::uuid);
-  with u as (
-    update public.gym_websites set published = true
-      where gym_id = current_setting('test.off')::uuid returning 1
-  ) select count(*) into v_cnt from u;
-  perform set_config('test.upd_cnt', v_cnt::text, true);
+  perform set_config('test.upd_cnt', '0', true);
 end $$;
-select is(current_setting('test.upd_cnt')::int, 0,
-  'update on a gym with website_builder_enabled=false affects no rows');
+-- Was "affects no rows" while the policy filtered it out. 0220 revoked
+-- the grant entirely — a bare UPDATE could publish without taking the
+-- snapshot — so the statement no longer runs for anybody, entitled or
+-- not. The entitlement is still enforced where it now matters, on the RPC.
+select throws_ok(
+  $$ update public.gym_websites set published = true
+       where gym_id = current_setting('test.off')::uuid $$,
+  '42501',
+  null,
+  'nobody UPDATEs gym_websites directly any more, entitled gym or not'
+);
 
 -- 10. DELETE on a disabled gym affects no rows (delete-policy entitlement fix).
 do $$

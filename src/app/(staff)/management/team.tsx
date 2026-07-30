@@ -20,7 +20,11 @@ import type { GymRole } from '@/types/database';
 const OWNER_STAFF_ROLES: GymRole[] = ['owner', 'admin', 'coach', 'staff'];
 const ADMIN_STAFF_ROLES: GymRole[] = ['coach', 'staff'];
 
-const CONFIGURABLE_ROLES: GymRole[] = ['admin', 'coach', 'staff', 'member'];
+// No 'member': gym_role_capabilities has check (role not in ('owner',
+// 'member')) (0020:37), so every toggle on that tab failed with "Could
+// not save permission" — while this page's own copy already says a
+// member's permissions are not editable.
+const CONFIGURABLE_ROLES: GymRole[] = ['admin', 'coach', 'staff'];
 
 type CapabilityGroup = {
   title: string;

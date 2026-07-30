@@ -81,7 +81,11 @@ export function planInsert(gymId: string, p: ProposedPlan) {
     credit_count: p.credit_count,
     monthly_price_cents: p.monthly_price_cents,
     notice_period_days: p.notice_period_days,
-    includes_individual_programming: false,
+    // A programming-only plan is individual programming and nothing
+    // else; the CHECK at 0123:116 refuses the row without this, and
+    // gym.add_plans advertises the kind, so hardcoding false made that
+    // sentence fail with a raw Postgres error.
+    includes_individual_programming: p.kind === 'programming_only',
     ...(p.kind === 'credit_period' ? { period_length: '30 days' } : {}),
   };
 }

@@ -79,32 +79,39 @@ select is(
   'gym_website_by_slug returns nothing for a draft (unpublished) site'
 );
 
--- 7. A coach without can_manage_website cannot update it. RLS's USING
--- clause silently excludes the row from the update (0 rows affected) —
--- unlike INSERT's WITH CHECK, a blocked UPDATE does not throw, so this
--- asserts the row is unaffected rather than expecting an exception.
+-- 7. Nobody updates this table directly any more. 0220 revoked the grant:
+-- a bare UPDATE could set published = true without ever writing
+-- published_design, so the public site would serve a snapshot that was
+-- never taken. This used to assert "0 rows affected"; the stronger fact
+-- is that the statement does not run at all, for anyone.
 do $$ begin perform _test_act_as(current_setting('test.coach')::uuid); end $$;
-do $$ begin
-  update public.gym_websites set published = true
-    where gym_id = current_setting('test.gym')::uuid;
-end $$;
-do $$ begin perform _test_act_as(current_setting('test.owner')::uuid); end $$;
-select is(
-  (select published from public.gym_websites where gym_id = current_setting('test.gym')::uuid),
-  false,
-  'a coach''s update attempt has no effect — the site is still unpublished'
+select throws_ok(
+  $$ update public.gym_websites set published = true
+       where gym_id = current_setting('test.gym')::uuid $$,
+  '42501',
+  null,
+  'a coach cannot UPDATE the site row — the grant is gone, not just the policy'
 );
 
--- 8. An admin can update it (publish it).
+-- 8. An admin publishes it through the RPC that takes the snapshot, which
+-- is the only door left and the one the screen has used since 0156.
 do $$ begin perform _test_act_as(current_setting('test.admin')::uuid); end $$;
-do $$ begin
-  update public.gym_websites set published = true, theme = 'ringside'
-    where gym_id = current_setting('test.gym')::uuid;
+-- The theme is a save_gym_website concern, not a publish one, so it goes
+-- through that RPC before the snapshot is taken.
+do $$
+begin
+  perform public.save_gym_website(
+    current_setting('test.gym')::uuid,
+    (select design from public.gym_websites
+      where gym_id = current_setting('test.gym')::uuid),
+    'ringside'
+  );
 end $$;
+do $$ begin perform public.publish_gym_website(current_setting('test.gym')::uuid); end $$;
 select is(
   (select published from public.gym_websites where gym_id = current_setting('test.gym')::uuid),
   true,
-  'an admin can publish the site'
+  'an admin publishes the site through publish_gym_website'
 );
 
 -- 9. Now published — gym_website_by_slug surfaces the theme.

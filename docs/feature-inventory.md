@@ -692,6 +692,63 @@ The staff area shows up when `can_access_staff_area` is on.
   spends six of its ten assertions on what did *not* widen, including that
   handing the coach every staff capability an owner could give them still
   does not open the ladder.
+- **The scaffolding around the programming** (0219, roadmap step 2) —
+  `programming.block_out`, `move_block` and `drop_block` for the year plan
+  ("Open prep runs 6 January to 15 March"), `programming.set_access` and
+  `who_is_programmed` for who is on individual programming and what it
+  costs them, and `plans.include_programming` for whether a plan carries
+  it. Every card states the thing its screen never has to: a block is
+  gym-wide and cannot be scoped to a class type; a block laid over another
+  becomes the one every coach's week strip shows, because `blockForDate`
+  breaks ties on the latest start; moving or dropping a block moves the
+  label and not the programming, which lives in `class_programming` keyed
+  on `(class_type_id, date)` with no relationship to a block at all;
+  switching a member to paid **takes away access they have today**,
+  because with no row at all a member is free by default; and a plan that
+  includes programming grants it regardless. `who_is_programmed` sorts on
+  days-written-ahead rather than name, so the answer is who runs out
+  first — the question behind the question, which the list screen has
+  never been able to answer. **The craft line held.** Nothing here writes a
+  workout, and the three verbs that would have — copy a week forward,
+  clear a day, put a WOD on the leaderboard — are deliberately absent:
+  each is a wholesale replace of a `sections` array whose honest preview
+  would have to render the coach-written content it is about to
+  overwrite. That is a card renderer, not an argument list.
+- **Three more gates that named one thing and tested another** (0219) —
+  sixth, seventh and eighth of the class. `class_programming` and
+  `programming_blocks` gated on `user_can_manage_classes` while the
+  programming screen reads `can_edit_classes`; `coach_tasks` (three
+  policies plus `complete_task` and `reopen_task`) gated on
+  `user_can_admin_or_coach` while the tasks screen reads
+  `can_manage_tasks`. Both helpers are raw role tests that ignore every
+  override and have no `left_at` guard, so somebody who had left the gym
+  kept writing its programming. The blocks table moved select *and* write
+  together on purpose — a gate that lets somebody write a block they
+  cannot then read is worse than either gate alone. The assignee-self
+  branch in both task RPCs is untouched: ticking off your own task has
+  never needed a capability. **And one asymmetry of my own making**:
+  0215 moved `membership_plans` to `effective_can(can_manage_plans)` and
+  left `plan_class_types` on `user_is_owner_of`, so a non-owner granted
+  the capability who switched a plan to programming-only got a successful
+  plan UPDATE and a class-type DELETE that removed nothing and reported
+  nothing — a row-filtered DELETE returns 204 with `error === null`. The
+  plan ended up programming-only while still carrying class types.
+- **The website only shows what you chose** (0220) — hiding a plan from
+  your website hid it from the page and not from the server.
+  `hiddenPlanIds` was honoured only in the renderer while
+  `gym_public_plans` returned every unarchived plan for a published site,
+  and the anon key is embedded in that rendered page — so the name, kind,
+  credit count and price of a plan an owner had deliberately taken off
+  their site were one request away from any visitor. 0158 had already
+  solved exactly this for hidden team members; this is that solution
+  applied to the sibling it missed, same `jsonb_path_query` exclusion over
+  the same `coalesce(published_design, design)`. Two more in the same
+  migration: `gym_websites` still took a bare client UPDATE, which could
+  set `published = true` without ever writing `published_design` — the
+  public site serving a snapshot that was never taken — so the grant is
+  revoked and the policy that guarded it went with it; and the website
+  asset storage policies checked capability, bucket and folder but not
+  whether the gym had the builder at all, nor `left_at`.
 - **The team, and the labels that sort the members** (roadmap step 2) —
   `team.invite` ("invite Sam as a coach, sam@example.com") over the
   existing `send-invite` function, so the code is still minted as the

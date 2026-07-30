@@ -17,6 +17,14 @@ import { ACTIONS, actionsFor, findAction } from './index';
 import { addLead, assignLeadTo, leadPipeline, moveLead } from './leads';
 import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
 import { moneySummary, periodLabel, refundMember, setPlanPrice } from './money';
+import {
+  blockOut,
+  dropBlock,
+  moveBlock,
+  setPlanProgramming,
+  setProgrammingAccess,
+  whoIsProgrammed,
+} from './programming';
 import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
 import { addTagRule, inviteToTeam, whoIsOnTheTeam } from './team';
 import { argInt, argMoney, argString } from './types';
@@ -91,6 +99,12 @@ describe('the registry', () => {
         'money.summary',
         'money.set_plan_price',
         'money.refund',
+        'programming.block_out',
+        'programming.move_block',
+        'programming.drop_block',
+        'programming.set_access',
+        'programming.who_is_programmed',
+        'plans.include_programming',
         'team.invite',
         'team.who',
         'tags.add_rule',
@@ -908,6 +922,93 @@ describe('tag rules', () => {
     const arg = addTagRule.args.find((a) => a.name === 'predicate')!;
     expect(arg.values).not.toContain('booked_class_type');
     expect(arg.values).not.toContain('attended_class_type');
+  });
+});
+
+describe('the year plan', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+  const ok = { name: 'Open prep', starts_on: '2027-01-06', ends_on: '2027-03-15' };
+
+  // The table's own CHECKs (0205): 2-60 characters, end on or after start.
+  // A row the database would reject must never become a confirm card.
+  it('holds itself to the same bounds the table does', () => {
+    expect(blockOut.sanitise(ok)).toEqual({
+      name: 'Open prep',
+      startsOn: '2027-01-06',
+      endsOn: '2027-03-15',
+      note: null,
+    });
+    expect(blockOut.sanitise({ ...ok, name: 'X' })).toBeNull();
+    expect(blockOut.sanitise({ ...ok, ends_on: '2027-01-05' })).toBeNull();
+    expect(blockOut.sanitise({ ...ok, starts_on: 'early January' })).toBeNull();
+    expect(blockOut.sanitise({ name: 'Open prep' })).toBeNull();
+  });
+
+  it('takes a one-day block, which is a real thing to want', () => {
+    expect(
+      blockOut.sanitise({ ...ok, starts_on: '2027-01-06', ends_on: '2027-01-06' })?.endsOn,
+    ).toBe('2027-01-06');
+  });
+
+  // An empty confirm card is worse than being told there was nothing in
+  // the sentence to act on.
+  it('refuses a change that changes nothing', () => {
+    expect(moveBlock.sanitise({ block: 'Open prep' })).toBeNull();
+    expect(moveBlock.sanitise({ block: 'Open prep', starts_on: '2027-02-01' })?.startsOn).toBe(
+      '2027-02-01',
+    );
+    expect(moveBlock.sanitise({ block: 'Open prep', name: 'Recovery' })?.name).toBe('Recovery');
+    expect(moveBlock.sanitise({ block: 'Open prep', name: 'R' })).toBeNull();
+  });
+
+  it('carries the id a chip sends and ignores a fake one', () => {
+    expect(
+      moveBlock.sanitise({ block: 'Open prep', name: 'Recovery', block_id: id })?.blockId,
+    ).toBe(id);
+    expect(dropBlock.sanitise({ block: 'Open prep', block_id: 'the first' })?.blockId).toBeNull();
+    expect(dropBlock.sanitise({})).toBeNull();
+  });
+});
+
+describe('individual programming', () => {
+  // set_member_programming_access refuses paid with no product, so the
+  // card is never built for a request that could only fail.
+  it('will not charge somebody without saying what they buy', () => {
+    expect(setProgrammingAccess.sanitise({ member: 'Marcus', mode: 'paid' })).toBeNull();
+    expect(
+      setProgrammingAccess.sanitise({ member: 'Marcus', mode: 'paid', product: 'PT block' })
+        ?.product,
+    ).toBe('PT block');
+    expect(setProgrammingAccess.sanitise({ member: 'Marcus', mode: 'free' })).toEqual({
+      member: 'Marcus',
+      mode: 'free',
+      product: null,
+      profileId: null,
+    });
+    // A product named alongside free means nothing and is dropped.
+    expect(
+      setProgrammingAccess.sanitise({ member: 'M', mode: 'free', product: 'PT block' })?.product,
+    ).toBeNull();
+    expect(setProgrammingAccess.sanitise({ member: 'M', mode: 'cheap' })).toBeNull();
+  });
+
+  it('is a question, so it never writes', () => {
+    expect(whoIsProgrammed.sanitise({})).toEqual({});
+    expect(whoIsProgrammed.kind).toBe('ask');
+    expect(whoIsProgrammed.apply).toBeUndefined();
+  });
+
+  it('needs a plan and an explicit yes or no', () => {
+    expect(setPlanProgramming.sanitise({ plan: 'Unlimited', included: true })).toEqual({
+      plan: 'Unlimited',
+      included: true,
+    });
+    expect(setPlanProgramming.sanitise({ plan: 'Unlimited', included: false })?.included).toBe(
+      false,
+    );
+    // "true" is not true — a string here would flip the wrong way round.
+    expect(setPlanProgramming.sanitise({ plan: 'Unlimited', included: 'true' })).toBeNull();
+    expect(setPlanProgramming.sanitise({ plan: 'Unlimited' })).toBeNull();
   });
 });
 
