@@ -352,10 +352,35 @@ already authorised. Roughly in order of how often an owner touches them:
   `members.tag`, which labels one person where this describes a kind of
   person and lets the sweep find them from now on. The rule runs
   immediately rather than waiting for the nightly pass, so the receipt can
-  say how many it caught. **Still absent:** changing somebody's role and
-  taking somebody off the team. Neither has a write anywhere in Temple —
-  no RPC, no screen, no client update — so both are in the known list
-  below rather than offered as verbs that would fail. **Settled, and the one
+  say how many it caught. **The two that had no write anywhere now do**
+  (0223): `team.set_role` ("make Jo an admin", "Dan is not coaching any
+  more, just a member") and `team.remove` ("Marcus has left"). Changing a
+  role meant deleting the person and re-inviting them, which threw away
+  the membership row and everything hanging off it. The verbs keep the
+  two operations apart on purpose — a demotion keeps the membership,
+  bookings and history; a removal cancels the lot and erases the health
+  answers, and reading one as the other is only recoverable in one
+  direction, so both cards say plainly which one they are.
+
+  Three rules govern anything touching a role, and they live in SQL
+  rather than in the client, because they are what makes granting the
+  capability safe: only an owner mints or changes an owner or an admin;
+  only an owner removes one; and a gym always keeps at least one owner,
+  since a gym whose only owner walked out has nobody who can administer
+  it and no support console to fix it from. A role change also clears
+  that person's per-member capability overrides — they were granted for
+  the job they had, and carrying them across is how a demoted admin keeps
+  admin powers under a coach's label.
+
+  One more bug fell out: **`user_can_admin` had no `left_at` guard.** It
+  backs thirteen policies across eight tables and the destructive verbs
+  lean on it, so an admin who left in March could still remove members in
+  July. `effective_can` has required `left_at is null` since it was
+  written; this was the last raw-role holdout on that path. `leave_gym`
+  moved onto `effective_can(gym_id, 'can_archive_members')` at the same
+  time — the screen has always gated its Remove button on that key, and
+  the server was asking a different question, which is 0218's bug on a
+  more destructive verb. **Settled, and the one
   capability change that widened rather than tightened** (0218):
   `create_invite` gated on `can_manage_staff` while the invite form read
   `can_invite`, so an owner who granted "Send invites" to a coach gave
@@ -479,13 +504,6 @@ next session finds them.
   the whole recurrence — so "move next Tuesday's 6am to 7am" silently
   moves every Tuesday. The bar refuses it rather than doing the wrong
   thing; the fix is a per-session move that leaves the pattern alone.
-- **No way to change somebody's role, or take them off the team.**
-  Nothing in Temple writes `gym_memberships.role` after the invite is
-  accepted, and nothing sets `left_at` from a staff surface — `leave_gym`
-  is the member's own door. So "make Jo an admin" and "Marcus has left"
-  both have nothing to wrap. Two RPCs, and the role one needs the same
-  owner-only ladder `create_invite` already has, or an admin could
-  promote themselves.
 - **Shop orders cannot be refunded at all.** `store_orders` has a
   `refunded` status that nothing writes: no screen, no RPC, no edge
   function. Membership refunds go through `stripe-refund`; the shop has

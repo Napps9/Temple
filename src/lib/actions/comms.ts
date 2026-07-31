@@ -215,7 +215,7 @@ export async function newsletterCard(
   draft: { subject: string; sections: { heading: string; body: string }[] },
   audience: string,
   ctx: ActionContext,
-  when: string | null = null,
+  extra: { when?: string; note?: string } = {},
 ): Promise<EmailDraftCard> {
   const g = await brandOf(ctx);
   return {
@@ -223,15 +223,24 @@ export async function newsletterCard(
     audience,
     emails: [
       {
-        when,
+        when: extra.when ?? null,
         subject: draft.subject,
         sections: draft.sections,
-        // Built with the same function apply will use, so what is on the
-        // card is not a rendering of the draft — it is the draft.
-        html: renderEmailHtml(docFor(g, draft.subject, draft.sections)),
+        // Built with the same function AND the same render context apply
+        // will use, so what is on the card is not a rendering of the draft
+        // — it is the draft. The footer is the gym's real business name
+        // and address; without it the card showed an email two lines
+        // shorter than the one that lands. unsubscribeUrl is the one
+        // deliberate difference: the worker substitutes a per-recipient
+        // link, and there is no per-recipient here.
+        html: renderEmailHtml(docFor(g, draft.subject, draft.sections), {
+          preheader: '',
+          footer: await footerOf(ctx, g),
+          unsubscribeUrl: '#',
+        }),
       },
     ],
-    note: null,
+    note: extra.note ?? null,
   };
 }
 
@@ -413,7 +422,7 @@ export function readAudienceArgs(
 export async function audienceLine(
   wanted: NewsletterAudience,
   ctx: ActionContext,
-): Promise<{ def: AudienceDefinition; line: string }> {
+): Promise<{ def: AudienceDefinition; line: string; count: number | null }> {
   const { found, missing } = await realTags(wanted.tags, ctx);
   // Falling back to everyone because a tag was misheard would mail the
   // whole gym. Keep the tag audience, empty, and let the line say so.
@@ -424,6 +433,7 @@ export async function audienceLine(
   if (wanted.tags.length > 0 && found.length === 0) {
     return {
       def,
+      count: 0,
       line: `No tag here called “${missing.join('” or “')}” — nobody would get this.`,
     };
   }
@@ -433,6 +443,7 @@ export async function audienceLine(
     missing.length > 0 ? ` (no tag called “${missing.join('” or “')}”)` : '';
   return {
     def,
+    count,
     line:
       count === null
         ? `To: ${who}${missed}`
@@ -493,7 +504,9 @@ async function gymTimezone(ctx: ActionContext): Promise<string> {
     .select('timezone')
     .eq('id', ctx.gymId)
     .single();
-  return (data as { timezone: string } | null)?.timezone || 'Europe/London';
+  // 'UTC' is the column default (0049), so the fallback agrees with the
+  // column rather than picking a different wrong answer.
+  return (data as { timezone: string } | null)?.timezone || 'UTC';
 }
 
 // What the editor puts in the footer, so a scheduled send is byte-for-byte
@@ -566,18 +579,42 @@ export const scheduleSend: ActionSpec<Scheduled> = {
         lines: ['Give me a day and time still ahead of us and I will set it.'],
       };
     }
-    const { line } = await audienceLine(a.audience, ctx);
+    const { line, count } = await audienceLine(a.audience, ctx);
+    // The campaign screen will not let you send to nobody. Scheduling to
+    // nobody is worse than sending to nobody, because the failure is a
+    // week away: _send_due_campaign marks the campaign failed, returns
+    // zero and tells no one. A draft is allowed to be addressed to an
+    // empty group — you open it and fix the audience. A booked send is
+    // not, because nobody opens it again.
+    if (count === 0) {
+      return {
+        title: 'Nobody is in that group, so this would go to no one.',
+        lines: [
+          line,
+          'Pick a group with somebody in it and I will book the time.',
+        ],
+      };
+    }
     const label = sendAtLabel(at, tz);
     return {
       title: `Send this ${label}?`,
       lines: [],
       card: 'email',
-      data: await newsletterCard(
-        a.draft,
-        line,
-        ctx,
-        `${label} — ${untilLabel(at, Date.now())}`,
-      ),
+      data: await newsletterCard(a.draft, line, ctx, {
+        when: `${label} — ${untilLabel(at, Date.now())}`,
+        // Three things an owner would otherwise learn the hard way, in
+        // the order they matter. The zone, because "09:00" is only a fact
+        // once you know whose clock. The not-before, because the
+        // dispatcher runs every fifteen minutes and an owner told "09:00"
+        // who sees it land at 09:12 has been misled. And the deadline on
+        // calling it off, phrased as a time rather than "until it sends"
+        // — the window really does close, and somebody who learns to
+        // trust the looser wording will one day lose the race.
+        note:
+          `Times are the gym's (${tz}), and it goes at that time or shortly after. ` +
+          `Call it off any time before then; once it starts going it cannot be called back. ` +
+          `Who gets it is worked out when it goes, so anyone joining or leaving between now and then counts.`,
+      }),
       yes: 'Yes, schedule it',
     };
   },

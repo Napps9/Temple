@@ -3,12 +3,11 @@
 // Two thin modules together, because both are mostly one job each and
 // neither earns a file of its own.
 //
-// The team's honest state: an owner can bring somebody in by saying so,
-// and can ask who is here. They cannot change a role or take somebody
-// off, because Temple has no write for either — no RPC, no screen, no
-// client update anywhere. Rather than offer a verb that would fail, both
-// are named in docs/roadmap.md as needing a write first, exactly like
-// coach reassignment.
+// The team, whole: bring somebody in, ask who is here, change what
+// somebody is, and take somebody off. The last two had no write anywhere
+// in Temple until 0223 — no RPC, no screen, no client update — so "make
+// Jo an admin" meant deleting Jo and re-inviting her, and losing the
+// membership row and everything hanging off it.
 //
 // Tag rules are the other half of `members.tag`: that one labels a
 // person, this one describes a kind of person and lets the sweep find
@@ -16,6 +15,7 @@
 // that need a class type — those want a second name resolved and are
 // better said on the screen than guessed at here.
 
+import { matchMembers } from '../chat-lookup';
 import { matchPlan } from './members';
 import {
   ActionError,
@@ -414,8 +414,254 @@ function describeRule(a: TagRule, planName: string | null): string {
   return PREDICATE_WORDS[a.predicate];
 }
 
+// ============================================================================
+// team.set_role and team.remove
+// ============================================================================
+//
+// Both go through the ladder in 0223, which is structural rather than
+// capability-driven: an owner or an admin can only be changed or removed
+// by an owner, and a gym always keeps at least one owner. Those rules
+// live in SQL because they are what makes granting the capability safe,
+// and a rule the client enforces is a rule an owner can be talked out of.
+//
+// The bar's job is to say the refusal in the words the owner used, and to
+// be clear which of the two things is happening. "He's not coaching any
+// more" is a role change and keeps the membership; "he has left" is a
+// removal and takes the bookings, the subscription and the health data
+// with it. Reading one as the other is not recoverable in the second
+// direction, so the cards say plainly which one they are.
+
+const ROLE_VALUES = ['owner', 'admin', 'coach', 'staff', 'member'] as const;
+type Role = (typeof ROLE_VALUES)[number];
+
+const ROLE_SAID: Record<Role, string> = {
+  owner: 'an owner',
+  admin: 'an admin',
+  coach: 'a coach',
+  staff: 'front desk',
+  member: 'an ordinary member',
+};
+
+type PersonRow = { profile_id: string; role: string; name: string };
+
+// The whole roster, members included: a role change is as often a
+// promotion out of the membership as a move between staff jobs, and
+// resolveTarget only sees members.
+async function everyone(ctx: ActionContext): Promise<PersonRow[]> {
+  const { data } = await ctx.supabase
+    .from('gym_memberships')
+    .select('profile_id, role, profiles!profile_id(full_name)')
+    .eq('gym_id', ctx.gymId)
+    .is('left_at', null);
+  return ((data ?? []) as unknown as {
+    profile_id: string;
+    role: string;
+    profiles: { full_name: string | null } | null;
+  }[])
+    .filter((r) => r.profiles?.full_name?.trim())
+    .map((r) => ({
+      profile_id: r.profile_id,
+      role: r.role,
+      name: r.profiles!.full_name!.trim(),
+    }));
+}
+
+type Resolved =
+  | { kind: 'one'; person: PersonRow }
+  | { kind: 'none' }
+  | { kind: 'many'; hits: PersonRow[] };
+
+async function whoTheyMeant(who: string, ctx: ActionContext): Promise<Resolved> {
+  const hits = matchMembers(await everyone(ctx), who);
+  if (hits.length === 0) return { kind: 'none' };
+  if (hits.length === 1) return { kind: 'one', person: hits[0] };
+  return { kind: 'many', hits };
+}
+
+// The RPCs raise in words. These are the ones an owner can act on; the
+// rest are plumbing and get the generic line.
+export function rosterFailure(message: string): string {
+  if (/needs an owner/i.test(message)) {
+    return 'A gym needs an owner. Make someone else an owner first, then try again.';
+  }
+  if (/Only owners can make/i.test(message)) {
+    return 'Only the owner can make somebody an owner or an admin.';
+  }
+  if (/Only owners can change/i.test(message)) {
+    return 'Only the owner can change what an owner or an admin is.';
+  }
+  if (/Only owners can remove/i.test(message)) {
+    return 'Only the owner can take an owner or an admin off the team.';
+  }
+  if (/not at this gym/i.test(message)) return 'They are not at this gym.';
+  if (/row-level security|Not authorised/i.test(message)) {
+    return 'You do not have permission to change the team.';
+  }
+  return "That didn't save — try again.";
+}
+
+export const setTeamRole: ActionSpec<{ who: string; role: Role }> = {
+  name: 'team.set_role',
+  kind: 'do',
+  capability: 'can_manage_staff',
+  says:
+    'Change what somebody is at the gym — "make Jo an admin", "Marcus is ' +
+    'a coach now", "put Sam on the front desk", "Dan is not coaching any ' +
+    'more, just a member". Not for taking somebody off the team, which is ' +
+    'team.remove.',
+  args: [
+    { name: 'who', type: 'string', desc: 'The person, as the owner named them', required: true },
+    {
+      name: 'role',
+      type: 'enum',
+      desc:
+        'What they become. "front desk" or "reception" is staff; "just a ' +
+        'member" or "not coaching any more" is member.',
+      values: [...ROLE_VALUES],
+      required: true,
+    },
+  ],
+  invalidate: ['staff-roster', 'coach-roster', 'gym-member-names', 'members-cohort'],
+  sanitise: (raw) => {
+    const who = argString(raw, 'who', 80);
+    const role = argEnum(raw, 'role', ROLE_VALUES);
+    return who && role ? { who, role } : null;
+  },
+  preview: async (a, ctx) => {
+    const found = await whoTheyMeant(a.who, ctx);
+    if (found.kind === 'none') {
+      return { title: `Nobody here called “${a.who}”.`, lines: [] };
+    }
+    if (found.kind === 'many') {
+      return {
+        title: `A few people could be “${a.who}” — which one?`,
+        lines: [],
+        choices: found.hits.map((h) => ({
+          label: `${h.name} (${ROLE_SAID[h.role as Role] ?? h.role})`,
+          args: { who: h.name, role: a.role },
+        })),
+      };
+    }
+    const p = found.person;
+    if (p.role === a.role) {
+      return { title: `${p.name} is already ${ROLE_SAID[a.role]}.`, lines: [] };
+    }
+    const down = a.role === 'member' && p.role !== 'member';
+    return {
+      title: `Make ${p.name} ${ROLE_SAID[a.role]}?`,
+      lines: [
+        `They are ${ROLE_SAID[p.role as Role] ?? p.role} now.`,
+        down
+          ? 'They stay at the gym — this only takes away the staff side. Their bookings and history are untouched.'
+          : 'They keep everything they have; this only changes what they can do.',
+        'Anything you switched on for them personally goes back to whatever the new role gets.',
+      ],
+      yes: `Yes, make them ${ROLE_SAID[a.role]}`,
+    };
+  },
+  apply: async (a, ctx) => {
+    const found = await whoTheyMeant(a.who, ctx);
+    if (found.kind !== 'one') throw new ActionError('I lost track of who you meant.');
+    const p = found.person;
+    const { error } = await ctx.supabase.rpc('set_member_role', {
+      p_gym_id: ctx.gymId,
+      p_profile_id: p.profile_id,
+      p_role: a.role,
+    });
+    if (error) throw new ActionError(rosterFailure(error.message));
+    ctx.offer?.('The team', '/management/roster');
+    return `${p.name} is ${ROLE_SAID[a.role]} now.`;
+  },
+};
+
+export const removeFromTeam: ActionSpec<{ who: string }> = {
+  name: 'team.remove',
+  kind: 'do',
+  capability: 'can_archive_members',
+  says:
+    'Take somebody off — "Marcus has left", "take Jo off the team", ' +
+    '"remove Sam". Not for changing what somebody does, which is ' +
+    'team.set_role.',
+  args: [
+    { name: 'who', type: 'string', desc: 'The person, as the owner named them', required: true },
+  ],
+  invalidate: [
+    'staff-roster',
+    'coach-roster',
+    'members-cohort',
+    'gym-member-names',
+    'class-sessions-month',
+  ],
+  sanitise: (raw) => {
+    const who = argString(raw, 'who', 80);
+    return who ? { who } : null;
+  },
+  preview: async (a, ctx) => {
+    const found = await whoTheyMeant(a.who, ctx);
+    if (found.kind === 'none') {
+      return { title: `Nobody here called “${a.who}”.`, lines: [] };
+    }
+    if (found.kind === 'many') {
+      return {
+        title: `A few people could be “${a.who}” — which one?`,
+        lines: [],
+        choices: found.hits.map((h) => ({
+          label: `${h.name} (${ROLE_SAID[h.role as Role] ?? h.role})`,
+          args: { who: h.name },
+        })),
+      };
+    }
+    const p = found.person;
+    // Counted rather than described, because "and their bookings" reads
+    // as boilerplate and "and their four bookings this week" reads as a
+    // decision. Same reads the Remove dialog on the members screen makes.
+    const [bookings, subs] = await Promise.all([
+      ctx.supabase
+        .from('class_bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('profile_id', p.profile_id),
+      ctx.supabase
+        .from('plan_subscriptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('gym_id', ctx.gymId)
+        .eq('profile_id', p.profile_id)
+        .eq('status', 'active'),
+    ]);
+    const b = bookings.count ?? 0;
+    const sub = (subs.count ?? 0) > 0;
+    return {
+      title: `Take ${p.name} off the team?`,
+      lines: [
+        `They are ${ROLE_SAID[p.role as Role] ?? p.role} now.`,
+        b > 0
+          ? `Their ${b} upcoming booking${b === 1 ? '' : 's'} ${b === 1 ? 'is' : 'are'} cancelled.`
+          : 'They have nothing booked.',
+        sub
+          ? 'Their membership is cancelled — no more payments are taken.'
+          : 'They have no live membership.',
+        'Their health answers are erased. This is not something I can undo.',
+      ],
+      yes: 'Yes, take them off',
+    };
+  },
+  apply: async (a, ctx) => {
+    const found = await whoTheyMeant(a.who, ctx);
+    if (found.kind !== 'one') throw new ActionError('I lost track of who you meant.');
+    const p = found.person;
+    const { error } = await ctx.supabase.rpc('leave_gym', {
+      p_gym_id: ctx.gymId,
+      p_profile_id: p.profile_id,
+    });
+    if (error) throw new ActionError(rosterFailure(error.message));
+    ctx.offer?.('The team', '/management/roster');
+    return `${p.name} is off the team. Their bookings are cancelled and their health answers are gone.`;
+  },
+};
+
 export const TEAM_ACTIONS: AnyAction[] = [
   erase(inviteToTeam),
   erase(whoIsOnTheTeam),
+  erase(setTeamRole),
+  erase(removeFromTeam),
   erase(addTagRule),
 ];

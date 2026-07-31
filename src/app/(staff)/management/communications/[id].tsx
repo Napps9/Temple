@@ -601,7 +601,22 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                   tone="amber"
                   icon="close-circle-outline"
                   label="Cancel schedule"
-                  onPress={() => unschedule.mutate(campaign.id)}
+                  onPress={() =>
+                    unschedule.mutate(campaign.id, {
+                      // The dispatcher closes this window by flipping the
+                      // row to 'sending', and the RPC then raises rather
+                      // than no-opping. Swallowing that told somebody
+                      // their email was cancelled while it was going out.
+                      onError: (e) =>
+                        setError(
+                          errorMessage(
+                            e,
+                            'Could not cancel — it may already have gone out.',
+                          ),
+                        ),
+                      onSuccess: () => setError(null),
+                    })
+                  }
                 />
               </View>
             ) : (

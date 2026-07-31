@@ -28,7 +28,14 @@ import {
   whoIsProgrammed,
 } from './programming';
 import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
-import { addTagRule, inviteToTeam, whoIsOnTheTeam } from './team';
+import {
+  addTagRule,
+  inviteToTeam,
+  removeFromTeam,
+  rosterFailure,
+  setTeamRole,
+  whoIsOnTheTeam,
+} from './team';
 import { argInt, argMoney, argString } from './types';
 
 describe('the registry', () => {
@@ -706,8 +713,21 @@ describe('describing a sequence', () => {
 // set is the shape that must not crash — every colour has a fallback.
 const NO_BRAND = {
   supabase: {
-    from: () => ({
-      select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }),
+    from: (table: string) => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({ data: null }),
+          maybeSingle: async () =>
+            table === 'gym_comms_settings'
+              ? {
+                  data: {
+                    footer_business_name: 'Temple Strength Ltd',
+                    footer_address: '14 Rivington St, London',
+                  },
+                }
+              : { data: null },
+        }),
+      }),
     }),
   },
   gymId: 'gym',
@@ -1080,6 +1100,38 @@ describe('scheduling a send', () => {
   });
 });
 
+// The condition was that the card show what is being approved. It was
+// showing an email two lines shorter than the one that lands: the card
+// compiled with no render context while the write compiled with the
+// gym's real footer, so the business name and postal address — the two
+// things a marketing email is legally obliged to carry — were on one and
+// not the other.
+describe('the card is the email that lands', () => {
+  it('compiles the footer the write compiles', async () => {
+    const card = await newsletterCard(
+      { subject: 'Hours', sections: [{ heading: 'Open', body: 'All week.' }] },
+      'To all members — 84 people.',
+      NO_BRAND,
+    );
+    expect(card.emails[0].html).toContain('Temple Strength Ltd');
+    expect(card.emails[0].html).toContain('14 Rivington St, London');
+    // The one deliberate difference: the worker substitutes a
+    // per-recipient link, and there is no per-recipient on a card.
+    expect(card.emails[0].html).not.toContain('{{unsubscribe_url}}');
+  });
+
+  it('carries the time and the caveats when it is a scheduled send', async () => {
+    const card = await newsletterCard(
+      { subject: 'Hours', sections: [{ heading: 'Open', body: 'All week.' }] },
+      'To all members — 84 people.',
+      NO_BRAND,
+      { when: 'Tuesday 4 August at 09:00 — in 3 days', note: 'Times are the gym’s.' },
+    );
+    expect(card.emails[0].when).toBe('Tuesday 4 August at 09:00 — in 3 days');
+    expect(card.note).toBe('Times are the gym’s.');
+  });
+});
+
 describe('calling a scheduled send off', () => {
   it('asks which when the words match more than one', async () => {
     const rows = [
@@ -1122,5 +1174,43 @@ describe('calling a scheduled send off', () => {
     const p = await cancelSend.preview({ which: null }, ctx);
     expect(p.title).toBe('Nothing is waiting to go out.');
     expect(p.yes).toBeUndefined();
+  });
+});
+
+// The two roster verbs. Both go through 0223's ladder, which is enforced
+// in SQL — what is checked here is that the bar never confuses the two
+// operations, because reading "he has left" as a role change is
+// recoverable and reading it the other way is not.
+describe('the roster, by sentence', () => {
+  it('takes a person and a role, and knows the words people use', () => {
+    expect(setTeamRole.sanitise({ who: 'Jo', role: 'admin' })).toEqual({
+      who: 'Jo',
+      role: 'admin',
+    });
+    expect(setTeamRole.sanitise({ who: 'Sam', role: 'staff' })?.role).toBe('staff');
+    expect(setTeamRole.sanitise({ who: 'Dan', role: 'member' })?.role).toBe('member');
+  });
+
+  it('refuses a role that is not one of the five', () => {
+    expect(setTeamRole.sanitise({ who: 'Jo', role: 'manager' })).toBeNull();
+    expect(setTeamRole.sanitise({ who: 'Jo' })).toBeNull();
+    expect(setTeamRole.sanitise({ role: 'admin' })).toBeNull();
+  });
+
+  it('keeps removal on its own verb, gated on its own switch', () => {
+    expect(removeFromTeam.sanitise({ who: 'Marcus' })).toEqual({ who: 'Marcus' });
+    expect(removeFromTeam.sanitise({})).toBeNull();
+    expect(removeFromTeam.capability).toBe('can_archive_members');
+    expect(setTeamRole.capability).toBe('can_manage_staff');
+  });
+
+  it('tells the owner which rule stopped them, in their own words', () => {
+    const p = (msg: string) =>
+      removeFromTeam.says && rosterFailure(msg);
+    expect(p('A gym needs an owner — make someone else an owner first')).toMatch(
+      /needs an owner/i,
+    );
+    expect(p('Only owners can remove owners or admins')).toMatch(/Only the owner/);
+    expect(p('some postgres noise')).toBe("That didn't save — try again.");
   });
 });

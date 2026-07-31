@@ -861,6 +861,33 @@ The staff area shows up when `can_access_staff_area` is on.
   and a `member_tagged` sequence with no tag is refused outright rather
   than created, because it would match nobody for ever while looking like
   it worked. The card also refuses a tag no member actually holds.
+- **The roster can change** (roadmap step 2) — `team.set_role` ("make Jo
+  an admin", "Dan is not coaching any more, just a member") and
+  `team.remove` ("Marcus has left") over `set_member_role` and `leave_gym`
+  (0223). Nothing in Temple wrote `gym_memberships.role` after an invite
+  was accepted, so a role change meant deleting the person and
+  re-inviting them — losing the membership row and everything hanging off
+  it. The two verbs stay separate deliberately: a demotion keeps the
+  membership, the bookings and the history; a removal cancels the lot and
+  erases the health answers, and the removal card counts what it is about
+  to cancel rather than describing it ("their 4 upcoming bookings are
+  cancelled") because a number reads as a decision and boilerplate does
+  not. Three rules live in SQL, not the client, because they are what
+  makes granting the capability safe: only an owner mints or changes an
+  owner or an admin, only an owner removes one, and **a gym always keeps
+  at least one owner** — a gym whose only owner walked out has nobody who
+  can administer it. A role change also clears that person's
+  `gym_member_capabilities` rows, since a per-person switch was granted
+  for the job they had.
+- **Leaving stops meaning admin** — `user_can_admin` read the membership
+  row without asking whether the person still worked there, so an admin
+  who left in March could still remove members in July. It backs thirteen
+  policies across eight tables and it was the last raw-role holdout on
+  the destructive path; `effective_can` has required `left_at is null`
+  since it was written. 0223 adds the guard and moves `leave_gym` itself
+  onto `effective_can(gym_id, 'can_archive_members')` — the key the
+  Remove button on the members screen has always read, while the server
+  asked a different question.
 - **A send can be booked and called off by sentence** (roadmap step 2) —
   `comms.schedule_send` ("email everyone about the Christmas hours on
   Friday morning") and `comms.cancel_send` ("don't send the Christmas

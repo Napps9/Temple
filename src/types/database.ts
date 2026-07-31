@@ -5282,6 +5282,14 @@ export type Database = {
         Args: { p_gym_id: string; p_profile_id: string };
         Returns: null;
       };
+      set_member_role: {
+        Args: {
+          p_gym_id: string;
+          p_profile_id: string;
+          p_role: 'owner' | 'admin' | 'coach' | 'staff' | 'member';
+        };
+        Returns: null;
+      };
       rejoin_gym: {
         Args: { p_gym_id: string; p_profile_id: string };
         Returns: null;
