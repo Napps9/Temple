@@ -579,6 +579,15 @@ short series without inventing a chart language per question.
 
 ### 5 — Fewer things to say
 
+**The baseline is in the repository now.** `src/lib/back-office.ts` holds
+every management surface as data with a `status` — `primary`,
+`back-office` or `retired` — so "routes retired" is a number a test
+asserts rather than a claim a document makes. Nothing is retired yet, on
+purpose: demotion is reversible and there is no evidence about which
+screens nobody opens. What did change is that everything behind the door
+is findable by typing, and that two surfaces which had no door at all —
+Goals and the Roster — now have one.
+
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
 from asking to acting removes sentences. The measures stay what they

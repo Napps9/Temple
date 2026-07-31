@@ -988,6 +988,46 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The Back Office is findable by typing** — `/management` has been a
+  Back Office index since it was built: eight categories, a tile or panel
+  per surface, gated by capability, in the app's own component kit. What
+  it was not was countable or searchable, because the catalogue lived
+  inline in a 1,600-line screen entangled with the panels that render
+  under it — which is why "routes retired", one of the roadmap's two
+  public measures, stayed a claim rather than a number.
+  `src/lib/back-office.ts` holds it as data: href, title, blurb,
+  category, capability keys, the words people reach for, the sentence that
+  does the same job in the bar, and a `status` the burndown can count. The
+  screen still calls `useCan` — hooks cannot run in a loop — and the
+  manifest only says which key to ask about, the same shape
+  `actionsFor(can)` uses for the bar's vocabulary. Nobody's visible tiles
+  changed; the two either-or gates (Cover on ask-or-claim, Tasks on
+  manage-or-staff-role) are pinned by tests so moving them into data could
+  not quietly narrow them.
+  **Search is the "easy to find" win.** Twenty-odd surfaces behind eight
+  pills is findable only by somebody who already knows which pill owns
+  what. Typing crosses every category at once.
+  **Which immediately proved it needed keywords.** The first draft indexed
+  titles and blurbs, and returned nothing for "refund", "coach pay",
+  "dns", "parq", "attendance", "export" or "vat" — every one a thing an
+  owner does, and none of them a word the tile's own marketing sentence
+  happened to use. A search index that only knows the names we chose is an
+  index for the people who chose them. Eighteen real queries are pinned by
+  a test.
+  **Two surfaces had no door at all.** Goals and the Roster were reachable
+  only from two quick-links on the Timeline, which is not where anybody
+  looks for them; both now have a tile in their category. Health screening
+  read like a third and is not one — the Settings tab embeds its panel
+  from the same file, so it needed indexing, not a tile that would sit
+  directly above the thing it links to.
+  **The guard** reads every route file under `(staff)/management/**` and
+  fails unless each is either in the manifest or named in a `PARENTED`
+  list with the screen that links to it. It found `/management/billing`
+  on its first run — a real surface reachable only from a hand-written
+  card buried in the Plans tab. Nothing can be built and lost again.
+  **Nothing was deleted and nothing moved.** Same four nav pills, same
+  category strip, same panels, every deep link still resolving. The
+  burndown starts with a baseline rather than a demolition.
 - **The Timeline stops counting every send the gym has ever made** (0232)
   — 0229 put the send receipt's numbers behind a lateral aggregate per
   campaign, which is right about *when* to count (bounces land hours after

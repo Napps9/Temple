@@ -55,6 +55,14 @@ import {
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import type { GymRole } from '@/types/database';
 import { useCan } from '@/lib/useCan';
+import {
+  categoriesWithEntries,
+  searchBackOffice,
+  visibleEntries,
+  CATEGORY_LABELS,
+  type BackOfficeCategory,
+  type BackOfficeEntry,
+} from '@/lib/back-office';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
 import { BrandingPanel } from './branding';
@@ -74,11 +82,16 @@ function ManagementCard({
   description,
   href,
   comingSoon,
+  saidInstead,
 }: {
   title: string;
   description: string;
   href?: LinkHref;
   comingSoon?: boolean;
+  // The sentence that does the same job in the bar. Somebody reading a
+  // tile is somebody who came looking for a screen — the one moment worth
+  // telling them they need not have.
+  saidInstead?: string;
 }) {
   const body = (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 border border-gray-100 dark:border-gray-800 shadow-card">
@@ -93,6 +106,11 @@ function ManagementCard({
         )}
       </View>
       <Text className="text-gray-500 dark:text-gray-400">{description}</Text>
+      {saidInstead ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          or say “{saidInstead}”
+        </Text>
+      ) : null}
     </View>
   );
   if (href && !comingSoon) {
@@ -105,22 +123,9 @@ function ManagementCard({
   return body;
 }
 
-type Category = 'members' | 'crm' | 'comms' | 'website' | 'store' | 'team' | 'plans' | 'settings';
-
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-const CATEGORY_LABELS: Record<Category, string> = {
-  members: 'Members',
-  crm: 'AI Front Desk',
-  comms: 'Email campaigns',
-  website: 'Website',
-  store: 'Store',
-  team: 'Team',
-  plans: 'Plans',
-  settings: 'Settings',
-};
-
-const CATEGORY_ICONS: Record<Category, IconName> = {
+const CATEGORY_ICONS: Record<BackOfficeCategory, IconName> = {
   members: 'people-outline',
   crm: 'sparkles-outline',
   comms: 'mail-outline',
@@ -140,9 +145,9 @@ function ManageNav({
   onSelect,
   vertical,
 }: {
-  categories: Category[];
-  active: Category;
-  onSelect: (c: Category) => void;
+  categories: BackOfficeCategory[];
+  active: BackOfficeCategory;
+  onSelect: (c: BackOfficeCategory) => void;
   vertical: boolean;
 }) {
   const colors = useThemeColors();
@@ -197,24 +202,48 @@ function ManageNav({
   );
 }
 
-const CATEGORY_ORDER: Category[] = [
-  'members',
-  'crm',
-  'comms',
-  'website',
-  'store',
-  'team',
-  'plans',
-  'settings',
-];
-
-type Card = {
-  category: Category;
-  title: string;
-  description: string;
-  href: LinkHref;
-  visible: boolean;
-};
+// Everything behind this door, found by typing.
+//
+// Twenty-odd surfaces behind eight category pills is findable only by
+// somebody who already knows which pill owns what — which is fine for the
+// person who built it and no use to the owner who wants "the thing where
+// I refund somebody". Searching crosses every category, and matches the
+// bar sentence too, so half-remembering either one lands in the same
+// place.
+function SearchResults({
+  results,
+  query,
+}: {
+  results: BackOfficeEntry[];
+  query: string;
+}) {
+  if (results.length === 0) {
+    return (
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 border border-gray-100 dark:border-gray-800 shadow-card">
+        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          Nothing here matches “{query.trim()}”.
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400">
+          It may be something you can just say — try asking for it in the
+          Timeline.
+        </Text>
+      </View>
+    );
+  }
+  return (
+    <View className="gap-3">
+      {results.map((e) => (
+        <ManagementCard
+          key={`${e.href}:${e.title}`}
+          title={e.title}
+          description={e.blurb}
+          href={e.href as LinkHref}
+          saidInstead={e.saidInstead}
+        />
+      ))}
+    </View>
+  );
+}
 
 export default function ManagementHome() {
   const role = useRole();
@@ -236,199 +265,57 @@ export default function ManagementHome() {
   const canWorkLeads = useCan('can_work_leads');
   const canManageWebsite = useCan('can_manage_website');
 
-  const cards: Card[] = [
-    // Insights + attendance folded into the Members tab: these two cards
-    // no longer render (Members owns a custom panel), they only keep the
-    // Members category visible for roles that can see stats but not the
-    // member list — e.g. a coach with attendance but no tag management.
-    {
-      category: 'members',
-      title: 'Insights',
-      description: 'Revenue, members and attendance.',
-      href: '/management/members',
-      visible: !!canSeeInsights,
-    },
-    {
-      category: 'members',
-      title: 'Attendance',
-      description: 'Trends from check-ins on class bookings.',
-      href: '/management/members',
-      visible: !!canViewAttendance,
-    },
-    {
-      category: 'team',
-      title: 'Team',
-      description: 'Invite owners, coaches and staff.',
-      href: '/management/team',
-      visible: !!canManageStaff,
-    },
-    {
-      category: 'team',
-      title: 'Coach earnings',
-      description: 'Set per-class-type rates and review what coaches earned.',
-      href: '/management/coach-earnings',
-      visible: !!canSetCoachPay,
-    },
-    {
-      category: 'team',
-      title: 'SOPs',
-      description: 'How we do things here — for the whole team.',
-      href: '/management/sops',
-      visible: !!canViewSops,
-    },
-    {
-      category: 'team',
-      title: 'Tasks',
-      description: 'Day-to-day staff work, assigned and tracked.',
-      href: '/management/tasks',
-      visible: !!canManageTasks || role === 'staff',
-    },
-    {
-      category: 'team',
-      title: 'Cover',
-      description: 'Hand a class to another coach; first-claim wins.',
-      href: '/management/cover',
-      visible: !!canRequestCover || !!canClaimCover,
-    },
-    {
-      category: 'settings',
-      title: 'Branding',
-      description: 'Logo, colours, gym name, public join link.',
-      href: '/management/branding',
-      visible: !!canManageStaff,
-    },
-    {
-      category: 'settings',
-      title: 'Leaderboards',
-      description: 'Turn class and strength comparisons on or off.',
-      href: '/management/leaderboards',
-      visible: !!canConfigureLeaderboards,
-    },
-    {
-      category: 'settings',
-      title: 'Messaging',
-      description: 'Decide who can DM whom inside the gym.',
-      href: '/management/messaging',
-      visible: !!canManageStaff,
-    },
-    {
-      category: 'settings',
-      title: 'Class types',
-      description: 'Name and colour the kinds of class you run.',
-      href: '/management/class-types',
-      visible: !!canEditClasses,
-    },
-    {
-      category: 'settings',
-      title: 'Gym settings',
-      description:
-        'Week start, booking windows, PAR-Q expiry, plan resolution, retention.',
-      href: '/management/operating',
-      visible: !!canManageStaff,
-    },
-    // Setup is a place, not a nag. Every other route into it is
-    // conditional on being unfinished — the Timeline card hides once the
-    // required steps are done, the checklist hides when dismissed — which
-    // left an owner who finished the required six with no way back to the
-    // optional three except knowing to type "continue setup".
-    {
-      category: 'settings',
-      title: 'Set up your gym',
-      description:
-        'The setup conversation — walks you through anything you left, whenever you want it.',
-      href: '/setup',
-      visible: role === 'owner',
-    },
-    {
-      category: 'members',
-      title: 'Members',
-      description: 'Invite members, view them by cohort, see and edit their tags.',
-      href: '/management/members',
-      visible: !!canManageTags,
-    },
-    {
-      category: 'comms',
-      title: 'Email campaigns',
-      description: 'Design, send and analyse email campaigns to your members.',
-      href: '/management/communications',
-      visible: !!canManageComms,
-    },
-    {
-      category: 'website',
-      title: 'Website',
-      description: 'A public site built from your own schedule, pricing and brand.',
-      href: '/management/website',
-      visible: !!canManageWebsite,
-    },
-    {
-      category: 'store',
-      title: 'Store',
-      description: 'Sell merch, programmes and tickets; manage stock and orders.',
-      href: '/management/store',
-      visible: !!canManageStore,
-    },
-    {
-      category: 'members',
-      title: 'Tag rules',
-      description: 'Auto-tag members based on cohort state.',
-      href: '/management/tags',
-      visible: !!canManageTags,
-    },
-    {
-      category: 'members',
-      title: 'Import members',
-      description: 'Stage members from Mindbody, PushPress, Glofox, Wodify or a spreadsheet.',
-      href: '/management/members/import',
-      visible: !!canManageStaff,
-    },
-    {
-      category: 'members',
-      title: 'Import workout history',
-      description: 'Seed past sets per member — lands in /track for PR pages and sparklines.',
-      href: '/management/members/import-workouts',
-      visible: !!canManageStaff,
-    },
-    {
-      category: 'crm',
-      title: 'AI Front Desk',
-      description: 'Track prospects from first contact through conversion.',
-      href: '/management/leads',
-      visible: !!canWorkLeads,
-    },
-    {
-      category: 'members',
-      title: 'Membership requests',
-      description: 'Approve or reject member requests to switch or cancel a plan.',
-      href: '/management/membership-requests',
-      visible: !!canAssignPlan,
-    },
-    {
-      category: 'plans',
-      title: 'Plans',
-      description: 'Define your membership plans, prices, and credit packs.',
-      href: '/management/plans',
-      visible: !!canManagePlans,
-    },
-  ];
+  const canManageParq = useCan('can_manage_parq');
 
-  const availableCategories = CATEGORY_ORDER.filter((c) =>
-    cards.some((card) => card.category === c && card.visible),
-  );
-  const [active, setActive] = useState<Category>(
+  // The catalogue lives in src/lib/back-office.ts so it can be counted,
+  // searched and guarded. The hooks stay here — they cannot be called from
+  // a loop — and the manifest only says which key to look up, the same
+  // shape actionsFor(can) uses for the bar's vocabulary.
+  const capabilities: Record<string, boolean | undefined> = {
+    can_see_insights: canSeeInsights,
+    can_view_attendance: canViewAttendance,
+    can_manage_tasks: canManageTasks,
+    can_request_cover: canRequestCover,
+    can_claim_cover: canClaimCover,
+    can_view_sops: canViewSops,
+    can_manage_staff: canManageStaff,
+    can_edit_classes: canEditClasses,
+    can_manage_tags: canManageTags,
+    can_manage_plans: canManagePlans,
+    can_set_coach_pay: canSetCoachPay,
+    can_configure_leaderboards: canConfigureLeaderboards,
+    can_manage_comms: canManageComms,
+    can_manage_store: canManageStore,
+    can_assign_plan: canAssignPlan,
+    can_work_leads: canWorkLeads,
+    can_manage_website: canManageWebsite,
+    can_manage_parq: canManageParq,
+  };
+  const entries = visibleEntries((c) => capabilities[c], role);
+  const [query, setQuery] = useState('');
+  const searching = query.trim().length > 0;
+  const results = searchBackOffice(query, entries);
+
+  const availableCategories = categoriesWithEntries(entries);
+  const [active, setActive] = useState<BackOfficeCategory>(
     availableCategories[0] ?? 'members',
   );
   const activeCategory = availableCategories.includes(active)
     ? active
     : availableCategories[0] ?? 'members';
-  const visibleCards = cards.filter(
-    (c) => c.visible && c.category === activeCategory,
+  // Most categories render a panel that is its own way in. These are the
+  // surfaces with no panel and no other door — before the manifest, Goals
+  // and the Roster were reachable only from two quick-links on the
+  // Timeline, which is not somewhere anybody thinks to look for them.
+  const visibleCards = entries.filter(
+    (e) => e.needsTile && e.category === activeCategory,
   );
 
   // The Website "category" is really just a doorway to the full-screen
   // site builder — it has no inline panel, only a single card that
   // links onward. So selecting it in the nav goes straight to the
   // builder rather than parking the user on a one-card page.
-  function selectCategory(c: Category) {
+  function selectCategory(c: BackOfficeCategory) {
     if (c === 'website') {
       router.push('/management/website');
       return;
@@ -459,7 +346,17 @@ export default function ManagementHome() {
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
-          {availableCategories.length > 1 ? (
+          {entries.length > 1 ? (
+            <Input
+              label="Find a setting"
+              value={query}
+              onChangeText={setQuery}
+              placeholder="refunds, sending domain, coach pay…"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          ) : null}
+          {searching ? null : availableCategories.length > 1 ? (
             <View className="lg:hidden">
               <ManageNav
                 categories={availableCategories}
@@ -471,8 +368,10 @@ export default function ManagementHome() {
           ) : null}
           {/* Owner-only setup nudge. Self-hides once all five steps are done
               so the card never nags a finished gym. */}
-          <GymSetupChecklist />
-          {activeCategory === 'members' ? (
+          {searching ? null : <GymSetupChecklist />}
+          {searching ? (
+            <SearchResults results={results} query={query} />
+          ) : activeCategory === 'members' ? (
           <MembersTab />
         ) : activeCategory === 'comms' ? (
           <CommunicationsHome />
@@ -501,16 +400,18 @@ export default function ManagementHome() {
           </View>
         ) : activeCategory === 'settings' ? (
           <SettingsTab />
-        ) : (
-          visibleCards.map((c) => (
-            <ManagementCard
-              key={c.title}
-              title={c.title}
-              description={c.description}
-              href={c.href}
-            />
-          ))
-        )}
+        ) : null}
+        {searching
+          ? null
+          : visibleCards.map((c) => (
+              <ManagementCard
+                key={c.title}
+                title={c.title}
+                description={c.blurb}
+                href={c.href as LinkHref}
+                saidInstead={c.saidInstead}
+              />
+            ))}
         </ScrollView>
       </View>
     </Screen>
