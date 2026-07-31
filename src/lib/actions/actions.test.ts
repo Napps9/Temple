@@ -202,7 +202,9 @@ describe('store actions', () => {
 
   it('previews a bottle the way the owner would read it back', async () => {
     const args = addStoreProduct.sanitise({ name: 'Water bottle', price: 1 })!;
-    const preview = await addStoreProduct.preview(args, null as never);
+    const preview = await addStoreProduct.preview(args, {
+      currency: 'GBP',
+    } as never);
     expect(preview.title).toBe('Add this to the shop?');
     expect(preview.lines[0]).toBe('Water bottle — £1');
   });

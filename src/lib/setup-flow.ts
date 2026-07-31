@@ -737,10 +737,41 @@ export function timetableSummary(p: TimetableProposal): string {
   return `${perWeek} class${perWeek === 1 ? '' : 'es'} a week${capText}.`;
 }
 
-export function formatPrice(cents: number | null): string {
+// A price the way a gym writes one: no decimals when there are none, so a
+// plan reads "£89" and not "£89.00". The currency is a required argument
+// rather than a default because the default was sterling and it silently
+// followed every price in the product onto euro and dollar gyms.
+export function formatPrice(cents: number | null, currency: string): string {
   if (cents === null) return '';
-  const pounds = cents / 100;
-  return Number.isInteger(pounds) ? `£${pounds}` : `£${pounds.toFixed(2)}`;
+  const amount = cents / 100;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    const n = Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+    return `${n} ${currency}`;
+  }
+}
+
+// The symbol on its own, for a field label ("Monthly price (£)") and for
+// prose that names the unit rather than an amount. Falls back to the code
+// when a currency has no distinct symbol in this locale.
+export function currencySymbol(currency: string): string {
+  try {
+    const parts = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    return parts.find((p) => p.type === 'currency')?.value ?? currency;
+  } catch {
+    return currency;
+  }
 }
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

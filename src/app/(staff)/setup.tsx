@@ -59,6 +59,7 @@ import {
   fieldLabel,
   formatRuleValue,
   formatDays,
+  currencySymbol,
   formatPrice,
   mergeRuleAnswers,
   nextRuleQuestion,
@@ -75,6 +76,7 @@ import {
   type RuleField,
   type TimetableProposal,
 } from '@/lib/setup-flow';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
@@ -193,7 +195,7 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
   stripe:
     'Payments next, before prices — connect your Stripe and members pay you directly; Temple takes no cut and adds nothing on top.',
   plans:
-    'Prices next: add each membership below — or describe them ("Unlimited is £89 with 30 days notice, an 8-class pack is £59") and I\'ll build them.',
+    'Prices next: add each membership below — or describe them ("Unlimited is ¤89 with 30 days notice, an 8-class pack is ¤59") and I\'ll build them.',
   parq:
     'Before anyone can book, members sign something — upload your waiver as a PDF and they sign it in the app. One is enough; a PAR-Q can come later.',
   team:
@@ -233,6 +235,7 @@ export default function SetupScreen() {
   const { data: profile } = useMyProfile();
   const brand = useGymBrand();
   const colors = useThemeColors();
+  const currency = useGymCurrency();
   const queryClient = useQueryClient();
 
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -324,6 +327,12 @@ export default function SetupScreen() {
 
   // Opening a named step, rather than only the next one — the finish card
   // reopens whatever the owner left, in place.
+  // ¤ is the generic currency sign: the prices step quotes example
+  // amounts and they have to be in the gym's money, which Stripe sets one
+  // step earlier.
+  const ask = (step: Exclude<Step, 'golive'>) =>
+    ASK[step].replace(/¤/g, currencySymbol(currency));
+
   function openStep(next: Step) {
     setStep(next);
     setMessages((m) => closeCards(m));
@@ -340,51 +349,51 @@ export default function SetupScreen() {
       ruleAnswers.current = {};
       openRuleQ.current = 0;
       pushMsgs(
-        { kind: 'step-ask', step: 'rules', text: ASK.rules },
+        { kind: 'step-ask', step: 'rules', text: ask('rules') },
         { kind: 'rule-question', q: 0, open: true },
       );
     } else if (next === 'logo') {
       pushMsgs(
-        { kind: 'step-ask', step: 'logo', text: ASK.logo },
+        { kind: 'step-ask', step: 'logo', text: ask('logo') },
         { kind: 'logo-card', open: true },
       );
     } else if (next === 'timetable') {
       pushMsgs(
-        { kind: 'step-ask', step: 'timetable', text: ASK.timetable },
+        { kind: 'step-ask', step: 'timetable', text: ask('timetable') },
         { kind: 'class-builder', open: true },
       );
     } else if (next === 'stripe') {
       pushMsgs(
-        { kind: 'step-ask', step: 'stripe', text: ASK.stripe },
+        { kind: 'step-ask', step: 'stripe', text: ask('stripe') },
         { kind: 'stripe-card', open: true },
       );
     } else if (next === 'plans') {
       pushMsgs(
-        { kind: 'step-ask', step: 'plans', text: ASK.plans },
+        { kind: 'step-ask', step: 'plans', text: ask('plans') },
         { kind: 'plan-builder', open: true },
       );
     } else if (next === 'parq') {
       pushMsgs(
-        { kind: 'step-ask', step: 'parq', text: ASK.parq },
+        { kind: 'step-ask', step: 'parq', text: ask('parq') },
         { kind: 'waiver-card', open: true },
       );
     } else if (next === 'team') {
       pushMsgs(
-        { kind: 'step-ask', step: 'team', text: ASK.team },
+        { kind: 'step-ask', step: 'team', text: ask('team') },
         { kind: 'team-card', open: true },
       );
     } else if (next === 'members') {
       pushMsgs(
-        { kind: 'step-ask', step: 'members', text: ASK.members },
+        { kind: 'step-ask', step: 'members', text: ask('members') },
         { kind: 'members-card', open: true },
       );
     } else if (next === 'workouts') {
       pushMsgs(
-        { kind: 'step-ask', step: 'workouts', text: ASK.workouts },
+        { kind: 'step-ask', step: 'workouts', text: ask('workouts') },
         { kind: 'workouts-card', open: true },
       );
     } else {
-      pushMsgs({ kind: 'temple', text: ASK[next] });
+      pushMsgs({ kind: 'temple', text: ask(next) });
     }
   }
 
@@ -1042,6 +1051,7 @@ function MessageRow({
   onReword: () => void;
 }) {
   const accent = useThemeColors().primary;
+  const currency = useGymCurrency();
   // Rendered by the parent's special cases, never here.
   if (
     msg.kind === 'logo-card' ||
@@ -1184,7 +1194,7 @@ function MessageRow({
               {p.notice_period_days ? `${p.blurb ? ' · ' : ''}${p.notice_period_days} days notice` : ''}
             </Text>
             <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">
-              {formatPrice(p.monthly_price_cents)}
+              {formatPrice(p.monthly_price_cents, currency)}
             </Text>
           </View>
         ))}
@@ -2353,6 +2363,7 @@ function PlanBuilderCard({
   onSkip: () => void;
 }) {
   const colors = useThemeColors();
+  const currency = useGymCurrency();
   const [entries, setEntries] = useState<PlanEntry[]>([]);
   const [draft, setDraft] = useState<PlanEntry>({
     name: '',
@@ -2409,7 +2420,7 @@ function PlanBuilderCard({
   }
 
   function entrySummary(e: PlanEntry): string {
-    const bits = [`£${e.pounds}`];
+    const bits = [`${currencySymbol(currency)}${e.pounds}`];
     if (e.kind !== 'unlimited') bits.push(`${e.credits} classes`);
     if (e.kind !== 'credit_pack' && e.notice.trim() !== '' && e.notice !== '0') {
       bits.push(`${e.notice} days notice`);
@@ -2481,7 +2492,9 @@ function PlanBuilderCard({
       <View className="flex-row gap-2">
         <View className="flex-1 gap-1.5">
           <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-            {draft.kind === 'credit_pack' ? 'Price (£)' : 'Price (£ / month)'}
+            {draft.kind === 'credit_pack'
+              ? `Price (${currencySymbol(currency)})`
+              : `Price (${currencySymbol(currency)} / month)`}
           </Text>
           <TextInput
             value={draft.pounds}

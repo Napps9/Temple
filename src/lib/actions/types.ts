@@ -23,8 +23,9 @@ import type { Database } from '../../types/database';
 
 export type ActionArg = {
   name: string;
-  // `money` takes the owner's units (pounds) and is stored in pence, so a
-  // spec never has to remember which side of the boundary it is on.
+  // `money` takes the owner's units — whole currency, whatever the gym
+  // bills in — and is stored in minor units, so a spec never has to
+  // remember which side of the boundary it is on.
   // `list` and `object` are structured values whose shape lives in `desc`
   // — the parser reads the description, and the spec's own sanitiser is
   // what actually decides whether what came back is usable.
@@ -48,6 +49,10 @@ export type ActionContext = {
   supabase: SupabaseClient<Database>;
   gymId: string;
   userId: string;
+  // The gym's billing currency (ISO 4217). Every amount an action prints
+  // goes through this — a card that approves a price change has to show
+  // the price in the money the gym actually charges.
+  currency: string;
   // Some actions finish somewhere else — a drafted newsletter is sent from
   // the campaign screen, because the send button is the approval and always
   // has been. So the action OFFERS the way through and the receipt carries
@@ -170,26 +175,28 @@ export function argInt(
   return r >= min && r <= max ? r : null;
 }
 
-// Pounds in, pence out. Accepts 1, "1", "1.50" and "£1.50" because all
-// four are things people type; refuses a third decimal place rather than
-// silently rounding someone's price.
+// Major units in, minor units out. Accepts 1, "1", "1.50", "£1.50",
+// "A$1.50" and "1,50 kr" because all of them are things people type — the
+// symbol is stripped rather than enumerated, since enumerating it is how
+// the rest of the product ended up assuming sterling. Refuses a third
+// decimal place rather than silently rounding someone's price.
 export function argMoney(
   raw: Record<string, unknown>,
   name: string,
-  maxPence = 10_000_00,
+  maxMinor = 10_000_00,
 ): number | null {
   const v = raw[name];
-  let pounds: number;
-  if (typeof v === 'number') pounds = v;
+  let major: number;
+  if (typeof v === 'number') major = v;
   else if (typeof v === 'string') {
-    const clean = v.replace(/[£$€,\s]/g, '');
+    const clean = v.replace(/[^\d.]/g, '');
     if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null;
-    pounds = Number(clean);
+    major = Number(clean);
   } else return null;
-  if (!Number.isFinite(pounds) || pounds < 0) return null;
-  const pence = Math.round(pounds * 100);
-  if (Math.abs(pounds * 100 - pence) > 0.001) return null;
-  return pence <= maxPence ? pence : null;
+  if (!Number.isFinite(major) || major < 0) return null;
+  const minor = Math.round(major * 100);
+  if (Math.abs(major * 100 - minor) > 0.001) return null;
+  return minor <= maxMinor ? minor : null;
 }
 
 export function argEnum<T extends string>(

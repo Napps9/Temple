@@ -30,6 +30,7 @@ import {
 } from '@/lib/subscriptions';
 import { useCan } from '@/lib/useCan';
 import { useDependents } from '@/lib/useDependents';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 import { dayBeforeCutoffEpoch } from '@/lib/zoned-time';
@@ -945,6 +946,7 @@ function BookMembershipPrompt({
   checkout: ReturnType<typeof useStartCheckout>;
   onBack: () => void;
 }) {
+  const currency = useGymCurrency();
   return (
     <View className="gap-3">
       <View className="gap-1">
@@ -975,7 +977,7 @@ function BookMembershipPrompt({
                 </Text>
               </View>
               <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                {planPriceLabel(plan)}
+                {planPriceLabel(plan, currency)}
               </Text>
             </View>
             {canSelfCheckout ? (

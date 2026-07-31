@@ -17,7 +17,9 @@ import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
+import { currencySymbol } from '@/lib/setup-flow';
 import { planKindLabel, planPriceLabel } from '@/lib/subscriptions';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
@@ -159,6 +161,7 @@ function coverageDiffers(r: EditablePlan): boolean {
 
 export function PlansPanel() {
   const colors = useThemeColors();
+  const currency = useGymCurrency();
   const { backTo } = useLocalSearchParams<{ backTo?: string }>();
   // Opened mid-setup, the two hops out of here stay inside setup — and
   // return to whichever of the two setup surfaces sent the owner in.
@@ -721,7 +724,7 @@ export function PlansPanel() {
                     </View>
                     <View className="items-end">
                       <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
-                        {planPriceLabel(snap)}
+                        {planPriceLabel(snap, currency)}
                       </Text>
                       {snap.notice_period_days ? (
                         <Text className="text-gray-400 dark:text-gray-500 text-xs">
@@ -866,7 +869,7 @@ export function PlansPanel() {
                 ) : null}
                 <View className="gap-1">
                   <Input
-                    label="Monthly price (£)"
+                    label={`Monthly price (${currencySymbol(currency)})`}
                     value={r.monthlyPrice}
                     onChangeText={(v) => update(idx, { monthlyPrice: v })}
                     keyboardType="decimal-pad"

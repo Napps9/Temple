@@ -289,7 +289,8 @@ export const addPlans: ActionSpec<{ proposal: PlansProposal }> = {
         'The plans described, as an array of {name, kind, ' +
         'monthly_price_cents, credit_count, notice_period_days, blurb}. kind ' +
         'is "unlimited" | "credit_period" | "credit_pack" | ' +
-        '"programming_only". monthly_price_cents is pence ("£89"→8900). N ' +
+        '"programming_only". monthly_price_cents is minor units, so the ' +
+        'amount they said times 100 ("89"→8900) whatever the currency. N ' +
         'classes a month is credit_period with credit_count N. blurb is a ' +
         'short plain line a member would read, carrying any restriction they ' +
         'stated (student, off-peak).',
@@ -301,7 +302,7 @@ export const addPlans: ActionSpec<{ proposal: PlansProposal }> = {
     const proposal = sanitisePlans({ plans: raw.plans });
     return proposal ? { proposal } : null;
   },
-  preview: async (a) => ({
+  preview: async (a, ctx) => ({
     title: 'Create these memberships?',
     lines: a.proposal.plans.map((p) => {
       const credits = p.credit_count !== null ? `, ${p.credit_count} classes` : '';
@@ -309,7 +310,7 @@ export const addPlans: ActionSpec<{ proposal: PlansProposal }> = {
         p.notice_period_days !== null && p.notice_period_days > 0
           ? `, ${p.notice_period_days} days notice`
           : '';
-      return `${p.name} — ${formatPrice(p.monthly_price_cents)}${credits}${notice}`;
+      return `${p.name} — ${formatPrice(p.monthly_price_cents, ctx.currency)}${credits}${notice}`;
     }),
     yes: 'Yes, create them',
   }),
@@ -325,7 +326,7 @@ export const addPlans: ActionSpec<{ proposal: PlansProposal }> = {
       throw e;
     }
     const names = a.proposal.plans
-      .map((p) => `${p.name} at ${formatPrice(p.monthly_price_cents)}`)
+      .map((p) => `${p.name} at ${formatPrice(p.monthly_price_cents, ctx.currency)}`)
       .join(', ');
     return `Created. ${names}.`;
   },

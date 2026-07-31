@@ -1,3 +1,6 @@
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,6 +11,7 @@ import {
   isLateCancel,
   lateCancelLabel,
   formatDays,
+  currencySymbol,
   formatPrice,
   mergeRuleAnswers,
   nextRuleQuestion,
@@ -159,10 +163,27 @@ describe('summaries and formatting', () => {
     expect(timetableSummary(p)).toBe('21 classes a week, all capped at 16.');
   });
 
-  it('formats prices in whole pounds when possible', () => {
-    expect(formatPrice(8900)).toBe('£89');
-    expect(formatPrice(8950)).toBe('£89.50');
-    expect(formatPrice(null)).toBe('');
+  it('formats prices in whole units when possible', () => {
+    expect(formatPrice(8900, 'GBP')).toBe('£89');
+    expect(formatPrice(8950, 'GBP')).toBe('£89.50');
+    expect(formatPrice(null, 'GBP')).toBe('');
+  });
+
+  // The bug this replaced: every price in the product printed a pound
+  // sign, whatever the gym billed in.
+  it('follows the gym currency rather than assuming sterling', () => {
+    expect(formatPrice(8900, 'EUR')).toContain('89');
+    expect(formatPrice(8900, 'EUR')).not.toContain('£');
+    expect(formatPrice(8900, 'USD')).not.toContain('£');
+    expect(formatPrice(8900, 'AUD')).not.toContain('£');
+  });
+
+  // A code Intl does not know must still print the number and say which
+  // money it is, rather than throwing inside a render.
+  it('falls back to the code for an unknown currency', () => {
+    expect(formatPrice(8900, 'ZZZ')).toContain('ZZZ');
+    expect(currencySymbol('GBP')).toBe('£');
+    expect(currencySymbol('ZZZ')).toBe('ZZZ');
   });
 
   it('collapses contiguous day runs', () => {
@@ -309,5 +330,46 @@ describe('rule questions and the rule sheet', () => {
     expect(
       fieldLabel('dm_scope', mergeRuleAnswers({ dm_scope: 'member_coach_only' })),
     ).toBe('coaches and staff only');
+  });
+});
+
+// Every price in the product printed a pound sign until this sweep, on
+// gyms billing in euros and dollars as much as on the ones billing in
+// sterling. The two shapes it took were a symbol glued to an amount and a
+// symbol baked into a field label, so those are what this refuses. It
+// scans the source rather than the render because the bug was never in one
+// component — it was the same three characters typed forty times.
+describe('no screen picks the currency itself', () => {
+  function sourceFiles(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) sourceFiles(full, out);
+      else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) out.push(full);
+    }
+    return out;
+  }
+
+  // Comments talk about the bug and about sterling examples; they render
+  // nothing.
+  function code(text: string): string {
+    return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  }
+
+  it('never glues a symbol to an amount', () => {
+    const offenders = sourceFiles('src').filter((f) =>
+      /[£€]\$\{/.test(code(readFileSync(f, 'utf8'))),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it('never bakes a symbol into a field label', () => {
+    const offenders = sourceFiles('src').filter(
+      (f) =>
+        // The currency picker is the one place a symbol is the subject
+        // rather than the unit — it is how you choose which one you bill in.
+        !f.endsWith('operating.tsx') &&
+        /\(\s*[£€]\s*[)/]/.test(code(readFileSync(f, 'utf8'))),
+    );
+    expect(offenders).toEqual([]);
   });
 });

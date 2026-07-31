@@ -5,7 +5,9 @@ import { Pressable, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { errorMessage } from '@/lib/errors';
+import { currencySymbol } from '@/lib/setup-flow';
 import { supabase } from '@/lib/supabase';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 
 type Tone = 'friendly' | 'professional' | 'high_energy';
 
@@ -46,6 +48,7 @@ export function AgentBriefBuilder({
   value: string;
   onChange: (next: string) => void;
 }) {
+  const symbol = currencySymbol(useGymCurrency());
   const [promptMode, setPromptMode] = useState<'generate' | 'manual'>('generate');
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +116,7 @@ export function AgentBriefBuilder({
             value={answers.intro_offer}
             onChangeText={(t) => setAnswers((a) => ({ ...a, intro_offer: t }))}
             multiline
-            placeholder="First class free. Or: £19 trial week, no commitment…"
+            placeholder={`First class free. Or: ${symbol}19 trial week, no commitment…`}
           />
           <Input
             label="Where should a brand-new member start?"
@@ -143,7 +146,7 @@ export function AgentBriefBuilder({
             multiline
             numberOfLines={3}
             placeholder={
-              'Do you do drop-ins? Yes, £15.\nDo I need to be fit first? No — everything scales.'
+              `Do you do drop-ins? Yes, ${symbol}15.\nDo I need to be fit first? No — everything scales.`
             }
           />
           <View className="gap-1.5">

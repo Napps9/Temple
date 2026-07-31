@@ -23,7 +23,9 @@ import {
   unixToDateIso,
 } from '@/lib/import/stripe';
 import { supabase } from '@/lib/supabase';
+import { currencySymbol } from '@/lib/setup-flow';
 import { useThemeColors } from '@/lib/theme';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import type { Json } from '@/types/database';
 
 type PlanReview = {
@@ -46,6 +48,7 @@ function fmtRenew(unix: number | null): string {
 
 export default function ImportStripeScreen() {
   const colors = useThemeColors();
+  const symbol = currencySymbol(useGymCurrency());
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const isOwner = membership?.role === 'owner';
@@ -426,8 +429,8 @@ export default function ImportStripeScreen() {
                       <Input
                         label={
                           p.kind === 'credit_pack'
-                            ? 'Pack price (£)'
-                            : 'Monthly price (£)'
+                            ? `Pack price (${symbol})`
+                            : `Monthly price (${symbol})`
                         }
                         value={p.monthlyPrice}
                         onChangeText={(v) =>

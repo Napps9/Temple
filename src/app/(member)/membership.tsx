@@ -17,6 +17,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { formatMoney } from '@/lib/coach-earnings';
 import { embedOne } from '@/lib/embed';
 import { errorMessage } from '@/lib/errors';
 import { paymentNoticeCopy } from '@/lib/payment-notice';
@@ -26,6 +27,7 @@ import {
   markPendingCheckout,
 } from '@/lib/pending-checkout';
 import { supabase } from '@/lib/supabase';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import {
   CURRENT_SUB_STATUSES,
   SUB_STATUS_META,
@@ -220,6 +222,7 @@ function CurrentSubCard({
   onContinueBilling?: () => void;
   continuingBilling?: boolean;
 }) {
+  const currency = useGymCurrency();
   const plan = sub.membership_plans;
   const kind = plan?.kind ?? 'unlimited';
   const isCredit = kind !== 'unlimited';
@@ -233,7 +236,7 @@ function CurrentSubCard({
   const priceCents = sub.price_cents ?? plan?.monthly_price_cents ?? null;
   const priceLabel =
     priceCents != null
-      ? planPriceLabel({ kind, monthly_price_cents: priceCents })
+      ? planPriceLabel({ kind, monthly_price_cents: priceCents }, currency)
       : null;
   const notice = plan?.notice_period_days ?? 0;
 
@@ -378,10 +381,7 @@ function PendingMembershipCard({
 }
 
 function money(cents: number, currency: string): string {
-  const amount = (cents / 100).toFixed(2);
-  const c = currency.toUpperCase();
-  const symbol = c === 'GBP' ? '£' : c === 'USD' ? '$' : c === 'EUR' ? '€' : '';
-  return symbol ? `${symbol}${amount}` : `${amount} ${c}`;
+  return formatMoney(cents, currency.toUpperCase());
 }
 
 function InvoiceRow({ inv }: { inv: MemberInvoice }) {
@@ -524,6 +524,7 @@ function MembershipActions({
 
 export default function MembershipScreen() {
   const { data: membership } = useGymMembership();
+  const currency = useGymCurrency();
   const session = useSession();
   const params = useLocalSearchParams<{ checkout?: string; book?: string }>();
   const gymId = membership?.gymId;
@@ -887,7 +888,7 @@ export default function MembershipScreen() {
                     </View>
                     <View className="items-end">
                       <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
-                        {planPriceLabel(plan)}
+                        {planPriceLabel(plan, currency)}
                       </Text>
                       {plan.notice_period_days ? (
                         <Text className="text-gray-400 dark:text-gray-500 text-xs">

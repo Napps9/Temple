@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 
 import type { Embedded } from '@/lib/embed';
+import { formatPrice } from '@/lib/setup-flow';
 import { supabase } from '@/lib/supabase';
 import type { MembershipPlanKind, PlanSubState } from '@/types/database';
 
@@ -317,15 +318,16 @@ export const SUB_STATUS_META: Record<
   cancelled: { label: 'Cancelled', tone: 'muted' },
 };
 
-export function planPriceLabel(plan: {
-  kind: MembershipPlanKind;
-  monthly_price_cents: number | null;
-}): string {
+export function planPriceLabel(
+  plan: {
+    kind: MembershipPlanKind;
+    monthly_price_cents: number | null;
+  },
+  currency: string,
+): string {
   if (plan.monthly_price_cents == null) return 'Free';
-  const pounds = `£${(plan.monthly_price_cents / 100)
-    .toFixed(2)
-    .replace(/\.00$/, '')}`;
-  return plan.kind === 'credit_pack' ? pounds : `${pounds}/mo`;
+  const price = formatPrice(plan.monthly_price_cents, currency);
+  return plan.kind === 'credit_pack' ? price : `${price}/mo`;
 }
 
 export function planKindLabel(plan: {

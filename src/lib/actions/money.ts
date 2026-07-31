@@ -238,7 +238,12 @@ export const setPlanPrice: ActionSpec<PriceChange> = {
     'items, which is store.set_price.',
   args: [
     { name: 'plan', type: 'string', desc: 'The plan, as the owner named it', required: true },
-    { name: 'price', type: 'money', desc: 'The new price in pounds', required: true },
+    {
+      name: 'price',
+      type: 'money',
+      desc: "The new price, in whole currency as they said it — not minor units",
+      required: true,
+    },
   ],
   invalidate: [
     'membership-plans',
@@ -267,17 +272,20 @@ export const setPlanPrice: ActionSpec<PriceChange> = {
     }
     const plan = found.plan;
     if (plan.monthly_price_cents === a.cents) {
-      return { title: `${plan.name} is already ${formatPrice(a.cents)}.`, lines: [] };
+      return {
+        title: `${plan.name} is already ${formatPrice(a.cents, ctx.currency)}.`,
+        lines: [],
+      };
     }
     const on = await countOnPlan(plan.plan_id, ctx);
     const was = plan.monthly_price_cents;
     return {
       title: `Change what ${plan.name} costs?`,
       lines: [
-        `${was === null ? 'no price set' : formatPrice(was)} → ${formatPrice(a.cents)}${per(plan.kind)}`,
+        `${was === null ? 'no price set' : formatPrice(was, ctx.currency)} → ${formatPrice(a.cents, ctx.currency)}${per(plan.kind)}`,
         on === 0
           ? 'Nobody is on it, so this only affects who signs up next.'
-          : `${on} member${on === 1 ? '' : 's'} on it keep paying ${formatPrice(was)} — a price change is never backdated.`,
+          : `${on} member${on === 1 ? '' : 's'} on it keep paying ${formatPrice(was, ctx.currency)} — a price change is never backdated.`,
         'Anyone signing up from now pays the new price.',
       ],
       yes: 'Yes, change it',
@@ -298,7 +306,7 @@ export const setPlanPrice: ActionSpec<PriceChange> = {
           : "That didn't save — try again.",
       );
     }
-    return `${found.plan.name} is now ${formatPrice(a.cents)}${per(found.plan.kind)} for new sign-ups.`;
+    return `${found.plan.name} is now ${formatPrice(a.cents, ctx.currency)}${per(found.plan.kind)} for new sign-ups.`;
   },
 };
 

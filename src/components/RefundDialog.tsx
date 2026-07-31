@@ -4,8 +4,11 @@ import { Modal, Pressable, Switch, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/lib/errors';
+import { formatMoney } from '@/lib/coach-earnings';
 import { computeRefund, type PlanKind, type RefundMode } from '@/lib/refunds';
 import { supabase } from '@/lib/supabase';
+import { currencySymbol } from '@/lib/setup-flow';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 
 type RefundSub = {
   id: string;
@@ -39,10 +42,6 @@ const MODES: { mode: RefundMode; title: string; blurb: string }[] = [
   },
 ];
 
-function money(cents: number): string {
-  return `£${(cents / 100).toFixed(2)}`;
-}
-
 export function RefundDialog({
   visible,
   onClose,
@@ -55,8 +54,9 @@ export function RefundDialog({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+  const gymCurrency = useGymCurrency();
   const [selected, setSelected] = useState<RefundMode>('prorata_revoke');
-  const [customPounds, setCustomPounds] = useState('');
+  const [customMajor, setCustomMajor] = useState('');
   const [notify, setNotify] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,16 +69,26 @@ export function RefundDialog({
     queryFn: async () => {
       const { data, error: e } = await supabase
         .from('billing_events')
-        .select('amount_cents, occurred_at')
+        .select('amount_cents, currency, occurred_at')
         .eq('plan_subscription_id', sub.id)
         .in('kind', ['checkout', 'invoice'])
         .order('occurred_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       if (e) throw e;
-      return data as { amount_cents: number; occurred_at: string } | null;
+      return data as {
+        amount_cents: number;
+        currency: string | null;
+        occurred_at: string;
+      } | null;
     },
   });
+
+  // A refund is denominated in whatever the charge was taken in, not in
+  // whatever the gym bills in today. They are almost always the same and
+  // the one time they are not is the time the number has to be right.
+  const currency = charge.data?.currency?.toUpperCase() ?? gymCurrency;
+  const money = (cents: number) => formatMoney(cents, currency);
 
   const now = new Date().toISOString();
   const ent = charge.data
@@ -93,7 +103,7 @@ export function RefundDialog({
     : null;
 
   const customCents =
-    customPounds.trim() === '' ? null : Math.round(parseFloat(customPounds) * 100);
+    customMajor.trim() === '' ? null : Math.round(parseFloat(customMajor) * 100);
 
   function previewCents(mode: RefundMode): number | null {
     if (!ent) return null;
@@ -194,12 +204,12 @@ export function RefundDialog({
               {selected === 'keep' ? (
                 <View className="gap-1">
                   <Text className="text-gray-700 dark:text-gray-200 text-xs">
-                    Amount to refund (£) — leave blank for the full{' '}
+                    Amount to refund ({currencySymbol(currency)}) — leave blank for the full{' '}
                     {money(charge.data.amount_cents)}
                   </Text>
                   <TextInput
-                    value={customPounds}
-                    onChangeText={setCustomPounds}
+                    value={customMajor}
+                    onChangeText={setCustomMajor}
                     keyboardType="decimal-pad"
                     placeholder={(charge.data.amount_cents / 100).toFixed(2)}
                     placeholderTextColor="#9CA3AF"

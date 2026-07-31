@@ -30,7 +30,9 @@ import {
   STATUS_META,
 } from '@/lib/injuries';
 import { movementName } from '@/lib/movements';
+import { formatMoney } from '@/lib/coach-earnings';
 import { supabase } from '@/lib/supabase';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
 import type { InjurySide, InjuryStatus } from '@/types/database';
@@ -107,6 +109,7 @@ type OnboardingRow = {
 
 export default function MemberDetailScreen() {
   const colors = useThemeColors();
+  const currency = useGymCurrency();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const router = useRouter();
@@ -465,7 +468,9 @@ export default function MemberDetailScreen() {
                 </View>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
                   {s.status}
-                  {s.price_cents !== null ? ` · £${(s.price_cents / 100).toFixed(2)}/mo` : ''}
+                  {s.price_cents !== null
+                    ? ` · ${formatMoney(s.price_cents, currency)}/mo`
+                    : ''}
                   {s.credit_balance !== null ? ` · ${s.credit_balance} credits` : ''}
                 </Text>
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
@@ -483,7 +488,7 @@ export default function MemberDetailScreen() {
                       ? `cancelled ${formatDate(s.cancelled_at)}`
                       : null,
                     refund
-                      ? `refunded £${(refund.cents / 100).toFixed(2)} on ${formatDate(refund.at)}`
+                      ? `refunded ${formatMoney(refund.cents, currency)} on ${formatDate(refund.at)}`
                       : null,
                   ]
                     .filter(Boolean)

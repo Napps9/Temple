@@ -14,7 +14,9 @@ import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { currencySymbol } from '@/lib/setup-flow';
 import { useThemeColors } from '@/lib/theme';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 
 type Conversation = {
   id: string;
@@ -673,6 +675,7 @@ function CoachModal({
   onClose: () => void;
   onCoached: (messageId: string) => void;
 }) {
+  const symbol = currencySymbol(useGymCurrency());
   const [kind, setKind] = useState<CoachKind>('rule');
   const [scope, setScope] = useState<CoachScope>('standing_rule');
   const [text, setText] = useState('');
@@ -771,7 +774,7 @@ function CoachModal({
             placeholder={
               kind === 'exemplar'
                 ? 'Note why this was a good reply'
-                : 'e.g. Membership is £45/mo — never quote £39 as the monthly rate'
+                : `e.g. Membership is ${symbol}45/mo — never quote ${symbol}39 as the monthly rate`
             }
           />
 

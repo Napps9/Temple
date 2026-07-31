@@ -1743,7 +1743,15 @@ The Manage page presents a tab strip:
   is connected the gym keeps its currency (default `GBP`), settable by
   hand in Gym settings (owner-gated `set_gym_currency` RPC). The Insights
   revenue tile reads this currency for its empty state rather than
-  assuming USD.
+  assuming USD. This reaches the whole product, not just the revenue
+  surfaces: `formatPrice(cents, currency)` takes the currency as a
+  required argument, so plans, setup, the shop, the talk bar's cards, the
+  member's membership screen, the refund dialog and every price input
+  label all follow the gym — and a vitest guard scans the source for a
+  symbol glued to an amount or baked into a label so the next one can't
+  be typed in by hand. The money job formats server-side through
+  `money_text(cents, currency)`, because `{offer_price}` is substituted
+  into the email the member receives.
 - **Membership (self-serve)** [member] — members pick and pay for a plan
   themselves at `/membership` (linked from Account): the gym's live
   plans, their current subscription + credit balance, and a Subscribe

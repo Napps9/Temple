@@ -434,16 +434,16 @@ async function currentMembership(
 // A pack is bought once and a credit period renews; only an unlimited plan
 // is "a month". Getting this wrong puts a price on the card that no other
 // screen in the app agrees with.
-function pricePhrase(kind: string, cents: number | null): string {
+function pricePhrase(kind: string, cents: number | null, currency: string): string {
   if (cents === null || cents === 0) return 'free';
-  const money = formatPrice(cents);
+  const money = formatPrice(cents, currency);
   if (kind === 'credit_pack') return `${money} one off`;
   if (kind === 'credit_period') return `${money} a period`;
   return `${money} a month`;
 }
 
-function priceLine(plan: PlanRow): string {
-  const price = pricePhrase(plan.kind, plan.monthly_price_cents);
+function priceLine(plan: PlanRow, currency: string): string {
+  const price = pricePhrase(plan.kind, plan.monthly_price_cents, currency);
   return plan.kind === 'credit_pack'
     ? `${plan.name} — ${plan.credit_count} classes, ${price}, not billed`
     : `${plan.name} — ${price}, not billed`;
@@ -553,7 +553,7 @@ export const assignPlan: ActionSpec<Assign> = {
       return {
         title: `Earmark ${plan.name} for ${target.name}?`,
         lines: [
-          priceLine(plan),
+          priceLine(plan, ctx.currency),
           `It lands the moment they claim their account — nothing to pay, and no signing up again.`,
           runs,
         ],
@@ -575,7 +575,8 @@ export const assignPlan: ActionSpec<Assign> = {
     }
     if (now && a.mode === null) {
       const on = now.membership_plans?.name ?? 'a membership';
-      const price = now.price_cents !== null ? `, ${formatPrice(now.price_cents)} a month` : '';
+      const price =
+        now.price_cents !== null ? `, ${formatPrice(now.price_cents, ctx.currency)} a month` : '';
       return {
         title: `${target.name} is on ${on}${price}.`,
         lines: [],
@@ -597,7 +598,7 @@ export const assignPlan: ActionSpec<Assign> = {
         ? `Move ${target.name} from ${now!.membership_plans?.name ?? 'their membership'} to ${plan.name}?`
         : `Put ${target.name} on ${plan.name}?`,
       lines: [
-        priceLine(plan),
+        priceLine(plan, ctx.currency),
         moving
           ? 'The same membership changes plan — nothing restarts and their history stays in one piece.'
           : 'They can book from now.',
@@ -648,7 +649,7 @@ export const assignPlan: ActionSpec<Assign> = {
     };
     const price =
       r.price_cents !== null && r.price_cents > 0
-        ? `${pricePhrase(r.plan_kind, r.price_cents)}, not billed`
+        ? `${pricePhrase(r.plan_kind, r.price_cents, ctx.currency)}, not billed`
         : 'no charge';
     const until = r.runs_to ? ` Runs to ${dayLabel(r.runs_to)}.` : '';
     return r.switched

@@ -34,7 +34,12 @@ export const addStoreProduct: ActionSpec<AddProduct> = {
     'hoodies at £35, we have 20", "add the technique guide as a £12 download".',
   args: [
     { name: 'name', type: 'string', desc: 'What it is called', required: true },
-    { name: 'price', type: 'money', desc: 'Price in pounds', required: true },
+    {
+      name: 'price',
+      type: 'money',
+      desc: 'Price in whole currency as they said it — not minor units',
+      required: true,
+    },
     {
       name: 'kind',
       type: 'enum',
@@ -61,10 +66,10 @@ export const addStoreProduct: ActionSpec<AddProduct> = {
       stock: argInt(raw, 'stock', 0, 100000),
     };
   },
-  preview: async (a) => ({
+  preview: async (a, ctx) => ({
     title: 'Add this to the shop?',
     lines: [
-      `${a.name} — ${formatPrice(a.priceCents)}`,
+      `${a.name} — ${formatPrice(a.priceCents, ctx.currency)}`,
       a.kind === 'digital'
         ? 'A download. You will need to attach the file on the store screen before it can sell.'
         : a.stock !== null
@@ -95,8 +100,8 @@ export const addStoreProduct: ActionSpec<AddProduct> = {
     });
     if (error) throw error;
     return a.kind === 'digital'
-      ? `${a.name} added at ${formatPrice(a.priceCents)}, hidden until you attach the file.`
-      : `${a.name} is in the shop at ${formatPrice(a.priceCents)}.`;
+      ? `${a.name} added at ${formatPrice(a.priceCents, ctx.currency)}, hidden until you attach the file.`
+      : `${a.name} is in the shop at ${formatPrice(a.priceCents, ctx.currency)}.`;
   },
 };
 
@@ -111,7 +116,12 @@ export const setStoreProductPrice: ActionSpec<SetPrice> = {
     '"drop hoodies to £30".',
   args: [
     { name: 'name', type: 'string', desc: 'The product, as they named it', required: true },
-    { name: 'price', type: 'money', desc: 'The new price in pounds', required: true },
+    {
+      name: 'price',
+      type: 'money',
+      desc: 'The new price in whole currency as they said it — not minor units',
+      required: true,
+    },
   ],
   invalidate: ['store-products', 'admin-store-products'],
   sanitise: (raw) => {
@@ -127,7 +137,7 @@ export const setStoreProductPrice: ActionSpec<SetPrice> = {
     return {
       title: 'Change this price?',
       lines: [
-        `${match.name} — ${formatPrice(match.price_cents)} → ${formatPrice(a.priceCents)}`,
+        `${match.name} — ${formatPrice(match.price_cents, ctx.currency)} → ${formatPrice(a.priceCents, ctx.currency)}`,
         match.recurring
           ? 'A subscription: new subscribers pay the new price, everyone already on it keeps theirs.'
           : 'Anyone mid-checkout pays what they were shown.',
@@ -149,7 +159,7 @@ export const setStoreProductPrice: ActionSpec<SetPrice> = {
       })
       .eq('id', match.id);
     if (error) throw error;
-    return `${match.name} is now ${formatPrice(a.priceCents)}.`;
+    return `${match.name} is now ${formatPrice(a.priceCents, ctx.currency)}.`;
   },
 };
 
@@ -194,9 +204,9 @@ export const storeSales: ActionSpec<StoreSales> = {
       };
     }
     return {
-      title: `${formatPrice(gross)} across ${orders} order${orders === 1 ? '' : 's'} in ${period}.`,
+      title: `${formatPrice(gross, ctx.currency)} across ${orders} order${orders === 1 ? '' : 's'} in ${period}.`,
       lines: [
-        `That averages ${formatPrice(Math.round(gross / orders))} an order.`,
+        `That averages ${formatPrice(Math.round(gross / orders), ctx.currency)} an order.`,
         liveProductsLine(products.data as ProductRow[] | null),
       ],
     };

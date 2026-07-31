@@ -133,7 +133,8 @@ function changePrompt(): string {
     `Today is ${today}.\n` +
     'Emit ONLY what was described — never invent classes, prices, dates, ' +
     'names or settings. Dates are YYYY-MM-DD and resolve forward from ' +
-    'today. Money in pounds unless an argument says otherwise.\n' +
+    'today. Money is in whole currency as the owner said it — the gym\'s ' +
+    'own, which may not be sterling — unless an argument says otherwise.\n' +
     // Deliberately no examples of what it cannot do. The catalogue is
     // built per call from the registry and grows every week; a list of
     // refusals written here goes stale silently and teaches the model to
@@ -160,7 +161,8 @@ const TIMETABLE_PROMPT =
 const PLANS_PROMPT =
   'You parse a gym owner\'s description of their membership prices into ' +
   'structured plans. Rules:\n' +
-  '- monthly_price_cents is the price in pence/cents: "£89" → 8900.\n' +
+  '- monthly_price_cents is the price in minor units, so the amount they ' +
+  'said times 100 whatever the currency: "89" → 8900.\n' +
   '- A plan limited to N classes per month is kind "credit_period" with ' +
   'credit_count N. An everything plan is "unlimited".\n' +
   '- blurb is a short plain-English line a member would read, e.g. ' +

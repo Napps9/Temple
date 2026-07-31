@@ -52,6 +52,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useCanFn } from '@/lib/useCan';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import {
   formatClock,
   formatTimelineLine,
@@ -193,6 +194,7 @@ export default function Timeline() {
   const role = useRole();
   const isOwner = role === 'owner';
   const can = useCanFn();
+  const currency = useGymCurrency();
   const colors = useThemeColors();
   const qc = useQueryClient();
 
@@ -358,6 +360,7 @@ export default function Timeline() {
     supabase,
     gymId: gymId!,
     userId: session!.user.id,
+    currency,
     offer,
   });
 
@@ -902,12 +905,13 @@ const STATUS_TONE: Record<
 // Marcus", with the way through to the work attached.
 function MemberSummaryCard({ member }: { member: MemberCard }) {
   const tone = STATUS_TONE[member.status.tone];
+  const currency = useGymCurrency();
   const facts: { label: string; value: string }[] = [
     {
       label: 'On',
       value: member.planName
         ? member.priceCents !== null
-          ? `${member.planName} · ${formatPrice(member.priceCents)}`
+          ? `${member.planName} · ${formatPrice(member.priceCents, currency)}`
           : member.planName
         : 'No membership',
     },

@@ -475,13 +475,6 @@ next session finds them.
   function. Membership refunds go through `stripe-refund`; the shop has
   no equivalent. Until it does, `money.refund` is deliberately scoped to
   memberships and says so.
-- **Plan and setup prices are hard-coded to sterling.** `formatPrice` in
-  `setup-flow.ts` prints `£` regardless of `gyms.currency`, and every
-  plans, setup and website surface uses it. The money summary and the
-  refund card both read the real currency off the row they are
-  describing, so the two now disagree on a non-sterling gym. The fix is
-  one function and roughly forty call sites, and it should happen in one
-  pass rather than a card at a time.
 - **Four pgTAP files fail in the local harness for the harness's own
   reasons** (storage path helpers, recurrence pattern rewrite, closure
   reopen, ordered onboarding responses) — listed in

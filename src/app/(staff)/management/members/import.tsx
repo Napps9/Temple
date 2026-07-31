@@ -41,7 +41,9 @@ import {
 } from '@/lib/import/infer';
 import type { StripePreview } from '@/lib/import/stripe';
 import { supabase } from '@/lib/supabase';
+import { currencySymbol } from '@/lib/setup-flow';
 import { useThemePreference, useThemeColors } from '@/lib/theme';
+import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { webSelectStyle } from '@/lib/webSelect';
@@ -1173,6 +1175,7 @@ function PlanReviewCard({
   onChange: (patch: Partial<ReviewedPlan>) => void;
 }) {
   const { scheme } = useThemePreference();
+  const currency = useGymCurrency();
   const nameMatch = existingPlans.find(
     (ep) => ep.name.trim().toLowerCase() === suggestion.raw_name.trim().toLowerCase(),
   );
@@ -1347,7 +1350,7 @@ function PlanReviewCard({
         ) : null}
         <View className="gap-1.5">
           <Text className="text-gray-700 dark:text-gray-200 text-xs">
-            Monthly price (£)
+            Monthly price ({currencySymbol(currency)})
           </Text>
           <TextInput
             editable={!bodyDimmed}
