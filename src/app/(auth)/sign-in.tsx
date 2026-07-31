@@ -16,16 +16,21 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { resendConfirmation, signIn } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 
-// Keep in sync with FEATURE_DEMO_TARGETS in the marketing site repo.
-// The origin check below is what stops anyone but the marketing site
+// Keep the keys in sync with FEATURE_DEMO_TARGETS in the marketing site
+// repo. The origin check below is what stops anyone but the marketing site
 // from triggering this at all; this allowlist is defense-in-depth on
 // top of that, so even a sender bug can't redirect a demo sign-in
 // anywhere but a screen we've actually chosen to demo.
-const DEMO_REDIRECT_ALLOWLIST = new Set([
-  '/track',
-  '/programming',
-  '/management/billing',
-  '/management/branding',
+//
+// A map rather than a set because /management/branding is retired — the
+// panel lives in the Manage screen's Settings tab now. The marketing site
+// is a separate repo on its own deploy cadence, so the key stays what it
+// already sends and the value is where that actually lands today.
+const DEMO_REDIRECTS = new Map([
+  ['/track', '/track'],
+  ['/programming', '/programming'],
+  ['/management/billing', '/management/billing'],
+  ['/management/branding', '/management?section=branding'],
 ]);
 
 export default function SignInScreen() {
@@ -69,8 +74,8 @@ export default function SignInScreen() {
       if (data?.type !== 'temple-demo-autofill') return;
       if (typeof data.email === 'string') setEmail(data.email);
       if (typeof data.password === 'string') setPassword(data.password);
-      if (typeof data.redirect === 'string' && DEMO_REDIRECT_ALLOWLIST.has(data.redirect)) {
-        demoRedirectRef.current = data.redirect;
+      if (typeof data.redirect === 'string') {
+        demoRedirectRef.current = DEMO_REDIRECTS.get(data.redirect) ?? null;
       }
     }
     window.addEventListener('message', onMessage);

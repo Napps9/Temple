@@ -367,7 +367,7 @@ describe('no screen picks the currency itself', () => {
       (f) =>
         // The currency picker is the one place a symbol is the subject
         // rather than the unit — it is how you choose which one you bill in.
-        !f.endsWith('operating.tsx') &&
+        !f.endsWith('OperatingDefaultsPanel.tsx') &&
         /\(\s*[£€]\s*[)/]/.test(code(readFileSync(f, 'utf8'))),
     );
     expect(offenders).toEqual([]);

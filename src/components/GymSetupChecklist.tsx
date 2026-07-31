@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { StatusDisk } from '@/components/StatusDisk';
 import { useGymMembership, useRole } from '@/lib/auth';
+import type { SettingsSectionId } from '@/lib/back-office';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 
@@ -36,7 +37,10 @@ type Step = {
     | 'workouts_imported';
   label: string;
   description: string;
-  href: string;
+  // A route, or a section of the Manage screen for the four steps whose
+  // routes were retired into it. Exactly one of the two.
+  href?: string;
+  section?: SettingsSectionId;
   icon: keyof typeof Ionicons.glyphMap;
   // Optional steps don't keep the card alive — once every required
   // step is done the whole thing vanishes regardless of optionals.
@@ -48,7 +52,7 @@ const STEPS: Step[] = [
     key: 'logo',
     label: 'Add your gym logo',
     description: 'A logo makes the app feel like your gym, not a template.',
-    href: '/management/branding',
+    section: 'branding',
     icon: 'image-outline',
   },
   {
@@ -56,7 +60,7 @@ const STEPS: Step[] = [
     label: 'Set your gym settings',
     description:
       'Week start, class defaults, booking and cancellation windows, plan resolution. Open and save once to lock them in.',
-    href: '/management/operating',
+    section: 'gym-settings',
     icon: 'settings-outline',
   },
   {
@@ -64,7 +68,7 @@ const STEPS: Step[] = [
     label: 'Add a class type & schedule',
     description:
       'Name the kinds of class you run and set the recurring days + times so they appear on the calendar.',
-    href: '/management/class-types',
+    section: 'class-types',
     icon: 'pricetags-outline',
   },
   {
@@ -72,7 +76,7 @@ const STEPS: Step[] = [
     label: 'Set up health screening',
     description:
       'Upload a waiver to sign or build a PAR-Q — one is enough. Until you do, the booking safety gate is off.',
-    href: '/management/parq',
+    section: 'health-screening',
     icon: 'medkit-outline',
   },
   {
@@ -128,13 +132,20 @@ type ProgressRow = {
 
 // Collapsed on a fresh app start so the nudge sits quietly; once the owner
 // opens it we keep it open across navigation (module scope, session-only,
-// like list-scroll-position). Tapping a step deep-links with
-// ?backTo=checklist so its BackLink returns to the full-screen /onboarding
-// checklist rather than dropping the owner on Manage — the two setup
-// surfaces stay in sync.
+// like list-scroll-position). Tapping a step that still has a route
+// deep-links with ?backTo=checklist so its BackLink returns to the
+// full-screen /onboarding checklist rather than dropping the owner on
+// Manage — the two setup surfaces stay in sync.
 let checklistOpen = false;
 
-export function GymSetupChecklist() {
+// This card only ever renders on the Manage screen, so a step whose
+// surface is a section of that screen opens it in place rather than
+// navigating to the screen it is already on.
+export function GymSetupChecklist({
+  onOpenSection,
+}: {
+  onOpenSection: (id: SettingsSectionId) => void;
+}) {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const role = useRole();
@@ -245,7 +256,11 @@ export function GymSetupChecklist() {
         {status.map((step) => (
           <Pressable
             key={step.key}
-            onPress={() => router.push(`${step.href}?backTo=checklist` as never)}
+            onPress={() =>
+              step.section
+                ? onOpenSection(step.section)
+                : router.push(`${step.href}?backTo=checklist` as never)
+            }
             className={`flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:opacity-70 ${
               step.done
                 ? 'bg-gray-50 dark:bg-gray-800/40'

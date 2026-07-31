@@ -7,7 +7,7 @@ import { contrastRatio } from '@/lib/brand-derivation';
 // Live preview the owner sees while editing the brand. Renders a
 // miniature version of the chrome a member experiences: the gym
 // name in the top header, a primary-coloured CTA, a sample card.
-// Used in both /management/branding and the create-gym onboarding
+// Used in both the Manage screen's Branding section and create-gym onboarding
 // step so the look stays consistent.
 export function BrandPreview({
   gymName,

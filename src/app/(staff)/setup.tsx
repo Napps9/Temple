@@ -2697,7 +2697,11 @@ function WaiverCard({
         Use the standard PAR-Q instead
       </Button>
       <Pressable
-        onPress={() => router.push('/management/parq?backTo=setup' as never)}
+        onPress={() =>
+          router.push(
+            '/management?section=health-screening&backTo=setup' as never,
+          )
+        }
         hitSlop={6}>
         <Text className="text-gray-400 dark:text-gray-500 text-[13px] text-center">
           Own wording? Write your own questions

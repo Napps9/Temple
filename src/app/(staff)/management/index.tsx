@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
@@ -18,11 +18,16 @@ import {
 import { GymSetupChecklist } from '@/components/GymSetupChecklist';
 import { ImportDataModal } from '@/components/ImportDataModal';
 import { Input } from '@/components/Input';
+import { BrandingPanel } from '@/components/BrandingPanel';
+import { ClassTypesPanel } from '@/components/ClassTypesPanel';
+import { ClosuresCard } from '@/components/ClosuresCard';
+import { HealthScreeningPanel } from '@/components/HealthScreeningPanel';
 import { InviteMemberModal } from '@/components/InviteMemberModal';
 import { LeaderboardsPanel } from '@/components/LeaderboardsPanel';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
 import { MessagingPanel } from '@/components/MessagingPanel';
+import { OperatingDefaultsPanel } from '@/components/OperatingDefaultsPanel';
 import { Screen } from '@/components/Screen';
 import { TagRulesModal } from '@/components/TagRulesModal';
 import { StatTile } from '@/components/StatTile';
@@ -62,17 +67,15 @@ import {
   searchBackOffice,
   visibleEntries,
   CATEGORY_LABELS,
+  BACK_OFFICE,
   type BackOfficeCategory,
   type BackOfficeEntry,
   type SettingsSectionId,
 } from '@/lib/back-office';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useThemeColors } from '@/lib/theme';
-import { BrandingPanel } from './branding';
-import { ClassTypesPanel } from './class-types';
 import { CommunicationsHome } from './communications';
-import { OperatingDefaultsPanel } from './operating';
-import { HealthScreeningPanel } from './parq';
 import { PlansPanel } from './plans';
 import { StoreHome } from './store';
 
@@ -315,17 +318,43 @@ export default function ManagementHome() {
     availableCategories[0] ?? 'members',
   );
 
-  // Leaderboards and Messaging have no route any more — their door is a
-  // section of this screen. Asking for one lands on Settings with that
-  // section first and open, and clears the search, because results replace
-  // the tab body and leaving the query set would show the row again
-  // instead of the thing it points at.
-  const [openSection, setOpenSection] = useState<SettingsSectionId | null>(null);
+  // Six settings surfaces have no route any more — their door is a section
+  // of this screen. Asking for one lands on Settings with that section
+  // first and open, and clears the search, because results replace the tab
+  // body and leaving the query set would show the row again instead of the
+  // thing it points at.
+  //
+  // Two ways in, each where it belongs. A tile or a search result on this
+  // screen sets state, because a Link back to the screen you are standing
+  // on is not navigation. /onboarding is a different screen, so it really
+  // does navigate, and ?section= is how it says where it meant.
+  const { section: sectionParam } = useLocalSearchParams<{ section?: string }>();
+  const arrived =
+    typeof sectionParam === 'string'
+      ? (sectionParam as SettingsSectionId)
+      : null;
+  const [openSection, setOpenSection] = useState<SettingsSectionId | null>(
+    arrived,
+  );
+  useEffect(() => {
+    if (!arrived) return;
+    setActive('settings');
+    setOpenSection(arrived);
+  }, [arrived]);
+
   function openSettingsSection(id: SettingsSectionId) {
     setActive('settings');
     setOpenSection(id);
     setQuery('');
   }
+
+  // The first-run bounce, which used to live on each of those routes. The
+  // hook is inert unless ?backTo says the owner came from a checklist, so
+  // an ordinary visit to a section never triggers it.
+  const arrivedStep = arrived
+    ? BACK_OFFICE.find((e) => e.section === arrived)?.setupStep
+    : undefined;
+  useSetupAutoReturn(arrivedStep?.key ?? '', arrivedStep?.fullRing ?? false);
   const activeCategory = availableCategories.includes(active)
     ? active
     : availableCategories[0] ?? 'members';
@@ -394,7 +423,9 @@ export default function ManagementHome() {
           ) : null}
           {/* Owner-only setup nudge. Self-hides once all five steps are done
               so the card never nags a finished gym. */}
-          {searching ? null : <GymSetupChecklist />}
+          {searching ? null : (
+            <GymSetupChecklist onOpenSection={openSettingsSection} />
+          )}
           {searching ? (
             <SearchResults
               results={results}
@@ -454,6 +485,7 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
   const canConfigureLeaderboards = useCan('can_configure_leaderboards') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canManageParq = useCan('can_manage_parq') ?? false;
+  const canBulkEditClasses = useCan('can_bulk_edit_classes') ?? false;
 
   const sections: {
     id: SettingsSectionId;
@@ -471,6 +503,16 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
       icon: 'options-outline',
       visible: canManageStaff,
       panel: <OperatingDefaultsPanel />,
+    },
+    {
+      id: 'closures',
+      title: 'Closures',
+      description: 'Days the gym is shut, and putting classes back when it reopens.',
+      icon: 'calendar-clear-outline',
+      // Its own gate, not the one above it. This card shared a route with
+      // the panel above but never its capability.
+      visible: canBulkEditClasses,
+      panel: <ClosuresCard />,
     },
     {
       id: 'branding',

@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { StatusDisk } from '@/components/StatusDisk';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import type { SettingsSectionId } from '@/lib/back-office';
 import { supabase } from '@/lib/supabase';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useThemeColors } from '@/lib/theme';
@@ -36,18 +37,31 @@ type Step = {
   key: StepKey;
   label: string;
   description: string;
-  href: string;
+  // A route, or a section of the Manage screen for the four steps whose
+  // routes were retired into it. Exactly one of the two.
+  href?: string;
+  section?: SettingsSectionId;
   icon: keyof typeof Ionicons.glyphMap;
   optional?: boolean;
   estimate: string;
 };
+
+// This checklist is its own full-screen surface, so a section step really
+// does navigate — and ?section= is how it says which one. ?backTo keeps
+// the bounce: the Manage screen runs the auto-return hook for the step the
+// section completes, so a finished step still returns the owner here.
+function stepHref(step: Step): string {
+  return step.section
+    ? `/management?section=${step.section}&backTo=checklist`
+    : `${step.href}?backTo=checklist`;
+}
 
 const STEPS: Step[] = [
   {
     key: 'logo',
     label: 'Add your gym logo',
     description: 'A logo makes the app feel like your gym, not a template.',
-    href: '/management/branding',
+    section: 'branding',
     icon: 'image-outline',
     estimate: '1 min',
   },
@@ -56,7 +70,7 @@ const STEPS: Step[] = [
     label: 'Set your gym settings',
     description:
       'Week start, class defaults, booking windows. Save once to lock them in.',
-    href: '/management/operating',
+    section: 'gym-settings',
     icon: 'settings-outline',
     estimate: '2 min',
   },
@@ -65,7 +79,7 @@ const STEPS: Step[] = [
     label: 'Add a class type & schedule',
     description:
       'Name the kinds of class you run (CrossFit, Hyrox, mobility…) and set the recurring days + times so they appear on the calendar.',
-    href: '/management/class-types',
+    section: 'class-types',
     icon: 'pricetags-outline',
     estimate: '3 min',
   },
@@ -73,7 +87,7 @@ const STEPS: Step[] = [
     key: 'parq',
     label: 'Set up health screening',
     description: 'Upload a waiver or build a PAR-Q — one is enough.',
-    href: '/management/parq',
+    section: 'health-screening',
     icon: 'medkit-outline',
     estimate: '2 min',
   },
@@ -304,7 +318,7 @@ function StepRow({
   const partial = !step.done && step.complete > 0 && step.complete < step.target;
   return (
     <Pressable
-      onPress={() => router.push(`${step.href}?backTo=checklist` as never)}
+      onPress={() => router.push(stepHref(step) as never)}
       className={`flex-row items-center gap-3 rounded-xl px-3 py-3 active:opacity-70 ${
         step.done ? 'bg-gray-50 dark:bg-gray-800/40' : 'bg-gray-50 dark:bg-gray-800'
       }`}>

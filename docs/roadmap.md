@@ -579,31 +579,40 @@ short series without inventing a chart language per question.
 
 ### 5 — Fewer things to say
 
-**Three retired, and the next calls now have evidence behind them.**
-`/management/membership-requests` is gone — the Timeline asks the same
-question with the same two choices through the same RPC, and gates those
-rows on the same capability, so the one role the screen existed for is
-served without it. `/management/leaderboards` and `/management/messaging`
-followed: each was a heading wrapped around a panel the Manage screen's
-Settings tab already rendered behind the same capability, and the manifest
-was the only thing in the repository that linked to either. Their tiles
-stay and now open the Settings tab with that section first and expanded —
-a surface that folds into a tab has to stay findable by the words it was
-findable by before, or the retirement cost something. `route_opens` counts
-which staff screens get opened per gym per day, with no identifier of any
-person in the table, so "has anyone opened this in ninety days" stops
-being a matter of opinion for everything that is not this obvious. The
-reasoning for collecting it at all is in the lawful-basis register, item 6.
+**Seven retired.** `/management/membership-requests` went first — the
+Timeline asks the same question with the same two choices through the same
+RPC, and gates those rows on the same capability, so the one role the
+screen existed for is served without it. The other six were all the same
+shape: a heading wrapped around a panel the Manage screen's Settings tab
+already rendered behind the same capability. Leaderboards and Messaging
+had nothing in the repository linking to them at all; Branding, Class
+types, Health screening and Gym settings were held up only by the
+first-run checklist navigating to them, which now opens the section
+instead and carries the step key so the owner is still returned to
+`/onboarding` when the step completes. Every tile stays and opens its
+section first and expanded — a surface that folds into a tab has to stay
+findable by the words it was findable by before, or the retirement cost
+something.
+
+**The evidence clause is dormant, and saying so matters.** `route_opens`
+counts which staff screens get opened per gym per day, with no identifier
+of any person in the table. But there are no gyms on the platform, so
+every screen reads zero and silence proves nothing — "nobody has opened
+this in ninety days" is not yet a fact anybody can establish. Until a gym
+lands, a screen goes only when something demonstrably does its job, which
+is the bar all seven actually met. The reasoning for collecting it at all
+is in the lawful-basis register, item 6.
 
 **The baseline is in the repository now.** `src/lib/back-office.ts` holds
 every management surface that exists as data, and `RETIRED_ROUTES` the
 routes that no longer do with the reason each went — so "routes retired"
-is a number a test asserts rather than a claim a document makes. Demotion
-is reversible and deletion is not, so nothing goes without either a
-demonstrated replacement or ninety days of silence; all three so far are
-the first kind, and the fourth will need the second. What did change is
-that everything behind the door is findable by typing, and that two
-surfaces which had no door at all — Goals and the Roster — now have one.
+is a number a test asserts rather than a claim a document makes. Deletion
+is not reversible, so nothing goes without a demonstrated replacement:
+the same panel, behind the same capability, reachable by the same words.
+Ninety days of silence is the second bar and it is not available yet, so
+it is not being used. What also changed is that everything behind the door
+is findable by typing, and that two surfaces which had no door at all —
+Goals and the Roster — now have one.
 
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates

@@ -1,15 +1,13 @@
+// Lives here rather than under app/ because it has no route of its own.
+// /management/branding was a Screen, a BackLink and a heading wrapped
+// around this panel, and the Manage screen's Settings tab already rendered
+// the same component behind the same capability.
+
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Platform, Pressable, Switch, Text, View } from 'react-native';
 
 import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
@@ -17,15 +15,12 @@ import { ChipButton } from '@/components/ChipButton';
 import { ColourField } from '@/components/ColourField';
 import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
-import { Screen } from '@/components/Screen';
-import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { DEFAULT_BRAND, joinUrl, leadUrl, normaliseHex, slugify } from '@/lib/brand';
 import { contrastRatio, deriveDarkColour } from '@/lib/brand-derivation';
 import { copyToClipboard } from '@/lib/clipboard';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
@@ -789,26 +784,6 @@ function AdvancedBrandingCard({
         </View>
       ) : null}
     </View>
-  );
-}
-
-export default function BrandingPage() {
-  useSetupAutoReturn('logo');
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Branding
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Customize how the gym looks to members.
-          </Text>
-        </View>
-        <BrandingPanel />
-      </ScrollView>
-    </Screen>
   );
 }
 

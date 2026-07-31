@@ -988,6 +988,35 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The last four settings routes, folded** — `/management/branding`,
+  `/management/class-types`, `/management/parq` and `/management/operating`
+  are deleted. Each was a `<Screen>`, a `<BackLink>` and a heading around a
+  panel the Settings tab already rendered behind the same capability. What
+  had kept them alive was the first-run checklist navigating to them with
+  `?backTo=` and being bounced back on completion, and one card
+  `/management/operating` carried that the tab did not.
+  **The bounce moved to the destination.** A manifest entry now carries
+  `setupStep`, so the Manage screen runs `useSetupAutoReturn` for whichever
+  step the arriving section completes — `/onboarding` still gets its owner
+  back, class types still waits for the full ring rather than the step's
+  own done flag. The checklist that renders *on* Manage stops navigating
+  entirely and opens the section in place; `/onboarding` is a different
+  screen so it genuinely navigates, and that is the one caller `?section=`
+  exists for.
+  **Closures got its own gate back.** `ClosuresCard` shared a route with
+  the gym-settings panel and never its capability — it has always been
+  `can_bulk_edit_classes`. Nested under Gym settings it would have
+  disappeared for anybody who can bulk-edit classes without managing staff,
+  which is the capability-mismatch bug this repo keeps finding, running the
+  other way. It is its own section, with the door it never had.
+  **Two live callers the filesystem check would not have caught.**
+  `/setup` still pushed `/management/parq?backTo=setup` — a button that
+  lands on nothing — and the marketing site's "see it live" demo posts
+  `/management/branding` at sign-in from a separate repo on its own deploy
+  cadence. The first is fixed; the second keeps the old path as the key it
+  already sends, with the folded destination as the value. A guard now
+  fails if any source file names a retired route in a string, with those
+  two files named as the exceptions and why.
 - **Two settings screens folded into the tab that already rendered them** —
   `/management/leaderboards` and `/management/messaging` are deleted. Each
   was a `<Screen>`, a `<BackLink>` and a heading wrapped around a panel —
@@ -2392,9 +2421,13 @@ The Manage page presents a tab strip:
     "48 hours" is entered directly), PAR-Q expiry, health-data retention,
     lead conversion window, and the **Cover** warning lead
     (`cover_warning_hours` — how far ahead to chase an uncovered class;
-    0 turns the warning off). Same editor as the standalone
-    `/management/operating` page. (Internally still "operating defaults":
-    the `set_gym_operating_defaults` RPC + `gyms` columns.)
+    0 turns the warning off). The only editor — the standalone
+    `/management/operating` page is retired. (Internally still "operating
+    defaults": the `set_gym_operating_defaults` RPC + `gyms` columns.)
+  - **Closures** [`can_bulk_edit_classes`] — the days the gym is shut and
+    putting classes back when it reopens. Its own card rather than part of
+    Gym settings above, because it has always been gated on who may
+    bulk-edit classes rather than on who manages staff.
   - **Branding** — gym name, slug, logo upload, primary / secondary /
     text colours with inline HSV picker, public-signup toggle. An
     **Advanced branding** collapsible adds a dark-mode logo and a

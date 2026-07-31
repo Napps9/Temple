@@ -1,20 +1,21 @@
+// Lives here rather than under app/ because it has no route of its own.
+// /management/operating was a Screen, a BackLink and a heading wrapped
+// around this panel, and the Manage screen's Settings tab already rendered
+// the same component behind the same capability. The closures card that
+// shared that route is now its own section — see ClosuresCard.tsx.
+
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, Text, TextInput, View } from 'react-native';
 
-import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { DurationField } from '@/components/DurationField';
-import { ReopenClosureModal } from '@/components/ReopenClosureModal';
-import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
-import { drainClassChangeEmails } from '@/lib/class-change-notifications';
 import { errorMessage } from '@/lib/errors';
 import type { Discipline } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
-import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
@@ -713,169 +714,6 @@ function Choice<T extends string>({
           </Pressable>
         );
       })}
-    </View>
-  );
-}
-
-export default function OperatingDefaultsPage() {
-  useSetupAutoReturn('settings');
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Gym settings
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Per-gym dials — training discipline, week start, class
-            defaults, booking and cancellation windows, PAR-Q expiry,
-            plan resolution, retention.
-          </Text>
-        </View>
-        <OperatingDefaultsPanel />
-        <ClosuresCard />
-      </ScrollView>
-    </Screen>
-  );
-}
-
-type Closure = {
-  id: string;
-  starts_on: string;
-  ends_on: string;
-  reason: string | null;
-};
-
-function fmtClosureDate(iso: string) {
-  // Plain YYYY-MM-DD; parsing at UTC noon keeps it on the right day
-  // whatever the viewer's offset.
-  return new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-// Closures are created from the calendar's Bulk action; this card is
-// where they are reviewed and reopened.
-function ClosuresCard() {
-  const { data: membership } = useGymMembership();
-  const canBulkEdit = useCan('can_bulk_edit_classes') ?? false;
-  const queryClient = useQueryClient();
-  const [reopening, setReopening] = useState<Closure | null>(null);
-
-  const closuresQuery = useQuery({
-    queryKey: ['gym-closures-live', membership?.gymId],
-    enabled: !!membership?.gymId && canBulkEdit,
-    queryFn: async (): Promise<Closure[]> => {
-      const { data, error } = await supabase
-        .from('gym_closures')
-        .select('id, starts_on, ends_on, reason')
-        .is('lifted_at', null)
-        .order('starts_on');
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  const reopen = useMutation({
-    mutationFn: async (args: {
-      closureId: string;
-      exclude: { recurrence_id: string; starts_at: string }[];
-    }) => {
-      const { error } = await supabase.rpc('reopen_closure', {
-        p_closure_id: args.closureId,
-        p_exclude: args.exclude,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setReopening(null);
-      if (membership?.gymId) void drainClassChangeEmails(membership.gymId);
-      queryClient.invalidateQueries({ queryKey: ['closure-reopen-preview'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-closures-live'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-closures'] });
-      queryClient.invalidateQueries({ queryKey: ['class-sessions-month'] });
-      queryClient.invalidateQueries({ queryKey: ['class-recurrences'] });
-    },
-  });
-
-  if (!canBulkEdit) return null;
-
-  const closures = closuresQuery.data ?? [];
-
-  return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-        Closures
-      </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
-        Dates the gym is shut. Classes inside a closure are cancelled, and
-        anything scheduled into it later is blocked. Start one from the Bulk
-        button on the Classes calendar.
-      </Text>
-
-      {closuresQuery.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
-      ) : closuresQuery.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
-          {errorMessage(closuresQuery.error, 'Could not load closures')}
-        </Text>
-      ) : closures.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          No closures set.
-        </Text>
-      ) : (
-        <View className="gap-2">
-          {closures.map((c) => (
-            <View
-              key={c.id}
-              className="flex-row items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
-              <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 text-sm">
-                  {c.starts_on === c.ends_on
-                    ? fmtClosureDate(c.starts_on)
-                    : `${fmtClosureDate(c.starts_on)} – ${fmtClosureDate(c.ends_on)}`}
-                </Text>
-                {c.reason ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                    {c.reason}
-                  </Text>
-                ) : null}
-              </View>
-              <ChipButton
-                label="Reopen"
-                icon="lock-open-outline"
-                tone="neutral"
-                onPress={() => setReopening(c)}
-              />
-            </View>
-          ))}
-        </View>
-      )}
-
-      <ReopenClosureModal
-        visible={reopening !== null}
-        closureId={reopening?.id ?? null}
-        closureLabel={
-          reopening
-            ? reopening.starts_on === reopening.ends_on
-              ? fmtClosureDate(reopening.starts_on)
-              : `${fmtClosureDate(reopening.starts_on)} – ${fmtClosureDate(reopening.ends_on)}`
-            : ''
-        }
-        onClose={() => setReopening(null)}
-        onConfirm={(exclude) =>
-          reopening && reopen.mutate({ closureId: reopening.id, exclude })
-        }
-        pending={reopen.isPending}
-        error={
-          reopen.error
-            ? errorMessage(reopen.error, 'Could not reopen those dates')
-            : null
-        }
-      />
     </View>
   );
 }

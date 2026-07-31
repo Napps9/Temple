@@ -1,7 +1,12 @@
+// Lives here rather than under app/ because it has no route of its own.
+// /management/class-types was a Screen, a BackLink and a heading wrapped
+// around this panel, and the Manage screen's Settings tab already rendered
+// the same component behind the same capability.
+
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Button } from '@/components/Button';
@@ -17,12 +22,9 @@ import {
   summariseRecurrence,
   validateRecurrence,
 } from '@/components/RecurrenceEditor';
-import { Screen } from '@/components/Screen';
-import { BackLink } from '@/components/BackLink';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useCan } from '@/lib/useCan';
 import { useGymDiscipline } from '@/lib/useGymDiscipline';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -1028,27 +1030,5 @@ export function ClassTypesPanel() {
           </View>
         ) : null}
     </View>
-  );
-}
-
-export default function ClassTypesScreen() {
-  useSetupAutoReturn('class_type_and_schedule', true);
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Class types
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Name and colour the kinds of class you run, and set up one or
-            more recurring schedules — e.g. weekdays at 6am plus a separate
-            Saturday 10am — so they appear on the calendar automatically.
-          </Text>
-        </View>
-        <ClassTypesPanel />
-      </ScrollView>
-    </Screen>
   );
 }

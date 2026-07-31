@@ -66,6 +66,7 @@ export const CATEGORY_LABELS: Record<BackOfficeCategory, string> = {
 // here instead: same component, same gate, one door.
 export type SettingsSectionId =
   | 'gym-settings'
+  | 'closures'
   | 'branding'
   | 'health-screening'
   | 'leaderboards'
@@ -75,9 +76,17 @@ export type SettingsSectionId =
 export type BackOfficeEntry = {
   href: string;
   // Set when the surface lives inside the Manage screen rather than at a
-  // route of its own. The tile selects the Settings tab and opens that
-  // section first, in place — there is nowhere to navigate to.
+  // route of its own. A tile on the Manage screen selects the Settings tab
+  // and opens that section in place; somewhere else — /onboarding is the
+  // only one — navigates to /management?section=… and lands on the same
+  // thing.
   section?: SettingsSectionId;
+  // The first-run checklist step this section completes, for the sections
+  // that are checklist destinations. The checklist used to push the owner
+  // at a route which bounced them back on completion; now the Manage
+  // screen reads this and runs the same hook, so /onboarding still gets
+  // its owner back.
+  setupStep?: { key: string; fullRing?: boolean };
   title: string;
   blurb: string;
   category: BackOfficeCategory;
@@ -144,6 +153,44 @@ export const RETIRED_ROUTES: { route: string; because: string }[] = [
       'can_manage_staff gate. Nothing in the app linked to the route; the ' +
       'panel moved to components/ and the entry now opens the Settings ' +
       'section.',
+  },
+  // The four the first-run checklist used to push people at. Each was the
+  // same wrapper around a panel the Settings tab already rendered; what
+  // kept them alive was the checklist navigating to them and bouncing the
+  // owner back on completion. The section carries the step key now, so the
+  // bounce survives without the route.
+  {
+    route: '/management/branding',
+    because:
+      'A Screen, a BackLink and a heading around BrandingPanel, already in ' +
+      'the Settings tab behind the same can_manage_staff gate. The logo ' +
+      'checklist step opens the section instead, and the marketing site’s ' +
+      '"see it live" demo link is translated to it at sign-in.',
+  },
+  {
+    route: '/management/class-types',
+    because:
+      'A Screen, a BackLink and a heading around ClassTypesPanel, already ' +
+      'in the Settings tab behind the same can_edit_classes gate. The ' +
+      'class-type checklist step opens the section instead, still waiting ' +
+      'for the full ring rather than the step’s own done flag.',
+  },
+  {
+    route: '/management/parq',
+    because:
+      'A Screen, a BackLink and a heading around HealthScreeningPanel — ' +
+      'which renders WaiverPanel and ParqPanel — already in the Settings ' +
+      'tab behind the same can_manage_parq gate. The health-screening ' +
+      'checklist step opens the section instead.',
+  },
+  {
+    route: '/management/operating',
+    because:
+      'A Screen, a BackLink and a heading around OperatingDefaultsPanel, ' +
+      'already in the Settings tab behind the same can_manage_staff gate. ' +
+      'The one thing the tab did not have was ClosuresCard, which is now ' +
+      'its own section on can_bulk_edit_classes — the gate it always had, ' +
+      'and one it would have lost by being nested under Gym settings.',
   },
 ];
 
@@ -351,7 +398,9 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
 
   // --- Settings ------------------------------------------------------
   {
-    href: '/management/operating',
+    href: '/management',
+    section: 'gym-settings',
+    setupStep: { key: 'settings' },
     title: 'Gym settings',
     blurb:
       'Week start, booking windows, PAR-Q expiry, plan resolution, retention.',
@@ -362,7 +411,23 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     status: 'back-office',
   },
   {
-    href: '/management/branding',
+    href: '/management',
+    section: 'closures',
+    title: 'Closures',
+    blurb: 'Days the gym is shut, and putting classes back when it reopens.',
+    keywords: ['closure', 'closed', 'holiday', 'bank holiday', 'christmas', 'reopen', 'shut'],
+    category: 'settings',
+    // Not can_manage_staff: this card has always been gated on who may
+    // bulk-edit classes, and folding it under Gym settings would have
+    // narrowed it. Its own section keeps the gate it had.
+    capabilities: ['can_bulk_edit_classes'],
+    saidInstead: 'close the gym 24 to 28 December',
+    status: 'back-office',
+  },
+  {
+    href: '/management',
+    section: 'branding',
+    setupStep: { key: 'logo' },
     title: 'Branding',
     blurb: 'Logo, colours, gym name, public join link.',
     keywords: ['logo', 'colours', 'colors', 'theme', 'join link'],
@@ -371,7 +436,11 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     status: 'back-office',
   },
   {
-    href: '/management/class-types',
+    href: '/management',
+    section: 'class-types',
+    // The step counts as done on the type alone but is not useful without
+    // a schedule, so it waits for the full ring.
+    setupStep: { key: 'class_type_and_schedule', fullRing: true },
     title: 'Class types',
     blurb: 'Name and colour the kinds of class you run.',
     keywords: ['colours', 'categories', 'capacity'],
@@ -381,16 +450,14 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     status: 'back-office',
   },
   {
-    href: '/management/parq',
+    href: '/management',
+    section: 'health-screening',
+    setupStep: { key: 'parq' },
     title: 'Health screening',
     blurb: 'The PAR-Q members answer before they train, and who has flagged.',
     keywords: ['parq', 'par-q', 'medical', 'screening', 'waiver', 'injury'],
     category: 'settings',
     capabilities: ['can_manage_parq'],
-    // The Settings tab embeds HealthScreeningPanel from this same screen,
-    // so the browse path already works; what was missing was any way to
-    // find it by name. No tile, because one would sit directly above the
-    // panel it links to.
     status: 'back-office',
   },
   {

@@ -40,6 +40,15 @@ const PARENTED: Record<string, string> = {
   account: 'components/TopNav (the avatar)',
 };
 
+function sourceFiles(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) sourceFiles(full, out);
+    else if (/\.tsx?$/.test(entry)) out.push(full);
+  }
+  return out;
+}
+
 function routeFiles(dir: string, prefix = ''): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = join(dir, name);
@@ -90,6 +99,33 @@ describe('nothing is built and then lost', () => {
     }
   });
 
+  // The filesystem check above is not enough. /setup still pushed
+  // '/management/parq?backTo=setup' after that route was deleted — a
+  // button that lands on nothing, which no test noticed because the
+  // manifest was clean and the file was gone. So: no source file may name
+  // a retired route in a string.
+  //
+  // Two files legitimately do. back-office.ts is the record itself, and
+  // sign-in.tsx keys the marketing site's demo redirect on the old path
+  // because that repo deploys separately and still sends it — the value
+  // beside it is where it actually goes.
+  it('never sends anybody to a retired route', () => {
+    const allowed = ['back-office.ts', 'sign-in.tsx'];
+    const files = sourceFiles('src').filter(
+      (f) => !allowed.some((a) => f.endsWith(a)) && !f.endsWith('.test.ts'),
+    );
+    const offenders: string[] = [];
+    for (const f of files) {
+      const text = readFileSync(f, 'utf8');
+      for (const r of RETIRED_ROUTES) {
+        if (new RegExp(`['"\`]${r.route}(['"\`?])`).test(text)) {
+          offenders.push(`${f} → ${r.route}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
   it('does not claim a parent for a screen that has since gone', () => {
     const gone = Object.keys(PARENTED).filter((r) => !routes.includes(r));
     expect(gone).toEqual([]);
@@ -107,10 +143,10 @@ describe('nothing is built and then lost', () => {
   });
 
   // Health screening reads as a third orphan and is not one: the Settings
-  // tab embeds its panel from the same file. What it lacked was a way to
-  // find it by name, which search now gives it.
+  // tab renders its panel. What it lacked was a way to find it by name,
+  // which search now gives it.
   it('indexes health screening without duplicating the panel', () => {
-    const parq = BACK_OFFICE.find((e) => e.href === '/management/parq');
+    const parq = BACK_OFFICE.find((e) => e.section === 'health-screening');
     expect(parq).toBeDefined();
     expect(parq!.needsTile).toBeUndefined();
     const all = visibleEntries(() => true, 'owner');
@@ -236,11 +272,15 @@ describe('finding it by typing', () => {
       'seo',
       'credits',
       'timezone',
-      // Both lost their route in the same change that wrote this line.
-      // A surface that folds into a tab has to stay findable by the words
-      // it was findable by before, or the retirement cost something.
+      // Every one of these lost its route to the Settings tab. A surface
+      // that folds into a tab has to stay findable by the words it was
+      // findable by before, or the retirement cost something.
       'dm',
       'rankings',
+      'closure',
+      'bank holiday',
+      'cancellation',
+      'join link',
     ];
     const empty = asked.filter((q) => searchBackOffice(q, all).length === 0);
     expect(empty).toEqual([]);
@@ -263,7 +303,7 @@ describe('the burndown has a baseline', () => {
     const byStatus = (s: string) => BACK_OFFICE.filter((e) => e.status === s).length;
     // The number moving is the measure; this test exists so it cannot move
     // by accident, and so raising it means writing down why.
-    expect(retiredCount()).toBe(3);
+    expect(retiredCount()).toBe(7);
     expect(retiredCount()).toBe(RETIRED_ROUTES.length);
     expect(byStatus('primary') + byStatus('back-office')).toBe(BACK_OFFICE.length);
   });
@@ -285,13 +325,21 @@ describe('the screen reads the manifest', () => {
     expect(screen).toMatch(/searchBackOffice\(/);
   });
 
-  // Leaderboards and Messaging have no route any more — their door is a
-  // section of this screen. A renamed or dropped section would turn the
-  // tile into a link that lands on the Members tab and does nothing
-  // visible, which is worse than the dead end deleting a route gives you.
+  // Seven surfaces have no route any more — their door is a section of
+  // this screen. A renamed or dropped section would turn the tile into a
+  // tap that lands nowhere visible, which is worse than the dead end
+  // deleting a route gives you.
   it('has a settings section behind every section link', () => {
     const named = BACK_OFFICE.filter((e) => e.section);
-    expect(named.map((e) => e.title).sort()).toEqual(['Leaderboards', 'Messaging']);
+    expect(named.map((e) => e.title).sort()).toEqual([
+      'Branding',
+      'Class types',
+      'Closures',
+      'Gym settings',
+      'Health screening',
+      'Leaderboards',
+      'Messaging',
+    ]);
     for (const e of named) {
       expect(e.href).toBe('/management');
       expect(screen).toContain(`id: '${e.section}'`);
@@ -301,13 +349,58 @@ describe('the screen reads the manifest', () => {
     // showing lives in state, not in the URL.
     expect(screen).toMatch(/onPress=\{c\.section \? \(\) => openSettingsSection/);
     expect(screen).toMatch(/onPress=\{e\.section \? \(\) => onOpenSection/);
+    // …and arriving from somewhere else really is navigation, so the
+    // screen has to read where it was sent.
+    expect(screen).toMatch(/useLocalSearchParams<\{ section\?: string \}>/);
   });
 
   // The panels moved out of app/ when their routes went. Left under app/,
   // Expo Router would have kept serving them as routes and the retirement
   // would have been a heading deleted rather than a door closed.
-  it('imports the two folded panels from components', () => {
-    expect(screen).toContain("from '@/components/LeaderboardsPanel'");
-    expect(screen).toContain("from '@/components/MessagingPanel'");
+  it('imports every folded panel from components', () => {
+    for (const name of [
+      'BrandingPanel',
+      'ClassTypesPanel',
+      'ClosuresCard',
+      'HealthScreeningPanel',
+      'LeaderboardsPanel',
+      'MessagingPanel',
+      'OperatingDefaultsPanel',
+    ]) {
+      expect(screen).toContain(`from '@/components/${name}'`);
+    }
+  });
+
+  // Closures shared a route with the gym-settings panel and never its
+  // capability. Nesting it under that section would have taken it away
+  // from whoever can bulk-edit classes without managing staff — the
+  // capability-mismatch bug this repo keeps finding, in reverse.
+  it('keeps closures on its own gate', () => {
+    const closures = BACK_OFFICE.find((e) => e.section === 'closures');
+    expect(closures?.capabilities).toEqual(['can_bulk_edit_classes']);
+    expect(screen).toMatch(/visible: canBulkEditClasses/);
+  });
+
+  // The first-run bounce used to live on each retired route. It lives on
+  // the destination now, so every step key the manifest names has to be a
+  // step the checklist actually tracks — a typo here silently stops
+  // returning the owner to /onboarding.
+  it('names a real checklist step for every section that completes one', () => {
+    const checklist = readFileSync(
+      join('src/components', 'GymSetupChecklist.tsx'),
+      'utf8',
+    );
+    const steps = BACK_OFFICE.filter((e) => e.setupStep);
+    expect(steps.map((e) => e.setupStep!.key).sort()).toEqual([
+      'class_type_and_schedule',
+      'logo',
+      'parq',
+      'settings',
+    ]);
+    for (const e of steps) {
+      expect(checklist).toContain(`key: '${e.setupStep!.key}'`);
+      expect(checklist).toContain(`section: '${e.section}'`);
+    }
+    expect(screen).toMatch(/useSetupAutoReturn\(/);
   });
 });

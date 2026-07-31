@@ -1,26 +1,20 @@
+// Lives here rather than under app/ because it has no route of its own.
+// /management/parq was a Screen, a BackLink and a heading wrapped around
+// this panel, and the Manage screen's Settings tab already rendered the
+// same component behind the same capability.
+
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { useEffect, useState } from 'react';
-import {
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Linking, Platform, Pressable, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
-import { Screen } from '@/components/Screen';
-import { BackLink } from '@/components/BackLink';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useSavedFlag } from '@/lib/useSavedFlag';
@@ -538,23 +532,3 @@ export function ParqPanel() {
   );
 }
 
-export default function ParqPage() {
-  useSetupAutoReturn('parq');
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Health screening
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Upload a waiver for members to sign, or build a PAR-Q. You only
-            need one before members can book.
-          </Text>
-        </View>
-        <HealthScreeningPanel />
-      </ScrollView>
-    </Screen>
-  );
-}
