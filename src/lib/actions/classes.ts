@@ -7,6 +7,21 @@
 // written, because a class can be added, moved or filled between reading
 // the card and tapping Yes.
 
+import {
+  bucketByClassType,
+  bucketByDay,
+  type AttendanceBooking,
+  type AttendanceSession,
+  type DayBucket,
+} from '../attendance';
+import {
+  attendanceAnswer,
+  shiftDays,
+  weekdayIndex,
+  weekdayName,
+  weekdayOfDay,
+  type TypeCount,
+} from '../attendance-answer';
 import { dateRangeWindow } from '../date-range';
 import {
   describeBulkEdit,
@@ -23,7 +38,13 @@ import {
 
 import { matchMembers } from '../chat-lookup';
 
-import { parseWallTime, sendAtEpoch, todayIn, type WallTime } from '../send-time';
+import {
+  dayIn,
+  parseWallTime,
+  sendAtEpoch,
+  todayIn,
+  type WallTime,
+} from '../send-time';
 
 import {
   ActionError,
@@ -1027,6 +1048,145 @@ export const setClassCoach: ActionSpec<SetCoach> = {
   },
 };
 
+
+// ============================================================================
+// classes.attendance
+// ============================================================================
+//
+// "How busy have we been." The attendance screen has answered this since
+// it was built, from two selects and the pure buckets below; what it
+// cannot do is answer without being visited, configured with a date range
+// and read. The same reads, said back as sentences.
+//
+// The period before is fetched as well, because a number on its own is
+// not an answer to "how busy" — 84 is good news or bad news depending
+// entirely on what last week was, and the owner should not have to
+// remember. attendance-answer.ts decides when that comparison is worth
+// stating.
+
+type Busy = { days: number; weekday: string | null };
+
+async function bucketWindow(
+  ctx: ActionContext,
+  from: string,
+  to: string,
+  tz: string,
+  keep: number | null,
+): Promise<{ attended: number; noShow: number; types: TypeCount[]; days: DayBucket[] }> {
+  const window = dateRangeWindow(from, to, tz);
+  if (!window) return { attended: 0, noShow: 0, types: [], days: [] };
+
+  const { data: sessionRows, error: sErr } = await ctx.supabase
+    .from('class_sessions')
+    .select('id, class_type_id, starts_at')
+    .eq('gym_id', ctx.gymId)
+    .gte('starts_at', window.startIso)
+    .lt('starts_at', window.endIso);
+  if (sErr) throw new ActionError('I could not read the classes for that period.');
+
+  // Only the days that were asked about. Filtering here rather than in
+  // the query is what makes "how busy was Saturday" a filter over one
+  // fetch instead of one fetch per Saturday.
+  const sessions = ((sessionRows ?? []) as AttendanceSession[]).filter(
+    (s) => keep === null || weekdayOfDay(dayIn(tz, s.starts_at)) === keep,
+  );
+  if (sessions.length === 0) {
+    return { attended: 0, noShow: 0, types: [], days: [] };
+  }
+
+  const { data: bookingRows, error: bErr } = await ctx.supabase
+    .from('class_bookings')
+    .select('class_session_id, attended_at, no_show')
+    .eq('gym_id', ctx.gymId)
+    .in(
+      'class_session_id',
+      sessions.map((s) => s.id),
+    );
+  if (bErr) throw new ActionError('I could not read the registers for that period.');
+  const bookings = (bookingRows ?? []) as AttendanceBooking[];
+
+  const byType = bucketByClassType(bookings, sessions);
+  const names = await classTypeNames(ctx);
+  const types: TypeCount[] = byType
+    .filter((b) => b.attended > 0)
+    .map((b) => ({
+      name: (b.class_type_id ? names.get(b.class_type_id) : null) ?? 'Other classes',
+      attended: b.attended,
+    }));
+
+  return {
+    attended: byType.reduce((n, b) => n + b.attended, 0),
+    noShow: byType.reduce((n, b) => n + b.no_show, 0),
+    types,
+    days: bucketByDay(bookings, sessions, { start: from, end: to }, tz),
+  };
+}
+
+async function classTypeNames(ctx: ActionContext): Promise<Map<string, string>> {
+  const { data } = await ctx.supabase
+    .from('class_types')
+    .select('id, name')
+    .eq('gym_id', ctx.gymId);
+  return new Map(
+    ((data ?? []) as { id: string; name: string }[]).map((t) => [t.id, t.name]),
+  );
+}
+
+export const classAttendance: ActionSpec<Busy> = {
+  name: 'classes.attendance',
+  kind: 'ask',
+  capability: 'can_view_attendance',
+  says:
+    'How busy the gym has been — "how busy was Saturday", "how were we ' +
+    'last week", "is anyone coming to yoga", "which class is dying", ' +
+    '"how many people came in this month".',
+  args: [
+    {
+      name: 'days',
+      type: 'integer',
+      desc: 'How far back they asked about. 7 if they did not say.',
+      min: 1,
+      max: 365,
+    },
+    {
+      name: 'weekday',
+      type: 'string',
+      desc:
+        'A day of the week, if they named one — "Saturday". Omit unless ' +
+        'they did.',
+    },
+  ],
+  sanitise: (raw) => ({
+    days: argInt(raw, 'days', 1, 365) ?? 7,
+    weekday: argString(raw, 'weekday', 20),
+  }),
+  preview: async (a, ctx) => {
+    const tz = await gymTimezone(ctx);
+    const keep = weekdayIndex(a.weekday);
+    // Yesterday backwards: today is still happening, and half a day
+    // dragged into a week's total is what makes "we are down" wrong every
+    // morning.
+    const end = shiftDays(todayIn(tz, Date.now()), -1);
+    const start = shiftDays(end, -(a.days - 1));
+    const priorEnd = shiftDays(start, -1);
+    const priorStart = shiftDays(priorEnd, -(a.days - 1));
+
+    const [now, before] = await Promise.all([
+      bucketWindow(ctx, start, end, tz, keep),
+      bucketWindow(ctx, priorStart, priorEnd, tz, keep),
+    ]);
+
+    const dayName = weekdayName(keep);
+    const period =
+      a.days === 7 ? 'the last week' : a.days === 1 ? 'yesterday' : `the last ${a.days} days`;
+    const label = dayName ? `${dayName}s in ${period}` : period;
+
+    const answer = attendanceAnswer({ label, now, before });
+    ctx.offer?.('Open attendance', '/management/attendance');
+    return { title: answer.title, lines: answer.lines };
+  },
+};
+
 export const CLASS_ACTIONS: AnyAction[] = [
   erase(editClasses),
   erase(cancelClass),
@@ -1034,4 +1194,5 @@ export const CLASS_ACTIONS: AnyAction[] = [
   erase(setClassCoach),
   erase(bookMemberIn),
   erase(removeMemberFrom),
+  erase(classAttendance),
 ];

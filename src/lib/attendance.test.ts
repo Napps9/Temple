@@ -50,10 +50,12 @@ describe('attendance helpers', () => {
 
   describe('bucketByDay', () => {
     it('counts attended bookings per day, sorted ascending', () => {
-      const result = bucketByDay(bookings, sessions, {
-        start: '2026-06-01',
-        end: '2026-06-30',
-      });
+      const result = bucketByDay(
+        bookings,
+        sessions,
+        { start: '2026-06-01', end: '2026-06-30' },
+        'Europe/London',
+      );
       expect(result).toEqual([
         { day: '2026-06-01', attended: 2 }, // yoga-mon + hiit-mon
         { day: '2026-06-03', attended: 1 }, // yoga-wed
@@ -61,10 +63,12 @@ describe('attendance helpers', () => {
     });
 
     it('excludes days outside the range', () => {
-      const result = bucketByDay(bookings, sessions, {
-        start: '2026-06-02',
-        end: '2026-06-02',
-      });
+      const result = bucketByDay(
+        bookings,
+        sessions,
+        { start: '2026-06-02', end: '2026-06-02' },
+        'Europe/London',
+      );
       expect(result).toEqual([]);
     });
 
@@ -73,8 +77,36 @@ describe('attendance helpers', () => {
         [{ class_session_id: 's-yoga-mon', attended_at: null, no_show: true }],
         sessions,
         { start: '2026-06-01', end: '2026-06-30' },
+        'Europe/London',
       );
       expect(onlyNoShow).toEqual([]);
     });
+  });
+});
+
+// The bug the timezone argument exists to stop: a 6am class in Sydney
+// starts at 20:00 UTC the day before, so slicing the stored timestamp
+// filed it under yesterday — and at a week boundary, under last week.
+describe('which day a class counts as', () => {
+  const sessions = [
+    { id: 's-dawn', class_type_id: 'ct-1', starts_at: '2026-08-03T20:00:00Z' },
+  ];
+  const bookings = [
+    { class_session_id: 's-dawn', attended_at: '2026-08-04T06:05:00Z', no_show: false },
+  ];
+
+  it('files a Sydney dawn class under the gym’s day, not UTC’s', () => {
+    expect(
+      bucketByDay(bookings, sessions, { start: '2026-08-01', end: '2026-08-31' }, 'Australia/Sydney'),
+    ).toEqual([{ day: '2026-08-04', attended: 1 }]);
+    expect(
+      bucketByDay(bookings, sessions, { start: '2026-08-01', end: '2026-08-31' }, 'UTC'),
+    ).toEqual([{ day: '2026-08-03', attended: 1 }]);
+  });
+
+  it('so a range that starts on the 4th still contains it', () => {
+    expect(
+      bucketByDay(bookings, sessions, { start: '2026-08-04', end: '2026-08-10' }, 'Australia/Sydney'),
+    ).toEqual([{ day: '2026-08-04', attended: 1 }]);
   });
 });

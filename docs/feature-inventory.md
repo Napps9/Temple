@@ -988,6 +988,34 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The bar answers about the gym** (0231) — roadmap phase 4. It has
+  answered about one member since 0211 and about money, the store, the
+  leads and the team since their modules landed; what it could not say is
+  how the gym itself is going.
+  **`classes.attendance`** ("how busy have we been", "how busy was
+  Saturday", "which class is dying") runs the attendance page's own two
+  selects and its already-tested buckets, and fetches the preceding period
+  as well — 84 is good news or bad news entirely depending on what last
+  week was, and an owner should not have to remember.
+  **`members.quiet`** ("who hasn't been in for a month") over a new
+  `gym_quiet_members` RPC — the only one of these with no screen behind
+  it. The retention tick computes the same thing nightly to pick who to
+  propose a message about and throws the working away, and the three
+  proposals a day it is allowed is deliberately not the whole list. Doing
+  it client-side would mean pulling every attendance row and taking a max
+  per member in JavaScript, silently truncated at PostgREST's default
+  limit — an answer confidently short rather than wrong-looking.
+  **What the answers refuse to say** is most of the work, in
+  `attendance-answer.ts` and tested there: no percentage change off a base
+  under ten, no "your yoga class is dying" unless the class was a real
+  class and lost a third of it, no reading an empty register as an empty
+  gym, and never-been-in kept apart from stopped-coming rather than
+  rounded to zero weeks.
+  **A bug found on the way:** `bucketByDay` sliced the stored timestamp
+  for the day key, which is UTC's day and not the gym's — a 6am class in
+  Sydney starts the previous evening in UTC, so it was counted on the
+  wrong day and, at a week boundary, in the wrong week. The attendance
+  screen had it too; both now pass the gym's timezone.
 - **A dead address is a member fact** (0230) — 0229 holds a bounced
   address back from every send, which is all the comms surfaces need and
   not what the gym needs. The person is still a member: they still have a

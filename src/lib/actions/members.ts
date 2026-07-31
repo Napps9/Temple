@@ -18,6 +18,7 @@ import {
   sanitiseMemberQuery,
   type MemberStatus,
 } from '../chat-lookup';
+import { quietAnswer } from '../attendance-answer';
 import type { UnreachableReason } from '../comms-report';
 import { formatPrice } from '../setup-flow';
 
@@ -957,11 +958,63 @@ export const messageMember: ActionSpec<Message> = {
   },
 };
 
+
+// ============================================================================
+// members.quiet
+// ============================================================================
+//
+// The only one of these questions with no screen behind it. The retention
+// tick works it out every night to decide who to propose a message about
+// and throws the working away — and the three proposals a day the loop is
+// allowed to make are deliberately not the whole list. An owner who wants
+// to see the whole list had nowhere to look.
+
+type Quiet = { weeks: number };
+
+export const quietMembers: ActionSpec<Quiet> = {
+  name: 'members.quiet',
+  kind: 'ask',
+  capability: 'can_view_attendance',
+  says:
+    'Who has stopped coming — "who hasn\'t been in for a month", "who has ' +
+    'gone quiet", "anyone drifting", "who is paying and never here".',
+  args: [
+    {
+      name: 'weeks',
+      type: 'integer',
+      desc: 'How long away they asked about, in weeks. 4 if they did not say.',
+      min: 1,
+      max: 52,
+    },
+  ],
+  sanitise: (raw) => ({ weeks: argInt(raw, 'weeks', 1, 52) ?? 4 }),
+  preview: async (a, ctx) => {
+    const { data, error } = await ctx.supabase.rpc('gym_quiet_members', {
+      p_gym_id: ctx.gymId,
+      p_weeks: a.weeks,
+    });
+    if (error) throw new ActionError('I could not read the registers.');
+    const rows = ((data ?? []) as {
+      full_name: string | null;
+      weeks_absent: number | null;
+      paying: boolean;
+    }[]).map((r) => ({
+      name: r.full_name?.trim() || 'A member',
+      weeksAbsent: r.weeks_absent,
+      paying: r.paying,
+    }));
+    const answer = quietAnswer(a.weeks, rows);
+    if (rows.length > 0) ctx.offer?.('Open members', '/management/members');
+    return { title: answer.title, lines: answer.lines };
+  },
+};
+
 export const MEMBER_ACTIONS: AnyAction[] = [
   erase(findMember),
   erase(assignPlan),
   erase(compMember),
   erase(tagMember),
   erase(messageMember),
+  erase(quietMembers),
 ];
 

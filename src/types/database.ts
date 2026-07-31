@@ -5508,6 +5508,19 @@ export type Database = {
           total: number;
         }[];
       };
+      // Who has stopped coming (0231). weeks_absent is null for a member
+      // who has never attended at all — a different fact from lapsing,
+      // and one the answer says out loud rather than rounding to zero.
+      gym_quiet_members: {
+        Args: { p_gym_id: string; p_weeks?: number };
+        Returns: {
+          profile_id: string;
+          full_name: string | null;
+          last_seen: string | null;
+          weeks_absent: number | null;
+          paying: boolean;
+        }[];
+      };
       // Which members cannot be emailed, without saying what their address
       // is — the flag is staff-wide, the address is admin-only (0230).
       gym_unreachable_emails: {

@@ -22,6 +22,7 @@ import { useExportAttendanceCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -40,6 +41,9 @@ export default function AttendanceScreen() {
   const [range, setRange] = useState(defaultRange);
   const [error, setError] = useState<string | null>(null);
   const canViewAttendance = useCan('can_view_attendance');
+  // The gym's clock, not the device's: a 6am class in Sydney is the
+  // previous evening in UTC and would land in the wrong day's bar.
+  const tz = useGymOperatingDefaults().data?.timezone ?? 'UTC';
   const canExport = useCan('can_export_members') ?? false;
   const exportAttendance = useExportAttendanceCsv();
 
@@ -87,8 +91,8 @@ export default function AttendanceScreen() {
   const classTypes = classTypesQuery.data ?? [];
 
   const dayBuckets = useMemo(
-    () => bucketByDay(bookings, sessions, { start: range.start, end: range.end }),
-    [bookings, sessions, range.start, range.end],
+    () => bucketByDay(bookings, sessions, { start: range.start, end: range.end }, tz),
+    [bookings, sessions, range.start, range.end, tz],
   );
 
   const typeBuckets = useMemo(

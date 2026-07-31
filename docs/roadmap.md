@@ -547,7 +547,18 @@ independent of the module work and can be pulled forward the moment the
 current verbs start feeling like a command line rather than a
 conversation.
 
-### 4 — Ask anything
+### 4 — Ask anything — under way
+
+Two of the four shipped (0231): `classes.attendance` ("how busy have we
+been", "how busy was Saturday", "which class is dying") over the
+attendance page's own reads plus the preceding period, and
+`members.quiet` ("who hasn't been in for a month") over a new
+`gym_quiet_members` RPC — the one question here with no screen behind it.
+"What did we take last week" was already `money.summary`. What is left is
+the shape of the answers rather than the answers themselves: a series
+still renders as sentences, and a chart language has not been needed yet.
+
+The original note:
 
 The bar answers about one member. It doesn't answer about the gym:
 "how busy was Saturday", "who hasn't been in for a month", "what did we

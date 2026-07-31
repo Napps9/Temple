@@ -24,9 +24,17 @@ import {
 } from './comms';
 import { sanitiseSequence } from '../sequence-draft';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
+import { classAttendance } from './classes';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { addLead, assignLeadTo, leadPipeline, moveLead } from './leads';
-import { assignPlan, compMember, findMember, messageMember, tagMember } from './members';
+import {
+  assignPlan,
+  compMember,
+  findMember,
+  messageMember,
+  quietMembers,
+  tagMember,
+} from './members';
 import { moneySummary, periodLabel, refundMember, setPlanPrice } from './money';
 import {
   blockOut,
@@ -1471,6 +1479,40 @@ describe('asking how a send went', () => {
     expect(sendReportAction.sanitise({})).toEqual({ which: null });
     expect(sendReportAction.sanitise({ which: 'christmas' })).toEqual({
       which: 'christmas',
+    });
+  });
+});
+
+// Phase 4: the bar answers about the gym, not only about one member.
+// Both of these are questions — nothing they touch has an apply, and a
+// question that could write would be the worst kind of surprise.
+describe('asking about the gym', () => {
+  it('are questions, gated on the register', () => {
+    expect(classAttendance.kind).toBe('ask');
+    expect(quietMembers.kind).toBe('ask');
+    expect(classAttendance.apply).toBeUndefined();
+    expect(quietMembers.apply).toBeUndefined();
+    expect(classAttendance.capability).toBe('can_view_attendance');
+    expect(quietMembers.capability).toBe('can_view_attendance');
+  });
+
+  it('default to a sensible period rather than refusing', () => {
+    expect(classAttendance.sanitise({})).toEqual({ days: 7, weekday: null });
+    expect(quietMembers.sanitise({})).toEqual({ weeks: 4 });
+  });
+
+  it('clamp a period nobody meant', () => {
+    expect(classAttendance.sanitise({ days: 100000 })).toEqual({
+      days: 7,
+      weekday: null,
+    });
+    expect(quietMembers.sanitise({ weeks: -3 })).toEqual({ weeks: 4 });
+  });
+
+  it('take the day of the week when one was named', () => {
+    expect(classAttendance.sanitise({ days: 28, weekday: 'Saturday' })).toEqual({
+      days: 28,
+      weekday: 'Saturday',
     });
   });
 });

@@ -107,6 +107,16 @@ export function parseTypedWallTime(text: string): WallTime | null {
 // Sydney evening is tomorrow. Every class action resolved "tomorrow's
 // 6am" against that, so near midnight the bar could offer to move a
 // class on a day nobody named.
+// Which day an instant falls on at the gym. Same formatter as todayIn,
+// named for the question it answers: a 6am class in Sydney happens the
+// evening before in UTC, so slicing an ISO string files it under the
+// wrong day and the wrong week.
+export function dayIn(tz: string, iso: string): string {
+  const at = Date.parse(iso);
+  if (!Number.isFinite(at)) return iso.slice(0, 10);
+  return todayIn(tz, at);
+}
+
 export function todayIn(tz: string, now: number): string {
   try {
     // en-CA gives YYYY-MM-DD, which is the shape everything downstream

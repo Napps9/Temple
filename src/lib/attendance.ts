@@ -1,6 +1,15 @@
 // Pure aggregation helpers for attendance.tsx. The screen reads
 // class_bookings + class_sessions for a window; these helpers bucket
 // the raw rows into the shapes the chart and breakdown table expect.
+//
+// Which day a class falls on is the gym's question, not UTC's: a 6am
+// class in Sydney starts the previous evening in UTC, and slicing the
+// stored timestamp filed it under the wrong day — and, at a week
+// boundary, the wrong week. The timezone is passed in rather than read
+// from the device for the usual reason: an owner on holiday should see
+// their gym's Saturday, not their own.
+
+import { dayIn } from './send-time';
 
 export type AttendanceBooking = {
   class_session_id: string;
@@ -25,10 +34,6 @@ export type DayBucket = {
   day: string; // YYYY-MM-DD
   attended: number;
 };
-
-function isoDate(timestamp: string): string {
-  return timestamp.slice(0, 10);
-}
 
 export function bucketByClassType(
   bookings: AttendanceBooking[],
@@ -57,6 +62,7 @@ export function bucketByDay(
   bookings: AttendanceBooking[],
   sessions: AttendanceSession[],
   range: { start: string; end: string },
+  tz: string,
 ): DayBucket[] {
   const sessionMap = new Map<string, AttendanceSession>();
   for (const s of sessions) sessionMap.set(s.id, s);
@@ -66,7 +72,7 @@ export function bucketByDay(
     if (b.attended_at === null) continue;
     const session = sessionMap.get(b.class_session_id);
     if (!session) continue;
-    const day = isoDate(session.starts_at);
+    const day = dayIn(tz, session.starts_at);
     if (day < range.start || day > range.end) continue;
     acc.set(day, (acc.get(day) ?? 0) + 1);
   }
