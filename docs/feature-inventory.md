@@ -861,6 +861,25 @@ The staff area shows up when `can_access_staff_area` is on.
   and a `member_tagged` sequence with no tag is refused outright rather
   than created, because it would match nobody for ever while looking like
   it worked. The card also refuses a tag no member actually holds.
+- **One sentence, several actions** (roadmap step 4) — the talk bar's
+  parser now emits `steps` rather than a single action, capped at three,
+  so "put Marcus on Unlimited and tag him VIP" is one sentence. They are
+  previewed together under one confirm, each step keeping its own title
+  and evidence — collapsing them into "do 3 things?" would be asking
+  somebody to approve a number. `travelTogether` (`src/lib/chain.ts`,
+  pure + tested) is the rule: **every step must be a write that came back
+  with something to confirm.** A step that resolved to a clarifying
+  question cannot be agreed to in advance alongside something else, and a
+  step whose sanitiser refused leaves the sentence with its middle
+  missing; either way the chain collapses to its first step and the bar
+  names how many were left. **On failure it stops and says exactly
+  where** — no transaction, no rollback, no silent retry. These are
+  separate writes across separate tables and some have already left the
+  building (an email sent, Stripe having moved money), so the receipt
+  carries what did happen and the line after it says nothing further was
+  tried. The client and the edge function deploy separately, so the client
+  also reads the older single-`action` shape for the minute between the
+  two.
 - **A shop order can be refunded** (roadmap step 2) —
   `store.refund_order` ("refund Marcus's hoodie", "give Sarah her money
   back for the water bottle") over a new `refund-store-order` edge

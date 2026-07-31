@@ -485,11 +485,31 @@ Three things, in order of how much they change the feel:
   erasing a member takes the turns naming them with it, from inside
   `_erase_member_health_data`, which is where every forget-this-member
   path already goes.
-- **One sentence, several actions.** "Cancel Friday's 6am and move
-  everyone to Saturday" is two actions with an order between them.
-  Chaining needs memory to sequence, which is why it belongs here rather
-  than in the module work. Now unblocked — the store it was waiting on
-  landed with 0221.
+- **One sentence, several actions — built.** "Put Marcus on Unlimited and
+  tag him VIP" is two writes with an order between them, and making
+  somebody say it twice is the kind of small tax that adds up to a surface
+  nobody uses. The parser emits `steps` rather than one action, capped at
+  three and instructed not to invent one.
+
+  The rule that decides whether they travel together is the load-bearing
+  part, and it is pure and tested (`src/lib/chain.ts`): **every step must
+  be a write that came back with something to confirm.** A step that
+  resolved to a question ("which Marcus?") cannot be agreed to in advance
+  alongside something else, because agreeing to a question is agreeing to
+  whichever answer the bar picks; a step whose sanitiser refused leaves a
+  sentence with its middle missing. Either way the chain collapses to its
+  first step and the bar says how many were left, naming the number — one
+  sentence to repeat is a different job from "some other things".
+
+  **The failure mode was the owner's call: stop and say exactly where.**
+  No transaction and no rollback, deliberately — these are separate writes
+  across separate tables and some have already left the building, with an
+  email sent or Stripe having moved money. Inventing a reverse for every
+  verb would be a second set of writes to get wrong, and a reverse that
+  itself failed leaves the owner worse off than being told plainly. So the
+  run stops at the first failure, the receipt carries what did happen, and
+  everything after is left untouched rather than attempted, because the
+  later step usually assumed the earlier one.
 
 Two costs, both real and both decisions rather than implementation:
 

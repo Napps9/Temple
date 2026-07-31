@@ -34,6 +34,7 @@ import {
   type MemberCard,
 } from '@/lib/actions';
 import type { Capability } from '@/lib/can';
+import { chainStopLine, leftoverLine, travelTogether } from '@/lib/chain';
 import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
 import { formatDate } from '@/lib/format-date';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
@@ -151,6 +152,13 @@ type LocalMsg =
       spec: AnyAction;
       args: never;
       preview: ActionPreview;
+      open: boolean;
+    }
+  // Two or three things said in one breath. One confirm covers the lot,
+  // and they run in the order they were said — see runChain.
+  | {
+      kind: 'chain';
+      steps: { spec: AnyAction; args: never; preview: ActionPreview }[];
       open: boolean;
     }
   | { kind: 'rules-sheet' };
@@ -351,6 +359,46 @@ export default function Timeline() {
     };
   };
 
+  // Two or three things in one sentence. They travel together only if
+  // every one of them is a confirmable `do` — a step that came back as a
+  // question ("which Marcus?") or a refusal cannot be agreed to in advance
+  // alongside something else, so the chain collapses to its first step and
+  // the owner is told what was left. Guessing past a question is the one
+  // thing this surface must never do.
+  const runChain = async (
+    steps: { spec: AnyAction; raw: Record<string, unknown> }[],
+  ): Promise<LocalMsg[]> => {
+    const built: { spec: AnyAction; args: never; preview: ActionPreview }[] = [];
+    for (const s of steps) {
+      const parsed = s.spec.sanitise(s.raw);
+      if (parsed === null || parsed === undefined) break;
+      const args = parsed as never;
+      built.push({ spec: s.spec, args, preview: await s.spec.preview(args, actionCtx()) });
+    }
+    const together = travelTogether(
+      built.map((b) => ({
+        kind: b.spec.kind,
+        canApply: !!b.spec.apply,
+        confirmable: !!b.preview.yes,
+      })),
+      steps.length,
+    );
+    if (together) return [{ kind: 'chain', steps: built, open: true }];
+    if (built.length === 0) return [{ kind: 'temple', text: MISSING_DETAIL }];
+    const first = built[0];
+    const leftover = leftoverLine(steps.length - 1);
+    return [
+      {
+        kind: 'action',
+        spec: first.spec,
+        args: first.args,
+        preview: first.preview,
+        open: first.spec.kind === 'do',
+      },
+      ...(leftover ? [{ kind: 'temple' as const, text: leftover }] : []),
+    ];
+  };
+
   // `offer` is collected during apply and rides on the receipt as a chip.
   // Nothing here navigates: an action that moved the owner to another
   // screen would empty the conversation they were in the middle of.
@@ -400,12 +448,31 @@ export default function Timeline() {
       });
       if (error) throw error;
       const p = (data as { proposal?: Record<string, unknown> })?.proposal ?? {};
-      const spec = findAction(p.action);
-      if (spec) {
-        const msg = await runAction(spec, (p.args ?? {}) as Record<string, unknown>);
+      // `steps` is the shape; `action`/`args` is the same thing with one
+      // step, and is read too because the function and the web app deploy
+      // separately — for the minute between the two, one of them is the
+      // older half.
+      const wire = Array.isArray(p.steps)
+        ? (p.steps as { action?: unknown; args?: unknown }[])
+        : p.action
+          ? [{ action: p.action, args: p.args }]
+          : [];
+      const steps = wire
+        .slice(0, 3)
+        .map((w) => ({ spec: findAction(w.action), raw: (w.args ?? {}) as Record<string, unknown> }))
+        .filter((w): w is { spec: AnyAction; raw: Record<string, unknown> } => !!w.spec);
+      if (steps.length === 1) {
+        const msg = await runAction(steps[0].spec, steps[0].raw);
         if (msg.kind === 'action') remember('gym', msg.preview.title);
         else if (msg.kind === 'temple') remember('gym', msg.text);
         push(msg);
+      } else if (steps.length > 1) {
+        for (const msg of await runChain(steps)) {
+          if (msg.kind === 'chain') remember('gym', msg.steps.map((x) => x.preview.title).join(' '));
+          else if (msg.kind === 'action') remember('gym', msg.preview.title);
+          else if (msg.kind === 'temple') remember('gym', msg.text);
+          push(msg);
+        }
       } else if (typeof p.cannot === 'string' && p.cannot.trim()) {
         push({ kind: 'temple', text: CANNOT_COPY });
       } else {
@@ -441,6 +508,59 @@ export default function Timeline() {
       freshen(msg.spec);
     } catch (e) {
       push({ kind: 'temple', text: failureText(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // The chain, run in the order it was said.
+  //
+  // No transaction and no rollback, deliberately. These are separate
+  // writes across separate tables and some of them leave the database
+  // entirely — an email has gone out, Stripe has moved money. "Undoing"
+  // the first step after the second failed would mean inventing a reverse
+  // for every verb, and a reverse that itself fails leaves the owner worse
+  // off than being told plainly.
+  //
+  // So it stops at the first failure and says exactly where: what got
+  // done, what did not, and why. Everything after the failure is left
+  // untouched rather than attempted, because the second thing usually
+  // assumed the first.
+  const confirmChain = async (
+    index: number,
+    msg: Extract<LocalMsg, { kind: 'chain' }>,
+  ) => {
+    if (!gymId || !session?.user.id || busy) return;
+    setBusy(true);
+    try {
+      const done: string[] = [];
+      let failedAt: { title: string; why: string } | null = null;
+      let offer: { label: string; href: string } | undefined;
+      for (const st of msg.steps) {
+        try {
+          done.push(
+            await st.spec.apply!(
+              st.args,
+              actionCtx((label, href) => {
+                offer = { label, href };
+              }),
+            ),
+          );
+          freshen(st.spec);
+        } catch (e) {
+          failedAt = { title: st.preview.title, why: failureText(e) };
+          break;
+        }
+      }
+      closeCard(index);
+      if (done.length > 0) {
+        const receipt = done.join(' ');
+        push({ kind: 'receipt', text: receipt, offer });
+        remember('gym', receipt, subjectOf(msg.steps[0].args));
+      }
+      if (failedAt) {
+        push({ kind: 'temple', text: chainStopLine(done.length, failedAt.why) });
+      }
     } finally {
       setBusy(false);
     }
@@ -584,6 +704,7 @@ export default function Timeline() {
               busy={busy}
               choices={rules.data?.choices}
               onConfirmAction={confirmAction}
+              onConfirmChain={confirmChain}
               onPickChoice={pickChoice}
               onDismiss={closeCard}
               onEditRule={applySingleRule}
@@ -673,6 +794,7 @@ function LocalRow({
   busy,
   choices,
   onConfirmAction,
+  onConfirmChain,
   onPickChoice,
   onDismiss,
   onEditRule,
@@ -684,6 +806,10 @@ function LocalRow({
   onConfirmAction: (
     index: number,
     msg: Extract<LocalMsg, { kind: 'action' }>,
+  ) => void;
+  onConfirmChain: (
+    index: number,
+    msg: Extract<LocalMsg, { kind: 'chain' }>,
   ) => void;
   onPickChoice: (
     spec: AnyAction,
@@ -716,6 +842,44 @@ function LocalRow({
       <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
         <RuleSheet choices={choices} editable={!busy} onEdit={onEditRule} />
       </View>
+    );
+  }
+
+  // Two or three things, agreed to once. Each step keeps its own title
+  // and evidence — collapsing them into "do 3 things?" would be asking
+  // somebody to approve a number.
+  if (msg.kind === 'chain') {
+    if (!msg.open) return null;
+    const n = msg.steps.length;
+    return (
+      <ProposalCard
+        title={n === 2 ? 'Both of these?' : `All ${n} of these?`}
+        lines={[]}
+        body={
+          <View className="gap-3">
+            {msg.steps.map((st, i) => (
+              <View
+                key={`${st.spec.name}-${i}`}
+                className={`gap-1 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3' : ''}`}>
+                <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
+                  {st.preview.title}
+                </Text>
+                {st.preview.lines.map((l) => (
+                  <Text
+                    key={l}
+                    className="text-gray-500 dark:text-gray-400 text-[13px] leading-[18px]">
+                    {l}
+                  </Text>
+                ))}
+              </View>
+            ))}
+          </View>
+        }
+        yes={n === 2 ? 'Yes, do both' : `Yes, do all ${n}`}
+        busy={busy}
+        onYes={() => onConfirmChain(index, msg)}
+        onNo={() => onDismiss(index)}
+      />
     );
   }
 

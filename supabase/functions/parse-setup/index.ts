@@ -114,13 +114,19 @@ const PLANS_TOOL = {
 const CHANGE_TOOL = {
   name: 'emit_change',
   description:
-    'Emit the action the gym owner asked for. Set `action` to its name and ' +
-    '`args` to only the arguments they actually named; use `cannot` when ' +
-    'the request is none of the actions offered.',
+    'Emit the actions the gym owner asked for, in the order they said ' +
+    'them. Usually one. Use `cannot` when the request is none of the ' +
+    'actions offered.',
   input_schema: {
     type: 'object',
     properties: {
-      args: { type: 'object' },
+      steps: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { args: { type: 'object' } },
+        },
+      },
       cannot: { type: ['string', 'null'] },
     },
   },
@@ -139,10 +145,16 @@ function changePrompt(): string {
     // built per call from the registry and grows every week; a list of
     // refusals written here goes stale silently and teaches the model to
     // refuse things that shipped. The actions below are the whole truth.
+    'One sentence is usually one action. It is two or three when the owner ' +
+    'genuinely asked for two or three things — "put Marcus on Unlimited and ' +
+    'tag him VIP" is two steps, in that order. Do NOT split one request into ' +
+    'steps because it has several arguments, and do not add a step they did ' +
+    'not ask for. At most three.\n' +
     'If the sentence is none of the actions below, set `cannot` to one ' +
-    'short plain sentence naming what they asked for, and set no action. Do ' +
+    'short plain sentence naming what they asked for, and emit no steps. Do ' +
     'not guess, and do not bend a sentence onto the nearest action that half ' +
-    'fits.'
+    'fits. A sentence can do both: take the parts that are actions and name ' +
+    'the rest in `cannot`.'
   );
 }
 
@@ -278,7 +290,16 @@ async function parse(
             ...CHANGE_TOOL.input_schema,
             properties: {
               ...CHANGE_TOOL.input_schema.properties,
-              action: { type: 'string', enum: actions.map((a) => a.name) },
+              steps: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    action: { type: 'string', enum: actions.map((a) => a.name) },
+                    args: { type: 'object' },
+                  },
+                },
+              },
             },
           },
         };
