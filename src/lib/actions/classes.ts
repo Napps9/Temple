@@ -23,7 +23,7 @@ import {
 
 import { matchMembers } from '../chat-lookup';
 
-import { parseWallTime, sendAtEpoch, type WallTime } from '../send-time';
+import { parseWallTime, sendAtEpoch, todayIn, type WallTime } from '../send-time';
 
 import {
   ActionError,
@@ -66,9 +66,11 @@ async function resolve(
   req: ClassEditRequest,
   ctx: ActionContext,
 ): Promise<Resolved | null> {
-  const today = new Date().toISOString().slice(0, 10);
-  const window = classEditWindow(req, today);
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  // The gym's clock, both times. "Tomorrow's 6am" is a day and an hour
+  // at the gym, and asking the device meant a coach on holiday resolved
+  // a different day and a different hour from the one they meant.
+  const tz = await gymTimezone(ctx);
+  const window = classEditWindow(req, todayIn(tz, Date.now()));
   const range = dateRangeWindow(window.start, window.end, tz);
   if (!range) return null;
   const { data, error } = await ctx.supabase
@@ -254,10 +256,10 @@ async function findClass(
       : { kind: 'unresolved', preview: { title: "That class isn't there any more.", lines: [] } };
   }
 
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const tz = await gymTimezone(ctx);
   // No day named means the next fortnight, so "cancel the barbell club"
   // still lands when there is only one of them coming up.
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIn(tz, Date.now());
   const from = a.day ?? today;
   const to = a.day ?? addDays(today, 14);
   const range = dateRangeWindow(from, to, tz);
@@ -276,13 +278,16 @@ async function findClass(
 
   let rows = (data ?? []) as unknown as ClassRow[];
   if (a.time) {
-    rows = rows.filter(
-      (r) =>
-        new Date(r.starts_at).toLocaleTimeString('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }) === a.time,
-    );
+    // Same clock as the window above. Matching "07:00" against a
+    // device-rendered time meant a travelling coach's 7am was the gym's
+    // 8am and nothing matched.
+    const clock = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    rows = rows.filter((r) => clock.format(new Date(r.starts_at)) === a.time);
   }
   if (a.classType) {
     const q = a.classType.toLowerCase();

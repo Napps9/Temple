@@ -925,6 +925,26 @@ The staff area shows up when `can_access_staff_area` is on.
   through every surface that reads status, and the amount belongs on the
   `billing_events` row (`kind = 'refund'`, excluded from revenue by
   `is_revenue_event`) where the money already lives.
+- **Every class surface is on the gym's clock** — `classes.move` wrote
+  its new time in `gyms.timezone` while `findClass` read "Friday's 7pm"
+  through `Intl.DateTimeFormat().resolvedOptions().timeZone`, so the two
+  halves of one sentence ran on different clocks for anybody who
+  travelled. Six device-clock reads are gone: the three registry ones
+  (`classes.edit`'s window, `findClass`, and `gym.add_classes`'s
+  `applyTimetable`, which was creating a 6am class at 4am if you set the
+  timetable up from abroad) plus the class-types editor, the create-class
+  modal and `/setup`'s timetable step, all of which now read
+  `useGymOperatingDefaults().timezone`.
+  A second bug in the same family went with it: `new
+  Date().toISOString().slice(0, 10)` is **today in UTC**, which is a
+  different day from the gym's for part of every day — half past midnight
+  in London is still yesterday in UTC — so "tomorrow's 6am" could resolve
+  against a day nobody named. `todayIn(tz, now)` (`src/lib/send-time.ts`,
+  pure + tested) replaces it, and the time filter that matched "07:00"
+  against a device-rendered clock string now formats in the gym's zone
+  too. Two vitest guards grep the registry for both patterns, because the
+  failure is invisible in the common case and only bites the one person
+  who left the country.
 - **A send going out can be stopped** (0228) — `comms.stop_send` ("stop
   the newsletter, the price is wrong") over a new `comms_stop_campaign`.
   `comms_unschedule_campaign` stops working the moment the dispatcher

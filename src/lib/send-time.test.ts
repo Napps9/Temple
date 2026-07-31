@@ -5,6 +5,7 @@ import {
   parseWallTime,
   sendAtEpoch,
   sendAtLabel,
+  todayIn,
   untilLabel,
 } from './send-time';
 
@@ -103,5 +104,32 @@ describe('how far away it is', () => {
     expect(untilLabel(now + 5 * 3600_000, now)).toBe('in 5 hours');
     expect(untilLabel(now + 3 * 86_400_000, now)).toBe('in 3 days');
     expect(untilLabel(now + 86_400_000, now)).toBe('in 24 hours');
+  });
+});
+
+// Every class action asked UTC what day it was. For part of every day
+// that is the wrong answer, and near midnight it is the wrong answer
+// about which class the owner meant.
+describe('what day it is at the gym', () => {
+  // 23:30 UTC on 3 August. London is already the 4th; New York is still
+  // the 3rd; Sydney is well into the 4th.
+  const lateNight = Date.UTC(2026, 7, 3, 23, 30);
+
+  it('is the gym’s day, not UTC’s', () => {
+    expect(todayIn('Europe/London', lateNight)).toBe('2026-08-04');
+    expect(todayIn('America/New_York', lateNight)).toBe('2026-08-03');
+    expect(todayIn('Australia/Sydney', lateNight)).toBe('2026-08-04');
+  });
+
+  // The case that made it a bug rather than a curiosity: 00:30 in London
+  // is the previous day in UTC, so "tomorrow" resolved to today.
+  it('does not lose a day just after midnight', () => {
+    const justAfterMidnight = Date.UTC(2026, 7, 3, 23, 30); // 00:30 BST on the 4th
+    expect(todayIn('Europe/London', justAfterMidnight)).toBe('2026-08-04');
+    expect(new Date(justAfterMidnight).toISOString().slice(0, 10)).toBe('2026-08-03');
+  });
+
+  it('falls back to UTC for a zone it cannot read', () => {
+    expect(todayIn('Not/AZone', lateNight)).toBe('2026-08-03');
   });
 });

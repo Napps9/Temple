@@ -167,6 +167,7 @@ export function ClassTypesPanel() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
+  const gymTz = gymDefaults?.timezone ?? 'UTC';
   const discipline = useGymDiscipline();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditableType[]>([]);
@@ -428,7 +429,10 @@ export function ClassTypesPanel() {
           endsOn = fmtDateLocal(endDate);
         }
 
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        // The gym's clock, not the device's. A recurrence created from
+        // a phone abroad would otherwise materialise every class at the
+        // traveller's hour rather than the members'.
+        const tz = gymTz;
 
         let recId: string;
         if (sched.id) {

@@ -98,3 +98,26 @@ export function parseTypedWallTime(text: string): WallTime | null {
   const m = /^(\d{4}-\d{2}-\d{2})[T\s]+(\d{1,2}:\d{2})/.exec(text.trim());
   return m ? parseWallTime(m[1], m[2]) : null;
 }
+
+// Today, at the gym.
+//
+// `new Date().toISOString().slice(0, 10)` is today in UTC, which is a
+// different day from the gym's for part of every single day — half past
+// midnight in London is still yesterday in UTC, and the whole of a
+// Sydney evening is tomorrow. Every class action resolved "tomorrow's
+// 6am" against that, so near midnight the bar could offer to move a
+// class on a day nobody named.
+export function todayIn(tz: string, now: number): string {
+  try {
+    // en-CA gives YYYY-MM-DD, which is the shape everything downstream
+    // already parses.
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date(now));
+  } catch {
+    return new Date(now).toISOString().slice(0, 10);
+  }
+}

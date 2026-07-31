@@ -15,6 +15,7 @@ import {
   ActionError,
   argString,
   erase,
+  gymTimezone,
   type ActionContext,
   type ActionSpec,
   type AnyAction,
@@ -265,8 +266,9 @@ export const addClasses: ActionSpec<{ proposal: TimetableProposal }> = {
     yes: 'Yes, add it',
   }),
   apply: async (a, ctx) => {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    await applyTimetable(ctx.supabase, ctx.gymId, tz, a.proposal);
+    // The timetable is the gym's, and so are its hours. Creating a 6am
+    // class from a device in Athens put it on the calendar at 4am.
+    await applyTimetable(ctx.supabase, ctx.gymId, await gymTimezone(ctx), a.proposal);
     const lines = a.proposal.schedules.map(
       (s) => `${s.class_type} — ${formatDays(s.days)} at ${s.times.join(', ')}`,
     );

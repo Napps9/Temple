@@ -236,6 +236,7 @@ export default function SetupScreen() {
   const brand = useGymBrand();
   const colors = useThemeColors();
   const currency = useGymCurrency();
+  const gymTz = useGymOperatingDefaults().data?.timezone ?? 'UTC';
   const queryClient = useQueryClient();
 
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -499,9 +500,8 @@ export default function SetupScreen() {
       capacity: caps.sort((a, b) => caps.filter((x) => x === a).length - caps.filter((x) => x === b).length).pop() ?? 16,
       minutes: durs.sort((a, b) => durs.filter((x) => x === a).length - durs.filter((x) => x === b).length).pop() ?? 60,
     };
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     applying.mutate(
-      () => applyTimetable(supabase, membership!.gymId, tz, p),
+      () => applyTimetable(supabase, membership!.gymId, gymTz, p),
       {
         onSuccess: () => {
           setMessages((m) => closeCards(m));

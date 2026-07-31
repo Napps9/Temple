@@ -1395,3 +1395,35 @@ describe('stopping a send, as a sentence', () => {
     expect(stopSend.sanitise({ which: 'christmas' })).toEqual({ which: 'christmas' });
   });
 });
+
+// The gym's clock, not the device's.
+//
+// Every class action used to resolve "Friday's 7pm" through
+// Intl.DateTimeFormat().resolvedOptions().timeZone — the phone's zone —
+// and ask UTC what day it was. Both are the wrong question. A coach
+// scheduling from a beach resolved a different hour from the one the
+// members see, and near midnight UTC is a different day from the gym's,
+// so "tomorrow's 6am" could land on a day nobody named.
+//
+// Grepped rather than unit-tested because the failure is invisible in
+// the common case — same city, same clock — and only shows up for the
+// one person who travelled.
+describe('the class actions read the gym clock', () => {
+  function actionSources(): string[] {
+    return readdirSync('src/lib/actions')
+      .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+      .map((f) => readFileSync(join('src/lib/actions', f), 'utf8'));
+  }
+
+  it('never asks the device what timezone it is in', () => {
+    for (const src of actionSources()) {
+      expect(src).not.toMatch(/resolvedOptions\(\)\.timeZone/);
+    }
+  });
+
+  it('never asks UTC what day it is', () => {
+    for (const src of actionSources()) {
+      expect(src).not.toMatch(/new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
+    }
+  });
+});

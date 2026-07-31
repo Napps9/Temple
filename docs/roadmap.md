@@ -571,15 +571,6 @@ same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
 
-- **Finding a class reads the device's clock; writing one reads the
-  gym's.** `findClass` resolves "Friday's 7pm" through
-  `Intl.DateTimeFormat().resolvedOptions().timeZone`, as every class
-  action has since they were written, while `classes.move` resolves the
-  *new* time in `gyms.timezone` — which is right for the instant being
-  written and leaves the two halves of one sentence on different clocks
-  for a coach who is travelling. `dateRangeWindow` already takes a
-  timezone, so this is plumbing rather than design, but it is a sweep
-  across every class action rather than a line.
 - **Email reports a number nobody should trust — decided, being built.**
   `email_campaign_recipients` has carried `delivered_at`, `open_count`,
   `click_count`, `unsubscribed_at`, `provider_message_id` and a status of

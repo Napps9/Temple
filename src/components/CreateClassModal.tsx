@@ -68,6 +68,7 @@ export function CreateClassModal({
 }) {
   const { data: membership } = useGymMembership();
   const { data: gymDefaults } = useGymOperatingDefaults();
+  const gymTz = gymDefaults?.timezone ?? 'UTC';
   const [classTypeId, setClassTypeId] = useState<string | null>(null);
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
@@ -206,7 +207,10 @@ export function CreateClassModal({
           endsOn = fmtDateLocal(endDate);
         }
 
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        // The gym's clock, not the device's. A recurrence created from
+        // a phone abroad would otherwise materialise every class at the
+        // traveller's hour rather than the members'.
+        const tz = gymTz;
 
         const { data: rec, error: recErr } = await supabase
           .from('class_recurrences')
