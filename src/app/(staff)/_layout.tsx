@@ -1,8 +1,11 @@
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, usePathname } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
 import { TopNav, type NavSection } from '@/components/TopNav';
-import { useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
+import { shouldRecord } from '@/lib/route-usage';
+import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 
@@ -27,10 +30,35 @@ const STAFF_SECTIONS: NavSection[] = [
   { name: 'management', href: '/management', label: 'Manage', icon: 'settings-outline' },
 ];
 
+// Counting which screens get opened, so the burndown rests on evidence
+// rather than on opinion (0233). A gym, a route, a day — no name.
+//
+// The hazard is documented three files away and is why this is a ref and
+// not state: a layout that re-renders on every navigation commit is the
+// exact shape that once dispatched fifty nested navigations here and
+// crashed production with React #185 (see the note in
+// src/app/(auth)/_layout.tsx). This renders nothing, redirects nothing,
+// holds its last value outside React, and swallows every error — a
+// counter must never be the reason a screen change fails.
+function useRouteOpens(gymId: string | null | undefined) {
+  const pathname = usePathname();
+  const last = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!gymId) return;
+    const route = shouldRecord(pathname, last.current);
+    if (!route) return;
+    last.current = route;
+    void supabase.rpc('record_route_open', { p_gym_id: gymId, p_route: route });
+  }, [pathname, gymId]);
+}
+
 export default function StaffLayout() {
   const session = useSession();
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area');
+  const { data: membership } = useGymMembership();
+  useRouteOpens(membership?.gymId);
 
   if (session === null) return <Redirect href="/sign-in" />;
   if (canAccessStaff === false) {

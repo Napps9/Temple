@@ -7,6 +7,7 @@ import {
   BACK_OFFICE,
   CATEGORY_ORDER,
   categoriesWithEntries,
+  retiredCount,
   searchBackOffice,
   visibleEntries,
 } from './back-office';
@@ -67,13 +68,25 @@ describe('nothing is built and then lost', () => {
   });
 
   // The other direction: a tile pointing at a screen somebody deleted is
-  // a dead end that looks like a feature.
+  // a dead end that looks like a feature. A retired entry is exempt —
+  // its screen is supposed to be gone, and the entry stays to say so.
   it('has a screen behind every door', () => {
     const known = new Set([...routes, 'members', 'index']);
-    const dead = BACK_OFFICE.filter((e) => e.href.startsWith('/management/'))
+    const dead = BACK_OFFICE.filter(
+      (e) => e.status !== 'retired' && e.href.startsWith('/management/'),
+    )
       .map((e) => e.href.replace('/management/', ''))
       .filter((r) => !known.has(r));
     expect(dead).toEqual([]);
+  });
+
+  // And the retired one has to be genuinely gone, or the entry is a lie
+  // about a screen that is still sitting there.
+  it('has no screen behind a retired door', () => {
+    for (const e of BACK_OFFICE.filter((x) => x.status === 'retired')) {
+      expect(routes).not.toContain(e.href.replace('/management/', ''));
+      expect(e.retiredBecause?.length ?? 0).toBeGreaterThan(40);
+    }
   });
 
   it('does not claim a parent for a screen that has since gone', () => {
@@ -116,8 +129,17 @@ describe('who sees what', () => {
   const nobody = () => false;
   const loading = () => undefined;
 
-  it('shows an owner everything', () => {
-    expect(visibleEntries(owner, 'owner')).toHaveLength(BACK_OFFICE.length);
+  it('shows an owner everything that still exists', () => {
+    expect(visibleEntries(owner, 'owner')).toHaveLength(
+      BACK_OFFICE.length - retiredCount(),
+    );
+  });
+
+  it('never offers a retired screen to anybody', () => {
+    const retired = BACK_OFFICE.filter((e) => e.status === 'retired');
+    expect(retired.length).toBeGreaterThan(0);
+    const shown = visibleEntries(owner, 'owner').map((e) => e.href);
+    for (const e of retired) expect(shown).not.toContain(e.href);
   });
 
   it('shows a member with no capabilities nothing at all', () => {
@@ -237,10 +259,13 @@ describe('finding it by typing', () => {
 describe('the burndown has a baseline', () => {
   it('counts what is where', () => {
     const byStatus = (s: string) => BACK_OFFICE.filter((e) => e.status === s).length;
-    // Nothing is retired yet. The number moving is the measure; this test
-    // exists so it cannot move by accident.
-    expect(byStatus('retired')).toBe(0);
-    expect(byStatus('primary') + byStatus('back-office')).toBe(BACK_OFFICE.length);
+    // The number moving is the measure; this test exists so it cannot move
+    // by accident, and so raising it means writing down why.
+    expect(retiredCount()).toBe(1);
+    expect(byStatus('retired')).toBe(retiredCount());
+    expect(byStatus('primary') + byStatus('back-office') + byStatus('retired')).toBe(
+      BACK_OFFICE.length,
+    );
   });
 
   it('offers the bar sentence wherever one exists', () => {

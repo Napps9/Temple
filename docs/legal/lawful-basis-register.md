@@ -26,6 +26,7 @@
 | 3 | Security, debugging, reliability | Usage & log data | **Legitimate interests** | LIA needed (see below). |
 | 4 | Support | Correspondence | **Legitimate interests** | LIA needed. |
 | 5 | Marketing to gyms | Contact details | **Consent / legitimate interests** | Also PECR for electronic marketing. LIA if LI. |
+| 6 | Improving the product — which staff screens are used | Gym id, route pattern, date, a count | **Legitimate interests** | No identifier of any person; no device storage. LIA below. 90-day retention. |
 
 **LIA (items 3–5):**
 
@@ -39,6 +40,21 @@
 - **Item 4 — support.** *Interest:* respond to and resolve user requests.
   *Necessity:* the correspondence itself is required to help. *Balance:* the
   user initiates contact, data is minimal and expected → **legitimate
+  interests appropriate.**
+- **Item 6 — which staff screens are used.** *Interest:* remove admin
+  screens that the conversational surface has replaced, without deleting
+  something a gym quietly relies on. *Necessity:* the only question is "has
+  anyone in any gym opened this in ninety days"; the minimum that answers it
+  is a gym id, a route pattern, a date and a count, which is exactly what
+  `route_opens` holds. **There is no `profile_id` column** — the table
+  cannot say who opened a screen, by construction rather than by policy —
+  and route segments carrying an id (`/management/members/<uuid>`) are
+  collapsed to `/management/members/[id]` on the device and again in the
+  RPC, so no member is identified either. *Balance:* staff surfaces only,
+  never the member app; nothing is stored on any device, so PECR's
+  consent-for-storage rule is not engaged and the cookie banner is not the
+  right gate — gating it there would have measured consent rate rather than
+  usage; purged at 90 days by `purge_expired_route_opens` → **legitimate
   interests appropriate.**
 - **Item 5 — marketing to gyms.** *Interest:* reach prospective business
   customers. *Necessity:* B2B outreach to named business contacts is the
@@ -69,6 +85,7 @@ DPA). Recorded here for completeness:
   (~6 years).
 - Health data: erased on leaving; swept 3 months after membership ends.
 - Waiver signatures: 6 years after membership ends, then deleted.
+- Staff screen-usage counts: 90 days, then deleted (`route_opens`).
 
 ## D. Sub-processors
 

@@ -1429,21 +1429,6 @@ function MembersTab() {
 
       {canManageTags ? <MembersList /> : null}
 
-      {canAssignPlan && !canManageTags ? (
-        <View className="gap-3">
-          {/* Owners/admins action requests via the Members list's Requests
-              filter; roles without the list keep the standalone queue. */}
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
-            Plan changes
-          </Text>
-          <ManagementCard
-            title="Membership requests"
-            description="Approve or reject member requests to switch or cancel a plan."
-            href="/management/membership-requests"
-          />
-        </View>
-      ) : null}
-
       {canInvite ? (
         <InviteMemberModal
           visible={inviteOpen}

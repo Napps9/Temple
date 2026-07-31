@@ -988,6 +988,52 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The first retirement, and the evidence for the next ones** (0233) —
+  the Back Office gave the burndown a baseline and no evidence.
+  **`/management/membership-requests` is deleted**, the first route
+  retired. Verified rather than assumed: the Timeline's `RequestCard`
+  calls the same `useDecideChangeRequest` with the same two choices and
+  shows the member's note beside it, and `timeline_feed` gates those rows
+  on `effective_can(gym_id, 'can_assign_plan')` — exactly the capability
+  the screen required — so the front-desk role the screen existed for is
+  served without it. Owners already action them from the Members list. The
+  manifest entry stays with `status: 'retired'` and a `retiredBecause`
+  line: a retirement that leaves a record of itself is reviewable, one
+  that leaves a gap is a thing somebody cannot find any more. The measure
+  is `retiredCount()`, asserted by a test so it cannot move by accident.
+  **`route_opens` counts which screens get opened** so the next calls rest
+  on evidence. A gym, a route, a day, a number — and **no `profile_id`
+  column exists**. The two access logs that do (`health_data_access_log`,
+  `agent_recording_access_log`) are per-person because they are audit
+  trails and the point of an audit trail is who; this is a measure and the
+  point of a measure is how many. A table without the column cannot become
+  a record of which staff member opened which screen, whoever later
+  decides they would like one.
+  **Ids are collapsed twice.** `/management/members/<uuid>` stores as
+  `/management/members/[id]` — normalised on the device by
+  `route-usage.ts` and again inside the RPC, because a client is not where
+  a privacy rule is enforced. Uuids, bare numbers and long opaque strings
+  all go. Staff surfaces only; the member app is not instrumented.
+  **Not behind the consent banner, on the record.** `cookie-consent.ts`
+  says its gate is what "any future tracking init must check" — and that
+  wording is about non-essential *storage*, of which this uses none.
+  Gating it would have made the burndown a measure of consent rate rather
+  than of usage. The reasoning is written into
+  `docs/legal/lawful-basis-register.md` (item 6, with its LIA) and
+  `docs/legal/dpia.md` so it is a decision somebody made rather than one
+  nobody noticed.
+  **The hook is a ref, not state,** because a layout that re-renders on
+  every navigation commit is the exact shape that once dispatched fifty
+  nested navigations and crashed production with React #185 — the warning
+  is still in `src/app/(auth)/_layout.tsx`. It renders nothing, redirects
+  nothing, and swallows every error: a counter must never be why a screen
+  change fails.
+  **And one sweep that was never visible.** 0189 wrapped eleven sweeps in
+  `_log_cron_run` so "has this ever run" stopped taking a night to answer;
+  0221 added a twelfth and scheduled it bare, so
+  `purge-expired-chat-turns` deleted member data nightly and left no trace
+  in `cron_run_log`. Re-registered wrapped — `cron.schedule` upserts by
+  job name, so the function is untouched.
 - **The Back Office is findable by typing** — `/management` has been a
   Back Office index since it was built: eight categories, a tile or panel
   per surface, gated by capability, in the app's own component kit. What

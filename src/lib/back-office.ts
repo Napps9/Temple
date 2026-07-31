@@ -83,6 +83,10 @@ export type BackOfficeEntry = {
   // Shown on the tile, because the moment somebody goes looking for a
   // screen is the moment worth telling them they need not have.
   saidInstead?: string;
+  // Why a screen went, kept with the entry rather than deleted alongside
+  // it. A retirement that leaves a record of itself is reviewable; one
+  // that leaves a gap is just a thing somebody cannot find any more.
+  retiredBecause?: string;
   // Two entries exist only to keep their category visible for a role that
   // can see the stats but not the member list — the Members panel renders
   // them itself, so a tile pointing at the page you are already on would
@@ -157,7 +161,13 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['cancel', 'downgrade', 'upgrade', 'freeze', 'pause'],
     category: 'members',
     capabilities: ['can_assign_plan'],
-    status: 'back-office',
+    status: 'retired',
+    retiredBecause:
+      'The Timeline asks the same question with the same two choices, ' +
+      'through the same RPC, and shows the member’s note beside it. The ' +
+      'feed gates those rows on can_assign_plan — the capability this ' +
+      'screen required — so the front-desk role it existed for is served ' +
+      'without it, and owners already action them from the Members list.',
   },
   {
     href: '/management/members/import',
@@ -395,9 +405,15 @@ export function visibleEntries(
 ): BackOfficeEntry[] {
   return BACK_OFFICE.filter(
     (e) =>
-      e.capabilities.some((c) => can(c) === true) ||
-      (e.roles ?? []).some((r) => r === role),
+      e.status !== 'retired' &&
+      (e.capabilities.some((c) => can(c) === true) ||
+        (e.roles ?? []).some((r) => r === role)),
   );
+}
+
+// The measure, computed rather than claimed.
+export function retiredCount(): number {
+  return BACK_OFFICE.filter((e) => e.status === 'retired').length;
 }
 
 export function categoriesWithEntries(

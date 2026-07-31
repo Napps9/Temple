@@ -3760,6 +3760,20 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      // A gym, a route, a day, a number — and deliberately nothing else.
+      // Written only by record_route_open; read by admins for their own
+      // gym; purged at ninety days (0233).
+      route_opens: {
+        Row: {
+          gym_id: string;
+          route: string;
+          day: string;
+          opens: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       // Addresses that cannot be reached, kept apart from
       // email_unsubscribes on purpose (0229): "we cannot reach you" and
       // "you asked us to stop" are different facts. Written only by the
@@ -5507,6 +5521,16 @@ export type Database = {
           skipped: number;
           total: number;
         }[];
+      };
+      // Which screens get opened (0233). No profile_id anywhere in this
+      // family — it is a measure, not an audit trail.
+      record_route_open: {
+        Args: { p_gym_id: string; p_route: string };
+        Returns: void;
+      };
+      gym_route_usage: {
+        Args: { p_gym_id: string; p_days?: number };
+        Returns: { route: string; opens: number; last_opened: string }[];
       };
       // Who has stopped coming (0231). weeks_absent is null for a member
       // who has never attended at all — a different fact from lapsing,

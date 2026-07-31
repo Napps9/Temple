@@ -40,6 +40,17 @@ before starting.
   purposes.
 - **Rights:** access/erasure via in-app tools; audit log of health-data
   access.
+- **Product-improvement measurement:** Temple counts which *staff* screens
+  get opened, per gym, per route pattern, per day. There is no identifier of
+  any person in the table — no `profile_id` column exists — and id-carrying
+  route segments are collapsed to `[id]` before storage, so it cannot say
+  who opened what or about whom. Nothing is written to any device, so this
+  is not cookie/PECR processing and is not behind the consent banner;
+  retained 90 days. The purpose is deleting admin screens the conversational
+  surface has replaced without removing one a gym still relies on. See item
+  6 of the lawful-basis register. It is deliberately *not* merged into
+  `health_data_access_log` or `agent_recording_access_log`, which are
+  per-person audit trails serving a different purpose.
 
 ## 4. Risks to individuals & mitigations already in place
 
