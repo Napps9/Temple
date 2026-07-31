@@ -988,6 +988,35 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The bar sends a shortlist, not the whole catalogue** — `actionsFor`
+  put every action the caller may use in front of the model on every
+  message: 52 of them, about 29,500 characters, roughly 8,000 tokens a
+  sentence. It worked, it was the largest single cost per turn, and it
+  grows linearly with a catalogue whose whole point is to keep growing.
+  `shortlist.ts` ranks actions against what was typed — IDF over the words
+  each action claims in its own `says`, so a word in forty actions counts
+  for almost nothing and a word in one counts for a lot — and sends the
+  top twelve plus whatever the last card was about, so "do that again"
+  still finds its verb.
+  **The retry is the whole reason it is safe.** A shortlist that drops the
+  right verb makes the bar refuse something it can plainly do, and nothing
+  about that failure looks like a bug: no error, no log, just an owner
+  learning Temple cannot do a thing it did last week. So a refusal is
+  re-asked against the full catalogue before it ever reaches them. A miss
+  costs one extra call; it can never cost a capability. A vitest guard
+  greps the screen for that retry.
+  **Measured, and the measurement is labelled.** Against all 154 phrasings
+  the catalogue writes for itself, the right action is in the top three
+  every time — but that corpus comes from the same strings the scorer
+  indexes, so it is a floor ("no action is unfindable by its own words"),
+  not a recall figure. Against 32 hand-written paraphrases that avoid the
+  catalogue's wording, 30 land in the top twelve; the two that miss share
+  no vocabulary at all with the action they mean. That number is
+  optimistic too — the sentences were written by somebody who knew how the
+  scorer works — which is the second reason the fallback exists. Payload
+  drops from ~29,500 to ~6,100 characters, so even paying the full
+  catalogue on one sentence in sixteen the average turn is about a quarter
+  of what it was.
 - **The parser is told the gym's day, not UTC's** — every date the model
   emits came from one line of `parse-setup`'s prompt, and that line read
   `new Date().toISOString()`. At 08:00 in Sydney UTC is still yesterday:

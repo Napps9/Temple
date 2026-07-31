@@ -1543,3 +1543,25 @@ describe('the parser is told the gym’s day', () => {
     expect(fn).toMatch(/at the gym, whose timezone is \$\{tz\}/);
   });
 });
+
+// The shortlist is only safe because a refusal is re-asked against the
+// whole catalogue before it reaches the owner. Grepped because dropping
+// that retry would turn "the bar can't find the verb" into "Temple can't
+// do that", silently, on a fraction of sentences nobody could predict.
+describe('a shortlisted refusal is asked again', () => {
+  const screen = readFileSync('src/app/(staff)/timeline.tsx', 'utf8');
+
+  it('sends the shortlist first', () => {
+    expect(screen).toMatch(/ask\(shortlist\(text, vocabulary, SHORTLIST, keep\)\)/);
+  });
+
+  it('re-asks with everything when the shortlist produced nothing', () => {
+    expect(screen).toMatch(
+      /if \(steps\.length === 0 && vocabulary\.length > SHORTLIST\) \{\s*p = await ask\(vocabulary\);/,
+    );
+  });
+
+  it('carries the last card’s action through regardless of the words', () => {
+    expect(screen).toMatch(/lastSpoken.*kind === 'action'/s);
+  });
+});

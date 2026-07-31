@@ -33,6 +33,7 @@ import {
   type EmailDraftCard,
   type MemberCard,
 } from '@/lib/actions';
+import { shortlist } from '@/lib/actions/shortlist';
 import type { Capability } from '@/lib/can';
 import { chainStopLine, leftoverLine, travelTogether } from '@/lib/chain';
 import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
@@ -438,30 +439,54 @@ export default function Timeline() {
     }
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke('parse-setup', {
-        body: {
-          gym_id: gymId,
-          step: 'change',
-          text,
-          actions: actionsFor((c) => can(c as Capability)),
-          history,
-        },
-      });
-      if (error) throw error;
-      const p = (data as { proposal?: Record<string, unknown> })?.proposal ?? {};
+      const vocabulary = actionsFor((c) => can(c as Capability));
+      // The last card's action rides along whatever the words say, so
+      // "do that again" and "the same for Sarah" still find it.
+      const lastSpoken = [...local].reverse().find((m) => m.kind === 'action');
+      const keep =
+        lastSpoken && lastSpoken.kind === 'action' ? [lastSpoken.spec.name] : [];
+
+      const ask = async (actions: typeof vocabulary) => {
+        const { data, error } = await supabase.functions.invoke('parse-setup', {
+          body: { gym_id: gymId, step: 'change', text, actions, history },
+        });
+        if (error) throw error;
+        return (data as { proposal?: Record<string, unknown> })?.proposal ?? {};
+      };
+
       // `steps` is the shape; `action`/`args` is the same thing with one
       // step, and is read too because the function and the web app deploy
       // separately — for the minute between the two, one of them is the
       // older half.
-      const wire = Array.isArray(p.steps)
-        ? (p.steps as { action?: unknown; args?: unknown }[])
-        : p.action
-          ? [{ action: p.action, args: p.args }]
-          : [];
-      const steps = wire
-        .slice(0, 3)
-        .map((w) => ({ spec: findAction(w.action), raw: (w.args ?? {}) as Record<string, unknown> }))
-        .filter((w): w is { spec: AnyAction; raw: Record<string, unknown> } => !!w.spec);
+      const readSteps = (p: Record<string, unknown>) => {
+        const wire = Array.isArray(p.steps)
+          ? (p.steps as { action?: unknown; args?: unknown }[])
+          : p.action
+            ? [{ action: p.action, args: p.args }]
+            : [];
+        return wire
+          .slice(0, 3)
+          .map((w) => ({
+            spec: findAction(w.action),
+            raw: (w.args ?? {}) as Record<string, unknown>,
+          }))
+          .filter(
+            (w): w is { spec: AnyAction; raw: Record<string, unknown> } => !!w.spec,
+          );
+      };
+
+      // Only the verbs this sentence looks like, which is most of the cost
+      // of a turn removed. The catalogue is the fallback rather than the
+      // default: a shortlist that drops the right verb would have the bar
+      // refuse something it can plainly do, and nothing about that failure
+      // looks like a bug — so a refusal is re-asked against everything
+      // before it is ever repeated to the owner.
+      let p = await ask(shortlist(text, vocabulary, SHORTLIST, keep));
+      let steps = readSteps(p);
+      if (steps.length === 0 && vocabulary.length > SHORTLIST) {
+        p = await ask(vocabulary);
+        steps = readSteps(p);
+      }
       if (steps.length === 1) {
         const msg = await runAction(steps[0].spec, steps[0].raw);
         if (msg.kind === 'action') remember('gym', msg.preview.title);
@@ -959,6 +984,12 @@ function LocalRow({
     />
   );
 }
+
+// Twelve is where the held-out set stops improving: 30 of 32 hand-written
+// paraphrases land inside it, and the two that do not share no words at
+// all with the action they mean, which no depth would fix. The retry
+// catches those.
+const SHORTLIST = 12;
 
 const WEB = Platform.OS === 'web';
 
