@@ -988,6 +988,33 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The website has verbs** — the canvas keeps its screen (laying out a
+  page is craft and no sentence beats dragging a block); the admin around
+  it does not. `website.publish`, `website.unpublish`,
+  `website.connect_domain`, `website.check_domain` and `website.set_seo`,
+  all over writes that already existed behind the Website screens.
+  **Publish refuses with the list.** It runs the same `allPageWarnings`
+  the editor blocks its own button on, so "publish it" answered with
+  "done" while nothing changed cannot happen — the card names what is
+  missing and which page it is on.
+  **Connecting a domain cannot finish in the conversation, and says so.**
+  It registers the domain and the DNS records are a table of hostnames and
+  values, not a sentence, so the receipt hands the owner to the page that
+  renders them rather than reading a CNAME target out in prose.
+  **`website.check_domain` is an `ask` that re-checks** rather than
+  reading the stored status back — the point of asking is that DNS may
+  have landed since anybody looked. It bends the ask/do line knowingly:
+  the recorded status is the answer, nothing about the gym changes, and a
+  confirmation tap in front of a DNS check would make the fastest question
+  in the module the slowest.
+  **The SEO fields go through `save_gym_website` with the editor's own
+  concurrency token**, because they live in the one JSONB column the
+  editor autosaves to. Losing that race says so plainly instead of
+  overwriting whatever somebody typed a second ago.
+  Order mattered: 0220 was the hardening and went first. Hiding a plan
+  from the website hid it from the rendered page and not from the public
+  RPC behind it, so a verb offering that would have sold a privacy the
+  server did not provide. The verbs are honest because the server is.
 - **The bar answers about the gym** (0231) — roadmap phase 4. It has
   answered about one member since 0211 and about money, the store, the
   leads and the team since their modules landed; what it could not say is

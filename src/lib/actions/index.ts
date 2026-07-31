@@ -7,6 +7,7 @@ import { MONEY_ACTIONS } from './money';
 import { PROGRAMMING_ACTIONS } from './programming';
 import { STORE_ACTIONS } from './store';
 import { TEAM_ACTIONS } from './team';
+import { WEBSITE_ACTIONS } from './website';
 import { toWire, type AnyAction, type ActionWire } from './types';
 
 export * from './types';
@@ -25,6 +26,7 @@ export const ACTIONS: AnyAction[] = [
   ...PROGRAMMING_ACTIONS,
   ...STORE_ACTIONS,
   ...TEAM_ACTIONS,
+  ...WEBSITE_ACTIONS,
 ];
 
 export function findAction(name: unknown): AnyAction | null {

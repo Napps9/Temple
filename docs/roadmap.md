@@ -459,12 +459,17 @@ already authorised. Roughly in order of how often an owner touches them:
   to render the coach-written content it is about to overwrite. That is a
   card renderer, not an argument list, and it is the next piece of work
   here rather than a gap.
-- **Website** — the hardening landed (0220), the verbs did not. Publish,
-  unpublish, connect a domain, check DNS and the SEO fields are all
-  sentence-shaped with real writes behind them, and are the next push.
-  What went first is the reason they can be honest: hiding a plan from
-  your website hid it from the page and not from the server, so a verb
-  offering that would have sold a privacy the server did not provide.
+- **Website** — done. The hardening landed first (0220) and the verbs
+  followed: `website.publish`, `website.unpublish`,
+  `website.connect_domain`, `website.check_domain`, `website.set_seo`.
+  Publish runs the editor's own page warnings and refuses with the list
+  rather than reporting success while nothing changed; connecting a domain
+  ends at the screen that can render a DNS table; the SEO write goes
+  through `save_gym_website` with the editor's concurrency token and says
+  so when it loses the race. What went first is the reason they can be
+  honest: hiding a plan from your website hid it from the page and not
+  from the server, so a verb offering that would have sold a privacy the
+  server did not provide.
 
 ### 3 — It remembers what you just said — done
 
