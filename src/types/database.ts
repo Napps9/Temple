@@ -2257,7 +2257,12 @@ export type Database = {
           id: string;
           gym_id: string;
           closure_id: string | null;
-          kind: 'gym_closed' | 'classes_rescheduled' | 'classes_reopened';
+          kind:
+            | 'gym_closed'
+            | 'classes_rescheduled'
+            | 'classes_reopened'
+            | 'class_cancelled'
+            | 'class_coach_changed';
           channel: 'email' | 'in_app';
           recipient: string | null;
           recipient_profile_id: string | null;
@@ -2273,7 +2278,12 @@ export type Database = {
           id?: string;
           gym_id: string;
           closure_id?: string | null;
-          kind: 'gym_closed' | 'classes_rescheduled' | 'classes_reopened';
+          kind:
+            | 'gym_closed'
+            | 'classes_rescheduled'
+            | 'classes_reopened'
+            | 'class_cancelled'
+            | 'class_coach_changed';
           channel: 'email' | 'in_app';
           recipient?: string | null;
           recipient_profile_id?: string | null;

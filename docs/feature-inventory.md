@@ -925,6 +925,28 @@ The staff area shows up when `can_access_staff_area` is on.
   through every surface that reads status, and the amount belongs on the
   `billing_events` row (`kind = 'refund'`, excluded from revenue by
   `is_revenue_event`) where the money already lives.
+- **Members are told who is taking it** (0227) — `class_change_notifications`
+  has announced a closed gym, a moved class, a reopened one and a
+  cancelled one since 0169/0212, and never the change a member is most
+  likely to care about: a coach is often why they booked. There was no
+  kind for it and neither writer called anything. `claim_cover` has
+  reassigned coaches since the cover flow existed and told the coach who
+  asked and nobody else; `set_session_coach` (0224) added assignment and
+  said so on its card. Both writers now call
+  `_enqueue_class_coach_changed` — notifying on one path only would make
+  cover and assignment behave differently for the same visible event.
+  Shaped like `_enqueue_class_cancelled`: an in-app row marked sent and an
+  email row queued per booked member, blanket unsubscribes recorded as
+  `skipped` with the reason rather than dropped. **Future classes only** —
+  mailing forty people about who taught a class they have already been to
+  is noise dressed as service. The idempotency key is the session plus the
+  incoming coach, so a retry cannot mail twice; the known edge is that a
+  there-and-back does not re-announce a coach they were already told
+  about, which is pinned by a test as the acceptable way to be wrong.
+  Two client bugs went with it: the member inbox's kind union never gained
+  `class_cancelled` when 0212 added it, so **a cancelled class has been
+  announcing itself as "Class times changed" ever since** — the two-branch
+  ternary fell through. It is a lookup table now, with a label per kind.
 - **One class can move, and one class can change coach** (roadmap step 2)
   — `classes.move` ("push Friday's barbell club to Thursday at 6:30") and
   `classes.set_coach` ("Jo is taking Saturday's 9am") over

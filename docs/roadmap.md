@@ -571,15 +571,6 @@ same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
 
-- **Nobody tells the members when a class changes coach.**
-  `class_change_notifications.kind` allows `gym_closed`,
-  `classes_rescheduled`, `classes_reopened` and `class_cancelled` — there
-  is no coach-change value, and the path that has always reassigned
-  coaches (`claim_cover`) tells the coach who asked and nobody else. So a
-  member who booked because Marcus was taking it finds out at the door,
-  whether the change came from cover or from `classes.set_coach`. One
-  fix, spanning both: widen the CHECK, add the enqueue, and call it from
-  both writers — half-fixing it would make the two paths disagree.
 - **Finding a class reads the device's clock; writing one reads the
   gym's.** `findClass` resolves "Friday's 7pm" through
   `Intl.DateTimeFormat().resolvedOptions().timeZone`, as every class

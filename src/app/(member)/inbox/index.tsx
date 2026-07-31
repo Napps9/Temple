@@ -525,7 +525,12 @@ function AnnouncementsTab({
 
 type ClassChangeRow = {
   id: string;
-  kind: 'gym_closed' | 'classes_rescheduled' | 'classes_reopened';
+  kind:
+    | 'gym_closed'
+    | 'classes_rescheduled'
+    | 'classes_reopened'
+    | 'class_cancelled'
+    | 'class_coach_changed';
   body: string;
   created_at: string;
   read_at: string | null;
@@ -534,6 +539,18 @@ type ClassChangeRow = {
 // Closures and bulk reschedules (0169). Opening the tab marks them read —
 // they carry their whole message in `body` (the classes they describe have
 // been deleted), so there is nothing further to open.
+// One label per kind. It was a two-branch ternary that fell through to
+// "Class times changed" for anything it did not know — which is how a
+// cancelled class (0212) has been announcing itself as a time change ever
+// since, and what a coach change would have done next.
+const NOTICE_TITLE: Record<string, string> = {
+  gym_closed: 'Gym closed',
+  classes_reopened: 'Classes are back on',
+  classes_rescheduled: 'Class times changed',
+  class_cancelled: 'Class cancelled',
+  class_coach_changed: 'Different coach',
+};
+
 function ClassChangeNotices({
   gymId,
   onChange,
@@ -581,11 +598,7 @@ function ClassChangeNotices({
           <View className="flex-row items-center gap-2">
             <Ionicons name="alert-circle" size={18} color="#D97706" />
             <Text className="text-amber-800 dark:text-amber-200 font-semibold flex-1">
-              {n.kind === 'gym_closed'
-                ? 'Gym closed'
-                : n.kind === 'classes_reopened'
-                  ? 'Classes are back on'
-                  : 'Class times changed'}
+              {NOTICE_TITLE[n.kind] ?? 'Class times changed'}
             </Text>
           </View>
           <Text className="text-amber-900 dark:text-amber-100 text-sm">

@@ -999,10 +999,11 @@ export const setClassCoach: ActionSpec<SetCoach> = {
       title: `Put ${hits[0].name} on ${classLabel(found.session)}?`,
       lines: [
         'The class does not move and nobody loses their place.',
-        // Deliberate, and the same as the cover flow's: claim_cover tells
-        // the coach who asked and nobody else. Saying it here is better
-        // than an owner assuming it was said.
-        'Members booked in are not told — tell them yourself if it matters.',
+        // 0227. Both writers tell them now — this one and the cover
+        // claim — because a coach is often why somebody booked, and a
+        // swap they only discover at the door is the worst way to find
+        // out.
+        'Everyone booked in is told who is taking it.',
       ],
       yes: 'Yes, put them on it',
     };
