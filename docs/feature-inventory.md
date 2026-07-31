@@ -1784,6 +1784,33 @@ The staff area shows up when `can_access_staff_area` is on.
   the other direction. pgTAP:
   `a_pack_that_costs_more_than_a_membership.sql` (14 assertions — five
   refusals, the two plan-choice cases, and both halves of the coupling).
+- **One budget for the whole gym** (0242) — six jobs each capping
+  themselves at three a day is **eighteen questions waiting** when an owner
+  opens the Timeline, which is the to-do list the Timeline was built to
+  replace. Nobody had ever set the total; each job only knew its own.
+  `_agent_ask_budget_left(gym)` returns five minus what has been asked
+  today, and the four jobs that can wait check it before proposing:
+  `retention_message`, `first_week_message`, `credits_low_message`,
+  `plan_upgrade_offer`. Every one of those is the gym *noticing* something,
+  where a day later is the same message.
+  **The money loop and cover are exempt.** A payment already missed has
+  Stripe's own retry clock running and a day costs real money; an uncovered
+  class tomorrow is not the same message a day later, it is a cancelled
+  class.
+  The per-job cap of three stays, and the two together give the property
+  that matters: no single job can take more than three of the five, so
+  whichever tick runs first can never starve the rest. `continue`, not
+  `exit` — the ticks walk every gym that has taken the job on, and one gym
+  being out of budget says nothing about the next.
+  Five is a constant rather than a per-gym setting: making it a setting
+  means a screen, a rule-sheet line and a decision an owner cannot make
+  well before living with it. It is one number in one function.
+  The Roster says so above the job list, because an owner who takes on a
+  sixth job, sees nothing from it and has not been told about a cap
+  concludes the job is broken. The four ticks were patched from their live
+  definitions rather than restated. pgTAP:
+  `one_budget_for_the_whole_gym.sql` (8 assertions, including that money
+  and cover spend none of it).
 - **The first week** (0234) — `set_first_week_job` (owner-only, Roster
   take-on card) writes a `first_week_message` authority row + owner-
   approved template. The daily `agent-first-week-tick` (09:15, after

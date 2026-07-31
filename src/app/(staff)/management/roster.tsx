@@ -157,6 +157,15 @@ export default function Roster() {
           Temple&apos;s jobs
         </Text>
 
+        {/* Without this an owner who turns a sixth job on, sees nothing
+            from it and concludes it is broken — the budget is silent
+            everywhere else. */}
+        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+          However many of these you take on, I&apos;ll ask you about at most
+          five things a day. Chasing a payment and finding cover don&apos;t
+          count — those can&apos;t wait a day.
+        </Text>
+
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base">
