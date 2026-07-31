@@ -26,8 +26,17 @@ import { dueCheckIns, useMyInjuries, type InjuryRow } from '@/lib/useInjuries';
 import { useThemeColors } from '@/lib/theme';
 import type { InjuryFeeling, InjurySide, InjuryStatus } from '@/types/database';
 
+// The member's own day, not UTC's and not the gym's. When a shoulder
+// started hurting is answered on the calendar the person logging it is
+// living in — unlike a class time, which is the gym's schedule. UTC got
+// this wrong for part of every day everywhere east of Greenwich: at 8am
+// in Sydney it pre-filled yesterday.
 function isoToday(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
 }
 
 const ALL_MOVEMENTS: { key: string; name: string }[] = MOVEMENT_GROUPS.flatMap(
