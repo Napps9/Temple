@@ -204,6 +204,36 @@ Deno.serve(async (req: Request) => {
   // 1000-member gym in well under a minute.
   const CONCURRENCY = 8;
 
+  // Stopping a send in flight (0228).
+  //
+  // comms_stop_campaign flips the campaign to 'cancelled' and skips
+  // whatever is still queued. This is the other half: without it the
+  // workers would keep draining their in-memory copy of the queue and
+  // send the lot regardless of what the database now says.
+  //
+  // Polled rather than checked per recipient. A read before every email
+  // doubles the round-trips on a thousand-member send to buy at most two
+  // seconds of responsiveness; every two seconds is well inside the
+  // window an owner spotting a mistake actually needs, and costs about
+  // thirty reads on the longest send this function can survive.
+  const STOP_POLL_MS = 2000;
+  let stopped = false;
+  let lastStopCheck = Date.now();
+  async function shouldStop(): Promise<boolean> {
+    if (stopped) return true;
+    if (Date.now() - lastStopCheck < STOP_POLL_MS) return false;
+    lastStopCheck = Date.now();
+    const { data } = await service
+      .from('email_campaigns')
+      .select('status')
+      .eq('id', campaignId)
+      .maybeSingle();
+    if ((data as { status?: string } | null)?.status === 'cancelled') {
+      stopped = true;
+    }
+    return stopped;
+  }
+
   // Variant 0 is the campaign's own subject; the rest come off
   // subject_variants in order. Assignment was decided and stored at
   // snapshot time (0185) — deciding here would re-roll on a retry and put
@@ -321,6 +351,7 @@ Deno.serve(async (req: Request) => {
     workers.push(
       (async () => {
         while (queue.length > 0) {
+          if (await shouldStop()) return;
           const next = queue.shift();
           if (!next) return;
           await deliver(next);
@@ -330,11 +361,28 @@ Deno.serve(async (req: Request) => {
   }
   await Promise.all(workers);
 
-  const finalStatus = sent === 0 && simulated === 0 && failed > 0 ? 'failed' : 'sent';
-  await service
-    .from('email_campaigns')
-    .update({ status: finalStatus, sent_at: new Date().toISOString() })
-    .eq('id', campaignId);
+  // A stopped send stays 'cancelled'. It did send, partly, on purpose —
+  // 'sent' would claim everyone got it and 'failed' would claim nobody
+  // did, and both are wrong about a deliberate half.
+  if (!stopped) {
+    const finalStatus = sent === 0 && simulated === 0 && failed > 0 ? 'failed' : 'sent';
+    await service
+      .from('email_campaigns')
+      .update({ status: finalStatus, sent_at: new Date().toISOString() })
+      .eq('id', campaignId);
+  } else {
+    // Anything left in the workers' hands when they stopped is still
+    // 'queued' in the database — comms_stop_campaign only saw the rows
+    // that existed when it ran.
+    await service
+      .from('email_campaign_recipients')
+      .update({
+        status: 'skipped',
+        error: 'The send was stopped before this one went out',
+      })
+      .eq('campaign_id', campaignId)
+      .eq('status', 'queued');
+  }
 
   return json({
     ok: true,

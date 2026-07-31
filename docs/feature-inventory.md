@@ -925,6 +925,28 @@ The staff area shows up when `can_access_staff_area` is on.
   through every surface that reads status, and the amount belongs on the
   `billing_events` row (`kind = 'refund'`, excluded from revenue by
   `is_revenue_event`) where the money already lives.
+- **A send going out can be stopped** (0228) — `comms.stop_send` ("stop
+  the newsletter, the price is wrong") over a new `comms_stop_campaign`.
+  `comms_unschedule_campaign` stops working the moment the dispatcher
+  flips a campaign to `sending`, and after that there was no abort, no
+  recall and no path to the `cancelled` status the CHECK has allowed
+  since 0044. The window is real: the worker sends eight at a time
+  through a queue that can be a thousand long.
+  **Two halves, both needed.** The RPC flips the campaign to `cancelled`
+  and marks everything still `queued` as `skipped` with the reason
+  recorded — done here rather than left to the worker, because a
+  timed-out invocation would otherwise strand those rows as `queued` for
+  ever, indistinguishable from a send in progress. The worker polls the
+  campaign's status every two seconds and stops pulling from its queue,
+  because it holds its own copy in memory and would otherwise send the
+  lot regardless; a vitest guard greps for that check, since a refactor
+  could drop it silently and the symptom is an email nobody can stop.
+  **What it cannot do is on the card:** mail already accepted by Resend
+  is gone — no recall exists in SMTP or the API — so the card counts how
+  many already have it before it asks, and the receipt says the ones who
+  got it keep it. The campaign ends `cancelled` rather than `sent` or
+  `failed`, because it did send, partly, on purpose, and both other words
+  are wrong about that.
 - **Members are told who is taking it** (0227) — `class_change_notifications`
   has announced a closed gym, a moved class, a reopened one and a
   cancelled one since 0169/0212, and never the change a member is most

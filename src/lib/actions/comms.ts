@@ -781,8 +781,138 @@ export const cancelSend: ActionSpec<{ which: string | null }> = {
   },
 };
 
+// ============================================================================
+// comms.stop_send
+// ============================================================================
+//
+// The other end of comms.cancel_send. That one pulls a scheduled send
+// back before it starts; this one stops one that is already going out,
+// which until 0228 nothing could do.
+//
+// The card's whole job is being honest about the shape of the thing.
+// Mail already accepted by Resend is gone — there is no recall in SMTP
+// and none in the API — so "stop it" cannot mean "unsend it", and an
+// owner who believes otherwise is worse off than one who was told. The
+// card says how many have already gone before it asks.
+
+type StopSend = { which: string | null };
+
+async function sendingCampaigns(ctx: ActionContext): Promise<ScheduledRow[]> {
+  const { data } = await ctx.supabase
+    .from('email_campaigns')
+    .select('id, title, subject, scheduled_for')
+    .eq('gym_id', ctx.gymId)
+    .eq('status', 'sending')
+    .order('updated_at', { ascending: false });
+  return (data ?? []) as ScheduledRow[];
+}
+
+async function goneAlready(campaignId: string, ctx: ActionContext): Promise<number> {
+  const { count } = await ctx.supabase
+    .from('email_campaign_recipients')
+    .select('id', { count: 'exact', head: true })
+    .eq('campaign_id', campaignId)
+    .in('status', ['sent', 'delivered']);
+  return count ?? 0;
+}
+
+async function stillWaiting(campaignId: string, ctx: ActionContext): Promise<number> {
+  const { count } = await ctx.supabase
+    .from('email_campaign_recipients')
+    .select('id', { count: 'exact', head: true })
+    .eq('campaign_id', campaignId)
+    .eq('status', 'queued');
+  return count ?? 0;
+}
+
+export const stopSend: ActionSpec<StopSend> = {
+  name: 'comms.stop_send',
+  kind: 'do',
+  capability: 'can_manage_comms',
+  says:
+    'Stop an email that is going out right now — "stop the newsletter", ' +
+    '"halt that send", "the price is wrong, stop it". For one that has ' +
+    'not started yet, that is comms.cancel_send.',
+  args: [
+    {
+      name: 'which',
+      type: 'string',
+      desc: 'The email, as they named it — words from its subject. Omit if they did not say.',
+    },
+  ],
+  invalidate: ['comms-campaigns', 'comms-campaign'],
+  sanitise: (raw) => ({ which: argString(raw, 'which', 120) }),
+  preview: async (a, ctx) => {
+    const rows = await sendingCampaigns(ctx);
+    if (rows.length === 0) {
+      return {
+        title: 'Nothing is going out right now.',
+        lines: [
+          'If it has not started yet I can call it off instead — say "don\'t send it".',
+        ],
+      };
+    }
+    const hits = matchScheduled(rows, a.which);
+    if (hits.length === 0) {
+      return {
+        title: `Nothing going out matches “${a.which}”.`,
+        lines: rows.map((r) => `Going out: “${r.subject}”`),
+      };
+    }
+    if (hits.length > 1) {
+      return {
+        title: 'Which one?',
+        lines: [],
+        choices: hits.map((r) => ({ label: r.subject, args: { which: r.subject } })),
+      };
+    }
+    const row = hits[0];
+    const [gone, waiting] = await Promise.all([
+      goneAlready(row.id, ctx),
+      stillWaiting(row.id, ctx),
+    ]);
+    return {
+      title: `Stop “${row.subject}” going out?`,
+      lines: [
+        gone === 0
+          ? 'Nothing has gone yet.'
+          : `${gone} ${gone === 1 ? 'person has' : 'people have'} already got it. There is no way to take an email back, so those stay sent.`,
+        waiting === 0
+          ? 'It is nearly through — there may be nothing left to stop.'
+          : `${waiting} more ${waiting === 1 ? 'is' : 'are'} still waiting and will not go.`,
+      ],
+      yes: 'Yes, stop it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const hits = matchScheduled(await sendingCampaigns(ctx), a.which);
+    if (hits.length !== 1) throw new ActionError('That one is no longer going out.');
+    const row = hits[0];
+    const gone = await goneAlready(row.id, ctx);
+    const { data, error } = await ctx.supabase.rpc('comms_stop_campaign', {
+      p_campaign_id: row.id,
+    });
+    if (error) {
+      throw new ActionError(
+        /not going out right now/i.test(error.message)
+          ? `“${row.subject}” finished before I could stop it — everyone on the list has it.`
+          : "That didn't save — try again.",
+      );
+    }
+    ctx.offer?.('Open it', `/management/communications/${row.id}`);
+    const skipped = (data as number) ?? 0;
+    return (
+      `Stopped. ${skipped} ${skipped === 1 ? 'person' : 'people'} will not get it` +
+      (gone > 0
+        ? `, and the ${gone} who already had it keep it — an email cannot be taken back.`
+        : '.')
+    );
+  },
+};
+
 export const COMMS_ACTIONS: AnyAction[] = [
   erase(describeSequenceAction),
   erase(scheduleSend),
   erase(cancelSend),
+  erase(stopSend),
 ];

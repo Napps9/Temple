@@ -617,12 +617,6 @@ next session finds them.
   endpoint registered in Resend against `email.delivered`,
   `email.bounced` and `email.complained`. Built to refuse unsigned
   requests, so it is inert rather than wrong until both are done.
-- **A send already going out cannot be stopped.** Once the sweep flips a
-  campaign to `sending`, there is no abort, no recall and no path to the
-  `cancelled` status the CHECK constraint allows — the only escape is the
-  ten-minute recovery path. `comms.cancel_send` reports losing that race
-  rather than pretending to win it, which is the honest half of the fix,
-  not the whole one.
 - **Four pgTAP files fail in the local harness for the harness's own
   reasons** (storage path helpers, recurrence pattern rewrite, closure
   reopen, ordered onboarding responses) — listed in

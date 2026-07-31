@@ -14,6 +14,7 @@ import {
 import {
   audienceFrom,
   cancelSend,
+  stopSend,
   describeSequenceAction,
   newsletterCard,
   readAudienceArgs,
@@ -1351,5 +1352,46 @@ describe('refunding a shop order', () => {
 
   it('needs the same switch as a membership refund', () => {
     expect(refundStoreOrder.capability).toBe('can_refund');
+  });
+});
+
+// Stopping a send has two halves and needs both. comms_stop_campaign
+// marks the queued rows, but a worker mid-invocation holds its own copy
+// of the queue in memory and would send the lot regardless — so the
+// worker has to re-read the campaign's status as it goes. Grepped
+// because it is the kind of thing a refactor drops silently, and the
+// symptom is an email nobody could stop.
+describe('a stopped send actually stops', () => {
+  const worker = readFileSync('supabase/functions/send-campaign/index.ts', 'utf8');
+
+  it('has the worker check before pulling each recipient', () => {
+    expect(worker).toMatch(/if \(await shouldStop\(\)\) return;/);
+  });
+
+  it('reads the campaign status back rather than trusting its own copy', () => {
+    expect(worker).toMatch(/from\('email_campaigns'\)[\s\S]{0,120}select\('status'\)/);
+  });
+
+  it('leaves a stopped campaign cancelled rather than sent', () => {
+    // The final write is skipped entirely when stopped — claiming 'sent'
+    // would say everyone got it and 'failed' would say nobody did.
+    expect(worker).toMatch(/if \(!stopped\) \{/);
+  });
+
+  it('skips whatever the workers were still holding', () => {
+    expect(worker).toMatch(/eq\('status', 'queued'\)/);
+  });
+});
+
+describe('stopping a send, as a sentence', () => {
+  it('is its own verb, separate from calling off a scheduled one', () => {
+    expect(stopSend.name).toBe('comms.stop_send');
+    expect(cancelSend.name).toBe('comms.cancel_send');
+    expect(stopSend.capability).toBe('can_manage_comms');
+  });
+
+  it('does not need to be told which when there is only one', () => {
+    expect(stopSend.sanitise({})).toEqual({ which: null });
+    expect(stopSend.sanitise({ which: 'christmas' })).toEqual({ which: 'christmas' });
   });
 });

@@ -5308,6 +5308,10 @@ export type Database = {
         Args: { p_session_id: string; p_coach_id: string };
         Returns: null;
       };
+      comms_stop_campaign: {
+        Args: { p_campaign_id: string };
+        Returns: number;
+      };
       set_member_role: {
         Args: {
           p_gym_id: string;
