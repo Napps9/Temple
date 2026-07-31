@@ -1516,3 +1516,30 @@ describe('asking about the gym', () => {
     });
   });
 });
+
+// Every date the parser emits comes from one line of its prompt, so that
+// line has to be the gym's day and not UTC's. At 08:00 in Sydney UTC is
+// still yesterday: told "today is the 4th", a model asked to cancel
+// tomorrow's 6am class resolves it to the 5th, which is today at the gym.
+// The wrong class gets cancelled and everybody booked on it is emailed
+// about it.
+describe('the parser is told the gym’s day', () => {
+  const fn = readFileSync('supabase/functions/parse-setup/index.ts', 'utf8');
+
+  it('never asks UTC what day it is', () => {
+    // The one permitted use is the fallback inside todayAtGym, for a zone
+    // Intl cannot read.
+    const uses = fn.match(/new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/g) ?? [];
+    expect(uses).toHaveLength(1);
+    expect(fn).toMatch(/catch \{\s*return new Date\(\)\.toISOString\(\)\.slice\(0, 10\);/);
+  });
+
+  it('reads the zone off the gym rather than taking it from the caller', () => {
+    expect(fn).toMatch(/from\('gyms'\)[\s\S]{0,80}select\('timezone'\)/);
+    expect(fn).not.toMatch(/body\.timezone|body\.tz\b/);
+  });
+
+  it('tells the model which zone the day is in', () => {
+    expect(fn).toMatch(/at the gym, whose timezone is \$\{tz\}/);
+  });
+});

@@ -132,11 +132,40 @@ const CHANGE_TOOL = {
   },
 };
 
-function changePrompt(): string {
-  const today = new Date().toISOString().slice(0, 10);
+// What day it is AT THE GYM, which is not what day it is in UTC.
+//
+// This prompt is where every date the model emits comes from, so getting
+// it from `new Date().toISOString()` was wrong in a way that got worse the
+// further a gym sat from Greenwich. At 08:00 in Sydney, UTC is still
+// yesterday: the model was told "today is the 4th", the owner said "cancel
+// tomorrow's 6am class", and the model resolved that to the 5th — which is
+// today at the gym. The wrong class gets cancelled and everybody booked on
+// it is emailed about it. Half past midnight in London is the same bug in
+// the other direction.
+//
+// The zone is read from the gym rather than sent by the client for the
+// usual reason: it must not be whatever device the owner happens to be
+// holding, and it must not be something a caller can claim.
+function todayAtGym(tz: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+function changePrompt(tz: string): string {
+  const today = todayAtGym(tz);
   return (
     'You parse a gym owner\'s sentence into the one action they asked for. ' +
-    `Today is ${today}.\n` +
+    `Today is ${today} at the gym, whose timezone is ${tz}. Every relative ` +
+    'date — tomorrow, Saturday, next week — is relative to that day and not ' +
+    'to any other clock.\n' +
     'Emit ONLY what was described — never invent classes, prices, dates, ' +
     'names or settings. Dates are YYYY-MM-DD and resolve forward from ' +
     'today. Money is in whole currency as the owner said it — the gym\'s ' +
@@ -275,6 +304,7 @@ function sanitiseHistory(raw: unknown): WireTurn[] {
 async function parse(
   step: 'timetable' | 'plans' | 'change',
   text: string,
+  tz: string,
   actions: ActionWire[] = [],
   history: WireTurn[] = [],
 ): Promise<unknown | null> {
@@ -314,7 +344,7 @@ async function parse(
       ? TIMETABLE_PROMPT
       : step === 'plans'
         ? PLANS_PROMPT
-        : changePrompt() + (actions.length ? actionCatalogue(actions) : '');
+        : changePrompt(tz) + (actions.length ? actionCatalogue(actions) : '');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -379,6 +409,16 @@ Deno.serve(async (req: Request) => {
 
   if (!API_KEY) return json({ error: 'unavailable' }, 503);
 
+  // 'UTC' is the column default (0049), so a gym that never set one gets
+  // the same answer the database would give rather than a different wrong
+  // one.
+  const { data: gymRow } = await caller
+    .from('gyms')
+    .select('timezone')
+    .eq('id', gymId)
+    .maybeSingle();
+  const tz = (gymRow as { timezone?: string } | null)?.timezone || 'UTC';
+
   try {
     // The client filters the catalogue by the caller's own capabilities
     // before sending it. That is a convenience for the model, not the
@@ -387,6 +427,7 @@ Deno.serve(async (req: Request) => {
     const proposal = await parse(
       step,
       text,
+      tz,
       sanitiseActions(body.actions),
       sanitiseHistory(body.history),
     );

@@ -988,6 +988,18 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The parser is told the gym's day, not UTC's** — every date the model
+  emits came from one line of `parse-setup`'s prompt, and that line read
+  `new Date().toISOString()`. At 08:00 in Sydney UTC is still yesterday:
+  the model was told "today is the 4th", the owner said "cancel tomorrow's
+  6am class", and it resolved to the 5th — today at the gym. The wrong
+  class is cancelled and everybody booked on it is emailed about it. Half
+  past midnight in London is the same bug the other way. The zone is now
+  read off the gym row (not sent by the client — it must not be whatever
+  device the owner is holding, and must not be something a caller can
+  claim), and the prompt names the zone as well as the day so relative
+  dates resolve against it. A vitest guard greps for the UTC pattern,
+  allowing exactly one: the fallback for a zone `Intl` cannot read.
 - **Programming that overwrites shows what it overwrites** — the two
   verbs that cross the craft line, held back until there was a card
   renderer honest enough to carry them. `programming.copy_week` ("copy

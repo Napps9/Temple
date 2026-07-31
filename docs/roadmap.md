@@ -645,6 +645,25 @@ next session finds them.
      ("how did the Christmas email do"), and a quiet Timeline line when a
      send finishes — which is also what closes the reaches-nobody case.
 
+- **The whole catalogue goes up on every sentence.** `actionsFor` sends
+  every action the caller may use, and the registry is now 52 of them:
+  about 29,500 characters, call it 8,000 tokens, on every message typed
+  into the bar. It works and it is the single largest cost per turn, and
+  it grows linearly with a catalogue the roadmap's own thesis says will
+  keep growing — 150 actions is roughly 23,000 tokens a sentence.
+  Two ways out, and the difference between them is what happens when the
+  shortlist is wrong:
+  1. **Prefilter and fall back.** Score actions against the typed sentence
+     and send the top N plus whatever the last turn touched; if the model
+     answers `cannot`, retry once with the full catalogue. Costs a second
+     call only on a miss and is provably never a capability regression,
+     which is the property that matters — a prefilter that silently drops
+     the right verb makes the bar say "I can't do that" about something it
+     can do, and nobody would ever find it.
+  2. **Two-stage: module, then action.** Halves the payload, doubles the
+     latency on every sentence rather than only on the misses.
+  Recommend 1. Not built: it is an optimisation of something that works,
+  and it wants measuring against real sentences rather than guessed ones.
 - **Four pgTAP files fail in the local harness for the harness's own
   reasons** (storage path helpers, recurrence pattern rewrite, closure
   reopen, ordered onboarding responses) — listed in
