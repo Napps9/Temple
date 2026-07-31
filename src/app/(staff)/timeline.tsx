@@ -154,6 +154,11 @@ type LocalMsg =
       spec: AnyAction;
       args: never;
       preview: ActionPreview;
+      // An `ask` action's answer can name a screen that shows more —
+      // attendance behind "how busy have we been", the campaign report
+      // behind "how did the Christmas email do". Same chip a receipt gets,
+      // collected from the preview rather than from apply.
+      offer?: { label: string; href: string };
       open: boolean;
     }
   // Two or three things said in one breath. One confirm covers the lot,
@@ -352,11 +357,19 @@ export default function Timeline() {
     // Type-erased on the way in, checked on the way out: the spec's own
     // sanitiser is what guarantees this matches its preview and apply.
     const args = parsed as never;
+    let offer: { label: string; href: string } | undefined;
+    const preview = await spec.preview(
+      args,
+      actionCtx((label, href) => {
+        offer = { label, href };
+      }),
+    );
     return {
       kind: 'action',
       spec,
       args,
-      preview: await spec.preview(args, actionCtx()),
+      preview,
+      offer,
       open: spec.kind === 'do',
     };
   };
@@ -370,12 +383,24 @@ export default function Timeline() {
   const runChain = async (
     steps: { spec: AnyAction; raw: Record<string, unknown> }[],
   ): Promise<LocalMsg[]> => {
-    const built: { spec: AnyAction; args: never; preview: ActionPreview }[] = [];
+    const built: {
+      spec: AnyAction;
+      args: never;
+      preview: ActionPreview;
+      offer?: { label: string; href: string };
+    }[] = [];
     for (const s of steps) {
       const parsed = s.spec.sanitise(s.raw);
       if (parsed === null || parsed === undefined) break;
       const args = parsed as never;
-      built.push({ spec: s.spec, args, preview: await s.spec.preview(args, actionCtx()) });
+      let offer: { label: string; href: string } | undefined;
+      const preview = await s.spec.preview(
+        args,
+        actionCtx((label, href) => {
+          offer = { label, href };
+        }),
+      );
+      built.push({ spec: s.spec, args, preview, offer });
     }
     const together = travelTogether(
       built.map((b) => ({
@@ -395,6 +420,7 @@ export default function Timeline() {
         spec: first.spec,
         args: first.args,
         preview: first.preview,
+        offer: first.offer,
         open: first.spec.kind === 'do',
       },
       ...(leftover ? [{ kind: 'temple' as const, text: leftover }] : []),
@@ -951,6 +977,11 @@ function LocalRow({
             {l}
           </Text>
         ))}
+        {msg.offer ? (
+          <View className="flex-row pt-1.5">
+            <OfferChip offer={msg.offer} />
+          </View>
+        ) : null}
       </View>
     );
   }
@@ -1330,16 +1361,26 @@ function SoftLine({
       </View>
       {offer ? (
         <View className="flex-row pl-5">
-          <Pressable
-            onPress={() => router.push(offer.href as never)}
-            className="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
-            <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
-              {offer.label}
-            </Text>
-          </Pressable>
+          <OfferChip offer={offer} />
         </View>
       ) : null}
     </View>
+  );
+}
+
+// The way through, offered rather than taken. An action never navigates on
+// the owner's behalf — that empties the conversation they were in the
+// middle of, which is the thing this surface exists to stop — so it names
+// a screen and this is the tap that goes there.
+function OfferChip({ offer }: { offer: { label: string; href: string } }) {
+  return (
+    <Pressable
+      onPress={() => router.push(offer.href as never)}
+      className="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+      <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
+        {offer.label}
+      </Text>
+    </Pressable>
   );
 }
 

@@ -1565,3 +1565,46 @@ describe('a shortlisted refusal is asked again', () => {
     expect(screen).toMatch(/lastSpoken.*kind === 'action'/s);
   });
 });
+
+// An `ask` action can name a screen that shows more — attendance behind
+// "how busy have we been", the campaign report behind "how did the
+// Christmas email do". It says so by calling ctx.offer, and for a long
+// while nothing happened: the Timeline ran spec.preview(args, actionCtx())
+// with no collector, so the optional call was a no-op and three shipped
+// chips never rendered once. Nothing failed and nothing looked wrong,
+// which is exactly why it survived.
+//
+// So: every preview call has to be handed a collector, and an action that
+// offers has to have somewhere for the offer to land.
+describe('an offer made from a preview reaches the owner', () => {
+  const screen = readFileSync('src/app/(staff)/timeline.tsx', 'utf8');
+
+  it('never runs a preview without collecting what it offered', () => {
+    const bare = screen.match(/\.preview\(\s*\w+\s*,\s*actionCtx\(\)\s*\)/g) ?? [];
+    expect(bare).toEqual([]);
+  });
+
+  it('collects into the action message and renders it', () => {
+    expect(screen).toMatch(/kind: 'action',\s+spec,\s+args,\s+preview,\s+offer,/);
+    expect(screen).toMatch(/offer: first\.offer,/);
+    expect(screen).toMatch(/<OfferChip offer=\{msg\.offer\} \/>/);
+  });
+
+  // The rule the chip exists to honour: the action names the way through,
+  // the owner decides whether to take it. Nothing in the registry may
+  // navigate for them.
+  it('offers the way through rather than taking it', () => {
+    const dir = 'src/lib/actions';
+    const offenders = readdirSync(dir)
+      .filter((f) => /\.ts$/.test(f) && !/\.test\.ts$/.test(f))
+      .filter((f) => /\brouter\./.test(readFileSync(join(dir, f), 'utf8')));
+    expect(offenders).toEqual([]);
+  });
+
+  it('has an action that actually offers, or the wiring is theory', () => {
+    const offering = ACTIONS.filter((a) =>
+      /ctx\.offer\?\.\(/.test(a.preview.toString()),
+    );
+    expect(offering.length).toBeGreaterThan(0);
+  });
+});
