@@ -466,16 +466,14 @@ already authorised. Roughly in order of how often an owner touches them:
   your website hid it from the page and not from the server, so a verb
   offering that would have sold a privacy the server did not provide.
 
-### 3 — It remembers what you just said — half done
+### 3 — It remembers what you just said — done
 
-Every sentence currently goes up alone. The bar sends the text and the
-catalogue and nothing else — no previous turn, no subject, no history. So
-"show me Marcus" followed by "put him on Unlimited" cannot work, and the
-owner has to name him twice. That is the single largest gap between what
-this is and what it feels like it should be, and it is not a model
-problem: the conversation is simply never sent.
+Every sentence used to go up alone: the text and the catalogue, nothing
+else. No previous turn, no subject, no history. So "show me Marcus"
+followed by "put him on Unlimited" could not work and the owner named him
+twice — never a model problem, the conversation was simply never sent.
 
-Three things, in order of how much they change the feel:
+Three things, in the order they changed the feel:
 
 - **The last few turns travel with the sentence.** Done. Pronouns and
   ellipsis resolve — "him", "that one", "the same again". The subject of
@@ -573,15 +571,6 @@ same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
 
-- **No way to change a class's coach.** `claim_cover` is self-claim only
-  — a coach takes an open cover request. Nothing anywhere reassigns a
-  session from one coach to another, so "give Tuesday 6am to Sam" has
-  nothing to wrap. Needs an RPC before it can be a sentence.
-- **No single-class reschedule.** Moving one class can only be expressed
-  today as a relative shift through `bulk_edit_sessions`, which rewrites
-  the whole recurrence — so "move next Tuesday's 6am to 7am" silently
-  moves every Tuesday. The bar refuses it rather than doing the wrong
-  thing; the fix is a per-session move that leaves the pattern alone.
 - **Nobody tells the members when a class changes coach.**
   `class_change_notifications.kind` allows `gym_closed`,
   `classes_rescheduled`, `classes_reopened` and `class_cancelled` — there
