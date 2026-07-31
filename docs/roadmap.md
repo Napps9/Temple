@@ -580,13 +580,43 @@ next session finds them.
   for a coach who is travelling. `dateRangeWindow` already takes a
   timezone, so this is plumbing rather than design, but it is a sweep
   across every class action rather than a line.
-- **A scheduled send that reaches nobody tells nobody.**
-  `_send_due_campaign` flips the campaign to `failed` when the audience
-  resolves to zero rows at send time, and nothing writes a notification,
-  a timeline event or an email. The owner finds out by going to look.
-  The audience *definition* is frozen at schedule time; the rows are
-  resolved at send time, so a tag emptied in between is exactly how this
-  happens.
+- **Email reports a number nobody should trust — decided, being built.**
+  `email_campaign_recipients` has carried `delivered_at`, `open_count`,
+  `click_count`, `unsubscribed_at`, `provider_message_id` and a status of
+  `queued|sent|delivered|simulated|bounced|failed|skipped` since 0044, and
+  `email_events` has kinds for `delivered`, `bounce` and `complaint`. The
+  columns were built for a provider webhook that was never stood up. So
+  `send-campaign` writes `sent`/`failed`, the tracking pixel writes opens
+  and clicks and *infers* `delivered` from an open — and **bounce rate is
+  structurally zero**, not low. "Received" is really "opened", which
+  under-reports by however much image blocking costs you. On top of that,
+  a send that reaches nobody flips to `failed` and tells no one.
+
+  Four decisions, all the owner's:
+
+  1. **Successful means delivered and not bounced.** The honest measure of
+     the send itself and the only part the gym controls; opens and clicks
+     sit underneath as engagement rather than being folded into one
+     flattering figure.
+  2. **A hard bounce suppresses the address and says so.** Repeatedly
+     mailing dead addresses is what wrecks a sender reputation and starts
+     putting everything in spam. Suppression is not an unsubscribe and
+     must not share its table — one is "we cannot reach you", the other is
+     "you asked us to stop", and they have different remedies.
+  3. **Tracking starts now; older sends say so.** Everything from the
+     webhook onward is real. Campaigns sent before it keep their
+     sent/opened/clicked and mark delivered and bounced *not tracked* —
+     a real zero and an unmeasured zero are different facts, and only one
+     of them is good news.
+  4. **Three surfaces:** the campaign report screen, an answer in the bar
+     ("how did the Christmas email do"), and a quiet Timeline line when a
+     send finishes — which is also what closes the reaches-nobody case.
+
+  What this needs from the operator, and does not work without: a
+  `RESEND_WEBHOOK_SECRET` in the Supabase function secrets, and the
+  endpoint registered in Resend against `email.delivered`,
+  `email.bounced` and `email.complained`. Built to refuse unsigned
+  requests, so it is inert rather than wrong until both are done.
 - **A send already going out cannot be stopped.** Once the sweep flips a
   campaign to `sending`, there is no abort, no recall and no path to the
   `cancelled` status the CHECK constraint allows — the only escape is the
