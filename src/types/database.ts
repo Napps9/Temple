@@ -3772,6 +3772,7 @@ export type Database = {
           reason: 'hard_bounce' | 'complaint';
           detail: string | null;
           campaign_id: string | null;
+          profile_id: string | null;
           first_seen_at: string;
           last_seen_at: string;
         };
@@ -5505,6 +5506,16 @@ export type Database = {
           linked: number;
           skipped: number;
           total: number;
+        }[];
+      };
+      // Which members cannot be emailed, without saying what their address
+      // is — the flag is staff-wide, the address is admin-only (0230).
+      gym_unreachable_emails: {
+        Args: { p_gym_id: string; p_profile_id?: string | null };
+        Returns: {
+          profile_id: string;
+          reason: 'hard_bounce' | 'complaint';
+          last_seen_at: string;
         }[];
       };
       // sent = what left, delivered = what a mailbox took, successful =

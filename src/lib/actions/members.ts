@@ -18,6 +18,7 @@ import {
   sanitiseMemberQuery,
   type MemberStatus,
 } from '../chat-lookup';
+import type { UnreachableReason } from '../comms-report';
 import { formatPrice } from '../setup-flow';
 
 import {
@@ -57,6 +58,10 @@ export type MemberCard = {
   creditBalance: number | null;
   compCredits: number | null;
   pastDueSince: string | null;
+  // Set when the gym cannot email this person at all (0230). On the card
+  // because the first thing an owner does with a member they have just
+  // pulled up is decide how to contact them.
+  unreachable: UnreachableReason | null;
   tags: { label: string; color: string; source: 'manual' | 'auto' }[];
 };
 
@@ -71,7 +76,7 @@ async function buildCard(
   row: CohortRow & { name: string },
   ctx: ActionContext,
 ): Promise<MemberCard> {
-  const [subs, comps, tags, dun] = await Promise.all([
+  const [subs, comps, tags, dun, dead] = await Promise.all([
     ctx.supabase
       .from('plan_subscriptions')
       .select('status, credit_balance, price_cents, membership_plans(name)')
@@ -101,6 +106,10 @@ async function buildCard(
       .eq('gym_id', ctx.gymId)
       .eq('profile_id', row.profile_id)
       .maybeSingle(),
+    ctx.supabase.rpc('gym_unreachable_emails', {
+      p_gym_id: ctx.gymId,
+      p_profile_id: row.profile_id,
+    }),
   ]);
   const sub = ((subs.data ?? []) as unknown as SubRow[])[0] ?? null;
   const compCredits = ((comps.data ?? []) as { credits_remaining: number | null }[]).reduce(
@@ -124,6 +133,8 @@ async function buildCard(
     compCredits: compCredits > 0 ? compCredits : null,
     pastDueSince:
       (dun.data as { past_due_since: string | null } | null)?.past_due_since ?? null,
+    unreachable:
+      ((dead.data ?? []) as { reason: UnreachableReason }[])[0]?.reason ?? null,
     tags: (tags.data ?? []) as MemberCard['tags'],
   };
 }

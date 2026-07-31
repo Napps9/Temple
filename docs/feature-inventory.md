@@ -988,6 +988,24 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **A dead address is a member fact** (0230) — 0229 holds a bounced
+  address back from every send, which is all the comms surfaces need and
+  not what the gym needs. The person is still a member: they still have a
+  plan, they still go quiet, and the coach going to chase them had no way
+  to know the email would land nowhere. `email_suppressions` gains
+  `profile_id`, written by the same event handler from the recipient row it
+  already holds — matching on the address at read time would mean every
+  member surface joining on an email column, and member email is behind
+  `can_see_email` (0178) precisely so most staff never see it.
+  `gym_unreachable_emails(gym, profile?)` answers "can we email this
+  person" without answering "what is their address": gated on
+  `can_access_staff_area`, returns no email column, and serves both the
+  one-member and whole-list shapes. It shows on the member profile as a
+  red notice with what to do instead, on the members list as a badge
+  ("Email dead" / "Marked spam"), and on the bar's member card as an Email
+  fact — so "show me Marcus" says it before you write to him. The two
+  reasons carry different advice on purpose: a bounce is usually a typo
+  worth correcting, a spam complaint is a decision worth respecting.
 - **A send going out can be stopped** (0228) — `comms.stop_send` ("stop
   the newsletter, the price is wrong") over a new `comms_stop_campaign`.
   `comms_unschedule_campaign` stops working the moment the dispatcher

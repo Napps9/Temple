@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { sendReport, type SendStats } from './comms-report';
+import {
+  sendReport,
+  unreachableLabel,
+  unreachableNote,
+  type SendStats,
+} from './comms-report';
 
 function stats(partial: Partial<SendStats>): SendStats {
   return {
@@ -92,5 +97,33 @@ describe('how a send went', () => {
     const r = sendReport('Christmas hours', stats({ recipients: 8, sent: 0, failed: 8 }));
     expect(r.title).toBe('“Christmas hours” reached nobody.');
     expect(r.lines).toEqual(['All 8 were refused before they left.']);
+  });
+});
+
+// A bounce and a spam complaint both mean "stop emailing this person" and
+// want opposite advice from a coach: one is usually a typo worth fixing,
+// the other is a decision worth respecting.
+describe('a member we cannot email', () => {
+  it('labels the two reasons differently', () => {
+    expect(unreachableLabel('hard_bounce')).toBe('Email dead');
+    expect(unreachableLabel('complaint')).toBe('Marked spam');
+  });
+
+  it('tells a coach what to do instead, by first name', () => {
+    const bounce = unreachableNote('hard_bounce', 'Marcus Webb');
+    expect(bounce).toContain('Marcus');
+    expect(bounce).not.toContain('Webb');
+    expect(bounce).toMatch(/Phone them or message them in Temple/);
+    expect(bounce).toMatch(/typo/);
+  });
+
+  it('does not suggest undoing a spam complaint', () => {
+    const spam = unreachableNote('complaint', 'Marcus Webb');
+    expect(spam).toMatch(/worth leaving alone/);
+    expect(spam).not.toMatch(/typo/);
+  });
+
+  it('copes with a member who has no name on file', () => {
+    expect(unreachableNote('hard_bounce', '   ')).toMatch(/^Email to This member/);
   });
 });

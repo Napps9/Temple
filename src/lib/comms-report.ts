@@ -26,6 +26,23 @@ export type SendStats = {
 
 export type SendReport = { title: string; lines: string[] };
 
+// Why a member cannot be emailed (0230). The two reasons want different
+// advice, which is the whole reason they are separate values rather than
+// one "suppressed" flag: a bounce is usually a mistake worth correcting,
+// and a spam complaint is a decision worth respecting.
+export type UnreachableReason = 'hard_bounce' | 'complaint';
+
+export function unreachableLabel(reason: UnreachableReason): string {
+  return reason === 'complaint' ? 'Marked spam' : 'Email dead';
+}
+
+export function unreachableNote(reason: UnreachableReason, name: string): string {
+  const first = name.trim().split(/\s+/)[0] || 'This member';
+  return reason === 'complaint'
+    ? `${first} marked one of your emails as spam, so nothing is sent to them any more. That one is worth leaving alone — message them in Temple if you need to reach them.`
+    : `Email to ${first} bounced permanently, so it is held back from every send. Phone them or message them in Temple. If the address was a typo, clearing it under Communications → Settings puts them back on the list.`;
+}
+
 function pct(n: number, of: number): number {
   return of > 0 ? Math.round((n / of) * 100) : 0;
 }

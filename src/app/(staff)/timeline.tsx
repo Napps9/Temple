@@ -1095,6 +1095,15 @@ function MemberSummaryCard({ member }: { member: MemberCard }) {
       value: `Failed — past due since ${formatDate(member.pastDueSince)}`,
     });
   }
+  if (member.unreachable) {
+    facts.push({
+      label: 'Email',
+      value:
+        member.unreachable === 'complaint'
+          ? 'They marked one as spam — nothing is sent to them'
+          : 'Bounces — phone them or message them here instead',
+    });
+  }
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-3">
       <View className="flex-row items-center gap-3">

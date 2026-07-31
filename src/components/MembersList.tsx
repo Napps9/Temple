@@ -11,6 +11,11 @@ import { Input } from '@/components/Input';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { useGymMembership } from '@/lib/auth';
+import { useUnreachableEmails } from '@/lib/comms';
+import {
+  unreachableLabel,
+  type UnreachableReason,
+} from '@/lib/comms-report';
 import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/format-date';
 import {
@@ -213,6 +218,11 @@ export function MembersList() {
       );
     },
   });
+
+  // Members we cannot email at all (0230). A coach about to chase someone
+  // who has gone quiet should know the email will land nowhere before they
+  // write it, not after.
+  const unreachableQuery = useUnreachableEmails(membership?.gymId);
 
   const requestsQuery = useChangeRequestQueue(
     canAssignPlan ? membership?.gymId : undefined,
@@ -468,6 +478,7 @@ export function MembersList() {
                         flagged={flagsQuery.data?.has(m.profile_id) ?? false}
                         injured={injuriesQuery.data?.has(m.profile_id) ?? false}
                         requested={memberRequests.length > 0}
+                        unreachable={unreachableQuery.data?.get(m.profile_id) ?? null}
                       />
                     </View>
                     {subs.length > 0 || comps.length > 0 ? (
@@ -609,11 +620,13 @@ function CohortBadges({
   flagged,
   injured,
   requested,
+  unreachable,
 }: {
   row: CohortRow;
   flagged: boolean;
   injured: boolean;
   requested: boolean;
+  unreachable: UnreachableReason | null;
 }) {
   const colors = useThemeColors();
   return (
@@ -622,6 +635,9 @@ function CohortBadges({
       {row.profiles?.managed ? <Badge label="Child" color="#8B5CF6" /> : null}
       {flagged ? <Badge label="PAR-Q" color="#DC2626" /> : null}
       {injured ? <Badge label="Injury" color="#F59E0B" /> : null}
+      {unreachable ? (
+        <Badge label={unreachableLabel(unreachable)} color="#DC2626" />
+      ) : null}
       {row.is_intro ? <Badge label="Intro" color="#10B981" /> : null}
       {row.is_expiring_soon ? (
         <Badge label={`${row.days_until_expiry}d`} color="#F97316" />

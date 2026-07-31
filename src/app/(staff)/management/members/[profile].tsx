@@ -21,6 +21,8 @@ import { RefundDialog } from '@/components/RefundDialog';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { useUnreachableEmails } from '@/lib/comms';
+import { unreachableNote } from '@/lib/comms-report';
 import { errorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/format-date';
 import {
@@ -124,6 +126,7 @@ export default function MemberDetailScreen() {
   const canRefund = useCan('can_refund') ?? false;
   const canRemove = useCan('can_archive_members') ?? false;
   const canSeeHealth = useCan('can_see_health_flag') ?? false;
+  const unreachableQuery = useUnreachableEmails(membership?.gymId);
 
   // Audit trail: opening another member's profile surfaces their PAR-Q
   // history + injuries, so we log the health-data access once per view.
@@ -340,6 +343,7 @@ export default function MemberDetailScreen() {
   }
 
   const isRemoved = gymMembership.data?.left_at !== null && gymMembership.data?.left_at !== undefined;
+  const unreachable = unreachableQuery.data?.get(profileId ?? '') ?? null;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -391,6 +395,19 @@ export default function MemberDetailScreen() {
                 />
               </View>
             ) : null}
+          </View>
+        ) : null}
+
+        {unreachable ? (
+          <View className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 gap-1">
+            <Text className="text-red-700 dark:text-red-400 text-sm font-semibold">
+              {unreachable === 'complaint'
+                ? 'Marked your email as spam'
+                : 'We cannot email this member'}
+            </Text>
+            <Text className="text-red-700/90 dark:text-red-300/90 text-xs">
+              {unreachableNote(unreachable, profile.data?.full_name ?? 'This member')}
+            </Text>
           </View>
         ) : null}
 

@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useGymMembership, useSession } from './auth';
+import type { UnreachableReason } from './comms-report';
 import { normalizeAudience, type AudienceDefinition } from './email/audience';
 import type { EmailDocument } from './email/blocks';
 import { renderEmailHtml, renderEmailText } from './email/render';
@@ -89,6 +90,33 @@ export function useCampaigns() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as CampaignListRow[];
+    },
+  });
+}
+
+// Members whose address bounced permanently or who marked a send as spam
+// (0230). Read as a set once per screen: the member list needs the whole
+// map, the profile page needs one row, and the RPC serves both. Deliberately
+// carries no email address — a coach may learn that an email will not land
+// without being shown what the address is (0178).
+export function useUnreachableEmails(gymId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['members-unreachable', gymId],
+    enabled: !!gymId,
+    // A coach without staff access is refused outright rather than handed
+    // an empty set, so retrying buys nothing.
+    retry: false,
+    queryFn: async (): Promise<Map<string, UnreachableReason>> => {
+      const { data, error } = await supabase.rpc('gym_unreachable_emails', {
+        p_gym_id: gymId!,
+        p_profile_id: null,
+      });
+      if (error) throw error;
+      const rows = (data ?? []) as {
+        profile_id: string;
+        reason: UnreachableReason;
+      }[];
+      return new Map(rows.map((r) => [r.profile_id, r.reason]));
     },
   });
 }
