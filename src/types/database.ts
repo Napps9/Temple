@@ -1591,6 +1591,30 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      chat_turns: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          role: 'owner' | 'gym';
+          text: string;
+          subject_profile_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          profile_id: string;
+          role: 'owner' | 'gym';
+          text: string;
+          subject_profile_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          subject_profile_id?: string | null;
+        };
+        Relationships: [];
+      };
       class_types: {
         Row: {
           id: string;

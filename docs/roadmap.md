@@ -384,15 +384,26 @@ Three things, in order of how much they change the feel:
   something feel like talking rather than typing commands.
   `src/lib/chat-memory.ts` bounds it by both count and recency and is
   pure, so the freshness rule below is tested rather than trusted.
-- **The conversation survives.** Not done, and deliberately: this is the
-  half that needs the retention answer first. Today it lives in React
-  state and dies on refresh: a card left open vanishes, and there is no answer to "what
-  did I ask it yesterday". Persisting it also gives the Timeline the one
-  thing it currently lacks as a home — a past.
+- **The conversation survives.** Done (0221). `chat_turns` stores who
+  said it, what they said, when, and which member it was about; the
+  Timeline restores the last twenty on open. Turns come back as the words
+  they were and never as cards — a preview is a snapshot of a gym that has
+  since moved, so re-offering its confirm would ask somebody to agree to a
+  world that no longer exists. **Restoring does not weaken the freshness
+  rule**: `recentTurns` still drops anything past ten minutes before it is
+  sent, so yesterday reads back on screen and carries nothing forward into
+  today's sentence. You read your own conversation and not the gym's — an
+  owner reading back every question a coach ever asked is a surveillance
+  feature nobody asked for, and the ask was first person both times.
+  Ninety days, then purged on the same cron shape as the lead sweep; and
+  erasing a member takes the turns naming them with it, from inside
+  `_erase_member_health_data`, which is where every forget-this-member
+  path already goes.
 - **One sentence, several actions.** "Cancel Friday's 6am and move
   everyone to Saturday" is two actions with an order between them.
   Chaining needs memory to sequence, which is why it belongs here rather
-  than in the module work.
+  than in the module work. Now unblocked — the store it was waiting on
+  landed with 0221.
 
 Two costs, both real and both decisions rather than implementation:
 

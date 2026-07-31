@@ -154,6 +154,16 @@ type LocalMsg =
     }
   | { kind: 'rules-sheet' };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// The member a turn was about, when the action resolved one. Recorded so
+// that erasing a member can find the sentences naming them without
+// reading the text of every turn ever stored.
+function subjectOf(args: unknown): string | null {
+  const id = (args as { profileId?: unknown } | null)?.profileId;
+  return typeof id === 'string' && UUID.test(id) ? id : null;
+}
+
 const CANNOT_COPY =
   "That's not something I can change from here yet — the Manage screens still cover it.";
 const NO_CHANGE_COPY =
@@ -236,9 +246,68 @@ export default function Timeline() {
   // subject forward is the sentence it amounts to. src/lib/chat-memory
   // bounds it by both recency and count before any of it is sent.
   const said = useRef<Turn[]>([]);
-  const remember = (role: Turn['role'], text: string) => {
+  // Kept as words in two places for two different reasons: the ref is what
+  // gets sent with the next sentence, the row is what survives a reload.
+  // The insert is deliberately not awaited — a conversation that stalls
+  // because its own history could not be written is worse than a gap in
+  // the history.
+  const remember = (
+    role: Turn['role'],
+    text: string,
+    subject?: string | null,
+  ) => {
     said.current = [...said.current.slice(-20), { role, text, at: Date.now() }];
+    if (!gymId || !session?.user.id) return;
+    void supabase.from('chat_turns').insert({
+      gym_id: gymId,
+      profile_id: session.user.id,
+      role,
+      text: text.slice(0, 4000),
+      subject_profile_id: subject ?? null,
+    });
   };
+
+  // Yesterday's conversation, read back on open. Turns restore as the
+  // words they were and never as cards: a preview is a snapshot of a gym
+  // that has since moved, so offering its confirm again would be asking
+  // somebody to agree to a world that no longer exists.
+  //
+  // Restoring the ref does NOT weaken the freshness rule — recentTurns
+  // still drops anything older than FRESH_MS before it is sent, so
+  // reopening the app tomorrow and saying "put him on Unlimited" fails to
+  // understand rather than resolving to yesterday's Marcus.
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current || !gymId || !session?.user.id) return;
+    restored.current = true;
+    void (async () => {
+      const { data } = await supabase
+        .from('chat_turns')
+        .select('role, text, created_at')
+        .eq('gym_id', gymId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      const rows = ((data ?? []) as {
+        role: Turn['role'];
+        text: string;
+        created_at: string;
+      }[]).reverse();
+      if (rows.length === 0) return;
+      said.current = rows.map((r) => ({
+        role: r.role,
+        text: r.text,
+        at: Date.parse(r.created_at),
+      }));
+      setLocal((l) => [
+        ...rows.map((r): LocalMsg =>
+          r.role === 'owner'
+            ? { kind: 'mine', text: r.text }
+            : { kind: 'temple', text: r.text },
+        ),
+        ...l,
+      ]);
+    })();
+  }, [gymId, session?.user.id]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -365,7 +434,7 @@ export default function Timeline() {
       );
       closeCard(index);
       push({ kind: 'receipt', text: receipt, offer });
-      remember('gym', receipt);
+      remember('gym', receipt, subjectOf(msg.args));
       freshen(msg.spec);
     } catch (e) {
       push({ kind: 'temple', text: failureText(e) });

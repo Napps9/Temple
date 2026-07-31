@@ -47,6 +47,28 @@ describe('what the bar carries forward', () => {
     expect(recentTurns(turns, NOW)).toEqual([]);
   });
 
+  // 0221 persists turns for ninety days and restores them on open, which
+  // would be a way to resurrect a stale subject if the freshness bound
+  // were anywhere but here. Yesterday's conversation reads back on screen
+  // and carries nothing forward into today's sentence.
+  it('restores a day-old conversation as history and sends none of it', () => {
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    const yesterday: Turn[] = [
+      { role: 'owner', text: 'show me Marcus', at: now - day },
+      { role: 'gym', text: 'Marcus Webb', at: now - day },
+    ];
+    expect(recentTurns(yesterday, now)).toEqual([]);
+    // And the moment something is said today, only that travels.
+    const resumed: Turn[] = [
+      ...yesterday,
+      { role: 'owner', text: 'how busy was Saturday', at: now },
+    ];
+    expect(recentTurns(resumed, now).map((t) => t.text)).toEqual([
+      'how busy was Saturday',
+    ]);
+  });
+
   it('keeps the fresh half of a conversation that spans the window', () => {
     const turns = [
       turn('owner', 'show me Marcus', FRESH_MS + 1000),

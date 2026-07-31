@@ -692,6 +692,29 @@ The staff area shows up when `can_access_staff_area` is on.
   spends six of its ten assertions on what did *not* widen, including that
   handing the coach every staff capability an owner could give them still
   does not open the ladder.
+- **The conversation survives a refresh** (0221, roadmap step 3) — the
+  bar's memory has been real but weightless: turns lived in React state,
+  so a reload emptied it, a card left open vanished, and the Timeline had
+  no past. `chat_turns` is deliberately small — who said it, what they
+  said, when, and which member it was about if any. No card payloads and
+  no action arguments: turns restore as words and never as cards, because
+  a preview is a snapshot of a gym that has since moved and re-offering
+  its confirm would ask somebody to agree to a world that no longer
+  exists. **Restoring does not weaken the freshness rule** — `recentTurns`
+  still drops anything past ten minutes before it is sent, so reopening
+  tomorrow and saying "put him on Unlimited" fails to understand rather
+  than resolving to yesterday's Marcus, which is the whole point of that
+  bound and is now pinned by its own test. Three privacy properties, this
+  being the first table in Temple that records what staff *asked* rather
+  than what they did: you read your own and not the gym's; ninety days
+  then purged, on the same cron shape as `purge_expired_leads`; and
+  erasing a member deletes the turns naming them, added inside
+  `_erase_member_health_data` because that is the path `leave_gym`, the
+  self-serve withdraw and the retention sweep all already call. It
+  deliberately does **not** write to `health_data_access_log` — that is a
+  GDPR Article 9 trail, the bar's member card carries no health data by
+  design, and a false entry in an audit whose value is being exactly true
+  is worse than no entry.
 - **The scaffolding around the programming** (0219, roadmap step 2) —
   `programming.block_out`, `move_block` and `drop_block` for the year plan
   ("Open prep runs 6 January to 15 March"), `programming.set_access` and
