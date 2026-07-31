@@ -247,6 +247,35 @@ function agentActionLine(e: TimelineEvent): TimelineLine {
     }
   }
 
+  if (kind === 'credits_low_message') {
+    const left =
+      typeof payload.credits_left === 'number' ? payload.credits_left : null;
+    const phrase =
+      left === null
+        ? 'their last few classes'
+        : `${left} class${left === 1 ? '' : 'es'}`;
+    switch (status) {
+      case 'proposed':
+        return {
+          text: `${first} is down to ${phrase} — give them the heads up?`,
+          tone: 'amber',
+        };
+      case 'approved':
+      case 'executed':
+        return {
+          text: `I've let ${first} know their pack is nearly out.`,
+          tone: 'neutral',
+        };
+      case 'rejected':
+        return { text: `${first} — you said leave it, so I did.`, tone: 'neutral' };
+      default:
+        return {
+          text: `The question about ${first} lapsed — nothing was sent.`,
+          tone: 'neutral',
+        };
+    }
+  }
+
   if (kind === 'cover_ask') {
     const requester = str(payload as Record<string, unknown>, 'requester_name');
     const who = requester ? firstName(requester) : 'a coach';

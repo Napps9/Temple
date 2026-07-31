@@ -28,7 +28,8 @@ type AuthorityRow = {
     | 'plan_adjustment_offer'
     | 'retention_message'
     | 'cover_ask'
-    | 'first_week_message';
+    | 'first_week_message'
+    | 'credits_low_message';
   level: 'autonomous' | 'approval' | 'reserved';
 };
 
@@ -272,6 +273,28 @@ export default function Roster() {
         <SimpleJob
           gymId={gymId}
           isOwner={isOwner}
+          kind="credits_low_message"
+          name="The last few classes"
+          onDescription="Tells a member on a class pack when they're down to their last one or two, while they're still training — three a day at most, and never about a monthly allowance, which resets anyway."
+          offTitle="Packs running out — want me to give them the heads up?"
+          offLines={[
+            "When somebody on a class pack is down to their last one or two, I'd send a quick heads up so they can top up before they get caught short — and I ask you before each until you say otherwise.",
+            'Only class packs, never a monthly allowance: that balance resets, so running low is just a normal month.',
+            'Only people still training. If they have stopped coming, that is a different conversation and not a sales one.',
+          ]}
+          enableRpc="set_credits_low_job"
+          disableRpc="set_credits_low_job"
+          level={levelFor('credits_low_message')}
+          onSetLevel={(l) => setLevel('credits_low_message', l)}
+          authorityLoaded={authority.data !== undefined}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
+          }
+        />
+
+        <SimpleJob
+          gymId={gymId}
+          isOwner={isOwner}
           kind="cover_ask"
           name="Finding cover"
           onDescription="When a class inside your warning window still has no coach, asks every coach who could claim it — again. Never moves or cancels a class; the claim stays first-come."
@@ -315,8 +338,16 @@ function SimpleJob({
   onDescription: string;
   offTitle: string;
   offLines: string[];
-  enableRpc: 'set_retention_job' | 'set_cover_job' | 'set_first_week_job';
-  disableRpc: 'set_retention_job' | 'set_cover_job' | 'set_first_week_job';
+  enableRpc:
+    | 'set_retention_job'
+    | 'set_cover_job'
+    | 'set_first_week_job'
+    | 'set_credits_low_job';
+  disableRpc:
+    | 'set_retention_job'
+    | 'set_cover_job'
+    | 'set_first_week_job'
+    | 'set_credits_low_job';
   level: 'autonomous' | 'approval' | 'reserved' | undefined;
   onSetLevel: (l: 'approval' | 'autonomous') => void;
   authorityLoaded: boolean;

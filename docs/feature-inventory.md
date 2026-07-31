@@ -1602,6 +1602,28 @@ The staff area shows up when `can_access_staff_area` is on.
   twice inside 45 days (a rejection blocks the window too), never about
   health, and writing anyone off stays human. Approval/autonomous flows,
   execution and the send worker are the money loop's, unchanged.
+- **The last few classes** (0235) — `set_credits_low_job` (owner-only,
+  Roster take-on card) writes a `credits_low_message` authority row +
+  owner-approved template. The daily `agent-credits-low-tick` (09:45, after
+  retention and the first week) finds members on a **`credit_pack`** with a
+  `credit_balance` of 1 or 2 who have trained inside 21 days, and proposes
+  one heads-up each.
+  Five rules in SQL. **Packs only** — a `credit_period` balance resets at
+  `period_resets_at`, so low is what a normal month looks like and a note
+  about it nags somebody who has simply used their allowance. **Not at
+  zero** — they are already locked out and the booking screen has told
+  them; at one or two the note has a job, which is stopping the lockout.
+  **Trained inside 21 days**, which is exactly retention's threshold in the
+  other direction, so no member can be held by both jobs and a renewal
+  nudge never reaches somebody already drifting away. **Once per
+  subscription per 60 days**, keyed on the subscription id in the payload
+  rather than the member, since a member buys pack after pack — and right
+  whether a repeat purchase opens a new row or tops up the old one, a
+  detail the migration deliberately does not depend on. **Three a day.**
+  The count is written into the payload as a phrase ("1 class", "2
+  classes") so neither the template nor the Timeline line has to guess at a
+  plural. pgTAP: `the_last_few_classes.sql` (11 assertions, seven of them
+  refusals).
 - **The first week** (0234) — `set_first_week_job` (owner-only, Roster
   take-on card) writes a `first_week_message` authority row + owner-
   approved template. The daily `agent-first-week-tick` (09:15, after

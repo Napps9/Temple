@@ -634,6 +634,15 @@ to be broken in practice — three `ask` actions had been calling
 `ctx.offer` into a no-op since they were written, so no chip had ever
 rendered.
 
+**And a fifth (0235).** `credits_low_message` tells a member on a class
+pack when they are down to their last one or two, while they are still
+training. Renewing a pack is the easiest revenue a gym has and the one
+most often missed, because noticing it means somebody watching a number
+that only ever goes down. Its sharpest rule is the one about *which* plan:
+a `credit_period` balance resets every month, so "two left" there is a
+normal Thursday, and a note about it would be a nag. Only a pack can
+actually run out.
+
 **And the gym took on a fourth job (0234).** Everything above makes the
 owner's typing cheaper; this is the first thing in a while that makes them
 type less. `first_week_message` notices somebody who joined and has never

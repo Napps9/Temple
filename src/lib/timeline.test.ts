@@ -214,6 +214,52 @@ describe('formatTimelineLine', () => {
     expect(noDays.text).toBe("Priya joined and hasn't been in yet — say something?");
   });
 
+  // The fifth job. One class left has to read as "1 class"; the count is
+  // the whole content of the line, so a plural bug is the sentence.
+  it('counts the classes left on a pack', () => {
+    const two = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Sam Doyle',
+        detail: {
+          action_kind: 'credits_low_message',
+          status: 'proposed',
+          payload: { member_name: 'Sam Doyle', credits_left: 2 },
+        },
+      }),
+    );
+    expect(two).toEqual({
+      text: 'Sam is down to 2 classes — give them the heads up?',
+      tone: 'amber',
+    });
+
+    const one = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Sam Doyle',
+        detail: {
+          action_kind: 'credits_low_message',
+          status: 'proposed',
+          payload: { member_name: 'Sam Doyle', credits_left: 1 },
+        },
+      }),
+    );
+    expect(one.text).toBe('Sam is down to 1 class — give them the heads up?');
+
+    const sent = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Sam Doyle',
+        detail: {
+          action_kind: 'credits_low_message',
+          status: 'executed',
+          payload: { member_name: 'Sam Doyle', credits_left: 1 },
+        },
+      }),
+    );
+    expect(sent.text).toBe("I've let Sam know their pack is nearly out.");
+  });
+
   it('describes closures with their dates', () => {
     const line = formatTimelineLine(
       evt({

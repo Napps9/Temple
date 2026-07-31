@@ -1429,6 +1429,8 @@ function AgentActionCard({
       ? 'One warm note from the gym usually brings a regular back.'
       : kind === 'first_week_message'
         ? 'The first session is the hard one — most people who never start never come back.'
+        : kind === 'credits_low_message'
+        ? 'Topping up is easy while they are still coming; finding out at the door is not.'
         : kind === 'cover_ask'
           ? 'Every coach who could claim gets the same nudge; the claim stays first-come.'
           : isOffer
@@ -1439,6 +1441,8 @@ function AgentActionCard({
       ? 'Yes, reach out'
       : kind === 'first_week_message'
         ? 'Yes, get them in'
+        : kind === 'credits_low_message'
+        ? 'Yes, tell them'
         : kind === 'cover_ask'
           ? 'Yes, ask them'
           : isOffer
