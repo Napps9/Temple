@@ -309,22 +309,27 @@ already authorised. Roughly in order of how often an owner touches them:
   newsletter finally carries an audience, resolved against the gym's real
   labels and counted on the card) and describe a sequence, which lands as
   a disabled automation over the engine that already had five triggers,
-  step delays and suppression and no way in but a form. **Still absent:**
-  scheduling a send from a sentence. The machinery exists (0183/0184), but
-  the standing rule is that nothing sends from the bar — the send button
-  is the approval — and "send it Monday at 9" is a send with a delay, not
-  a draft. Worth a decision before it is built rather than after.
+  step delays and suppression and no way in but a form. **Decided, not yet
+  built:** scheduling a send from a sentence. The standing rule was that
+  nothing sends from the bar, and a scheduled send is a send with a delay.
+  The owner's call was yes, on one condition — the card must render the
+  actual email, name the audience and the exact time, and the send stays
+  cancellable until it goes. So the approval moves from a button to a
+  card that shows you what you are approving, which is the stronger of
+  the two. Machinery is 0183/0184.
 - **Leads** — done for the pipeline (0217). Take an enquiry down while
   they are still on the phone, move one along, hand one over, and ask how
   the week is going — including who has been left untouched, which is
   what a board is worst at showing. The front desk's own settings are
   still a screen and stay one for now: they are the owner teaching a
-  voice, which is closer to craft than to admin. **Open question:** the
+  voice, which is closer to craft than to admin. **Decided, not yet built:** the
   whole pipeline is gated on `can_assign_plan`, described to owners as
-  "Put members onto plans and adjust subscriptions". That is the wrong
-  capability for a sales board, and splitting it out is a new key, a
-  default per role and a row on the Team screen — a change owners would
-  see, so it wants deciding rather than assuming.
+  "Put members onto plans and adjust subscriptions" — the wrong switch for
+  a sales board. It gets split into its own capability, defaulting to
+  exactly who holds it today (owner, admin, coach, front desk), so nothing
+  changes on day one and the switch finally says what it does. New key in
+  `default_capability` and `can.ts`, a row on the Team screen, and the
+  five lead RPCs plus the four verbs move onto it.
 - **Team and tags** — done for what has a write. `team.invite` ("invite
   Sam as a coach, sam@example.com") over the existing `send-invite`
   function, `team.who`, and `tags.add_rule` — the other half of
@@ -401,7 +406,12 @@ Two costs, both real and both decisions rather than implementation:
   what about which member.** That sits next to health-adjacent surfaces
   and must not become a way around the access audit log — asking the bar
   about someone has to leave the same trace that opening their profile
-  does. It needs a retention answer before it is written, not after.
+  does. **Settled: ninety days, then purged.** Long enough to answer "what
+  did I ask last month", short enough that it is not a permanent record of
+  who asked what about whom, and the same shape as the lead retention
+  sweep (`purge_expired_leads`, 0115) so it is one more entry on a cron
+  that already exists rather than a new mechanism. The audit trace is not
+  optional and is not part of the trade: it lands either way.
 
 Placed here because asking about the gym is where follow-ups are worth
 most: "how busy was Saturday" wants "and Sunday?" to work. But it is
