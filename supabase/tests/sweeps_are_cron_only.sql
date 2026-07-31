@@ -15,7 +15,7 @@
 -- family now; both members are cron sweeps and neither is client-called.
 
 begin;
-select plan(3);
+select plan(5);
 
 \ir _helpers.psql
 
@@ -57,6 +57,43 @@ select is(
         or has_function_privilege('anon', p.oid, 'execute'))),
   '',
   'nor any expire_* sweep'
+);
+
+-- The jobs' ticks are the same shape again: cross-tenant, cron-only, and
+-- the most consequential of the lot — a tick proposes and, at
+-- `autonomous`, executes, which queues real email to real members. Four of
+-- them now (revenue, retention, cover, first week) and they were correctly
+-- revoked one at a time by hand, which is exactly the arrangement this
+-- file exists to stop relying on: create-or-replace preserves an ACL and
+-- CREATE FUNCTION grants PUBLIC by default, so the next person to reshape
+-- one of these has to remember. Keyed on the name so the fifth job is
+-- covered without editing this test.
+select is(
+  (select coalesce(string_agg(p.proname, ', ' order by p.proname), '')
+     from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname like 'agent\_%\_tick'
+      and (has_function_privilege('authenticated', p.oid, 'execute')
+        or has_function_privilege('anon', p.oid, 'execute'))),
+  '',
+  'nor any job tick'
+);
+
+-- And the two definer helpers the ticks call. _agent_execute_action is the
+-- single path by which an approved action becomes a queued message, and it
+-- takes an action id — reachable from a client it would let anybody send
+-- any gym's pending note by guessing a uuid.
+select is(
+  (select coalesce(string_agg(p.proname, ', ' order by p.proname), '')
+     from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname like '\_agent\_%'
+      and (has_function_privilege('authenticated', p.oid, 'execute')
+        or has_function_privilege('anon', p.oid, 'execute'))),
+  '',
+  'nor the helpers a tick executes through'
 );
 
 select * from finish();
