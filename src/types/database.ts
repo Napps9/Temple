@@ -3507,6 +3507,10 @@ export type Database = {
           subject_variants: string[];
           sent_at: string | null;
           recipient_count: number;
+          // Set by comms_apply_delivery_event the first time a real
+          // delivery report lands (0229). False means unmeasured, which
+          // is not the same fact as zero.
+          delivery_tracked: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -3578,6 +3582,7 @@ export type Database = {
           last_clicked_at: string | null;
           click_count: number;
           unsubscribed_at: string | null;
+          complained_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -3599,6 +3604,7 @@ export type Database = {
           last_clicked_at?: string | null;
           click_count?: number;
           unsubscribed_at?: string | null;
+          complained_at?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -3620,6 +3626,7 @@ export type Database = {
           last_clicked_at: string | null;
           click_count: number;
           unsubscribed_at: string | null;
+          complained_at: string | null;
           created_at: string;
         }>;
         Relationships: [];
@@ -3751,6 +3758,25 @@ export type Database = {
           reason: string | null;
           created_at: string;
         }>;
+        Relationships: [];
+      };
+      // Addresses that cannot be reached, kept apart from
+      // email_unsubscribes on purpose (0229): "we cannot reach you" and
+      // "you asked us to stop" are different facts. Written only by the
+      // service role; staff may read one and delete one.
+      email_suppressions: {
+        Row: {
+          id: string;
+          gym_id: string;
+          email: string;
+          reason: 'hard_bounce' | 'complaint';
+          detail: string | null;
+          campaign_id: string | null;
+          first_seen_at: string;
+          last_seen_at: string;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       gym_email_topics: {
@@ -5481,18 +5507,26 @@ export type Database = {
           total: number;
         }[];
       };
+      // sent = what left, delivered = what a mailbox took, successful =
+      // delivered and not bounced. tracked rides along so a caller cannot
+      // render the numbers without the fact that says whether they mean
+      // anything (0229).
       comms_campaign_stats: {
         Args: { p_campaign_id: string };
         Returns: {
           recipients: number;
           sent: number;
           delivered: number;
+          successful: number;
           simulated: number;
           failed: number;
           bounced: number;
+          complained: number;
           opened: number;
           clicked: number;
           unsubscribed: number;
+          skipped: number;
+          tracked: boolean;
         }[];
       };
       list_programmed_members: {

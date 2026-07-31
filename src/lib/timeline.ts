@@ -14,6 +14,7 @@ export type TimelineKind =
   | 'cover_claimed'
   | 'gym_closed'
   | 'membership_request'
+  | 'campaign_sent'
   | 'agent_action';
 
 export type TimelineEvent = {
@@ -112,9 +113,66 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
         tone: 'amber',
       };
     }
+    case 'campaign_sent':
+      return campaignSentLine(e);
     case 'agent_action':
       return agentActionLine(e);
   }
+}
+
+function num(detail: Record<string, unknown>, key: string): number {
+  const v = detail[key];
+  return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+}
+
+function people(n: number): string {
+  return n === 1 ? '1 member' : `${n} members`;
+}
+
+// The receipt for a send (0229). Read at scroll time rather than written
+// at send time, because the interesting half of what happened to an email
+// — whether it arrived — lands minutes to hours after the last one goes
+// out. The counts here are recomputed on every read, so a line that said
+// "went to 214" this morning can say "and 211 arrived" this afternoon.
+function campaignSentLine(e: TimelineEvent): TimelineLine {
+  const title = e.subject.trim() || 'A campaign';
+  const status = str(e.detail, 'status');
+  const sent = num(e.detail, 'sent');
+  const bounced = num(e.detail, 'bounced');
+  const complained = num(e.detail, 'complained');
+
+  if (status === 'failed') {
+    return { text: `“${title}” didn’t go out — nobody received it.`, tone: 'amber' };
+  }
+  if (status === 'cancelled') {
+    const skipped = num(e.detail, 'skipped');
+    return {
+      text: `I stopped “${title}” — ${sent} had already gone, ${skipped} didn’t.`,
+      tone: 'neutral',
+    };
+  }
+  if (sent > 0 && num(e.detail, 'simulated') === sent) {
+    return {
+      text: `“${title}” was a practice run — nothing actually left the building.`,
+      tone: 'neutral',
+    };
+  }
+
+  // "and N arrived" rather than "N of M", which would read as a claim
+  // that the rest failed. While the reports are still coming in, they
+  // haven't.
+  const arrived =
+    e.detail.tracked === true && num(e.detail, 'successful') > 0
+      ? `, and ${num(e.detail, 'successful')} arrived`
+      : '';
+  let text = `“${title}” went to ${people(sent)}${arrived}.`;
+  if (bounced > 0) {
+    text += ` ${bounced === 1 ? 'One address' : `${bounced} addresses`} bounced — I’ve stopped mailing ${bounced === 1 ? 'it' : 'them'}.`;
+  }
+  if (complained > 0) {
+    text += ` ${complained === 1 ? 'Someone' : `${complained} people`} marked it as spam.`;
+  }
+  return { text, tone: bounced > 0 || complained > 0 ? 'amber' : 'neutral' };
 }
 
 // The money loop's receipts and questions (0206). Payload fields are

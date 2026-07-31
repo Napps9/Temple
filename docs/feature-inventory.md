@@ -945,6 +945,49 @@ The staff area shows up when `can_access_staff_area` is on.
   too. Two vitest guards grep the registry for both patterns, because the
   failure is invisible in the common case and only bites the one person
   who left the country.
+- **What actually happened to the email** (0229) — the report screen said
+  "Delivered" from the day it was built and never meant it: the figure was
+  the count Resend's API accepted, which is a promise to try. Three
+  columns and three event kinds had sat unwritten since 0044 —
+  `delivered_at`, status `bounced`, and the `delivered`/`bounce`/
+  `complaint` event kinds — because the provider webhook they were built
+  for was never stood up. **Bounce rate was structurally zero**, and
+  "received" was really "opened".
+  **The listener:** `resend-webhook`, verifying the Standard Webhooks
+  (Svix) signature over `${id}.${timestamp}.${body}` against
+  `RESEND_WEBHOOK_SECRET`, with a five-minute replay window and no
+  unsigned path at all — an endpoint anyone could post to would let a
+  stranger mark any address bounced and stop a gym's mail. It consumes
+  `email.delivered`, `email.bounced` and `email.complained` and hands each
+  to `comms_apply_delivery_event`, a service-role-only RPC that finds the
+  recipient by `provider_message_id` — which is why it takes no gym id and
+  a forged payload cannot aim at another tenant.
+  **Three definitions, one function.** `comms_campaign_stats` now returns
+  `sent` (what left, bounces included), `delivered` (what a mailbox took),
+  and `successful` (delivered and not bounced) separately, plus
+  `complained`, `skipped` and a `tracked` flag. Engagement reads against
+  what arrived rather than what left, so a bad address list stops looking
+  like writing nobody liked.
+  **A hard bounce suppresses the address**, into `email_suppressions` —
+  deliberately not `email_unsubscribes`, because "we cannot reach you" and
+  "you asked us to stop" are different facts with different remedies, and
+  collapsing them would show a typo on the member's own preferences screen
+  as an opt-out. Subtracted inside `comms_audience_rows`, so the count an
+  owner sees before pressing send is the number who will be mailed. A
+  transient bounce is recorded and nothing more. A complaint outranks a
+  bounce on the same address. Staff can clear one from Communications →
+  Settings when the typo is fixed.
+  **Unmeasured is not zero.** `delivery_tracked` starts false and is
+  flipped by the first real event for that campaign, so a send whose
+  webhook was never wired reads "not measured" rather than 0%.
+  **Three surfaces:** the report screen, a `campaign_sent` line in the
+  Timeline computed at read time (bounces land hours after the last email,
+  so a row written at send time would be permanently wrong about them),
+  and `comms.send_report` in the bar ("how did the Christmas email do").
+  **Operator steps, without which nothing measures:** add
+  `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
+  `<project>/functions/v1/resend-webhook` in Resend against those three
+  events.
 - **A send going out can be stopped** (0228) — `comms.stop_send` ("stop
   the newsletter, the price is wrong") over a new `comms_stop_campaign`.
   `comms_unschedule_campaign` stops working the moment the dispatcher

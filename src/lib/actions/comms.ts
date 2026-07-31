@@ -14,6 +14,7 @@
 // drafting it, turning it on is still a human act. Same rule as the
 // newsletter's send button, for the same reason.
 
+import { sendReport, type SendStats } from '../comms-report';
 import {
   DEFAULT_AUDIENCE,
   describeAudience,
@@ -910,9 +911,98 @@ export const stopSend: ActionSpec<StopSend> = {
   },
 };
 
+// ============================================================================
+// comms.send_report
+// ============================================================================
+//
+// "How did the newsletter do." Until 0229 the only answerable half of that
+// question was how many left, so the report screen showed the number that
+// left under the word Delivered and nobody could tell the difference.
+
+type SendReportArgs = { which: string | null };
+
+type FinishedRow = {
+  id: string;
+  title: string;
+  subject: string;
+  status: string;
+  sent_at: string | null;
+  updated_at: string;
+};
+
+async function finishedCampaigns(ctx: ActionContext): Promise<FinishedRow[]> {
+  const { data } = await ctx.supabase
+    .from('email_campaigns')
+    .select('id, title, subject, status, sent_at, updated_at')
+    .eq('gym_id', ctx.gymId)
+    .in('status', ['sent', 'failed', 'cancelled'])
+    .order('sent_at', { ascending: false, nullsFirst: false })
+    .limit(20);
+  return (data ?? []) as FinishedRow[];
+}
+
+export const sendReportAction: ActionSpec<SendReportArgs> = {
+  name: 'comms.send_report',
+  kind: 'ask',
+  capability: 'can_manage_comms',
+  says:
+    'How an email did — "how did the newsletter go", "what was the open ' +
+    'rate on the Christmas email", "did anyone bounce", "how many people ' +
+    'got it".',
+  args: [
+    {
+      name: 'which',
+      type: 'string',
+      desc:
+        'The email, as they named it — words from its subject. Omit for the ' +
+        'most recent one.',
+    },
+  ],
+  sanitise: (raw) => ({ which: argString(raw, 'which', 120) }),
+  preview: async (a, ctx) => {
+    const rows = await finishedCampaigns(ctx);
+    if (rows.length === 0) {
+      return { title: 'You have not sent an email yet.', lines: [] };
+    }
+    const hits = a.which
+      ? rows.filter(
+          (r) =>
+            r.subject.toLowerCase().includes(a.which!.toLowerCase()) ||
+            r.title.toLowerCase().includes(a.which!.toLowerCase()),
+        )
+      : [rows[0]];
+    if (hits.length === 0) {
+      return {
+        title: `I cannot find a send matching “${a.which}”.`,
+        lines: rows.slice(0, 5).map((r) => `Sent: “${r.subject}”`),
+      };
+    }
+    if (hits.length > 1) {
+      return {
+        title: 'Which one?',
+        lines: [],
+        choices: hits
+          .slice(0, 5)
+          .map((r) => ({ label: r.subject, args: { which: r.subject } })),
+      };
+    }
+    const row = hits[0];
+    const { data, error } = await ctx.supabase.rpc('comms_campaign_stats', {
+      p_campaign_id: row.id,
+    });
+    if (error) throw new ActionError('I could not read that send’s report.');
+    const s = (data as SendStats[] | null)?.[0];
+    if (!s) throw new ActionError('That send has no report yet.');
+    const report = sendReport(row.subject || row.title, s);
+    ctx.offer?.('Open the report', `/management/communications/${row.id}`);
+    return { title: report.title, lines: report.lines };
+  },
+};
+
 export const COMMS_ACTIONS: AnyAction[] = [
   erase(describeSequenceAction),
   erase(scheduleSend),
   erase(cancelSend),
   erase(stopSend),
+  erase(sendReportAction),
 ];

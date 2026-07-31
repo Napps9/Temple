@@ -180,6 +180,86 @@ describe('formatTimelineLine', () => {
   });
 });
 
+// The receipt an owner gets when a send finishes (0229). The distinction
+// the copy has to hold: a send whose delivery reports never arrived must
+// not claim a number, and a send whose reports are still arriving must
+// not imply the rest failed.
+describe('the receipt for a send', () => {
+  function campaign(detail: Record<string, unknown>) {
+    return formatTimelineLine(
+      evt({ kind: 'campaign_sent', subject: 'Christmas hours', detail }),
+    );
+  }
+
+  it('says how many it went to, and stops there when nothing came back', () => {
+    const line = campaign({
+      status: 'sent',
+      tracked: false,
+      sent: 214,
+      successful: 0,
+      bounced: 0,
+      complained: 0,
+    });
+    expect(line.text).toBe('“Christmas hours” went to 214 members.');
+    expect(line.tone).toBe('neutral');
+  });
+
+  it('adds what arrived without implying the rest did not', () => {
+    expect(
+      campaign({
+        status: 'sent',
+        tracked: true,
+        sent: 214,
+        successful: 208,
+        bounced: 0,
+        complained: 0,
+      }).text,
+    ).toBe('“Christmas hours” went to 214 members, and 208 arrived.');
+  });
+
+  it('names the bounces and says what was done about them', () => {
+    const line = campaign({
+      status: 'sent',
+      tracked: true,
+      sent: 214,
+      successful: 208,
+      bounced: 6,
+      complained: 0,
+    });
+    expect(line.text).toBe(
+      '“Christmas hours” went to 214 members, and 208 arrived. 6 addresses bounced — I’ve stopped mailing them.',
+    );
+    expect(line.tone).toBe('amber');
+  });
+
+  it('does not hide a spam complaint', () => {
+    const line = campaign({
+      status: 'sent',
+      tracked: true,
+      sent: 40,
+      successful: 39,
+      bounced: 0,
+      complained: 1,
+    });
+    expect(line.text).toBe(
+      '“Christmas hours” went to 40 members, and 39 arrived. Someone marked it as spam.',
+    );
+    expect(line.tone).toBe('amber');
+  });
+
+  it('tells the truth about a practice run and a stopped send', () => {
+    expect(
+      campaign({ status: 'sent', tracked: false, sent: 12, simulated: 12 }).text,
+    ).toBe('“Christmas hours” was a practice run — nothing actually left the building.');
+    expect(
+      campaign({ status: 'cancelled', tracked: true, sent: 42, skipped: 158 }).text,
+    ).toBe('I stopped “Christmas hours” — 42 had already gone, 158 didn’t.');
+    expect(campaign({ status: 'failed', sent: 0 }).text).toBe(
+      '“Christmas hours” didn’t go out — nobody received it.',
+    );
+  });
+});
+
 describe('groupTimelineByDay', () => {
   const now = new Date(2026, 6, 29, 12, 0, 0); // 29 Jul 2026, local
 

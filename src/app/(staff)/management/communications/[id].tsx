@@ -787,14 +787,37 @@ function ReportView({ campaign }: { campaign: Campaign }) {
         recipients: number;
         sent: number;
         delivered: number;
+        successful: number;
         simulated: number;
         failed: number;
         bounced: number;
+        complained: number;
         opened: number;
         clicked: number;
         unsubscribed: number;
+        skipped: number;
+        tracked: boolean;
       }[];
       return rows[0] ?? null;
+    },
+    // Delivery reports land over the minutes after a send finishes, so a
+    // report opened straight away is watching numbers that are still
+    // moving.
+    refetchInterval: 30_000,
+  });
+
+  const trouble = useQuery({
+    queryKey: ['comms-campaign-trouble', campaign.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_campaign_recipients')
+        .select('id, email, full_name, status, error, complained_at')
+        .eq('campaign_id', campaign.id)
+        .or('status.eq.bounced,complained_at.not.is.null')
+        .order('email')
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -816,10 +839,21 @@ function ReportView({ campaign }: { campaign: Campaign }) {
   });
 
   const s = stats.data;
-  const reached = s?.sent ?? 0;
-  const openRate = reached > 0 ? Math.round(((s?.opened ?? 0) / reached) * 100) : 0;
-  const clickRate = reached > 0 ? Math.round(((s?.clicked ?? 0) / reached) * 100) : 0;
+  const sent = s?.sent ?? 0;
   const fullySimulated = !!s && s.sent > 0 && s.simulated === s.sent;
+  // Delivery reports are the truth about arrival; opens are the fallback
+  // and the honest denominator when nothing came back (0229). Rates are
+  // read against what arrived, not what left, so a bad address does not
+  // quietly count as a person who ignored you.
+  const tracked = !!s?.tracked;
+  const arrived = tracked ? (s?.successful ?? 0) : 0;
+  const base = tracked && arrived > 0 ? arrived : sent;
+  const openRate = base > 0 ? Math.round(((s?.opened ?? 0) / base) * 100) : 0;
+  const clickRate = base > 0 ? Math.round(((s?.clicked ?? 0) / base) * 100) : 0;
+  const successRate = sent > 0 ? Math.round((arrived / sent) * 100) : 0;
+  const unmeasured =
+    !!s && !tracked && !fullySimulated && s.sent > 0 && campaign.status !== 'sending';
+  const troubleRows = trouble.data ?? [];
 
   const previewHtml = useMemo(() => {
     const doc = coerceDocument(campaign.design, {
@@ -932,10 +966,38 @@ function ReportView({ campaign }: { campaign: Campaign }) {
         </View>
       ) : null}
 
-      {/* Funnel */}
+      {unmeasured ? (
+        <View className="bg-gray-500/10 border border-gray-500/30 rounded-xl p-4 gap-1">
+          <Text className="text-gray-700 dark:text-gray-200 font-semibold text-sm">
+            Not measured
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-400 text-xs">
+            No delivery reports came back for this send, so we know it went out
+            and nothing more. Sends from before delivery reporting was switched
+            on will always read this way — an unmeasured zero and a real zero
+            are different things, so this shows a dash rather than 0%.
+          </Text>
+        </View>
+      ) : null}
+
+      {/* What left, what arrived, what came of it */}
       <View className="flex-row gap-3 flex-wrap">
         <StatTile title="Recipients" value={s?.recipients ?? '—'} minWidth={100} />
-        <StatTile title="Delivered" value={reached} minWidth={100} />
+        <StatTile
+          title="Sent"
+          value={sent}
+          subtitle="left the building"
+          minWidth={100}
+        />
+        <StatTile
+          title="Successful"
+          value={fullySimulated || !tracked ? '—' : `${successRate}%`}
+          subtitle={
+            fullySimulated || !tracked ? undefined : `${arrived} of ${sent} arrived`
+          }
+          tone={tracked && !fullySimulated && successRate >= 95 ? 'green' : 'default'}
+          minWidth={130}
+        />
         <StatTile
           title="Opened"
           value={fullySimulated ? '—' : `${openRate}%`}
@@ -949,20 +1011,73 @@ function ReportView({ campaign }: { campaign: Campaign }) {
           minWidth={100}
         />
         <StatTile
+          title="Bounced"
+          value={tracked || (s?.bounced ?? 0) > 0 ? (s?.bounced ?? 0) : '—'}
+          subtitle={(s?.bounced ?? 0) > 0 ? 'now suppressed' : undefined}
+          minWidth={100}
+          tone={(s?.bounced ?? 0) > 0 ? 'red' : 'muted'}
+        />
+        <StatTile
           title="Unsubscribed"
           value={s?.unsubscribed ?? 0}
           minWidth={100}
           tone={(s?.unsubscribed ?? 0) > 0 ? 'red' : 'muted'}
         />
-        {(s?.failed ?? 0) + (s?.bounced ?? 0) > 0 ? (
+        {(s?.complained ?? 0) > 0 ? (
           <StatTile
-            title="Failed / bounced"
-            value={(s?.failed ?? 0) + (s?.bounced ?? 0)}
+            title="Marked as spam"
+            value={s?.complained ?? 0}
+            tone="red"
+            minWidth={140}
+          />
+        ) : null}
+        {(s?.failed ?? 0) > 0 ? (
+          <StatTile
+            title="Never sent"
+            value={s?.failed ?? 0}
+            subtitle="rejected at the door"
             tone="red"
             minWidth={100}
           />
         ) : null}
+        {(s?.skipped ?? 0) > 0 ? (
+          <StatTile
+            title="Skipped"
+            value={s?.skipped ?? 0}
+            subtitle="the send was stopped"
+            tone="muted"
+            minWidth={100}
+          />
+        ) : null}
       </View>
+
+      {troubleRows.length > 0 ? (
+        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            Addresses we can no longer reach
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            These are held back from future sends. If one was a typo that has
+            since been fixed, clear it from Communications → Settings and the
+            next send will include them again.
+          </Text>
+          {troubleRows.map((r) => (
+            <View
+              key={r.id}
+              className="border-t border-gray-100 dark:border-gray-800 pt-2 gap-0.5">
+              <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                {r.full_name ? `${r.full_name} · ` : ''}
+                {r.email}
+              </Text>
+              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                {r.complained_at
+                  ? 'Marked it as spam'
+                  : (r.error ?? 'The address bounced')}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <View className="gap-2">
         <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">

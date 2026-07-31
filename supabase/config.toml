@@ -69,6 +69,13 @@ verify_jwt = false
 [functions.track]
 verify_jwt = false
 
+# Delivery reports from Resend (delivered / bounced / complained). No JWT —
+# Resend carries none; the Standard Webhooks signature against
+# RESEND_WEBHOOK_SECRET is the guard, and the function refuses anything
+# unsigned rather than falling back to trusting the payload.
+[functions.resend-webhook]
+verify_jwt = false
+
 # Per-gym sending domain management (Resend Management API). Signed-in
 # staff caller; re-checks can_manage_comms per action.
 [functions.sending-domain]

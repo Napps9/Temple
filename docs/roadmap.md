@@ -571,7 +571,26 @@ same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
 
-- **Email reports a number nobody should trust — decided, being built.**
+- **Email reports a number nobody should trust — built (0229).** All four
+  decisions below are implemented: a signed `resend-webhook` function, an
+  `email_suppressions` table subtracted from every audience, a
+  `delivery_tracked` marker flipped by the first real event, and a
+  `comms_campaign_stats` that returns sent / delivered / successful
+  separately. Live on all three surfaces. Two things still sit with the
+  operator and nothing measures until both are done: add
+  `RESEND_WEBHOOK_SECRET` to the Supabase function secrets, and register
+  `<project>/functions/v1/resend-webhook` in Resend against
+  `email.delivered`, `email.bounced` and `email.complained`. Until then
+  every send honestly reads "not measured" rather than 0%.
+
+  One thing 0229 deliberately did not do: the transactional senders
+  (class changes, cover, payment notices) still mail a hard-bounced
+  address. Resend suppresses at the account level once an address has
+  bounced permanently, so those are refused by the provider rather than
+  delivered — the cost is a failed row, not a reputation. Teaching the
+  five enqueue functions the same predicate is worth doing on its own.
+
+  The original finding, kept for the reasoning:
   `email_campaign_recipients` has carried `delivered_at`, `open_count`,
   `click_count`, `unsubscribed_at`, `provider_message_id` and a status of
   `queued|sent|delivered|simulated|bounced|failed|skipped` since 0044, and
@@ -603,11 +622,6 @@ next session finds them.
      ("how did the Christmas email do"), and a quiet Timeline line when a
      send finishes — which is also what closes the reaches-nobody case.
 
-  What this needs from the operator, and does not work without: a
-  `RESEND_WEBHOOK_SECRET` in the Supabase function secrets, and the
-  endpoint registered in Resend against `email.delivered`,
-  `email.bounced` and `email.complained`. Built to refuse unsigned
-  requests, so it is inert rather than wrong until both are done.
 - **Four pgTAP files fail in the local harness for the harness's own
   reasons** (storage path helpers, recurrence pattern rewrite, closure
   reopen, ordered onboarding responses) — listed in

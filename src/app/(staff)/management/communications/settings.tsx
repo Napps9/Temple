@@ -7,6 +7,7 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { SendingDomainCard } from '@/components/email/SendingDomainCard';
+import { SuppressedAddressesCard } from '@/components/email/SuppressedAddressesCard';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCommsSettings, useSendingDomain } from '@/lib/comms';
 import { errorMessage } from '@/lib/errors';
@@ -187,6 +188,8 @@ export default function CommsSettingsScreen() {
             </Text>
           </View>
         )}
+
+        <SuppressedAddressesCard />
 
       </ScrollView>
     </Screen>

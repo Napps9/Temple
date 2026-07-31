@@ -19,6 +19,7 @@ import {
   newsletterCard,
   readAudienceArgs,
   scheduleSend,
+  sendReportAction,
   sequenceCard,
 } from './comms';
 import { sanitiseSequence } from '../sequence-draft';
@@ -1425,5 +1426,51 @@ describe('the class actions read the gym clock', () => {
     for (const src of actionSources()) {
       expect(src).not.toMatch(/new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
     }
+  });
+});
+
+// The delivery webhook is the one endpoint in the codebase that a
+// stranger could otherwise post to, and what it writes is "this address
+// is dead, stop mailing it". A missing secret has to be a refusal, never
+// a fallback to trusting the payload — grepped because the failure is
+// silent and the blast radius is a gym's whole mailing list.
+describe('the delivery webhook refuses anything unsigned', () => {
+  const fn = readFileSync('supabase/functions/resend-webhook/index.ts', 'utf8');
+
+  it('will not run without the secret', () => {
+    expect(fn).toMatch(/!SECRET/);
+    expect(fn).toMatch(/Function is not configured/);
+  });
+
+  it('verifies before it parses, so a bad payload is never read', () => {
+    const verifyAt = fn.indexOf('await verify(');
+    const parseAt = fn.indexOf('JSON.parse(raw)');
+    expect(verifyAt).toBeGreaterThan(0);
+    expect(parseAt).toBeGreaterThan(verifyAt);
+  });
+
+  it('holds the replay window rather than accepting any timestamp', () => {
+    expect(fn).toMatch(/TOLERANCE_SECONDS/);
+    expect(fn).toMatch(/age > TOLERANCE_SECONDS/);
+  });
+
+  it('compares signatures in constant time', () => {
+    expect(fn).toMatch(/constantTimeEquals\(expected/);
+  });
+});
+
+describe('asking how a send went', () => {
+  it('is a question, not an instruction', () => {
+    expect(sendReportAction.name).toBe('comms.send_report');
+    expect(sendReportAction.kind).toBe('ask');
+    expect(sendReportAction.capability).toBe('can_manage_comms');
+    expect(sendReportAction.apply).toBeUndefined();
+  });
+
+  it('does not need to be told which one', () => {
+    expect(sendReportAction.sanitise({})).toEqual({ which: null });
+    expect(sendReportAction.sanitise({ which: 'christmas' })).toEqual({
+      which: 'christmas',
+    });
   });
 });
