@@ -8,6 +8,7 @@
 import { formatPrice } from '../setup-flow';
 
 import {
+  ActionError,
   argEnum,
   argInt,
   argMoney,
@@ -259,8 +260,202 @@ export function matchProduct<T extends { name: string }>(
   return contains.length === 1 ? contains[0] : null;
 }
 
+// ============================================================================
+// store.refund_order
+// ============================================================================
+//
+// store_order_status has allowed 'refunded' since the shop was built and
+// nothing wrote it — money.refund is memberships only and says so, and the
+// orders screen has no refund button. So a wrong-size hoodie was refunded
+// in the Stripe dashboard and the order sat in Temple saying 'paid'.
+//
+// The money moves through refund-store-order on the gym's connected
+// account, the same shape as the membership refund: the amount is
+// recomputed server-side and the secret key never comes near here.
+//
+// The card carries the two consequences an owner cannot see from the
+// order row. Stock only comes back if nothing shipped, because refunding
+// a posted hoodie does not put it on the shelf. And a downloaded file
+// cannot be un-downloaded — the link stops working, which is worth
+// saying rather than implying.
+
+type RefundOrder = {
+  who: string | null;
+  what: string | null;
+  amountCents: number | null;
+};
+
+type OrderRow = {
+  id: string;
+  status: string;
+  total_cents: number;
+  currency: string;
+  created_at: string;
+  fulfilled_at: string | null;
+  has_physical: boolean;
+  profiles: { full_name: string | null } | null;
+  store_order_items: { name_snapshot: string; quantity: number }[];
+};
+
+function orderLine(o: OrderRow, currency: string): string {
+  const items = o.store_order_items
+    .map((i) => (i.quantity > 1 ? `${i.quantity} × ${i.name_snapshot}` : i.name_snapshot))
+    .join(', ');
+  const when = new Date(o.created_at).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+  });
+  return `${o.profiles?.full_name?.trim() || 'A member'} — ${items || 'an order'}, ${formatPrice(o.total_cents, currency)}, ${when}`;
+}
+
+async function refundableOrders(ctx: ActionContext): Promise<OrderRow[]> {
+  const { data } = await ctx.supabase
+    .from('store_orders')
+    .select(
+      'id, status, total_cents, currency, created_at, fulfilled_at, has_physical, ' +
+        'profiles!profile_id(full_name), store_order_items(name_snapshot, quantity)',
+    )
+    .eq('gym_id', ctx.gymId)
+    .in('status', ['paid', 'fulfilled'])
+    .order('created_at', { ascending: false })
+    .limit(40);
+  return (data ?? []) as unknown as OrderRow[];
+}
+
+function matchOrders(rows: OrderRow[], a: RefundOrder): OrderRow[] {
+  let out = rows;
+  if (a.who) {
+    const q = a.who.toLowerCase();
+    out = out.filter((o) => (o.profiles?.full_name ?? '').toLowerCase().includes(q));
+  }
+  if (a.what) {
+    const q = a.what.toLowerCase();
+    out = out.filter((o) =>
+      o.store_order_items.some((i) => i.name_snapshot.toLowerCase().includes(q)),
+    );
+  }
+  return out;
+}
+
+export const refundStoreOrder: ActionSpec<RefundOrder> = {
+  name: 'store.refund_order',
+  kind: 'do',
+  capability: 'can_refund',
+  says:
+    'Give somebody their money back for something they bought in the shop ' +
+    "— \"refund Marcus's hoodie\", \"give Sarah her money back for the water " +
+    'bottle", "refund that last shop order". Not for a membership payment, ' +
+    'which is money.refund.',
+  args: [
+    { name: 'who', type: 'string', desc: 'The member, if they named one' },
+    { name: 'what', type: 'string', desc: 'The thing bought, if they named it' },
+    {
+      name: 'amount',
+      type: 'money',
+      desc: 'Only if they named a sum to give back rather than the whole order',
+    },
+  ],
+  invalidate: [
+    'staff-store-orders',
+    'my-store-orders',
+    'store-products',
+    'admin-store-products',
+    'store-revenue',
+  ],
+  sanitise: (raw) => ({
+    who: argString(raw, 'who', 60),
+    what: argString(raw, 'what', 60),
+    amountCents: argMoney(raw, 'amount'),
+  }),
+  preview: async (a, ctx) => {
+    const rows = await refundableOrders(ctx);
+    if (rows.length === 0) {
+      return { title: 'Nothing in the shop has been paid for yet.', lines: [] };
+    }
+    const hits = matchOrders(rows, a);
+    if (hits.length === 0) {
+      return {
+        title: 'No shop order matches that.',
+        lines: rows.slice(0, 4).map((o) => orderLine(o, ctx.currency)),
+      };
+    }
+    if (hits.length > 1) {
+      return {
+        title: 'Which order?',
+        lines: [],
+        choices: hits.slice(0, 5).map((o) => ({
+          label: orderLine(o, ctx.currency),
+          args: {
+            who: o.profiles?.full_name ?? a.who,
+            what: o.store_order_items[0]?.name_snapshot ?? a.what,
+            amount: a.amountCents === null ? undefined : a.amountCents / 100,
+          },
+        })),
+      };
+    }
+    const o = hits[0];
+    const cents =
+      a.amountCents !== null && a.amountCents < o.total_cents
+        ? a.amountCents
+        : o.total_cents;
+    const digital = o.store_order_items.length > 0 && !o.has_physical;
+    return {
+      title: `Refund ${formatPrice(cents, ctx.currency)} to ${o.profiles?.full_name?.trim() || 'them'}?`,
+      lines: [
+        orderLine(o, ctx.currency),
+        cents < o.total_cents
+          ? `Part of the order — ${formatPrice(o.total_cents - cents, ctx.currency)} stays with you.`
+          : 'The whole order.',
+        o.fulfilled_at === null
+          ? 'It has not gone out, so anything you track the stock of goes back on the shelf.'
+          : 'It has already gone out, so the stock is not put back — you have posted it.',
+        ...(digital
+          ? ['Their download stops working. What they already downloaded is theirs.']
+          : []),
+      ],
+      yes: 'Yes, refund it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const hits = matchOrders(await refundableOrders(ctx), a);
+    if (hits.length !== 1) throw new ActionError('I lost track of which order you meant.');
+    const o = hits[0];
+    const { data, error } = await ctx.supabase.functions.invoke('refund-store-order', {
+      body: {
+        order_id: o.id,
+        custom_cents:
+          a.amountCents !== null && a.amountCents < o.total_cents ? a.amountCents : undefined,
+      },
+    });
+    if (error) throw new ActionError(await refundFailure(error));
+    const r = (data ?? {}) as { refundCents?: number; restocked?: boolean };
+    const amount = formatPrice(r.refundCents ?? o.total_cents, ctx.currency);
+    const who = o.profiles?.full_name?.trim() || 'them';
+    return r.restocked
+      ? `${amount} refunded to ${who}, and the stock is back on the shelf.`
+      : `${amount} refunded to ${who}.`;
+  },
+};
+
+// The edge function answers in words; these are the ones an owner can act
+// on, and the rest is plumbing.
+async function refundFailure(e: unknown): Promise<string> {
+  const res = (e as { context?: Response }).context;
+  if (res && typeof res.json === 'function') {
+    try {
+      const body = await res.json();
+      const msg = String((body as { error?: string })?.error ?? '');
+      if (msg) return msg;
+    } catch {
+      // fall through
+    }
+  }
+  return 'The refund did not go through.';
+}
+
 export const STORE_ACTIONS: AnyAction[] = [
   erase(addStoreProduct),
   erase(setStoreProductPrice),
+  erase(refundStoreOrder),
   erase(storeSales),
 ];

@@ -34,7 +34,13 @@ import {
   setProgrammingAccess,
   whoIsProgrammed,
 } from './programming';
-import { addStoreProduct, matchProduct, setStoreProductPrice, storeSales } from './store';
+import {
+  addStoreProduct,
+  matchProduct,
+  refundStoreOrder,
+  setStoreProductPrice,
+  storeSales,
+} from './store';
 import {
   addTagRule,
   inviteToTeam,
@@ -1264,5 +1270,86 @@ describe('moving one class, and changing its coach', () => {
   it('gates both on editing classes, not on covering them', () => {
     expect(moveClass.capability).toBe('can_edit_classes');
     expect(setClassCoach.capability).toBe('can_edit_classes');
+  });
+});
+
+// The last of the four writes Temple did not have. The order is picked by
+// what the owner said rather than by an id, so what matters here is that
+// a vague sentence asks rather than guesses.
+describe('refunding a shop order', () => {
+  const rows = [
+    {
+      id: 'a',
+      status: 'paid',
+      total_cents: 3500,
+      currency: 'GBP',
+      created_at: '2026-07-20T10:00:00Z',
+      fulfilled_at: null,
+      has_physical: true,
+      profiles: { full_name: 'Marcus Webb' },
+      store_order_items: [{ name_snapshot: 'Hoodie', quantity: 1 }],
+    },
+    {
+      id: 'b',
+      status: 'fulfilled',
+      total_cents: 800,
+      currency: 'GBP',
+      created_at: '2026-07-18T10:00:00Z',
+      fulfilled_at: '2026-07-19T10:00:00Z',
+      has_physical: true,
+      profiles: { full_name: 'Marcus Webb' },
+      store_order_items: [{ name_snapshot: 'Water bottle', quantity: 1 }],
+    },
+  ];
+  const ctx = {
+    supabase: {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            in: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }),
+          }),
+        }),
+      }),
+    },
+    gymId: 'gym',
+    userId: 'user',
+    currency: 'GBP',
+  } as never;
+
+  it('asks which order when the member bought more than one thing', async () => {
+    const p = await refundStoreOrder.preview(
+      { who: 'Marcus', what: null, amountCents: null },
+      ctx,
+    );
+    expect(p.choices).toHaveLength(2);
+    expect(p.yes).toBeUndefined();
+  });
+
+  it('says what happens to the stock, and it depends on whether it shipped', async () => {
+    const unshipped = await refundStoreOrder.preview(
+      { who: 'Marcus', what: 'Hoodie', amountCents: null },
+      ctx,
+    );
+    expect(unshipped.lines.join(' ')).toMatch(/back on the shelf/);
+    expect(unshipped.yes).toBe('Yes, refund it');
+
+    const shipped = await refundStoreOrder.preview(
+      { who: 'Marcus', what: 'Water bottle', amountCents: null },
+      ctx,
+    );
+    expect(shipped.lines.join(' ')).toMatch(/not put back/);
+  });
+
+  it('takes a partial amount and says what is kept', async () => {
+    const p = await refundStoreOrder.preview(
+      { who: 'Marcus', what: 'Hoodie', amountCents: 1000 },
+      ctx,
+    );
+    expect(p.title).toContain('£10');
+    expect(p.lines.join(' ')).toMatch(/£25 stays with you/);
+  });
+
+  it('needs the same switch as a membership refund', () => {
+    expect(refundStoreOrder.capability).toBe('can_refund');
   });
 });

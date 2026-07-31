@@ -330,11 +330,26 @@ already authorised. Roughly in order of how often an owner touches them:
   hide behind "refund Marcus" and they differ by tens of pounds and by
   whether he trains tomorrow, so the mode is kept out of the parser's
   vocabulary entirely and the card asks with the arithmetic already on
-  each option. **Still absent:** refunding a shop order — `store_orders`
-  has no refund path at all, in the app or in an edge function, so
-  there is nothing to wrap — and refunding a single booking's credit,
-  which `remove_member_booking` already does as part of taking someone
-  out rather than as a verb of its own.
+  each option. **The shop can be refunded now too** (0225):
+  `store.refund_order` over a new `refund-store-order` function, the same
+  shape as the membership one — Stripe on the gym's connected account, the
+  amount recomputed server-side, the secret key nowhere near a client.
+  `store_orders` has carried a `refunded` status since the shop was built
+  and nothing had ever written it, so a wrong-size hoodie was refunded in
+  the Stripe dashboard and the order sat in Temple saying paid.
+
+  What Stripe knows nothing about is the half that needed deciding.
+  **Stock comes back only if nothing shipped** — refunding a posted hoodie
+  does not put it on the shelf, and silently adding it back would have
+  somebody sell it twice. **A digital delivery is revoked** — it cannot be
+  un-downloaded and the card says so, but leaving a live link on a
+  refunded order means the gym is still serving a file to somebody who has
+  their money back. And **a partial refund still ends the order**, because
+  inventing a `partly_refunded` status would spread through every surface
+  that reads status; the amount lives on the billing event, which is where
+  money already lives. **Still absent:** refunding a single booking's
+  credit, which `remove_member_booking` already does as part of taking
+  someone out rather than as a verb of its own.
 - **Comms** — done. Send to a tag (the newsletter finally carries an
   audience, resolved against the gym's real labels and counted on the
   card), describe a sequence, which lands as a disabled automation over
@@ -534,11 +549,6 @@ next session finds them.
   the whole recurrence — so "move next Tuesday's 6am to 7am" silently
   moves every Tuesday. The bar refuses it rather than doing the wrong
   thing; the fix is a per-session move that leaves the pattern alone.
-- **Shop orders cannot be refunded at all.** `store_orders` has a
-  `refunded` status that nothing writes: no screen, no RPC, no edge
-  function. Membership refunds go through `stripe-refund`; the shop has
-  no equivalent. Until it does, `money.refund` is deliberately scoped to
-  memberships and says so.
 - **Nobody tells the members when a class changes coach.**
   `class_change_notifications.kind` allows `gym_closed`,
   `classes_rescheduled`, `classes_reopened` and `class_cancelled` — there

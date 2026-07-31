@@ -861,6 +861,29 @@ The staff area shows up when `can_access_staff_area` is on.
   and a `member_tagged` sequence with no tag is refused outright rather
   than created, because it would match nobody for ever while looking like
   it worked. The card also refuses a tag no member actually holds.
+- **A shop order can be refunded** (roadmap step 2) —
+  `store.refund_order` ("refund Marcus's hoodie", "give Sarah her money
+  back for the water bottle") over a new `refund-store-order` edge
+  function and `_refund_store_order` (0225). `store_orders` has carried a
+  `refunded` status since the shop was built and nothing ever wrote it —
+  no screen, no RPC, no function — so the only way to refund a shop
+  purchase was the Stripe dashboard, and the order stayed `paid` in Temple
+  for ever. Same shape as the membership refund: Stripe on the gym's
+  connected account, the amount recomputed server-side rather than trusted
+  from the request, gated on the same `can_refund` capability. Stripe
+  moves the money first and the RPC runs after, because the other order
+  leaves an order claiming a refund that never happened.
+  Three decisions Stripe knows nothing about, all stated on the card:
+  **stock comes back only if nothing shipped** (`_mark_store_order_paid`
+  decrements it at purchase, so an unfulfilled order's goods are still on
+  the shelf and a posted one's are not); **a digital delivery is revoked**
+  — the select policy now requires `revoked_at is null`, so the download
+  stops working, while what was already downloaded is gone and the card
+  says so rather than implying otherwise; and **a partial refund still
+  ends the order**, because a `partly_refunded` status would spread
+  through every surface that reads status, and the amount belongs on the
+  `billing_events` row (`kind = 'refund'`, excluded from revenue by
+  `is_revenue_event`) where the money already lives.
 - **One class can move, and one class can change coach** (roadmap step 2)
   — `classes.move` ("push Friday's barbell club to Thursday at 6:30") and
   `classes.set_coach` ("Jo is taking Saturday's 9am") over

@@ -369,7 +369,7 @@ export const refundMember: ActionSpec<Refund> = {
   says:
     'Give a member their money back — "refund Marcus", "refund Sarah\'s ' +
     'last payment", "give Dan £20 back". Only about a membership payment; ' +
-    'shop orders are refunded on the orders screen.',
+    'a shop order is store.refund_order.',
   args: [
     { name: 'member', type: 'string', desc: 'The person, as the owner named them', required: true },
     {

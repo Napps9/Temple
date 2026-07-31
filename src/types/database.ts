@@ -4112,6 +4112,8 @@ export type Database = {
           asset_path: string;
           created_at: string;
           last_downloaded_at: string | null;
+          // Set when the order was refunded; the select policy hides it.
+          revoked_at: string | null;
         };
         Insert: {
           id?: string;
@@ -4123,9 +4125,11 @@ export type Database = {
           asset_path: string;
           created_at?: string;
           last_downloaded_at?: string | null;
+          revoked_at?: string | null;
         };
         Update: Partial<{
           last_downloaded_at: string | null;
+          revoked_at: string | null;
         }>;
         Relationships: [];
       };
