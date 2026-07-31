@@ -69,7 +69,11 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     steps:
+      # Full history: the changed-function diff below needs the previous
+      # head, and the default depth-1 checkout does not have it.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Read Supabase CLI version
         id: cli
         run: echo "version=$(jq -r '.supabase.cli_version' package.json)" >> "$GITHUB_OUTPUT"
@@ -83,6 +87,73 @@ jobs:
       # (we shipped 0029 after 0030 earlier in the project's history).
       - name: Push migrations
         run: supabase db push --include-all
+      # Which functions this push actually changed.
+      #
+      # Deploying all thirty-nine on every push was correct and slow: each
+      # one bundles its own deps from esm.sh, and a bad spell there once
+      # cost twenty-eight minutes on a push that touched no function at
+      # all. The set is still derived from the tree rather than a
+      # hand-maintained list — a new function silently missing from a list
+      # is how sync-vapi-assistant / voice-sample / agent-interview once
+      # shipped undeployed.
+      #
+      # Two things widen a change to everything, because narrowing them
+      # would skip a function that genuinely needs redeploying:
+      #
+      #   * _shared/ — fourteen functions import it, and it is bundled into
+      #     each of them at deploy time, so editing it changes their
+      #     shipped code without touching their directories.
+      #   * config.toml — it carries every function's verify_jwt, which is
+      #     read at deploy time.
+      #
+      # And anything we cannot diff confidently is also everything: a first
+      # push, or a force push whose old head the runner no longer has.
+      # Re-running a failed deploy job recomputes against the same
+      # `before`, so a function that failed is retried rather than skipped.
+      - name: Work out which edge functions changed
+        id: fns
+        run: |
+          all_functions() {
+            for dir in supabase/functions/*/; do
+              name="$(basename "$dir")"
+              [ "$name" = "_shared" ] && continue
+              echo "$name"
+            done
+          }
+          before='${{ github.event.before }}'
+          why=""
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            why="no previous head to compare against"
+          elif ! git cat-file -e "${before}^{commit}" 2>/dev/null; then
+            why="previous head $before is not in this checkout"
+          else
+            changed="$(git diff --name-only "$before" "$GITHUB_SHA" \
+              -- supabase/functions supabase/config.toml)"
+            if printf '%s\n' "$changed" \
+                 | grep -qE '^supabase/(functions/_shared/|config\.toml$)'; then
+              why="shared code or function config changed"
+            fi
+          fi
+          if [ -n "$why" ]; then
+            names="$(all_functions)"
+            echo "::notice::deploying every edge function — $why"
+          else
+            # A deleted function still shows in the diff; drop anything
+            # whose directory has gone rather than asking Supabase to
+            # deploy it.
+            names="$(printf '%s\n' "$changed" \
+              | sed -n 's|^supabase/functions/\([^/]*\)/.*|\1|p' \
+              | sort -u \
+              | while read -r n; do
+                  [ -n "$n" ] && [ -d "supabase/functions/$n" ] && echo "$n"
+                done)"
+          fi
+          echo "names=$(printf '%s' "$names" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          if [ -z "$names" ]; then
+            echo "No edge function changed."
+          else
+            echo "Deploying:$(printf '%s' "$names" | tr '\n' ' ')"
+          fi
       # Edge functions aren't covered by `db push`. Deploy them after the
       # migration so the Communications Suite workers ship in lock-step with
       # the schema they call (track -> comms_track_event, send-campaign ->
@@ -97,6 +168,11 @@ jobs:
         # a 522 on `track`) blocks every function after it from deploying.
         # We attempt them all, tally failures, and fail the step at the end.
         run: |
+          names="${{ steps.fns.outputs.names }}"
+          if [ -z "$names" ]; then
+            echo "Nothing to deploy."
+            exit 0
+          fi
           failed=""
           deploy() {
             for attempt in 1 2 3; do
@@ -110,14 +186,7 @@ jobs:
             failed="$failed $1"
             return 0
           }
-          # Deploy every function directory (bar the shared module) rather
-          # than a hand-maintained list — a new function silently missing
-          # from the list is how sync-vapi-assistant/voice-sample/
-          # agent-interview shipped undeployed. Per-function verify_jwt is
-          # still read from supabase/config.toml.
-          for dir in supabase/functions/*/; do
-            name="$(basename "$dir")"
-            [ "$name" = "_shared" ] && continue
+          for name in $names; do
             deploy "$name"
           done
           if [ -n "$failed" ]; then
