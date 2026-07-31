@@ -309,3 +309,50 @@ describe('buildDemoPlan — discipline: hyrox', () => {
     );
   });
 });
+
+describe('the gym\'s jobs', () => {
+  // The demo Timeline is the product's main surface, and without an
+  // authority row per job it shows the gym's own activity and nothing
+  // Temple did.
+  it('takes every job on, and leaves questions waiting on the Timeline', () => {
+    expect(plan.agentAuthority).toHaveLength(7);
+    expect(plan.agentActions.filter((a) => a.status === 'proposed')).toHaveLength(3);
+  });
+
+  // A card naming somebody who is not in the gym, or who left it, is the
+  // first thing a viewer taps and the first thing that falls apart.
+  it('points every proposal at a member who is actually here', () => {
+    const active = new Set(
+      plan.memberships.filter((m) => m.left_at === null).map((m) => m.profile_id),
+    );
+    for (const a of plan.agentActions) {
+      if (a.subject_profile === null) continue;
+      expect(active.has(a.subject_profile)).toBe(true);
+    }
+  });
+
+  // The upgrade card's evidence is arithmetic over a pack the member is
+  // supposed to hold. Naming somebody on Unlimited would read fine on the
+  // Timeline and be nonsense one tap deeper.
+  it('offers the upgrade to somebody who is genuinely on the pack', () => {
+    const pack = plan.plans.find((pl) => pl.kind === 'credit_pack')!;
+    const upgrade = plan.agentActions.find(
+      (a) => a.action_kind === 'plan_upgrade_offer',
+    )!;
+    const theirs = plan.subscriptions.find(
+      (sub) => sub.profile_id === upgrade.subject_profile,
+    )!;
+    expect(theirs.plan_id).toBe(pack.plan_id);
+    expect(upgrade.payload.plan_name).toBe(pack.name);
+  });
+
+  // The one card the money loop was built for. If the demo's chase points
+  // at somebody whose card never failed, the Money tiles and the proposal
+  // disagree on the same screen.
+  it('chases somebody the dunning table agrees is behind', () => {
+    const behind = new Set(plan.dunning.map((d) => d.profile_id));
+    for (const a of plan.agentActions.filter((x) => x.action_kind === 'chase_message')) {
+      expect(behind.has(a.subject_profile!)).toBe(true);
+    }
+  });
+});

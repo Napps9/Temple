@@ -26,6 +26,12 @@ import {
   type Rng,
 } from './roster';
 import {
+  buildAgentJobs,
+  type AgentActionRow,
+  type AgentAuthorityRow,
+  type AgentTemplateRow,
+} from './jobs';
+import {
   CLASS_TYPE_DEFS,
   CLASS_TYPE_DEFS_HYROX,
   GYM_HOURS,
@@ -127,6 +133,9 @@ export type DemoPlan = {
   gymHours: T<'gym_hours'>[];
   programming: T<'class_programming'>[];
   directMessages: T<'direct_messages'>[];
+  agentAuthority: AgentAuthorityRow[];
+  agentTemplates: AgentTemplateRow[];
+  agentActions: AgentActionRow[];
 };
 
 function iso(d: Date): string {
@@ -250,6 +259,10 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   const subscriptions: T<'plan_subscriptions'>[] = [];
   const invoiceLinks: T<'membership_invoice_links'>[] = [];
   const dunning: T<'plan_subscription_dunning'>[] = [];
+  // Who the job proposals point at has to be somebody whose seeded data
+  // backs the card: a demo where the upgrade offer names a member on
+  // Unlimited falls apart the moment anybody taps through to them.
+  const packMembers: DemoUser[] = [];
   activeMembers.forEach((m, i) => {
     const base = {
       gym_membership_id: membershipIdByProfile.get(m.id)!,
@@ -296,6 +309,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
         });
       }
     } else if (i % 2 === 0) {
+      packMembers.push(m);
       subscriptions.push({
         ...base,
         plan_id: creditPackPlanId,
@@ -917,6 +931,47 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     });
   });
 
+  // --- the gym's jobs ------------------------------------------------------------
+  //
+  // Nothing here runs a tick: the ticks are cron-only, and their
+  // predicates read live attendance and balances, so a seeded gym would
+  // show whatever today's dates happened to make true. These are written
+  // in the shape a tick writes them, pointed at people whose other seeded
+  // data backs the card.
+  const person = (u: DemoUser) => ({ id: u.id, name: u.fullName });
+  const planBy = (id: string) => plans.find((pl) => pl.plan_id === id)!;
+  const { authority: agentAuthority, templates: agentTemplates, actions: agentActions } =
+    buildAgentJobs({
+      gymId,
+      ownerId: owner.id,
+      now: config.now,
+      currency: gym.currency!,
+      cast: {
+        // i === 1 and i === 4 are the two mid-dunning subscriptions above:
+        // one out of Stripe retries, one still being tried.
+        urgentDunning: person(activeMembers[1]),
+        softDunning: person(activeMembers[4]),
+        packHeavy: person(packMembers[0]),
+        packLow: person(packMembers[1] ?? packMembers[0]),
+        quiet: person(activeMembers[2]),
+        justJoined: person(activeMembers[activeMembers.length - 1]),
+        coverCoach: coaches[0].fullName,
+      },
+      // Read off the catalogue built above rather than restated. The
+      // upgrade card's whole content is arithmetic over these numbers, so
+      // a demo that quoted a price the plans table disagreed with would
+      // be wrong in the one place a viewer is most likely to check.
+      prices: {
+        unlimitedCents: planBy(unlimitedPlanId).monthly_price_cents!,
+        creditPeriodCents: planBy(creditPeriodPlanId).monthly_price_cents!,
+        packCents: planBy(creditPackPlanId).monthly_price_cents!,
+        packCredits: planBy(creditPackPlanId).credit_count!,
+        unlimitedName: planBy(unlimitedPlanId).name!,
+        creditPeriodName: planBy(creditPeriodPlanId).name!,
+        packName: planBy(creditPackPlanId).name!,
+      },
+    });
+
   return {
     config,
     password: config.password ?? DEMO_PASSWORD,
@@ -952,5 +1007,8 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     gymHours,
     programming,
     directMessages,
+    agentAuthority,
+    agentTemplates,
+    agentActions,
   };
 }

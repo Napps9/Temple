@@ -3945,6 +3945,27 @@ surround:
   history, progressing PRs, Hyrox races, injuries, leads, campaign
   draft, store, published website), deterministic per `--seed`, with
   a guarded `--teardown`. Runbook: `docs/demo-gym.md`.
+  **And the gym's jobs** (`scripts/demo-gym/jobs.ts`) — the seeder wrote
+  no `agent_authority` rows, and no job can propose anything without one,
+  so a demo Timeline showed the gym's own activity and nothing Temple
+  ever did: the product's main surface demoed as a feed. It now seeds all
+  seven authority rows at `approval` (the rope every `set_*_job` RPC
+  actually ships with, not a flattering autonomous), the six templates so
+  approving a proposal in a demo queues a message rather than raising "No
+  approved template", and a morning: **three questions waiting and six
+  receipts behind them**, one of them rejected, because an owner who said
+  yes to everything never shows that no is a real answer.
+  No tick runs. The ticks are cron-only and read live attendance and
+  balances, so a seeded gym would show whatever today's dates made true;
+  the rows are written in the shape a tick writes them. Prices are read
+  off the seeded catalogue rather than restated, and money is formatted by
+  a local mirror of `money_text` rather than `Intl`, which resolves
+  against the runtime locale and would break the seeder's determinism.
+  Every proposal points at somebody whose other seeded data backs the
+  card — the chase at a member the dunning table agrees is behind, the
+  upgrade at a member genuinely on the pack — asserted in
+  `plan.test.ts`, because a card that falls apart one tap deeper is worse
+  than no card.
 
 ---
 

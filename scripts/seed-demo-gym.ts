@@ -20,6 +20,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '../src/types/database';
 import { buildDemoPlan, type DemoPlan } from './demo-gym/plan';
+import { countWaiting } from './demo-gym/jobs';
 
 type Client = SupabaseClient<Database>;
 
@@ -135,6 +136,9 @@ function printCounts(plan: DemoPlan): void {
     ['gym_hours', plan.gymHours.length],
     ['class_programming', plan.programming.length],
     ['direct_messages', plan.directMessages.length],
+    ['agent_authority', plan.agentAuthority.length],
+    ['agent_message_templates', plan.agentTemplates.length],
+    ['agent_actions', plan.agentActions.length],
   ];
   const width = Math.max(...rows.map(([n]) => n.length));
   for (const [name, count] of rows) console.log(`  ${name.padEnd(width)}  ${count}`);
@@ -148,6 +152,7 @@ function printCredentials(plan: DemoPlan): void {
   console.log(`Coaches:  coach1@${plan.emailDomain}  coach2@${plan.emailDomain}`);
   console.log(`Members:  member01@${plan.emailDomain} … member${String(members.length).padStart(2, '0')}@${plan.emailDomain}`);
   console.log(`Password: ${plan.password}  (all accounts)`);
+  console.log(`Timeline: ${countWaiting(plan.agentActions)} question(s) waiting, ${plan.agentActions.length - countWaiting(plan.agentActions)} receipt(s) behind them`);
   console.log(`Teardown: npm run seed:demo -- --teardown --slug ${plan.gym.slug}`);
 }
 
@@ -229,6 +234,13 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
   await insertAll(sb, 'gym_hours', p.gymHours);
   await insertAll(sb, 'class_programming', p.programming);
   await insertAll(sb, 'direct_messages', p.directMessages);
+  // Insert: never on all three — the app has no client write path to
+  // them, every production write is a service-role RPC or a cron tick.
+  // The seeder is the service role, so it writes them directly; the cast
+  // is the same one gymFlags uses above and for the same reason.
+  await insertAll(sb, 'agent_authority', p.agentAuthority as never);
+  await insertAll(sb, 'agent_message_templates', p.agentTemplates as never);
+  await insertAll(sb, 'agent_actions', p.agentActions as never);
 
   console.log('');
   console.log('Seeded:');

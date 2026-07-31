@@ -619,7 +619,10 @@ export type Database = {
             | 'chase_message'
             | 'plan_adjustment_offer'
             | 'retention_message'
-            | 'cover_ask';
+            | 'cover_ask'
+            | 'first_week_message'
+            | 'credits_low_message'
+            | 'plan_upgrade_offer';
           subject_profile: string | null;
           subject_subscription: string | null;
           payload: Json;
@@ -702,7 +705,10 @@ export type Database = {
             | 'chase_message'
             | 'plan_adjustment_offer'
             | 'retention_message'
-            | 'cover_ask';
+            | 'cover_ask'
+            | 'first_week_message'
+            | 'credits_low_message'
+            | 'plan_upgrade_offer';
           level: 'autonomous' | 'approval' | 'reserved';
           updated_by: string | null;
           updated_at: string;
@@ -751,7 +757,15 @@ export type Database = {
       agent_message_templates: {
         Row: {
           gym_id: string;
-          kind: 'chase_message' | 'plan_adjustment_offer' | 'retention_message';
+          // cover_ask is absent by design: it re-asks through the cover
+          // plumbing and never mails a member, so it has no template.
+          kind:
+            | 'chase_message'
+            | 'plan_adjustment_offer'
+            | 'retention_message'
+            | 'first_week_message'
+            | 'credits_low_message'
+            | 'plan_upgrade_offer';
           body: string;
           approved_by: string | null;
           approved_at: string;
