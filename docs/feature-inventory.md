@@ -1602,7 +1602,7 @@ The staff area shows up when `can_access_staff_area` is on.
   twice inside 45 days (a rejection blocks the window too), never about
   health, and writing anyone off stays human. Approval/autonomous flows,
   execution and the send worker are the money loop's, unchanged.
-- **Training history follows the athlete tier** (0237) — athlete mode
+- **Training history follows the athlete tier** (0237, 0238) — athlete mode
   (0068/0069) already sold the right thing: a member who leaves a gym, or
   never joined one, keeps logging under an athlete subscription, and a solo
   workout carries `gym_id = NULL`. What it never gated was the record.
@@ -1623,10 +1623,23 @@ The staff area shows up when `can_access_staff_area` is on.
   plus races and splits — free, regardless of membership or subscription.
   Definer, no arguments, keyed on `auth.uid()`, so no shape of the call
   reads anybody else's training. Recorded in the lawful-basis register
-  (§C2). pgTAP: `your_history_is_the_product.sql` — ten assertions covering
-  both failure directions, a payer losing their record and a lapsed member
-  keeping it, plus the export answering for exactly the person the policies
-  just refused.
+  (§C2). The web download and the phone share sheet are one path
+  (`src/lib/download.ts`, lifted out of `csv.ts` so the CSV exports and this
+  one cannot drift).
+  **A locked record still has to say what is in it** (0238) — gating the
+  rows without gating the count would have left the athlete screen showing
+  an empty state to somebody with years logged, which is the screen whose
+  whole job is to be worth paying for. `my_training_summary()` returns
+  counts and a date span only — workouts, results, races, gyms, first and
+  last — never a row of training, so the pitch is specific without leaking
+  what is being sold. Same definer, same `auth.uid()` keying. The card
+  reads "142 sessions since September 2022, across 2 gyms", says plainly
+  that nothing has been deleted, and offers the free download beside the
+  subscribe path. pgTAP: `your_history_is_the_product.sql` — twelve
+  assertions covering both failure directions, a payer losing their record
+  and a lapsed member keeping it, the export answering for exactly the
+  person the policies just refused, and the summary counting that same
+  refused record while returning none of it.
 - **Left means left** (0236) — a live permission bug, found by sweeping the
   raw role helpers rather than by anybody hitting it. `effective_can` has
   required `left_at is null` since it was written and 0223 fixed

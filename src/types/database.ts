@@ -4531,6 +4531,21 @@ export type Database = {
         };
         Returns: string;
       };
+      my_training_summary: {
+        Args: Record<string, never>;
+        Returns: {
+          workouts: number;
+          results: number;
+          races: number;
+          gyms: number;
+          first_at: string | null;
+          last_at: string | null;
+        };
+      };
+      export_my_training_history: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
       is_athlete_active: {
         Args: Record<string, never>;
         Returns: boolean;

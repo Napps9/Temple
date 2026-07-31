@@ -12,6 +12,11 @@ import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { findMovement } from '@/lib/movements';
 import { supabase } from '@/lib/supabase';
+import {
+  shareTrainingExport,
+  waitingLine,
+  type TrainingSummary,
+} from '@/lib/training-export';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 
 type LoggedMovement = { key: string; name: string; group: string; last: string };
@@ -130,7 +135,46 @@ export default function AthleteHome() {
     },
   });
 
+  // What is waiting, counted past the policies. The tracked_* reads above
+  // are gated on the subscription (0237), so for the one person this screen
+  // exists to convert they come back empty — and the copy would promise a
+  // history the page then fails to show. This answers regardless (0238),
+  // and says nothing about any individual session: counts and a range.
+  const waiting = useQuery({
+    queryKey: ['my-training-summary', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async (): Promise<TrainingSummary> => {
+      const { data, error } = await supabase.rpc('my_training_summary');
+      if (error) throw error;
+      return data as TrainingSummary;
+    },
+  });
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  // Free, and not behind the tier: the right of access is not a product
+  // feature. Deliberately reachable whether or not somebody subscribes.
+  const downloadHistory = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const { data, error } = await supabase.rpc('export_my_training_history');
+      if (error) throw error;
+      await shareTrainingExport(data);
+    } catch (e) {
+      setExportError(errorMessage(e, 'Could not put your history together'));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const logged = movements.data ?? [];
+  const held = waiting.data;
+  // Locked, not empty. Somebody with nothing logged is a different screen
+  // from somebody whose record is sitting behind the tier.
+  const lockedHistory =
+    !athleteActive.data && (held?.workouts ?? 0) > 0;
 
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
@@ -156,10 +200,50 @@ export default function AthleteHome() {
         </View>
 
         <Text className="text-gray-500 dark:text-gray-400 text-sm">
-          You're not in a gym right now, but your workout history is yours —
-          {logged.length > 0 ? ' it stays here and ' : ' '}follows you into any
-          gym on the network when you join.
+          You're not in a gym right now, but your workout history is yours — it
+          is kept, and it follows you into any gym on the network when you join.
         </Text>
+
+        {/* Locked, not empty. Without this the page tells somebody their
+            history is theirs and then shows them nothing, because the
+            tracked_* reads are gated on the subscription (0237). */}
+        {lockedHistory ? (
+          <AccentCard accent={BRAND_STEEL}>
+            <View className="flex-row items-center gap-3">
+              <View
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: BRAND_STEEL + '26' }}>
+                <Ionicons name="lock-closed-outline" size={20} color={BRAND_STEEL} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  Your training is still here
+                </Text>
+                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  {waitingLine(held!)}
+                </Text>
+              </View>
+            </View>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Nothing has been deleted. Start solo tracking to open it back up
+              and pick up where you left off — or take a copy, free, whether you
+              subscribe or not.
+            </Text>
+            {exportError ? (
+              <Text
+                accessibilityLiveRegion="polite"
+                className="text-red-500 dark:text-red-400 text-sm">
+                {exportError}
+              </Text>
+            ) : null}
+            <Button
+              variant="secondary"
+              onPress={downloadHistory}
+              loading={exporting}>
+              Download my history
+            </Button>
+          </AccentCard>
+        ) : null}
 
         {/* Solo tracking — the paid athlete tier (free during beta). */}
         {athleteActive.data ? (

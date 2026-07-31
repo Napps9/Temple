@@ -1,3 +1,5 @@
+import { downloadFile } from './download';
+
 // CSV builder with two non-negotiable guards:
 //
 // 1. Injection guard: spreadsheet apps treat cells starting with =, +,
@@ -59,32 +61,5 @@ export function buildCsv<Row>(
 }
 
 export async function downloadCsv(filename: string, csv: string): Promise<void> {
-  // Web detection without importing react-native at module scope — keeps
-  // csv.ts importable by Vitest without a react-native bundler.
-  const isWeb =
-    typeof document !== 'undefined' && typeof URL !== 'undefined' && 'createObjectURL' in URL;
-  if (isWeb) {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 0);
-    return;
-  }
-  const [fs, sharing] = await Promise.all([
-    import('expo-file-system'),
-    import('expo-sharing'),
-  ]);
-  const file = new fs.File(fs.Paths.cache, filename);
-  file.write(csv);
-  if (await sharing.isAvailableAsync()) {
-    await sharing.shareAsync(file.uri, {
-      mimeType: 'text/csv',
-      dialogTitle: filename,
-    });
-  }
+  return downloadFile(filename, csv, 'text/csv');
 }

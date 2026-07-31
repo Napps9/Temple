@@ -10,7 +10,7 @@
 -- policies have just refused.
 
 begin;
-select plan(10);
+select plan(12);
 
 \ir _helpers.psql
 
@@ -130,6 +130,22 @@ select ok(
   (public.export_my_training_history()->'workouts'->0->'movement_results')
     @> '[{"movement_key": "back_squat"}]'::jsonb,
   'with the movement results nested inside it'
+);
+
+-- And the screen that sells the tier can still say what is waiting. Left
+-- to the policies alone, /athlete would tell somebody their history is
+-- theirs and then show them nothing, which is the pitch and the evidence
+-- contradicting each other.
+select is(
+  (public.my_training_summary()->>'workouts')::int,
+  1,
+  'the summary still counts what is waiting, so the pitch is not a bluff'
+);
+
+select ok(
+  (public.my_training_summary()->>'first_at') is not null
+    and (public.my_training_summary()->>'gyms')::int = 1,
+  'and says how far back it goes and how many gyms it spans'
 );
 
 -- ---------------------------------------------------------------------------

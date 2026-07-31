@@ -680,7 +680,11 @@ next session finds them.
   logging into the gym they left, free. And gating a *product* is not
   gating a *right*, so `export_my_training_history()` ships alongside:
   complete record, free, no subscription, `security definer` so it answers
-  when the policies do not.
+  when the policies do not. One thing 0237 broke on its own and 0238 fixed:
+  gating the rows also gated the *count*, so the screen selling the tier
+  showed an empty state to somebody with years logged.
+  `my_training_summary()` returns counts and a date span and no training,
+  so the card can say what is behind the lock without giving it away.
 
 - **Email reports a number nobody should trust — built (0229).** All four
   decisions below are implemented: a signed `resend-webhook` function, an
