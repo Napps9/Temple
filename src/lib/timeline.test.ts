@@ -166,6 +166,54 @@ describe('formatTimelineLine', () => {
     expect(rejected.text).toBe("Emma's payment — you said leave it, so I did.");
   });
 
+  // The fourth job's own voice. Gone quiet and never started are different
+  // facts about different people, and a card that says "we've missed you"
+  // to somebody who has never been in reads as a mistake.
+  it('asks about somebody who joined and never came', () => {
+    const proposed = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Priya Shah',
+        detail: {
+          action_kind: 'first_week_message',
+          status: 'proposed',
+          payload: { member_name: 'Priya Shah', days_since_join: 14 },
+        },
+      }),
+    );
+    expect(proposed).toEqual({
+      text: "Priya joined 14 days ago and hasn't been in yet — say something?",
+      tone: 'amber',
+    });
+
+    const sent = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Priya Shah',
+        detail: {
+          action_kind: 'first_week_message',
+          status: 'executed',
+          payload: { member_name: 'Priya Shah', days_since_join: 14 },
+        },
+      }),
+    );
+    expect(sent.text).toBe("I've offered Priya a hand getting started.");
+
+    // No day count is still a sentence, not a gap.
+    const noDays = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Priya Shah',
+        detail: {
+          action_kind: 'first_week_message',
+          status: 'proposed',
+          payload: { member_name: 'Priya Shah' },
+        },
+      }),
+    );
+    expect(noDays.text).toBe("Priya joined and hasn't been in yet — say something?");
+  });
+
   it('describes closures with their dates', () => {
     const line = formatTimelineLine(
       evt({

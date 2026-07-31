@@ -27,7 +27,8 @@ type AuthorityRow = {
     | 'chase_message'
     | 'plan_adjustment_offer'
     | 'retention_message'
-    | 'cover_ask';
+    | 'cover_ask'
+    | 'first_week_message';
   level: 'autonomous' | 'approval' | 'reserved';
 };
 
@@ -249,6 +250,28 @@ export default function Roster() {
         <SimpleJob
           gymId={gymId}
           isOwner={isOwner}
+          kind="first_week_message"
+          name="The first week"
+          onDescription="Notices somebody who joined and hasn't been in yet, and sends one warm note — three a day at most, once per person ever, and never anyone who came across from another gym."
+          offTitle="People who joined and never came — want me to reach out?"
+          offLines={[
+            "When somebody has been a member a week or two and still hasn't trained, I'd send one warm note — and I ask you before each until you say otherwise.",
+            'Once per person, ever: a first week only happens once, so a no from you is final for them.',
+            'Never anyone who came across from another platform — they may have trained here for years and I have no way of knowing.',
+          ]}
+          enableRpc="set_first_week_job"
+          disableRpc="set_first_week_job"
+          level={levelFor('first_week_message')}
+          onSetLevel={(l) => setLevel('first_week_message', l)}
+          authorityLoaded={authority.data !== undefined}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
+          }
+        />
+
+        <SimpleJob
+          gymId={gymId}
+          isOwner={isOwner}
           kind="cover_ask"
           name="Finding cover"
           onDescription="When a class inside your warning window still has no coach, asks every coach who could claim it — again. Never moves or cancels a class; the claim stays first-come."
@@ -292,8 +315,8 @@ function SimpleJob({
   onDescription: string;
   offTitle: string;
   offLines: string[];
-  enableRpc: 'set_retention_job' | 'set_cover_job';
-  disableRpc: 'set_retention_job' | 'set_cover_job';
+  enableRpc: 'set_retention_job' | 'set_cover_job' | 'set_first_week_job';
+  disableRpc: 'set_retention_job' | 'set_cover_job' | 'set_first_week_job';
   level: 'autonomous' | 'approval' | 'reserved' | undefined;
   onSetLevel: (l: 'approval' | 'autonomous') => void;
   authorityLoaded: boolean;

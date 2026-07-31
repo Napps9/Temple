@@ -220,6 +220,33 @@ function agentActionLine(e: TimelineEvent): TimelineLine {
     }
   }
 
+  if (kind === 'first_week_message') {
+    const days =
+      typeof payload.days_since_join === 'number' ? payload.days_since_join : null;
+    switch (status) {
+      case 'proposed':
+        return {
+          text: days
+            ? `${first} joined ${days} days ago and hasn't been in yet — say something?`
+            : `${first} joined and hasn't been in yet — say something?`,
+          tone: 'amber',
+        };
+      case 'approved':
+      case 'executed':
+        return {
+          text: `I've offered ${first} a hand getting started.`,
+          tone: 'neutral',
+        };
+      case 'rejected':
+        return { text: `${first} — you said leave it, so I did.`, tone: 'neutral' };
+      default:
+        return {
+          text: `The question about ${first} lapsed — nothing was sent.`,
+          tone: 'neutral',
+        };
+    }
+  }
+
   if (kind === 'cover_ask') {
     const requester = str(payload as Record<string, unknown>, 'requester_name');
     const who = requester ? firstName(requester) : 'a coach';

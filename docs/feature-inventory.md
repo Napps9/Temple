@@ -988,6 +988,39 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The gym notices a member who never started** (0234) — a fourth job on
+  the rope, stamped from the 0206 framework the way 0208 stamped the second
+  and third: same authority dial, same proposal card, same owner-approved
+  template, same hard rules in SQL rather than in a prompt.
+  **It fills a gap the other jobs structurally cannot see.**
+  `agent_retention_tick` joins `class_bookings` on `attended_at is not
+  null`, so by construction it only ever notices somebody who has trained
+  and stopped. A member who signed up and never came was invisible to every
+  job in the product — and that is the moment a gym loses people.
+  `gym_quiet_members` (0231) already treated never-attended as a different
+  fact from lapsed; this acts on the half of that answer nothing was acting
+  on.
+  **Four hard rules, all in the tick's own `where`:** never somebody whose
+  `pending_members.linked_profile_id` marks them as having come across from
+  another platform — they may have trained at that gym for five years and
+  Temple has no idea when, because a class-booking history is not what the
+  importers carry, so telling them the gym noticed they have not been in is
+  the worst message in the product; **once per member ever**, unlike
+  retention's rolling 45 days, because a first week happens once and that
+  makes a rejection final; **seven days at the earliest and thirty at the
+  latest**; **three a day per gym**, so a gym that has just opened its join
+  link does not wake up to a queue.
+  **The card distinguishes two different decisions.** Booked and did not
+  come is not the same as never booked, and an owner acts differently on
+  each, so the evidence says which. Beyond that it is one warm note from
+  the template — no offer, no plan change, nothing about health, and
+  writing anybody off stays human.
+  **A third check constraint, found by the test.**
+  `agent_message_templates.kind` needed widening too, not just
+  `agent_actions` and `agent_authority` — 0208 widened it to three kinds
+  rather than four because `cover_ask` re-asks through the cover plumbing
+  and never mails a member. Missing it would have raised "No approved
+  template" the first time an owner approved a note.
 - **The bar answers with a door instead of a refusal** — two `ask` actions
   in `src/lib/actions/back-office.ts`.
   **`system.find_screen`** ("take me to coach earnings", "where do I set
@@ -1569,6 +1602,20 @@ The staff area shows up when `can_access_staff_area` is on.
   twice inside 45 days (a rejection blocks the window too), never about
   health, and writing anyone off stays human. Approval/autonomous flows,
   execution and the send worker are the money loop's, unchanged.
+- **The first week** (0234) — `set_first_week_job` (owner-only, Roster
+  take-on card) writes a `first_week_message` authority row + owner-
+  approved template. The daily `agent-first-week-tick` (09:15, after
+  retention's 08:45) finds members who joined 7–30 days ago, are on an
+  active plan, and have **never** had a booking marked attended — the case
+  retention cannot see, since it joins on `attended_at is not null`.
+  Proposes one warm note each: three per gym per day, **once per member
+  ever** (so a rejection is final for them), and **never** somebody whose
+  `pending_members.linked_profile_id` marks them as imported, because a
+  member who came across from another platform may have trained there for
+  years. Evidence distinguishes never-booked from booked-and-didn't-come.
+  Approval/autonomous flows, execution and the send worker are the money
+  loop's, unchanged. pgTAP: `the_member_who_never_started.sql`
+  (13 assertions, most of them refusals).
 - **Finding cover** (roadmap phase 7, 0208) — `set_cover_job` writes a
   `cover_ask` authority row (no template: the execution isn't a member
   email). The hourly `agent-cover-tick` finds cover offers nobody has

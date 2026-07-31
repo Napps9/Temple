@@ -179,10 +179,19 @@ every job's rules ("I never talk about health"). Guardian flows included.
 `cron_run_log` is the sharpest case: every sweep now records what it did,
 and the whole interface is a SQL query. Those rows become quiet Timeline
 lines — the gym's pulse, visible for the first time. The notification
-badge sources fold into the same stream. The two dead capability switches
-(`can_issue_override`, `can_issue_comp_grant`) **retire**. PWA branding,
-light/dark, the crash screen, BackLink, RLS, the capability matrix: load-
-bearing substrate, untouched.
+badge sources fold into the same stream. PWA branding, light/dark, the
+crash screen, BackLink, RLS, the capability matrix: load-bearing
+substrate, untouched.
+
+This section used to say the two dead capability switches
+(`can_issue_override`, `can_issue_comp_grant`) **retire**. Neither is dead
+any more and neither retired — they were wired up instead.
+`can_issue_override` gates going over a class cap in `book_member_for`
+(0213, with a pgTAP test) and `can_issue_comp_grant` gates
+`grant_member_comp` (0211) and the `members.comp` action. A switch an
+owner can see and a server that ignores it is the bug this codebase keeps
+finding; both of these were that, and both were fixed by enforcing them
+rather than by deleting them.
 
 ## Where we got to
 
@@ -624,6 +633,19 @@ empties the conversation they were in the middle of. That rule turned out
 to be broken in practice — three `ask` actions had been calling
 `ctx.offer` into a no-op since they were written, so no chip had ever
 rendered.
+
+**And the gym took on a fourth job (0234).** Everything above makes the
+owner's typing cheaper; this is the first thing in a while that makes them
+type less. `first_week_message` notices somebody who joined and has never
+trained — a gap the other jobs structurally cannot see, because
+`agent_retention_tick` joins `class_bookings` on `attended_at is not
+null` and so only ever notices people who have trained and stopped.
+Stamped from the 0206 framework: same dial, same card, same
+owner-approved template. Its four hard rules live in SQL, and the one that
+matters most is that it never writes to somebody who came across from
+another platform — they may have trained at that gym for years, and
+Temple has no idea when, so telling them it noticed they have not been in
+is the worst message in the product.
 
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates

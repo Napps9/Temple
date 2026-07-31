@@ -1427,19 +1427,23 @@ function AgentActionCard({
   const reasoning =
     kind === 'retention_message'
       ? 'One warm note from the gym usually brings a regular back.'
-      : kind === 'cover_ask'
-        ? 'Every coach who could claim gets the same nudge; the claim stays first-come.'
-        : isOffer
-          ? `Stripe has stopped trying${offerPlan ? ` — ${offerPlan}${offerPrice ? ` at ${offerPrice}` : ''} might keep them` : ''}.`
-          : 'A friendly note with their pay link usually sorts it.';
+      : kind === 'first_week_message'
+        ? 'The first session is the hard one — most people who never start never come back.'
+        : kind === 'cover_ask'
+          ? 'Every coach who could claim gets the same nudge; the claim stays first-come.'
+          : isOffer
+            ? `Stripe has stopped trying${offerPlan ? ` — ${offerPlan}${offerPrice ? ` at ${offerPrice}` : ''} might keep them` : ''}.`
+            : 'A friendly note with their pay link usually sorts it.';
   const yesLabel =
     kind === 'retention_message'
       ? 'Yes, reach out'
-      : kind === 'cover_ask'
-        ? 'Yes, ask them'
-        : isOffer
-          ? 'Yes, offer it'
-          : 'Yes, send it';
+      : kind === 'first_week_message'
+        ? 'Yes, get them in'
+        : kind === 'cover_ask'
+          ? 'Yes, ask them'
+          : isOffer
+            ? 'Yes, offer it'
+            : 'Yes, send it';
 
   const decide = async (decision: 'approve' | 'reject') => {
     if (!actionId || busy) return;
