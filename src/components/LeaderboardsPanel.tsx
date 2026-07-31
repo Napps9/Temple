@@ -1,8 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ScrollView, Switch, Text, View } from 'react-native';
+// Lives here rather than under app/ because it has no route of its own.
+// /management/leaderboards was a Screen, a BackLink and a heading wrapped
+// around this panel, and the Manage screen's Settings tab already rendered
+// the same component behind the same capability — two doors into one
+// surface, one of which nothing in the app linked to.
 
-import { Screen } from '@/components/Screen';
-import { BackLink } from '@/components/BackLink';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Switch, Text, View } from 'react-native';
+
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -120,24 +124,5 @@ export function LeaderboardsPanel() {
         </Text>
       ) : null}
     </View>
-  );
-}
-
-export default function LeaderboardsConfigPage() {
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Leaderboards
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Decide which kinds of comparison your members see.
-          </Text>
-        </View>
-        <LeaderboardsPanel />
-      </ScrollView>
-    </Screen>
   );
 }

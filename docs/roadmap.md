@@ -579,22 +579,31 @@ short series without inventing a chart language per question.
 
 ### 5 — Fewer things to say
 
-**One retired, and the next calls now have evidence behind them.**
+**Three retired, and the next calls now have evidence behind them.**
 `/management/membership-requests` is gone — the Timeline asks the same
 question with the same two choices through the same RPC, and gates those
 rows on the same capability, so the one role the screen existed for is
-served without it. `route_opens` counts which staff screens get opened per
-gym per day, with no identifier of any person in the table, so "has anyone
-opened this in ninety days" stops being a matter of opinion. The reasoning
-for collecting it at all is in the lawful-basis register, item 6.
+served without it. `/management/leaderboards` and `/management/messaging`
+followed: each was a heading wrapped around a panel the Manage screen's
+Settings tab already rendered behind the same capability, and the manifest
+was the only thing in the repository that linked to either. Their tiles
+stay and now open the Settings tab with that section first and expanded —
+a surface that folds into a tab has to stay findable by the words it was
+findable by before, or the retirement cost something. `route_opens` counts
+which staff screens get opened per gym per day, with no identifier of any
+person in the table, so "has anyone opened this in ninety days" stops
+being a matter of opinion for everything that is not this obvious. The
+reasoning for collecting it at all is in the lawful-basis register, item 6.
 
 **The baseline is in the repository now.** `src/lib/back-office.ts` holds
-every management surface as data with a `status` — `primary`,
-`back-office` or `retired` — so "routes retired" is a number a test
-asserts rather than a claim a document makes. Demotion is reversible and deletion is not, so nothing goes
-without either a demonstrated replacement or ninety days of silence. What did change is that everything behind the door
-is findable by typing, and that two surfaces which had no door at all —
-Goals and the Roster — now have one.
+every management surface that exists as data, and `RETIRED_ROUTES` the
+routes that no longer do with the reason each went — so "routes retired"
+is a number a test asserts rather than a claim a document makes. Demotion
+is reversible and deletion is not, so nothing goes without either a
+demonstrated replacement or ninety days of silence; all three so far are
+the first kind, and the fourth will need the second. What did change is
+that everything behind the door is findable by typing, and that two
+surfaces which had no door at all — Goals and the Roster — now have one.
 
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates

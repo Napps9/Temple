@@ -19,8 +19,10 @@ import { GymSetupChecklist } from '@/components/GymSetupChecklist';
 import { ImportDataModal } from '@/components/ImportDataModal';
 import { Input } from '@/components/Input';
 import { InviteMemberModal } from '@/components/InviteMemberModal';
+import { LeaderboardsPanel } from '@/components/LeaderboardsPanel';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
+import { MessagingPanel } from '@/components/MessagingPanel';
 import { Screen } from '@/components/Screen';
 import { TagRulesModal } from '@/components/TagRulesModal';
 import { StatTile } from '@/components/StatTile';
@@ -62,14 +64,13 @@ import {
   CATEGORY_LABELS,
   type BackOfficeCategory,
   type BackOfficeEntry,
+  type SettingsSectionId,
 } from '@/lib/back-office';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useThemeColors } from '@/lib/theme';
 import { BrandingPanel } from './branding';
 import { ClassTypesPanel } from './class-types';
 import { CommunicationsHome } from './communications';
-import { LeaderboardsPanel } from './leaderboards';
-import { MessagingPanel } from './messaging';
 import { OperatingDefaultsPanel } from './operating';
 import { HealthScreeningPanel } from './parq';
 import { PlansPanel } from './plans';
@@ -81,12 +82,19 @@ function ManagementCard({
   title,
   description,
   href,
+  onPress,
   comingSoon,
   saidInstead,
 }: {
   title: string;
   description: string;
   href?: LinkHref;
+  // Set instead of `href` for a surface that lives inside this screen —
+  // Leaderboards and Messaging, whose routes are retired. A Link back to
+  // the screen you are already standing on is not navigation, and this
+  // screen already keeps which tab is showing in state rather than in the
+  // URL, so a section belongs in state too.
+  onPress?: () => void;
   comingSoon?: boolean;
   // The sentence that does the same job in the bar. Somebody reading a
   // tile is somebody who came looking for a screen — the one moment worth
@@ -113,6 +121,9 @@ function ManagementCard({
       ) : null}
     </View>
   );
+  if (onPress && !comingSoon) {
+    return <Pressable onPress={onPress}>{body}</Pressable>;
+  }
   if (href && !comingSoon) {
     return (
       <Link href={href} asChild>
@@ -213,9 +224,11 @@ function ManageNav({
 function SearchResults({
   results,
   query,
+  onOpenSection,
 }: {
   results: BackOfficeEntry[];
   query: string;
+  onOpenSection: (id: SettingsSectionId) => void;
 }) {
   if (results.length === 0) {
     return (
@@ -237,7 +250,8 @@ function SearchResults({
           key={`${e.href}:${e.title}`}
           title={e.title}
           description={e.blurb}
-          href={e.href as LinkHref}
+          href={e.section ? undefined : (e.href as LinkHref)}
+          onPress={e.section ? () => onOpenSection(e.section!) : undefined}
           saidInstead={e.saidInstead}
         />
       ))}
@@ -300,6 +314,18 @@ export default function ManagementHome() {
   const [active, setActive] = useState<BackOfficeCategory>(
     availableCategories[0] ?? 'members',
   );
+
+  // Leaderboards and Messaging have no route any more — their door is a
+  // section of this screen. Asking for one lands on Settings with that
+  // section first and open, and clears the search, because results replace
+  // the tab body and leaving the query set would show the row again
+  // instead of the thing it points at.
+  const [openSection, setOpenSection] = useState<SettingsSectionId | null>(null);
+  function openSettingsSection(id: SettingsSectionId) {
+    setActive('settings');
+    setOpenSection(id);
+    setQuery('');
+  }
   const activeCategory = availableCategories.includes(active)
     ? active
     : availableCategories[0] ?? 'members';
@@ -370,7 +396,11 @@ export default function ManagementHome() {
               so the card never nags a finished gym. */}
           {searching ? null : <GymSetupChecklist />}
           {searching ? (
-            <SearchResults results={results} query={query} />
+            <SearchResults
+              results={results}
+              query={query}
+              onOpenSection={openSettingsSection}
+            />
           ) : activeCategory === 'members' ? (
           <MembersTab />
         ) : activeCategory === 'comms' ? (
@@ -399,7 +429,7 @@ export default function ManagementHome() {
             ) : null}
           </View>
         ) : activeCategory === 'settings' ? (
-          <SettingsTab />
+          <SettingsTab open={openSection} />
         ) : null}
         {searching
           ? null
@@ -408,7 +438,8 @@ export default function ManagementHome() {
                 key={c.title}
                 title={c.title}
                 description={c.blurb}
-                href={c.href as LinkHref}
+                href={c.section ? undefined : (c.href as LinkHref)}
+                onPress={c.section ? () => openSettingsSection(c.section!) : undefined}
                 saidInstead={c.saidInstead}
               />
             ))}
@@ -418,62 +449,91 @@ export default function ManagementHome() {
   );
 }
 
-function SettingsTab() {
+function SettingsTab({ open }: { open: SettingsSectionId | null }) {
   const canManageStaff = useCan('can_manage_staff') ?? false;
   const canConfigureLeaderboards = useCan('can_configure_leaderboards') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canManageParq = useCan('can_manage_parq') ?? false;
 
+  const sections: {
+    id: SettingsSectionId;
+    title: string;
+    description: string;
+    icon: IconName;
+    visible: boolean;
+    panel: ReactNode;
+  }[] = [
+    {
+      id: 'gym-settings',
+      title: 'Gym settings',
+      description:
+        'Week start, booking windows, cancel cutoff, PAR-Q expiry, plan resolution.',
+      icon: 'options-outline',
+      visible: canManageStaff,
+      panel: <OperatingDefaultsPanel />,
+    },
+    {
+      id: 'branding',
+      title: 'Branding',
+      description: 'Logo, colours, gym name, public join link.',
+      icon: 'color-palette-outline',
+      visible: canManageStaff,
+      panel: <BrandingPanel />,
+    },
+    {
+      id: 'health-screening',
+      title: 'Health screening',
+      description: 'Upload a waiver to sign, or build a PAR-Q. One is enough.',
+      icon: 'heart-outline',
+      visible: canManageParq,
+      panel: <HealthScreeningPanel />,
+    },
+    {
+      id: 'leaderboards',
+      title: 'Leaderboards',
+      description: 'Turn class and strength comparisons on or off.',
+      icon: 'trophy',
+      visible: canConfigureLeaderboards,
+      panel: <LeaderboardsPanel />,
+    },
+    {
+      id: 'messaging',
+      title: 'Messaging',
+      description: 'Decide who can DM whom inside the gym.',
+      icon: 'chatbubbles-outline',
+      visible: canManageStaff,
+      panel: <MessagingPanel />,
+    },
+    {
+      id: 'class-types',
+      title: 'Class types',
+      description: 'Name, colour and schedule the kinds of class you run.',
+      icon: 'calendar-outline',
+      visible: canEditClasses,
+      panel: <ClassTypesPanel />,
+    },
+  ];
+
+  // The named section goes to the top rather than being scrolled to.
+  // Landing at the top of six collapsed cards with the one you asked for
+  // below the fold is the same as not opening it.
+  const shown = sections.filter((s) => s.visible);
+  const ordered = open
+    ? [...shown.filter((s) => s.id === open), ...shown.filter((s) => s.id !== open)]
+    : shown;
+
   return (
     <View className="gap-3">
-      {canManageStaff ? (
+      {ordered.map((s) => (
         <SettingsSection
-          title="Gym settings"
-          description="Week start, booking windows, cancel cutoff, PAR-Q expiry, plan resolution."
-          icon="options-outline">
-          <OperatingDefaultsPanel />
+          key={s.id}
+          title={s.title}
+          description={s.description}
+          icon={s.icon}
+          defaultOpen={s.id === open}>
+          {s.panel}
         </SettingsSection>
-      ) : null}
-      {canManageStaff ? (
-        <SettingsSection
-          title="Branding"
-          description="Logo, colours, gym name, public join link."
-          icon="color-palette-outline">
-          <BrandingPanel />
-        </SettingsSection>
-      ) : null}
-      {canManageParq ? (
-        <SettingsSection
-          title="Health screening"
-          description="Upload a waiver to sign, or build a PAR-Q. One is enough."
-          icon="heart-outline">
-          <HealthScreeningPanel />
-        </SettingsSection>
-      ) : null}
-      {canConfigureLeaderboards ? (
-        <SettingsSection
-          title="Leaderboards"
-          description="Turn class and strength comparisons on or off."
-          icon="trophy">
-          <LeaderboardsPanel />
-        </SettingsSection>
-      ) : null}
-      {canManageStaff ? (
-        <SettingsSection
-          title="Messaging"
-          description="Decide who can DM whom inside the gym."
-          icon="chatbubbles-outline">
-          <MessagingPanel />
-        </SettingsSection>
-      ) : null}
-      {canEditClasses ? (
-        <SettingsSection
-          title="Class types"
-          description="Name, colour and schedule the kinds of class you run."
-          icon="calendar-outline">
-          <ClassTypesPanel />
-        </SettingsSection>
-      ) : null}
+      ))}
     </View>
   );
 }
@@ -485,14 +545,21 @@ function SettingsSection({
   title,
   description,
   icon,
+  defaultOpen,
   children,
 }: {
   title: string;
   description: string;
   icon: IconName;
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen ?? false);
+  // Opens on a deep link and never force-closes: somebody who arrived at
+  // one section and then collapsed it has said what they want.
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
   const colors = useThemeColors();
   return (
     <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">

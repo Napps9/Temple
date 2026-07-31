@@ -988,6 +988,43 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **Two settings screens folded into the tab that already rendered them** —
+  `/management/leaderboards` and `/management/messaging` are deleted. Each
+  was a `<Screen>`, a `<BackLink>` and a heading wrapped around a panel —
+  `LeaderboardsPanel`, `MessagingPanel` — that the Manage screen's Settings
+  tab already rendered, behind the same capability
+  (`can_configure_leaderboards`, `can_manage_staff`). Nothing in the app
+  linked to either route: the manifest was the only reference in the
+  repository, so the second door was reachable by typing a URL and by
+  nothing else. Verified by grep before deleting, not assumed.
+  **The panels moved to `src/components/`.** Left under `app/`, Expo Router
+  would have kept serving them as routes and the retirement would have been
+  a heading deleted rather than a door closed.
+  **A folded surface stays findable, which is the whole condition.** The
+  tile and the search result remain; their entry carries
+  `section: 'leaderboards' | 'messaging'` instead of a route of its own,
+  and the card **acts rather than links** — it selects the Settings tab,
+  puts that section **first and open**, and clears the search. A `<Link>`
+  back to the screen you are already standing on is not navigation, and
+  this screen has always kept which tab is showing in state rather than in
+  the URL, so a section belongs in state too. First rather than scrolled
+  to: landing at the top of six collapsed cards with the one you asked for
+  below the fold is the same as not opening it. Guards hold it together —
+  every `section` names a section the screen actually renders (grepped out
+  of `index.tsx`, so a rename cannot silently turn the tile into a tap that
+  does nothing), both cards go through `onPress` rather than `href`, the
+  two panels are imported from `components/`, and `dm` and `rankings` are
+  pinned in the search-words test, because a surface that folds into a tab
+  has to stay findable by the words it was findable by before or the
+  retirement cost something.
+  **The manifest model got simpler on the way.** `BACK_OFFICE` is now the
+  surfaces that exist and `RETIRED_ROUTES` the routes that do not, each
+  with where the job went; `status: 'retired'` and `retiredBecause` are
+  gone. A surface that moves inside another screen is not the same fact as
+  a surface that goes, and the old shape could only say one of them —
+  `visibleEntries` filtered retired entries out, which would have made
+  these two unsearchable. `retiredCount()` is `RETIRED_ROUTES.length`:
+  **3**.
 - **The first retirement, and the evidence for the next ones** (0233) —
   the Back Office gave the burndown a baseline and no evidence.
   **`/management/membership-requests` is deleted**, the first route
@@ -997,10 +1034,10 @@ The staff area shows up when `can_access_staff_area` is on.
   on `effective_can(gym_id, 'can_assign_plan')` — exactly the capability
   the screen required — so the front-desk role the screen existed for is
   served without it. Owners already action them from the Members list. The
-  manifest entry stays with `status: 'retired'` and a `retiredBecause`
-  line: a retirement that leaves a record of itself is reviewable, one
-  that leaves a gap is a thing somebody cannot find any more. The measure
-  is `retiredCount()`, asserted by a test so it cannot move by accident.
+  route is recorded in `RETIRED_ROUTES` with the reason: a retirement that
+  leaves a record of itself is reviewable, one that leaves a gap is a thing
+  somebody cannot find any more. The measure is `retiredCount()`, asserted
+  by a test so it cannot move by accident.
   **`route_opens` counts which screens get opened** so the next calls rest
   on evidence. A gym, a route, a day, a number — and **no `profile_id`
   column exists**. The two access logs that do (`health_data_access_log`,
@@ -2210,10 +2247,10 @@ The Manage page presents a tab strip:
     (auto-saving edits first) and can **delete** the staged row (e.g. to
     clear junk from a test import).
   - **Plan changes** [`can_assign_plan`] — roles without the member list
-    (coaches/staff) get a **Membership requests** card linking to the
-    standalone queue; Leads live on the AI Front Desk tab. The standalone
-    `/management/members`, `/management/tags` and
-    `/management/membership-requests` routes still exist for deep links.
+    (coaches/staff) action them from the Timeline, which raises the same
+    request with the same two choices behind the same capability; Leads
+    live on the AI Front Desk tab. The standalone `/management/members`
+    and `/management/tags` routes still exist for deep links.
 - **Team** [`can_manage_staff`] — staff roster with inline open-task
   + open-cover-request counts; per-coach earnings + class-type
   qualifications; SOPs card; Invite codes card (one-time codes to
@@ -2289,8 +2326,8 @@ The Manage page presents a tab strip:
   downgrade + cancel request). Owner edits them in the Manage → Plans tab
   (RPC `set_membership_change_policies`). Where approval is needed the
   member files a `membership_change_requests` row (RLS self
-  insert/withdraw); staff work the queue at
-  `/management/membership-requests`
+  insert/withdraw); staff work the queue from the Timeline's `RequestCard`
+  and the Members list's Requests filter
   (RPC `staff_membership_change_requests`) and approve/reject. The Stripe
   change + row update run together in the `stripe-modify-subscription`
   edge function under the service role. Credit packs and one-off class

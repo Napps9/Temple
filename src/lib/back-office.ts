@@ -20,8 +20,9 @@
 //   * The index can be searched, because there is something to search.
 //     Twenty-five tiles behind eight category pills is findable only by
 //     somebody who knows which pill owns what.
-//   * `status` gives the burndown a baseline. Nothing is retired yet;
-//     the point is that when something is, the number moves on its own.
+//   * RETIRED_ROUTES gives the burndown a numerator. A route that goes is
+//     recorded here rather than deleted silently, so "routes retired" is a
+//     number a test asserts and a reason somebody can read.
 //
 // The gate is expressed as data rather than as `useCan` calls, so the
 // screen still does the asking and this module only says what to ask —
@@ -60,8 +61,23 @@ export const CATEGORY_LABELS: Record<BackOfficeCategory, string> = {
   settings: 'Settings',
 };
 
+// The collapsible sections of the Manage screen's Settings tab. A surface
+// whose only route was a heading wrapped around one of these panels points
+// here instead: same component, same gate, one door.
+export type SettingsSectionId =
+  | 'gym-settings'
+  | 'branding'
+  | 'health-screening'
+  | 'leaderboards'
+  | 'messaging'
+  | 'class-types';
+
 export type BackOfficeEntry = {
   href: string;
+  // Set when the surface lives inside the Manage screen rather than at a
+  // route of its own. The tile selects the Settings tab and opens that
+  // section first, in place — there is nowhere to navigate to.
+  section?: SettingsSectionId;
   title: string;
   blurb: string;
   category: BackOfficeCategory;
@@ -83,10 +99,6 @@ export type BackOfficeEntry = {
   // Shown on the tile, because the moment somebody goes looking for a
   // screen is the moment worth telling them they need not have.
   saidInstead?: string;
-  // Why a screen went, kept with the entry rather than deleted alongside
-  // it. A retirement that leaves a record of itself is reviewable; one
-  // that leaves a gap is just a thing somebody cannot find any more.
-  retiredBecause?: string;
   // Two entries exist only to keep their category visible for a role that
   // can see the stats but not the member list — the Members panel renders
   // them itself, so a tile pointing at the page you are already on would
@@ -98,8 +110,42 @@ export type BackOfficeEntry = {
   // and no other door — before the manifest they were reachable only from
   // two quick-links on the Timeline.
   needsTile?: boolean;
-  status: 'primary' | 'back-office' | 'retired';
+  status: 'primary' | 'back-office';
 };
+
+// Routes that no longer exist, and where the job went. The burndown's
+// numerator, kept in the repository rather than in a changelog: a deletion
+// that leaves a record of itself is reviewable, one that leaves a gap is
+// just a thing somebody cannot find any more.
+export const RETIRED_ROUTES: { route: string; because: string }[] = [
+  {
+    route: '/management/membership-requests',
+    because:
+      'The Timeline asks the same question with the same two choices, ' +
+      'through the same RPC, and shows the member’s note beside it. The ' +
+      'feed gates those rows on can_assign_plan — the capability this ' +
+      'screen required — so the front-desk role it existed for is served ' +
+      'without it, and owners already action them from the Members list.',
+  },
+  {
+    route: '/management/leaderboards',
+    because:
+      'A Screen, a BackLink and a heading around LeaderboardsPanel, which ' +
+      'the Manage screen’s Settings tab already rendered behind the same ' +
+      'can_configure_leaderboards gate. Nothing in the app linked to the ' +
+      'route; the panel moved to components/ and the entry now opens the ' +
+      'Settings section.',
+  },
+  {
+    route: '/management/messaging',
+    because:
+      'A Screen, a BackLink and a heading around MessagingPanel, which the ' +
+      'Manage screen’s Settings tab already rendered behind the same ' +
+      'can_manage_staff gate. Nothing in the app linked to the route; the ' +
+      'panel moved to components/ and the entry now opens the Settings ' +
+      'section.',
+  },
+];
 
 export const BACK_OFFICE: BackOfficeEntry[] = [
   // --- Members -------------------------------------------------------
@@ -153,21 +199,6 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'members',
     capabilities: ['can_manage_tags'],
     status: 'back-office',
-  },
-  {
-    href: '/management/membership-requests',
-    title: 'Membership requests',
-    blurb: 'Approve or reject member requests to switch or cancel a plan.',
-    keywords: ['cancel', 'downgrade', 'upgrade', 'freeze', 'pause'],
-    category: 'members',
-    capabilities: ['can_assign_plan'],
-    status: 'retired',
-    retiredBecause:
-      'The Timeline asks the same question with the same two choices, ' +
-      'through the same RPC, and shows the member’s note beside it. The ' +
-      'feed gates those rows on can_assign_plan — the capability this ' +
-      'screen required — so the front-desk role it existed for is served ' +
-      'without it, and owners already action them from the Members list.',
   },
   {
     href: '/management/members/import',
@@ -363,7 +394,8 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     status: 'back-office',
   },
   {
-    href: '/management/leaderboards',
+    href: '/management',
+    section: 'leaderboards',
     title: 'Leaderboards',
     blurb: 'Turn class and strength comparisons on or off.',
     keywords: ['rankings', 'comparisons', 'boards'],
@@ -372,7 +404,8 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     status: 'back-office',
   },
   {
-    href: '/management/messaging',
+    href: '/management',
+    section: 'messaging',
     title: 'Messaging',
     blurb: 'Decide who can DM whom inside the gym.',
     keywords: ['dm', 'chat', 'direct messages'],
@@ -405,15 +438,14 @@ export function visibleEntries(
 ): BackOfficeEntry[] {
   return BACK_OFFICE.filter(
     (e) =>
-      e.status !== 'retired' &&
-      (e.capabilities.some((c) => can(c) === true) ||
-        (e.roles ?? []).some((r) => r === role)),
+      e.capabilities.some((c) => can(c) === true) ||
+      (e.roles ?? []).some((r) => r === role),
   );
 }
 
 // The measure, computed rather than claimed.
 export function retiredCount(): number {
-  return BACK_OFFICE.filter((e) => e.status === 'retired').length;
+  return RETIRED_ROUTES.length;
 }
 
 export function categoriesWithEntries(

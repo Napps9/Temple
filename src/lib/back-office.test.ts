@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BACK_OFFICE,
   CATEGORY_ORDER,
+  RETIRED_ROUTES,
   categoriesWithEntries,
   retiredCount,
   searchBackOffice,
@@ -68,24 +69,24 @@ describe('nothing is built and then lost', () => {
   });
 
   // The other direction: a tile pointing at a screen somebody deleted is
-  // a dead end that looks like a feature. A retired entry is exempt —
-  // its screen is supposed to be gone, and the entry stays to say so.
+  // a dead end that looks like a feature.
   it('has a screen behind every door', () => {
     const known = new Set([...routes, 'members', 'index']);
-    const dead = BACK_OFFICE.filter(
-      (e) => e.status !== 'retired' && e.href.startsWith('/management/'),
-    )
-      .map((e) => e.href.replace('/management/', ''))
+    const dead = BACK_OFFICE.filter((e) => e.href.startsWith('/management'))
+      .map((e) => (e.href === '/management' ? 'index' : e.href.replace('/management/', '')))
       .filter((r) => !known.has(r));
     expect(dead).toEqual([]);
   });
 
-  // And the retired one has to be genuinely gone, or the entry is a lie
-  // about a screen that is still sitting there.
-  it('has no screen behind a retired door', () => {
-    for (const e of BACK_OFFICE.filter((x) => x.status === 'retired')) {
-      expect(routes).not.toContain(e.href.replace('/management/', ''));
-      expect(e.retiredBecause?.length ?? 0).toBeGreaterThan(40);
+  // A retired route has to be genuinely gone and genuinely unreferenced,
+  // or the record is a claim about a screen still sitting there.
+  it('has no file and no door behind a retired route', () => {
+    expect(RETIRED_ROUTES.length).toBeGreaterThan(0);
+    const hrefs = new Set(BACK_OFFICE.map((e) => e.href));
+    for (const r of RETIRED_ROUTES) {
+      expect(routes).not.toContain(r.route.replace('/management/', ''));
+      expect(hrefs.has(r.route)).toBe(false);
+      expect(r.because.length).toBeGreaterThan(40);
     }
   });
 
@@ -130,16 +131,12 @@ describe('who sees what', () => {
   const loading = () => undefined;
 
   it('shows an owner everything that still exists', () => {
-    expect(visibleEntries(owner, 'owner')).toHaveLength(
-      BACK_OFFICE.length - retiredCount(),
-    );
+    expect(visibleEntries(owner, 'owner')).toHaveLength(BACK_OFFICE.length);
   });
 
-  it('never offers a retired screen to anybody', () => {
-    const retired = BACK_OFFICE.filter((e) => e.status === 'retired');
-    expect(retired.length).toBeGreaterThan(0);
+  it('never offers a retired route to anybody', () => {
     const shown = visibleEntries(owner, 'owner').map((e) => e.href);
-    for (const e of retired) expect(shown).not.toContain(e.href);
+    for (const r of RETIRED_ROUTES) expect(shown).not.toContain(r.route);
   });
 
   it('shows a member with no capabilities nothing at all', () => {
@@ -239,6 +236,11 @@ describe('finding it by typing', () => {
       'seo',
       'credits',
       'timezone',
+      // Both lost their route in the same change that wrote this line.
+      // A surface that folds into a tab has to stay findable by the words
+      // it was findable by before, or the retirement cost something.
+      'dm',
+      'rankings',
     ];
     const empty = asked.filter((q) => searchBackOffice(q, all).length === 0);
     expect(empty).toEqual([]);
@@ -261,11 +263,9 @@ describe('the burndown has a baseline', () => {
     const byStatus = (s: string) => BACK_OFFICE.filter((e) => e.status === s).length;
     // The number moving is the measure; this test exists so it cannot move
     // by accident, and so raising it means writing down why.
-    expect(retiredCount()).toBe(1);
-    expect(byStatus('retired')).toBe(retiredCount());
-    expect(byStatus('primary') + byStatus('back-office') + byStatus('retired')).toBe(
-      BACK_OFFICE.length,
-    );
+    expect(retiredCount()).toBe(3);
+    expect(retiredCount()).toBe(RETIRED_ROUTES.length);
+    expect(byStatus('primary') + byStatus('back-office')).toBe(BACK_OFFICE.length);
   });
 
   it('offers the bar sentence wherever one exists', () => {
@@ -283,5 +283,31 @@ describe('the screen reads the manifest', () => {
     expect(screen).toMatch(/from '@\/lib\/back-office'/);
     expect(screen).toMatch(/visibleEntries\(/);
     expect(screen).toMatch(/searchBackOffice\(/);
+  });
+
+  // Leaderboards and Messaging have no route any more — their door is a
+  // section of this screen. A renamed or dropped section would turn the
+  // tile into a link that lands on the Members tab and does nothing
+  // visible, which is worse than the dead end deleting a route gives you.
+  it('has a settings section behind every section link', () => {
+    const named = BACK_OFFICE.filter((e) => e.section);
+    expect(named.map((e) => e.title).sort()).toEqual(['Leaderboards', 'Messaging']);
+    for (const e of named) {
+      expect(e.href).toBe('/management');
+      expect(screen).toContain(`id: '${e.section}'`);
+    }
+    // The tile has to act rather than link: a Link back to the screen you
+    // are standing on is not navigation, and the tab this screen is
+    // showing lives in state, not in the URL.
+    expect(screen).toMatch(/onPress=\{c\.section \? \(\) => openSettingsSection/);
+    expect(screen).toMatch(/onPress=\{e\.section \? \(\) => onOpenSection/);
+  });
+
+  // The panels moved out of app/ when their routes went. Left under app/,
+  // Expo Router would have kept serving them as routes and the retirement
+  // would have been a heading deleted rather than a door closed.
+  it('imports the two folded panels from components', () => {
+    expect(screen).toContain("from '@/components/LeaderboardsPanel'");
+    expect(screen).toContain("from '@/components/MessagingPanel'");
   });
 });

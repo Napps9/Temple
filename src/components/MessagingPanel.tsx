@@ -1,15 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+// Lives here rather than under app/ because it has no route of its own.
+// /management/messaging was a Screen, a BackLink and a heading wrapped
+// around this panel, and the Manage screen's Settings tab already rendered
+// the same component behind the same capability — two doors into one
+// surface, one of which nothing in the app linked to.
 
-import { Screen } from '@/components/Screen';
-import { BackLink } from '@/components/BackLink';
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pressable, Text, View } from 'react-native';
+
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
-
-import { Ionicons } from '@expo/vector-icons';
 
 type Cfg = { dm_scope: 'full_gym' | 'member_coach_only' };
 
@@ -114,24 +117,5 @@ export function MessagingPanel() {
         {canManageStaff ? ' Team → Configure role permissions.' : ' the role permissions matrix.'}
       </Text>
     </View>
-  );
-}
-
-export default function MessagingConfig() {
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Manage" fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
-            Messaging
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
-            Decide who can DM whom inside the gym.
-          </Text>
-        </View>
-        <MessagingPanel />
-      </ScrollView>
-    </Screen>
   );
 }
