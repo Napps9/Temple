@@ -1,3 +1,4 @@
+import { BACK_OFFICE_ACTIONS } from './back-office';
 import { CLASS_ACTIONS } from './classes';
 import { COMMS_ACTIONS } from './comms';
 import { GYM_ACTIONS } from './gym';
@@ -27,6 +28,7 @@ export const ACTIONS: AnyAction[] = [
   ...STORE_ACTIONS,
   ...TEAM_ACTIONS,
   ...WEBSITE_ACTIONS,
+  ...BACK_OFFICE_ACTIONS,
 ];
 
 export function findAction(name: unknown): AnyAction | null {

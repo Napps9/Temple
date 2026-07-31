@@ -614,6 +614,17 @@ it is not being used. What also changed is that everything behind the door
 is findable by typing, and that two surfaces which had no door at all —
 Goals and the Roster — now have one.
 
+**And the bar stopped refusing what it could point at.**
+`system.find_screen` searches the same manifest the Manage index searches,
+filtered to what the asker can actually open, and offers the way through
+as a chip — the bar's worst failure was "I can't do that" when there is a
+surface and only the sentence is missing. It offers the door rather than
+taking it, which is the standing rule: navigating on somebody's behalf
+empties the conversation they were in the middle of. That rule turned out
+to be broken in practice — three `ask` actions had been calling
+`ctx.offer` into a no-op since they were written, so no chip had ever
+rendered.
+
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
 from asking to acting removes sentences. The measures stay what they

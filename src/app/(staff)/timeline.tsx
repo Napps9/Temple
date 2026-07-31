@@ -438,6 +438,8 @@ export default function Timeline() {
     userId: session!.user.id,
     currency,
     offer,
+    can: (c: string) => can(c as Capability),
+    role,
   });
 
   const freshen = (spec: AnyAction) => {

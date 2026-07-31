@@ -60,6 +60,15 @@ export type ActionContext = {
   // empties the conversation they were having, which is the exact thing
   // this surface exists to stop.
   offer?: (label: string, href: string) => void;
+  // The same capability check that filters the vocabulary, for the one
+  // action whose ANSWER is a list of surfaces. Filtering what it may
+  // propose is not enough there — it would name screens the asker cannot
+  // open. Undefined means unknown, which is not permission.
+  can?: (capability: string) => boolean | undefined;
+  // Alongside `can`, because two back-office surfaces are gated on being
+  // the owner and on no capability at all — Billing and Setup. Without it
+  // "where do I connect Stripe" answers nothing for the one person who can.
+  role?: string | null;
 };
 
 // What the card shows. `lines` is the evidence; a `do` action gets the

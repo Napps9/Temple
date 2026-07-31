@@ -143,8 +143,31 @@ describe('the registry', () => {
         'store.add_product',
         'store.set_price',
         'store.sales',
+        'system.find_screen',
+        'usage.what_nobody_opens',
       ]),
     );
+  });
+
+  // The bar's worst failure is answering "I can't do that" when there is a
+  // screen for it and only the sentence is missing. find_screen is the
+  // fallback that turns that into a door, so it has to be reachable by
+  // anybody who can be on a staff screen at all — and no wider.
+  it('offers the way to a screen to anybody staff-side', () => {
+    const staff = actionsFor((c) => c === 'can_access_staff_area').map(
+      (a) => a.name,
+    );
+    expect(staff).toContain('system.find_screen');
+    // The same gate members.find, members.message and team.who already use
+    // — the things anybody working a shift can ask.
+    expect(staff.sort()).toEqual([
+      'members.find',
+      'members.message',
+      'system.find_screen',
+      'team.who',
+    ]);
+    // And no wider: the usage question is an admin deciding what to keep.
+    expect(staff).not.toContain('usage.what_nobody_opens');
   });
 });
 

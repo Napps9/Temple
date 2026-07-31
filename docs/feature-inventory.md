@@ -988,6 +988,36 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The bar answers with a door instead of a refusal** — two `ask` actions
+  in `src/lib/actions/back-office.ts`.
+  **`system.find_screen`** ("take me to coach earnings", "where do I set
+  the cancel cutoff", "where is the thing that refunds somebody") searches
+  the same `back-office.ts` manifest the Manage screen searches, so every
+  keyword written for the tile index works in the bar too. The bar's worst
+  failure was saying "I can't do that" when there is a surface and only the
+  sentence is missing; this turns that into a door. One match answers with
+  the surface, the category it sits under, the sentence that would have
+  saved the trip where one exists, and the way through as a chip. Two or
+  more is a question with a chip each, not a guess. None says so plainly
+  and suggests saying what they want changed instead.
+  **Filtered twice, because the vocabulary gate cannot do this job.** The
+  action is allowed — `can_access_staff_area`, the same gate `members.find`
+  and `team.who` use — and only its *results* are privileged, so the
+  preview filters the manifest again through `ctx.can` and `ctx.role`.
+  Without the role half, Billing and Setup are invisible to the one person
+  who can reach them: both are owner-gated with no capability at all.
+  **It offers the door; it never walks through it.** No third action kind
+  was needed — `ActionContext.offer` already existed for this, with the
+  rule that navigating on the owner's behalf empties the conversation they
+  were in the middle of.
+  **`usage.what_nobody_opens`** [`can_manage_staff`] reads
+  `gym_route_usage`: what gets opened, ranked, and which surfaces with a
+  route of their own have never been. It says two things out loud that a
+  bare list would let a reader get wrong — that **nothing recorded is not
+  zero**, since counting only started at 0233 and there are no gyms yet,
+  and that the folded Settings sections are **not** in the answer at all,
+  because they all record as `/management`, so their absence is not
+  silence.
 - **The last four settings routes, folded** — `/management/branding`,
   `/management/class-types`, `/management/parq` and `/management/operating`
   are deleted. Each was a `<Screen>`, a `<BackLink>` and a heading around a
