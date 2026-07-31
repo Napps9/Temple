@@ -45,6 +45,7 @@ import {
   type GymRulesRow,
 } from '@/lib/rules-read';
 import type { MemberStatus } from '@/lib/chat-lookup';
+import type { ProgrammingChangeCard } from '@/lib/programming-copy';
 import {
   formatPrice,
   type RuleChoices,
@@ -947,6 +948,8 @@ function LocalRow({
       body={
         msg.preview.card === 'email' ? (
           <EmailDraftPreview draft={msg.preview.data as EmailDraftCard} />
+        ) : msg.preview.card === 'programming' ? (
+          <ProgrammingChangePreview card={msg.preview.data as ProgrammingChangeCard} />
         ) : null
       }
       yes={msg.preview.yes ?? 'Yes, do it'}
@@ -1156,6 +1159,58 @@ function MemberSummaryCard({ member }: { member: MemberCard }) {
         }>
         Open their profile
       </Button>
+    </View>
+  );
+}
+
+
+// What a copy or a wipe is about to do to the whiteboard (0231).
+//
+// The one card in the bar whose job is to make somebody say no. Every
+// other preview summarises; this one quotes, because the thing at risk is
+// a session a coach wrote by hand and the only way to recognise it is to
+// see their own words. A count would confirm an overwrite without ever
+// showing what was overwritten.
+function ProgrammingChangePreview({ card }: { card: ProgrammingChangeCard }) {
+  return (
+    <View className="gap-2">
+      {card.rows.map((row, i) => (
+        <View
+          key={`${row.date}:${row.classType}:${i}`}
+          className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 gap-1.5">
+          <View className="flex-row items-baseline gap-2">
+            <Text className="text-gray-900 dark:text-gray-50 text-[13px] font-semibold">
+              {row.day}
+            </Text>
+            <Text className="text-gray-400 dark:text-gray-500 text-[12px] flex-1">
+              {row.classType}
+            </Text>
+          </View>
+
+          {row.incoming.map((line, j) => (
+            <Text
+              key={`in:${j}`}
+              className="text-gray-700 dark:text-gray-200 text-[13px] leading-[18px]">
+              {line}
+            </Text>
+          ))}
+
+          {row.replacing.length > 0 ? (
+            <View className="gap-1 pt-1.5 border-t border-gray-100 dark:border-gray-800">
+              <Text className="text-red-600 dark:text-red-400 text-[11px] font-semibold uppercase tracking-wide">
+                {row.incoming.length > 0 ? 'Replaces' : 'Deletes'}
+              </Text>
+              {row.replacing.map((line, j) => (
+                <Text
+                  key={`out:${j}`}
+                  className="text-red-600/90 dark:text-red-400/90 text-[13px] leading-[18px] line-through">
+                  {line}
+                </Text>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ))}
     </View>
   );
 }

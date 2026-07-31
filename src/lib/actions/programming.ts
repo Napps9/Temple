@@ -19,17 +19,36 @@
 // would have been offered these verbs and refused by the database on
 // every one.
 
+import { weekdayIndex } from '../attendance-answer';
+import { parseSections } from '../programming';
+import {
+  clearPlan,
+  clearSentence,
+  copyPlan,
+  copySentence,
+  dayLabel as weekdayDayLabel,
+  mondayOf,
+  shiftDays,
+  weekDays,
+  weekLabel,
+  type ProgrammedDay,
+} from '../programming-copy';
+import { todayIn } from '../send-time';
+
 import { matchPlan } from './members';
 import {
   ActionError,
   argEnum,
+  argInt,
   argString,
   erase,
+  gymTimezone,
   type ActionContext,
   type ActionPreview,
   type ActionSpec,
   type AnyAction,
 } from './types';
+import type { Json } from '../../types/database';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE =
@@ -685,7 +704,236 @@ export const setPlanProgramming: ActionSpec<PlanProgramming> = {
   },
 };
 
+
+// ============================================================================
+// programming.copy_week / programming.clear_day
+// ============================================================================
+//
+// The two verbs that cross the craft line, and the reason they waited for
+// a card renderer. Everything else here works on the scaffolding; these
+// two do a wholesale replace of a `sections` array a coach wrote by hand.
+// A preview that said "3 sessions will be replaced" would be an argument
+// list describing a robbery. The card shows the coach their own titles,
+// on the days they are about to disappear from.
+//
+// Weeks are offsets rather than dates on purpose. A model asked for "the
+// Monday of last week" has to know today, do calendar arithmetic and
+// agree with the gym's timezone about which day it is; asked for -1 it
+// has to count to one. The server resolves the rest against the gym's
+// clock, which is the same rule every class action follows.
+
+type CopyWeek = { from: number; to: number };
+
+async function classTypesFor(
+  ctx: ActionContext,
+): Promise<{ id: string; name: string }[]> {
+  const { data } = await ctx.supabase
+    .from('class_types')
+    .select('id, name')
+    .eq('gym_id', ctx.gymId)
+    .is('archived_at', null)
+    .order('name');
+  return (data ?? []) as { id: string; name: string }[];
+}
+
+async function programmedBetween(
+  ctx: ActionContext,
+  from: string,
+  to: string,
+): Promise<ProgrammedDay[]> {
+  const { data, error } = await ctx.supabase
+    .from('class_programming')
+    .select('class_type_id, date, sections')
+    .eq('gym_id', ctx.gymId)
+    .gte('date', from)
+    .lte('date', to);
+  if (error) throw new ActionError('I could not read the programming.');
+  return ((data ?? []) as { class_type_id: string; date: string; sections: unknown }[]).map(
+    (r) => ({
+      date: r.date,
+      classTypeId: r.class_type_id,
+      sections: parseSections(r.sections),
+    }),
+  );
+}
+
+async function thisMonday(ctx: ActionContext): Promise<string> {
+  return mondayOf(todayIn(await gymTimezone(ctx), Date.now()));
+}
+
+export const copyWeek: ActionSpec<CopyWeek> = {
+  name: 'programming.copy_week',
+  kind: 'do',
+  capability: 'can_edit_classes',
+  says:
+    'Copy a week of class programming onto another week — "copy last week ' +
+    'into next week", "put this week\'s programming on next week", "repeat ' +
+    'last week".',
+  args: [
+    {
+      name: 'from',
+      type: 'integer',
+      desc:
+        'Which week to copy FROM, counted in weeks from this one: 0 this ' +
+        'week, -1 last week, -2 the week before. Default -1.',
+      min: -52,
+      max: 52,
+    },
+    {
+      name: 'to',
+      type: 'integer',
+      desc:
+        'Which week to copy ONTO, same counting: 0 this week, 1 next week. ' +
+        'Default 1.',
+      min: -52,
+      max: 52,
+    },
+  ],
+  invalidate: ['class-programming-month'],
+  sanitise: (raw) => {
+    const from = argInt(raw, 'from', -52, 52) ?? -1;
+    const to = argInt(raw, 'to', -52, 52) ?? 1;
+    if (from === to) return null;
+    return { from, to };
+  },
+  preview: async (a, ctx) => {
+    const base = await thisMonday(ctx);
+    const fromMonday = shiftDays(base, a.from * 7);
+    const toMonday = shiftDays(base, a.to * 7);
+    const [classTypes, source, destination] = await Promise.all([
+      classTypesFor(ctx),
+      programmedBetween(ctx, fromMonday, shiftDays(fromMonday, 6)),
+      programmedBetween(ctx, toMonday, shiftDays(toMonday, 6)),
+    ]);
+    const card = copyPlan({ fromMonday, toMonday, classTypes, source, destination });
+    if (card.rows.length === 0) {
+      return { title: copySentence(card), lines: [] };
+    }
+    return {
+      title: card.heading,
+      lines: [copySentence(card)],
+      card: 'programming',
+      data: card,
+      yes: card.replacedDays > 0 ? 'Yes, replace them' : 'Yes, copy it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const base = await thisMonday(ctx);
+    const fromMonday = shiftDays(base, a.from * 7);
+    const toMonday = shiftDays(base, a.to * 7);
+    const source = await programmedBetween(ctx, fromMonday, shiftDays(fromMonday, 6));
+    if (source.length === 0) {
+      throw new ActionError('There is nothing programmed that week any more.');
+    }
+
+    const rows = source
+      .filter((d) => d.sections.length > 0)
+      .map((d) => ({
+        gym_id: ctx.gymId,
+        class_type_id: d.classTypeId,
+        date: shiftDays(toMonday, dayOffset(fromMonday, d.date)),
+        sections: d.sections as unknown as Json,
+        author_id: ctx.userId,
+        updated_at: new Date().toISOString(),
+      }));
+
+    const { error } = await ctx.supabase
+      .from('class_programming')
+      .upsert(rows, { onConflict: 'class_type_id,date' });
+    if (error) throw new ActionError('That did not copy across — try again.');
+
+    ctx.offer?.('Open programming', '/programming');
+    return rows.length === 1
+      ? `Copied. One session now sits on the week of ${weekLabel(toMonday)}.`
+      : `Copied. ${rows.length} sessions now sit on the week of ${weekLabel(toMonday)}.`;
+  },
+};
+
+type ClearDay = { day: string; week: number };
+
+export const clearDay: ActionSpec<ClearDay> = {
+  name: 'programming.clear_day',
+  kind: 'do',
+  capability: 'can_edit_classes',
+  says:
+    'Wipe a day of class programming — "clear Saturday\'s programming", ' +
+    '"delete what is on Tuesday", "empty next Monday".',
+  args: [
+    {
+      name: 'day',
+      type: 'string',
+      desc: 'The day, as a weekday name ("Saturday") or a date (YYYY-MM-DD).',
+      required: true,
+    },
+    {
+      name: 'week',
+      type: 'integer',
+      desc:
+        'Which week the day is in, counted from this one: 0 this week, 1 ' +
+        'next week, -1 last week. Ignored when a full date was given.',
+      min: -52,
+      max: 52,
+    },
+  ],
+  invalidate: ['class-programming-month'],
+  sanitise: (raw) => {
+    const day = argString(raw, 'day', 20);
+    if (!day) return null;
+    return { day, week: argInt(raw, 'week', -52, 52) ?? 0 };
+  },
+  preview: async (a, ctx) => {
+    const date = await resolveDay(a, ctx);
+    if (!date) {
+      return { title: `I could not work out which day “${a.day}” is.`, lines: [] };
+    }
+    const [classTypes, existing] = await Promise.all([
+      classTypesFor(ctx),
+      programmedBetween(ctx, date, date),
+    ]);
+    const card = clearPlan({ date, classTypes, existing });
+    if (card.rows.length === 0) {
+      return { title: clearSentence(card), lines: [] };
+    }
+    return {
+      title: `Wipe the programming on ${card.heading}?`,
+      lines: [clearSentence(card)],
+      card: 'programming',
+      data: card,
+      yes: 'Yes, wipe it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const date = await resolveDay(a, ctx);
+    if (!date) throw new ActionError('I could not work out which day that is.');
+    const { error } = await ctx.supabase
+      .from('class_programming')
+      .delete()
+      .eq('gym_id', ctx.gymId)
+      .eq('date', date);
+    if (error) throw new ActionError('That did not clear — try again.');
+    ctx.offer?.('Open programming', '/programming');
+    return `Wiped. ${weekdayDayLabel(date)} has nothing programmed on it.`;
+  },
+};
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+async function resolveDay(a: ClearDay, ctx: ActionContext): Promise<string | null> {
+  if (ISO_DAY.test(a.day.trim())) return a.day.trim();
+  const index = weekdayIndex(a.day);
+  if (index === null) return null;
+  const monday = shiftDays(await thisMonday(ctx), a.week * 7);
+  // weekDays runs Monday-first; weekdayIndex counts from Sunday.
+  return shiftDays(monday, index === 0 ? 6 : index - 1);
+}
+
+function dayOffset(monday: string, date: string): number {
+  return weekDays(monday).indexOf(date);
+}
+
 export const PROGRAMMING_ACTIONS: AnyAction[] = [
+  erase(copyWeek),
+  erase(clearDay),
   erase(blockOut),
   erase(moveBlock),
   erase(dropBlock),

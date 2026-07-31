@@ -457,8 +457,13 @@ already authorised. Roughly in order of how often an owner touches them:
   today's WOD on the leaderboard" — are deliberately not built. Each is a
   wholesale replace of a `sections` array whose honest preview would have
   to render the coach-written content it is about to overwrite. That is a
-  card renderer, not an argument list, and it is the next piece of work
-  here rather than a gap.
+  card renderer, not an argument list — **so the renderer was built and
+  two of them shipped**: `programming.copy_week` and
+  `programming.clear_day`, previewed by a card that quotes the coach's own
+  titles on the days they are about to disappear from, struck through, with
+  a confirm label that changes when something is lost. "Put today's WOD on
+  the leaderboard" is still deliberately unbuilt: it is a judgement about a
+  session, not scaffolding around one.
 - **Website** — done. The hardening landed first (0220) and the verbs
   followed: `website.publish`, `website.unpublish`,
   `website.connect_domain`, `website.check_domain`, `website.set_seo`.

@@ -988,6 +988,32 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **Programming that overwrites shows what it overwrites** — the two
+  verbs that cross the craft line, held back until there was a card
+  renderer honest enough to carry them. `programming.copy_week` ("copy
+  last week into next week") and `programming.clear_day` ("clear
+  Saturday's programming") are both a wholesale replace of a `sections`
+  array a coach wrote by hand, and a preview reading "3 sessions will be
+  replaced" is an argument list describing a robbery.
+  **So the card quotes rather than counts.** Every day it touches renders
+  what arrives and, struck through in red underneath, what it lands on —
+  the coach's own titles and the first line of their own body text, which
+  is the only thing they will recognise. The confirm label changes too:
+  "Yes, copy it" onto a blank week, "Yes, replace them" when something is
+  lost.
+  **Copying nothing onto something is not a copy.** A blank source day is
+  skipped rather than blanking the destination — a delete wearing a copy's
+  clothes is exactly what nobody means by "repeat last week".
+  **Weeks are offsets, not dates.** A model asked for "the Monday of last
+  week" has to know today, do calendar arithmetic and agree with the gym's
+  timezone about which day it is; asked for -1 it has to count to one. The
+  server resolves the rest against the gym's clock, the same rule every
+  class action follows. A weekday name ("Saturday") resolves the same way,
+  with Sunday at the end of the week rather than the start.
+  The known limit, shared with every confirm card in the bar: the preview
+  is a snapshot. If somebody writes into the destination week between the
+  card and the tap, the card described the older content. The ten-minute
+  freshness rule bounds it; nothing here re-locks.
 - **The website has verbs** — the canvas keeps its screen (laying out a
   page is craft and no sentence beats dragging a block); the admin around
   it does not. `website.publish`, `website.unpublish`,
