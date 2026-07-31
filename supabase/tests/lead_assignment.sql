@@ -105,9 +105,14 @@ select is(
   'each lead has exactly one in-app notification (enqueue is idempotent)');
 
 -- 5. Re-running assign_lead on an already-assigned lead adds no duplicate.
+--
+-- Called as the service role, because 0240 took the `authenticated` grant
+-- off it: assign_lead checks nothing and is only ever reached through
+-- record_lead / the capture RPCs, which call it as definer.
 do $$
 declare v_lead uuid;
 begin
+  perform set_config('role', 'service_role', true);
   select id into v_lead from public.leads
     where gym_id = current_setting('test.rr')::uuid limit 1;
   perform assign_lead(v_lead);

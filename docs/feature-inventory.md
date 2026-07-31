@@ -1691,6 +1691,42 @@ The staff area shows up when `can_access_staff_area` is on.
   member flip their own flag, and both leaderboards already filter
   `left_at is null`, so the write is inert. pgTAP:
   `the_invite_that_let_nobody_back_in.sql` (11 assertions).
+- **Grants that guard nothing** (0240) — **`revoke ... from public` does
+  not lock a function down on Supabase.** The project ships `alter default
+  privileges in schema public grant execute on functions to anon,
+  authenticated, service_role`, so a function arrives with explicit grants
+  to `anon` and `authenticated` already on it, and revoking PUBLIC removes
+  a grant that was never what let them in. The author writes the guard, the
+  guard reads correctly, and it does nothing.
+  0085 hit this on the sharpest function in the product, with the reasoning
+  spelled out in a comment above the statement: `_mark_store_order_paid`
+  "must not be reachable by members" because it "trusts the service role".
+  It takes a Stripe checkout session id, flips the matching order to
+  `paid`, stamps `paid_at`, decrements stock and inserts the digital
+  deliveries, and verifies nothing — it was written for a webhook that had
+  already checked Stripe's signature. **Proved against a pending order for
+  a £49 digital product**: `store_orders_select` lets a buyer read their
+  own row, so the session id is theirs to read, and calling this with it
+  returns `paid`, `paid_at` set, and a row in `store_digital_deliveries`.
+  The member never pays and downloads the file.
+  `_record_store_subscription_cycle` (0086/0087) is the same statement and
+  the same hole for a recurring product. 0136 onwards revoke `from public,
+  anon, authenticated`, which is the form that works, and the other eleven
+  service-role-only functions all use it.
+  `assign_lead` is a different miss found in the same sweep: 0114 granted
+  it to `authenticated` on the reasoning that it is "guarded by the RPCs
+  that wrap it", but nothing in the client calls it — staff reassign
+  through `set_lead_assignee` and the capture RPCs call it internally as
+  definer — so the only caller the grant serves is the direct one the
+  wrapper reasoning does not cover. Any signed-in user holding a lead's
+  uuid could assign that lead, in a gym they have nothing to do with, to
+  one of its coaches.
+  pgTAP: `grants_that_guard_nothing.sql` — the money assertion (a member
+  cannot settle their own unpaid order, and the file is never granted) plus
+  a family rule keyed on the name, that no `_`-prefixed security-definer
+  function in `public` is reachable by `anon` or `authenticated`. Extension
+  members are excluded so real pgTAP's internals do not count in CI, and
+  `_tap_%` so the local harness's shim does not count locally.
   The guard is keyed on the **name** (`user_can_%` plus `user_is_owner_of`),
   not on a list, because a list is exactly how five helpers survived 0223
   fixing the sixth. It immediately caught `user_can_issue_comp_grant`

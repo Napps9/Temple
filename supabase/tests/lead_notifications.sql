@@ -57,7 +57,13 @@ select is(
   'email notification targets the assigned coach');
 
 -- 4. Enqueue is idempotent: still exactly one email row after re-assign.
-do $$ begin perform assign_lead(current_setting('test.lead')::uuid); end $$;
+-- As the service role: 0240 took the `authenticated` grant off assign_lead,
+-- which checks nothing and is only reached through the capture RPCs.
+do $$
+begin
+  perform set_config('role', 'service_role', true);
+  perform assign_lead(current_setting('test.lead')::uuid);
+end $$;
 select is(
   (select count(*)::int from public.lead_notifications
      where lead_id = current_setting('test.lead')::uuid and channel = 'email'),
