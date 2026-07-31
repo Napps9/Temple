@@ -1660,11 +1660,37 @@ The staff area shows up when `can_access_staff_area` is on.
   the `self_or_staff` policies are OR'd independently against
   `profile_id = auth.uid()` so nobody loses their own row. 243 pgTAP
   assertions pass unchanged.
-  **`user_belongs_to` is deliberately excluded** and named in the test as an
-  exemption. It backs 29 policies including the `tracked_*` tables — a
-  member's own workout history, PRs and race splits — so whether leaving a
-  gym should cut somebody off from their own training record is a product
-  decision with a GDPR edge, not a permission bug.
+  **`user_belongs_to` was held back** and named in the test as an exemption:
+  it backs 29 policies including the `tracked_*` tables, so whether leaving
+  a gym cuts somebody off from their own training record looked like a
+  product decision rather than a permission bug. 0237 settled it and
+  guarded it, and the test now asserts the family with no exemption left to
+  remember.
+- **The invite that let nobody back in** (0239) — three more of 0236's bug,
+  found by sweeping the definer functions that touch `gym_memberships`
+  without mentioning `left_at`.
+  `accept_invite` upserted on `(gym_id, profile_id)` and set only the role,
+  so **a member who left and was invited back stayed left**: verified, the
+  code is marked used, the role updates, `left_at` stays, and
+  `user_belongs_to` returns false. They are told they joined and they did
+  not, and an invite is single-use so the gym has to notice and issue
+  another. 0033 designed for exactly this ("re-joining the gym you
+  previously left stays allowed") and wrote it into `join_gym_by_slug`;
+  `accept_invite` was not in that change. Nor was the other half — an
+  invite could mint a second active membership, and then "oldest active
+  membership wins" (`src/lib/auth.ts`) lands the invited person in the gym
+  they were already in. Same rule and same message as `create_gym` now, and
+  the raise rolls back before the code is consumed, so a refused invite is
+  still usable once they have left the other gym.
+  `set_member_booking_requirement` authorised on `role in ('owner','admin')`
+  against `gym_memberships` with no guard — 0236's bug written inline
+  rather than through a helper, which is why the helper sweep missed it.
+  `gym_role_capabilities_self_select` did the same, leaving a departed
+  member reading the gym's capability matrix for their old role.
+  Checked and left alone: `set_appear_in_leaderboards` lets a departed
+  member flip their own flag, and both leaderboards already filter
+  `left_at is null`, so the write is inert. pgTAP:
+  `the_invite_that_let_nobody_back_in.sql` (11 assertions).
   The guard is keyed on the **name** (`user_can_%` plus `user_is_owner_of`),
   not on a list, because a list is exactly how five helpers survived 0223
   fixing the sixth. It immediately caught `user_can_issue_comp_grant`
