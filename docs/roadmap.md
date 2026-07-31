@@ -643,6 +643,22 @@ a `credit_period` balance resets every month, so "two left" there is a
 normal Thursday, and a note about it would be a nag. Only a pack can
 actually run out.
 
+**And a sixth (0241), which is the first one that argues with another.**
+`plan_upgrade_offer` notices a member whose pack costs them more than one
+of the gym's own memberships would, and says so as the pack runs out. It
+fires at the same moment the fifth job does, deliberately: that is when
+the member is about to spend money again, and the only moment the sum is
+help rather than a pitch. Which means the two jobs would otherwise reach
+the same person five minutes apart with "top up your pack" and "don't buy
+another pack" — so the sixth replaces the fifth for that member rather
+than arriving beside it. The exclusion reads the *status*, so an owner who
+says no to the upgrade hands the member back to the top-up nudge on the
+next tick; that answer was about the membership, not about the reminder.
+The rules that keep it honest are the two arithmetic ones — the
+alternative has to cover how much they actually train, and save them at
+least a fifth — because a job that upsells on a rounding error is worse
+than no job.
+
 **And the gym took on a fourth job (0234).** Everything above makes the
 owner's typing cheaper; this is the first thing in a while that makes them
 type less. `first_week_message` notices somebody who joined and has never

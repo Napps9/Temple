@@ -1431,6 +1431,8 @@ function AgentActionCard({
         ? 'The first session is the hard one — most people who never start never come back.'
         : kind === 'credits_low_message'
         ? 'Topping up is easy while they are still coming; finding out at the door is not.'
+        : kind === 'plan_upgrade_offer'
+          ? `Their own training says ${offerPlan ?? 'a membership'} is cheaper than the next pack.`
         : kind === 'cover_ask'
           ? 'Every coach who could claim gets the same nudge; the claim stays first-come.'
           : isOffer
@@ -1443,6 +1445,8 @@ function AgentActionCard({
         ? 'Yes, get them in'
         : kind === 'credits_low_message'
         ? 'Yes, tell them'
+        : kind === 'plan_upgrade_offer'
+          ? 'Yes, show them'
         : kind === 'cover_ask'
           ? 'Yes, ask them'
           : isOffer

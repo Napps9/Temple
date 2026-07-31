@@ -1752,7 +1752,38 @@ The staff area shows up when `can_access_staff_area` is on.
   The count is written into the payload as a phrase ("1 class", "2
   classes") so neither the template nor the Timeline line has to guess at a
   plural. pgTAP: `the_last_few_classes.sql` (11 assertions, seven of them
-  refusals).
+  refusals). 0241 added one more rule: it steps aside for a member the
+  upgrade job has just spoken to.
+- **The wrong plan** (0241) — `set_plan_upgrade_job` (owner-only, Roster
+  take-on card) writes a `plan_upgrade_offer` authority row +
+  owner-approved template. The daily `agent-plan-upgrade-tick` (09:40)
+  finds a member whose class pack is costing them more than one of the
+  gym's own memberships would, and proposes the sum.
+  **When it fires is the whole design.** It fires at exactly the moment
+  `credits_low_message` does — a pack down to its last one or two, trained
+  inside 21 days — because that is when the member is about to spend money
+  again, and the only moment this is help rather than a pitch. So it does
+  not compete with the top-up nudge, it **replaces** it: one message
+  saying both "you are running low" and "there is a cheaper way".
+  Six rules in SQL. **The arithmetic has to favour them** — attendance in
+  the last 30 days times what a class costs on this pack, against the
+  cheapest live recurring plan. If the pack wins, this job stays quiet and
+  the top-up nudge is the right message. **The alternative has to cover
+  them** — an `unlimited` plan always does, a `credit_period` one only if
+  its `credit_count` reaches what they trained, or "cheaper" is only true
+  until week three. **A margin worth a message** — a fifth of their spend
+  and more than one class, so nobody is asked to switch to save 80p.
+  **Once per member per 180 days**, not per subscription: the answer does
+  not change pack to pack, so a rejection is final for six months.
+  **Three a day.** All money is formatted through `money_text` in the
+  gym's own currency, in the payload and in the evidence both.
+  The coupling is a `not exists` at the bottom of `agent_credits_low_tick`,
+  narrow on purpose: only a live or already-sent proposal suppresses the
+  nudge, so an owner who **rejects** the upgrade gets the top-up back on
+  the next tick rather than losing it for 60 days over an answer given in
+  the other direction. pgTAP:
+  `a_pack_that_costs_more_than_a_membership.sql` (14 assertions — five
+  refusals, the two plan-choice cases, and both halves of the coupling).
 - **The first week** (0234) — `set_first_week_job` (owner-only, Roster
   take-on card) writes a `first_week_message` authority row + owner-
   approved template. The daily `agent-first-week-tick` (09:15, after

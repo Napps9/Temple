@@ -29,7 +29,8 @@ type AuthorityRow = {
     | 'retention_message'
     | 'cover_ask'
     | 'first_week_message'
-    | 'credits_low_message';
+    | 'credits_low_message'
+    | 'plan_upgrade_offer';
   level: 'autonomous' | 'approval' | 'reserved';
 };
 
@@ -312,6 +313,29 @@ export default function Roster() {
             qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
           }
         />
+
+        <SimpleJob
+          gymId={gymId}
+          isOwner={isOwner}
+          kind="plan_upgrade_offer"
+          name="The wrong plan"
+          onDescription="Notices a member whose pack is costing them more than one of your memberships would, and says so as their pack runs out — three a day at most, once per person every six months, and only when the sum is clearly in their favour."
+          offTitle="Members paying over the odds — want me to tell them?"
+          offLines={[
+            "When somebody's pack is nearly out and the way they've been training makes one of your memberships cheaper, I'd tell them the sum — and I ask you before each until you say otherwise.",
+            'Only when it is clearly worth saying: the membership has to cover how much they actually train, and save them at least a fifth.',
+            'It replaces the top-up nudge for that person rather than arriving beside it, so nobody gets told to buy another pack and then told not to.',
+            'I never move anyone. They switch themselves, or reply, and the classes they have already paid for still stand.',
+          ]}
+          enableRpc="set_plan_upgrade_job"
+          disableRpc="set_plan_upgrade_job"
+          level={levelFor('plan_upgrade_offer')}
+          onSetLevel={(l) => setLevel('plan_upgrade_offer', l)}
+          authorityLoaded={authority.data !== undefined}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
+          }
+        />
       </ScrollView>
     </Screen>
   );
@@ -342,12 +366,14 @@ function SimpleJob({
     | 'set_retention_job'
     | 'set_cover_job'
     | 'set_first_week_job'
-    | 'set_credits_low_job';
+    | 'set_credits_low_job'
+    | 'set_plan_upgrade_job';
   disableRpc:
     | 'set_retention_job'
     | 'set_cover_job'
     | 'set_first_week_job'
-    | 'set_credits_low_job';
+    | 'set_credits_low_job'
+    | 'set_plan_upgrade_job';
   level: 'autonomous' | 'approval' | 'reserved' | undefined;
   onSetLevel: (l: 'approval' | 'autonomous') => void;
   authorityLoaded: boolean;

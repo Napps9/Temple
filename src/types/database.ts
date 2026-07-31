@@ -4276,6 +4276,10 @@ export type Database = {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;
       };
+      set_plan_upgrade_job: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
       set_agent_job_level: {
         Args: {
           p_gym_id: string;

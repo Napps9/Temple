@@ -276,6 +276,35 @@ function agentActionLine(e: TimelineEvent): TimelineLine {
     }
   }
 
+  if (kind === 'plan_upgrade_offer') {
+    const saving =
+      typeof payload.upgrade_saving === 'string' ? payload.upgrade_saving : null;
+    const plan =
+      typeof payload.offer_plan_name === 'string' ? payload.offer_plan_name : null;
+    switch (status) {
+      case 'proposed':
+        return {
+          text: saving
+            ? `${first} is paying over the odds — ${plan ?? 'a membership'} would save them ${saving} a month. Tell them?`
+            : `${first} would be better off on ${plan ?? 'a membership'} — tell them?`,
+          tone: 'amber',
+        };
+      case 'approved':
+      case 'executed':
+        return {
+          text: `I've shown ${first} the sums — ${plan ?? 'the membership'} is theirs to take.`,
+          tone: 'neutral',
+        };
+      case 'rejected':
+        return { text: `${first} — you said leave it, so I did.`, tone: 'neutral' };
+      default:
+        return {
+          text: `The question about ${first} lapsed — nothing was sent.`,
+          tone: 'neutral',
+        };
+    }
+  }
+
   if (kind === 'cover_ask') {
     const requester = str(payload as Record<string, unknown>, 'requester_name');
     const who = requester ? firstName(requester) : 'a coach';
