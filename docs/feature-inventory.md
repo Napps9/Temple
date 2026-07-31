@@ -1602,6 +1602,31 @@ The staff area shows up when `can_access_staff_area` is on.
   twice inside 45 days (a rejection blocks the window too), never about
   health, and writing anyone off stays human. Approval/autonomous flows,
   execution and the send worker are the money loop's, unchanged.
+- **Training history follows the athlete tier** (0237) — athlete mode
+  (0068/0069) already sold the right thing: a member who leaves a gym, or
+  never joined one, keeps logging under an athlete subscription, and a solo
+  workout carries `gym_id = NULL`. What it never gated was the record.
+  **Two holes, both verified against a membership closed 90 days ago.**
+  `user_belongs_to` had no `left_at` guard and is the write half of every
+  `tracked_*` insert policy, so somebody who left kept logging workouts
+  *attributed to the gym they left* — free, bypassing the tier, and landing
+  their new training in that gym's staff-visible history. And the read half
+  was a bare `profile_id = auth.uid()`, so the whole record stayed browsable
+  forever whether or not anyone was paying.
+  The self branch on all seven `tracked_*` tables with a `gym_id` now asks
+  for current membership **or** an active athlete subscription. A member in
+  a gym is unaffected. Somebody who leaves gets everything back the moment
+  they subscribe; nothing is ever deleted.
+  **The right of access is not for sale, so it does not sit behind the
+  tier.** `export_my_training_history()` returns the caller's complete
+  record — workouts with sections, entries and movement results nested,
+  plus races and splits — free, regardless of membership or subscription.
+  Definer, no arguments, keyed on `auth.uid()`, so no shape of the call
+  reads anybody else's training. Recorded in the lawful-basis register
+  (§C2). pgTAP: `your_history_is_the_product.sql` — ten assertions covering
+  both failure directions, a payer losing their record and a lapsed member
+  keeping it, plus the export answering for exactly the person the policies
+  just refused.
 - **Left means left** (0236) — a live permission bug, found by sweeping the
   raw role helpers rather than by anybody hitting it. `effective_can` has
   required `left_at is null` since it was written and 0223 fixed

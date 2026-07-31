@@ -108,31 +108,30 @@ select ok(
 -- five, and nothing failed. A helper that grants a staff power and forgets
 -- the guard now fails here instead.
 --
--- user_belongs_to is the one exclusion and it is deliberate. It backs 29
--- policies including the tracked_* tables — a member's own workout history,
--- PRs and race splits — so whether leaving a gym should cut somebody off
--- from their own training record is a product decision with a GDPR edge,
--- not a permission bug. Named here so the exemption is a choice somebody
--- made rather than a helper nobody noticed.
+-- user_belongs_to was held back from 0236 as an open product question,
+-- because it looked like guarding it would cut a member off from their own
+-- training record. 0237 established that it would not — the read path never
+-- called it, and all fourteen of its write policies are the gym-attributed
+-- logging that should stop when somebody leaves — and guarded it. So the
+-- family is now every one of them, with no exemption to remember.
 
 select is(
   (select coalesce(string_agg(p.proname, ', ' order by p.proname), '')
      from pg_proc p
      join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
-      and (p.proname like 'user\_can\_%' or p.proname = 'user_is_owner_of')
+      and (p.proname like 'user\_can\_%'
+        or p.proname in ('user_is_owner_of', 'user_belongs_to'))
       and pg_get_functiondef(p.oid) not like '%left_at is null%'),
   '',
-  'every helper that grants a staff power refuses somebody who has left'
+  'every membership predicate refuses somebody who has left — no exemptions'
 );
 
-select is(
-  (select count(*)::int from pg_proc p
-     join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.proname = 'user_belongs_to'
-      and pg_get_functiondef(p.oid) not like '%left_at%'),
-  1,
-  'and user_belongs_to is still the open question, on purpose'
+select ok(
+  (select pg_get_functiondef(p.oid) like '%left_at is null%'
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'user_belongs_to'),
+  'including user_belongs_to, which 0237 settled rather than left open'
 );
 
 select * from finish();

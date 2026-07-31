@@ -87,6 +87,34 @@ DPA). Recorded here for completeness:
 - Waiver signatures: 6 years after membership ends, then deleted.
 - Staff screen-usage counts: 90 days, then deleted (`route_opens`).
 
+## C2. Access to training history when a subscription lapses (0237)
+
+A member's training record stays in the database whatever happens to their
+membership or their athlete subscription. What changed in 0237 is **who can
+browse it in the product**: the `tracked_*` select policies now require
+either current membership of the gym the row belongs to, or an active
+athlete subscription. Somebody who leaves a gym and does not subscribe
+cannot page through their history in the app until they do; nothing is
+deleted, and subscribing restores the view in full.
+
+**That is a commercial gate on a product, and it is explicitly not a gate on
+the right of access.** Article 15 entitles a data subject to a copy of
+their personal data free of charge, and a subscription cannot be a
+precondition for it. So `export_my_training_history()` returns the caller's
+complete record — workouts, sections, entries, movement results, races and
+splits — as one document, free, regardless of membership or tier. It is
+`security definer` precisely so that it answers when the policies above do
+not, and it takes no arguments and keys on `auth.uid()`, so there is no
+shape of the call that reads anybody else's training.
+
+Basis for continuing to hold the record after a subscription lapses:
+legitimate interests (Art. 6(1)(f)) — the member's own interest in an
+unbroken training history they can resume, and Temple's in offering it
+back. It is not special-category data: workout results are performance
+records, not health data, and the Article 9 surfaces (PAR-Q, injuries) are
+separately governed and erased on leaving. A member who wants it gone uses
+the existing erasure path, which is unaffected.
+
 ## D. Sub-processors
 
 Supabase, Stripe, Resend, Vercel, and (optional) Anthropic, Pexels — see DPA

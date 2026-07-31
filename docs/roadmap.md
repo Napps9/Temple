@@ -669,18 +669,18 @@ same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
 
-- **Does leaving a gym cut you off from your own training record?** Open,
-  and a product decision rather than a bug. `user_belongs_to` has no
-  `left_at` guard and backs 29 policies, including the `tracked_*` tables —
-  a member's own workout history, PRs and race splits. 0236 guarded every
-  other role helper and deliberately left this one, because tightening it
-  would silently answer a question nobody has asked: a member who leaves
-  keeps reading their own history today, and whether that is right depends
-  on what we think the record belongs to. There is a GDPR edge either way —
-  cutting them off is arguably fine since the gym is the controller, and
-  leaving it is arguably better for the member. It should be decided on
-  purpose. The pgTAP file `left_means_left.sql` names the exemption so it
-  stays a choice rather than an oversight.
+- **Does leaving a gym cut you off from your own training record? —
+  answered (0237).** It was written here as an open question; it is not one
+  any more. The tracking product is sold separately, so the history is part
+  of what the athlete tier buys: the `tracked_*` read policies now want
+  current membership or an active subscription, and the record itself is
+  never touched. Two things fell out of settling it. The old worry was
+  backwards — the read path never called `user_belongs_to`, so guarding it
+  cost nobody their history and closed a hole where somebody who left kept
+  logging into the gym they left, free. And gating a *product* is not
+  gating a *right*, so `export_my_training_history()` ships alongside:
+  complete record, free, no subscription, `security definer` so it answers
+  when the policies do not.
 
 - **Email reports a number nobody should trust — built (0229).** All four
   decisions below are implemented: a signed `resend-webhook` function, an
