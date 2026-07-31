@@ -119,10 +119,10 @@ export function useLogNudge() {
 // to include for every staff member.
 export function useUnreadLeadNotifications() {
   const { data: membership } = useGymMembership();
-  const canAssignPlan = useCan('can_assign_plan') ?? false;
+  const canWorkLeads = useCan('can_work_leads') ?? false;
   return useQuery({
     queryKey: ['unread-lead-notifications', membership?.gymId],
-    enabled: !!membership?.gymId && canAssignPlan,
+    enabled: !!membership?.gymId && canWorkLeads,
     queryFn: async (): Promise<number> => {
       const { data, error } = await supabase.rpc('count_unread_lead_notifications', {
         p_gym_id: membership!.gymId,

@@ -861,6 +861,28 @@ The staff area shows up when `can_access_staff_area` is on.
   and a `member_tagged` sequence with no tag is refused outright rather
   than created, because it would match nobody for ever while looking like
   it worked. The card also refuses a tag no member actually holds.
+- **The lead pipeline has its own switch** (roadmap step 2) —
+  `can_work_leads` ("Work the enquiries: see and work the front desk
+  pipeline — take enquiries, assign them, follow them up"), added in 0226
+  and defaulting to exactly who held `can_assign_plan`: admin, coach and
+  front desk, with owner true by short-circuit. The whole front desk used
+  to run on `can_assign_plan`, which the Team screen describes as "put
+  members onto plans and adjust subscriptions" — so an owner who wanted a
+  coach on the phones had to hand them membership billing to do it, and
+  one who wanted them off billing lost them the phones. Nothing changes on
+  day one; from day two the two switches move apart.
+  The half that fixes a live bug: nine policies across seven tables
+  (`leads`, `lead_sources`, `lead_assignment_rules`, `lead_notifications`,
+  `agent_conversations`, `agent_messages`, `gym_agent_settings`) still
+  read `user_can_assign_plan` — the raw-role helper with no `left_at`
+  guard and no override lookup. 0217 made the pipeline's *writes* honour
+  the switch while its *reads* ignored it, so a coach whose switch an
+  owner had turned off could still read every name, email and phone number
+  in it, and somebody who left in March could read them in July. All nine
+  now read `effective_can(gym_id, 'can_work_leads')`.
+  `plan_subscriptions`, `comp_grants` and `membership_change_requests`
+  keep `can_assign_plan` — membership machinery, where it is the only key
+  it should ever have been.
 - **One sentence, several actions** (roadmap step 4) — the talk bar's
   parser now emits `steps` rather than a single action, capped at three,
   so "put Marcus on Unlimited and tag him VIP" is one sentence. They are

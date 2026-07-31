@@ -25,11 +25,11 @@ const STATUS_COPY: Record<ConversationRow['status'], { label: string; cls: strin
 
 export default function AgentConversationsScreen() {
   const { data: membership } = useGymMembership();
-  const canAssignPlan = useCan('can_assign_plan');
+  const canWorkLeads = useCan('can_work_leads');
 
   const conversations = useQuery({
     queryKey: ['agent-conversations', membership?.gymId],
-    enabled: !!membership?.gymId && canAssignPlan === true,
+    enabled: !!membership?.gymId && canWorkLeads === true,
     queryFn: async (): Promise<ConversationRow[]> => {
       const { data, error } = await supabase
         .from('agent_conversations')
@@ -42,7 +42,7 @@ export default function AgentConversationsScreen() {
     },
   });
 
-  if (canAssignPlan === false) return <Redirect href="/management" />;
+  if (canWorkLeads === false) return <Redirect href="/management" />;
   if (!membership) return null;
 
   const tabs: LeadsTab[] =

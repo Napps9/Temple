@@ -13,7 +13,7 @@
 // capture, the notification queue still goes out, the AI front desk still
 // works the same rows.
 //
-// Everything here runs on `can_assign_plan`, which is the capability the
+// Everything here runs on `can_work_leads`, which is the capability the
 // leads screen has always gated itself on. As of 0217 it is also the
 // capability the RPCs enforce.
 
@@ -31,7 +31,7 @@ import {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const CAPABILITY = 'can_assign_plan';
+const CAPABILITY = 'can_work_leads';
 
 type LeadStatus =
   | 'cold'

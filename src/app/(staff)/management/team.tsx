@@ -45,6 +45,7 @@ const CAPABILITY_GROUPS: CapabilityGroup[] = [
   {
     title: 'People & invites',
     caps: [
+      { value: 'can_work_leads', label: 'Work the enquiries', description: 'See and work the front desk — take enquiries, assign them, follow them up.' },
       { value: 'can_invite', label: 'Send invites', description: 'Email invites to new members and staff.' },
       { value: 'can_manage_staff', label: 'Manage staff', description: 'Invite owners/coaches/staff and configure the team.' },
       { value: 'can_archive_members', label: 'Archive members', description: 'Remove members from the gym (soft-delete).' },

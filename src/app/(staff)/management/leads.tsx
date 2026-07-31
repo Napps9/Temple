@@ -126,10 +126,10 @@ export default function LeadsScreen() {
   const colors = useThemeColors();
   const brand = useGymBrand();
   const { data: membership } = useGymMembership();
-  const canAssignPlan = useCan('can_assign_plan');
+  const canWorkLeads = useCan('can_work_leads');
   const isOwner = membership?.role === 'owner';
   // compute_insight_summary raises for anyone but owner/admin (it gates on
-  // user_can_admin, 0102). can_assign_plan — which admits this whole screen
+  // user_can_admin, 0102). can_work_leads — which admits this whole screen
   // — defaults on for coach and staff, so without this the two lifecycle
   // tiles fire a query that always 403s and render its absence as a
   // confident 0. Gate them on the same role the RPC requires.
@@ -166,7 +166,7 @@ export default function LeadsScreen() {
   // (phone='web-test'), so this is exactly 1 the moment it happens.
   const firstRealLead = useQuery({
     queryKey: ['agent-first-real-lead', membership?.gymId],
-    enabled: !!membership?.gymId && canAssignPlan === true,
+    enabled: !!membership?.gymId && canWorkLeads === true,
     queryFn: async (): Promise<boolean> => {
       const { count, error } = await supabase
         .from('agent_conversations')
@@ -180,7 +180,7 @@ export default function LeadsScreen() {
 
   const leads = useQuery({
     queryKey: ['leads', membership?.gymId, scope],
-    enabled: !!membership?.gymId && canAssignPlan === true,
+    enabled: !!membership?.gymId && canWorkLeads === true,
     queryFn: async (): Promise<LeadRow[]> => {
       let q = supabase
         .from('leads')
@@ -204,7 +204,7 @@ export default function LeadsScreen() {
 
   const sources = useQuery({
     queryKey: ['lead-sources', membership?.gymId],
-    enabled: !!membership?.gymId && canAssignPlan === true,
+    enabled: !!membership?.gymId && canWorkLeads === true,
     queryFn: async (): Promise<SourceRow[]> => {
       const { data, error } = await supabase
         .from('lead_sources')
@@ -219,7 +219,7 @@ export default function LeadsScreen() {
 
   const coaches = useQuery({
     queryKey: ['lead-coaches', membership?.gymId],
-    enabled: !!membership?.gymId && canAssignPlan === true,
+    enabled: !!membership?.gymId && canWorkLeads === true,
     queryFn: async (): Promise<CoachRow[]> => {
       const { data, error } = await supabase
         .from('gym_memberships')
@@ -266,7 +266,7 @@ export default function LeadsScreen() {
   // from the same lifecycle RPC the old Insights tab used.
   const newLeadsCount = useQuery({
     queryKey: ['leads-new-count', gymId, start, end],
-    enabled: !!gymId && canAssignPlan === true && rangeValid,
+    enabled: !!gymId && canWorkLeads === true && rangeValid,
     queryFn: async () => {
       const { count, error } = await supabase
         .from('leads')
@@ -296,7 +296,7 @@ export default function LeadsScreen() {
     },
   });
 
-  if (canAssignPlan === false) return <Redirect href="/management" />;
+  if (canWorkLeads === false) return <Redirect href="/management" />;
   if (!membership) return null;
 
   return (

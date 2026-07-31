@@ -181,7 +181,7 @@ export default function AgentConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
-  const canAssignPlan = useCan('can_assign_plan');
+  const canWorkLeads = useCan('can_work_leads');
   const canReview = useCan('can_review_ai_calls');
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState('');
@@ -198,7 +198,7 @@ export default function AgentConversationScreen() {
 
   const conversation = useQuery({
     queryKey: ['agent-conversation', id],
-    enabled: !!id && canAssignPlan === true,
+    enabled: !!id && canWorkLeads === true,
     queryFn: async (): Promise<Conversation | null> => {
       const { data, error: e } = await supabase
         .from('agent_conversations')
@@ -212,7 +212,7 @@ export default function AgentConversationScreen() {
 
   const messages = useQuery({
     queryKey: ['agent-messages', id],
-    enabled: !!id && canAssignPlan === true,
+    enabled: !!id && canWorkLeads === true,
     refetchInterval: 5000,
     queryFn: async (): Promise<MessageRow[]> => {
       const { data, error: e } = await supabase
@@ -346,7 +346,7 @@ export default function AgentConversationScreen() {
     onError: (e) => setError(errorMessage(e, 'Could not update the conversation')),
   });
 
-  if (canAssignPlan === false) return <Redirect href="/management" />;
+  if (canWorkLeads === false) return <Redirect href="/management" />;
   if (!membership) return null;
 
   const c = conversation.data;

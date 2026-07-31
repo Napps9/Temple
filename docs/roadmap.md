@@ -383,14 +383,27 @@ already authorised. Roughly in order of how often an owner touches them:
   the week is going — including who has been left untouched, which is
   what a board is worst at showing. The front desk's own settings are
   still a screen and stay one for now: they are the owner teaching a
-  voice, which is closer to craft than to admin. **Decided, not yet built:** the
-  whole pipeline is gated on `can_assign_plan`, described to owners as
-  "Put members onto plans and adjust subscriptions" — the wrong switch for
-  a sales board. It gets split into its own capability, defaulting to
-  exactly who holds it today (owner, admin, coach, front desk), so nothing
-  changes on day one and the switch finally says what it does. New key in
-  `default_capability` and `can.ts`, a row on the Team screen, and the
-  five lead RPCs plus the four verbs move onto it.
+  voice, which is closer to craft than to admin. **The pipeline has its own
+  switch now** (0226). It was gated on `can_assign_plan`, described to
+  owners as "Assign plans: put members onto plans and adjust
+  subscriptions" — the wrong switch for a sales board, so an owner who
+  wanted a coach on the phones had to hand them membership billing to do
+  it. `can_work_leads` defaults to exactly who held the old key (admin,
+  coach, front desk; owner true by short-circuit), so nothing changes on
+  day one and from day two the two can move apart, which is the point.
+
+  The second half was the reason to do it now rather than later. Nine
+  policies across seven tables — `leads`, `lead_sources`,
+  `lead_assignment_rules`, `lead_notifications`, `agent_conversations`,
+  `agent_messages`, `gym_agent_settings` — still read
+  `user_can_assign_plan`, the raw-role helper with no `left_at` guard and
+  no override lookup. So 0217 made the writes honour the switch while the
+  *reads* ignored it: a coach whose switch an owner turned off could still
+  read every name, email and phone number in the pipeline, and somebody
+  who left in March could read them in July. Same bug class, one layer
+  down. What did not move is `plan_subscriptions`, `comp_grants` and
+  `membership_change_requests` — membership machinery, where
+  `can_assign_plan` is the only key it should ever have been.
 - **Team and tags** — done for what has a write. `team.invite` ("invite
   Sam as a coach, sam@example.com") over the existing `send-invite`
   function, `team.who`, and `tags.add_rule` — the other half of

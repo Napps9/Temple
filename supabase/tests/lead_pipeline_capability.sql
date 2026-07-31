@@ -1,4 +1,4 @@
--- The lead pipeline honours its own switch (0217).
+-- The lead pipeline honours its own switch (0217, 0226).
 --
 -- The pair that matters is the coach: allowed by default, refused once the
 -- owner turns the capability off — which is what the leads screen has
@@ -9,6 +9,11 @@
 -- The left_at assertion is the quieter one. user_can_assign_plan never
 -- checked it, so somebody who left kept write access to names, emails and
 -- phone numbers of people who never joined the gym.
+--
+-- 0226 moved the whole pipeline onto its own key, can_work_leads,
+-- defaulting to exactly who held can_assign_plan — so every assertion
+-- below still describes the same people, and the switch being turned off
+-- is now the switch that says what it does.
 
 begin;
 select plan(9);
@@ -72,7 +77,7 @@ select lives_ok(
 select _test_act_as(current_setting('test.owner')::uuid);
 
 insert into public.gym_role_capabilities (gym_id, role, capability, enabled)
-  values (current_setting('test.gym')::uuid, 'coach', 'can_assign_plan', false);
+  values (current_setting('test.gym')::uuid, 'coach', 'can_work_leads', false);
 
 select _test_act_as(current_setting('test.coach')::uuid);
 

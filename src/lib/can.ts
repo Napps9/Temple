@@ -12,6 +12,7 @@ export type Capability =
   | 'can_issue_comp_grant'
   | 'can_manage_plans'
   | 'can_assign_plan'
+  | 'can_work_leads'
   | 'can_invite'
   | 'can_refund'
   | 'can_manage_staff'
@@ -56,6 +57,7 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_issue_comp_grant:  { owner: true,  admin: true,  coach: true,  staff: false, member: false },
   can_manage_plans:      { owner: true,  admin: false, coach: false, staff: false, member: false },
   can_assign_plan:       { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
+  can_work_leads:        { owner: true,  admin: true,  coach: true,  staff: true,  member: false },
   can_invite:            { owner: true,  admin: true,  coach: false, staff: false, member: false },
   can_refund:            { owner: true,  admin: false, coach: false, staff: false, member: false },
   can_manage_staff:      { owner: true,  admin: true,  coach: false, staff: false, member: false },

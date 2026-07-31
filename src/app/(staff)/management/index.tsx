@@ -233,6 +233,7 @@ export default function ManagementHome() {
   const canManageComms = useCan('can_manage_comms');
   const canManageStore = useCan('can_manage_store');
   const canAssignPlan = useCan('can_assign_plan');
+  const canWorkLeads = useCan('can_work_leads');
   const canManageWebsite = useCan('can_manage_website');
 
   const cards: Card[] = [
@@ -392,7 +393,7 @@ export default function ManagementHome() {
       title: 'AI Front Desk',
       description: 'Track prospects from first contact through conversion.',
       href: '/management/leads',
-      visible: !!canAssignPlan,
+      visible: !!canWorkLeads,
     },
     {
       category: 'members',
