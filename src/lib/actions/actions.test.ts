@@ -1631,3 +1631,74 @@ describe('an offer made from a preview reaches the owner', () => {
     expect(offering.length).toBeGreaterThan(0);
   });
 });
+
+describe('what an ask answer draws', () => {
+  // The prose refuses a percentage off a base under ten, because it reads
+  // as a trend and is a coincidence. The figure has to refuse the same
+  // one, or the card contradicts its own caption.
+  it('shows no change when the period before was too small to compare', async () => {
+    const ctx = moneyCtx({ memberships: [], store: [] });
+    const p = await moneySummary.preview(
+      { from: '2026-07-01', to: '2026-07-31', defaulted: false },
+      ctx,
+    );
+    expect(p.answer).toBeUndefined();
+  });
+
+  // £900 and €400 is not £1,300 of anything, so a single headline number
+  // cannot be drawn and the prose carries it instead.
+  it('draws no figure when two currencies came in', async () => {
+    const ctx = moneyCtx({
+      memberships: [
+        { gross_cents: 90000, currency: 'GBP', charge_count: 9 },
+        { gross_cents: 40000, currency: 'EUR', charge_count: 4 },
+      ],
+      store: [],
+    });
+    const p = await moneySummary.preview(
+      { from: '2026-07-01', to: '2026-07-31', defaulted: false },
+      ctx,
+    );
+    expect(p.title).toContain('from memberships');
+    expect(p.answer).toBeUndefined();
+  });
+
+  it('splits one currency into a figure and where it came from', async () => {
+    const ctx = moneyCtx({
+      memberships: [{ gross_cents: 90000, currency: 'GBP', charge_count: 9 }],
+      store: [{ gross_cents: 10000, currency: 'GBP', order_count: 3 }],
+    });
+    const p = await moneySummary.preview(
+      { from: '2026-07-01', to: '2026-07-31', defaulted: false },
+      ctx,
+    );
+    // formatMoney as the prose uses it, decimals and all — a figure
+    // reading £1,000 above a line reading £1,000.00 is two numbers.
+    expect(p.answer?.figure?.value).toBe('£1,000.00');
+    expect(p.answer?.list?.rows.map((r) => r.name)).toEqual(['Memberships', 'The shop']);
+    // Rails compare within the split, so the larger source is full width.
+    expect(p.answer?.list?.rows[0].weight).toBe(1);
+  });
+});
+
+function moneyCtx(data: { memberships: unknown[]; store: unknown[] }) {
+  return {
+    supabase: {
+      rpc: async (name: string) =>
+        name === 'compute_revenue_summary'
+          ? { data: data.memberships, error: null }
+          : { data: data.store, error: null },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({ data: [], error: null }),
+            maybeSingle: async () => ({ data: { currency: 'GBP' }, error: null }),
+          }),
+        }),
+      }),
+    },
+    gymId: 'gym',
+    userId: 'user',
+    currency: 'GBP',
+  } as never;
+}

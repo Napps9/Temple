@@ -89,9 +89,10 @@ describe('how busy have we been', () => {
         },
       }),
     );
-    expect(r.lines).toContain(
-      'Barbell club 24, Open gym 14, Yoga 9, Conditioning 8, and 1 more.',
-    );
+    // The split is drawn as a ranked list on the card (0243), not written
+    // out here. Saying it in both places made the card read as though the
+    // numbers disagreed until you checked that they did not.
+    expect(r.lines.some((l) => l.includes('Barbell club 24'))).toBe(false);
   });
 });
 

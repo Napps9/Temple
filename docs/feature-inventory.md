@@ -1343,6 +1343,39 @@ The staff area shows up when `can_access_staff_area` is on.
   Sydney starts the previous evening in UTC, so it was counted on the
   wrong day and, at a week boundary, in the wrong week. The attendance
   screen had it too; both now pass the gym's timezone.
+- **The answers draw their numbers** (phase 4's remainder) — every answer
+  above rendered as prose, and the gap that left was specific:
+  `classes.attendance` computed the run of days and then discarded it, so
+  an owner rebuilt the shape of their own week in their head from "busiest
+  was Saturday with 47".
+  **One vocabulary, not a renderer per question** — which is precisely
+  what the phase said it would not build. `src/lib/answer.ts` defines
+  three shapes and no more: a **figure** (a value with an optional
+  change), a **short series** (a run of counts), and a **list** (ranked
+  rows, with a magnitude rail only when the numbers actually compare).
+  `AnswerFigures` draws them once; any `ask` action fills them.
+  No chart language was invented because none of the three is a chart: a
+  single value with a change is a stat tile rather than a one-bar bar
+  chart, a run of counts is bars, a set of names is a list. One series in
+  one hue — the gym's own `primary` — so there is nothing to tell apart,
+  no legend to carry, and no categorical palette to validate. Marks carry
+  the hue and text never does. There is no hover layer, because this is a
+  chat stream on a phone, so the one thing an owner reaches for — which
+  day was busiest — is the only bar labelled.
+  **The bucket width follows the period**, so a year fits in the bars
+  rather than showing its last quarter under a label that says the year —
+  a chart disagreeing with the number above it. A day with nobody in keeps
+  its rail, because a missing bar reads as a missing day.
+  **What it refuses to draw** is again most of the work: no delta off a
+  base under ten, matching the floor the prose already uses, so the figure
+  cannot contradict its own caption; no headline figure when two
+  currencies came in, since £900 plus €400 is not £1,300 of anything; and
+  no series at all from `money.summary`, whose reads return period totals
+  — a trend drawn from one number is the chart that lies.
+  One prose line went in the process: the class split was being drawn
+  *and* written out, which read as two sets of numbers until you checked
+  they agreed. Tests: `answer.test.ts` (14) plus the refusals in
+  `actions.test.ts`.
 - **Every sender honours a dead address** — 0229 held a bounced address
   back from campaigns and nothing else, so class changes, cover requests,
   payment notices and automation sequences went on mailing it. That was

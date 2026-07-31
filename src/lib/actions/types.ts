@@ -17,6 +17,7 @@
 //
 // Adding an action to the bar is adding one entry here.
 
+import type { ActionAnswer } from '../answer';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '../../types/database';
@@ -92,6 +93,11 @@ export type ActionContext = {
 export type ActionPreview = {
   title: string;
   lines: string[];
+  // An `ask` action's numbers, drawn rather than described. One shared
+  // vocabulary (src/lib/answer.ts) — a figure, a short series, a ranked
+  // list — so a new question needs no new renderer. The lines stay: they
+  // carry what the numbers must not claim on their own.
+  answer?: ActionAnswer;
   // The confirm button, labelled by the action — "Yes, close it" rather
   // than a generic "Yes, do it". A `do` action should always set it.
   yes?: string;

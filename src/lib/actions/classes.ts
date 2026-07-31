@@ -22,6 +22,7 @@ import {
   weekdayOfDay,
   type TypeCount,
 } from '../attendance-answer';
+import { toSeries, weighRows, type AnswerDelta } from '../answer';
 import { dateRangeWindow } from '../date-range';
 import {
   describeBulkEdit,
@@ -1132,6 +1133,21 @@ async function classTypeNames(ctx: ActionContext): Promise<Map<string, string>> 
   );
 }
 
+// The same floor attendanceAnswer uses for its prose comparison: below
+// it a percentage is arithmetic rather than information, so the figure
+// shows no change rather than a made-up one.
+const DELTA_BASE = 10;
+
+function attendanceDelta(now: number, before: number): AnswerDelta | undefined {
+  if (before < DELTA_BASE) return undefined;
+  const change = Math.round(((now - before) / before) * 100);
+  if (change === 0) return { direction: 'level', text: 'level with the period before' };
+  return {
+    direction: change > 0 ? 'up' : 'down',
+    text: `${Math.abs(change)}% on the period before`,
+  };
+}
+
 export const classAttendance: ActionSpec<Busy> = {
   name: 'classes.attendance',
   kind: 'ask',
@@ -1183,7 +1199,40 @@ export const classAttendance: ActionSpec<Busy> = {
 
     const answer = attendanceAnswer({ label, now, before });
     ctx.offer?.('Open attendance', '/management/attendance');
-    return { title: answer.title, lines: answer.lines };
+
+    // The shape of the period, which every version of this answer has
+    // computed and thrown away: an owner had to rebuild their own week in
+    // their head from "busiest was Saturday with 31".
+    const ranked = [...now.types].sort(
+      (t, u) => u.attended - t.attended || t.name.localeCompare(u.name),
+    );
+    const shown = ranked.slice(0, 4);
+    return {
+      title: answer.title,
+      lines: answer.lines,
+      answer: {
+        figure: {
+          value: String(now.attended),
+          label: `marked in over ${label}`,
+          delta: attendanceDelta(now.attended, before.attended),
+        },
+        series: toSeries(now.days, 'Day by day') ?? undefined,
+        list:
+          shown.length > 0
+            ? {
+                label: 'By class',
+                rows: weighRows(
+                  shown.map((t) => ({
+                    name: t.name,
+                    detail: String(t.attended),
+                    value: t.attended,
+                  })),
+                ),
+                more: ranked.length - shown.length || undefined,
+              }
+            : undefined,
+      },
+    };
   },
 };
 

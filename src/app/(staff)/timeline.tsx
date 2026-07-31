@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 
+import { AnswerFigures } from '@/components/AnswerFigures';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
@@ -972,6 +973,11 @@ function LocalRow({
         <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
           {msg.preview.title}
         </Text>
+        {msg.preview.answer ? (
+          <View className="pb-1">
+            <AnswerFigures answer={msg.preview.answer} />
+          </View>
+        ) : null}
         {msg.preview.lines.map((l) => (
           <Text
             key={l}

@@ -53,13 +53,6 @@ function weekdayOf(day: string): string {
   });
 }
 
-function list(types: TypeCount[], limit: number): string {
-  return types
-    .slice(0, limit)
-    .map((t) => `${t.name} ${t.attended}`)
-    .join(', ');
-}
-
 export function attendanceAnswer(input: AttendanceInput): {
   title: string;
   lines: string[];
@@ -97,14 +90,13 @@ export function attendanceAnswer(input: AttendanceInput): {
     );
   }
 
+  // The split by class used to be written out here — "CrossFit 96, Yoga
+  // 19" — and is now drawn as a ranked list above these lines (0243).
+  // Saying it twice made the card read as though the numbers disagreed
+  // until you checked that they did not.
   const ranked = [...now.types].sort(
     (a, b) => b.attended - a.attended || a.name.localeCompare(b.name),
   );
-  if (ranked.length > 0) {
-    lines.push(
-      list(ranked, 4) + (ranked.length > 4 ? `, and ${ranked.length - 4} more.` : '.'),
-    );
-  }
 
   // The falling class. Only one, and only when it is real: the point of
   // the line is to send somebody to look at a class, and sending them

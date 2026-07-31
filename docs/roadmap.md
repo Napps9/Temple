@@ -566,16 +566,38 @@ independent of the module work and can be pulled forward the moment the
 current verbs start feeling like a command line rather than a
 conversation.
 
-### 4 — Ask anything — under way
+### 4 — Ask anything — done
 
-Two of the four shipped (0231): `classes.attendance` ("how busy have we
-been", "how busy was Saturday", "which class is dying") over the
+Two of the four shipped first (0231): `classes.attendance` ("how busy
+have we been", "how busy was Saturday", "which class is dying") over the
 attendance page's own reads plus the preceding period, and
 `members.quiet` ("who hasn't been in for a month") over a new
 `gym_quiet_members` RPC — the one question here with no screen behind it.
-"What did we take last week" was already `money.summary`. What is left is
-the shape of the answers rather than the answers themselves: a series
-still renders as sentences, and a chart language has not been needed yet.
+"What did we take last week" was already `money.summary`.
+
+**And then the shape of the answers, which was the actual remainder.**
+Every one of them rendered as prose, and the gap that left was specific:
+`classes.attendance` computed the run of days and then threw it away, so
+an owner rebuilt their own week in their head from "busiest was Saturday
+with 47".
+
+One vocabulary rather than a renderer per question, which is exactly what
+this phase said it would not do — a figure, a short series, a ranked list
+(`src/lib/answer.ts`), drawn once (`AnswerFigures`) and filled by any
+`ask` action. No chart language was invented because none of the three
+forms is a chart: a single value with a change is a stat tile, a run of
+counts is bars, a set of names is a list. One series, one hue — the gym's
+own brand primary — so there is nothing to tell apart and no legend to
+carry.
+
+The prose stays underneath, and one line of it went: the class split was
+being drawn *and* written out, which read as two sets of numbers until
+you checked they agreed. What the answers refuse to draw is the rest of
+the work — no percentage off a base under ten, because the caption
+already refuses that comparison; no headline figure when two currencies
+came in, because £900 plus €400 is not £1,300 of anything; and no series
+from `money.summary` at all, because those reads return period totals and
+a trend drawn from one number is the chart that lies.
 
 The original note:
 

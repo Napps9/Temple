@@ -14,6 +14,7 @@
 // that has taken payment in two will get two rows; adding them up would
 // produce a number that is not money in any currency at all.
 
+import { weighRows, type ActionAnswer } from '../answer';
 import { formatMoney } from '../coach-earnings';
 import { computeRefund, type PlanKind, type RefundMode } from '../refunds';
 import { formatPrice } from '../setup-flow';
@@ -190,9 +191,41 @@ export const moneySummary: ActionSpec<Args> = {
         ? `Nothing came in ${when}.`
         : `${tookLine(mRows)} ${when}.`,
       lines: [...(shop ? [`${shop}.`] : []), ...(failing ? [failing] : [])],
+      answer: nothing ? undefined : moneyAnswer(mRows, sRows, when),
     };
   },
 };
+
+// The totals as a figure and a split, when there is one currency to show
+// them in. Two currencies get the prose only: a single headline number
+// would have to add them up, and £900 + €400 is not £1,300 of anything.
+// No series — these RPCs return period totals, not a run of days, and
+// drawing a trend from one number is the chart that lies.
+function moneyAnswer(
+  mRows: MembershipRow[],
+  sRows: StoreRow[],
+  when: string,
+): ActionAnswer | undefined {
+  const currencies = new Set(
+    [...mRows, ...sRows].filter((r) => (r.gross_cents ?? 0) > 0).map((r) => r.currency),
+  );
+  if (currencies.size !== 1) return undefined;
+  const currency = [...currencies][0];
+  const memberships = mRows.reduce((n, r) => n + (r.gross_cents ?? 0), 0);
+  const shopCents = sRows.reduce((n, r) => n + (r.gross_cents ?? 0), 0);
+  const rows = [
+    { name: 'Memberships', detail: formatMoney(memberships, currency), value: memberships },
+    { name: 'The shop', detail: formatMoney(shopCents, currency), value: shopCents },
+  ].filter((r) => r.value > 0);
+
+  return {
+    figure: {
+      value: formatMoney(memberships + shopCents, currency),
+      label: `taken ${when}`,
+    },
+    list: rows.length > 1 ? { label: 'Where from', rows: weighRows(rows) } : undefined,
+  };
+}
 
 // ============================================================================
 // money.set_plan_price

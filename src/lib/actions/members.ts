@@ -1005,7 +1005,34 @@ export const quietMembers: ActionSpec<Quiet> = {
     }));
     const answer = quietAnswer(a.weeks, rows);
     if (rows.length > 0) ctx.offer?.('Open members', '/management/members');
-    return { title: answer.title, lines: answer.lines };
+    // Names, not quantities — so no rail. A bar beside a person invites a
+    // comparison nobody is making, and "most absent" is not a ranking a
+    // gym should be encouraged to read.
+    const shown = rows.slice(0, 6);
+    return {
+      title: answer.title,
+      lines: answer.lines,
+      answer:
+        rows.length > 0
+          ? {
+              figure: {
+                value: String(rows.length),
+                label: `not in for ${a.weeks} week${a.weeks === 1 ? '' : 's'}`,
+              },
+              list: {
+                label: 'Who',
+                rows: shown.map((r) => ({
+                  name: r.name,
+                  detail:
+                    r.weeksAbsent === null
+                      ? 'never been in'
+                      : `${r.weeksAbsent} week${r.weeksAbsent === 1 ? '' : 's'}`,
+                })),
+                more: rows.length - shown.length || undefined,
+              },
+            }
+          : undefined,
+    };
   },
 };
 
