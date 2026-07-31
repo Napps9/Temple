@@ -1602,6 +1602,35 @@ The staff area shows up when `can_access_staff_area` is on.
   twice inside 45 days (a rejection blocks the window too), never about
   health, and writing anyone off stays human. Approval/autonomous flows,
   execution and the send worker are the money loop's, unchanged.
+- **Left means left** (0236) — a live permission bug, found by sweeping the
+  raw role helpers rather than by anybody hitting it. `effective_can` has
+  required `left_at is null` since it was written and 0223 fixed
+  `user_can_admin`; **the other six were never done**. Verified against a
+  real membership closed 120 days ago: `user_can_manage_classes`,
+  `user_can_admin_or_coach`, `user_can_cover`, `user_can_access_staff_area`
+  and `user_can_assign_plan` all returned **true**.
+  Between them they back 21 live RLS policies. A departed coach could
+  **insert, update and delete `class_types`, `class_recurrences` and
+  `class_sessions`** — delete the gym's whole timetable — plus delete any
+  member's booking, and read `plan_subscriptions` and
+  `membership_change_requests` (who is on what plan and what they pay),
+  `comp_grants`, cover requests, coach tasks, the waitlist, SOPs and
+  onboarding answers. `user_is_owner_of` was unguarded too, so an owner who
+  left could still switch a job on or rebrand the gym.
+  One line per helper, the same line 0223 added; the roles each accepts are
+  unchanged, so no current member's access moves, and the `self` branches of
+  the `self_or_staff` policies are OR'd independently against
+  `profile_id = auth.uid()` so nobody loses their own row. 243 pgTAP
+  assertions pass unchanged.
+  **`user_belongs_to` is deliberately excluded** and named in the test as an
+  exemption. It backs 29 policies including the `tracked_*` tables — a
+  member's own workout history, PRs and race splits — so whether leaving a
+  gym should cut somebody off from their own training record is a product
+  decision with a GDPR edge, not a permission bug.
+  The guard is keyed on the **name** (`user_can_%` plus `user_is_owner_of`),
+  not on a list, because a list is exactly how five helpers survived 0223
+  fixing the sixth. It immediately caught `user_can_issue_comp_grant`
+  missing from this migration's own first draft.
 - **The last few classes** (0235) — `set_credits_low_job` (owner-only,
   Roster take-on card) writes a `credits_low_message` authority row +
   owner-approved template. The daily `agent-credits-low-tick` (09:45, after
