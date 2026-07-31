@@ -988,6 +988,24 @@ The staff area shows up when `can_access_staff_area` is on.
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
   events.
+- **The Timeline stops counting every send the gym has ever made** (0232)
+  — 0229 put the send receipt's numbers behind a lateral aggregate per
+  campaign, which is right about *when* to count (bounces land hours after
+  the last email, so a row written at send time is permanently wrong about
+  them) and wrong about *how many* campaigns to count for. Every campaign
+  the gym had ever sent was aggregated on every load of the staff home
+  screen, and campaigns are never deleted, so the cost grew for ever.
+  Measured locally: 32ms at 150 sends, 381ms at 500 sends of 800 members
+  each — on the one query that runs before an owner sees anything.
+  The fix is exact rather than a sampled approximation, which is the only
+  reason it is worth doing: the outer query returns at most `v_limit` rows
+  across every branch, so a campaign older than the `v_limit` most recent
+  cannot appear on the page even if every row on it were a campaign.
+  Taking that many and no more is the same answer over fifty aggregates
+  instead of five hundred — 381ms to 114ms, and no longer growing with the
+  gym's history. A pgTAP file pins the part a comment cannot hold: the cut
+  keeps the newest sends, and paging backwards still reaches the rest
+  rather than hiding them.
 - **The bar sends a shortlist, not the whole catalogue** — `actionsFor`
   put every action the caller may use in front of the model on every
   message: 52 of them, about 29,500 characters, roughly 8,000 tokens a
