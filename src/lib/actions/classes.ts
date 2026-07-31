@@ -23,10 +23,14 @@ import {
 
 import { matchMembers } from '../chat-lookup';
 
+import { parseWallTime, sendAtEpoch, type WallTime } from '../send-time';
+
 import {
   ActionError,
+  argInt,
   argString,
   erase,
+  gymTimezone,
   type ActionContext,
   type ActionPreview,
   type ActionSpec,
@@ -761,9 +765,267 @@ function addDays(iso: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
+// ============================================================================
+// classes.move and classes.set_coach
+// ============================================================================
+//
+// The two things the calendar could show and nothing could change. Both
+// went in as RPCs in 0224 — before that, a session's time could only be
+// shifted by ±N minutes across a whole date range, and its coach could
+// only be set by that coach volunteering through the cover flow.
+//
+// The new time is resolved in the gym's timezone rather than the device's,
+// because the instant written is the one members see and a coach on
+// holiday must not shift it. (Finding the class still reads the device's
+// clock, as every class action has; that inconsistency is one sweep, named
+// in docs/roadmap.md, rather than half-done here.)
+
+type Move = {
+  day: string | null;
+  time: string | null;
+  classType: string | null;
+  sessionId: string | null;
+  to: WallTime;
+  minutes: number | null;
+};
+
+function newTimeLabel(at: number, tz: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(at));
+}
+
+// The RPCs raise in words; these are the ones an owner can act on.
+function classWriteFailure(message: string): string {
+  if (/already run/i.test(message)) {
+    return 'That class has already run — its attendance is a record of who was there.';
+  }
+  if (/gym is closed/i.test(message)) return message;
+  if (/already a class of that series/i.test(message)) {
+    return 'There is already a class of that series at that time.';
+  }
+  if (/already coaching/i.test(message)) {
+    return 'They are already coaching something at that time.';
+  }
+  if (/not qualified/i.test(message)) {
+    return 'They are marked as not qualified for that kind of class.';
+  }
+  if (/Only an owner or a coach/i.test(message)) {
+    return 'Only an owner or a coach can be put in front of a class.';
+  }
+  if (/not at this gym/i.test(message)) return 'They are not at this gym.';
+  if (/row-level security|Not authorised/i.test(message)) {
+    return 'You do not have permission to change classes.';
+  }
+  return "That didn't save — try again.";
+}
+
+export const moveClass: ActionSpec<Move> = {
+  name: 'classes.move',
+  kind: 'do',
+  capability: 'can_edit_classes',
+  says:
+    'Move one class to a different time or day — "move tomorrow\'s 6am to ' +
+    '7", "Saturday\'s spin is at 10 this week not 9", "push Friday\'s ' +
+    'barbell club to Thursday at 6:30". For a whole range of classes use ' +
+    'classes.edit; to call one off use classes.cancel.',
+  args: [
+    ...CLASS_ARGS,
+    {
+      name: 'to_day',
+      type: 'date',
+      desc:
+        'The day it moves to, YYYY-MM-DD. If they only changed the time, ' +
+        'this is the same day it is on now.',
+      required: true,
+    },
+    {
+      name: 'to_time',
+      type: 'string',
+      desc: 'The new start time as 24-hour "HH:MM" ("7"→"07:00", "6:30pm"→"18:30")',
+      required: true,
+    },
+    {
+      name: 'minutes',
+      type: 'integer',
+      desc: 'A new length in minutes, only if they changed it',
+      min: 5,
+      max: 480,
+    },
+  ],
+  invalidate: [
+    'class-sessions-month',
+    'class-session-detail',
+    'my-upcoming-sessions',
+    'my-future-bookings',
+    'my-bookings',
+    'agenda-booking-counts',
+    'class-change-notifications',
+  ],
+  sanitise: (raw) => {
+    const to = parseWallTime(raw.to_day, raw.to_time);
+    if (!to) return null;
+    const minutes = argInt(raw, 'minutes', 5, 480);
+    return { ...readClass(raw), to, minutes };
+  },
+  preview: async (a, ctx) => {
+    const found = await findClass(a, { to_day: null }, a.sessionId, ctx);
+    if (found.kind === 'unresolved') return found.preview;
+    const tz = await gymTimezone(ctx);
+    const at = sendAtEpoch(a.to, tz, Date.now());
+    if (at === null) {
+      return {
+        title: 'That time has already gone, or is more than a year out.',
+        lines: ['Give me a day and time still ahead of us.'],
+      };
+    }
+    const booked = await bookedCount(found.session.id, ctx);
+    return {
+      title: `Move ${classLabel(found.session)}?`,
+      lines: [
+        `It goes to ${newTimeLabel(at, tz)}${a.minutes ? `, ${a.minutes} minutes` : ''}.`,
+        booked === 0
+          ? 'Nobody has booked it, so nobody needs telling.'
+          : `${booked} ${booked === 1 ? 'person is' : 'people are'} booked in and ` +
+            'will get a note that it has changed time. Their places are kept.',
+        // 0170 refuses to rewrite a pattern from a partial selection, and
+        // one class is the most partial there is. An owner who edits the
+        // schedule next month and finds this class back at its old slot
+        // should have been told, not surprised.
+        'This moves the one class. The repeating schedule still says the old slot, so editing the schedule later puts it back.',
+      ],
+      yes: 'Yes, move it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const found = await findClass(a, { to_day: null }, a.sessionId, ctx);
+    if (found.kind === 'unresolved') throw new ActionError('That class is no longer there.');
+    const tz = await gymTimezone(ctx);
+    const at = sendAtEpoch(a.to, tz, Date.now());
+    if (at === null) throw new ActionError('That time has already gone.');
+    const { error } = await ctx.supabase.rpc('reschedule_session', {
+      p_session_id: found.session.id,
+      p_starts_at: new Date(at).toISOString(),
+      p_duration: a.minutes,
+    });
+    if (error) throw new ActionError(classWriteFailure(error.message));
+    return `Moved. It is ${newTimeLabel(at, tz)} now, and anyone booked in has been told.`;
+  },
+};
+
+type SetCoach = {
+  day: string | null;
+  time: string | null;
+  classType: string | null;
+  sessionId: string | null;
+  coach: string;
+};
+
+type CoachRow = { profile_id: string; name: string };
+
+// Owners and coaches only, which is set_session_coach's own rule and
+// user_can_cover's before it: admins do not coach. Offering an admin as a
+// choice would be offering a chip that fails.
+async function coaches(ctx: ActionContext): Promise<CoachRow[]> {
+  const { data } = await ctx.supabase
+    .from('gym_memberships')
+    .select('profile_id, profiles!profile_id(full_name)')
+    .eq('gym_id', ctx.gymId)
+    .in('role', ['owner', 'coach'])
+    .is('left_at', null);
+  return ((data ?? []) as unknown as {
+    profile_id: string;
+    profiles: { full_name: string | null } | null;
+  }[])
+    .filter((r) => r.profiles?.full_name?.trim())
+    .map((r) => ({ profile_id: r.profile_id, name: r.profiles!.full_name!.trim() }));
+}
+
+export const setClassCoach: ActionSpec<SetCoach> = {
+  name: 'classes.set_coach',
+  kind: 'do',
+  capability: 'can_edit_classes',
+  says:
+    'Put a different coach on a class — "Jo is taking Saturday\'s 9am", ' +
+    '"put Marcus on tomorrow\'s 6am instead". For a coach asking somebody ' +
+    'else to take theirs, that is the cover flow, not this.',
+  args: [
+    ...CLASS_ARGS,
+    {
+      name: 'coach',
+      type: 'string',
+      desc: 'The coach taking it, as the owner named them',
+      required: true,
+    },
+  ],
+  invalidate: [
+    'class-sessions-month',
+    'class-session-detail',
+    'my-upcoming-sessions',
+    'cover-offers',
+    'coach-earnings',
+  ],
+  sanitise: (raw) => {
+    const coach = argString(raw, 'coach', 80);
+    return coach ? { ...readClass(raw), coach } : null;
+  },
+  preview: async (a, ctx) => {
+    const found = await findClass(a, { coach: a.coach }, a.sessionId, ctx);
+    if (found.kind === 'unresolved') return found.preview;
+    const hits = matchMembers(await coaches(ctx), a.coach);
+    if (hits.length === 0) {
+      return {
+        title: `No coach here called “${a.coach}”.`,
+        lines: ['Only an owner or a coach can be put in front of a class.'],
+      };
+    }
+    if (hits.length > 1) {
+      return {
+        title: `A few coaches could be “${a.coach}” — which one?`,
+        lines: [],
+        choices: hits.map((h) => ({
+          label: h.name,
+          args: { ...a, coach: h.name, session_id: found.session.id },
+        })),
+      };
+    }
+    return {
+      title: `Put ${hits[0].name} on ${classLabel(found.session)}?`,
+      lines: [
+        'The class does not move and nobody loses their place.',
+        // Deliberate, and the same as the cover flow's: claim_cover tells
+        // the coach who asked and nobody else. Saying it here is better
+        // than an owner assuming it was said.
+        'Members booked in are not told — tell them yourself if it matters.',
+      ],
+      yes: 'Yes, put them on it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const found = await findClass(a, { coach: a.coach }, a.sessionId, ctx);
+    if (found.kind === 'unresolved') throw new ActionError('That class is no longer there.');
+    const hits = matchMembers(await coaches(ctx), a.coach);
+    if (hits.length !== 1) throw new ActionError('I lost track of which coach you meant.');
+    const { error } = await ctx.supabase.rpc('set_session_coach', {
+      p_session_id: found.session.id,
+      p_coach_id: hits[0].profile_id,
+    });
+    if (error) throw new ActionError(classWriteFailure(error.message));
+    return `${hits[0].name} is taking ${classLabel(found.session)}.`;
+  },
+};
+
 export const CLASS_ACTIONS: AnyAction[] = [
   erase(editClasses),
   erase(cancelClass),
+  erase(moveClass),
+  erase(setClassCoach),
   erase(bookMemberIn),
   erase(removeMemberFrom),
 ];

@@ -5282,6 +5282,18 @@ export type Database = {
         Args: { p_gym_id: string; p_profile_id: string };
         Returns: null;
       };
+      reschedule_session: {
+        Args: {
+          p_session_id: string;
+          p_starts_at: string;
+          p_duration?: number | null;
+        };
+        Returns: null;
+      };
+      set_session_coach: {
+        Args: { p_session_id: string; p_coach_id: string };
+        Returns: null;
+      };
       set_member_role: {
         Args: {
           p_gym_id: string;

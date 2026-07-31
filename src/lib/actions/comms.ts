@@ -43,6 +43,7 @@ import {
   ActionError,
   argString,
   erase,
+  gymTimezone,
   type ActionContext,
   type ActionSpec,
   type AnyAction,
@@ -497,17 +498,6 @@ type Scheduled = {
   audience: NewsletterAudience;
   when: WallTime;
 };
-
-async function gymTimezone(ctx: ActionContext): Promise<string> {
-  const { data } = await ctx.supabase
-    .from('gyms')
-    .select('timezone')
-    .eq('id', ctx.gymId)
-    .single();
-  // 'UTC' is the column default (0049), so the fallback agrees with the
-  // column rather than picking a different wrong answer.
-  return (data as { timezone: string } | null)?.timezone || 'UTC';
-}
 
 // What the editor puts in the footer, so a scheduled send is byte-for-byte
 // what pressing Send on the screen would have produced.

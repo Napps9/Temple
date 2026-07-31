@@ -284,12 +284,42 @@ already authorised. Roughly in order of how often an owner touches them:
   have no write behind them at all (0212–0214). Cancel a class, book
   someone in, take them out, work the waitlist. Cancelling a class
   notified nobody before this and class-change emails had no dispatcher,
-  so both were fixed underneath rather than papered over. **Still absent:**
-  changing a class's coach — claim_cover is self-claim only and there is
-  no reassignment write anywhere — and a single-class reschedule, which
-  today can only be expressed as a relative shift that silently rewrites
-  the whole recurrence. Both need their own fix before the bar offers
-  them.
+  so both were fixed underneath rather than papered over. **The two that
+  had no write behind them now do** (0224): `classes.move` ("push
+  Friday's barbell club to Thursday at 6:30") and `classes.set_coach`
+  ("Jo is taking Saturday's 9am").
+
+  `bulk_edit_sessions` was the only writer of a session's time, and it is
+  a *relative* shift over a date range that refuses anything crossing
+  midnight — so moving one class to a different day had no expression at
+  all, and the client could not do it either (0195 revoked UPDATE on
+  `class_sessions`, deliberately). `coach_id` had exactly one writer in
+  the whole schema: `claim_cover`, which sets it to `auth.uid()`. A coach
+  could volunteer for a class; nobody could be given one.
+
+  Three things the new RPCs had to learn that the trigger layer could not
+  teach them. The closure-suppression trigger is BEFORE INSERT only — on
+  purpose, per 0164, since firing on `UPDATE OF coach_id` would make a
+  coach who claims a class inside their own away window immediately
+  re-offer it — so moving a class *into* a live closure is a hole only the
+  RPC can close, and it does. The unique index on `(recurrence_id,
+  starts_at)` turns a move onto a sibling's slot into a `unique_violation`,
+  caught and said in words. And the coach change replicates `claim_cover`'s
+  two hard-won checks: no double-booking, and nobody put in front of a
+  class type they are marked unqualified for.
+
+  Two things they deliberately do not do, both said on the card rather
+  than hidden. **They do not touch `class_recurrences`** — 0170 refuses to
+  rewrite a pattern from a partial selection because "these three
+  Tuesdays but not that one" has no representation in a recurrence, and
+  one session is the most partial selection there is; so the schedule
+  still says the old slot and editing the schedule later puts the class
+  back, which the card states. **A coach change tells no members** —
+  `class_change_notifications.kind` has no coach-change value and
+  `claim_cover` tells the requesting coach and nobody else, so adding
+  member mail on one path and not the other would make cover and
+  assignment behave differently for the same visible event. It is one gap
+  across both paths, listed below.
 - **Money** — done for memberships (0215). Read the month back
   (`money.summary`, per currency, with what is failing right now),
   change a plan's price, and refund a member. Two of the three needed
@@ -509,6 +539,24 @@ next session finds them.
   function. Membership refunds go through `stripe-refund`; the shop has
   no equivalent. Until it does, `money.refund` is deliberately scoped to
   memberships and says so.
+- **Nobody tells the members when a class changes coach.**
+  `class_change_notifications.kind` allows `gym_closed`,
+  `classes_rescheduled`, `classes_reopened` and `class_cancelled` — there
+  is no coach-change value, and the path that has always reassigned
+  coaches (`claim_cover`) tells the coach who asked and nobody else. So a
+  member who booked because Marcus was taking it finds out at the door,
+  whether the change came from cover or from `classes.set_coach`. One
+  fix, spanning both: widen the CHECK, add the enqueue, and call it from
+  both writers — half-fixing it would make the two paths disagree.
+- **Finding a class reads the device's clock; writing one reads the
+  gym's.** `findClass` resolves "Friday's 7pm" through
+  `Intl.DateTimeFormat().resolvedOptions().timeZone`, as every class
+  action has since they were written, while `classes.move` resolves the
+  *new* time in `gyms.timezone` — which is right for the instant being
+  written and leaves the two halves of one sentence on different clocks
+  for a coach who is travelling. `dateRangeWindow` already takes a
+  timezone, so this is plumbing rather than design, but it is a sweep
+  across every class action rather than a line.
 - **A scheduled send that reaches nobody tells nobody.**
   `_send_due_campaign` flips the campaign to `failed` when the audience
   resolves to zero rows at send time, and nothing writes a notification,

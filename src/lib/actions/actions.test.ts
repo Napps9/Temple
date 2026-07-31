@@ -3,7 +3,14 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { bookMemberIn, cancelClass, editClasses, removeMemberFrom } from './classes';
+import {
+  bookMemberIn,
+  cancelClass,
+  editClasses,
+  moveClass,
+  removeMemberFrom,
+  setClassCoach,
+} from './classes';
 import {
   audienceFrom,
   cancelSend,
@@ -1212,5 +1219,50 @@ describe('the roster, by sentence', () => {
     );
     expect(p('Only owners can remove owners or admins')).toMatch(/Only the owner/);
     expect(p('some postgres noise')).toBe("That didn't save — try again.");
+  });
+});
+
+// The two class writes that never existed. Both resolve the new instant
+// in the gym's timezone, so what is checked here is that the sanitiser
+// refuses rather than degrades — a move whose time did not parse must not
+// become a move to now.
+describe('moving one class, and changing its coach', () => {
+  const base = { day: '2026-08-04', time: '06:00' };
+
+  it('takes a target day and time', () => {
+    const a = moveClass.sanitise({ ...base, to_day: '2026-08-06', to_time: '18:30' });
+    expect(a?.to).toEqual({ y: 2026, mo: 8, d: 6, h: 18, mi: 30 });
+    expect(a?.day).toBe('2026-08-04');
+    expect(a?.minutes).toBeNull();
+  });
+
+  it('takes a new length when they changed it', () => {
+    expect(
+      moveClass.sanitise({ ...base, to_day: '2026-08-06', to_time: '18:30', minutes: 75 })
+        ?.minutes,
+    ).toBe(75);
+    // Out of range is dropped rather than clamped: a 2-minute class is a
+    // typo and the RPC refuses it anyway.
+    expect(
+      moveClass.sanitise({ ...base, to_day: '2026-08-06', to_time: '18:30', minutes: 2 })
+        ?.minutes,
+    ).toBeNull();
+  });
+
+  it('refuses a move it cannot place', () => {
+    expect(moveClass.sanitise({ ...base, to_day: '2026-08-06' })).toBeNull();
+    expect(moveClass.sanitise({ ...base, to_time: '18:30' })).toBeNull();
+    expect(moveClass.sanitise({ ...base, to_day: 'Thursday', to_time: '18:30' })).toBeNull();
+    expect(moveClass.sanitise({ ...base, to_day: '2026-04-31', to_time: '18:30' })).toBeNull();
+  });
+
+  it('needs a named coach to reassign', () => {
+    expect(setClassCoach.sanitise({ ...base, coach: 'Jo' })?.coach).toBe('Jo');
+    expect(setClassCoach.sanitise(base)).toBeNull();
+  });
+
+  it('gates both on editing classes, not on covering them', () => {
+    expect(moveClass.capability).toBe('can_edit_classes');
+    expect(setClassCoach.capability).toBe('can_edit_classes');
   });
 });

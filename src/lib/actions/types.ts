@@ -149,6 +149,20 @@ export function toWire(spec: AnyAction): ActionWire {
   return { name: spec.name, kind: spec.kind, says: spec.says, args: spec.args };
 }
 
+// The gym's own clock. Anything an action writes as an instant — a send
+// time, a class's new slot — is a wall time somebody said out loud, and
+// the wall they meant is the gym's. 'UTC' is the column default (0049),
+// so the fallback agrees with the column rather than picking a different
+// wrong answer.
+export async function gymTimezone(ctx: ActionContext): Promise<string> {
+  const { data } = await ctx.supabase
+    .from('gyms')
+    .select('timezone')
+    .eq('id', ctx.gymId)
+    .single();
+  return (data as { timezone: string } | null)?.timezone || 'UTC';
+}
+
 // Shared argument readers. Every action validates through these rather
 // than trusting the shape the model sent.
 export function argString(

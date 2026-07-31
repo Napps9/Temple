@@ -861,6 +861,39 @@ The staff area shows up when `can_access_staff_area` is on.
   and a `member_tagged` sequence with no tag is refused outright rather
   than created, because it would match nobody for ever while looking like
   it worked. The card also refuses a tag no member actually holds.
+- **One class can move, and one class can change coach** (roadmap step 2)
+  — `classes.move` ("push Friday's barbell club to Thursday at 6:30") and
+  `classes.set_coach` ("Jo is taking Saturday's 9am") over
+  `reschedule_session` and `set_session_coach` (0224). Before this,
+  `bulk_edit_sessions` was the only writer of a session's time and it is
+  a *relative* shift over a date range that refuses anything crossing
+  midnight, so moving one class to a different day had no expression at
+  all; and `coach_id` had exactly one writer in the schema, `claim_cover`,
+  which sets it to `auth.uid()` — a coach could volunteer for a class,
+  nobody could be given one. The client could not do either: 0195 revoked
+  UPDATE on `class_sessions`.
+  The move refuses a class that has already run (its attendance is a
+  record of who was there), a time in the past, a slot inside a live
+  closure — the suppression trigger is BEFORE INSERT only, on purpose, so
+  the RPC is the only guard there — and a slot already held by a sibling
+  of the same recurrence (`class_sessions_recurrence_starts_unique`,
+  caught and said in words). Anyone booked in keeps their place and gets
+  a `classes_rescheduled` notification, keyed on the resulting time so a
+  double-tap does not mail twice.
+  The coach change replicates `claim_cover`'s two checks — no
+  double-booking, and nobody put in front of a class type they are marked
+  unqualified for — and adds the roster rule that only an owner or a coach
+  can take a class (admins do not coach, which is `user_can_cover`'s own
+  rule). Both gate on `effective_can(gym_id, 'can_edit_classes')`;
+  `can_bulk_edit_classes` stays what 0169 wrote it for, which is blast
+  radius over a range.
+  Two things they deliberately do not do, both stated on the card rather
+  than hidden: they **do not rewrite the repeating schedule** (0170
+  refuses to rewrite a pattern from a partial selection, and one session
+  is the most partial there is — so editing the schedule later puts the
+  class back), and a coach change **tells no members**, matching
+  `claim_cover`, which tells the requesting coach and nobody else. Both
+  are in the roadmap's known list.
 - **The roster can change** (roadmap step 2) — `team.set_role` ("make Jo
   an admin", "Dan is not coaching any more, just a member") and
   `team.remove` ("Marcus has left") over `set_member_role` and `leave_gym`
