@@ -17,8 +17,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -35,14 +35,18 @@ jobs:
     runs-on: ubuntu-latest
     name: pgTAP (Supabase)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Read Supabase CLI version
         id: cli
         # Single source of truth for the CLI version — local `npm run dev`
         # warns on mismatch, CI pins to this same value. Bumping
         # package.json#supabase.cli_version flows everywhere.
+        #
+        # setup-cli v3 resolves that version from npm rather than from
+        # GitHub releases, so whatever this reads has to exist as a
+        # published `supabase` package — not merely as a release tag.
         run: echo "version=$(jq -r '.supabase.cli_version' package.json)" >> "$GITHUB_OUTPUT"
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: ${{ steps.cli.outputs.version }}
       - name: Start local Supabase
@@ -71,13 +75,13 @@ jobs:
     steps:
       # Full history: the changed-function diff below needs the previous
       # head, and the default depth-1 checkout does not have it.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Read Supabase CLI version
         id: cli
         run: echo "version=$(jq -r '.supabase.cli_version' package.json)" >> "$GITHUB_OUTPUT"
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: ${{ steps.cli.outputs.version }}
       - name: Link to hosted project
