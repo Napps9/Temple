@@ -1016,6 +1016,24 @@ The staff area shows up when `can_access_staff_area` is on.
   Sydney starts the previous evening in UTC, so it was counted on the
   wrong day and, at a week boundary, in the wrong week. The attendance
   screen had it too; both now pass the gym's timezone.
+- **Every sender honours a dead address** — 0229 held a bounced address
+  back from campaigns and nothing else, so class changes, cover requests,
+  payment notices and automation sequences went on mailing it. That was
+  survivable and not free: Resend suppresses an address at the account
+  level once it has hard bounced, so those came back refused rather than
+  delivered, costing a failed row per notice and a queue that retried a
+  dead address every time the gym moved a class.
+  `_shared/suppression.ts` loads the gym's list once per drain and each
+  worker records a skip that says why. Done at the dispatcher rather than
+  in the eight enqueue functions: suppression is a fact about delivery,
+  not about whether the notice should exist, and one shared helper beats
+  eight verbatim restatements of large function bodies.
+  **Keyed by gym as well as address.** The same person can bounce for one
+  gym and be perfectly reachable at another, and a shared platform must
+  never let one gym's bad list silence another's mail — tested, along with
+  the deliberate failure mode: if the suppression lookup itself errors the
+  queue goes out anyway, because not telling a member their class is
+  cancelled is a worse harm than mailing an address that bounces.
 - **A dead address is a member fact** (0230) — 0229 holds a bounced
   address back from every send, which is all the comms surfaces need and
   not what the gym needs. The person is still a member: they still have a

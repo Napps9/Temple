@@ -594,12 +594,14 @@ next session finds them.
   `email.delivered`, `email.bounced` and `email.complained`. Until then
   every send honestly reads "not measured" rather than 0%.
 
-  One thing 0229 deliberately did not do: the transactional senders
-  (class changes, cover, payment notices) still mail a hard-bounced
-  address. Resend suppresses at the account level once an address has
-  bounced permanently, so those are refused by the provider rather than
-  delivered — the cost is a failed row, not a reputation. Teaching the
-  five enqueue functions the same predicate is worth doing on its own.
+  The transactional senders honour it too, since
+  `_shared/suppression.ts`: class changes, cover, payment notices and
+  automation sequences all load the gym's suppression list once per drain
+  and record a skip with the reason rather than mailing a dead address and
+  collecting a provider refusal. Done at the dispatcher rather than in the
+  eight enqueue functions — suppression is a fact about delivery, not
+  about whether the notice should exist, and one shared helper beats eight
+  verbatim restatements.
 
   The original finding, kept for the reasoning:
   `email_campaign_recipients` has carried `delivered_at`, `open_count`,

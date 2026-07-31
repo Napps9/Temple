@@ -33,6 +33,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { requireGymMember, safeOrigin } from '../_shared/caller.ts';
 
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+import { loadSuppressed, SUPPRESSED_REASON } from '../_shared/suppression.ts';
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -386,6 +387,8 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  const suppressed = await loadSuppressed(service, [gymId!]);
+
   let sent = 0;
   let failed = 0;
   let simulated = 0;
@@ -397,6 +400,14 @@ Deno.serve(async (req: Request) => {
       await service
         .from('cover_notifications')
         .update({ status: 'skipped', error: 'No recipient address' })
+        .eq('id', r.id);
+      return;
+    }
+
+    if (suppressed.has(gymId!, to)) {
+      await service
+        .from('cover_notifications')
+        .update({ status: 'skipped', error: SUPPRESSED_REASON })
         .eq('id', r.id);
       return;
     }

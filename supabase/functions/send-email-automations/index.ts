@@ -27,6 +27,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { loadSuppressed, SUPPRESSED_REASON } from '../_shared/suppression.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -189,6 +191,10 @@ Deno.serve(async (req: Request) => {
     }),
   );
 
+  // One lookup for every gym in this drain — the worker is cross-gym, and
+  // a suppression belongs to the gym that earned it.
+  const suppressed = await loadSuppressed(service, gymIds);
+
   const unsubBase = `${SUPABASE_URL}/functions/v1/send-email-automations`;
   let sent = 0;
   let failed = 0;
@@ -204,6 +210,15 @@ Deno.serve(async (req: Request) => {
       await service
         .from('email_automation_runs')
         .update({ status: 'skipped', error: 'Missing recipient or compiled body' })
+        .eq('id', r.id);
+      skipped += 1;
+      return;
+    }
+
+    if (suppressed.has(r.gym_id, r.recipient_email)) {
+      await service
+        .from('email_automation_runs')
+        .update({ status: 'skipped', error: SUPPRESSED_REASON })
         .eq('id', r.id);
       skipped += 1;
       return;
