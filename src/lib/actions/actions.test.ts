@@ -6,9 +6,11 @@ import { describe, expect, it } from 'vitest';
 import { bookMemberIn, cancelClass, editClasses, removeMemberFrom } from './classes';
 import {
   audienceFrom,
+  cancelSend,
   describeSequenceAction,
   newsletterCard,
   readAudienceArgs,
+  scheduleSend,
   sequenceCard,
 } from './comms';
 import { sanitiseSequence } from '../sequence-draft';
@@ -1035,5 +1037,90 @@ describe('matchProduct', () => {
 
   it('returns nothing when nothing matches', () => {
     expect(matchProduct(shop, 'protein')).toBeNull();
+  });
+});
+
+// The owner's condition for allowing a send to be approved now and go
+// later was that the card show what is being approved: the real email,
+// who it reaches, and the exact time.
+describe('scheduling a send', () => {
+  const ok = {
+    newsletter: {
+      subject: 'Christmas hours',
+      sections: [{ heading: 'We are open', body: 'Every day but the 25th.' }],
+    },
+    send_on: '2026-12-20',
+    send_time: '09:00',
+  };
+
+  it('takes a draft with a day and an hour', () => {
+    const a = scheduleSend.sanitise(ok);
+    expect(a?.draft.subject).toBe('Christmas hours');
+    expect(a?.when).toEqual({ y: 2026, mo: 12, d: 20, h: 9, mi: 0 });
+  });
+
+  // A newsletter with no time is comms.draft_newsletter. Sending "now"
+  // because the time did not parse is the one outcome nobody asked for.
+  it('refuses rather than sending immediately when the time is unusable', () => {
+    expect(scheduleSend.sanitise({ ...ok, send_time: 'in the morning' })).toBeNull();
+    expect(scheduleSend.sanitise({ ...ok, send_time: undefined })).toBeNull();
+    expect(scheduleSend.sanitise({ ...ok, send_on: undefined })).toBeNull();
+    expect(scheduleSend.sanitise({ ...ok, newsletter: undefined })).toBeNull();
+  });
+
+  it('carries the audience the same way the newsletter does', () => {
+    const a = scheduleSend.sanitise({ ...ok, tags: ['injured'] });
+    expect(a?.audience.tags).toEqual(['injured']);
+  });
+
+  it('says what it staled, including the campaign it just wrote', () => {
+    expect(scheduleSend.invalidate).toContain('comms-campaigns');
+    expect(scheduleSend.kind).toBe('do');
+    expect(scheduleSend.capability).toBe('can_manage_comms');
+  });
+});
+
+describe('calling a scheduled send off', () => {
+  it('asks which when the words match more than one', async () => {
+    const rows = [
+      { id: 'a', title: 'Christmas hours', subject: 'Christmas hours', scheduled_for: null },
+      { id: 'b', title: 'Christmas party', subject: 'Christmas party', scheduled_for: null },
+    ];
+    const ctx = {
+      supabase: {
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({ order: async () => ({ data: rows }) }),
+            }),
+          }),
+        }),
+      },
+      gymId: 'gym',
+      userId: 'user',
+    } as never;
+    const p = await cancelSend.preview({ which: 'christmas' }, ctx);
+    expect(p.choices?.map((c) => c.label)).toEqual([
+      'Christmas hours',
+      'Christmas party',
+    ]);
+    expect(p.yes).toBeUndefined();
+  });
+
+  it('says nothing is waiting rather than cancelling the wrong thing', async () => {
+    const ctx = {
+      supabase: {
+        from: () => ({
+          select: () => ({
+            eq: () => ({ eq: () => ({ order: async () => ({ data: [] }) }) }),
+          }),
+        }),
+      },
+      gymId: 'gym',
+      userId: 'user',
+    } as never;
+    const p = await cancelSend.preview({ which: null }, ctx);
+    expect(p.title).toBe('Nothing is waiting to go out.');
+    expect(p.yes).toBeUndefined();
   });
 });

@@ -22,7 +22,14 @@ import {
 } from '../email/audience';
 import { FALLBACK_BRAND_SEED } from '../email/blocks';
 import { renderEmailHtml, renderEmailText } from '../email/render';
-import { newsletterDocument } from '../newsletter-draft';
+import { newsletterDocument, sanitiseNewsletter } from '../newsletter-draft';
+import {
+  parseWallTime,
+  sendAtEpoch,
+  sendAtLabel,
+  untilLabel,
+  type WallTime,
+} from '../send-time';
 import {
   primaryRow,
   sanitiseSequence,
@@ -208,6 +215,7 @@ export async function newsletterCard(
   draft: { subject: string; sections: { heading: string; body: string }[] },
   audience: string,
   ctx: ActionContext,
+  when: string | null = null,
 ): Promise<EmailDraftCard> {
   const g = await brandOf(ctx);
   return {
@@ -215,7 +223,7 @@ export async function newsletterCard(
     audience,
     emails: [
       {
-        when: null,
+        when,
         subject: draft.subject,
         sections: draft.sections,
         // Built with the same function apply will use, so what is on the
@@ -378,7 +386,6 @@ export const describeSequenceAction: ActionSpec<{ draft: SequenceDraft }> = {
   },
 };
 
-export const COMMS_ACTIONS: AnyAction[] = [erase(describeSequenceAction)];
 
 // ============================================================================
 // The newsletter's audience
@@ -450,4 +457,305 @@ export const AUDIENCE_ARGS = [
       'active, paying, expiring_soon, expired. "lapsed" or "people who have ' +
       'left" is ["expired"]; "people about to run out" is ["expiring_soon"].',
   },
+];
+
+// ============================================================================
+// comms.schedule_send
+// ============================================================================
+//
+// The newsletter has always been draftable by sentence and sendable only
+// by button, because the button was the approval. Scheduling breaks that:
+// nobody is standing at the screen at seven on Sunday morning, so the
+// approval has to happen now for a thing that happens later.
+//
+// The owner's condition for allowing it was that the card show what is
+// being approved rather than describe it. So this card renders the
+// compiled email — the same HTML the worker will post — names the
+// audience with its count, and states the exact local time and how far
+// away that is. Then it stays cancellable: comms.cancel_send pulls it
+// back to a draft, and so does the campaign screen, right up until the
+// dispatcher takes it.
+//
+// Two writes, deliberately not wrapped in one. If the draft saves and the
+// schedule does not, the owner has a draft — which is recoverable and
+// visible — and is told exactly that. Rolling the draft back would leave
+// them with nothing and a sentence they would have to type again.
+
+type Scheduled = {
+  draft: { subject: string; sections: { heading: string; body: string }[] };
+  audience: NewsletterAudience;
+  when: WallTime;
+};
+
+async function gymTimezone(ctx: ActionContext): Promise<string> {
+  const { data } = await ctx.supabase
+    .from('gyms')
+    .select('timezone')
+    .eq('id', ctx.gymId)
+    .single();
+  return (data as { timezone: string } | null)?.timezone || 'Europe/London';
+}
+
+// What the editor puts in the footer, so a scheduled send is byte-for-byte
+// what pressing Send on the screen would have produced.
+async function footerOf(ctx: ActionContext, g: Brand | null) {
+  const { data } = await ctx.supabase
+    .from('gym_comms_settings')
+    .select('footer_business_name, footer_address')
+    .eq('gym_id', ctx.gymId)
+    .maybeSingle();
+  const row = data as
+    | { footer_business_name: string | null; footer_address: string | null }
+    | null;
+  return {
+    businessName: row?.footer_business_name || (g?.name ?? null),
+    address: row?.footer_address ?? '',
+  };
+}
+
+export const scheduleSend: ActionSpec<Scheduled> = {
+  name: 'comms.schedule_send',
+  kind: 'do',
+  capability: 'can_manage_comms',
+  says:
+    'Write an email to the members and send it at a set time — "email ' +
+    'everyone about the Christmas hours on Friday morning", "tell the ' +
+    'lapsed lot we miss them, send it Monday at 9". Without a time it is ' +
+    'comms.draft_newsletter.',
+  args: [
+    {
+      name: 'newsletter',
+      type: 'object',
+      desc:
+        '{subject, sections: [{heading, body}]} — DRAFT it for them: a short ' +
+        'subject line and 2-4 sections, each a heading plus 1-3 sentences of ' +
+        "warm, plain British English written from the owner's brief. Use ONLY " +
+        'facts they stated — never invent dates, times, prices or names.',
+      required: true,
+    },
+    {
+      name: 'send_on',
+      type: 'date',
+      desc: 'The day it goes, YYYY-MM-DD, resolved forward from today',
+      required: true,
+    },
+    {
+      name: 'send_time',
+      type: 'string',
+      desc:
+        'The time it goes, HH:MM on a 24-hour clock, in the gym\'s own local ' +
+        'time ("9 in the morning" is 09:00, "half seven in the evening" is ' +
+        '19:30). If they named a day but no time, use 09:00.',
+      required: true,
+    },
+    ...AUDIENCE_ARGS,
+  ],
+  invalidate: ['comms-campaigns', 'comms-campaign'],
+  sanitise: (raw) => {
+    const draft = sanitiseNewsletter(raw.newsletter);
+    const when = parseWallTime(raw.send_on, raw.send_time);
+    if (!draft || !when) return null;
+    return { draft, audience: readAudienceArgs(raw), when };
+  },
+  preview: async (a, ctx) => {
+    const tz = await gymTimezone(ctx);
+    const at = sendAtEpoch(a.when, tz, Date.now());
+    if (at === null) {
+      return {
+        title: 'That time has already gone, or is more than a year out.',
+        lines: ['Give me a day and time still ahead of us and I will set it.'],
+      };
+    }
+    const { line } = await audienceLine(a.audience, ctx);
+    const label = sendAtLabel(at, tz);
+    return {
+      title: `Send this ${label}?`,
+      lines: [],
+      card: 'email',
+      data: await newsletterCard(
+        a.draft,
+        line,
+        ctx,
+        `${label} — ${untilLabel(at, Date.now())}`,
+      ),
+      yes: 'Yes, schedule it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const tz = await gymTimezone(ctx);
+    const at = sendAtEpoch(a.when, tz, Date.now());
+    if (at === null) throw new ActionError('That time has already gone.');
+    // Re-resolved rather than carried from the preview, same as the
+    // newsletter: a tag renamed between the card opening and Yes changes
+    // who this reaches, and the send is a week away.
+    const { def } = await audienceLine(a.audience, ctx);
+    const g = await brandOf(ctx);
+    const doc = docFor(g, a.draft.subject, a.draft.sections);
+
+    const { data, error } = await ctx.supabase
+      .from('email_campaigns')
+      .insert({
+        gym_id: ctx.gymId,
+        created_by: ctx.userId,
+        title: a.draft.subject,
+        subject: a.draft.subject,
+        design: doc as unknown as Json,
+        audience: def as unknown as Json,
+      })
+      .select('id')
+      .single();
+    if (error || !data) {
+      throw new ActionError(
+        /row-level security|permission/i.test(error?.message ?? '')
+          ? 'You do not have permission to write to members.'
+          : "That didn't save — try again.",
+      );
+    }
+    const id = (data as { id: string }).id;
+    const href = `/management/communications/${id}`;
+
+    const footer = await footerOf(ctx, g);
+    const { error: schedErr } = await ctx.supabase.rpc(
+      'comms_schedule_campaign',
+      {
+        p_campaign_id: id,
+        p_send_at: new Date(at).toISOString(),
+        p_html: renderEmailHtml(doc, { preheader: '', footer }),
+        p_text: renderEmailText(doc, { footer }),
+      },
+    );
+    // Stop and say where. The draft is real, saved and openable — the one
+    // thing an owner must not do is walk away believing it is booked.
+    if (schedErr) {
+      ctx.offer?.('Open it', href);
+      throw new ActionError(
+        `“${a.draft.subject}” is drafted, but I could not book the time — it is sitting in your campaigns as a draft, unsent. Open it and schedule it there.`,
+      );
+    }
+
+    ctx.offer?.('Open it', href);
+    const label = sendAtLabel(at, tz);
+    return (
+      `Scheduled — “${a.draft.subject}” goes to ${describeAudience(def).toLowerCase()} on ${label}. ` +
+      `Say "don't send the ${a.draft.subject} email" any time before then and I will pull it.`
+    );
+  },
+};
+
+// ============================================================================
+// comms.cancel_send
+// ============================================================================
+//
+// The other half of the promise. A scheduled send is only really
+// cancellable if calling it off is as easy as booking it was — otherwise
+// "you can always cancel" means "you can always go and find the screen".
+
+type ScheduledRow = {
+  id: string;
+  title: string;
+  subject: string;
+  scheduled_for: string | null;
+};
+
+async function scheduledCampaigns(ctx: ActionContext): Promise<ScheduledRow[]> {
+  const { data } = await ctx.supabase
+    .from('email_campaigns')
+    .select('id, title, subject, scheduled_for')
+    .eq('gym_id', ctx.gymId)
+    .eq('status', 'scheduled')
+    .order('scheduled_for', { ascending: true });
+  return (data ?? []) as ScheduledRow[];
+}
+
+function matchScheduled(rows: ScheduledRow[], q: string | null): ScheduledRow[] {
+  if (rows.length === 0) return [];
+  if (!q) return rows;
+  const needle = q.toLowerCase();
+  const hits = rows.filter(
+    (r) =>
+      r.subject.toLowerCase().includes(needle) ||
+      r.title.toLowerCase().includes(needle),
+  );
+  return hits.length > 0 ? hits : [];
+}
+
+export const cancelSend: ActionSpec<{ which: string | null }> = {
+  name: 'comms.cancel_send',
+  kind: 'do',
+  capability: 'can_manage_comms',
+  says:
+    'Call off an email that is waiting to go — "don\'t send the Christmas ' +
+    'hours email", "cancel Monday\'s newsletter", "stop that email going ' +
+    'out".',
+  args: [
+    {
+      name: 'which',
+      type: 'string',
+      desc:
+        'The email, as they named it — words from its subject. Omit if they ' +
+        'did not say which.',
+    },
+  ],
+  invalidate: ['comms-campaigns', 'comms-campaign'],
+  sanitise: (raw) => ({ which: argString(raw, 'which', 120) }),
+  preview: async (a, ctx) => {
+    const rows = await scheduledCampaigns(ctx);
+    if (rows.length === 0) {
+      return { title: 'Nothing is waiting to go out.', lines: [] };
+    }
+    const hits = matchScheduled(rows, a.which);
+    if (hits.length === 0) {
+      return {
+        title: `Nothing scheduled matching “${a.which}”.`,
+        lines: rows.map((r) => `Waiting: “${r.subject}”`),
+      };
+    }
+    if (hits.length > 1) {
+      return {
+        title: 'Which one?',
+        lines: [],
+        choices: hits.map((r) => ({ label: r.subject, args: { which: r.subject } })),
+      };
+    }
+    const tz = await gymTimezone(ctx);
+    const row = hits[0];
+    return {
+      title: `Call off “${row.subject}”?`,
+      lines: [
+        row.scheduled_for
+          ? `It was going out ${sendAtLabel(new Date(row.scheduled_for).getTime(), tz)}.`
+          : 'It was waiting to go.',
+        'It goes back to a draft — nothing is deleted, and you can send it or reschedule it whenever.',
+      ],
+      yes: 'Yes, call it off',
+    };
+  },
+  apply: async (a, ctx) => {
+    const hits = matchScheduled(await scheduledCampaigns(ctx), a.which);
+    if (hits.length !== 1) {
+      throw new ActionError('That one is no longer waiting to go.');
+    }
+    const row = hits[0];
+    const { error } = await ctx.supabase.rpc('comms_unschedule_campaign', {
+      p_campaign_id: row.id,
+    });
+    if (error) {
+      // The dispatcher takes a campaign by flipping it off 'scheduled', so
+      // losing the race means it has already gone. Saying "cancelled"
+      // would be the worst possible lie here.
+      throw new ActionError(
+        /not scheduled/i.test(error.message)
+          ? `“${row.subject}” has already gone out — I was too late to stop it.`
+          : "That didn't save — try again.",
+      );
+    }
+    ctx.offer?.('Open it', `/management/communications/${row.id}`);
+    return `Called off. “${row.subject}” is back to a draft and nobody has had it.`;
+  },
+};
+
+export const COMMS_ACTIONS: AnyAction[] = [
+  erase(describeSequenceAction),
+  erase(scheduleSend),
+  erase(cancelSend),
 ];

@@ -305,18 +305,34 @@ already authorised. Roughly in order of how often an owner touches them:
   there is nothing to wrap — and refunding a single booking's credit,
   which `remove_member_booking` already does as part of taking someone
   out rather than as a verb of its own.
-- **Comms** — done for the two that matter. Send to a tag (the
-  newsletter finally carries an audience, resolved against the gym's real
-  labels and counted on the card) and describe a sequence, which lands as
-  a disabled automation over the engine that already had five triggers,
-  step delays and suppression and no way in but a form. **Decided, not yet
-  built:** scheduling a send from a sentence. The standing rule was that
-  nothing sends from the bar, and a scheduled send is a send with a delay.
-  The owner's call was yes, on one condition — the card must render the
-  actual email, name the audience and the exact time, and the send stays
-  cancellable until it goes. So the approval moves from a button to a
-  card that shows you what you are approving, which is the stronger of
-  the two. Machinery is 0183/0184.
+- **Comms** — done. Send to a tag (the newsletter finally carries an
+  audience, resolved against the gym's real labels and counted on the
+  card), describe a sequence, which lands as a disabled automation over
+  the engine that already had five triggers, step delays and suppression
+  and no way in but a form, and now **schedule a send and call one off**.
+  The standing rule was that nothing sends from the bar, and a scheduled
+  send is a send with a delay. The owner's call was yes, on one condition
+  — the card must render the actual email, name the audience and the
+  exact time, and the send stays cancellable until it goes. All three
+  hold: the card is the compiled HTML the worker will post, the audience
+  line carries its count, the time is spelled out with how far away it is,
+  and `comms.cancel_send` pulls it back to a draft by sentence right up
+  until the dispatcher takes it. Losing that race is reported as losing
+  it — "it has already gone out" — because saying "cancelled" would be
+  the worst available lie.
+
+  Two writes, deliberately not one transaction. The user's rule for
+  chaining was stop and say exactly where, so a draft that saves and a
+  schedule that doesn't leaves a real, openable draft and a sentence
+  saying so. Rolling the draft back would leave nothing and a sentence to
+  retype.
+
+  A bug fell out of building it: **nothing in the comms path read
+  `gyms.timezone`.** The editor resolved the typed time in the *device's*
+  zone and said so in the hint text, so a coach scheduling from a beach
+  booked the wrong hour for the members. Both surfaces now read the gym's
+  zone through one parser (`src/lib/send-time.ts`), which is the same
+  rule the timetable and the cancel cutoffs already followed.
 - **Leads** — done for the pipeline (0217). Take an enquiry down while
   they are still on the phone, move one along, hand one over, and ask how
   the week is going — including who has been left untouched, which is
@@ -475,6 +491,19 @@ next session finds them.
   function. Membership refunds go through `stripe-refund`; the shop has
   no equivalent. Until it does, `money.refund` is deliberately scoped to
   memberships and says so.
+- **A scheduled send that reaches nobody tells nobody.**
+  `_send_due_campaign` flips the campaign to `failed` when the audience
+  resolves to zero rows at send time, and nothing writes a notification,
+  a timeline event or an email. The owner finds out by going to look.
+  The audience *definition* is frozen at schedule time; the rows are
+  resolved at send time, so a tag emptied in between is exactly how this
+  happens.
+- **A send already going out cannot be stopped.** Once the sweep flips a
+  campaign to `sending`, there is no abort, no recall and no path to the
+  `cancelled` status the CHECK constraint allows — the only escape is the
+  ten-minute recovery path. `comms.cancel_send` reports losing that race
+  rather than pretending to win it, which is the honest half of the fix,
+  not the whole one.
 - **Four pgTAP files fail in the local harness for the harness's own
   reasons** (storage path helpers, recurrence pattern rewrite, closure
   reopen, ordered onboarding responses) — listed in

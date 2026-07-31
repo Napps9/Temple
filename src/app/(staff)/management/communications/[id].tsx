@@ -37,9 +37,15 @@ import {
 import { useEmailHistory } from '@/lib/email/history';
 import { renderEmailHtml } from '@/lib/email/render';
 import { errorMessage } from '@/lib/errors';
+import {
+  parseTypedWallTime,
+  sendAtEpoch,
+  sendAtLabel,
+} from '@/lib/send-time';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 import type { Database, Json } from '@/types/database';
 
@@ -121,6 +127,14 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   const schedule = useScheduleCampaign();
   const unschedule = useUnscheduleCampaign();
   const [scheduleAt, setScheduleAt] = useState<string>('');
+  // The gym's timezone, not the device's. A coach scheduling next week's
+  // newsletter from a beach should book the hour the members will read
+  // it at, which is the same rule the timetable and the cutoffs follow.
+  const tz = useGymOperatingDefaults().data?.timezone ?? 'Europe/London';
+  const scheduledEpoch = (() => {
+    const w = parseTypedWallTime(scheduleAt);
+    return w ? sendAtEpoch(w, tz, Date.now()) : null;
+  })();
   const queryClient = useQueryClient();
 
   const brandSeed: BrandSeed = useMemo(
@@ -322,7 +336,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
       await persist();
       await schedule.mutateAsync({
         campaignId: campaign.id,
-        sendAt: new Date(scheduleAt).toISOString(),
+        sendAt: new Date(scheduledEpoch!).toISOString(),
         document,
         preheader,
         footer,
@@ -578,13 +592,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
               <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 gap-2">
                 <Text className="text-amber-800 dark:text-amber-300 text-sm">
                   Scheduled to send{' '}
-                  {new Date(campaign.scheduled_for).toLocaleString('en-GB', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {sendAtLabel(new Date(campaign.scheduled_for).getTime(), tz)}
                   . Edits after this point will not go out — the version you
                   scheduled is the version that sends.
                 </Text>
@@ -599,8 +607,9 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             ) : (
               <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2 border border-gray-200 dark:border-gray-700">
                 <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                  Or send it later. Times are in your device's timezone;
-                  delivery starts within about fifteen minutes of the slot.
+                  Or send it later. Times are the gym's own ({tz}), wherever
+                  you happen to be; delivery starts within about fifteen
+                  minutes of the slot.
                 </Text>
                 <Input
                   label="Send at"
@@ -614,12 +623,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                   tone="primary"
                   icon="time-outline"
                   label="Schedule"
-                  disabled={
-                    !canSend ||
-                    !scheduleAt.trim() ||
-                    Number.isNaN(new Date(scheduleAt).getTime()) ||
-                    new Date(scheduleAt).getTime() <= Date.now()
-                  }
+                  disabled={!canSend || scheduledEpoch === null}
                   onPress={doSchedule}
                 />
               </View>

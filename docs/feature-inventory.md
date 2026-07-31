@@ -861,6 +861,35 @@ The staff area shows up when `can_access_staff_area` is on.
   and a `member_tagged` sequence with no tag is refused outright rather
   than created, because it would match nobody for ever while looking like
   it worked. The card also refuses a tag no member actually holds.
+- **A send can be booked and called off by sentence** (roadmap step 2) —
+  `comms.schedule_send` ("email everyone about the Christmas hours on
+  Friday morning") and `comms.cancel_send` ("don't send the Christmas
+  hours email") over 0183/0193's machinery. The standing rule was that
+  nothing sends from the bar, because the send button *is* the approval;
+  a scheduled send breaks that, since nobody is at the screen at seven on
+  Sunday. So the approval moves to a card that shows what is being
+  approved: the compiled email itself, the audience with its count, and
+  the exact local time stamped above the subject with how far away it is
+  ("Tuesday 4 August at 09:00 — in 3 days"). Two writes, deliberately not
+  one transaction — a draft that saves and a schedule that fails leaves a
+  real, openable draft and a receipt saying exactly that, because rolling
+  the draft back would leave nothing. Cancelling goes through
+  `comms_unschedule_campaign`, which is gated on `status = 'scheduled'`;
+  the */15 dispatcher closes that window by flipping the row to
+  `sending`, and losing the race is reported as losing it ("it has
+  already gone out") rather than as a cancellation.
+- **A scheduled time is the gym's, not the device's** — nothing in the
+  comms path read `gyms.timezone`. The campaign editor resolved the typed
+  time through `new Date(...)` in the *device's* zone and its hint text
+  said so, so a coach scheduling next week's newsletter from a beach
+  booked the wrong hour for the members — the one surface in Temple not
+  following the gym's clock, when the timetable, the closures and the
+  cancel cutoffs all do. `src/lib/send-time.ts` (pure + tested) parses a
+  wall time, resolves it in `gyms.timezone` through `wallTimeToEpoch`, and
+  labels it back in the same zone; both the chat verb and the editor go
+  through it, so a send booked on either surface lands at the same
+  instant. It also refuses a day that does not exist (31 April) rather
+  than rolling it forward, and anything more than a year out.
 - **The draft, in the chat** — a confirm card that read "Rehab class starts
   Monday — A new small-group session for anyone…" told an owner it was
   roughly about the right thing, which is not the question they have. Both
