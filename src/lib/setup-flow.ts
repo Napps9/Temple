@@ -113,6 +113,7 @@ export type RuleChoices = {
   leaderboards_on: boolean;
   public_signup: boolean;
   public_lead_capture: boolean;
+  members_can_self_checkout: boolean;
   expiring_within_days: number;
   parq_expiry_days: number;
   health_retention_months: number;
@@ -134,6 +135,7 @@ export const DEFAULT_RULE_CHOICES: RuleChoices = {
   leaderboards_on: true,
   public_signup: true,
   public_lead_capture: true,
+  members_can_self_checkout: true,
   expiring_within_days: 14,
   parq_expiry_days: 365,
   health_retention_months: 3,
@@ -196,6 +198,10 @@ export const RULE_FIELD_OPTIONS: Record<RuleField, FieldOption[]> = {
   public_signup: [
     { label: 'can join', value: true },
     { label: 'cannot join', value: false },
+  ],
+  members_can_self_checkout: [
+    { label: 'pay for their own membership', value: true },
+    { label: 'are put on a plan by you', value: false },
   ],
   public_lead_capture: [
     { label: 'on', value: true },
@@ -377,6 +383,7 @@ export function ruleSheet(c: RuleChoices): SheetGroup[] {
         line({ t: 'Leaderboards are ' }, { f: 'leaderboards_on' }),
         line({ t: 'People ' }, { f: 'public_signup' }, { t: ' from your website' }),
         line({ t: 'The enquiry form is ' }, { f: 'public_lead_capture' }),
+        line({ t: 'Members ' }, { f: 'members_can_self_checkout' }),
       ],
     },
     {

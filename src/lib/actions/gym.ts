@@ -118,7 +118,8 @@ export const changeRules: ActionSpec<{ changes: RuleChange[] }> = {
         '       booking_cutoff_minutes_before: minutes as integer, 0 = up to ' +
         'the start.\n' +
         '       require_membership_to_book / allow_minors / leaderboards_on / ' +
-        'public_signup / public_lead_capture: boolean.\n' +
+        'public_signup / public_lead_capture / members_can_self_checkout: ' +
+        'boolean.\n' +
         '       week_starts_on: "mon" | "sun". weight_unit: "kg" | "lb". ' +
         'dm_scope: "full_gym" | "member_coach_only".\n' +
         '       expiring_within_days / lead_conversion_window_days / ' +
@@ -666,6 +667,77 @@ export const setGymColour: ActionSpec<{ colour: string }> = {
   },
 };
 
+// ============================================================================
+// gym.rename
+// ============================================================================
+//
+// The gym's own name, which shows on every email, the join page and the
+// app header. Deliberately NOT the slug: that is the public join URL, and
+// changing it breaks every link an owner has already put on Instagram, a
+// flyer or a door. The two live on the same card today and only one of
+// them is safe to say out loud, so the card says which.
+
+export const renameGym: ActionSpec<{ name: string }> = {
+  name: 'gym.rename',
+  kind: 'do',
+  capability: null,
+  // set_gym_name asks user_is_owner_of, and what the gym is called is not
+  // a grantable decision.
+  roles: ['owner'],
+  says:
+    'Change what the gym is called — "call us Iron Temple", "rename the ' +
+    'gym to Temple Strength". Not the web address, which stays as it is.',
+  args: [
+    {
+      name: 'name',
+      type: 'string',
+      desc: 'The new name, exactly as they said it',
+      required: true,
+    },
+  ],
+  invalidate: ['gym-brand'],
+  sanitise: (raw) => {
+    const name = argString(raw, 'name', 60);
+    return name ? { name } : null;
+  },
+  preview: async (a, ctx) => {
+    const { data } = await ctx.supabase
+      .from('gyms')
+      .select('name, slug')
+      .eq('id', ctx.gymId)
+      .maybeSingle();
+    const gym = data as { name: string; slug: string } | null;
+    if (!gym) return { title: 'I could not read your gym.', lines: [] };
+    if (gym.name === a.name) {
+      return { title: `You are already called ${a.name}.`, lines: [] };
+    }
+    return {
+      title: `Rename the gym to ${a.name}?`,
+      lines: [
+        `${gym.name} → ${a.name}, on your emails, your join page and the app.`,
+        // The thing an owner does not think of, and the one that would
+        // cost them: the URL is a separate field on purpose.
+        `Your join link does not change — it stays /${gym.slug}. Change that on the Branding card if you mean to, and anything already pointing at the old one stops working.`,
+      ],
+      yes: 'Yes, rename it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const { error } = await ctx.supabase.rpc('set_gym_name', {
+      p_gym_id: ctx.gymId,
+      p_name: a.name,
+    });
+    if (error) {
+      throw new ActionError(
+        /not authorised|row-level security|permission/i.test(error.message)
+          ? 'Only an owner can rename the gym.'
+          : "That didn't save — try again.",
+      );
+    }
+    return `You are ${a.name} now.`;
+  },
+};
+
 export const GYM_ACTIONS: AnyAction[] = [
   erase(changeRules),
   erase(addClasses),
@@ -673,5 +745,6 @@ export const GYM_ACTIONS: AnyAction[] = [
   erase(closeGym),
   erase(reopenGym),
   erase(setGymColour),
+  erase(renameGym),
   erase(draftNewsletter),
 ];

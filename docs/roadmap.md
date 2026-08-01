@@ -721,7 +721,7 @@ gated on `can_claim_cover`, with the claim still first-come in
 `claim_cover` rather than an owner's decision. A coach's own outstanding
 requests turned out to have been in the feed all along.
 Two passes at the bar, and the first one failed: it was written down as
-not-earned before it was earned. **Nine retired, eleven owed.**
+not-earned before it was earned. **Nine retired, one owed.**
 
 **Auditing before building keeps finding the work half-done and the
 permissions wrong.** Plans was the third surface in a row where the
@@ -800,6 +800,34 @@ carrying the keywords of every rule it speaks. That is what unblocks the
 rest of the settings burndown — each section that folds points its words
 at the sheet instead of losing them.
 
+**And then the burndown turned out to be counting the wrong thing.** Eleven
+surfaces read as owed. Nine of them had already moved. `ends` records where
+a surface is *going*; nothing recorded whether it had got there, so a
+finished move counted against the scoreboard forever and the only way to
+reach zero was to delete the manifest — which is not what `moves` means.
+The roadmap's own definition is that the interaction becomes a sentence and
+the screen **demotes to the Back Office**, which is exactly where all of
+them already sat.
+
+So the manifest gained `movedTo`: the actions that took each surface's job.
+Named rather than a boolean, because a boolean is a claim and a name is
+checkable — a test asserts every one exists in the registry, so deleting an
+action re-opens the surface it was closing instead of leaving a lie behind.
+Insights, Attendance, Tag rules, Plans and Closures needed nothing at all;
+Branding and Class types needed one verb each (`gym.rename`,
+`classes.rename_type`); Billing needed one rule field
+(`members_can_self_checkout`, now a sentence in the sheet like every other
+rule). Health screening was reclassified to **keeps** — a waiver is a PDF
+somebody signs with their own hand and a PAR-Q is a questionnaire being
+authored, so neither was ever going to become a sentence.
+
+**One is left, and it is blocked rather than unbuilt.**
+`set_leaderboard_config` is the only rule setter gated on a capability
+rather than on being the owner, so its panel is the single door an admin
+holding `can_configure_leaderboards` has. Deleting it would take a
+permission away. It moves when the gym's rules can be spoken by somebody
+who is not the owner — a product decision, not a chore.
+
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
 from asking to acting removes sentences. The measures stay what they
@@ -812,6 +840,19 @@ Bugs found while building the modules that could not be closed in the
 same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
+
+- **The timetable's own tables are gated on a role, not a capability.**
+  `class_sessions`, `class_types` and `class_recurrences` all write behind
+  `user_can_manage_classes`, which is `role in ('owner','admin','coach')`
+  with `left_at is null` — correct and well-maintained (0236), but a role
+  check where the screens in front of it ask `can_edit_classes`. At the
+  defaults the two agree exactly, so nothing is wrong today; revoke
+  `can_edit_classes` from coaches and the buttons vanish while the tables
+  keep saying yes. Same shape as the archive family fixed in 0245, and the
+  eleventh instance of it. Not fixed with the phase-5 close because it is
+  three tables and roughly a dozen policies rather than six functions, and
+  it deserves its own change with its own pgTAP rather than riding along
+  with a burndown.
 
 - **`extend_recurrence` has no horizon.** Found while auditing the
   settings panels. It is `security definer`, granted to `authenticated`,

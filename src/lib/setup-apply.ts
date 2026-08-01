@@ -289,6 +289,10 @@ export async function applyRules(
       'set_gym_public_lead_capture',
       { p_gym_id: gymId, p_enabled: choices.public_lead_capture },
     ],
+    [
+      'set_member_self_checkout',
+      { p_gym_id: gymId, p_enabled: choices.members_can_self_checkout },
+    ],
   ];
   for (const [fn, args] of calls) {
     const { error: e } = await supabase.rpc(fn, args);

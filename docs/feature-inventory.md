@@ -1167,6 +1167,39 @@ The staff area shows up when `can_access_staff_area` is on.
   leaves every session that already ran, so the card says the attendance
   history is untouched, and says how many are already on the timetable and
   still run).
+- **The burndown learns to finish** (`movedTo`) — eleven surfaces read as
+  owed and nine had already moved. `ends` records where a surface is
+  *going*; nothing recorded whether it had arrived, so a completed move
+  counted against the scoreboard forever and the only path to zero was
+  deleting the manifest — which is not what `moves` means. The roadmap's
+  definition is that the interaction becomes a sentence and the screen
+  **demotes to the Back Office**, which is where all of them already sat.
+  `BackOfficeEntry.movedTo` now names the actions that took each
+  surface's job. **Named rather than a boolean, because a boolean is a
+  claim and a name is checkable**: a guard asserts every entry exists in
+  `ACTIONS`, so deleting an action re-opens the surface it was closing
+  rather than leaving a lie in the manifest, and a second guard refuses a
+  `keeps` or `splits` entry claiming to have moved. `movesLeft()` counts
+  `moves` without `movedTo`, and reads **1**.
+  Closing the last few needed three things, not seven screens:
+  `gym.rename` ("call us Iron Temple" — the name only, never the slug,
+  because that is the public join URL and changing it breaks every link
+  already on a flyer; the card says so, since it is the consequence an
+  owner does not think of), `classes.rename_type` ("rename Metcon to
+  Conditioning" — the card's job is the reassurance that a rename is not
+  a new class type, so nothing detaches and no history splits in two), and
+  `members_can_self_checkout` as a rule-sheet line, which was the last
+  thing Billing was the only way to reach.
+  **Health screening was reclassified `keeps`**: a waiver is a PDF
+  somebody signs with their own hand and a PAR-Q is a questionnaire being
+  authored question by question. Neither was ever going to be a sentence,
+  and its two settings that genuinely are rules (`parq_expiry_days`,
+  `health_retention_months`) have been in the sheet all along.
+  **Leaderboards is the one left, and it is blocked rather than unbuilt**
+  — `set_leaderboard_config` is the only rule setter gated on a capability
+  rather than on being the owner, so its panel is the single door an admin
+  holding `can_configure_leaderboards` has. It moves when the gym's rules
+  can be spoken by somebody who is not the owner.
   **Two live callers the filesystem check would not have caught.**
   `/setup` still pushed `/management/parq?backTo=setup` — a button that
   lands on nothing — and the marketing site's "see it live" demo posts

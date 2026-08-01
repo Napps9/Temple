@@ -13,6 +13,7 @@ import {
   searchBackOffice,
   visibleEntries,
 } from './back-office';
+import { ACTIONS } from './actions';
 
 const MANAGEMENT = 'src/app/(staff)/management';
 
@@ -328,12 +329,46 @@ describe('the burndown has a baseline', () => {
   // which keeps its screen forever, because building a page is craft —
   // from Tag rules, which is a form waiting to become a sentence. A
   // burndown that cannot reach zero is an appetite, not a plan.
+  // `movedTo` is the difference between a scoreboard that can finish and
+  // one that can only be abandoned. A name is checkable where a boolean
+  // is not: delete the action and the surface it was closing re-opens,
+  // rather than the manifest quietly keeping a claim that stopped being
+  // true.
+  it('can prove every move it claims', () => {
+    const names = new Set(ACTIONS.map((a) => a.name));
+    const missing: string[] = [];
+    for (const e of BACK_OFFICE) {
+      for (const n of e.movedTo ?? []) {
+        if (!names.has(n)) missing.push(`${e.title} → ${n}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  // Only a surface on its way out can have got there. A `keeps` entry
+  // claiming it moved is a category error, and the one place this would
+  // go wrong quietly.
+  it('only lets a surface that was going somewhere claim to have arrived', () => {
+    for (const e of BACK_OFFICE) {
+      if (e.movedTo) expect(e.ends).toBe('moves');
+    }
+  });
+
   it('knows which surfaces are still owed', () => {
     const by = (e: string) => BACK_OFFICE.filter((x) => x.ends === e).length;
     expect(by('keeps') + by('moves') + by('splits')).toBe(BACK_OFFICE.length);
-    // Eleven: Messaging retired into the rule sheet. The other eleven
-    // are still owed a sentence.
-    expect(movesLeft()).toBe(11);
+    // One. Nine of the eleven had already moved and the manifest could
+    // not say so — `ends` records where a surface is going, not whether
+    // it got there, so a finished move counted against the burndown
+    // forever. The tenth, Billing, needed one more rule field.
+    //
+    // The last is Leaderboards, and it is blocked rather than unbuilt:
+    // set_leaderboard_config is the only rule setter gated on a
+    // capability rather than on being the owner, so its panel is the one
+    // door an admin holding can_configure_leaderboards has. It cannot
+    // move until the gym's rules can be spoken by somebody who is not the
+    // owner, which is a product decision and not a chore.
+    expect(movesLeft()).toBe(1);
     // Phase 5 is done when this is zero. It is not a target for the count
     // of screens — `keeps` is the floor and is supposed to stay.
     expect(by('keeps')).toBeGreaterThan(0);
@@ -351,6 +386,7 @@ describe('the burndown has a baseline', () => {
     ).toEqual([
       'Coach earnings',
       'Goals',
+      'Health screening',
       'Roster',
       'Set up your gym',
       'Website',
@@ -359,6 +395,13 @@ describe('the burndown has a baseline', () => {
       // IS the sentence.
       'Your rules',
     ]);
+    // Reclassified from `moves`: a waiver is a PDF somebody signs with
+    // their own hand and a PAR-Q is a questionnaire being authored, so
+    // neither was ever going to become a sentence. Its two settings that
+    // are rules already live in the sheet.
+    expect(
+      BACK_OFFICE.find((e) => e.title === 'Health screening')?.ends,
+    ).toBe('keeps');
   });
 
   it('offers the bar sentence wherever one exists', () => {

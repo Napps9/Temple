@@ -13,6 +13,7 @@ export const GYM_RULES_SELECT =
   'week_starts_on, allow_minors, weight_unit, dm_scope, ' +
   'class_leaderboards_enabled, strength_leaderboards_enabled, ' +
   'public_signup_enabled, public_lead_capture_enabled, ' +
+  'members_can_self_checkout, ' +
   'expiring_within_days, parq_expiry_days, health_retention_months, ' +
   'cover_warning_hours, lead_conversion_window_days, ' +
   'default_class_capacity, default_class_minutes';
@@ -30,6 +31,7 @@ export type GymRulesRow = {
   strength_leaderboards_enabled: boolean;
   public_signup_enabled: boolean;
   public_lead_capture_enabled: boolean;
+  members_can_self_checkout: boolean;
   expiring_within_days: number;
   parq_expiry_days: number;
   health_retention_months: number;
@@ -110,6 +112,7 @@ export function choicesFromGym(
       gym.class_leaderboards_enabled || gym.strength_leaderboards_enabled,
     public_signup: gym.public_signup_enabled,
     public_lead_capture: gym.public_lead_capture_enabled,
+    members_can_self_checkout: gym.members_can_self_checkout,
     expiring_within_days: gym.expiring_within_days,
     parq_expiry_days: gym.parq_expiry_days,
     health_retention_months: gym.health_retention_months,

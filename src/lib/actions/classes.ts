@@ -1735,6 +1735,80 @@ function typeRefusal(message: string): string {
     : "That didn't save — try again.";
 }
 
+export const renameClassType: ActionSpec<{ classType: string; name: string }> = {
+  name: 'classes.rename_type',
+  kind: 'do',
+  capability: 'can_edit_classes',
+  says:
+    'Rename a kind of class — "rename Metcon to Conditioning", "call ' +
+    'Open Gym Open Session". Only the name; its colour is a swatch and ' +
+    'stays on the Class types card.',
+  args: [
+    ...TYPE_ARGS,
+    { name: 'name', type: 'string', desc: 'The new name', required: true },
+  ],
+  invalidate: [
+    'class-types',
+    'class-type-names',
+    'class-sessions-month',
+    'class-recurrences',
+  ],
+  sanitise: (raw) => {
+    const classType = argString(raw, 'class_type', 60);
+    const name = argString(raw, 'name', 60);
+    return classType && name ? { classType, name } : null;
+  },
+  preview: async (a, ctx) => {
+    const found = await matchClassType(a.classType, false, ctx);
+    if (found.kind === 'none') {
+      return { title: `You don't run a class called “${a.classType}”.`, lines: [] };
+    }
+    if (found.kind === 'many') {
+      return {
+        title: `“${a.classType}” could be more than one of your classes — which?`,
+        lines: [],
+        choices: found.names.map((n) => ({
+          label: n,
+          args: { class_type: n, name: a.name },
+        })),
+      };
+    }
+    if (found.type.name === a.name) {
+      return { title: `It is already called ${a.name}.`, lines: [] };
+    }
+    const upcoming = await upcomingOfType(found.type.id, ctx);
+    return {
+      title: `Rename ${found.type.name} to ${a.name}?`,
+      lines: [
+        // The reassuring half: a rename is not a new class type, so
+        // nothing detaches from it and no history splits in two.
+        upcoming === 0
+          ? 'Everything it has ever run keeps its history under the new name.'
+          : `The ${upcoming} on the timetable ahead and everything it has already run all read ${a.name} — nothing is detached or duplicated.`,
+        'Members see the new name the next time they look at the timetable.',
+      ],
+      yes: 'Yes, rename it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const found = await matchClassType(a.classType, false, ctx);
+    if (found.kind !== 'one') throw new ActionError('That class is no longer there.');
+    const { error } = await ctx.supabase
+      .from('class_types')
+      .update({ name: a.name })
+      .eq('gym_id', ctx.gymId)
+      .eq('id', found.type.id);
+    if (error) {
+      throw new ActionError(
+        /duplicate key|unique/i.test(error.message)
+          ? `You already run a class called ${a.name}.`
+          : typeRefusal(error.message),
+      );
+    }
+    return `${found.type.name} is called ${a.name} now.`;
+  },
+};
+
 export const CLASS_ACTIONS: AnyAction[] = [
   erase(editClasses),
   erase(cancelClass),
@@ -1747,4 +1821,5 @@ export const CLASS_ACTIONS: AnyAction[] = [
   erase(requestCover),
   erase(retireClassType),
   erase(restoreClassType),
+  erase(renameClassType),
 ];

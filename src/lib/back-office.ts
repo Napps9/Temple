@@ -134,8 +134,23 @@ export type BackOfficeEntry = {
   //   splits  the routine path becomes a sentence; the screen survives
   //           one tap deeper for the deep dive.
   //
-  // Phase 5 is done when nothing is left marked `moves`.
+  // Phase 5 is done when nothing marked `moves` is still owed.
   ends: 'keeps' | 'moves' | 'splits';
+  // The sentences that took this surface's job, once they exist.
+  //
+  // `ends` says where a surface is going; on its own it cannot say
+  // whether it has got there, so a burndown keyed on it alone counts a
+  // finished move forever and can only reach zero by deleting the
+  // manifest. That is not what `moves` means — the roadmap's own
+  // definition is that the interaction becomes a sentence and the SCREEN
+  // DEMOTES to the Back Office, which is where all of these already sit.
+  //
+  // So the move is done when the job is sayable, and this records what
+  // says it. Named actions rather than a boolean, because a boolean is a
+  // claim and a name is checkable: a test asserts every one of these
+  // exists in the registry, so deleting an action re-opens the surface it
+  // was closing instead of quietly leaving a lie behind.
+  movedTo?: string[];
 };
 
 // Routes that no longer exist, and where the job went. The burndown's
@@ -259,6 +274,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     capabilities: ['can_see_insights'],
     saidInstead: 'what did we take last month',
     categoryOnly: true,
+    movedTo: ['money.summary', 'store.sales', 'leads.pipeline'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -271,6 +287,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     capabilities: ['can_view_attendance'],
     saidInstead: 'how busy have we been',
     categoryOnly: true,
+    movedTo: ['classes.attendance', 'members.quiet'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -290,8 +307,10 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     title: 'Tag rules',
     blurb: 'Auto-tag members based on cohort state.',
     keywords: ['automatic', 'segments', 'labels'],
+    saidInstead: 'stop auto-tagging people as lapsed',
     category: 'members',
     capabilities: ['can_manage_tags'],
+    movedTo: ['tags.rules', 'tags.add_rule', 'tags.remove_rule'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -429,9 +448,11 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     title: 'Billing & payments',
     blurb: 'Connect Stripe to charge members for memberships. You keep 100%.',
     keywords: ['stripe', 'refund', 'refunds', 'payouts', 'card', 'invoice', 'tax', 'vat', 'payments'],
+    saidInstead: 'let members pay for their own membership',
     category: 'plans',
     capabilities: [],
     roles: ['owner'],
+    movedTo: ['gym.change_rules', 'money.summary', 'money.refund'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -443,6 +464,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'plans',
     capabilities: ['can_manage_plans'],
     saidInstead: 'Unlimited is £95 a month now',
+    movedTo: ['gym.add_plans', 'money.set_plan_price', 'plans.retire', 'plans.restore', 'plans.include_programming'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -459,6 +481,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'settings',
     capabilities: ['can_manage_staff'],
     saidInstead: 'make the cancel cutoff 2 hours',
+    movedTo: ['gym.change_rules'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -474,6 +497,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     // narrowed it. Its own section keeps the gate it had.
     capabilities: ['can_bulk_edit_classes'],
     saidInstead: 'close the gym 24 to 28 December',
+    movedTo: ['gym.close_dates', 'gym.reopen'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -484,8 +508,10 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     title: 'Branding',
     blurb: 'Logo, colours, gym name, public join link.',
     keywords: ['logo', 'colours', 'colors', 'theme', 'join link'],
+    saidInstead: 'make our colour navy',
     category: 'settings',
     capabilities: ['can_manage_staff'],
+    movedTo: ['gym.set_colour', 'gym.rename'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -501,6 +527,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'settings',
     capabilities: ['can_edit_classes'],
     saidInstead: 'add a 7am Wednesday spin class',
+    movedTo: ['gym.add_classes', 'classes.rename_type', 'classes.retire_type', 'classes.restore_type'],
     ends: 'moves',
     status: 'back-office',
   },
@@ -513,7 +540,13 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['parq', 'par-q', 'medical', 'screening', 'waiver', 'injury'],
     category: 'settings',
     capabilities: ['can_manage_parq'],
-    ends: 'moves',
+    // Not a form waiting to become a sentence. A waiver is a PDF
+    // somebody uploads and members sign with their own hand, and a PAR-Q
+    // is a questionnaire being authored question by question — both are
+    // craft, and neither is sayable. Its two settings that ARE rules
+    // (parq_expiry_days, health_retention_months) are already in the rule
+    // sheet; what is left is the authoring, which keeps its screen.
+    ends: 'keeps',
     status: 'back-office',
   },
   {
@@ -600,7 +633,7 @@ export function retiredCount(): number {
 // has gone; this counts what is still owed. A phase whose scoreboard only
 // counts upwards can never be finished, only abandoned.
 export function movesLeft(): number {
-  return BACK_OFFICE.filter((e) => e.ends === 'moves').length;
+  return BACK_OFFICE.filter((e) => e.ends === 'moves' && !e.movedTo).length;
 }
 
 export function categoriesWithEntries(

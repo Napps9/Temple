@@ -25,6 +25,7 @@ const FRESH_GYM: GymRulesRow = {
   strength_leaderboards_enabled: true,
   public_signup_enabled: true,
   public_lead_capture_enabled: true,
+  members_can_self_checkout: true,
   expiring_within_days: 14,
   parq_expiry_days: 365,
   health_retention_months: 3,
