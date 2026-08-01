@@ -207,6 +207,43 @@ function agentActionLine(e: TimelineEvent): TimelineLine {
     typeof payload.offer_price === 'string' ? payload.offer_price : null;
   const isOffer = kind === 'plan_adjustment_offer';
 
+  // The one kind with no `first` to speak of: it is about a class, and the
+  // people are a list. Handled before anything reads memberName, which
+  // would fall back to e.subject and put an empty name in the sentence.
+  if (kind === 'class_return_message') {
+    const label =
+      typeof payload.class_label === 'string' && payload.class_label
+        ? payload.class_label
+        : 'one of your classes';
+    const n = typeof payload.eligible === 'number' ? payload.eligible : null;
+    const sent = Math.min(n ?? 0, 12);
+    switch (status) {
+      case 'proposed':
+        return {
+          text: n
+            ? `${label} is emptying — ${n === 1 ? 'one regular has' : `${n} regulars have`} stopped coming, and ${n === 1 ? 'they are' : 'they are all'} still training here. Ask them back?`
+            : `${label} is emptying — ask the regulars back?`,
+          tone: 'amber',
+        };
+      case 'approved':
+      case 'executed':
+        return {
+          text: `I've asked ${sent === 1 ? 'the one regular' : `the ${sent} regulars`} back to ${label}.`,
+          tone: 'neutral',
+        };
+      case 'rejected':
+        return {
+          text: `${label} — you said leave it, so I did.`,
+          tone: 'neutral',
+        };
+      default:
+        return {
+          text: `The question about ${label} lapsed — nothing was sent.`,
+          tone: 'neutral',
+        };
+    }
+  }
+
   if (kind === 'retention_message') {
     const weeks =
       typeof payload.weeks_absent === 'number' ? payload.weeks_absent : null;

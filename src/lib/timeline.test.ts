@@ -261,6 +261,109 @@ describe('formatTimelineLine', () => {
     expect(sent.text).toBe("I've let Sam know their pack is nearly out.");
   });
 
+  // The seventh job, and the first line about a class rather than a
+  // person. Everything above it reads `member_name` and falls back to
+  // e.subject; this one has neither, and getting that wrong puts an
+  // empty name in the middle of the sentence.
+  it('talks about the class, not about anybody', () => {
+    const proposed = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: '',
+        detail: {
+          action_kind: 'class_return_message',
+          status: 'proposed',
+          payload: {
+            class_label: 'Tuesday 6am CrossFit',
+            eligible: 6,
+            recipients: [1, 2, 3, 4, 5, 6],
+          },
+        },
+      }),
+    );
+    expect(proposed).toEqual({
+      text:
+        'Tuesday 6am CrossFit is emptying — 6 regulars have stopped coming, ' +
+        'and they are all still training here. Ask them back?',
+      tone: 'amber',
+    });
+
+    const one = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: '',
+        detail: {
+          action_kind: 'class_return_message',
+          status: 'proposed',
+          payload: { class_label: 'Friday 7:30pm Yoga', eligible: 1 },
+        },
+      }),
+    );
+    expect(one.text).toBe(
+      'Friday 7:30pm Yoga is emptying — one regular has stopped coming, and ' +
+      'they are still training here. Ask them back?',
+    );
+
+    const sent = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: '',
+        detail: {
+          action_kind: 'class_return_message',
+          status: 'executed',
+          payload: {
+            class_label: 'Tuesday 6am CrossFit',
+            eligible: 6,
+            recipients: [1, 2, 3, 4, 5, 6],
+          },
+        },
+      }),
+    );
+    expect(sent.text).toBe(
+      "I've asked the 6 regulars back to Tuesday 6am CrossFit.",
+    );
+
+    const declined = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: '',
+        detail: {
+          action_kind: 'class_return_message',
+          status: 'rejected',
+          payload: { class_label: 'Tuesday 6am CrossFit', eligible: 6 },
+        },
+      }),
+    );
+    expect(declined.text).toBe(
+      'Tuesday 6am CrossFit — you said leave it, so I did.',
+    );
+  });
+
+  // Past twelve the tick caps the send, so the receipt has to say what
+  // went out and not what qualified — "I've asked the 30 regulars back"
+  // when 12 were emailed is the owner's record of a thing that did not
+  // happen.
+  it('reports what was sent, not what qualified', () => {
+    const capped = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: '',
+        detail: {
+          action_kind: 'class_return_message',
+          status: 'executed',
+          payload: {
+            class_label: 'Monday 6am CrossFit',
+            eligible: 30,
+            recipients: new Array(12).fill(0),
+          },
+        },
+      }),
+    );
+    expect(capped.text).toBe(
+      "I've asked the 12 regulars back to Monday 6am CrossFit.",
+    );
+  });
+
   it('describes closures with their dates', () => {
     const line = formatTimelineLine(
       evt({

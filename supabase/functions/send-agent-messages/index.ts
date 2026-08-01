@@ -20,6 +20,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { requireGymCapability } from '../_shared/caller.ts';
 
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+import { loadSuppressed, SUPPRESSED_REASON } from '../_shared/suppression.ts';
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -142,6 +143,16 @@ Deno.serve(async (req: Request) => {
       : RESEND_FROM;
 
   const live = Boolean(RESEND_API_KEY && fromAddress);
+  // The sixth place this has to be honoured, and the one that was
+  // missed. 0229's comment names the transactional senders — class
+  // changes, cover, payment notices, automations — and the jobs' own
+  // sender is not on that list, so a hard-bounced address kept getting
+  // every retention, first-week, top-up and upgrade message the gym
+  // proposed. It matters more now the class-return job exists: one
+  // approval queues up to twelve rows, so one bad address is no longer
+  // one refused send but a share of a fan-out, every quarter, for a
+  // person who cannot read any of it.
+  const suppressed = await loadSuppressed(service, [gymId!]);
 
   let sent = 0;
   let failed = 0;
@@ -156,6 +167,14 @@ Deno.serve(async (req: Request) => {
       await service
         .from('agent_outbound_messages')
         .update({ status: 'skipped', error: 'No email address' })
+        .eq('id', r.id);
+      return;
+    }
+
+    if (suppressed.has(gymId!, to)) {
+      await service
+        .from('agent_outbound_messages')
+        .update({ status: 'skipped', error: SUPPRESSED_REASON })
         .eq('id', r.id);
       return;
     }

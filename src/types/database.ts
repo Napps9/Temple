@@ -622,7 +622,8 @@ export type Database = {
             | 'cover_ask'
             | 'first_week_message'
             | 'credits_low_message'
-            | 'plan_upgrade_offer';
+            | 'plan_upgrade_offer'
+            | 'class_return_message';
           subject_profile: string | null;
           subject_subscription: string | null;
           payload: Json;
@@ -708,7 +709,8 @@ export type Database = {
             | 'cover_ask'
             | 'first_week_message'
             | 'credits_low_message'
-            | 'plan_upgrade_offer';
+            | 'plan_upgrade_offer'
+            | 'class_return_message';
           level: 'autonomous' | 'approval' | 'reserved';
           updated_by: string | null;
           updated_at: string;
@@ -765,7 +767,8 @@ export type Database = {
             | 'retention_message'
             | 'first_week_message'
             | 'credits_low_message'
-            | 'plan_upgrade_offer';
+            | 'plan_upgrade_offer'
+            | 'class_return_message';
           body: string;
           approved_by: string | null;
           approved_at: string;
@@ -4291,6 +4294,10 @@ export type Database = {
         Returns: null;
       };
       set_plan_upgrade_job: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: null;
+      };
+      set_class_return_job: {
         Args: { p_gym_id: string; p_enabled: boolean };
         Returns: null;
       };

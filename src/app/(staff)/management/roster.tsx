@@ -30,7 +30,8 @@ type AuthorityRow = {
     | 'cover_ask'
     | 'first_week_message'
     | 'credits_low_message'
-    | 'plan_upgrade_offer';
+    | 'plan_upgrade_offer'
+    | 'class_return_message';
   level: 'autonomous' | 'approval' | 'reserved';
 };
 
@@ -345,6 +346,29 @@ export default function Roster() {
             qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
           }
         />
+
+        <SimpleJob
+          gymId={gymId}
+          isOwner={isOwner}
+          kind="class_return_message"
+          name="The class that is emptying"
+          onDescription="Watches each class on its own — the Tuesday 6am, not the gym — and when one has clearly thinned out, offers to ask back the regulars who stopped coming to it. One class a day at most, the same class no more than once a quarter, and never more than twelve people in a go."
+          offTitle="A class is quietly emptying — want me to ask them back?"
+          offLines={[
+            'When a class falls well below what it used to do, I would ask back the people who used to come to it and have stopped — and I ask you before each until you say otherwise.',
+            'Only people who are still training with you. Anybody who has stopped coming altogether is the other job, and they get a different message.',
+            'Only when it is really a fall: down at least 40% and at least two a class, with enough people to be a pattern rather than two holidays.',
+            'I never move the class, change its coach or suggest dropping it. That is yours to decide, and you know why it is quiet better than I do.',
+          ]}
+          enableRpc="set_class_return_job"
+          disableRpc="set_class_return_job"
+          level={levelFor('class_return_message')}
+          onSetLevel={(l) => setLevel('class_return_message', l)}
+          authorityLoaded={authority.data !== undefined}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
+          }
+        />
       </ScrollView>
     </Screen>
   );
@@ -376,13 +400,15 @@ function SimpleJob({
     | 'set_cover_job'
     | 'set_first_week_job'
     | 'set_credits_low_job'
-    | 'set_plan_upgrade_job';
+    | 'set_plan_upgrade_job'
+    | 'set_class_return_job';
   disableRpc:
     | 'set_retention_job'
     | 'set_cover_job'
     | 'set_first_week_job'
     | 'set_credits_low_job'
-    | 'set_plan_upgrade_job';
+    | 'set_plan_upgrade_job'
+    | 'set_class_return_job';
   level: 'autonomous' | 'approval' | 'reserved' | undefined;
   onSetLevel: (l: 'approval' | 'autonomous') => void;
   authorityLoaded: boolean;

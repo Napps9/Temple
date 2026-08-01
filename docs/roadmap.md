@@ -755,6 +755,23 @@ closure that `close_gym_dates` has always gated on
 `can_bulk_edit_classes`. The RPC half is 0245; the vocabulary half is
 `ActionSpec.roles` and an `actionsFor` that takes the caller's role.
 
+**And the audit named the next job.** Insights' pull half being finished
+meant the missing half was push, and push in this codebase has a shape
+already: a job on the rope. `class_return_message` (0246) is the seventh,
+and the first that proposes about a *class* rather than a person — a slot
+that has clearly thinned out, and an offer to ask back the regulars who
+stopped coming to it. What makes it a new job rather than a second
+retention is a positive rule: it only writes to people who are **still
+training here**. Somebody who stopped altogether is retention's and gets
+retention's sentence; somebody who trains three times a week and has
+quietly dropped one class is invisible to every other job, because every
+other predicate is satisfied by them attending anything. It is also the
+framework's first fan-out — one tap, up to twelve emails — which is why
+it takes one slot a day where the others take three, and why
+`_agent_execute_action` now keys its outbound rows per recipient. The
+measure it moves is the second one, and it is the first thing built that
+moves it without the owner typing at all.
+
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
 from asking to acting removes sentences. The measures stay what they

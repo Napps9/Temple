@@ -1983,15 +1983,77 @@ The staff area shows up when `can_access_staff_area` is on.
   the other direction. pgTAP:
   `a_pack_that_costs_more_than_a_membership.sql` (14 assertions — five
   refusals, the two plan-choice cases, and both halves of the coupling).
-- **One budget for the whole gym** (0242) — six jobs each capping
+- **The class that is emptying** (0246, roadmap phase 5) — the seventh
+  job, and the first that is not about one person. `set_class_return_job`
+  (owner-only, Roster take-on card) writes a `class_return_message`
+  authority row + owner-approved template; the daily
+  `agent-class-return-tick` (09:50) watches each **slot** — a class type
+  on a weekday at a local clock time, which is what an owner means by
+  "the Tuesday 6am" — and proposes asking back the regulars who stopped
+  coming to it.
+  **This is Insights' push half.** Five questions in the bar already draw
+  their numbers, and every one of them waits to be asked; a question
+  nobody asks moves "owner interventions per member per month" by
+  nothing. The roadmap's words for what push looks like are *every chart
+  ends in a verb*, and this is the verb.
+  **The rule the job lives on is a positive one.** Recipients must be
+  **still training at the gym** — attended something inside 30 days —
+  and not have attended *this slot* in the last four weeks. Somebody who
+  stopped coming altogether is `retention_message`'s person and gets
+  retention's sentence; somebody who trains three times a week and has
+  quietly dropped one class is invisible to every other job in the
+  product, because every other predicate is satisfied by them attending
+  anything. The two jobs are disjoint by construction and both messages
+  are true as a result.
+  **Thresholds, because a small class is mostly noise.** Three sessions
+  in each four-week window (or it is a new slot or a cancelled run, not a
+  decline); the earlier window must have averaged **four a session**; the
+  fall must be **at least 40% AND at least two a session** — both, so a
+  small class has to really empty and a big one cannot hide a collapse
+  behind a flattering percentage; and at least **three** recipients, or
+  it is two people's schedules changing.
+  **The fan-out is new to the framework.** Every other approval sends one
+  email to one person; this one sends up to twelve from a single tap, so
+  it takes the strictest budget: **one slot per gym per day** against the
+  others' three, **once per slot per 90 days**, and a hard cap of twelve
+  recipients with the card saying how many were left out rather than the
+  number quietly disappearing. `_agent_execute_action` gained a branch
+  that queues a row per recipient keyed
+  `agent-action:<id>:<profile>`, so a re-execute is idempotent per person
+  and a partially-sent action cannot double-mail anybody.
+  **What it never does**: cancels or moves the class, changes its coach,
+  or suggests dropping it. An emptying slot might need any of those and
+  the owner knows why it is quiet better than Temple does.
+  Slot grouping is by the **gym's** local weekday and clock time via
+  `_slot_label`, so the label an owner reads and the label the member
+  reads are the same string built once. pgTAP:
+  `the_class_that_is_emptying.sql` (12 assertions) runs a gym in
+  `Australia/Sydney` on purpose — a test in UTC proves nothing about slot
+  grouping — and pins the two that matter: the count on the card equals
+  the length of the recipient list (they were computed by two copies of
+  one predicate in the first draft), and executing twice sends nobody a
+  second copy.
+- **Suppressions reach the jobs' sender** (0246) — `email_suppressions`
+  (0229) is honoured by five senders and was missed by the sixth, which
+  is the one every job's approved action goes through. A hard-bounced
+  address kept receiving every retention, first-week, top-up and upgrade
+  message a gym proposed; Resend refuses them at the account level, so
+  the cost was a failed row per notice rather than a delivery, and a
+  reputation. It matters more now the class-return job exists: one
+  approval queues up to twelve rows, so one dead address is a share of a
+  fan-out every quarter rather than a single refused send.
+  `send-agent-messages` now loads the gym's suppression set and records
+  one `skipped` with `SUPPRESSED_REASON` instead.
+- **One budget for the whole gym** (0242, widened in 0246) — six jobs each capping
   themselves at three a day is **eighteen questions waiting** when an owner
   opens the Timeline, which is the to-do list the Timeline was built to
   replace. Nobody had ever set the total; each job only knew its own.
   `_agent_ask_budget_left(gym)` returns five minus what has been asked
-  today, and the four jobs that can wait check it before proposing:
+  today, and the five jobs that can wait check it before proposing:
   `retention_message`, `first_week_message`, `credits_low_message`,
-  `plan_upgrade_offer`. Every one of those is the gym *noticing* something,
-  where a day later is the same message.
+  `plan_upgrade_offer` and `class_return_message` (added by 0246). Every
+  one of those is the gym *noticing* something, where a day later is the
+  same message.
   **The money loop and cover are exempt.** A payment already missed has
   Stripe's own retry clock running and a day costs real money; an uncovered
   class tomorrow is not the same message a day later, it is a cancelled

@@ -1483,10 +1483,15 @@ function AgentActionCard({
   const offerPrice =
     typeof payload.offer_price === 'string' ? payload.offer_price : null;
   const actionId = event.item_id.split(':')[1];
+  // How many actually get the email, which is not the same as how many
+  // qualified: past twelve this is a mailshot and the tick caps it.
+  const sentCount = Array.isArray(payload.recipients) ? payload.recipients.length : 0;
 
   const line = formatTimelineLine(event);
   const reasoning =
-    kind === 'retention_message'
+    kind === 'class_return_message'
+      ? 'They have not left the gym, only this class — which is the one Temple can still do something about.'
+      : kind === 'retention_message'
       ? 'One warm note from the gym usually brings a regular back.'
       : kind === 'first_week_message'
         ? 'The first session is the hard one — most people who never start never come back.'
@@ -1500,7 +1505,9 @@ function AgentActionCard({
             ? `Stripe has stopped trying${offerPlan ? ` — ${offerPlan}${offerPrice ? ` at ${offerPrice}` : ''} might keep them` : ''}.`
             : 'A friendly note with their pay link usually sorts it.';
   const yesLabel =
-    kind === 'retention_message'
+    kind === 'class_return_message'
+      ? 'Yes, ask them back'
+      : kind === 'retention_message'
       ? 'Yes, reach out'
       : kind === 'first_week_message'
         ? 'Yes, get them in'
@@ -1541,12 +1548,16 @@ function AgentActionCard({
         tone="neutral"
         text={
           decided === 'approve'
-            ? kind === 'cover_ask'
+            ? kind === 'class_return_message'
+              ? `Asked — ${sentCount === 1 ? 'the one regular has' : `all ${sentCount} have`} the invitation.`
+              : kind === 'cover_ask'
               ? 'Asked — the coaches have a fresh nudge.'
               : isOffer
                 ? `Offered — ${first} has it in their inbox.`
                 : `Sent — ${first} has the note.`
-            : kind === 'cover_ask'
+            : kind === 'class_return_message'
+              ? 'Left alone — nobody was asked back.'
+              : kind === 'cover_ask'
               ? 'Left alone — no one was nudged.'
               : `Left alone — nothing was sent to ${first}.`
         }
