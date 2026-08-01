@@ -1013,7 +1013,32 @@ The staff area shows up when `can_access_staff_area` is on.
   **Operator steps, without which nothing measures:** add
   `RESEND_WEBHOOK_SECRET` to the Supabase function secrets and register
   `<project>/functions/v1/resend-webhook` in Resend against those three
-  events.
+  events. **Both done — the webhook is live** and campaign reports read
+  real delivery.
+- **The report says a number once** (`src/lib/campaign-report.ts`) — the
+  first real send exposed three faults at one recipient. Two were layout:
+  `StatTile` put `tracking-widest` on an uppercase label inside a 100px
+  tile, breaking "RECIPIENTS" across two lines mid-word, and a three-
+  character value like "100%" dropped its percent sign onto a second row.
+  Both now clamp to one line, and only the label may shrink to fit — a
+  number that scales itself is a number you cannot compare across tiles.
+  The third was the design. Seven tiles drew unconditionally, four of them
+  percentages, so a send to one person read "SUCCESSFUL 100%" and "OPENED
+  100%" — not rates, a way of spelling "1", with the honest number ("1 of
+  1 arrived") demoted to the subtitle. **Three rules now:** the value is
+  always a **count**, never a percentage; a **rate appears only at ten or
+  more**, below which the fraction is both shorter and more honest than a
+  figure whose resolution the sample has not got; and a tile for something
+  that did not happen is **absent**, not zero. One hero figure leads
+  (`arrived`, or `sent` when delivery is unmeasured), with opens and
+  clicks read against what *arrived* rather than what left — so a bad
+  address never quietly counts as somebody who ignored you.
+  The problem tiles come off their own columns rather than off
+  `recipients - sent`: that gap is `failed` plus `skipped` plus whatever
+  is in flight, and a tile derived from it would count the same recipient
+  twice beside the explicit ones. Addresses that bounced before are not in
+  it at all — 0229 subtracts the suppression list when the audience is
+  built, so they never become recipients of the send.
 - **The gym notices a member who never started** (0234) — a fourth job on
   the rope, stamped from the 0206 framework the way 0208 stamped the second
   and third: same authority dial, same proposal card, same owner-approved

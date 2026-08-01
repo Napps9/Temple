@@ -13,6 +13,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { campaignReport } from '@/lib/campaign-report';
 import { StatTile } from '@/components/StatTile';
 import { useGymMembership } from '@/lib/auth';
 import {
@@ -841,16 +842,25 @@ function ReportView({ campaign }: { campaign: Campaign }) {
   const s = stats.data;
   const sent = s?.sent ?? 0;
   const fullySimulated = !!s && s.sent > 0 && s.simulated === s.sent;
-  // Delivery reports are the truth about arrival; opens are the fallback
-  // and the honest denominator when nothing came back (0229). Rates are
-  // read against what arrived, not what left, so a bad address does not
-  // quietly count as a person who ignored you.
+  // The shape of the report — which number leads, which tiles earn a
+  // place, when a percentage is worth printing — is decided in
+  // src/lib/campaign-report.ts, so it is testable without a screen and
+  // says the same thing wherever it is read.
   const tracked = !!s?.tracked;
-  const arrived = tracked ? (s?.successful ?? 0) : 0;
-  const base = tracked && arrived > 0 ? arrived : sent;
-  const openRate = base > 0 ? Math.round(((s?.opened ?? 0) / base) * 100) : 0;
-  const clickRate = base > 0 ? Math.round(((s?.clicked ?? 0) / base) * 100) : 0;
-  const successRate = sent > 0 ? Math.round((arrived / sent) * 100) : 0;
+  const report = campaignReport({
+    recipients: s?.recipients ?? 0,
+    sent,
+    successful: s?.successful ?? 0,
+    simulated: s?.simulated ?? 0,
+    failed: s?.failed ?? 0,
+    skipped: s?.skipped ?? 0,
+    bounced: s?.bounced ?? 0,
+    complained: s?.complained ?? 0,
+    opened: s?.opened ?? 0,
+    clicked: s?.clicked ?? 0,
+    unsubscribed: s?.unsubscribed ?? 0,
+    tracked,
+  });
   const unmeasured =
     !!s && !tracked && !fullySimulated && s.sent > 0 && campaign.status !== 'sending';
   const troubleRows = trouble.data ?? [];
@@ -980,76 +990,36 @@ function ReportView({ campaign }: { campaign: Campaign }) {
         </View>
       ) : null}
 
-      {/* What left, what arrived, what came of it */}
-      <View className="flex-row gap-3 flex-wrap">
-        <StatTile title="Recipients" value={s?.recipients ?? '—'} minWidth={100} />
-        <StatTile
-          title="Sent"
-          value={sent}
-          subtitle="left the building"
-          minWidth={100}
-        />
-        <StatTile
-          title="Successful"
-          value={fullySimulated || !tracked ? '—' : `${successRate}%`}
-          subtitle={
-            fullySimulated || !tracked ? undefined : `${arrived} of ${sent} arrived`
-          }
-          tone={tracked && !fullySimulated && successRate >= 95 ? 'green' : 'default'}
-          minWidth={130}
-        />
-        <StatTile
-          title="Opened"
-          value={fullySimulated ? '—' : `${openRate}%`}
-          subtitle={fullySimulated ? undefined : `${s?.opened ?? 0} opens`}
-          minWidth={100}
-        />
-        <StatTile
-          title="Clicked"
-          value={fullySimulated ? '—' : `${clickRate}%`}
-          subtitle={fullySimulated ? undefined : `${s?.clicked ?? 0} clicks`}
-          minWidth={100}
-        />
-        <StatTile
-          title="Bounced"
-          value={tracked || (s?.bounced ?? 0) > 0 ? (s?.bounced ?? 0) : '—'}
-          subtitle={(s?.bounced ?? 0) > 0 ? 'now suppressed' : undefined}
-          minWidth={100}
-          tone={(s?.bounced ?? 0) > 0 ? 'red' : 'muted'}
-        />
-        <StatTile
-          title="Unsubscribed"
-          value={s?.unsubscribed ?? 0}
-          minWidth={100}
-          tone={(s?.unsubscribed ?? 0) > 0 ? 'red' : 'muted'}
-        />
-        {(s?.complained ?? 0) > 0 ? (
-          <StatTile
-            title="Marked as spam"
-            value={s?.complained ?? 0}
-            tone="red"
-            minWidth={140}
-          />
-        ) : null}
-        {(s?.failed ?? 0) > 0 ? (
-          <StatTile
-            title="Never sent"
-            value={s?.failed ?? 0}
-            subtitle="rejected at the door"
-            tone="red"
-            minWidth={100}
-          />
-        ) : null}
-        {(s?.skipped ?? 0) > 0 ? (
-          <StatTile
-            title="Skipped"
-            value={s?.skipped ?? 0}
-            subtitle="the send was stopped"
-            tone="muted"
-            minWidth={100}
-          />
+      {/* What left, what arrived, what came of it — one hero number and
+          only the tiles with something to say (src/lib/campaign-report). */}
+      <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-0.5 shadow-card">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">
+          {report.hero.label}
+        </Text>
+        <Text className="text-gray-900 dark:text-gray-50 text-5xl font-semibold">
+          {report.hero.value}
+        </Text>
+        {report.hero.detail ? (
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            {report.hero.detail}
+          </Text>
         ) : null}
       </View>
+
+      {report.tiles.length > 0 ? (
+        <View className="flex-row gap-3 flex-wrap">
+          {report.tiles.map((t) => (
+            <StatTile
+              key={t.label}
+              title={t.label}
+              value={t.value}
+              subtitle={t.detail}
+              tone={t.tone}
+              minWidth={150}
+            />
+          ))}
+        </View>
+      ) : null}
 
       {troubleRows.length > 0 ? (
         <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">

@@ -58,10 +58,20 @@ export function StatTile({
 }: Props) {
   const content: ReactNode = (
     <>
-      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      {/* One line each, both of them. `tracking-widest` on an uppercase
+          label inside a 100px tile broke "RECIPIENTS" across two lines
+          mid-word, and a three-character value like "100%" dropped its
+          percent sign onto a second row. Shrinking to fit is right for a
+          label and wrong for a number, so only the label may scale. */}
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wider">
         {title}
       </Text>
-      <Text className={`${valueToneClass[tone]} text-3xl font-semibold`}>
+      <Text
+        numberOfLines={1}
+        className={`${valueToneClass[tone]} text-3xl font-semibold`}>
         {value}
       </Text>
       {delta ? (

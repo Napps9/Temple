@@ -852,12 +852,20 @@ next session finds them.
   `email_suppressions` table subtracted from every audience, a
   `delivery_tracked` marker flipped by the first real event, and a
   `comms_campaign_stats` that returns sent / delivered / successful
-  separately. Live on all three surfaces. Two things still sit with the
-  operator and nothing measures until both are done: add
-  `RESEND_WEBHOOK_SECRET` to the Supabase function secrets, and register
-  `<project>/functions/v1/resend-webhook` in Resend against
-  `email.delivered`, `email.bounced` and `email.complained`. Until then
-  every send honestly reads "not measured" rather than 0%.
+  separately. Live on all three surfaces. **The two operator steps are
+  now done**: the signing secret is set and the endpoint is registered
+  against `email.delivered`, `email.bounced` and `email.complained`, and
+  the first real send came back measured. That also lit up the suppression
+  check added to `send-agent-messages` — `email_suppressions` can finally
+  be populated, so the six senders that consult it are consulting
+  something.
+
+  The first measured send exposed the report itself. Seven stat tiles drew
+  unconditionally, four of them percentages, so one recipient read
+  "SUCCESSFUL 100%" — not a rate, a way of spelling "1". Rewritten around
+  three rules in `src/lib/campaign-report.ts`: the value is a count, a
+  rate appears only at ten or more, and a tile for something that did not
+  happen is absent rather than zero.
 
   The transactional senders honour it too, since
   `_shared/suppression.ts`: class changes, cover, payment notices and
