@@ -11,11 +11,13 @@ import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage, functionErrorMessage } from '@/lib/errors';
 import {
+  runInference,
+} from '@/lib/import/infer';
+import {
   centsToPounds,
   poundsToCents,
-  runInference,
   type PlanKind,
-} from '@/lib/import/infer';
+} from '@/lib/import/plan-mapping';
 import {
   buildStripeImportRows,
   type StripeMember,

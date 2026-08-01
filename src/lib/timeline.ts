@@ -10,6 +10,7 @@ export type TimelineKind =
   | 'member_joined'
   | 'lead_captured'
   | 'payment_failing'
+  | 'held_back'
   | 'cover_requested'
   | 'cover_claimed'
   | 'gym_closed'
@@ -111,6 +112,19 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
           ? `${name} wants to move to ${target}.`
           : `${name} wants to change their membership.`,
         tone: 'amber',
+      };
+    }
+    case 'held_back': {
+      const n = num(e.detail, 'held');
+      // The budget's own voice. Without it a quiet Timeline reads as a
+      // product with nothing to say rather than one being careful, and
+      // those are opposite things to believe about your gym.
+      return {
+        text:
+          n === 1
+            ? "There was one more worth mentioning today — I'll bring it tomorrow."
+            : `There were ${n} more worth mentioning today — I'll bring them tomorrow.`,
+        tone: 'neutral',
       };
     }
     case 'campaign_sent':

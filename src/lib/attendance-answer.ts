@@ -19,6 +19,10 @@ export type TypeCount = { name: string; attended: number };
 export type Period = {
   attended: number;
   noShow: number;
+  // Booked, and neither ticked nor unticked by a coach. Not a member
+  // behaviour at all — it is the register nobody took, and it makes
+  // `attended` smaller than the truth without making it look wrong.
+  unmarked: number;
   types: TypeCount[];
 };
 
@@ -125,6 +129,21 @@ export function attendanceAnswer(input: AttendanceInput): {
       worst.to === 0
         ? `${worst.name} had ${worst.from} and now has nobody — worth a look.`
         : `${worst.name} is down from ${worst.from} to ${worst.to} — the biggest fall.`,
+    );
+  }
+
+  // Said before the no-show line, because it changes how to read every
+  // number above it. An owner told "84 came in" who is not told "and 31
+  // registers were never taken" has been given a figure they will trust
+  // more than it deserves.
+  if (now.unmarked > 0) {
+    const share = Math.round(
+      (now.unmarked / (now.attended + now.noShow + now.unmarked)) * 100,
+    );
+    lines.push(
+      share >= 20
+        ? `${now.unmarked} bookings were never marked either way — that is ${share}% of them, so the count above is a floor rather than a total.`
+        : `${now.unmarked} bookings were never marked either way.`,
     );
   }
 

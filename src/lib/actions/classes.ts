@@ -1073,9 +1073,15 @@ async function bucketWindow(
   to: string,
   tz: string,
   keep: number | null,
-): Promise<{ attended: number; noShow: number; types: TypeCount[]; days: DayBucket[] }> {
+): Promise<{
+  attended: number;
+  noShow: number;
+  unmarked: number;
+  types: TypeCount[];
+  days: DayBucket[];
+}> {
   const window = dateRangeWindow(from, to, tz);
-  if (!window) return { attended: 0, noShow: 0, types: [], days: [] };
+  if (!window) return { attended: 0, noShow: 0, unmarked: 0, types: [], days: [] };
 
   const { data: sessionRows, error: sErr } = await ctx.supabase
     .from('class_sessions')
@@ -1092,7 +1098,7 @@ async function bucketWindow(
     (s) => keep === null || weekdayOfDay(dayIn(tz, s.starts_at)) === keep,
   );
   if (sessions.length === 0) {
-    return { attended: 0, noShow: 0, types: [], days: [] };
+    return { attended: 0, noShow: 0, unmarked: 0, types: [], days: [] };
   }
 
   const { data: bookingRows, error: bErr } = await ctx.supabase
@@ -1118,6 +1124,7 @@ async function bucketWindow(
   return {
     attended: byType.reduce((n, b) => n + b.attended, 0),
     noShow: byType.reduce((n, b) => n + b.no_show, 0),
+    unmarked: byType.reduce((n, b) => n + b.unmarked, 0),
     types,
     days: bucketByDay(bookings, sessions, { start: from, end: to }, tz),
   };
@@ -1213,6 +1220,10 @@ export const classAttendance: ActionSpec<Busy> = {
       answer: {
         figure: {
           value: String(now.attended),
+          // "marked in", not "came in". The distinction is the whole
+          // reason unmarked is reported below: this number is what a
+          // coach recorded, and a register nobody took makes it smaller
+          // than the truth without looking wrong.
           label: `marked in over ${label}`,
           delta: attendanceDelta(now.attended, before.attended),
         },

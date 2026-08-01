@@ -13,8 +13,8 @@ import {
 function ask(partial: Partial<AttendanceInput>): AttendanceInput {
   return {
     label: 'the last 7 days',
-    now: { attended: 0, noShow: 0, types: [], days: [] },
-    before: { attended: 0, noShow: 0, types: [] },
+    now: { attended: 0, noShow: 0, unmarked: 0, types: [], days: [] },
+    before: { attended: 0, noShow: 0, unmarked: 0, types: [] },
     ...partial,
   };
 }
@@ -26,6 +26,7 @@ describe('how busy have we been', () => {
         now: {
           attended: 84,
           noShow: 0,
+          unmarked: 0,
           types: [],
           days: [
             { day: '2026-08-03', attended: 22 },
@@ -44,16 +45,16 @@ describe('how busy have we been', () => {
   it('compares periods only when the earlier one was big enough to mean something', () => {
     const real = attendanceAnswer(
       ask({
-        now: { attended: 84, noShow: 0, types: [], days: [] },
-        before: { attended: 70, noShow: 0, types: [] },
+        now: { attended: 84, noShow: 0, unmarked: 0, types: [], days: [] },
+        before: { attended: 70, noShow: 0, unmarked: 0, types: [] },
       }),
     );
     expect(real.lines).toContain('Up 20% on the period before, when it was 70.');
 
     const noisy = attendanceAnswer(
       ask({
-        now: { attended: 12, noShow: 0, types: [], days: [] },
-        before: { attended: 4, noShow: 0, types: [] },
+        now: { attended: 12, noShow: 0, unmarked: 0, types: [], days: [] },
+        before: { attended: 4, noShow: 0, unmarked: 0, types: [] },
       }),
     );
     expect(noisy.lines.join(' ')).not.toMatch(/%/);
@@ -65,8 +66,8 @@ describe('how busy have we been', () => {
   it('says level rather than up 0%', () => {
     const r = attendanceAnswer(
       ask({
-        now: { attended: 40, noShow: 0, types: [], days: [] },
-        before: { attended: 40, noShow: 0, types: [] },
+        now: { attended: 40, noShow: 0, unmarked: 0, types: [], days: [] },
+        before: { attended: 40, noShow: 0, unmarked: 0, types: [] },
       }),
     );
     expect(r.lines).toContain('Level with the period before.');
@@ -78,6 +79,7 @@ describe('how busy have we been', () => {
         now: {
           attended: 60,
           noShow: 0,
+          unmarked: 0,
           days: [],
           types: [
             { name: 'Yoga', attended: 9 },
@@ -107,6 +109,7 @@ describe('the class that is falling away', () => {
         now: {
           attended: 40,
           noShow: 0,
+          unmarked: 0,
           days: [],
           types: [
             { name: 'Barbell club', attended: 32 },
@@ -116,6 +119,7 @@ describe('the class that is falling away', () => {
         before: {
           attended: 50,
           noShow: 0,
+          unmarked: 0,
           types: [
             { name: 'Barbell club', attended: 29 },
             { name: 'Yoga', attended: 21 },
@@ -132,12 +136,14 @@ describe('the class that is falling away', () => {
         now: {
           attended: 30,
           noShow: 0,
+          unmarked: 0,
           days: [],
           types: [{ name: 'Mobility', attended: 1 }],
         },
         before: {
           attended: 30,
           noShow: 0,
+          unmarked: 0,
           types: [{ name: 'Mobility', attended: 4 }],
         },
       }),
@@ -151,10 +157,11 @@ describe('the class that is falling away', () => {
         now: {
           attended: 30,
           noShow: 0,
+          unmarked: 0,
           days: [],
           types: [{ name: 'Yoga', attended: 17 }],
         },
-        before: { attended: 30, noShow: 0, types: [{ name: 'Yoga', attended: 20 }] },
+        before: { attended: 30, noShow: 0, unmarked: 0, types: [{ name: 'Yoga', attended: 20 }] },
       }),
     );
     expect(r.lines.join(' ')).not.toMatch(/biggest fall/);
@@ -168,12 +175,14 @@ describe('the class that is falling away', () => {
         now: {
           attended: 30,
           noShow: 0,
+          unmarked: 0,
           days: [],
           types: [{ name: 'Barbell club', attended: 30 }],
         },
         before: {
           attended: 44,
           noShow: 0,
+          unmarked: 0,
           types: [
             { name: 'Barbell club', attended: 30 },
             { name: 'Yoga', attended: 14 },
@@ -194,7 +203,7 @@ describe('the two answers that are not numbers', () => {
 
   it('reports no-shows as a share of the seats taken', () => {
     const r = attendanceAnswer(
-      ask({ now: { attended: 36, noShow: 4, types: [], days: [] } }),
+      ask({ now: { attended: 36, noShow: 4, unmarked: 0, types: [], days: [] } }),
     );
     expect(r.lines).toContain("4 booked in and didn't turn up — 10% of the seats taken.");
   });
@@ -284,5 +293,43 @@ describe('who has gone quiet', () => {
       title: 'Everybody has been in within a month.',
       lines: [],
     });
+  });
+});
+
+// A register nobody took is not a member behaviour — it is the number
+// that quietly makes every other number here a floor. Reported before the
+// no-show line, because it changes how to read the ones above it.
+describe('the registers nobody took', () => {
+  it('says how many were never marked either way', () => {
+    const r = ask({
+      now: { attended: 40, noShow: 4, unmarked: 6, types: [], days: [] },
+      before: { attended: 40, noShow: 0, unmarked: 0, types: [] },
+    });
+    expect(attendanceAnswer(r).lines).toContain(
+      '6 bookings were never marked either way.',
+    );
+  });
+
+  // Past a fifth, the headline is not a total any more and saying so is
+  // the difference between a number an owner trusts and one they should.
+  it('calls the count a floor when enough registers are missing', () => {
+    const r = attendanceAnswer(
+      ask({
+        now: { attended: 40, noShow: 0, unmarked: 30, types: [], days: [] },
+        before: { attended: 40, noShow: 0, unmarked: 0, types: [] },
+      }),
+    );
+    expect(r.lines.join(' ')).toContain('43% of them');
+    expect(r.lines.join(' ')).toContain('a floor rather than a total');
+  });
+
+  it('stays quiet when every register was taken', () => {
+    const r = attendanceAnswer(
+      ask({
+        now: { attended: 40, noShow: 2, unmarked: 0, types: [], days: [] },
+        before: { attended: 40, noShow: 0, unmarked: 0, types: [] },
+      }),
+    );
+    expect(r.lines.some((l) => l.includes('never marked'))).toBe(false);
   });
 });

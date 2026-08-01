@@ -29,16 +29,18 @@ import {
 import { parseCsv } from '@/lib/import/csv';
 import { isLikelyDuplicate } from '@/lib/import/dedup';
 import {
+  runColumnMapping,
+  runInference,
+  type InferenceResponse,
+} from '@/lib/import/infer';
+import {
   buildCorrectionRows,
   centsToPounds,
   poundsToCents,
-  runColumnMapping,
-  runInference,
   summariseForInference,
-  type InferenceResponse,
   type PlanKind,
   type ReviewedPlan,
-} from '@/lib/import/infer';
+} from '@/lib/import/plan-mapping';
 import type { StripePreview } from '@/lib/import/stripe';
 import { supabase } from '@/lib/supabase';
 import { currencySymbol } from '@/lib/setup-flow';

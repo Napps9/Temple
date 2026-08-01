@@ -1754,6 +1754,43 @@ The staff area shows up when `can_access_staff_area` is on.
   `src/lib/cover-notifications.ts`, imported lazily by the action so the
   registry stays loadable by vitest without a react-native bundler.
   pgTAP: `a_cover_offer_you_can_take.sql` (7).
+- **Say when you held something back** (0244) — 0242 gave the gym a daily
+  ask budget and then spent it silently, so a quiet Timeline could mean
+  "nothing needed saying today" or "five were said and three are waiting
+  until tomorrow" — opposite facts about the same gym, and the worst shape
+  a limit can have: invisible, so it reads as a product with nothing to
+  offer rather than one being careful.
+  `agent_deferrals` is one row per gym per day counting what was held; the
+  four capped ticks call `_agent_record_deferral` where they used to just
+  `continue`. **Not a queue and not a list of who** — the deferred work is
+  re-derived by tomorrow's tick from live attendance and balances, so a
+  stored list would be stale the moment somebody trained. The count is the
+  honest thing to keep. Gated in the feed on `can_see_money`, the same
+  capability the proposals are gated on. pgTAP:
+  `say_when_you_held_something_back.sql` (6), including that a gym never
+  held back says nothing at all — the line only means something if it is
+  rare.
+- **Attendance reports the registers nobody took** — `classes.attendance`
+  answered with `attended` and never mentioned `unmarked`, which is not a
+  member behaviour at all: it is the register a coach never opened, and it
+  makes every number above it a floor rather than a total. Now said before
+  the no-show line, because it changes how to read the ones above it, and
+  past a fifth of bookings it says so outright. The figure's label is
+  "marked in", not "came in", for the same reason.
+- **The import arithmetic is testable** (`plan-mapping.ts`) — the pure half
+  of `infer.ts`: what a gym's raw plan names and tags look like before the
+  inference sees them, what a price is in pence, and what the gym changed
+  about the guess afterwards. It went untested for exactly as long as it
+  lived beside a network call, because `infer.ts` imports supabase at
+  module scope and vitest cannot load it. Split rather than mocked: the
+  arithmetic decides what every member in a file ends up on.
+  17 assertions, and the two that matter most are refusals — a blank price
+  reads as "they did not say" rather than free, and a blank plan name is a
+  member with no plan rather than a plan called "".
+  **The other four untested modules have the same cause**, not neglect:
+  `resolve-movements`, `stripe-health`, `membership-changes` and
+  `csv-exports` all import supabase or react-native at module scope. Each
+  needs the same split before a test can reach it.
 - **The burndown knows what it is owed** — `back-office.ts` entries carry
   `ends` alongside `status`: **keeps** / **moves** / **splits**, taken from
   the roadmap's sorting rule. `status` records where a surface sits and
