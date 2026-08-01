@@ -35,6 +35,7 @@ import {
   quietMembers,
   tagMember,
 } from './members';
+import { listTagRules, removeTagRule } from './team';
 import { moneySummary, periodLabel, refundMember, setPlanPrice } from './money';
 import {
   blockOut,
@@ -1862,6 +1863,87 @@ function coverAskCtx(session: { coach_id: string }, ranged: unknown[] = []) {
                     }),
                   }),
                 },
+      }),
+    },
+    gymId: 'gym',
+    userId: 'user',
+  } as never;
+}
+
+describe('the tags the gym applies by itself', () => {
+  // The rules editor was the last place a human had to operate this by
+  // hand. Listing them is what a retirement needs before the screen can
+  // go — tags.add_rule has shipped since the team module landed.
+  it('says what each rule does, in the words the editor used', async () => {
+    const p = await listTagRules.preview({} as never, tagCtx([
+      { id: 'r1', label: 'Drifting', predicate_kind: 'no_recent_attendance',
+        threshold_days: 30, class_type_id: null, plan_id: null, active: true },
+      { id: 'r2', label: 'New', predicate_kind: 'joined_within',
+        threshold_days: 14, class_type_id: null, plan_id: null, active: true },
+    ]));
+    expect(p.answer?.figure?.value).toBe('2');
+    expect(p.answer?.list?.rows.map((r) => r.detail)).toEqual([
+      'No check-ins for 30 days',
+      'Joined in the last 14 days',
+    ]);
+  });
+
+  // A rule that is switched off tags nobody, so counting it among the
+  // ones "tagging members for you" would overstate what is happening.
+  it('counts only the rules that are actually tagging', async () => {
+    const p = await listTagRules.preview({} as never, tagCtx([
+      { id: 'r1', label: 'Drifting', predicate_kind: 'no_recent_attendance',
+        threshold_days: 30, class_type_id: null, plan_id: null, active: true },
+      { id: 'r2', label: 'Old', predicate_kind: 'expired',
+        threshold_days: null, class_type_id: null, plan_id: null, active: false },
+    ]));
+    expect(p.title).toBe('1 of 2 rules are tagging members for you.');
+    expect(p.answer?.list?.rows[1].detail).toBe('off');
+  });
+
+  // A gym tagging nothing is not an empty screen — it is a gym where
+  // every tag was put on by hand, which is worth saying.
+  it('says so plainly when nothing is automatic', async () => {
+    const p = await listTagRules.preview({} as never, tagCtx([]));
+    expect(p.title).toBe('Nothing is being tagged automatically.');
+    expect(p.answer).toBeUndefined();
+  });
+});
+
+describe('stopping a tag rule', () => {
+  const rows = [
+    { id: 'r1', label: 'Drifting', predicate_kind: 'no_recent_attendance',
+      threshold_days: 30, class_type_id: null, plan_id: null, active: true },
+    { id: 'r2', label: 'Drifting away', predicate_kind: 'inactive',
+      threshold_days: null, class_type_id: null, plan_id: null, active: true },
+  ];
+
+  it('asks which when the words match more than one', async () => {
+    const p = await removeTagRule.preview({ label: 'drift' }, tagCtx(rows));
+    expect(p.choices?.map((c) => c.label)).toEqual(['Drifting', 'Drifting away']);
+  });
+
+  // The tags this rule put on people go with it; a tag somebody added by
+  // hand is a different row and is not touched. Saying which is the
+  // difference between a confirm and a guess.
+  it('says what happens to the tags it already applied', async () => {
+    const p = await removeTagRule.preview({ label: 'Drifting away' }, tagCtx(rows));
+    expect(p.yes).toBe('Yes, stop it');
+    expect(p.lines.join(' ')).toContain('Tags added by hand stay');
+  });
+
+  it('says so rather than guessing when no rule matches', async () => {
+    const p = await removeTagRule.preview({ label: 'Nonsense' }, tagCtx(rows));
+    expect(p.title).toContain('No rule here tags anybody');
+    expect(p.yes).toBeUndefined();
+  });
+});
+
+function tagCtx(rows: unknown[]) {
+  return {
+    supabase: {
+      from: () => ({
+        select: () => ({ eq: () => ({ order: async () => ({ data: rows, error: null }) }) }),
       }),
     },
     gymId: 'gym',

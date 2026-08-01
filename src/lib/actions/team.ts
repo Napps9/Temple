@@ -16,6 +16,10 @@
 // better said on the screen than guessed at here.
 
 import { matchMembers } from '../chat-lookup';
+import {
+  describeTagRule,
+  type TagRule as StoredTagRule,
+} from '../tag-rules';
 import { matchPlan } from './members';
 import {
   ActionError,
@@ -658,10 +662,150 @@ export const removeFromTeam: ActionSpec<{ who: string }> = {
   },
 };
 
+type RuleRow = Pick<
+  StoredTagRule,
+  'id' | 'label' | 'predicate_kind' | 'threshold_days' | 'active'
+> & { class_type_id: string | null; plan_id: string | null };
+
+async function rules(ctx: ActionContext): Promise<RuleRow[]> {
+  const { data, error } = await ctx.supabase
+    .from('tag_rules')
+    .select('id, label, predicate_kind, threshold_days, class_type_id, plan_id, active')
+    .eq('gym_id', ctx.gymId)
+    .order('label');
+  if (error) throw new ActionError('I could not read the tag rules.');
+  return (data ?? []) as unknown as RuleRow[];
+}
+
+// ============================================================================
+// tags.rules
+// ============================================================================
+
+export const listTagRules: ActionSpec<Record<string, never>> = {
+  name: 'tags.rules',
+  kind: 'ask',
+  capability: 'can_manage_tags',
+  says:
+    'What tags the gym applies by itself — "what tags am I applying", ' +
+    '"what are my tag rules", "how is everyone getting tagged".',
+  args: [],
+  sanitise: () => ({}) as Record<string, never>,
+  preview: async (_a, ctx) => {
+    const rows = await rules(ctx);
+    const on = rows.filter((r) => r.active);
+    if (rows.length === 0) {
+      return {
+        title: 'Nothing is being tagged automatically.',
+        lines: [
+          'Every tag on a member right now was put there by hand.',
+          'Say something like “tag anyone who hasn’t been in for 30 days as Drifting”.',
+        ],
+      };
+    }
+    return {
+      title:
+        on.length === rows.length
+          ? `${rows.length} rule${rows.length === 1 ? '' : 's'} are tagging members for you.`
+          : `${on.length} of ${rows.length} rules are tagging members for you.`,
+      lines: [
+        'They run over the whole roster, so a member can pick up or lose a tag without anybody touching them.',
+        ...(on.length < rows.length
+          ? ['The rest are switched off and tag nobody.']
+          : []),
+      ],
+      answer: {
+        figure: { value: String(on.length), label: 'tagging automatically' },
+        // Rules are instructions, not quantities — a rail beside one
+        // would rank it above another, which is not a thing.
+        list: {
+          label: 'What each one does',
+          rows: rows.map((r) => ({
+            name: r.label,
+            detail: r.active ? describeTagRule(r) : 'off',
+          })),
+        },
+      },
+    };
+  },
+};
+
+// ============================================================================
+// tags.remove_rule
+// ============================================================================
+
+type DropRule = { label: string };
+
+export const removeTagRule: ActionSpec<DropRule> = {
+  name: 'tags.remove_rule',
+  kind: 'do',
+  capability: 'can_manage_tags',
+  says:
+    'Stop tagging a group automatically — "stop tagging people Drifting", ' +
+    '"get rid of the New tag rule".',
+  args: [
+    {
+      name: 'label',
+      type: 'string',
+      desc: 'The tag the rule applies, as they named it.',
+      required: true,
+    },
+  ],
+  invalidate: ['tag-rules', 'member-tags', 'member-tags-for', 'members-cohort'],
+  sanitise: (raw) => {
+    const label = argString(raw, 'label', 40);
+    return label ? { label } : null;
+  },
+  preview: async (a, ctx) => {
+    const hits = (await rules(ctx)).filter((r) =>
+      r.label.toLowerCase().includes(a.label.toLowerCase()),
+    );
+    if (hits.length === 0) {
+      return {
+        title: `No rule here tags anybody “${a.label}”.`,
+        lines: ['Say “what tags am I applying” to see the ones that exist.'],
+      };
+    }
+    if (hits.length > 1) {
+      return {
+        title: `A few rules could be “${a.label}” — which one?`,
+        lines: [],
+        choices: hits.map((h) => ({ label: h.label, args: { label: h.label } })),
+      };
+    }
+    return {
+      title: `Stop tagging people ${hits[0].label}?`,
+      lines: [
+        describeTagRule(hits[0]) + '.',
+        // The rule goes; the tags it put on people go with it, because
+        // they were never anybody's judgement. A tag somebody added by
+        // hand is a different row and is not touched.
+        'The tag comes off everyone it put it on. Tags added by hand stay.',
+      ],
+      yes: 'Yes, stop it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const hits = (await rules(ctx)).filter(
+      (r) => r.label.toLowerCase() === a.label.toLowerCase(),
+    );
+    if (hits.length !== 1) {
+      throw new ActionError('That rule moved while we were talking — try again.');
+    }
+    const { error } = await ctx.supabase
+      .from('tag_rules')
+      .delete()
+      .eq('id', hits[0].id);
+    if (error) throw new ActionError(error.message);
+    return `Nobody is being tagged ${hits[0].label} any more.`;
+  },
+};
+
 export const TEAM_ACTIONS: AnyAction[] = [
   erase(inviteToTeam),
   erase(whoIsOnTheTeam),
   erase(setTeamRole),
   erase(removeFromTeam),
   erase(addTagRule),
+  erase(listTagRules),
+  erase(removeTagRule),
 ];

@@ -1754,6 +1754,25 @@ The staff area shows up when `can_access_staff_area` is on.
   `src/lib/cover-notifications.ts`, imported lazily by the action so the
   registry stays loadable by vitest without a react-native bundler.
   pgTAP: `a_cover_offer_you_can_take.sql` (7).
+- **Tag rules are sayable end to end** — `tags.add_rule` has shipped since
+  the team module landed; what the screen still owned was *seeing* the
+  rules and *stopping* one. `tags.rules` lists them in the editor's own
+  words through `describeTagRule`, counting only the ones actually
+  tagging — a switched-off rule tags nobody, so counting it would
+  overstate what is happening — and says plainly when nothing is
+  automatic, because a gym where every tag was put on by hand is a fact
+  rather than an empty screen. `tags.remove_rule` matches on the label,
+  asks which when the words fit more than one, and says what happens to
+  the tags already applied: the rule's own come off, tags added by hand
+  stay.
+  **A duplicate caught by a guard rather than by review**: the first
+  version of this shipped a second `tags.add_rule` in a new module,
+  because the registry was not checked first. `names every action
+  uniquely` failed on 58 unique of 59, and the two genuinely new actions
+  moved in beside the original rather than beginning a parallel module.
+  The other guard earned its keep the same minute — `names queries that
+  actually exist` rejected an `invalidate` key naming no real query,
+  which is a write whose screens never refresh and fails silently.
 - **Say when you held something back** (0244) — 0242 gave the gym a daily
   ask budget and then spent it silently, so a quiet Timeline could mean
   "nothing needed saying today" or "five were said and three are waiting
