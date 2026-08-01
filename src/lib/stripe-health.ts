@@ -31,5 +31,8 @@ export async function fetchStripeHealth(gymId: string): Promise<StripeHealth> {
 }
 
 // The Timeline's sentence about all this lives in lib/timeline.ts with
-// every other owner-visible line — this module imports supabase and so
-// cannot be loaded by vitest, which is exactly why the copy is not here.
+// every other owner-visible line. That was originally forced — anything
+// importing supabase failed to parse under vitest — and is now a choice:
+// the react-native alias and the test env fixed the parse and the throw,
+// so this module is testable. The copy stays in timeline.ts because every
+// owner-visible line living in one place is worth keeping on its own.

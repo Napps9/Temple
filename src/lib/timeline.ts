@@ -4,7 +4,9 @@
 // register ("How Temple talks" — docs/loop-1-payment-recovery.md) is
 // reviewable: one idea per message, first person only where Temple itself
 // acted, no system vocabulary. Pure module — the fetch hook lives with the
-// screen, because anything importing supabase.ts can't be parsed by vitest.
+// screen. That split was once forced — anything importing supabase.ts
+// failed to parse under vitest — and survives on its own merit: one place
+// for every owner-visible sentence is what makes the register reviewable.
 
 export type TimelineKind =
   | 'member_joined'
