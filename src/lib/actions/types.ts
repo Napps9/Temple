@@ -110,6 +110,16 @@ export type ActionSpec<A = Record<string, unknown>> = {
   name: string;
   kind: 'do' | 'ask';
   capability: string | null;
+  // Roles that may be offered this action at all, on top of `capability`.
+  // The manifest has carried the same field since it was extracted, for
+  // the same reason: some writes are governed by who you are and not by a
+  // key anybody can be granted. The gym's operating rules are the case —
+  // eight owner-only setters behind one sentence, with no capability in
+  // the matrix that means "change how the gym runs", and the rule sheet
+  // itself gated on being the owner. Advertising a capability there put
+  // "free cancel until 2 hours before" in front of every coach, previewed
+  // it, took their confirmation and then let the database refuse them.
+  roles?: string[];
   // One line telling the model when this action is the right one. Written
   // as the owner would say it, because that is what it has to match.
   says: string;

@@ -170,6 +170,40 @@ describe('the registry', () => {
     // And no wider: the usage question is an admin deciding what to keep.
     expect(staff).not.toContain('usage.what_nobody_opens');
   });
+
+  // The gym's operating rules are eight owner-only setters behind one
+  // sentence. Advertising can_edit_classes put them in front of every
+  // coach: offered, previewed, confirmed, and then refused by the first
+  // RPC. A capability nobody can be granted is not a gate.
+  it('keeps the rules sentence to the only person the setters accept', () => {
+    const everything = () => true;
+    expect(actionsFor(everything, 'coach').map((a) => a.name)).not.toContain(
+      'gym.change_rules',
+    );
+    expect(actionsFor(everything, 'admin').map((a) => a.name)).not.toContain(
+      'gym.change_rules',
+    );
+    expect(actionsFor(everything, 'owner').map((a) => a.name)).toContain(
+      'gym.change_rules',
+    );
+    // Not knowing the role is not permission either — the same rule the
+    // capability half already follows for undefined.
+    expect(actionsFor(everything).map((a) => a.name)).not.toContain(
+      'gym.change_rules',
+    );
+  });
+
+  // Closing a week cancels every session in it, which is why
+  // close_gym_dates asks can_bulk_edit_classes and not the looser
+  // can_edit_classes a coach holds for moving one class.
+  it('asks for the bulk permission before shutting the gym for a week', () => {
+    const closer = actionsFor((c) => c === 'can_edit_classes').map((a) => a.name);
+    expect(closer).toContain('classes.move');
+    expect(closer).not.toContain('gym.close_dates');
+    expect(
+      actionsFor((c) => c === 'can_bulk_edit_classes').map((a) => a.name),
+    ).toContain('gym.close_dates');
+  });
 });
 
 // An invalidate key that names no real query is a write whose screens never

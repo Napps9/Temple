@@ -600,6 +600,32 @@ The staff area shows up when `can_access_staff_area` is on.
   (it requires `left_at is null`). pgTAP `plan_price_changes.sql`
   (plan(11)) pins both halves, including the same admin refused before
   the grant and allowed after it.
+- **Taking a plan off the shelf, and putting it back** (0245, roadmap
+  phase 5) — `plans.retire` ("stop selling the off-peak membership",
+  "retire the student plan") and `plans.restore` ("bring back the
+  off-peak membership"). The card's whole job is the sentence "archive"
+  does not say: the people on the plan keep their membership, their
+  price and their access, and what changes is that it stops being
+  offered — the join page, the website's plan block and the staff plan
+  picker all filter `archived_at is null`. Naming a plan that is already
+  off sale says so rather than "no such plan", and restore only ever
+  looks at retired plans, so the two verbs cannot be confused by a name
+  that exists on both sides. Hard delete stays on the plans screen: it
+  is guarded by `plan_has_dependents` and is not a thing to do by
+  sentence. 0245 is the same capability bug found a fourth, fifth and
+  sixth time — `archive_plan`, `restore_plan` and `delete_plan` asked
+  `user_is_owner_of` while their buttons were gated on
+  `can_archive_plans` and `can_hard_delete`, so a granted admin was
+  offered the button and refused by the database. The class-type three
+  ran the *other* way: `archive_class_type`, `restore_class_type` and
+  `delete_class_type` asked `user_can_admin_or_coach`, which matches
+  `can_archive_classes` at its default and ignores a revocation
+  entirely — an owner who took the permission off coaches still had
+  coaches who could archive a class type by calling the RPC. All six now
+  ask `effective_can`. pgTAP `archive_honours_its_capability.sql`
+  (plan(11)) asserts both directions plus the two "nothing changed for a
+  gym that overrode nothing" baselines; five of the eleven fail against
+  the old definitions.
 - **Giving money back** (roadmap phase 2) — `money.refund` ("refund
   Marcus", "give Dan £20 back"), the only verb in the registry that moves
   money out of the gym's account. "Refund Marcus" is four different
@@ -1592,7 +1618,43 @@ The staff area shows up when `can_access_staff_area` is on.
   per-action saves, a receipt line in the stream, the sheet refetches.
   The tap goes through `gym.change_rules` like a spoken change does, so
   there is one path to a rule change rather than a tap path and a
-  sentence path.
+  sentence path. **Owner only, and now honestly so**: every setter
+  `applyRules` calls — `set_gym_operating_defaults`,
+  `set_require_membership_to_book`, `set_allow_minors`,
+  `set_gym_weight_unit`, `set_dm_scope`, `set_gym_public_signup`,
+  `set_gym_public_lead_capture` — asks `user_is_owner_of`, and the sheet
+  is drawn only for owners, but the *action* advertised
+  `can_edit_classes`, which covers admins and coaches. A coach could say
+  "free cancel until 2 hours before", see it previewed, confirm it, and
+  be refused by the first RPC. `ActionSpec` gained `roles` (the field the
+  Back Office manifest has carried since it was extracted, for the same
+  reason: some writes are governed by who you are and not by a key
+  anybody can be granted), `actionsFor` takes the caller's role, and an
+  unknown role is not permission any more than an unloaded capability
+  set is. Same pass moved `gym.close_dates` onto `can_bulk_edit_classes`
+  — closing a week cancels every session in it, which `close_gym_dates`
+  has always asked for and the action never advertised.
+- **When Stripe stops working** (roadmap phase 5) — the one line on the
+  Timeline that is not an event. Everything else there comes from
+  `timeline_feed`: something happened, and the row is the record of it.
+  Stripe's health is a *state*, read live through the owner-only
+  `stripe-account` function, because a `gym_stripe_accounts` row only
+  means an account id was once stored — a revoked grant surfaces as
+  `reachable: false` and nothing in the product would say so until a
+  member's card was declined. `stripeWarning` (`src/lib/timeline.ts`,
+  pure + tested) says nothing in three cases: never connected (that is
+  the go-live checklist's line, and one problem in two voices reads as
+  two), healthy (a processor that works is not news, and a line that
+  appears daily stops being read on the day it matters), and *the check
+  itself failing* (that is "we could not ask", not "the answer was bad",
+  and crying broken on a failed request is what teaches an owner to
+  ignore the true alarm). Three states are worth interrupting for, in
+  the order they hurt: unreachable (red — memberships, renewals and the
+  shop are all failing), charges disabled (amber — nobody can pay you
+  yet), payouts held (amber — the money is not reaching your bank). It
+  renders above the setup and money-job cards, because those are work an
+  owner chose to leave and this is money that has already stopped
+  arriving.
 - **The ledger seed** — `agent_actions` (loop-1 spec's table) exists and
   is unioned into the feed: staff read behind `can_see_money`, no client
   write path at all (`Insert: never`).

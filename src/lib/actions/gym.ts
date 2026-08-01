@@ -87,7 +87,15 @@ async function currentRules(ctx: ActionContext) {
 export const changeRules: ActionSpec<{ changes: RuleChange[] }> = {
   name: 'gym.change_rules',
   kind: 'do',
-  capability: 'can_edit_classes',
+  // Owner, and no capability. Every setter applyRules calls —
+  // set_gym_operating_defaults, set_require_membership_to_book,
+  // set_allow_minors, set_gym_weight_unit, set_dm_scope,
+  // set_gym_public_signup, set_gym_public_lead_capture — asks
+  // user_is_owner_of, and the rule sheet on the Timeline is drawn only
+  // for owners. can_edit_classes covers admins and coaches, so this
+  // sentence was offered to people the first RPC would refuse.
+  capability: null,
+  roles: ['owner'],
   says:
     'Change how the gym runs — "free cancel until 2 hours before", "let ' +
     'people book 3 days out", "members can book without a membership", ' +
@@ -167,7 +175,11 @@ type Closure = { startsOn: string; endsOn: string; reason: string | null };
 export const closeGym: ActionSpec<Closure> = {
   name: 'gym.close_dates',
   kind: 'do',
-  capability: 'can_edit_classes',
+  // close_gym_dates checks can_bulk_edit_classes, which stops at admin —
+  // closing a week cancels every session in it, which is not the same
+  // permission as moving one class. The advertised key was the looser
+  // can_edit_classes, so a coach was offered the sentence and refused.
+  capability: 'can_bulk_edit_classes',
   says:
     'Shut the gym for a stretch of days — "close 24 to 28 December", ' +
     '"we\'re shut next Monday for the bank holiday".',

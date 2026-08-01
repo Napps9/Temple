@@ -4,6 +4,7 @@ import {
   dayLabel,
   formatTimelineLine,
   groupTimelineByDay,
+  stripeWarning,
   type TimelineEvent,
 } from './timeline';
 
@@ -373,5 +374,58 @@ describe('groupTimelineByDay', () => {
   it('labels older days with the weekday and date', () => {
     expect(dayLabel('2026-07-20', now)).toBe('Monday 20 Jul');
     expect(dayLabel('2025-12-24', now)).toBe('Wednesday 24 Dec 2025');
+  });
+});
+
+describe('stripeWarning', () => {
+  const HEALTHY = {
+    connected: true as const,
+    reachable: true as const,
+    chargesEnabled: true,
+    payoutsEnabled: true,
+  };
+
+  it('says nothing when payments work, because a working processor is not news', () => {
+    expect(stripeWarning(HEALTHY)).toBeNull();
+  });
+
+  it('says nothing to a gym that has never connected Stripe', () => {
+    // That fact belongs to the go-live checklist, and one problem in two
+    // voices reads as two problems.
+    expect(stripeWarning({ connected: false })).toBeNull();
+  });
+
+  it('says nothing when the check itself could not run', () => {
+    expect(stripeWarning(undefined)).toBeNull();
+  });
+
+  it('is red when Stripe cannot be reached, because every payment is failing', () => {
+    const w = stripeWarning({ connected: true, reachable: false });
+    expect(w?.tone).toBe('red');
+    expect(w?.text).toContain('cannot reach');
+    expect(w?.text).toContain('shop');
+  });
+
+  it('is amber when onboarding was never finished, and says nobody can pay', () => {
+    const w = stripeWarning({ ...HEALTHY, chargesEnabled: false });
+    expect(w?.tone).toBe('amber');
+    expect(w?.text).toContain('Nobody can pay you');
+  });
+
+  it('mentions held payouts, which nothing else in Temple would', () => {
+    const w = stripeWarning({ ...HEALTHY, payoutsEnabled: false });
+    expect(w?.tone).toBe('amber');
+    expect(w?.text).toContain('not reaching your bank');
+  });
+
+  it('leads with charges when both charges and payouts are off', () => {
+    // Held payouts are irrelevant to a gym that cannot take money at all,
+    // and two lines about Stripe on one screen is one too many.
+    const w = stripeWarning({
+      ...HEALTHY,
+      chargesEnabled: false,
+      payoutsEnabled: false,
+    });
+    expect(w?.text).toContain('will not take payments yet');
   });
 });

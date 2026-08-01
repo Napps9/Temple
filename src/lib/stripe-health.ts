@@ -29,3 +29,7 @@ export async function fetchStripeHealth(gymId: string): Promise<StripeHealth> {
   if (error) throw error;
   return data as StripeHealth;
 }
+
+// The Timeline's sentence about all this lives in lib/timeline.ts with
+// every other owner-visible line — this module imports supabase and so
+// cannot be loaded by vitest, which is exactly why the copy is not here.

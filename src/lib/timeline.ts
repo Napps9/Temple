@@ -444,3 +444,77 @@ export function groupTimelineByDay(
       ),
     }));
 }
+
+// ---------------------------------------------------------------------------
+// The one thing on this screen that is not an event
+// ---------------------------------------------------------------------------
+//
+// Every line above comes from timeline_feed — something happened, and the
+// row is the record of it. Stripe's health is the opposite: a state, read
+// live from Stripe because a gym_stripe_accounts row only means we once
+// stored an account id. There is no event to union, and by the time there
+// is one it is a member telling the owner their card was declined.
+//
+// Billing draws four states because somebody who opened Billing came to
+// look at Stripe. The Timeline is where an owner is when they are not
+// thinking about Stripe at all, so it says something only when nothing
+// else will tell them, and stays silent in three cases:
+//
+//   never connected — that is the go-live checklist's line, and a gym
+//   still setting up does not need one fact in two voices
+//
+//   healthy — a payments processor that works is not news, and a line
+//   that appears every day stops being read on the day it matters
+//
+//   the check could not run — that is "we could not ask", not "the
+//   answer was bad", and crying broken on a failed request is what
+//   teaches an owner to ignore the true alarm
+//
+// Which leaves three worth interrupting for, in the order they hurt.
+export type StripeWarning = { text: string; tone: 'amber' | 'red' };
+
+type HealthInput =
+  | { connected: false }
+  | { connected: true; reachable: false }
+  | {
+      connected: true;
+      reachable: true;
+      chargesEnabled: boolean;
+      payoutsEnabled: boolean;
+    };
+
+export function stripeWarning(
+  health: HealthInput | undefined,
+): StripeWarning | null {
+  if (!health || !health.connected) return null;
+  if (!health.reachable) {
+    return {
+      text:
+        'I cannot reach your Stripe account, so nothing can be charged right ' +
+        'now — memberships, renewals and the shop are all failing until it ' +
+        'is reconnected.',
+      tone: 'red',
+    };
+  }
+  if (!health.chargesEnabled) {
+    return {
+      text:
+        'Stripe has your account but will not take payments yet — there is a ' +
+        'step left to finish in your Stripe dashboard. Nobody can pay you ' +
+        'until it is done.',
+      tone: 'amber',
+    };
+  }
+  // Charges work, payouts do not: the gym is taking money and it is
+  // sitting in Stripe. No member is blocked, so it is not the emergency
+  // the two above are — but nothing else in Temple would ever mention it.
+  if (!health.payoutsEnabled) {
+    return {
+      text:
+        'You are taking payments, but Stripe is holding the payouts — the ' +
+        'money is not reaching your bank until you finish verification.',
+      tone: 'amber',
+    };
+  }
+  return null;
+}

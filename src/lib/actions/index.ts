@@ -5,6 +5,7 @@ import { GYM_ACTIONS } from './gym';
 import { LEAD_ACTIONS } from './leads';
 import { MEMBER_ACTIONS } from './members';
 import { MONEY_ACTIONS } from './money';
+import { PLAN_ACTIONS } from './plans';
 import { PROGRAMMING_ACTIONS } from './programming';
 import { STORE_ACTIONS } from './store';
 import { TEAM_ACTIONS } from './team';
@@ -24,6 +25,7 @@ export const ACTIONS: AnyAction[] = [
   ...COMMS_ACTIONS,
   ...MEMBER_ACTIONS,
   ...MONEY_ACTIONS,
+  ...PLAN_ACTIONS,
   ...PROGRAMMING_ACTIONS,
   ...STORE_ACTIONS,
   ...TEAM_ACTIONS,
@@ -40,10 +42,18 @@ export function findAction(name: unknown): AnyAction | null {
 // what their capabilities allow, so the model cannot propose an action
 // they would then be refused. `can` mirrors useCan — undefined means the
 // capability set hasn't loaded, which is not permission.
+//
+// `role` is the second half of the same promise, and omitting it is not
+// permission either: an action that names roles is withheld from a caller
+// whose role we have not been told. A vocabulary that guesses wide is the
+// failure this whole filter exists to prevent.
 export function actionsFor(
   can: (capability: string) => boolean | undefined,
+  role?: string | null,
 ): ActionWire[] {
   return ACTIONS.filter(
-    (a) => a.capability === null || can(a.capability) === true,
+    (a) =>
+      (a.capability === null || can(a.capability) === true) &&
+      (a.roles === undefined || (!!role && a.roles.includes(role))),
   ).map((a) => toWire(a));
 }

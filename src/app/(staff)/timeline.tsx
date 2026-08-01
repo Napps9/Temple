@@ -53,6 +53,7 @@ import {
   type RuleChoices,
   type RuleField,
 } from '@/lib/setup-flow';
+import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useCanFn } from '@/lib/useCan';
@@ -61,6 +62,7 @@ import {
   formatClock,
   formatTimelineLine,
   groupTimelineByDay,
+  stripeWarning,
   type TimelineEvent,
 } from '@/lib/timeline';
 
@@ -93,6 +95,36 @@ function useTimelineFeed(gymId: string | undefined) {
       return (data ?? []) as TimelineEvent[];
     },
   });
+}
+
+// Two calls because they answer different questions: the row says whether
+// this gym ever connected Stripe, and only if it did is it worth asking
+// Stripe whether the connection still works. A gym that never connected
+// must not pay for a round trip to be told what the row already said.
+function useStripeWarning(gymId: string | undefined, enabled: boolean) {
+  const account = useQuery({
+    queryKey: ['gym-stripe-account', gymId],
+    enabled: !!gymId && enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gym_stripe_accounts')
+        .select('stripe_account_id')
+        .eq('gym_id', gymId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { stripe_account_id: string | null } | null;
+    },
+  });
+  const health = useQuery({
+    queryKey: stripeHealthQueryKey(gymId),
+    enabled: !!gymId && enabled && !!account.data?.stripe_account_id,
+    staleTime: 60_000,
+    queryFn: () => fetchStripeHealth(gymId!),
+  });
+  // health.isError leaves data undefined, which stripeWarning reads as
+  // "could not ask" and says nothing about — the same call Billing makes
+  // when its own check fails.
+  return stripeWarning(health.data);
 }
 
 function useMoneyAuthority(gymId: string | undefined, enabled: boolean) {
@@ -216,6 +248,9 @@ export default function Timeline() {
 
   const feed = useTimelineFeed(gymId);
   const rules = useGymRules(gymId, isOwner);
+  // Owner-gated because the stripe-account function is: a coach asking
+  // would get an error, and an error is not a warning.
+  const stripe = useStripeWarning(gymId, isOwner);
   const setupProgress = useQuery({
     queryKey: ['gym-setup-progress', gymId],
     enabled: !!gymId && isOwner,
@@ -468,7 +503,7 @@ export default function Timeline() {
     }
     setBusy(true);
     try {
-      const vocabulary = actionsFor((c) => can(c as Capability));
+      const vocabulary = actionsFor((c) => can(c as Capability), role);
       // The last card's action rides along whatever the words say, so
       // "do that again" and "the same for Sarah" still find it.
       const lastSpoken = [...local].reverse().find((m) => m.kind === 'action');
@@ -732,6 +767,17 @@ export default function Timeline() {
               </View>
             ))
           )}
+
+          {/* Above the setup card and the job card because those are work
+              an owner chose to leave; this is money that has already
+              stopped arriving. */}
+          {stripe ? (
+            <SoftLine
+              text={stripe.text}
+              tone={stripe.tone}
+              offer={{ label: 'Open billing', href: '/management/billing' }}
+            />
+          ) : null}
 
           {setupOutstanding ? (
             <SetupCard
@@ -1351,7 +1397,7 @@ function SoftLine({
   offer,
 }: {
   text: string;
-  tone: 'neutral' | 'amber';
+  tone: 'neutral' | 'amber' | 'red';
   at?: string;
   offer?: { label: string; href: string };
 }) {
@@ -1360,7 +1406,11 @@ function SoftLine({
       <View className="flex-row items-start gap-3 px-1">
         <View
           className={`w-2 h-2 rounded-full mt-[7px] ${
-            tone === 'amber' ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+            tone === 'red'
+              ? 'bg-red-500'
+              : tone === 'amber'
+                ? 'bg-amber-500'
+                : 'bg-gray-300 dark:bg-gray-600'
           }`}
         />
         <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px]">

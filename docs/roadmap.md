@@ -723,6 +723,38 @@ requests turned out to have been in the feed all along.
 Two passes at the bar, and the first one failed: it was written down as
 not-earned before it was earned. **Eight retired, twelve owed.**
 
+**Auditing before building keeps finding the work half-done and the
+permissions wrong.** Plans was the third surface in a row where the
+sentence half already shipped — `gym.add_plans` creates,
+`money.set_plan_price` prices, `plans.include_programming` decides what a
+plan carries — and the only verbs genuinely owed were retiring one and
+bringing it back (`plans.retire`, `plans.restore`, 0245). Billing was the
+same: `require_membership_to_book` had been a rule sentence since the
+sheet existed, Stripe Connect is an OAuth redirect and stays a screen, and
+what was actually missing was the roadmap's own words — *connection health
+becomes a Timeline receipt when something needs attention*. Insights is
+the one where the audit says the opposite: the five questions
+(`money.summary`, `classes.attendance`, `members.quiet`, `store.sales`,
+`leads.pipeline`) all draw their numbers already, so **pull is done and
+push is the whole remaining job** — the numbers arriving without being
+asked for, which is a job on the rope, not another chart.
+
+What the audits keep turning up alongside the work is one bug wearing
+different clothes: a switch an owner can see and a server that ignores it.
+Six more instances this pass. `archive_plan`, `restore_plan` and
+`delete_plan` asked `user_is_owner_of` while their buttons were gated on
+`can_archive_plans` and `can_hard_delete` — a granted admin refused.
+`archive_class_type`, `restore_class_type` and `delete_class_type` asked
+`user_can_admin_or_coach`, which happens to equal `can_archive_classes` at
+its default and ignores a revocation entirely — an owner who took the
+permission away still had coaches who could use it. And two actions were
+advertising capabilities their own writes could not honour:
+`gym.change_rules` offered every coach a settings change behind eight
+owner-only setters, and `gym.close_dates` offered coaches a week-long
+closure that `close_gym_dates` has always gated on
+`can_bulk_edit_classes`. The RPC half is 0245; the vocabulary half is
+`ActionSpec.roles` and an `actionsFor` that takes the caller's role.
+
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
 from asking to acting removes sentences. The measures stay what they
