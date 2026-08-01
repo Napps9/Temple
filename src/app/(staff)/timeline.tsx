@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -711,6 +711,21 @@ export default function Timeline() {
     );
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
   };
+
+  // ?rules=1 opens the sheet, which is what makes it a destination rather
+  // than a chip only somebody already here can find. Settings sections
+  // fold into this sheet as they retire, and each one arrives carrying
+  // the words people searched for it by — "dm", "leaderboards",
+  // "cancellation". Those words need somewhere to land, and until this
+  // they had nowhere: the sheet had no address.
+  const { rules: rulesParam } = useLocalSearchParams<{ rules?: string }>();
+  const openRules = rulesParam === '1';
+  useEffect(() => {
+    if (openRules && isOwner) showRulesSheet();
+    // Once per arrival. Re-opening on every render would re-add the sheet
+    // after the owner scrolled past it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRules, isOwner]);
 
   const groups = groupTimelineByDay(feed.data ?? []);
 

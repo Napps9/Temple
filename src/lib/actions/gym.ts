@@ -424,10 +424,254 @@ export const draftNewsletter: ActionSpec<{
   },
 };
 
+
+// ============================================================================
+// gym.reopen
+// ============================================================================
+//
+// The other half of gym.close_dates, and the half that was only ever a
+// screen. Closing is a sentence; reopening was a card on Manage with a
+// per-session picker, so an owner who shut the gym for a burst pipe and
+// then got it fixed had to go and find the screen.
+//
+// The picker is not replaced, it is bypassed for the common case. Putting
+// everything back is what "we're open again" means, and reopen_closure
+// with an empty exclusion list is exactly that. A gym reopening but
+// wanting three of the forty classes to stay cancelled is a real case and
+// a rare one — that keeps the card, and the receipt points at it.
+
+type Reopen = { on: string | null };
+
+type ClosureRow = {
+  id: string;
+  starts_on: string;
+  ends_on: string;
+  reason: string | null;
+};
+
+async function liveClosures(ctx: ActionContext): Promise<ClosureRow[]> {
+  const { data } = await ctx.supabase
+    .from('gym_closures')
+    .select('id, starts_on, ends_on, reason')
+    .eq('gym_id', ctx.gymId)
+    .is('lifted_at', null)
+    .order('starts_on', { ascending: true });
+  return (data ?? []) as ClosureRow[];
+}
+
+function closureRange(c: ClosureRow): string {
+  return c.starts_on === c.ends_on
+    ? closureDay(c.starts_on)
+    : `${closureDay(c.starts_on)} to ${closureDay(c.ends_on)}`;
+}
+
+export const reopenGym: ActionSpec<Reopen> = {
+  name: 'gym.reopen',
+  kind: 'do',
+  capability: 'can_bulk_edit_classes',
+  says:
+    "Open the gym back up after a closure — \"we're open again\", \"cancel " +
+    'the closure\", \"we\'re back open on Monday after all\". Puts the ' +
+    'cancelled classes back and tells everyone who was booked.',
+  args: [
+    {
+      name: 'on',
+      type: 'date',
+      desc:
+        'Only if they named which closure, as any date inside it (YYYY-MM-DD). ' +
+        'Omit if they just said the gym is open again.',
+    },
+  ],
+  invalidate: ['gym-closures', 'gym-closures-live', 'class-sessions-month'],
+  sanitise: (raw) => {
+    const on = argString(raw, 'on', 10);
+    return { on: on && /^\d{4}-\d{2}-\d{2}$/.test(on) ? on : null };
+  },
+  preview: async (a, ctx) => {
+    const all = await liveClosures(ctx);
+    if (all.length === 0) {
+      return { title: 'The gym is not closed for anything at the moment.', lines: [] };
+    }
+    const matching = a.on
+      ? all.filter((c) => c.starts_on <= a.on! && c.ends_on >= a.on!)
+      : all;
+    if (matching.length === 0) {
+      return {
+        title: `Nothing is closed on ${closureDay(a.on!)}.`,
+        lines: all.map((c) => `Closed ${closureRange(c)}${c.reason ? ` — ${c.reason}` : ''}.`),
+      };
+    }
+    // More than one closure open at once is unusual and ambiguous, so it
+    // asks rather than guessing at the nearest.
+    if (matching.length > 1) {
+      return {
+        title: 'Which closure is ending?',
+        lines: [],
+        choices: matching.map((c) => ({
+          label: `${closureRange(c)}${c.reason ? ` — ${c.reason}` : ''}`,
+          args: { on: c.starts_on },
+        })),
+      };
+    }
+    const c = matching[0];
+    return {
+      title: `Open the gym back up for ${closureRange(c)}?`,
+      lines: [
+        'Every class that was cancelled for it goes back on the timetable.',
+        // Bookings are not restored — the refund already happened and
+        // re-booking is the member's own decision. Said out loud because
+        // an owner reasonably expects "undo" to mean all of it.
+        'People are told the classes are back on, but their bookings are not restored — they book again themselves.',
+        ...(c.reason ? [`It was closed for: ${c.reason}.`] : []),
+      ],
+      yes: 'Yes, open it back up',
+    };
+  },
+  apply: async (a, ctx) => {
+    const all = await liveClosures(ctx);
+    const matching = a.on
+      ? all.filter((c) => c.starts_on <= a.on! && c.ends_on >= a.on!)
+      : all;
+    if (matching.length !== 1) {
+      throw new ActionError('That closure is no longer there.');
+    }
+    const { data, error } = await ctx.supabase.rpc('reopen_closure', {
+      p_closure_id: matching[0].id,
+      p_exclude: [],
+    });
+    if (error) {
+      throw new ActionError(
+        /not authorised|row-level security|permission/i.test(error.message)
+          ? 'You do not have permission to reopen the gym.'
+          : "That didn't go through — try again.",
+      );
+    }
+    const r = (data ?? {}) as { restored?: number; notified?: number };
+    const n = r.restored ?? 0;
+    ctx.offer?.('Open the timetable', '/classes');
+    return n > 0
+      ? `The gym is open again for ${closureRange(matching[0])}. ${n} ${n === 1 ? 'class is' : 'classes are'} back on — everyone who was booked has been told.`
+      : `The gym is open again for ${closureRange(matching[0])}. There was nothing left to put back.`;
+  },
+};
+
+// ============================================================================
+// gym.set_colour
+// ============================================================================
+//
+// The one branding change an owner makes more than once. Logos are a file
+// picker and the Branding card keeps them; a colour is a sentence.
+//
+// Dark mode is the whole subtlety. primary_color_dark is nullable and
+// means "derive it from the light one", so a gym that has never opened the
+// editor gets both modes moved by this and a gym that hand-picked a dark
+// colour keeps it. Which of those happened is said on the card, because
+// silently discarding a deliberate choice and silently ignoring a change
+// are both wrong and they look identical from outside.
+
+const HEX = /^#[0-9A-Fa-f]{6}$/;
+
+type Branding = {
+  logo_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  text_color: string;
+  logo_url_dark: string | null;
+  primary_color_dark: string | null;
+  secondary_color_dark: string | null;
+  text_color_dark: string | null;
+};
+
+async function currentBranding(ctx: ActionContext): Promise<Branding | null> {
+  const { data } = await ctx.supabase
+    .from('gyms')
+    .select(
+      'logo_url, primary_color, secondary_color, text_color, logo_url_dark, ' +
+        'primary_color_dark, secondary_color_dark, text_color_dark',
+    )
+    .eq('id', ctx.gymId)
+    .maybeSingle();
+  return (data as Branding | null) ?? null;
+}
+
+export const setGymColour: ActionSpec<{ colour: string }> = {
+  name: 'gym.set_colour',
+  kind: 'do',
+  capability: null,
+  // set_gym_branding asks user_is_owner_of, and the gym's identity is an
+  // owner's decision rather than a grantable one.
+  roles: ['owner'],
+  says:
+    'Change the gym\'s brand colour — "make our colour navy", "our brand ' +
+    'colour is #E11D48", "change the app colour to dark green". Only the ' +
+    'colour; a logo is a file and lives on the Branding card.',
+  args: [
+    {
+      name: 'colour',
+      type: 'string',
+      desc:
+        'The colour as a 6-digit hex with a leading #, e.g. "#E11D48". If ' +
+        'they named a colour in words ("navy", "dark green"), convert it to ' +
+        'its hex yourself. If you cannot tell what colour they mean, leave ' +
+        'it out rather than guessing.',
+      required: true,
+    },
+  ],
+  invalidate: ['gym-brand'],
+  sanitise: (raw) => {
+    const colour = argString(raw, 'colour', 7);
+    return colour && HEX.test(colour) ? { colour: colour.toUpperCase() } : null;
+  },
+  preview: async (a, ctx) => {
+    const b = await currentBranding(ctx);
+    if (!b) {
+      return { title: 'I could not read your branding.', lines: [] };
+    }
+    if (b.primary_color.toUpperCase() === a.colour) {
+      return { title: `Your brand colour is already ${a.colour}.`, lines: [] };
+    }
+    return {
+      title: `Change your brand colour to ${a.colour}?`,
+      lines: [
+        `${b.primary_color.toUpperCase()} → ${a.colour}, everywhere the app uses your colour — buttons, links, your join page and your website.`,
+        b.primary_color_dark === null
+          ? 'Dark mode follows it automatically.'
+          : 'Your hand-picked dark-mode colour stays as it is — change that one on the Branding card.',
+      ],
+      yes: 'Yes, change it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const b = await currentBranding(ctx);
+    if (!b) throw new ActionError('I could not read your branding.');
+    const { error } = await ctx.supabase.rpc('set_gym_branding', {
+      p_gym_id: ctx.gymId,
+      p_logo_url: b.logo_url,
+      p_primary_color: a.colour,
+      p_secondary_color: b.secondary_color,
+      p_text_color: b.text_color,
+      p_logo_url_dark: b.logo_url_dark,
+      p_primary_color_dark: b.primary_color_dark,
+      p_secondary_color_dark: b.secondary_color_dark,
+      p_text_color_dark: b.text_color_dark,
+    });
+    if (error) {
+      throw new ActionError(
+        /not authorised|row-level security|permission/i.test(error.message)
+          ? 'Only an owner can change the gym’s branding.'
+          : "That didn't save — try again.",
+      );
+    }
+    return `Your brand colour is now ${a.colour}.`;
+  },
+};
+
 export const GYM_ACTIONS: AnyAction[] = [
   erase(changeRules),
   erase(addClasses),
   erase(addPlans),
   erase(closeGym),
+  erase(reopenGym),
+  erase(setGymColour),
   erase(draftNewsletter),
 ];

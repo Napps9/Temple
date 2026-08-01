@@ -186,11 +186,13 @@ describe('who sees what', () => {
   });
 
   it('honours a role gate where one exists, without a capability', () => {
-    // Billing and Setup are the two owner-only surfaces with no
-    // capability key behind them.
+    // Billing, Setup and the rule sheet are the owner-only surfaces with
+    // no capability key behind them. The sheet is owner-only because
+    // every setter it drives asks user_is_owner_of.
     expect(visibleEntries(nobody, 'owner').map((e) => e.href).sort()).toEqual([
       '/management/billing',
       '/setup',
+      '/timeline?rules=1',
     ]);
     expect(visibleEntries(nobody, 'coach')).toEqual([]);
   });
@@ -233,9 +235,14 @@ describe('finding it by typing', () => {
 
   // The point of indexing the sentence too: somebody who half-remembers
   // the bar phrasing still lands on the screen.
+  // Two answers, and both are right: the panel that has always held the
+  // setting, and the rule sheet that now says it as a sentence. A search
+  // that returned only the panel would be sending people to the surface
+  // the sorting rule is trying to retire.
   it('finds one by the sentence that does the same job', () => {
-    expect(searchBackOffice('cancel cutoff', all).map((e) => e.title)).toEqual([
+    expect(searchBackOffice('cancel cutoff', all).map((e) => e.title).sort()).toEqual([
       'Gym settings',
+      'Your rules',
     ]);
   });
 
@@ -308,7 +315,10 @@ describe('the burndown has a baseline', () => {
     const byStatus = (s: string) => BACK_OFFICE.filter((e) => e.status === s).length;
     // The number moving is the measure; this test exists so it cannot move
     // by accident, and so raising it means writing down why.
-    expect(retiredCount()).toBe(8);
+    // Nine: the Messaging section went. One switch, and the rule sheet
+    // already said it — see RETIRED_ROUTES for why Leaderboards, the
+    // switch beside it, could not go with it.
+    expect(retiredCount()).toBe(9);
     expect(retiredCount()).toBe(RETIRED_ROUTES.length);
     expect(byStatus('primary') + byStatus('back-office')).toBe(BACK_OFFICE.length);
   });
@@ -321,7 +331,9 @@ describe('the burndown has a baseline', () => {
   it('knows which surfaces are still owed', () => {
     const by = (e: string) => BACK_OFFICE.filter((x) => x.ends === e).length;
     expect(by('keeps') + by('moves') + by('splits')).toBe(BACK_OFFICE.length);
-    expect(movesLeft()).toBe(12);
+    // Eleven: Messaging retired into the rule sheet. The other eleven
+    // are still owed a sentence.
+    expect(movesLeft()).toBe(11);
     // Phase 5 is done when this is zero. It is not a target for the count
     // of screens — `keeps` is the floor and is supposed to stay.
     expect(by('keeps')).toBeGreaterThan(0);
@@ -336,7 +348,17 @@ describe('the burndown has a baseline', () => {
       BACK_OFFICE.filter((e) => e.ends === 'keeps')
         .map((e) => e.title)
         .sort(),
-    ).toEqual(['Coach earnings', 'Goals', 'Roster', 'Set up your gym', 'Website']);
+    ).toEqual([
+      'Coach earnings',
+      'Goals',
+      'Roster',
+      'Set up your gym',
+      'Website',
+      // Not a screen and not craft, but a destination — the place
+      // retiring settings land. It cannot itself be owed a sentence: it
+      // IS the sentence.
+      'Your rules',
+    ]);
   });
 
   it('offers the bar sentence wherever one exists', () => {
@@ -356,7 +378,7 @@ describe('the screen reads the manifest', () => {
     expect(screen).toMatch(/searchBackOffice\(/);
   });
 
-  // Seven surfaces have no route any more — their door is a section of
+  // Six surfaces have no route any more — their door is a section of
   // this screen. A renamed or dropped section would turn the tile into a
   // tap that lands nowhere visible, which is worse than the dead end
   // deleting a route gives you.
@@ -369,7 +391,6 @@ describe('the screen reads the manifest', () => {
       'Gym settings',
       'Health screening',
       'Leaderboards',
-      'Messaging',
     ]);
     for (const e of named) {
       expect(e.href).toBe('/management');
@@ -395,7 +416,6 @@ describe('the screen reads the manifest', () => {
       'ClosuresCard',
       'HealthScreeningPanel',
       'LeaderboardsPanel',
-      'MessagingPanel',
       'OperatingDefaultsPanel',
     ]) {
       expect(screen).toContain(`from '@/components/${name}'`);

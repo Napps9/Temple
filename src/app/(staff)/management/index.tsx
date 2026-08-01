@@ -26,7 +26,6 @@ import { InviteMemberModal } from '@/components/InviteMemberModal';
 import { LeaderboardsPanel } from '@/components/LeaderboardsPanel';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
-import { MessagingPanel } from '@/components/MessagingPanel';
 import { OperatingDefaultsPanel } from '@/components/OperatingDefaultsPanel';
 import { Screen } from '@/components/Screen';
 import { TagRulesModal } from '@/components/TagRulesModal';
@@ -481,7 +480,14 @@ export default function ManagementHome() {
 }
 
 function SettingsTab({ open }: { open: SettingsSectionId | null }) {
-  const canManageStaff = useCan('can_manage_staff') ?? false;
+  // Three of these panels write nothing but owner-only RPCs. They were
+  // shown on can_manage_staff, which an admin holds by default, so an
+  // admin opened Gym settings, Branding or Messaging, changed a value and
+  // was refused by the database — a confirmation taken and then thrown
+  // away. The rule sheet these three duplicate has always been owner-only
+  // for the same reason: how the gym runs is the owner's decision, and
+  // the answer is to stop offering it rather than to widen eight setters.
+  const isOwner = useRole() === 'owner';
   const canConfigureLeaderboards = useCan('can_configure_leaderboards') ?? false;
   const canEditClasses = useCan('can_edit_classes') ?? false;
   const canManageParq = useCan('can_manage_parq') ?? false;
@@ -501,7 +507,7 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
       description:
         'Week start, booking windows, cancel cutoff, PAR-Q expiry, plan resolution.',
       icon: 'options-outline',
-      visible: canManageStaff,
+      visible: isOwner,
       panel: <OperatingDefaultsPanel />,
     },
     {
@@ -519,7 +525,7 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
       title: 'Branding',
       description: 'Logo, colours, gym name, public join link.',
       icon: 'color-palette-outline',
-      visible: canManageStaff,
+      visible: isOwner,
       panel: <BrandingPanel />,
     },
     {
@@ -537,14 +543,6 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
       icon: 'trophy',
       visible: canConfigureLeaderboards,
       panel: <LeaderboardsPanel />,
-    },
-    {
-      id: 'messaging',
-      title: 'Messaging',
-      description: 'Decide who can DM whom inside the gym.',
-      icon: 'chatbubbles-outline',
-      visible: canManageStaff,
-      panel: <MessagingPanel />,
     },
     {
       id: 'class-types',

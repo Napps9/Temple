@@ -721,7 +721,7 @@ gated on `can_claim_cover`, with the claim still first-come in
 `claim_cover` rather than an owner's decision. A coach's own outstanding
 requests turned out to have been in the feed all along.
 Two passes at the bar, and the first one failed: it was written down as
-not-earned before it was earned. **Eight retired, twelve owed.**
+not-earned before it was earned. **Nine retired, eleven owed.**
 
 **Auditing before building keeps finding the work half-done and the
 permissions wrong.** Plans was the third surface in a row where the
@@ -772,6 +772,34 @@ it takes one slot a day where the others take three, and why
 measure it moves is the second one, and it is the first thing built that
 moves it without the owner typing at all.
 
+**The seven settings sections came to four sentences and one cut.** The
+audit found the same shape a fourth time: two of the seven were already
+done — Leaderboards is `leaderboards_on` and Messaging is `dm_scope`, both
+sentences in the rule sheet since the sheet existed. Only Messaging could
+be *cut*, because `set_dm_scope` is owner-only and the sheet already
+serves every person the section did; `set_leaderboard_config` is the one
+rule setter gated on a capability rather than on being the owner, so
+deleting its panel would take a permission away from an admin who holds
+`can_configure_leaderboards`. It stays owed until the rules can be spoken
+by somebody who is not the owner, which is a real design question and not
+a chore.
+
+Three more were shown to people the database refuses — Gym settings,
+Branding and Messaging on `can_manage_staff`, with nine owner-only setters
+behind them. That is the tenth instance of one bug, and the count is the
+point: a switch an owner can see and a server that ignores it is not an
+oversight this codebase made once.
+
+**And "moves" got a definition.** A section folding into the rule sheet
+takes its words with it, and the words need somewhere to land — the
+manifest's own guard says a folded surface "has to stay findable by the
+words it was findable by before, or the retirement cost something", and
+retiring Messaging made a search for "dm" return nothing. So the sheet is
+a destination now: `/timeline?rules=1` opens it and it has a manifest row
+carrying the keywords of every rule it speaks. That is what unblocks the
+rest of the settings burndown — each section that folds points its words
+at the sheet instead of losing them.
+
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
 from asking to acting removes sentences. The measures stay what they
@@ -784,6 +812,23 @@ Bugs found while building the modules that could not be closed in the
 same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
+
+- **`extend_recurrence` has no horizon.** Found while auditing the
+  settings panels. It is `security definer`, granted to `authenticated`,
+  and guarded only by `user_belongs_to` — which is *deliberate* and
+  documented in 0005: the member calendar materialises the timetable
+  lazily on view, and RLS would otherwise block it. The gate is right.
+  What is missing is a ceiling on `until_date`: `end_at := least(until_date,
+  coalesce(rec.ends_on, until_date))`, so an indefinite recurrence with a
+  far-future date materialises everything in between. Any member of the
+  gym can pass `2099-12-31` and write thousands of bookable sessions into
+  their own gym's timetable. Not fixed here because picking the ceiling is
+  a judgement call with a silent-truncation failure mode on the other
+  side: `close_gym_dates` legitimately reaches a year out through
+  `extend_gym_recurrences`, staff scroll the calendar ahead, and a clamp
+  that is too tight quietly stops materialising with no error. Roughly two
+  years is probably right, and it wants a pgTAP that pins both the clamp
+  and a legitimate long closure still working.
 
 - **Does leaving a gym cut you off from your own training record? —
   answered (0237).** It was written here as an open question; it is not one

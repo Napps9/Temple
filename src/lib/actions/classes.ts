@@ -1545,6 +1545,196 @@ export const requestCover: ActionSpec<CoverAsk> = {
   },
 };
 
+// ============================================================================
+// The kinds of class a gym runs
+// ============================================================================
+//
+// Creating one is already a sentence — gym.add_classes takes a whole
+// timetable and mints the types it needs. Renaming and retiring were only
+// ever the Class types card, which is where the colour picker and the
+// schedule editor live and where they stay: a colour is a swatch, not a
+// sentence.
+//
+// Retiring is not deleting. archive_class_type sets archived_at, which
+// stops the extender materialising new sessions (0035) and takes the type
+// off every picker, and leaves every session that already ran exactly
+// where it was — so last month's attendance still reads. The card says
+// that, because "archive" reads like "erase" to anyone who has not read
+// the schema. The hard delete stays on the card behind can_hard_delete
+// and its dependent check.
+
+type ClassTypeRow = { id: string; name: string; archived_at: string | null };
+
+type TypeMatch =
+  | { kind: 'one'; type: ClassTypeRow }
+  | { kind: 'many'; names: string[] }
+  | { kind: 'none' };
+
+async function matchClassType(
+  query: string,
+  archived: boolean,
+  ctx: ActionContext,
+): Promise<TypeMatch> {
+  const q0 = ctx.supabase
+    .from('class_types')
+    .select('id, name, archived_at')
+    .eq('gym_id', ctx.gymId);
+  const { data } = await (archived
+    ? q0.not('archived_at', 'is', null)
+    : q0.is('archived_at', null));
+  const rows = (data ?? []) as ClassTypeRow[];
+  const q = query.toLowerCase().replace(/^the /, '').trim();
+  const exact = rows.find((r) => r.name.toLowerCase() === q);
+  if (exact) return { kind: 'one', type: exact };
+  const near = rows.filter(
+    (r) => r.name.toLowerCase().includes(q) || q.includes(r.name.toLowerCase()),
+  );
+  if (near.length === 1) return { kind: 'one', type: near[0] };
+  if (near.length > 1) return { kind: 'many', names: near.map((r) => r.name) };
+  return { kind: 'none' };
+}
+
+// Sessions already on the timetable ahead of now. Retiring stops new ones
+// being materialised but leaves these standing, which is the fact an owner
+// needs before saying yes.
+async function upcomingOfType(typeId: string, ctx: ActionContext): Promise<number> {
+  const { count } = await ctx.supabase
+    .from('class_sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('gym_id', ctx.gymId)
+    .eq('class_type_id', typeId)
+    .gt('starts_at', new Date().toISOString());
+  return count ?? 0;
+}
+
+const TYPE_ARGS = [
+  {
+    name: 'class_type',
+    type: 'string' as const,
+    desc: 'The kind of class, as the owner named it',
+    required: true,
+  },
+];
+
+export const retireClassType: ActionSpec<{ classType: string }> = {
+  name: 'classes.retire_type',
+  kind: 'do',
+  capability: 'can_archive_classes',
+  says:
+    'Stop running a kind of class — "we\'re not doing Yoga any more", ' +
+    '"retire the Open Gym slot", "archive Metcon". Not for cancelling one ' +
+    'class or a run of them, which is classes.cancel.',
+  args: TYPE_ARGS,
+  invalidate: ['class-types', 'class-type-names', 'class-sessions-month', 'class-recurrences'],
+  sanitise: (raw) => {
+    const classType = argString(raw, 'class_type', 60);
+    return classType ? { classType } : null;
+  },
+  preview: async (a, ctx) => {
+    const found = await matchClassType(a.classType, false, ctx);
+    if (found.kind === 'none') {
+      const gone = await matchClassType(a.classType, true, ctx);
+      return {
+        title:
+          gone.kind === 'one'
+            ? `${gone.type.name} is already retired.`
+            : `You don't run a class called “${a.classType}”.`,
+        lines: [],
+      };
+    }
+    if (found.kind === 'many') {
+      return {
+        title: `“${a.classType}” could be more than one of your classes — which?`,
+        lines: [],
+        choices: found.names.map((n) => ({ label: n, args: { class_type: n } })),
+      };
+    }
+    const upcoming = await upcomingOfType(found.type.id, ctx);
+    return {
+      title: `Stop running ${found.type.name}?`,
+      lines: [
+        'No new sessions get scheduled, and it comes off the timetable editor and every picker.',
+        upcoming === 0
+          ? 'Nothing of it is on the timetable ahead.'
+          : `The ${upcoming} already on the timetable still ${upcoming === 1 ? 'runs' : 'run'} — cancel ${upcoming === 1 ? 'it' : 'them'} separately if you want ${upcoming === 1 ? 'it' : 'them'} gone.`,
+        'Everything it has already run stays exactly as it is, so your attendance history is untouched.',
+      ],
+      yes: 'Yes, retire it',
+    };
+  },
+  apply: async (a, ctx) => {
+    const found = await matchClassType(a.classType, false, ctx);
+    if (found.kind !== 'one') throw new ActionError('That class is no longer there.');
+    const { error } = await ctx.supabase.rpc('archive_class_type', {
+      p_id: found.type.id,
+    });
+    if (error) throw new ActionError(typeRefusal(error.message));
+    return `${found.type.name} is retired. Nothing new will be scheduled for it.`;
+  },
+};
+
+export const restoreClassType: ActionSpec<{ classType: string }> = {
+  name: 'classes.restore_type',
+  kind: 'do',
+  capability: 'can_archive_classes',
+  says:
+    'Start running a retired kind of class again — "we\'re doing Yoga ' +
+    'again", "bring Metcon back", "unarchive Open Gym".',
+  args: TYPE_ARGS,
+  invalidate: ['class-types', 'class-type-names', 'class-sessions-month', 'class-recurrences'],
+  sanitise: (raw) => {
+    const classType = argString(raw, 'class_type', 60);
+    return classType ? { classType } : null;
+  },
+  preview: async (a, ctx) => {
+    const found = await matchClassType(a.classType, true, ctx);
+    if (found.kind === 'none') {
+      const live = await matchClassType(a.classType, false, ctx);
+      return {
+        title:
+          live.kind === 'one'
+            ? `${live.type.name} is already running.`
+            : `You have no retired class called “${a.classType}”.`,
+        lines: [],
+      };
+    }
+    if (found.kind === 'many') {
+      return {
+        title: `“${a.classType}” could be more than one of your retired classes — which?`,
+        lines: [],
+        choices: found.names.map((n) => ({ label: n, args: { class_type: n } })),
+      };
+    }
+    return {
+      title: `Start running ${found.type.name} again?`,
+      lines: [
+        'It goes back on the timetable editor and every picker.',
+        // Materialisation resumes from the pattern; it does not backfill
+        // the weeks the type was retired, and an owner expecting the gap
+        // to fill in would be waiting for something that never comes.
+        'Any repeating slots it had start filling in again from now — the weeks it was off stay empty.',
+      ],
+      yes: 'Yes, bring it back',
+    };
+  },
+  apply: async (a, ctx) => {
+    const found = await matchClassType(a.classType, true, ctx);
+    if (found.kind !== 'one') throw new ActionError('That class is no longer there.');
+    const { error } = await ctx.supabase.rpc('restore_class_type', {
+      p_id: found.type.id,
+    });
+    if (error) throw new ActionError(typeRefusal(error.message));
+    ctx.offer?.('Open class types', '/management?section=class-types');
+    return `${found.type.name} is back. Its repeating slots start filling in again.`;
+  },
+};
+
+function typeRefusal(message: string): string {
+  return /not authorised|row-level security|permission/i.test(message)
+    ? 'You do not have permission to retire classes.'
+    : "That didn't save — try again.";
+}
+
 export const CLASS_ACTIONS: AnyAction[] = [
   erase(editClasses),
   erase(cancelClass),
@@ -1555,4 +1745,6 @@ export const CLASS_ACTIONS: AnyAction[] = [
   erase(classAttendance),
   erase(classUncovered),
   erase(requestCover),
+  erase(retireClassType),
+  erase(restoreClassType),
 ];

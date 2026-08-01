@@ -1098,6 +1098,50 @@ The staff area shows up when `can_access_staff_area` is on.
   disappeared for anybody who can bulk-edit classes without managing staff,
   which is the capability-mismatch bug this repo keeps finding, running the
   other way. It is its own section, with the door it never had.
+- **The settings audit** (roadmap phase 5) — seven sections were carried
+  as owed; auditing them against what already ships found the picture much
+  smaller and a bug much bigger.
+  **Three of the seven were shown to people the database refuses.** Gym
+  settings, Branding and Messaging were `visible: canManageStaff`, which
+  an admin holds by default, while every RPC behind them —
+  `set_gym_operating_defaults`, `set_allow_minors`, `set_gym_weight_unit`,
+  `set_gym_currency`, `set_gym_discipline`, `set_gym_branding`,
+  `set_gym_name`, `set_gym_slug`, `set_dm_scope` — asks `user_is_owner_of`.
+  An admin opened one, changed a value, saved, and was refused: a
+  confirmation taken and thrown away. They are `visible: isOwner` now. Not
+  widened, because the rule sheet these duplicate has always been
+  owner-only for the same reason — how the gym runs is the owner's
+  decision, and the answer is to stop offering it rather than to widen
+  nine setters.
+  **Two were already done.** Leaderboards is `leaderboards_on` and
+  Messaging is `dm_scope`, both of them sentences in the rule sheet since
+  the sheet existed. Only one could be cut: `set_dm_scope` is owner-only,
+  so the Messaging section served exactly the people the sheet already
+  serves and deleting it costs nobody a permission. `set_leaderboard_config`
+  is the one rule setter gated on a *capability* (`can_configure_leaderboards`),
+  so its panel is the only way an admin holding that capability can reach
+  it — deleting it would have taken a permission away, and it stays owed
+  rather than cut.
+  **The rule sheet became a destination**, which is what "moves" has to
+  mean if the words are to survive. `/timeline?rules=1` opens it, and it
+  has a manifest row carrying the keywords of every rule it speaks. The
+  guard caught this: retiring Messaging made a search for "dm" return
+  nothing, and the manifest's own test says a folded surface "has to stay
+  findable by the words it was findable by before, or the retirement cost
+  something".
+  **What was genuinely owed came to four sentences**, not seven screens:
+  `gym.set_colour` ("make our colour navy" — logos are a file picker and
+  keep their card; a hand-picked dark-mode colour is preserved and the
+  card says so, because silently discarding a deliberate choice and
+  silently ignoring a change look identical from outside), `gym.reopen`
+  ("we're open again" — `reopen_closure` with an empty exclusion list; the
+  per-session picker stays for the rare case, and the card says bookings
+  are *not* restored because "undo" implies they would be),
+  `classes.retire_type` and `classes.restore_type` ("we're not doing Yoga
+  any more" — archiving stops new sessions being materialised (0035) and
+  leaves every session that already ran, so the card says the attendance
+  history is untouched, and says how many are already on the timetable and
+  still run).
   **Two live callers the filesystem check would not have caught.**
   `/setup` still pushed `/management/parq?backTo=setup` — a button that
   lands on nothing — and the marketing site's "see it live" demo posts

@@ -70,7 +70,6 @@ export type SettingsSectionId =
   | 'branding'
   | 'health-screening'
   | 'leaderboards'
-  | 'messaging'
   | 'class-types';
 
 export type BackOfficeEntry = {
@@ -144,6 +143,18 @@ export type BackOfficeEntry = {
 // that leaves a record of itself is reviewable, one that leaves a gap is
 // just a thing somebody cannot find any more.
 export const RETIRED_ROUTES: { route: string; because: string }[] = [
+  {
+    route: '/management?section=messaging',
+    because:
+      'One switch, and the rule sheet already says it: "Members can ' +
+      'message anyone in the gym / coaches and staff only", tappable, ' +
+      'through gym.change_rules like every other rule. The section had ' +
+      'been shown on can_manage_staff while set_dm_scope asks ' +
+      'user_is_owner_of, so the only people it ever worked for are the ' +
+      'people the sheet already serves. Deleting it costs nobody a ' +
+      'permission — which is exactly why Leaderboards, the switch beside ' +
+      'it, could not go too.',
+  },
   {
     route: '/management/membership-requests',
     because:
@@ -516,16 +527,37 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     ends: 'moves',
     status: 'back-office',
   },
+  // The rule sheet, which is where retiring settings go.
+  //
+  // Not a screen — a card the Timeline draws from the gym's live settings,
+  // every rule a tappable sentence. It earns a manifest row because it is
+  // now a destination: sections fold into it as they retire, and each
+  // arrives carrying the words people searched for it by. Without a row
+  // those words have nowhere to land and the retirement costs a door.
+  // ?rules=1 is the address; the chip above the bar is the other way in.
   {
-    href: '/management',
-    section: 'messaging',
-    title: 'Messaging',
-    blurb: 'Decide who can DM whom inside the gym.',
-    keywords: ['dm', 'chat', 'direct messages'],
+    href: '/timeline?rules=1',
+    title: 'Your rules',
+    blurb:
+      'Every rule the gym runs by, as sentences with tappable values.',
+    keywords: [
+      'settings',
+      'dm',
+      'chat',
+      'direct messages',
+      'cancellation',
+      'cutoff',
+      'booking window',
+      'minors',
+      'week start',
+      'kilograms',
+      'pounds',
+    ],
     category: 'settings',
-    capabilities: ['can_manage_staff'],
-    ends: 'moves',
-    status: 'back-office',
+    capabilities: [],
+    roles: ['owner'],
+    ends: 'keeps',
+    status: 'primary',
   },
   // Setup is a place, not a nag. Every other route into it is conditional
   // on being unfinished, which left an owner who finished the required
