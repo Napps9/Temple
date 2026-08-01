@@ -710,15 +710,18 @@ down: the roadmap says Earnings **keeps its screen** because a coach
 checking their pay is evidence, and Tasks and SOPs **split** rather than
 move, because reading them keeps a screen and only the chasing goes.
 
-**And the first cut it measured turned out not to be earned.** Cover
-looked like the clean swap — the ops job already chases the coaches, and
-`classes.uncovered` now answers the question the screen exists for, so
-what is uncovered is a sentence. But the screen does three things, and
-the other two have no replacement: a coach asking for cover ("I can't do
-tomorrow's 6:30") and a coach claiming an offer, which stays first-come
-on their own device by design. Retiring it now would take away the only
-way a coach can hand a class over. The bar is the same panel behind the
-same capability reachable by the same words, and one of three is not it.
+**And the first cut it measured took four replacements, not one.** Cover
+looked like the clean swap — the ops job has chased the coaches since
+0208 — but chasing was never the same as replacing the screen, and the
+screen did more than it looked. Seeing what is waiting became
+`classes.uncovered`. Handing one class over became
+`classes.request_cover`, and a holiday the same sentence with two dates.
+Claiming became a Timeline card for exactly the coaches the feed already
+gated on `can_claim_cover`, with the claim still first-come in
+`claim_cover` rather than an owner's decision. A coach's own outstanding
+requests turned out to have been in the feed all along.
+Two passes at the bar, and the first one failed: it was written down as
+not-earned before it was earned. **Eight retired, twelve owed.**
 
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates

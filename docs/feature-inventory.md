@@ -1724,6 +1724,36 @@ The staff area shows up when `can_access_staff_area` is on.
   member flip their own flag, and both leaderboards already filter
   `left_at is null`, so the write is inert. pgTAP:
   `the_invite_that_let_nobody_back_in.sql` (11 assertions).
+- **Cover retired** (0243) — the eighth route to go, and the first that
+  needed four replacements rather than one. The screen did more than it
+  looked: see what is waiting, hand one class over, hand a week over, and
+  claim. The ops job had been chasing the coaches since 0208, which was
+  never the same as replacing the screen.
+  **Seeing** is `classes.uncovered`. **Handing one over** is
+  `classes.request_cover` ("I can't do tomorrow's 6:30"), which refuses a
+  class that is not yours *before* the confirm rather than letting the
+  server refuse it after. **A holiday** is the same sentence with two
+  dates — both or neither, because pairing a stated start with an invented
+  end books somebody off for a fortnight they never mentioned — and the
+  preview names the count, since "cover my 4 classes" is a different
+  decision from "cover my 11". **Claiming** arrives as a Timeline card for
+  exactly the coaches `timeline_feed` already gated on `can_claim_cover`.
+  The feed now carries the open offers rather than a count: unclaimed and
+  not yet run, because either would be a button whose only outcome is an
+  error. It also carries `requested_by`, so the card leaves the buttons
+  off your own request — which is also where the fourth thing went, since
+  your own outstanding requests were always in the feed.
+  **The claim did not change.** `claim_cover` still takes the row
+  `for update`, so two coaches tapping at once resolve in the database and
+  the loser is told — in the server's own words, which were already the
+  right ones ("Offer already claimed or cancelled"). This moved where an
+  offer is seen, not how it is won.
+  `drainCoverEmails` was a private copy of `drainClassChangeEmails` inside
+  the screen, with a comment pointing at the original — the state a helper
+  is in just before the two stop matching. It is now
+  `src/lib/cover-notifications.ts`, imported lazily by the action so the
+  registry stays loadable by vitest without a react-native bundler.
+  pgTAP: `a_cover_offer_you_can_take.sql` (7).
 - **The burndown knows what it is owed** — `back-office.ts` entries carry
   `ends` alongside `status`: **keeps** / **moves** / **splits**, taken from
   the roadmap's sorting rule. `status` records where a surface sits and

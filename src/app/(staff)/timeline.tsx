@@ -720,6 +720,11 @@ export default function Timeline() {
                   ) : e.kind === 'agent_action' &&
                     (e.detail as { status?: string }).status === 'proposed' ? (
                     <AgentActionCard key={e.item_id} event={e} gymId={gymId} />
+                  ) : e.kind === 'cover_requested' &&
+                    openOffers(e).length > 0 &&
+                    (e.detail as { requested_by?: string }).requested_by !==
+                      session?.user.id ? (
+                    <CoverOfferCard key={e.item_id} event={e} gymId={gymId} />
                   ) : (
                     <ReceiptLine key={e.item_id} event={e} />
                   ),
@@ -1558,6 +1563,121 @@ function AgentActionCard({
 // behind "See the details", exactly two choices with the yes labelled by
 // the action — the loop-1 register, applied to the queue that already
 // exists.
+
+// A cover offer, where the coach already is (0243). The feed has carried
+// `cover_requested` since 0204 and gates it on can_claim_cover — exactly
+// the people who could take it — but it carried a count, which is a thing
+// to read. The offers ride along now, so it is a thing to do.
+//
+// The claim is a race and stays one: claim_cover locks the row, so two
+// coaches tapping at once resolve in the database. Losing is a normal
+// outcome rather than an error, and the card says so in the server's own
+// words rather than inventing a friendlier lie.
+type CoverOffer = { offer_id: string; name: string; starts_at: string };
+
+function openOffers(event: TimelineEvent): CoverOffer[] {
+  const raw = (event.detail as { open_sessions?: unknown }).open_sessions;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (o): o is CoverOffer =>
+      !!o &&
+      typeof (o as CoverOffer).offer_id === 'string' &&
+      typeof (o as CoverOffer).starts_at === 'string',
+  );
+}
+
+function CoverOfferCard({
+  event,
+  gymId,
+}: {
+  event: TimelineEvent;
+  gymId: string | undefined;
+}) {
+  const qc = useQueryClient();
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [taken, setTaken] = useState<string[]>([]);
+  const [refused, setRefused] = useState<string | null>(null);
+  const offers = openOffers(event);
+  const who = event.subject.trim().split(/\s+/)[0] || 'A coach';
+
+  const claim = async (offer: CoverOffer) => {
+    if (busyId) return;
+    setBusyId(offer.offer_id);
+    setRefused(null);
+    const { error } = await supabase.rpc('claim_cover', {
+      p_session_offer_id: offer.offer_id,
+    });
+    setBusyId(null);
+    if (error) {
+      // "Offer already claimed or cancelled", "You are not qualified to
+      // cover this class type", "That would clash with a class you are
+      // already teaching" — every one of these is already the sentence a
+      // coach needs, written where the rule is enforced.
+      setRefused(error.message);
+      qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
+      return;
+    }
+    setTaken((t) => [...t, offer.offer_id]);
+    qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
+    qc.invalidateQueries({ queryKey: ['my-upcoming-sessions'] });
+  };
+
+  const left = offers.filter((o) => !taken.includes(o.offer_id));
+
+  return (
+    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-3">
+      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px] leading-[22px]">
+        {who} needs cover.{' '}
+        {left.length === 0 ? 'You picked it up.' : 'Take one?'}
+      </Text>
+
+      {left.map((o) => (
+        <View key={o.offer_id} className="flex-row items-center gap-3">
+          <View className="flex-1">
+            <Text className="text-gray-700 dark:text-gray-200 text-[14px]">
+              {o.name}
+            </Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-[12.5px]">
+              {new Date(o.starts_at).toLocaleString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+              })}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => claim(o)}
+            disabled={!!busyId}
+            className="px-4 py-2.5 rounded-lg bg-primary active:opacity-70">
+            <Text className="text-white text-sm font-semibold">
+              {busyId === o.offer_id ? 'Taking…' : "I'll take it"}
+            </Text>
+          </Pressable>
+        </View>
+      ))}
+
+      {taken.length > 0 ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+          It&apos;s yours — it&apos;s on your schedule now.
+        </Text>
+      ) : null}
+
+      {refused ? (
+        <Text className="text-amber-700 dark:text-amber-500 text-[13px]">
+          {refused}
+        </Text>
+      ) : null}
+
+      <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+        First to claim takes it.
+      </Text>
+    </View>
+  );
+}
+
 function RequestCard({
   event,
   gymId,

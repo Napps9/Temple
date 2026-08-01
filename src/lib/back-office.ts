@@ -209,6 +209,21 @@ export const RETIRED_ROUTES: { route: string; because: string }[] = [
       'its own section on can_bulk_edit_classes — the gate it always had, ' +
       'and one it would have lost by being nested under Gym settings.',
   },
+  {
+    route: '/management/cover',
+    because:
+      'The screen did four things and every one of them has somewhere ' +
+      'else to be. Seeing what is waiting is `classes.uncovered` ("what ' +
+      'is uncovered", "is Saturday covered"). Handing one class over is ' +
+      '`classes.request_cover` ("I can’t do tomorrow’s 6:30"), and a ' +
+      'holiday is the same sentence with two dates. Claiming arrives as a ' +
+      'Timeline card for exactly the coaches the feed already gated on ' +
+      'can_claim_cover, and the claim stays first-come in claim_cover ' +
+      'rather than becoming an owner’s decision. Your own outstanding ' +
+      'requests were the fourth, and they were always in the feed — the ' +
+      'card just leaves the buttons off your own. The ops job has been ' +
+      'chasing the coaches since 0208.',
+  },
 ];
 
 export const BACK_OFFICE: BackOfficeEntry[] = [
@@ -394,17 +409,6 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     capabilities: ['can_manage_tasks'],
     roles: ['staff'],
     ends: 'splits',
-    status: 'back-office',
-  },
-  {
-    href: '/management/cover',
-    title: 'Cover',
-    blurb: 'Hand a class to another coach; first-claim wins.',
-    keywords: ['swap', 'sub', 'holiday', 'absence'],
-    category: 'team',
-    capabilities: ['can_request_cover', 'can_claim_cover'],
-    saidInstead: 'Jo is taking Saturday’s 9am',
-    ends: 'moves',
     status: 'back-office',
   },
 

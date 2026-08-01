@@ -1304,7 +1304,6 @@ export const classUncovered: ActionSpec<Uncovered> = {
     }
 
     const shown = rows.slice(0, 6);
-    ctx.offer?.('Open cover', '/management/cover');
     return {
       title: `${rows.length} class${rows.length === 1 ? '' : 'es'} ${when} still ${rows.length === 1 ? 'has' : 'have'} no coach.`,
       lines: [
@@ -1344,6 +1343,197 @@ function coverWhen(iso: string | null): string {
   });
 }
 
+// ============================================================================
+// classes.request_cover
+// ============================================================================
+//
+// The coach's half of the cover flow: "I can't do tomorrow's 6:30". The
+// roadmap named this sentence and it is the piece the cover screen could
+// not lose without stranding a coach who needs to hand a class over.
+//
+// It only ever offers the coach's OWN class. request_cover would refuse
+// anything else, and an action that lets somebody type a sentence the
+// server will reject is an action that wastes their time politely. An
+// owner moving somebody else's class is classes.set_coach, which is a
+// decision rather than a request.
+
+type CoverAsk = ReturnType<typeof readClass> & {
+  notes: string | null;
+  // "I'm away the 14th to the 21st" — every class of theirs in the
+  // window, which is the shape a holiday actually has. Both dates or
+  // neither: half a range is not a range, and pairing a stated start with
+  // an invented end books somebody off for a fortnight they never asked
+  // about.
+  from: string | null;
+  to: string | null;
+};
+
+// A stretch of days rather than one class. The count is read here so the
+// confirm names it — "cover my 4 classes" is a different decision from
+// "cover my 11 classes", and an owner-facing preview that says neither is
+// a confirm nobody can weigh.
+async function coverRangePreview(
+  a: { from: string | null; to: string | null; notes: string | null },
+  ctx: ActionContext,
+): Promise<ActionPreview> {
+  const { data } = await ctx.supabase
+    .from('class_sessions')
+    .select('id')
+    .eq('gym_id', ctx.gymId)
+    .eq('coach_id', ctx.userId)
+    .gte('starts_at', `${a.from}T00:00:00`)
+    .lte('starts_at', `${a.to}T23:59:59`);
+  const n = (data ?? []).length;
+  if (n === 0) {
+    return {
+      title: `You have nothing on between ${dayLabel(a.from!)} and ${dayLabel(a.to!)}.`,
+      lines: ['Nothing to hand over, so there is nobody to ask.'],
+    };
+  }
+  return {
+    title: `Ask the other coaches to cover your ${n} class${n === 1 ? '' : 'es'} from ${dayLabel(a.from!)} to ${dayLabel(a.to!)}?`,
+    lines: [
+      'Every qualified coach gets the offers at once, and each class goes ' +
+        'to the first to claim it.',
+      'Nothing is moved or cancelled — a class nobody claims stays yours.',
+      ...(a.notes ? [`They will see your note: “${a.notes}”.`] : []),
+    ],
+    yes: 'Yes, ask them',
+  };
+}
+
+// Imported lazily: cover-notifications reads react-native's Platform at
+// module scope, and the action registry has to stay loadable by vitest
+// without a react-native bundler. The cron drains every 15 minutes
+// anyway, so a failure here costs latency rather than a message.
+async function nudgeCoverEmails(ctx: ActionContext): Promise<void> {
+  try {
+    const { drainCoverEmails } = await import('../cover-notifications');
+    await drainCoverEmails(ctx.gymId);
+  } catch {
+    // Non-fatal by design.
+  }
+}
+
+function dayLabel(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  });
+}
+
+export const requestCover: ActionSpec<CoverAsk> = {
+  name: 'classes.request_cover',
+  kind: 'do',
+  capability: 'can_request_cover',
+  says:
+    'Ask another coach to take one of your classes — "I can\'t do ' +
+    'tomorrow\'s 6:30", "someone cover Saturday 9am for me", "I need ' +
+    'cover for Friday\'s barbell club".',
+  args: [
+    ...CLASS_ARGS,
+    {
+      name: 'notes',
+      type: 'string',
+      desc:
+        'Anything they said about why or what the class needs. Omit if ' +
+        'they only named the class.',
+    },
+    {
+      name: 'from',
+      type: 'date',
+      desc:
+        'First day off, YYYY-MM-DD, when they named a stretch of time ' +
+        'rather than one class ("I am away the 14th to the 21st"). Omit ' +
+        'both dates when they named a single class.',
+    },
+    {
+      name: 'to',
+      type: 'date',
+      desc: 'Last day off, YYYY-MM-DD, inclusive.',
+    },
+  ],
+  invalidate: ['cover-offers', 'my-upcoming-sessions', 'timeline-feed'],
+  sanitise: (raw) => {
+    const from = argString(raw, 'from', 10);
+    const to = argString(raw, 'to', 10);
+    const ranged =
+      from && to && ISO_DATE.test(from) && ISO_DATE.test(to) && to >= from;
+    return {
+      ...readClass(raw),
+      notes: argString(raw, 'notes', 300),
+      from: ranged ? from : null,
+      to: ranged ? to : null,
+    };
+  },
+  preview: async (a, ctx) => {
+    if (a.from && a.to) return coverRangePreview(a, ctx);
+    const found = await findClass(a, { notes: a.notes }, a.sessionId, ctx);
+    if (found.kind === 'unresolved') return found.preview;
+
+    // Yours to hand over, or not yours to hand over. Checked here so the
+    // refusal is a sentence rather than a server error after a confirm.
+    const { data } = await ctx.supabase
+      .from('class_sessions')
+      .select('coach_id')
+      .eq('gym_id', ctx.gymId)
+      .eq('id', found.session.id)
+      .maybeSingle();
+    const coachId = (data as { coach_id: string | null } | null)?.coach_id ?? null;
+    if (coachId !== ctx.userId) {
+      return {
+        title: `${classLabel(found.session)} isn’t yours to hand over.`,
+        lines: [
+          coachId
+            ? 'Only the coach on a class can ask for cover for it.'
+            : 'That class has no coach on it yet, so there is nothing to cover.',
+          'To put somebody else in front of it, say who is taking it.',
+        ],
+      };
+    }
+
+    return {
+      title: `Ask the other coaches to take ${classLabel(found.session)}?`,
+      lines: [
+        'Every qualified coach gets the offer at once, and the first to ' +
+          'claim it takes it.',
+        'The class is not moved or cancelled — it stays exactly as it is ' +
+          'until somebody picks it up.',
+        ...(a.notes ? [`They will see your note: “${a.notes}”.`] : []),
+      ],
+      yes: 'Yes, ask them',
+      data: { sessionId: found.session.id },
+    };
+  },
+  apply: async (a, ctx) => {
+    if (a.from && a.to) {
+      const { error } = await ctx.supabase.rpc('request_cover_range', {
+        p_gym_id: ctx.gymId,
+        p_start: a.from,
+        p_end: a.to,
+        p_exclude_session_ids: [],
+        p_notes: a.notes,
+      });
+      if (error) throw new ActionError(error.message);
+      await nudgeCoverEmails(ctx);
+      return `Asked the coaches to cover you from ${dayLabel(a.from)} to ${dayLabel(a.to)}.`;
+    }
+    const found = await findClass(a, {}, a.sessionId, ctx);
+    if (found.kind !== 'one') {
+      throw new ActionError('That class moved while we were talking — try again.');
+    }
+    const { error } = await ctx.supabase.rpc('request_cover', {
+      p_session_ids: [found.session.id],
+      p_notes: a.notes,
+    });
+    if (error) throw new ActionError(error.message);
+    await nudgeCoverEmails(ctx);
+    return `Asked the coaches about ${classLabel(found.session)}.`;
+  },
+};
+
 export const CLASS_ACTIONS: AnyAction[] = [
   erase(editClasses),
   erase(cancelClass),
@@ -1353,4 +1543,5 @@ export const CLASS_ACTIONS: AnyAction[] = [
   erase(removeMemberFrom),
   erase(classAttendance),
   erase(classUncovered),
+  erase(requestCover),
 ];

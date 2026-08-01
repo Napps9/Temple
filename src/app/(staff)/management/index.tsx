@@ -909,7 +909,7 @@ function TeamMemberRow({
           <CountPill
             icon="swap-horizontal-outline"
             value={openCover.isLoading ? null : openCover.data ?? 0}
-            href="/management/cover"
+            href="/timeline"
           />
         ) : null}
       </View>

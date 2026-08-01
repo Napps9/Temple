@@ -1021,7 +1021,7 @@ function CoverTab({ gymId }: { gymId: string }) {
                         : 'See what needs cover'
                   }
                   icon="open-outline"
-                  onPress={() => router.push('/management/cover' as never)}
+                  onPress={() => router.push('/timeline' as never)}
                 />
               </View>
             </View>

@@ -195,12 +195,16 @@ describe('who sees what', () => {
     expect(visibleEntries(nobody, 'coach')).toEqual([]);
   });
 
-  // Cover has always been visible to anybody who can ask OR claim, and
-  // Tasks to anybody who manages them OR holds the staff role. Moving the
-  // gate into data must not quietly narrow either.
-  it('keeps the two either-or gates', () => {
+  // Tasks is visible to anybody who manages them OR holds the staff role.
+  // Moving the gate into data must not quietly narrow it.
+  //
+  // Cover was the other either-or gate and has no entry any more (0243):
+  // a coach who can only claim now meets offers in the Timeline, which
+  // the feed has always gated on the same can_claim_cover. The gate did
+  // not narrow — it moved to where the work is.
+  it('keeps the either-or gate', () => {
     const claimer = visibleEntries((c) => c === 'can_claim_cover', 'coach');
-    expect(claimer.map((e) => e.title)).toEqual(['Cover']);
+    expect(claimer).toEqual([]);
 
     const staff = visibleEntries(nobody, 'staff');
     expect(staff.map((e) => e.title)).toEqual(['Tasks']);
@@ -304,7 +308,7 @@ describe('the burndown has a baseline', () => {
     const byStatus = (s: string) => BACK_OFFICE.filter((e) => e.status === s).length;
     // The number moving is the measure; this test exists so it cannot move
     // by accident, and so raising it means writing down why.
-    expect(retiredCount()).toBe(7);
+    expect(retiredCount()).toBe(8);
     expect(retiredCount()).toBe(RETIRED_ROUTES.length);
     expect(byStatus('primary') + byStatus('back-office')).toBe(BACK_OFFICE.length);
   });
@@ -317,7 +321,7 @@ describe('the burndown has a baseline', () => {
   it('knows which surfaces are still owed', () => {
     const by = (e: string) => BACK_OFFICE.filter((x) => x.ends === e).length;
     expect(by('keeps') + by('moves') + by('splits')).toBe(BACK_OFFICE.length);
-    expect(movesLeft()).toBe(13);
+    expect(movesLeft()).toBe(12);
     // Phase 5 is done when this is zero. It is not a target for the count
     // of screens — `keeps` is the floor and is supposed to stay.
     expect(by('keeps')).toBeGreaterThan(0);

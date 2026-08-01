@@ -24,7 +24,7 @@ import {
 } from './comms';
 import { sanitiseSequence } from '../sequence-draft';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
-import { classAttendance, classUncovered } from './classes';
+import { classAttendance, classUncovered, requestCover } from './classes';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { addLead, assignLeadTo, leadPipeline, moveLead } from './leads';
 import {
@@ -1760,6 +1760,110 @@ function coverCtx(rows: unknown[]) {
   };
   return {
     supabase: { from: () => ({ select: () => chain }) },
+    gymId: 'gym',
+    userId: 'user',
+  } as never;
+}
+
+describe("a coach handing a class over", () => {
+  // Only ever their own class. request_cover refuses anything else, and
+  // an action that lets somebody type a sentence the server will reject
+  // wastes their time politely.
+  it('refuses a class that is not theirs, before the confirm rather than after', async () => {
+    const p = await requestCover.preview(
+      { day: null, time: null, classType: 'barbell', sessionId: 'sess-1',
+        notes: null, from: null, to: null },
+      coverAskCtx({ coach_id: 'someone-else' }),
+    );
+    expect(p.title).toContain('isn’t yours to hand over');
+    expect(p.yes).toBeUndefined();
+  });
+
+  it('offers a class that is theirs, and says the claim is a race', async () => {
+    const p = await requestCover.preview(
+      { day: null, time: null, classType: 'barbell', sessionId: 'sess-1',
+        notes: null, from: null, to: null },
+      coverAskCtx({ coach_id: 'user' }),
+    );
+    expect(p.title).toContain('Ask the other coaches to take');
+    expect(p.yes).toBe('Yes, ask them');
+    expect(p.lines.join(' ')).toContain('first to claim it takes it');
+  });
+
+  // A holiday is a stretch of days, not a class. Both dates or neither:
+  // pairing a stated start with an invented end books somebody off for a
+  // fortnight they never mentioned.
+  it('takes both dates or neither', () => {
+    expect(requestCover.sanitise({ from: '2026-08-14', to: '2026-08-21' })).toMatchObject({
+      from: '2026-08-14',
+      to: '2026-08-21',
+    });
+    expect(requestCover.sanitise({ from: '2026-08-14' })).toMatchObject({
+      from: null,
+      to: null,
+    });
+    // Backwards is not a range either.
+    expect(requestCover.sanitise({ from: '2026-08-21', to: '2026-08-14' })).toMatchObject({
+      from: null,
+      to: null,
+    });
+  });
+
+  // "Cover my 4 classes" is a different decision from "cover my 11", and
+  // a confirm that names neither cannot be weighed.
+  it('counts the classes in a holiday before asking', async () => {
+    const p = await requestCover.preview(
+      { day: null, time: null, classType: null, sessionId: null, notes: null,
+        from: '2026-08-14', to: '2026-08-21' },
+      coverAskCtx({ coach_id: 'user' }, [{ id: 'a' }, { id: 'b' }, { id: 'c' }]),
+    );
+    expect(p.title).toBe(
+      'Ask the other coaches to cover your 3 classes from 14 August to 21 August?',
+    );
+  });
+
+  it('says there is nothing to hand over when the week is empty', async () => {
+    const p = await requestCover.preview(
+      { day: null, time: null, classType: null, sessionId: null, notes: null,
+        from: '2026-08-14', to: '2026-08-21' },
+      coverAskCtx({ coach_id: 'user' }, []),
+    );
+    expect(p.title).toContain('nothing on between');
+    expect(p.yes).toBeUndefined();
+  });
+});
+
+function coverAskCtx(session: { coach_id: string }, ranged: unknown[] = []) {
+  const rangeChain = {
+    eq: () => rangeChain,
+    gte: () => rangeChain,
+    lte: async () => ({ data: ranged, error: null }),
+  };
+  return {
+    supabase: {
+      from: (table: string) => ({
+        select: (cols: string) =>
+          cols === 'coach_id'
+            ? { eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: session }) }) }) }
+            : cols === 'id'
+              ? rangeChain
+              : {
+                  eq: () => ({
+                    eq: () => ({
+                      maybeSingle: async () => ({
+                        data: {
+                          id: 'sess-1',
+                          name: 'Barbell club',
+                          starts_at: '2026-08-01T18:30:00Z',
+                          capacity: 12,
+                          class_types: { name: 'Barbell club' },
+                        },
+                      }),
+                    }),
+                  }),
+                },
+      }),
+    },
     gymId: 'gym',
     userId: 'user',
   } as never;
