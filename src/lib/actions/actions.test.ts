@@ -24,7 +24,7 @@ import {
 } from './comms';
 import { sanitiseSequence } from '../sequence-draft';
 import { addClasses, addPlans, changeRules, closeGym, draftNewsletter } from './gym';
-import { classAttendance } from './classes';
+import { classAttendance, classUncovered } from './classes';
 import { ACTIONS, actionsFor, findAction } from './index';
 import { addLead, assignLeadTo, leadPipeline, moveLead } from './leads';
 import {
@@ -1700,5 +1700,67 @@ function moneyCtx(data: { memberships: unknown[]; store: unknown[] }) {
     gymId: 'gym',
     userId: 'user',
     currency: 'GBP',
+  } as never;
+}
+
+describe('what is uncovered', () => {
+  // The question the cover screen exists to answer. It has to work before
+  // that screen can go, or the retirement takes away the only way to see
+  // the list.
+  it('counts and names the classes with nobody teaching them', async () => {
+    const p = await classUncovered.preview({ days: 7 }, coverCtx([
+      { class_sessions: { name: 'Saturday 9am', starts_at: '2026-08-01T09:00:00Z' },
+        original_coach: { full_name: 'Priya Sharma' } },
+      { class_sessions: { name: 'Barbell club', starts_at: '2026-08-03T18:30:00Z' },
+        original_coach: { full_name: 'Callum Reid' } },
+    ]));
+    expect(p.title).toBe('2 classes this week still have no coach.');
+    expect(p.answer?.figure?.value).toBe('2');
+    expect(p.answer?.list?.rows.map((r) => r.name)).toEqual([
+      'Saturday 9am',
+      'Barbell club',
+    ]);
+  });
+
+  // A class is an occasion, not a quantity — a rail beside one would rank
+  // it above another, which is not a thing anybody means.
+  it('gives the classes no magnitude rail', async () => {
+    const p = await classUncovered.preview({ days: 7 }, coverCtx([
+      { class_sessions: { name: 'Saturday 9am', starts_at: '2026-08-01T09:00:00Z' },
+        original_coach: null },
+    ]));
+    expect(p.answer?.list?.rows[0].weight).toBeUndefined();
+  });
+
+  // "Nothing is uncovered" is a real answer and a good one. Drawing a
+  // zero figure under it would make good news look like an empty screen.
+  it('says everything is covered without drawing a nought', async () => {
+    const p = await classUncovered.preview({ days: 7 }, coverCtx([]));
+    expect(p.title).toBe('Everything this week has a coach.');
+    expect(p.answer).toBeUndefined();
+  });
+
+  it('reads back the period it was actually asked about', async () => {
+    const p = await classUncovered.preview({ days: 14 }, coverCtx([]));
+    expect(p.title).toBe('Everything the next 14 days has a coach.');
+  });
+
+  it('defaults to the week when no period was named', () => {
+    expect(classUncovered.sanitise({})).toEqual({ days: 7 });
+  });
+});
+
+function coverCtx(rows: unknown[]) {
+  const chain = {
+    eq: () => chain,
+    is: () => chain,
+    gte: () => chain,
+    lte: () => chain,
+    order: async () => ({ data: rows, error: null }),
+  };
+  return {
+    supabase: { from: () => ({ select: () => chain }) },
+    gymId: 'gym',
+    userId: 'user',
   } as never;
 }

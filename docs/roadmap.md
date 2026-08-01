@@ -694,6 +694,32 @@ another platform — they may have trained at that gym for years, and
 Temple has no idea when, so telling them it noticed they have not been in
 is the worst message in the product.
 
+**Phase 5 has a finish line now.** `status` on a Back Office entry said
+where a surface sits; it could not tell Website — which keeps its screen
+forever, because building a page is craft — from Tag rules, which is a
+form waiting to become a sentence. So the manifest carries `ends` as
+well, taken from the sorting rule at the top of this document rather than
+from anybody's memory: **keeps** (craft, judgement, evidence),
+**moves** (exists so a human can operate machinery), **splits** (routine
+path said, deep dive one tap deeper).
+
+The scoreboard reads **13 moves, 9 splits, 5 keeps**, and phase 5 is done
+when `moves` reaches zero — not when the list is empty. Five surfaces are
+supposed to survive and two of them settled a question by being written
+down: the roadmap says Earnings **keeps its screen** because a coach
+checking their pay is evidence, and Tasks and SOPs **split** rather than
+move, because reading them keeps a screen and only the chasing goes.
+
+**And the first cut it measured turned out not to be earned.** Cover
+looked like the clean swap — the ops job already chases the coaches, and
+`classes.uncovered` now answers the question the screen exists for, so
+what is uncovered is a sentence. But the screen does three things, and
+the other two have no replacement: a coach asking for cover ("I can't do
+tomorrow's 6:30") and a coach claiming an offer, which stays first-come
+on their own device by design. Retiring it now would take away the only
+way a coach can hand a class over. The bar is the same panel behind the
+same capability reachable by the same words, and one of three is not it.
+
 The endpoint is not an owner typing more. It's the gym telling them what
 needs deciding, and the answer being one tap. Every job that graduates
 from asking to acting removes sentences. The measures stay what they

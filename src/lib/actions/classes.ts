@@ -1236,6 +1236,114 @@ export const classAttendance: ActionSpec<Busy> = {
   },
 };
 
+// ============================================================================
+// classes.uncovered
+// ============================================================================
+//
+// The one question the cover screen exists to answer. The ops job already
+// does the screen's other half — chasing the coaches who could claim —
+// so this is what has to exist before that screen can go: the same read,
+// under the same RLS, reachable by the words somebody would use.
+//
+// Deliberately not a claim path. The claim stays first-come on the coach's
+// own device, which is the rule the whole cover flow is built on; an owner
+// assigning cover from the bar would quietly replace a race with a
+// decision. `classes.set_coach` is the sentence for when the owner has
+// genuinely decided.
+
+type Uncovered = { days: number };
+
+type UncoveredRow = {
+  original_coach: { full_name: string | null } | null;
+  class_sessions: { name: string | null; starts_at: string } | null;
+};
+
+export const classUncovered: ActionSpec<Uncovered> = {
+  name: 'classes.uncovered',
+  kind: 'ask',
+  capability: 'can_request_cover',
+  says:
+    'Which classes still have nobody to teach them — "what is uncovered", ' +
+    '"any classes without a coach", "is Saturday covered", "who is ' +
+    'teaching this week".',
+  args: [
+    {
+      name: 'days',
+      type: 'integer',
+      desc: 'How far ahead they asked about, in days. 7 if they did not say.',
+      min: 1,
+      max: 90,
+    },
+  ],
+  sanitise: (raw) => ({ days: argInt(raw, 'days', 1, 90) ?? 7 }),
+  preview: async (a, ctx) => {
+    const now = new Date();
+    const until = new Date(now.getTime() + a.days * 86_400_000);
+    const { data, error } = await ctx.supabase
+      .from('cover_request_sessions')
+      .select(
+        'class_sessions!inner(name, starts_at), original_coach:profiles!original_coach_id(full_name)',
+      )
+      .eq('gym_id', ctx.gymId)
+      .is('claimed_by', null)
+      // !inner so PostgREST filters on the embedded class rather than
+      // nulling it — a request for a class that already ran is dead, and
+      // counting it would send somebody looking for a class in the past.
+      .gte('class_sessions.starts_at', now.toISOString())
+      .lte('class_sessions.starts_at', until.toISOString())
+      .order('starts_at', { referencedTable: 'class_sessions', ascending: true });
+    if (error) throw new ActionError('I could not read the cover requests.');
+
+    const rows = (data ?? []) as unknown as UncoveredRow[];
+    const when = a.days === 7 ? 'this week' : `the next ${a.days} days`;
+    if (rows.length === 0) {
+      return {
+        title: `Everything ${when} has a coach.`,
+        lines: ['Nothing is waiting to be claimed.'],
+      };
+    }
+
+    const shown = rows.slice(0, 6);
+    ctx.offer?.('Open cover', '/management/cover');
+    return {
+      title: `${rows.length} class${rows.length === 1 ? '' : 'es'} ${when} still ${rows.length === 1 ? 'has' : 'have'} no coach.`,
+      lines: [
+        'Any qualified coach can claim them, first come.',
+        'Nothing is moved or cancelled while they wait.',
+      ],
+      answer: {
+        figure: {
+          value: String(rows.length),
+          label: `uncovered ${when}`,
+        },
+        // Classes are occasions, not quantities — a rail beside them would
+        // rank one uncovered class above another, which is not a thing.
+        list: {
+          label: 'Which',
+          rows: shown.map((r) => ({
+            name: r.class_sessions?.name?.trim() || 'A class',
+            detail: coverWhen(r.class_sessions?.starts_at ?? null),
+          })),
+          more: rows.length - shown.length || undefined,
+        },
+      },
+    };
+  },
+};
+
+// "Sat 9:00am" — the day and the time, because an uncovered class is a
+// thing an owner places in their week rather than a date they look up.
+function coverWhen(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString('en-GB', {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 export const CLASS_ACTIONS: AnyAction[] = [
   erase(editClasses),
   erase(cancelClass),
@@ -1244,4 +1352,5 @@ export const CLASS_ACTIONS: AnyAction[] = [
   erase(bookMemberIn),
   erase(removeMemberFrom),
   erase(classAttendance),
+  erase(classUncovered),
 ];

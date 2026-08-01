@@ -1724,6 +1724,24 @@ The staff area shows up when `can_access_staff_area` is on.
   member flip their own flag, and both leaderboards already filter
   `left_at is null`, so the write is inert. pgTAP:
   `the_invite_that_let_nobody_back_in.sql` (11 assertions).
+- **The burndown knows what it is owed** — `back-office.ts` entries carry
+  `ends` alongside `status`: **keeps** / **moves** / **splits**, taken from
+  the roadmap's sorting rule. `status` records where a surface sits and
+  cannot distinguish one that keeps its screen forever from one still
+  waiting to dissolve, so on its own it is a scoreboard that never reaches
+  zero. `movesLeft()` is the denominator; **13 moves, 9 splits, 5 keeps**,
+  and phase 5 finishes at zero moves. The five keeps are named in the test
+  rather than counted, so moving one is a decision somebody wrote down.
+- **`classes.uncovered`** — "what is uncovered", "any classes without a
+  coach", "is Saturday covered". The same read the cover screen makes,
+  under the same RLS and the same `can_request_cover` gate, rendered
+  through the answer vocabulary: a count and the classes with when each
+  one is. **Nothing uncovered draws no figure** — a nought under "everything
+  has a coach" makes good news look like an empty screen. No magnitude
+  rails either: a class is an occasion, not a quantity, and a rail would
+  rank one uncovered class above another. Deliberately not a claim path —
+  the claim stays first-come on the coach's own device, and an owner
+  assigning cover from the bar would replace a race with a decision.
 - **Grants that guard nothing** (0240) — **`revoke ... from public` does
   not lock a function down on Supabase.** The project ships `alter default
   privileges in schema public grant execute on functions to anon,

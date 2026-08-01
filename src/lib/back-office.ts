@@ -120,6 +120,23 @@ export type BackOfficeEntry = {
   // two quick-links on the Timeline.
   needsTile?: boolean;
   status: 'primary' | 'back-office';
+  // Where the sorting rule (docs/roadmap.md) says this surface ends up,
+  // which is a different question from where it sits today. `status`
+  // records the latter and cannot tell a screen that keeps its screen
+  // forever from one still waiting to dissolve — so on its own it is a
+  // scoreboard that can never reach zero.
+  //
+  //   keeps   craft, judgement or evidence lives here. Writing a page,
+  //           authoring a product, listening to a call, the importers'
+  //           mapping decisions. These are the floor: phase 5 finishing
+  //           does not mean they go.
+  //   moves   exists so a human can operate machinery. A sentence and a
+  //           receipt replace it, and the route goes.
+  //   splits  the routine path becomes a sentence; the screen survives
+  //           one tap deeper for the deep dive.
+  //
+  // Phase 5 is done when nothing is left marked `moves`.
+  ends: 'keeps' | 'moves' | 'splits';
 };
 
 // Routes that no longer exist, and where the job went. The burndown's
@@ -204,6 +221,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'members',
     capabilities: ['can_manage_tags'],
     saidInstead: 'show me Marcus',
+    ends: 'splits',
     status: 'back-office',
   },
   {
@@ -215,6 +233,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     capabilities: ['can_see_insights'],
     saidInstead: 'what did we take last month',
     categoryOnly: true,
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -226,6 +245,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     capabilities: ['can_view_attendance'],
     saidInstead: 'how busy have we been',
     categoryOnly: true,
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -236,6 +256,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'members',
     capabilities: ['can_see_insights'],
     needsTile: true,
+    ends: 'keeps',
     status: 'primary',
   },
   {
@@ -245,6 +266,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['automatic', 'segments', 'labels'],
     category: 'members',
     capabilities: ['can_manage_tags'],
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -254,6 +276,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['migration', 'csv', 'mindbody', 'pushpress', 'glofox', 'wodify'],
     category: 'members',
     capabilities: ['can_manage_staff'],
+    ends: 'splits',
     status: 'back-office',
   },
   {
@@ -263,6 +286,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['prs', 'sets', 'migration', 'csv'],
     category: 'members',
     capabilities: ['can_manage_staff'],
+    ends: 'splits',
     status: 'back-office',
   },
 
@@ -275,6 +299,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'crm',
     capabilities: ['can_work_leads'],
     saidInstead: 'how are the enquiries looking',
+    ends: 'splits',
     status: 'back-office',
   },
 
@@ -287,6 +312,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'comms',
     capabilities: ['can_manage_comms'],
     saidInstead: 'email everyone about the new opening times',
+    ends: 'splits',
     status: 'back-office',
   },
 
@@ -299,6 +325,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'website',
     capabilities: ['can_manage_website'],
     saidInstead: 'publish the website',
+    ends: 'keeps',
     status: 'back-office',
   },
 
@@ -311,6 +338,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'store',
     capabilities: ['can_manage_store'],
     saidInstead: 'how is the shop doing',
+    ends: 'splits',
     status: 'back-office',
   },
 
@@ -323,6 +351,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'team',
     capabilities: ['can_manage_staff'],
     needsTile: true,
+    ends: 'keeps',
     status: 'primary',
   },
   {
@@ -333,6 +362,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'team',
     capabilities: ['can_manage_staff'],
     saidInstead: 'invite Sam as a coach',
+    ends: 'splits',
     status: 'back-office',
   },
   {
@@ -342,6 +372,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['pay', 'wages', 'rates', 'payroll', 'coach pay'],
     category: 'team',
     capabilities: ['can_set_coach_pay'],
+    ends: 'keeps',
     status: 'back-office',
   },
   {
@@ -351,6 +382,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['procedures', 'handbook', 'how-to'],
     category: 'team',
     capabilities: ['can_view_sops'],
+    ends: 'splits',
     status: 'back-office',
   },
   {
@@ -361,6 +393,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'team',
     capabilities: ['can_manage_tasks'],
     roles: ['staff'],
+    ends: 'splits',
     status: 'back-office',
   },
   {
@@ -371,6 +404,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'team',
     capabilities: ['can_request_cover', 'can_claim_cover'],
     saidInstead: 'Jo is taking Saturday’s 9am',
+    ends: 'moves',
     status: 'back-office',
   },
 
@@ -383,6 +417,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'plans',
     capabilities: [],
     roles: ['owner'],
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -393,6 +428,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'plans',
     capabilities: ['can_manage_plans'],
     saidInstead: 'Unlimited is £95 a month now',
+    ends: 'moves',
     status: 'back-office',
   },
 
@@ -408,6 +444,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'settings',
     capabilities: ['can_manage_staff'],
     saidInstead: 'make the cancel cutoff 2 hours',
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -422,6 +459,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     // narrowed it. Its own section keeps the gate it had.
     capabilities: ['can_bulk_edit_classes'],
     saidInstead: 'close the gym 24 to 28 December',
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -433,6 +471,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['logo', 'colours', 'colors', 'theme', 'join link'],
     category: 'settings',
     capabilities: ['can_manage_staff'],
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -447,6 +486,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'settings',
     capabilities: ['can_edit_classes'],
     saidInstead: 'add a 7am Wednesday spin class',
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -458,6 +498,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['parq', 'par-q', 'medical', 'screening', 'waiver', 'injury'],
     category: 'settings',
     capabilities: ['can_manage_parq'],
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -468,6 +509,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['rankings', 'comparisons', 'boards'],
     category: 'settings',
     capabilities: ['can_configure_leaderboards'],
+    ends: 'moves',
     status: 'back-office',
   },
   {
@@ -478,6 +520,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['dm', 'chat', 'direct messages'],
     category: 'settings',
     capabilities: ['can_manage_staff'],
+    ends: 'moves',
     status: 'back-office',
   },
   // Setup is a place, not a nag. Every other route into it is conditional
@@ -492,6 +535,7 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     category: 'settings',
     capabilities: [],
     roles: ['owner'],
+    ends: 'keeps',
     status: 'back-office',
   },
 ];
@@ -513,6 +557,14 @@ export function visibleEntries(
 // The measure, computed rather than claimed.
 export function retiredCount(): number {
   return RETIRED_ROUTES.length;
+}
+
+// The burndown's denominator, and phase 5's finish line: surfaces that
+// exist only so a human can operate machinery. `retiredCount` counts what
+// has gone; this counts what is still owed. A phase whose scoreboard only
+// counts upwards can never be finished, only abandoned.
+export function movesLeft(): number {
+  return BACK_OFFICE.filter((e) => e.ends === 'moves').length;
 }
 
 export function categoriesWithEntries(

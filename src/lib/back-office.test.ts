@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   BACK_OFFICE,
+  movesLeft,
   CATEGORY_ORDER,
   RETIRED_ROUTES,
   categoriesWithEntries,
@@ -306,6 +307,32 @@ describe('the burndown has a baseline', () => {
     expect(retiredCount()).toBe(7);
     expect(retiredCount()).toBe(RETIRED_ROUTES.length);
     expect(byStatus('primary') + byStatus('back-office')).toBe(BACK_OFFICE.length);
+  });
+
+  // `status` says where a surface sits; `ends` says where the sorting rule
+  // sends it. Without the second, the scoreboard cannot tell Website —
+  // which keeps its screen forever, because building a page is craft —
+  // from Tag rules, which is a form waiting to become a sentence. A
+  // burndown that cannot reach zero is an appetite, not a plan.
+  it('knows which surfaces are still owed', () => {
+    const by = (e: string) => BACK_OFFICE.filter((x) => x.ends === e).length;
+    expect(by('keeps') + by('moves') + by('splits')).toBe(BACK_OFFICE.length);
+    expect(movesLeft()).toBe(13);
+    // Phase 5 is done when this is zero. It is not a target for the count
+    // of screens — `keeps` is the floor and is supposed to stay.
+    expect(by('keeps')).toBeGreaterThan(0);
+  });
+
+  // Named rather than counted, so moving one is a decision somebody wrote
+  // down. Every one of these is quoted from docs/roadmap.md's inventory —
+  // Earnings keeps its screen because a coach checking their pay is
+  // evidence, and the website builder's canvas is craft.
+  it('keeps the surfaces the sorting rule says keep their screen', () => {
+    expect(
+      BACK_OFFICE.filter((e) => e.ends === 'keeps')
+        .map((e) => e.title)
+        .sort(),
+    ).toEqual(['Coach earnings', 'Goals', 'Roster', 'Set up your gym', 'Website']);
   });
 
   it('offers the bar sentence wherever one exists', () => {
