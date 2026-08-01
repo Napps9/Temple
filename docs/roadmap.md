@@ -841,6 +841,19 @@ same change, either because there is no write to fix or because the fix
 is a feature. Written down rather than left in a commit message, so the
 next session finds them.
 
+- **`email.failed` is not mapped, so a send that never left counts as
+  sent.** `resend-webhook` maps three event types — delivered, bounced,
+  complained — and acknowledges everything else with `200 ok, ignored`.
+  `email.failed` means Resend could not send at all, and those recipients
+  keep whatever status the sender wrote, which is `sent`. The campaign
+  report's `failed` column exists and is drawn (`Never sent`, "rejected at
+  the door"), but only ever fills from a synchronous rejection at send
+  time — an asynchronous failure reported afterwards has no path into it.
+  Spotted while wiring the webhook up and deliberately not fixed mid-setup.
+  The fix is a fourth branch in the event map plus a status the RPC will
+  accept; the care needed is in not double-counting a recipient that both
+  failed and later bounced.
+
 - **The timetable's own tables are gated on a role, not a capability.**
   `class_sessions`, `class_types` and `class_recurrences` all write behind
   `user_can_manage_classes`, which is `role in ('owner','admin','coach')`
