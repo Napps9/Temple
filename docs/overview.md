@@ -11,7 +11,8 @@ listening to a call, signing a waiver. A screen dissolves when it exists
 only so a human can operate machinery.
 
 **Scale:** 246 migrations · 256 pgTAP files · 41 edge functions · 92 app
-screens · 12 cron jobs · 1,599 JS tests across 105 files.
+screens · 66 sentences · 7 jobs · 12 cron jobs · 1,630 JS tests across 108
+files.
 
 ---
 
@@ -146,11 +147,56 @@ rope, and what it will never do.
 - **Delivery is a fact** — a signed Resend webhook, a suppression list
   subtracted from every audience and honoured by all six senders, and
   reports that say "not measured" rather than 0% when nothing came back.
-- **Trunk-based CI** — push to `main`, then typecheck + 1,599 tests,
+- **Trunk-based CI** — push to `main`, then typecheck + 1,630 tests,
   then the full pgTAP suite against a real Supabase, then migrations
   deploy to the hosted project, then Vercel.
 
 ---
+
+## How it's tested — and what that does not cover
+
+| Level | Count | Proves | Blind to |
+|---|---|---|---|
+| **pgTAP** | 256 files | RLS, RPC authorisation, capability enforcement, job predicates, triggers — against a real Postgres in CI | Anything above SQL |
+| **vitest, logic** | 1,619 | Copy, sanitisers, preview arithmetic, the manifest, the answer vocabulary | Anything rendered |
+| **vitest, render** | 11 | Content and branching in components — right tiles, right copy, right conditional | **Layout.** NativeWind is stubbed so `className` is inert; no width, wrapping or overflow is computed |
+| **tsc** | — | Types line up | — |
+
+**Nothing has ever exercised the running product.** No test signs in, no
+test loads a screen against a real database, and no job has proposed
+anything about a member who was not a fixture.
+
+The proof is the bug that prompted this: `StatTile` broke "RECIPIENTS"
+across two lines mid-word on six screens. 1,630 tests pass over it. A
+human found it by looking at a screenshot.
+
+**The render harness is new and was the bigger unlock.** There was no
+vitest config at all, which is *why* 92 screens had no tests — anything
+importing `react-native` failed to parse. Aliasing to `react-native-web`
+(what Vercel already serves) fixed it, and removed a second constraint
+that had shaped design decisions: modules importing `lib/supabase` are
+testable now, so splitting one in half to test its logic is a choice
+rather than a requirement.
+
+**A gym with a clock** (`scripts/demo-gym/simulate.ts`) is the answer to
+the question unit tests cannot reach: does a month of this feel like
+help? It generates days of plausible activity from member personalities
+— `regular`, `twice_weekly`, `weekender`, `drifting`, `sporadic`,
+`never_started` — seeded so a bad month replays exactly. It found two
+things before touching a database, both now pinned as tests:
+
+- **A twelve-person slot can never trigger the class-return job.** It
+  averages 3.75 a session against a floor of four. The floor is right;
+  the consequence is that a small demo gym shows the job on and silent
+  forever, and anyone would conclude it was broken.
+- **A loyal core hides a large loss.** Sixteen people drift from a slot:
+  with four regulars left the job speaks up, with six it does not. Same
+  sixteen gone. Whether that is correct is a product question, and it is
+  now a decision rather than a number somebody nudges.
+
+Three documents carry the rest: `docs/testing-plan.md` (a manual session
+of sentences, per module), `docs/running-a-gym.md` (the simulation plan
+and what is still to build), and the roadmap's *Known and not yet fixed*.
 
 ## How it's kept honest
 
