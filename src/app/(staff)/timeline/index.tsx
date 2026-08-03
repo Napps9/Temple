@@ -14,6 +14,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 
 import { AnswerFigures } from '@/components/AnswerFigures';
 import { Avatar } from '@/components/Avatar';
@@ -21,9 +23,12 @@ import { Button } from '@/components/Button';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
+import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
+import { TimelinePastDay } from '@/components/TimelinePastDay';
 import { OfferChip, ReceiptLine, SoftLine } from '@/components/TimelineLines';
+import { TodayButton } from '@/components/TodayButton';
 import { REQUIRED_SETUP_KEYS } from '../setup';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import {
@@ -55,11 +60,14 @@ import {
   type RuleField,
 } from '@/lib/setup-flow';
 import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
+import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useCanFn } from '@/lib/useCan';
 import { useGymCurrency } from '@/lib/useGymCurrency';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import {
+  dayLabel,
   dedupeClosures,
   formatTimelineLine,
   groupTimelineByDay,
@@ -67,6 +75,14 @@ import {
   stripeWarning,
   type TimelineEvent,
 } from '@/lib/timeline';
+import {
+  clampDayKey,
+  classifyDay,
+  dayKeyOf,
+  dayStart,
+  pagerBounds,
+  shiftDayKey,
+} from '@/lib/timeline-day';
 
 // The Timeline (docs/roadmap.md phases 1, 3 and 4): the staff home. The
 // stream is the gym's existing activity, read-only; the talk bar is the
@@ -531,8 +547,10 @@ export default function Timeline() {
 
   const freshen = (spec: AnyAction) => {
     // The stream is this screen's own concern; what else went stale is the
-    // module's, and it says so.
+    // module's, and it says so. The per-day pages go stale with it — a
+    // decision taken from the bar changes what a past page still shows.
     qc.invalidateQueries({ queryKey: ['timeline-feed'] });
+    qc.invalidateQueries({ queryKey: ['timeline-day'] });
     for (const key of spec.invalidate ?? []) {
       qc.invalidateQueries({ queryKey: [key] });
     }
@@ -772,11 +790,83 @@ export default function Timeline() {
   const { rules: rulesParam } = useLocalSearchParams<{ rules?: string }>();
   const openRules = rulesParam === '1';
   useEffect(() => {
-    if (openRules && isOwner) showRulesSheet();
+    if (openRules && isOwner) {
+      // The sheet renders in today's thread — a deep link must land on
+      // the page where it will actually appear.
+      setDayKey(dayKeyOf(new Date()));
+      showRulesSheet();
+    }
     // Once per arrival. Re-opening on every render would re-add the sheet
     // after the owner scrolled past it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openRules, isOwner]);
+
+  // ------------------------------------------------------------------
+  // The day pager. One dayKey names the visible page: today is the
+  // conversation (stream + work + bar), any earlier day is a read-only
+  // thread of what survives from it. Swiping and the arrows move the
+  // same single piece of state — no page array, no recentering.
+  // ------------------------------------------------------------------
+  const todayKey = dayKeyOf(new Date());
+  const [dayKey, setDayKey] = useState(todayKey);
+  const page = classifyDay(dayKey);
+
+  // The floor is the day the gym row was born — nothing any feed branch
+  // returns can predate it. Until it loads the pager stays clamped to
+  // today rather than offering days it can't stand behind.
+  const gymFloor = useQuery({
+    queryKey: ['gym-floor', gymId],
+    enabled: !!gymId,
+    staleTime: Infinity,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await supabase
+        .from('gyms')
+        .select('created_at')
+        .eq('id', gymId!)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as { created_at: string } | null)?.created_at ?? null;
+    },
+  });
+  const defaults = useGymOperatingDefaults();
+  // Ceiling sits at today until the future-day pages land — an arrow
+  // into an empty tomorrow would be a promise with nothing behind it.
+  const bounds = gymFloor.data
+    ? {
+        floor: pagerBounds(
+          gymFloor.data,
+          defaults.data?.materialisation_horizon_weeks ?? 12,
+        ).floor,
+        ceiling: todayKey,
+      }
+    : { floor: todayKey, ceiling: todayKey };
+
+  const shiftDay = (direction: -1 | 1) => {
+    setDayKey((k) =>
+      clampDayKey(shiftDayKey(k, direction), bounds.floor, bounds.ceiling),
+    );
+    haptic.selection();
+  };
+  // Same thresholds the Classes calendar ships with: only horizontal
+  // motion past 30px claims the gesture, and 15px of vertical motion
+  // bails out so the thread keeps scrolling underneath.
+  const swipe = Gesture.Pan()
+    .activeOffsetX([-30, 30])
+    .failOffsetY([-15, 15])
+    .onEnd((e) => {
+      'worklet';
+      const enoughDistance = Math.abs(e.translationX) > 60;
+      const enoughVelocity = Math.abs(e.velocityX) > 200;
+      if (!enoughDistance && !enoughVelocity) return;
+      runOnJS(shiftDay)(e.translationX > 0 ? -1 : 1);
+    });
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(() => startOfMonthOf(new Date()));
+  const openPicker = () => {
+    setPickerMonth(startOfMonthOf(dayStart(dayKey)));
+    setPickerOpen(true);
+  };
 
   // The stream is the record; the block is the work. Splitting them is
   // what answers "what do I need to care about" without reading every
@@ -785,14 +875,71 @@ export default function Timeline() {
     dedupeClosures(feed.data ?? []),
     session?.user.id,
   );
-  const groups = groupTimelineByDay(stream);
+  // Today's page shows today's thread only; other days have their own
+  // pages now, fetched by day window.
+  const groups = groupTimelineByDay(stream).filter((g) => g.key === todayKey);
   const feedEmpty = (feed.data ?? []).length === 0;
+
+  const atFloor = dayKey <= bounds.floor;
+  const atCeiling = dayKey >= bounds.ceiling;
 
   return (
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">
+        {/* The day header: Today jump, the visible day with stepping
+            arrows, tap-to-open month grid — the same header the Classes
+            and Programming calendars carry, so days read as days
+            everywhere. */}
+        <View className="flex-row items-center pt-3 pb-1 px-4 md:max-w-2xl md:mx-auto md:w-full">
+          <View className="flex-1 flex-row justify-start">
+            {!page.isToday ? (
+              <TodayButton onPress={() => setDayKey(todayKey)} />
+            ) : null}
+          </View>
+          <View className="flex-row items-center gap-0.5">
+            <Pressable
+              onPress={() => shiftDay(-1)}
+              disabled={atFloor}
+              hitSlop={8}
+              accessibilityLabel="Previous day"
+              className="w-8 h-8 items-center justify-center">
+              <Text
+                className={`text-lg ${atFloor ? 'text-gray-300 dark:text-gray-700' : 'text-gray-400 dark:text-gray-500'}`}>
+                ‹
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={openPicker}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Pick a date"
+              className="px-1.5 py-1 items-center justify-center active:opacity-70">
+              <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+                {dayLabel(dayKey, new Date())}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => shiftDay(1)}
+              disabled={atCeiling}
+              hitSlop={8}
+              accessibilityLabel="Next day"
+              className="w-8 h-8 items-center justify-center">
+              <Text
+                className={`text-lg ${atCeiling ? 'text-gray-300 dark:text-gray-700' : 'text-gray-400 dark:text-gray-500'}`}>
+                ›
+              </Text>
+            </Pressable>
+          </View>
+          <View className="flex-1" />
+        </View>
+
+        <GestureDetector gesture={swipe}>
+          <View className="flex-1">
+            {page.isPast ? (
+              <TimelinePastDay gymId={gymId} dayKey={dayKey} />
+            ) : !page.isToday ? null : (
         <ScrollView
           ref={scrollRef}
           className="flex-1"
@@ -827,9 +974,6 @@ export default function Timeline() {
           ) : (
             groups.map((g) => (
               <View key={g.key} className="gap-4">
-                <Text className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 text-center pt-2">
-                  {g.label}
-                </Text>
                 {g.events.map((e) => (
                   <ReceiptLine key={e.item_id} event={e} />
                 ))}
@@ -924,8 +1068,11 @@ export default function Timeline() {
             </View>
           ) : null}
         </ScrollView>
+            )}
+          </View>
+        </GestureDetector>
 
-        {isOwner ? (
+        {isOwner && page.isToday ? (
           <View className="px-4 pb-4 pt-1 gap-2 md:max-w-2xl md:mx-auto md:w-full">
             <View className="flex-row gap-2">
               <BarChip
@@ -966,6 +1113,20 @@ export default function Timeline() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+
+      <MonthPickerModal
+        visible={pickerOpen}
+        month={pickerMonth}
+        selected={dayStart(dayKey)}
+        weekStartsOn={defaults.data?.week_starts_on ?? 'mon'}
+        onChangeMonth={(dir) => setPickerMonth((m) => addMonthsTo(m, dir))}
+        onSelectDay={(day) => {
+          // Out-of-range picks land on the nearest reachable day.
+          setDayKey(clampDayKey(dayKeyOf(day), bounds.floor, bounds.ceiling));
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </Screen>
   );
 }
@@ -1185,6 +1346,15 @@ function LocalRow({
 // all with the action they mean, which no depth would fix. The retry
 // catches those.
 const SHORTLIST = 12;
+
+// Month arithmetic for the date picker only — the pager itself moves by
+// dayKey (src/lib/timeline-day.ts).
+function startOfMonthOf(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+function addMonthsTo(d: Date, n: number): Date {
+  return new Date(d.getFullYear(), d.getMonth() + n, 1);
+}
 
 const WEB = Platform.OS === 'web';
 
