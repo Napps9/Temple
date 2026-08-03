@@ -402,7 +402,9 @@ export const refundMember: ActionSpec<Refund> = {
   says:
     'Give a member their money back — "refund Marcus", "refund Sarah\'s ' +
     'last payment", "give Dan £20 back". Only about a membership payment; ' +
-    'a shop order is store.refund_order.',
+    'a shop order is store.refund_order. NOT for ending or cancelling ' +
+    'a membership — no action does that, and a sentence asking for it is ' +
+    'none of these.',
   args: [
     { name: 'member', type: 'string', desc: 'The person, as the owner named them', required: true },
     {
