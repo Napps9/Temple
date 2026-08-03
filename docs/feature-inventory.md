@@ -429,6 +429,36 @@ The staff area shows up when `can_access_staff_area` is on.
   carried `can_see_money` SELECT policies since 0204/0206; no new RPC.
   The page also says where replies land (the gym's email inbox), because
   Temple doesn't read replies.
+- **The Timeline pages by day** — one thread per day. Today is the
+  conversation (stream + Waiting block + talk bar, unchanged); swipe
+  right (or the ‹ arrow / month picker / TodayButton header shared with
+  the calendars) into past days — read-only threads fetched by day
+  window over `timeline_feed`'s `p_before` (strict `<` per branch, no
+  tiebreaker, so day boundaries are the safe cursor) — back to the day
+  the gym row was born (`gyms.created_at`, the floor). Swipe left into
+  FUTURE days: that day's classes with booked counts and an amber
+  "Still needs a coach." where cover is unclaimed (cover rows
+  RLS-filter per viewer), closures in effect, scheduled sends
+  (`email_campaigns.scheduled_for`, comms gate), renewals due
+  (`paid_period_end`, plans gate) and open tasks due. Forward paging
+  stops at the recurrence materialisation horizon; browsing never calls
+  `extend_gym_recurrences`. Day cursor arithmetic in
+  `src/lib/timeline-day.ts`, future-day sentences in
+  `src/lib/future-day.ts` (both pure + tested); shared line renderers in
+  `src/components/TimelineLines.tsx`. A past day shows what survives —
+  decided requests and recovered payments have left the feed, which is
+  the honest shape of history here. No migration: every read rides
+  existing policies.
+- **Ask a past event anything** — the story page carries an ask bar
+  (three suggested openers + free text) answered by the `explain-event`
+  edge function: caller must hold `can_see_money`, the function loads
+  exactly the story page's rows, renders a deterministic fact block in
+  owner language (`facts.ts`, mirror-tested in
+  `src/lib/explain-event-facts.test.ts`), and fences `claude-sonnet-5`
+  inside it — answer from the facts or say "The records here don't
+  say." The Q&A thread is deliberately ephemeral (0221 keeps
+  `chat_turns` small; restored turns would replay context-free into the
+  main Timeline).
 - **Questions decided in place** — pending membership requests render as
   the stream's only cards: one question, exactly two choices with the
   yes labelled by the action ("Yes, move Marcus"), member note behind
