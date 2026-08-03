@@ -2291,9 +2291,11 @@ The staff area shows up when `can_access_staff_area` is on.
   as active/paying for cohorts, and checkout/change/cancel ride the
   existing Stripe rails (every non-credit_pack kind is subscription
   mode).
-- **Money block on Analysis** [`can_see_money`, owner-only by default —
-  so it is absent for the coaches the rest of the page is aimed at] —
-  four tiles for the current calendar month off one RPC,
+- **Money block on Manage → Members** [`can_see_money`, owner-only by
+  default — so it is absent for the coaches and staff who reach the tab
+  via `can_view_attendance`; it lived on the Programming Analysis page
+  until Aug 2026, where it was owner-only content on a coach-facing
+  screen] — four tiles for the current calendar month off one RPC,
   `compute_finance_summary(gym, month_start)`:
   **Confirmed** (settled `billing_events` this month, with a delta vs the
   named previous month rather than the generic "previous period"),

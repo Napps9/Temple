@@ -15,6 +15,7 @@ import {
   isoDate,
   presetRange,
 } from '@/components/DateRangeCta';
+import { FinanceBlock } from '@/components/FinanceBlock';
 import { GymSetupChecklist } from '@/components/GymSetupChecklist';
 import { ImportDataModal } from '@/components/ImportDataModal';
 import { Input } from '@/components/Input';
@@ -1486,6 +1487,13 @@ function MembersTab() {
             />
           </View>
         </View>
+      ) : null}
+
+      {/* Month-anchored on purpose, unlike the picker-scoped tiles above:
+          pending renewals and failing payments are a "this month" read,
+          the window compute_finance_summary is built around. */}
+      {membership?.gymId && canSeeMoney ? (
+        <FinanceBlock gymId={membership.gymId} />
       ) : null}
 
       {canInvite || canManageStaff || canManageTags || canExport ? (
