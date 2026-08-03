@@ -399,6 +399,24 @@ export default function Timeline() {
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
+  // The stream reads oldest-at-top, so the newest line — and the Waiting
+  // block — live at the bottom. Opening the screen at the top would show
+  // last week first. Chat behavior instead: pinned to the end while
+  // content lays out, released the moment the reader scrolls up into
+  // history, re-pinned when they come back to the bottom.
+  const pinnedToEnd = useRef(true);
+  const onStreamScroll = (e: {
+    nativeEvent: {
+      contentOffset: { y: number };
+      contentSize: { height: number };
+      layoutMeasurement: { height: number };
+    };
+  }) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    pinnedToEnd.current =
+      contentOffset.y + layoutMeasurement.height >= contentSize.height - 120;
+  };
+
   useEffect(() => {
     if (local.length > 0) {
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
@@ -780,6 +798,13 @@ export default function Timeline() {
           ref={scrollRef}
           className="flex-1"
           contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
+          onScroll={onStreamScroll}
+          scrollEventThrottle={100}
+          onContentSizeChange={() => {
+            if (pinnedToEnd.current) {
+              scrollRef.current?.scrollToEnd({ animated: false });
+            }
+          }}
           refreshControl={
             <RefreshControl
               refreshing={feed.isRefetching}
