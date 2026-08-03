@@ -26,6 +26,7 @@ import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
+import { TimelineFutureDay } from '@/components/TimelineFutureDay';
 import { TimelinePastDay } from '@/components/TimelinePastDay';
 import { OfferChip, ReceiptLine, SoftLine } from '@/components/TimelineLines';
 import { TodayButton } from '@/components/TodayButton';
@@ -829,16 +830,15 @@ export default function Timeline() {
     },
   });
   const defaults = useGymOperatingDefaults();
-  // Ceiling sits at today until the future-day pages land — an arrow
-  // into an empty tomorrow would be a promise with nothing behind it.
+  // Forward paging stops at the recurrence materialisation horizon —
+  // beyond it there are no class rows, so a page would be an empty
+  // promise. Browsing never extends the horizon; that stays a deliberate
+  // act on the surfaces that own it.
   const bounds = gymFloor.data
-    ? {
-        floor: pagerBounds(
-          gymFloor.data,
-          defaults.data?.materialisation_horizon_weeks ?? 12,
-        ).floor,
-        ceiling: todayKey,
-      }
+    ? pagerBounds(
+        gymFloor.data,
+        defaults.data?.materialisation_horizon_weeks ?? 12,
+      )
     : { floor: todayKey, ceiling: todayKey };
 
   const shiftDay = (direction: -1 | 1) => {
@@ -939,7 +939,9 @@ export default function Timeline() {
           <View className="flex-1">
             {page.isPast ? (
               <TimelinePastDay gymId={gymId} dayKey={dayKey} />
-            ) : !page.isToday ? null : (
+            ) : page.isFuture ? (
+              <TimelineFutureDay gymId={gymId} dayKey={dayKey} />
+            ) : (
         <ScrollView
           ref={scrollRef}
           className="flex-1"
