@@ -2352,6 +2352,23 @@ The staff area shows up when `can_access_staff_area` is on.
   lies. Underneath the tiles, **Needs chasing** lists who
   (`gym_overdue_memberships`, `can_see_money`, deep-linking to the
   member).
+  **Chase for me** (0248) — when the money job is on, each row grows a
+  handover chip: `request_payment_chase(gym, subscription)` joins or
+  opens the same `agent_cases` row the revenue tick would, writes the
+  same `chase_message` action, and executes it through
+  `_agent_execute_action` (same template, outbound queue, quiet hours,
+  suppressions). The tap IS the approval — the caller holds
+  `can_see_money`, the capability `decide_agent_action` takes a yes
+  from, so the action is born approved with the tapper as `decided_by`
+  and the Timeline shows a receipt, not a question. Guardrails still
+  bind: job must be on, the two-touch cap counts the manual touch, and
+  a tick-proposed chase is approved rather than duplicated. The
+  authority dial is deliberately not consulted (it rations the agent's
+  initiative, not the owner's orders). On success the client pokes
+  `send-agent-messages` best-effort so the email leaves now rather than
+  on the 15-minute cron. Rows the teammate is already on show a static
+  "Chasing" chip (open case with an approved/executed chase, read under
+  the same RLS).
   **The membership deliberately stays `active` while Stripe retries.**
   `ps.status = 'active'` is what gates booking eligibility
   (`0011_eligibility_predicates.sql`, `0050_multi_membership_booking.sql`),

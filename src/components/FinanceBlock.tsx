@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -201,6 +201,7 @@ export function FinanceBlock({ gymId }: { gymId: string }) {
 // returns no email or phone, since those are governed by can_see_email /
 // can_see_full_pii and routing them through a money RPC would sidestep it.
 function OverdueList({ gymId }: { gymId: string }) {
+  const queryClient = useQueryClient();
   const rows = useQuery({
     queryKey: ['overdue-memberships', gymId],
     enabled: !!gymId,
@@ -210,6 +211,77 @@ function OverdueList({ gymId }: { gymId: string }) {
       });
       if (error) throw error;
       return (data ?? []) as unknown as OverdueRow[];
+    },
+  });
+
+  // Same key and shape as the Timeline's useMoneyAuthority, so the two
+  // screens share one cache entry.
+  const authority = useQuery({
+    queryKey: ['agent-authority', gymId],
+    enabled: !!gymId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_authority')
+        .select('action_kind, level')
+        .eq('gym_id', gymId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const jobOn = (authority.data ?? []).some(
+    (a) => a.action_kind === 'chase_message',
+  );
+
+  // Which of these failures the teammate is already on: an approved or
+  // executed chase on the open case. Read under the same can_see_money
+  // RLS the nudge detail screen uses.
+  const chases = useQuery({
+    queryKey: ['payment-chases', gymId],
+    enabled: !!gymId && jobOn,
+    queryFn: async (): Promise<Set<string>> => {
+      const [cases, actions] = await Promise.all([
+        supabase
+          .from('agent_cases')
+          .select('id, plan_subscription_id')
+          .eq('gym_id', gymId)
+          .neq('stage', 'closed'),
+        supabase
+          .from('agent_actions')
+          .select('case_id, status')
+          .eq('gym_id', gymId)
+          .eq('action_kind', 'chase_message')
+          .in('status', ['approved', 'executed']),
+      ]);
+      if (cases.error) throw cases.error;
+      if (actions.error) throw actions.error;
+      const chasedCases = new Set(
+        (actions.data ?? []).map((a) => a.case_id).filter(Boolean),
+      );
+      return new Set(
+        (cases.data ?? [])
+          .filter((c) => chasedCases.has(c.id))
+          .map((c) => c.plan_subscription_id),
+      );
+    },
+  });
+
+  const chase = useMutation({
+    mutationFn: async (subscriptionId: string) => {
+      const { error } = await supabase.rpc('request_payment_chase', {
+        p_gym_id: gymId,
+        p_subscription_id: subscriptionId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // The outbound queue drains on a 15-minute cron; the owner just
+      // asked, so nudge the worker now. Best-effort — quiet hours or a
+      // failure here just leave it to the cron.
+      void supabase.functions.invoke('send-agent-messages', {
+        body: { gym_id: gymId },
+      });
+      void queryClient.invalidateQueries({ queryKey: ['payment-chases', gymId] });
+      void queryClient.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
     },
   });
 
@@ -238,6 +310,12 @@ function OverdueList({ gymId }: { gymId: string }) {
         booking meanwhile; members on a credit plan cannot, because their
         credits only arrive when the payment goes through.
       </Text>
+      {jobOn ? (
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          Chase for me skips my three-day wait — I send the nudge now, and
+          the receipt lands in the Timeline.
+        </Text>
+      ) : null}
       <View className="gap-2">
         {shown.map((r) => (
           <Pressable
@@ -275,15 +353,43 @@ function OverdueList({ gymId }: { gymId: string }) {
             <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
               {formatMoney(r.amount_cents, r.currency)}
             </Text>
-            {/* The one action that needs no PII and no extra fetch. Email
-                and phone live on the member's own screen, one member at a
-                time, each behind its own capability. */}
-            <ChipButton
-              label="Message"
-              icon="chatbubble-outline"
-              tone="neutral"
-              onPress={() => router.push(`/inbox/direct/${r.profile_id}` as never)}
-            />
+            <View className="items-stretch gap-1.5">
+              {jobOn ? (
+                chases.data?.has(r.subscription_id) ? (
+                  <ChipButton
+                    label="Chasing"
+                    icon="sparkles"
+                    tone="neutral"
+                  />
+                ) : (
+                  <ChipButton
+                    label={
+                      chase.isPending && chase.variables === r.subscription_id
+                        ? 'Handing over…'
+                        : 'Chase for me'
+                    }
+                    icon="sparkles-outline"
+                    tone="primary"
+                    disabled={chase.isPending}
+                    onPress={() => chase.mutate(r.subscription_id)}
+                  />
+                )
+              ) : null}
+              {/* The one action that needs no PII and no extra fetch. Email
+                  and phone live on the member's own screen, one member at a
+                  time, each behind its own capability. */}
+              <ChipButton
+                label="Message"
+                icon="chatbubble-outline"
+                tone="neutral"
+                onPress={() => router.push(`/inbox/direct/${r.profile_id}` as never)}
+              />
+              {chase.error && chase.variables === r.subscription_id ? (
+                <Text className="text-red-500 dark:text-red-400 text-xs max-w-[140px]">
+                  {errorMessage(chase.error, "That didn't go through")}
+                </Text>
+              ) : null}
+            </View>
             <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
           </Pressable>
         ))}

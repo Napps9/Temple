@@ -4318,6 +4318,13 @@ export type Database = {
         };
         Returns: null;
       };
+      request_payment_chase: {
+        Args: {
+          p_gym_id: string;
+          p_subscription_id: string;
+        };
+        Returns: string;
+      };
       set_membership_change_policies: {
         Args: {
           p_gym_id: string;
