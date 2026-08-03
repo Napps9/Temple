@@ -685,7 +685,7 @@ export default function MembershipScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Account" fallbackHref="/account" />
+        <BackLink fallbackHref="/account" />
 
         {failingSub ? <PaymentFailedNotice sub={failingSub} /> : null}
 

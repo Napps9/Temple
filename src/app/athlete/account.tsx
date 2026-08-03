@@ -43,7 +43,7 @@ export default function AthleteAccount() {
     <Screen edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <BackLink inline label="Athlete" fallbackHref="/athlete" />
+          <BackLink inline fallbackHref="/athlete" />
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Account
           </Text>

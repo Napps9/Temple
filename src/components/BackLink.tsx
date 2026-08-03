@@ -7,59 +7,44 @@ import { useThemeColors } from '@/lib/theme';
 
 // Standard back affordance for deep-link sub-pages.
 //
-// Two visual variants share one navigation contract:
+// One navigation contract, everywhere: go back to the screen the user
+// actually came from (router.back()), and use `fallbackHref` — the page's
+// logical parent — only when there is no history, which means a cold open
+// or a deep link. The label is always "Back", because the destination
+// varies with the journey; the old destination labels ("Manage",
+// "Members") were promises this contract cannot keep, so they are gone.
+// `fallbackHref` navigates by replace, not push: after a cold open the
+// deep-linked page shouldn't linger as a history entry.
 //
-//   - default: a `chevron + label` row that sits above the page title,
-//     used on Manage sub-pages and Account where there's vertical room
-//     for an explicit destination label.
+// Two visual variants share the contract:
+//
+//   - default: a `chevron + Back` row that sits above the page title.
 //   - inline: just the chevron, sized to sit beside an inline title in
-//     a flex-row header — the pattern Track / Inbox / Athlete / Member
-//     deep pages reach for.
+//     a flex-row header.
 //
-// Two navigation contracts, chosen by `preferBack`:
+// The one exception is `?backTo=setup|checklist`, which relabels to
+// "Setup" and hard-replaces into the flow the owner was working through.
+// It beats router.back() deliberately: after a Stripe OAuth round-trip
+// history exists but points at the provider's redirect chain, not at
+// setup, so only a fixed destination gets the owner home.
 //
-//   - Named destination (default): when `fallbackHref` is given, that
-//     path is ALWAYS the destination — the label is a promise about
-//     where you'll land ("Manage", "Email campaigns"), so we honour it
-//     regardless of the back stack. (Earlier behaviour preferred
-//     router.back() when any history existed, which broke for a user
-//     who navigated Classes → Analysis → a Manage sub-page: tapping
-//     "Manage" went to Analysis because that's what router.back() saw.)
-//
-//   - Came-from (`preferBack`): return to wherever the user actually
-//     came from via router.back(), and only fall back to `fallbackHref`
-//     when there's no history (a deep-link / cold open). This is the
-//     right contract for content pages reachable from many places — a
-//     movement opened from Track, Journal, a workout, or a group should
-//     go back to whichever of those the user was on, not to one fixed
-//     parent. Pair it with the bare chevron (`inline`) so no visible
-//     label over-promises a single destination.
-//
-// Without a fallbackHref the component falls back to router.back() and
-// the label should just be "Back" — the destination genuinely is
-// wherever the user came from.
+// With no history and no fallbackHref there is genuinely nowhere to go,
+// so the component renders nothing rather than a dead chevron.
+// canGoBack() isn't reactive — a phantom render can only degrade to a
+// safe no-op in onPress, never a wrong navigation.
 export function BackLink({
-  label = 'Back',
   fallbackHref,
   inline = false,
-  preferBack = false,
 }: {
-  label?: string;
   fallbackHref?: Href;
   inline?: boolean;
-  preferBack?: boolean;
 }) {
   const colors = useThemeColors();
-  // A sub-page opened from setup carries ?backTo so its back affordance
-  // returns to the flow the owner was working through, not the page's usual
-  // parent: `setup` is the conversation, `checklist` the manual list. It
-  // re-points via a fixed replace and takes precedence over preferBack —
-  // both are cross-group, where router.back() pops to whatever unrelated
-  // screen the owner last visited (the exact failure the named-destination
-  // default avoids).
   const { backTo } = useLocalSearchParams<{ backTo?: string }>();
   const toSetup = backTo === 'setup' || backTo === 'checklist';
-  const effLabel = toSetup ? 'Setup' : label;
+  const label = toSetup ? 'Setup' : 'Back';
+
+  if (!toSetup && !fallbackHref && !router.canGoBack()) return null;
 
   function onPress() {
     haptic.selection();
@@ -67,24 +52,14 @@ export function BackLink({
       router.replace(backTo === 'checklist' ? '/onboarding' : '/setup');
       return;
     }
-    if (preferBack) {
-      if (router.canGoBack()) {
-        router.back();
-        return;
-      }
-      if (fallbackHref) router.replace(fallbackHref);
-      return;
-    }
-    if (fallbackHref) {
-      router.replace(fallbackHref);
-      return;
-    }
     if (router.canGoBack()) {
       router.back();
+      return;
     }
+    if (fallbackHref) router.replace(fallbackHref);
   }
 
-  const a11yLabel = effLabel === 'Back' ? 'Back' : `Back to ${effLabel}`;
+  const a11yLabel = toSetup ? 'Back to Setup' : 'Back';
 
   if (inline) {
     return (
@@ -107,7 +82,7 @@ export function BackLink({
       accessibilityLabel={a11yLabel}
       className="flex-row items-center gap-1 self-start py-1 active:opacity-70">
       <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
-      <Text className="text-gray-500 dark:text-gray-400">{effLabel}</Text>
+      <Text className="text-gray-500 dark:text-gray-400">{label}</Text>
     </Pressable>
   );
 }

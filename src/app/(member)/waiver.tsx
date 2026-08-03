@@ -125,7 +125,7 @@ export default function WaiverForm() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
-        {router.canGoBack() ? <BackLink /> : null}
+        <BackLink />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             {active.data.title}

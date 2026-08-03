@@ -37,7 +37,7 @@ export default function InjuryCheck() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
-        <BackLink label="Book" />
+        <BackLink fallbackHref="/book" />
 
         <View className="items-center gap-3 pt-2">
           <View className="w-16 h-16 rounded-full bg-primary/15 items-center justify-center">

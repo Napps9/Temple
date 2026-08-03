@@ -105,14 +105,14 @@ export function LeadsShell({
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <View className="flex-1 lg:flex-row">
         <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-gray-200 dark:border-gray-800 px-4 py-6 gap-4">
-          <BackLink label="Manage" fallbackHref="/management" />
+          <BackLink fallbackHref="/management" />
           <LeadsPills tabs={tabs} active={active} vertical />
         </View>
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-5 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
           <View className="lg:hidden gap-3">
-            <BackLink label="Manage" fallbackHref="/management" />
+            <BackLink fallbackHref="/management" />
             <LeadsPills tabs={tabs} active={active} vertical={false} />
           </View>
           {children}

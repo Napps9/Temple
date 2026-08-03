@@ -57,7 +57,7 @@ export default function FamilyScreen() {
   return (
     <Screen>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
-        <BackLink label="Account" fallbackHref="/account" />
+        <BackLink fallbackHref="/account" />
 
         <View className="gap-1">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">

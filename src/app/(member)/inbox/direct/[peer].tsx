@@ -93,7 +93,7 @@ export default function DirectThread() {
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="flex-1 px-4 md:max-w-2xl md:mx-auto md:w-full py-6">
         <View className="flex-row items-center gap-3 px-2 pb-3">
-          <BackLink inline label="Inbox" fallbackHref="/inbox" />
+          <BackLink inline fallbackHref="/inbox" />
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 font-semibold">
               {peerProfile.data?.full_name?.trim() || 'Member'}

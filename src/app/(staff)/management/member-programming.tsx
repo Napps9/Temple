@@ -85,7 +85,7 @@ function MemberCalendar({ profileId }: { profileId: string }) {
         memberScope={{ profileId, name }}
         topBar={
           <View className="pt-3 gap-2">
-            <BackLink label="Members" fallbackHref="/management/members" />
+            <BackLink fallbackHref="/management/members" />
             <View className="flex-row items-center gap-3">
               <Avatar
                 name={name}
@@ -372,7 +372,7 @@ function IndividualsList() {
         className="flex-1"
         contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-2">
-          <BackLink label="Programming" fallbackHref="/(staff)/programming" />
+          <BackLink fallbackHref="/(staff)/programming" />
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-bold">
             Individual programming
           </Text>

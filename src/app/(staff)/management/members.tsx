@@ -63,7 +63,7 @@ export default function MembersScreen() {
           if (scrollKey) setScrollPosition(scrollKey, e.nativeEvent.contentOffset.y);
         }}
         scrollEventThrottle={100}>
-        <BackLink label="Manage" fallbackHref="/management" />
+        <BackLink fallbackHref="/management" />
         <View className="gap-2">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
             Members

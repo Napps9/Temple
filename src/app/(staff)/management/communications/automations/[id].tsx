@@ -640,7 +640,7 @@ export default function AutomationEditor() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="py-6 px-4">
-          <BackLink label="Automations" fallbackHref="/management/communications/automations" />
+          <BackLink fallbackHref="/management/communications/automations" />
           <Text className="text-gray-500 dark:text-gray-400 mt-4">Loading…</Text>
         </View>
       </Screen>
@@ -733,7 +733,7 @@ export default function AutomationEditor() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Automations" fallbackHref="/management/communications/automations" />
+        <BackLink fallbackHref="/management/communications/automations" />
 
         <View className="flex-row items-center justify-between gap-3 flex-wrap">
           <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">

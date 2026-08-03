@@ -102,7 +102,7 @@ export default function NudgeStory() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Timeline" fallbackHref="/timeline" />
+        <BackLink fallbackHref="/timeline" />
 
         {story.isLoading ? (
           <View className="py-16 items-center">

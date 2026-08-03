@@ -259,7 +259,7 @@ export default function ImportedMemberDetailScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Members" fallbackHref="/management/members" />
+        <BackLink fallbackHref="/management/members" />
 
         {canManageStaff !== true || query.isLoading ? (
           <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>

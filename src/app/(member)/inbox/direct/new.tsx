@@ -107,7 +107,7 @@ export default function NewDirectMessage() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
-          <BackLink inline label="Inbox" fallbackHref="/inbox" />
+          <BackLink inline fallbackHref="/inbox" />
           <View className="flex-1">
             <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
               New message

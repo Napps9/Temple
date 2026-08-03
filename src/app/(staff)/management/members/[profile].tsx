@@ -348,7 +348,7 @@ export default function MemberDetailScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink label="Members" fallbackHref="/management/members" />
+        <BackLink fallbackHref="/management/members" />
 
         <View className="flex-row items-center gap-3">
           <Avatar
@@ -653,7 +653,13 @@ export default function MemberDetailScreen() {
           profileId={profileId}
           memberName={profile.data?.full_name ?? 'this member'}
           onClose={() => setShowRemove(false)}
-          onRemoved={() => router.back()}
+          onRemoved={() => {
+            // A cold-opened profile has no history to pop, and the member
+            // no longer exists to stand on. Replace, so the dead URL
+            // doesn't survive as a history entry either.
+            if (router.canGoBack()) router.back();
+            else router.replace('/management/members' as never);
+          }}
         />
       ) : null}
 
