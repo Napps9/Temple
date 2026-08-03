@@ -104,7 +104,16 @@ export type DemoPlan = {
   gym: T<'gyms'>;
   // Ops-only columns the hand-trimmed Insert type deliberately omits;
   // applied by the orchestrator as a separate cast update.
-  gymFlags: { store_enabled: boolean; store_shipping_fee_cents: number; website_builder_enabled: boolean };
+  // onboarding_dismissed_at: a demo gym is a RUNNING gym, and without it
+  // the owner's every sign-in redirects to day-one /setup (the Stripe
+  // setup step can never complete on a demo tenant) — found when all six
+  // owner e2e journeys timed out waiting for a Timeline that never came.
+  gymFlags: {
+    store_enabled: boolean;
+    store_shipping_fee_cents: number;
+    website_builder_enabled: boolean;
+    onboarding_dismissed_at: string;
+  };
   memberships: T<'gym_memberships'>[];
   consents: T<'member_consents'>[];
   plans: T<'membership_plans'>[];
@@ -978,7 +987,12 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     emailDomain,
     users,
     gym,
-    gymFlags: { store_enabled: true, store_shipping_fee_cents: 500, website_builder_enabled: true },
+    gymFlags: {
+      store_enabled: true,
+      store_shipping_fee_cents: 500,
+      website_builder_enabled: true,
+      onboarding_dismissed_at: nowISO,
+    },
     memberships,
     consents,
     plans,

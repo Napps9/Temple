@@ -8,7 +8,7 @@ import { COACH_EMAIL, signIn } from './helpers';
 // shouldn't. A coach opens Manage and the owner-only cards must not be
 // there, while a card their default capabilities do grant must be.
 test('a coach sees Manage without the owner-only sections', async ({ page }) => {
-  await signIn(page, COACH_EMAIL);
+  await signIn(page, COACH_EMAIL, { expectBar: false });
   await page.goto('/management');
 
   // Granted to coaches at the defaults (can_edit_classes).

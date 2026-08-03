@@ -962,6 +962,16 @@ next session finds them.
      ("how did the Christmas email do"), and a quiet Timeline line when a
      send finishes — which is also what closes the reaches-nobody case.
 
+- **The talk bar is owner-only while the registry speaks staff.** The
+  Timeline renders its whole bottom block — chips and bar — behind
+  `isOwner`, yet `actionsFor(can, role)` filters the catalogue per staff
+  capability and several actions exist precisely for coaches (cover,
+  attendance, check-in). Either the bar should render for staff with
+  their filtered vocabulary, or the per-role plumbing below it is
+  serving one person. Found when the coach e2e journey waited for a bar
+  that can never come. A product decision, not a bug: the answer decides
+  whether "the chat is the spine" means the owner's spine or the gym's.
+
 - **Four pgTAP files fail in the local harness for the harness's own
   reasons** (storage path helpers, recurrence pattern rewrite, closure
   reopen, ordered onboarding responses) — listed in

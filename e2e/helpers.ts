@@ -16,7 +16,15 @@ export const PARSER_AVAILABLE = process.env.E2E_PARSER !== '0';
 export const TALK_BAR_PLACEHOLDER =
   'Show me a member, change a class, send a newsletter…';
 
-export async function signIn(page: Page, email: string): Promise<void> {
+// The talk bar is the owner's (timeline.tsx renders the whole bottom
+// block behind isOwner), so it proves the owner's landing only — staff
+// sign-in settles for reaching /timeline at all. Waiting for the bar on
+// a coach account can never pass.
+export async function signIn(
+  page: Page,
+  email: string,
+  { expectBar = true }: { expectBar?: boolean } = {},
+): Promise<void> {
   // Decide cookie consent before first paint so the PECR banner never
   // overlaps a control the journey needs (key: src/lib/cookie-consent.ts).
   await page.addInitScript(() => {
@@ -29,12 +37,15 @@ export async function signIn(page: Page, email: string): Promise<void> {
   await page.getByRole('textbox', { name: 'Email' }).fill(email);
   await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
   await page.getByText('Sign in', { exact: true }).last().click();
-  // Staff land on the Timeline; the talk bar arriving is the whole
-  // stack agreeing — auth, membership resolution, capability read,
-  // timeline union.
-  await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toBeVisible({
-    timeout: 30_000,
-  });
+  // Staff land on the Timeline; for the owner the talk bar arriving is
+  // the whole stack agreeing — auth, membership resolution, capability
+  // read, timeline union.
+  await page.waitForURL('**/timeline**', { timeout: 30_000 });
+  if (expectBar) {
+    await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toBeVisible({
+      timeout: 30_000,
+    });
+  }
 }
 
 export async function say(page: Page, sentence: string): Promise<void> {

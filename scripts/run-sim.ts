@@ -158,10 +158,23 @@ async function main(): Promise<void> {
 
   const { data: gym } = await sb
     .from('gyms')
-    .select('id, name, timezone')
+    .select('id, name, timezone, onboarding_dismissed_at')
     .eq('slug', slug)
     .maybeSingle();
   if (!gym) fail(`no gym with slug "${slug}" — run npm run seed:demo first.`);
+
+  // A gym with weeks of history is not a day-one gym: without this flag
+  // the owner's sign-in redirects to /setup (the Stripe step never
+  // completes on a demo tenant) and the Timeline the sim exists to fill
+  // is never reached.
+  if (!values['dry-run'] && !gym.onboarding_dismissed_at) {
+    const { error } = await sb
+      .from('gyms')
+      .update({ onboarding_dismissed_at: new Date().toISOString() } as never)
+      .eq('id', gym.id);
+    if (error) fail(`marking onboarding dismissed failed: ${error.message}`);
+    console.log('Marked day-one onboarding dismissed — this gym has history now.');
+  }
   const tz = gym.timezone ?? 'Europe/London';
   const todayISO = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
   const runStart = new Date().toISOString();
