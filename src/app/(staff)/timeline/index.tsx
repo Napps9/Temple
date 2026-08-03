@@ -282,7 +282,38 @@ export default function Timeline() {
         !r.done &&
         !(REQUIRED_SETUP_KEYS as readonly string[]).includes(r.step_key),
     );
-  const setupOutstanding = requiredLeft || optionalLeft;
+  // The same flag "Skip for now" writes on /onboarding and setup's own
+  // "I'll finish later" (0105): one dismissal, honoured everywhere. The
+  // strict `=== false` keeps the card from flashing in before the flag
+  // has been read. Setup stays one sentence away — "continue setup" in
+  // the bar — so hiding the card closes no doors.
+  const setupDismissed = useQuery({
+    queryKey: ['gym-onboarding-dismissed', gymId],
+    enabled: !!gymId && isOwner,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase
+        .from('gyms')
+        .select('onboarding_dismissed_at')
+        .eq('id', gymId!)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data?.onboarding_dismissed_at;
+    },
+  });
+  const dismissSetup = async () => {
+    if (!gymId) return;
+    const { error } = await supabase.rpc('dismiss_gym_onboarding', {
+      p_gym_id: gymId,
+    });
+    if (error) return;
+    qc.invalidateQueries({ queryKey: ['gym-onboarding-dismissed'] });
+    push({
+      kind: 'receipt',
+      text: "Hidden. Say 'continue setup' here whenever you want it back.",
+    });
+  };
+  const setupOutstanding =
+    (requiredLeft || optionalLeft) && setupDismissed.data === false;
   const authority = useMoneyAuthority(gymId, isOwner);
   const [jobDismissed, setJobDismissed] = useState(false);
 
@@ -826,6 +857,7 @@ export default function Timeline() {
               done={setupDone}
               total={REQUIRED_SETUP_KEYS.length}
               blocking={requiredLeft}
+              onDismiss={dismissSetup}
             />
           ) : null}
 
@@ -2010,27 +2042,41 @@ function SetupCard({
   done,
   total,
   blocking,
+  onDismiss,
 }: {
   done: number;
   total: number;
   blocking: boolean;
+  // Writes the same 0105 flag as "Skip for now" on /onboarding: this
+  // card never comes back, and setup stays reachable through the bar.
+  onDismiss: () => void;
 }) {
   const colors = useThemeColors();
   // Once nothing is blocking, this is an offer rather than a warning: one
   // line and a link, no progress bar counting a list that's finished.
   if (!blocking) {
     return (
-      <Pressable
-        onPress={() => router.push('/setup' as never)}
-        className="flex-row items-center gap-2.5 px-1 active:opacity-70">
+      <View className="flex-row items-center gap-2.5 px-1">
         <Ionicons name="rocket-outline" size={15} color={colors.iconSecondary} />
-        <Text className="flex-1 text-gray-500 dark:text-gray-400 text-[13.5px]">
-          Your gym is ready. A few optional bits are still there if you want
-          them —{' '}
-          <Text className="text-link font-medium">pick up where you left off</Text>
-          .
-        </Text>
-      </Pressable>
+        <Pressable
+          onPress={() => router.push('/setup' as never)}
+          className="flex-1 active:opacity-70">
+          <Text className="text-gray-500 dark:text-gray-400 text-[13.5px]">
+            Your gym is ready. A few optional bits are still there if you want
+            them —{' '}
+            <Text className="text-link font-medium">
+              pick up where you left off
+            </Text>
+            .
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={onDismiss}
+          hitSlop={8}
+          accessibilityLabel="Don't show this again">
+          <Ionicons name="close" size={16} color={colors.iconSecondary} />
+        </Pressable>
+      </View>
     );
   }
   return (
@@ -2061,6 +2107,14 @@ function SetupCard({
       <Button onPress={() => router.push('/setup' as never)}>
         Carry on setting up
       </Button>
+      <Pressable
+        onPress={onDismiss}
+        hitSlop={6}
+        className="items-center active:opacity-70">
+        <Text className="text-gray-400 dark:text-gray-500 text-[13px] font-medium">
+          Don&apos;t show this again
+        </Text>
+      </Pressable>
     </View>
   );
 }
