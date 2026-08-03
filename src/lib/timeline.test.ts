@@ -93,6 +93,9 @@ describe('formatTimelineLine', () => {
     expect(givenUp.text).toBe(
       "Emma's payment didn't go through, and no more tries are coming.",
     );
+    // Stripe giving up is not "still a problem", it is money stopped —
+    // one rung above amber.
+    expect(givenUp.tone).toBe('red');
   });
 
   it('phrases cover in people, not requests', () => {

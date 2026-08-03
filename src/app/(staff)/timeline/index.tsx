@@ -761,8 +761,8 @@ export default function Timeline() {
             </View>
           ) : (
             groups.map((g) => (
-              <View key={g.key} className="gap-3">
-                <Text className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 text-center">
+              <View key={g.key} className="gap-4">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 text-center pt-2">
                   {g.label}
                 </Text>
                 {g.events.map((e) =>
@@ -791,6 +791,7 @@ export default function Timeline() {
             <SoftLine
               text={stripe.text}
               tone={stripe.tone}
+              icon="card-outline"
               offer={{ label: 'Open billing', href: '/management/billing' }}
             />
           ) : null}
@@ -956,7 +957,14 @@ function LocalRow({
     );
   }
   if (msg.kind === 'receipt') {
-    return <SoftLine text={msg.text} tone="neutral" offer={msg.offer} />;
+    return (
+      <SoftLine
+        text={msg.text}
+        tone="neutral"
+        icon="checkmark-circle-outline"
+        offer={msg.offer}
+      />
+    );
   }
   if (msg.kind === 'rules-sheet') {
     if (!choices) return null;
@@ -1401,6 +1409,28 @@ function ProposalCard({
   );
 }
 
+// What each kind of line is about, at a glance. The icon carries the
+// category so the sentence doesn't have to be re-read to place it — a
+// stream of near-identical grey lines was the complaint that bought
+// these.
+const KIND_ICON: Record<
+  TimelineEvent['kind'],
+  React.ComponentProps<typeof Ionicons>['name']
+> = {
+  member_joined: 'person-add-outline',
+  lead_captured: 'chatbubble-ellipses-outline',
+  payment_failing: 'card-outline',
+  held_back: 'time-outline',
+  cover_requested: 'swap-horizontal-outline',
+  cover_claimed: 'swap-horizontal-outline',
+  gym_closed: 'moon-outline',
+  membership_request: 'help-circle-outline',
+  campaign_sent: 'paper-plane-outline',
+  // Temple itself acted — one icon for every job, because "Temple did
+  // this" is the category; the sentence says which job.
+  agent_action: 'sparkles-outline',
+};
+
 function ReceiptLine({ event }: { event: TimelineEvent }) {
   const line = formatTimelineLine(event);
   return (
@@ -1408,6 +1438,7 @@ function ReceiptLine({ event }: { event: TimelineEvent }) {
       text={line.text}
       tone={line.tone}
       lead={line.lead}
+      icon={KIND_ICON[event.kind]}
       at={event.occurred_at}
       href={storyHref(event) ?? undefined}
     />
@@ -1418,6 +1449,7 @@ function SoftLine({
   text,
   tone,
   lead,
+  icon,
   at,
   offer,
   href,
@@ -1425,6 +1457,7 @@ function SoftLine({
   text: string;
   tone: 'neutral' | 'amber' | 'red';
   lead?: string;
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
   at?: string;
   offer?: { label: string; href: string };
   // A line with somewhere to open becomes the tap itself — the whole row,
@@ -1432,18 +1465,37 @@ function SoftLine({
   href?: string;
 }) {
   const colors = useThemeColors();
+  // Urgency is a container, not just a dot: an amber or red line sits in
+  // its own tinted card so a live problem cannot hide in a scroll of
+  // quiet receipts.
+  const urgent = tone !== 'neutral';
+  const iconColor =
+    tone === 'red' ? '#EF4444' : tone === 'amber' ? '#F59E0B' : colors.iconSecondary;
   const body = (
     <>
-      <View
-        className={`w-2 h-2 rounded-full mt-[7px] ${
-          tone === 'red'
-            ? 'bg-red-500'
-            : tone === 'amber'
-              ? 'bg-amber-500'
-              : 'bg-gray-300 dark:bg-gray-600'
-        }`}
-      />
-      <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px]">
+      {icon ? (
+        <View
+          className={`w-7 h-7 rounded-full items-center justify-center ${
+            tone === 'red'
+              ? 'bg-red-500/15'
+              : tone === 'amber'
+                ? 'bg-amber-500/15'
+                : 'bg-gray-200/70 dark:bg-gray-800'
+          }`}>
+          <Ionicons name={icon} size={14} color={iconColor} />
+        </View>
+      ) : (
+        <View
+          className={`w-2 h-2 rounded-full mt-[7px] ${
+            tone === 'red'
+              ? 'bg-red-500'
+              : tone === 'amber'
+                ? 'bg-amber-500'
+                : 'bg-gray-300 dark:bg-gray-600'
+          }`}
+        />
+      )}
+      <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] mt-[3px]">
         {lead && text.startsWith(lead) ? (
           <>
             <Text className="font-semibold text-gray-900 dark:text-gray-50">
@@ -1456,7 +1508,7 @@ function SoftLine({
         )}
       </Text>
       {at ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[3px]">
+        <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[6px]">
           {formatClock(at)}
         </Text>
       ) : null}
@@ -1465,25 +1517,32 @@ function SoftLine({
           name="chevron-forward"
           size={14}
           color={colors.iconSecondary}
-          style={{ marginTop: 4 }}
+          style={{ marginTop: 7 }}
         />
       ) : null}
     </>
   );
+  const rowClass = urgent
+    ? `flex-row items-start gap-3 px-3 py-2.5 rounded-xl border ${
+        tone === 'red'
+          ? 'bg-red-500/10 border-red-500/20'
+          : 'bg-amber-500/10 border-amber-500/20'
+      }`
+    : 'flex-row items-start gap-3 px-1';
   return (
     <View className="gap-2">
       {href ? (
         <Pressable
           onPress={() => router.push(href as never)}
           accessibilityRole="link"
-          className="flex-row items-start gap-3 px-1 active:opacity-60">
+          className={`${rowClass} active:opacity-60`}>
           {body}
         </Pressable>
       ) : (
-        <View className="flex-row items-start gap-3 px-1">{body}</View>
+        <View className={rowClass}>{body}</View>
       )}
       {offer ? (
-        <View className="flex-row pl-5">
+        <View className="flex-row pl-10">
           <OfferChip offer={offer} />
         </View>
       ) : null}
@@ -1606,6 +1665,7 @@ function AgentActionCard({
     return (
       <SoftLine
         tone="neutral"
+        icon="sparkles-outline"
         href={actionId ? `/timeline/${actionId}` : undefined}
         text={
           decided === 'approve'
@@ -1837,6 +1897,7 @@ function RequestCard({
     return (
       <SoftLine
         tone="neutral"
+        icon="checkmark-circle-outline"
         text={
           decided === 'approve'
             ? `${firstName}'s membership — sorted, as they asked.`

@@ -43,9 +43,10 @@ const AI_SOURCE = 'ai front desk';
 
 export type TimelineLine = {
   text: string;
-  // amber marks the lines that describe a live problem; everything else is
-  // a quiet receipt.
-  tone: 'neutral' | 'amber';
+  // amber marks the lines that describe a live problem; red the ones where
+  // the loss has already started (Stripe has given up on a card).
+  // Everything else is a quiet receipt.
+  tone: 'neutral' | 'amber' | 'red';
   // The leading run of characters to render semibold — always a prefix of
   // text, always the who (or the what, for a campaign). The stream is a
   // hundred grey sentences; the name is what an owner scans for.
@@ -79,11 +80,13 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
     case 'payment_failing': {
       const name = firstName(e.subject);
       const retry = str(e.detail, 'next_payment_attempt');
+      // Amber while Stripe is still trying; red once it has given up,
+      // because from that day the money is not late, it is stopped.
       return {
         text: retry
           ? `${name}'s payment didn't go through — the card will be tried again.`
           : `${name}'s payment didn't go through, and no more tries are coming.`,
-        tone: 'amber',
+        tone: retry ? 'amber' : 'red',
         lead: name,
       };
     }
