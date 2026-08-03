@@ -87,11 +87,15 @@ Neither is reachable by a unit test of the SQL, because both are about the
 
 `--dry-run` prints the plan and predictions without writing;
 `--tick-only` re-runs the ticks on consecutive mornings without adding
-history. A run dirties the gym by design — teardown + re-seed is the
-reset. It still needs a machine with a stack (`npm run dev`, or
-`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `--yes` for a hosted
-project); this sandbox cannot reach one, so the first execution happens
-there.
+history. A run dirties the gym by design — teardown + re-seed (the Demo
+gym workflow) is the reset.
+
+**Where it runs: GitHub Actions, against the hosted project.** Nothing
+in this project runs on a laptop. The **Run the gym** workflow
+(`.github/workflows/run-the-gym.yml`) is the front door for all three
+instruments — pick `sim`, `e2e`, `eval` or `all`, and read the job log.
+It reuses the Demo gym workflow's secrets and shares its concurrency
+group so a sim never races a reseed.
 
 One honest limitation: the ticks read `now()`, so a run is "the morning
 after a month", not thirty mornings. The per-day cadence question is
@@ -104,8 +108,8 @@ against fresh seeds at different `--days`.
 
 ### 1. Simulate a month, then read it as an owner
 
-`npm run sim -- --days 30 --seed 2026` against a seeded gym, then open the
-Timeline and scroll.
+Run the gym workflow → `sim` (or the whole thing with `all`), then open
+the deployed app as the demo owner and scroll the Timeline.
 
 The questions only this answers:
 
@@ -118,14 +122,15 @@ The questions only this answers:
 
 ### 2. Playwright, at two viewports — scaffolded
 
-`npm run e2e` (`playwright.config.ts` + `e2e/`). Two projects — an
-iPhone-13 viewport and 1280px desktop — because the StatTile wrap only
-shows narrow. Credentials default to the demo owner and coach1
-(override with `E2E_*` env); the config starts `expo start --web` itself
-unless `E2E_BASE_URL` points at a running one. Journeys 2 and 3 need the
-parser functions reachable — `E2E_PARSER=0` skips them. The specs are
-written against the real screens' copy and have not yet run against a
-live stack; expect first-run selector fixes. Six journeys:
+Run the gym workflow → `e2e` (`playwright.config.ts` + `e2e/`), against
+the deployed app at `app.jointemple.io` by default (`E2E_BASE_URL`
+overrides). Two projects — an iPhone-13 viewport and 1280px desktop —
+because the StatTile wrap only shows narrow. Credentials default to the
+demo owner and coach1 (`E2E_*` env overrides). Journeys 2 and 3 need
+`ANTHROPIC_API_KEY` on the hosted functions — `E2E_PARSER=0` skips
+them. The report uploads as a workflow artifact. The specs are written
+against the real screens' copy and have not yet run against the live
+app; expect first-run selector fixes. Six journeys:
 
 | Journey | What it catches |
 |---|---|
@@ -142,8 +147,10 @@ browser is the only thing that can see a wrap.
 
 ### 3. A parser eval — built
 
-`npm run eval:parser` (`scripts/run-parser-eval.ts`, fixtures in
-`scripts/parser-eval/cases.ts`). 55 sentences through the real path —
+Run the gym workflow → `eval` (`scripts/run-parser-eval.ts`, fixtures
+in `scripts/parser-eval/cases.ts`; needs the publishable anon key as a
+repo variable or secret `SUPABASE_ANON_KEY`). 55 sentences through the
+real path —
 the bar's own shortlist, the deployed `parse-setup`, the same
 full-catalogue fallback — signed in as the demo owner with a real JWT.
 Five are refusal traps: "cancel Marcus's membership" must not become

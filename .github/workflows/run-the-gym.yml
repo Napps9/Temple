@@ -1,0 +1,129 @@
+name: Run the gym
+
+# The three instruments from docs/running-a-gym.md, run where everything
+# already lives — nothing in this project runs on a laptop:
+#
+#   sim   simulate weeks of activity into the hosted demo gym, then run
+#         the real tick RPCs and print what each job proposed
+#   e2e   the six Playwright journeys against the deployed app, at
+#         phone and desktop widths
+#   eval  ~55 sentences through the deployed parser, refusal traps
+#         included
+#
+# Seed the demo gym first (Demo gym workflow -> seed, slug
+# demo-ironworks). The sim dirties it by design — teardown + re-seed is
+# the reset. Not demo-launchpad: its password rotates nightly, so the
+# default credentials the journeys and the eval use would be wrong.
+#
+# Secrets/vars needed:
+#   SUPABASE_PROJECT_REF, SUPABASE_SERVICE_ROLE_KEY  (already used by
+#     the Demo gym workflow)
+#   SUPABASE_ANON_KEY  (the publishable anon key — Dashboard -> Settings
+#     -> API; safe as a repo variable, needed by e2e-adjacent eval only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: Which instrument to run
+        type: choice
+        options: [all, sim, e2e, eval]
+        default: all
+      slug:
+        description: Demo gym slug (must start with demo-)
+        default: demo-ironworks
+      days:
+        description: Days of history the sim replays (sim only)
+        default: "56"
+      seed:
+        description: Sim seed — same seed, same month (sim only)
+        default: "2026"
+
+env:
+  DO_NOT_TRACK: "1"
+
+jobs:
+  sim:
+    if: inputs.what == 'all' || inputs.what == 'sim'
+    runs-on: ubuntu-latest
+    # Shares the seeder's group so a sim never races a reseed.
+    concurrency:
+      group: demo-gym
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: "0"
+      - name: Simulate, then tick
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLUG: ${{ inputs.slug }}
+          DAYS: ${{ inputs.days }}
+          SEED: ${{ inputs.seed }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY repo secret is not set."
+            exit 1
+          fi
+          npx tsx scripts/run-sim.ts --slug "$SLUG" --days "$DAYS" --seed "$SEED" --yes
+
+  e2e:
+    # After the sim when both run (the journeys read the Timeline the
+    # ticks just wrote) — but a skipped sim must not skip this job too,
+    # which is what a bare `needs` does.
+    if: >-
+      always() &&
+      (inputs.what == 'all' || inputs.what == 'e2e') &&
+      (needs.sim.result == 'success' || needs.sim.result == 'skipped')
+    runs-on: ubuntu-latest
+    needs: [sim]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: "0"
+      - run: npx playwright install --with-deps chromium
+      - name: Six journeys, two widths
+        env:
+          E2E_SLUG: ${{ inputs.slug }}
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+  eval:
+    if: inputs.what == 'all' || inputs.what == 'eval'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: "0"
+      - name: Parser eval
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+          SLUG: ${{ inputs.slug }}
+        run: |
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_ANON_KEY is not set — add the publishable anon key as a repo variable or secret."
+            exit 1
+          fi
+          npx tsx scripts/run-parser-eval.ts --slug "$SLUG"
