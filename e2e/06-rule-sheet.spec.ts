@@ -11,7 +11,9 @@ test('the rule sheet opens, offers options on tap, and saves a value', async ({ 
   await signIn(page, OWNER_EMAIL);
   await page.goto('/timeline?rules=1');
 
-  await expect(page.getByText('Your rules')).toBeVisible({ timeout: 30_000 });
+  // first(): on desktop the owner's bar chip is also labelled "Your
+  // rules", so the bare text matches twice.
+  await expect(page.getByText('Your rules').first()).toBeVisible({ timeout: 30_000 });
 
   // Value tokens are the tappable spans inside the rule sentences,
   // marked with a ▾ (RuleSheet.tsx) — tapping one opens that field's

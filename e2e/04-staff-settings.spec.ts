@@ -9,11 +9,10 @@ import { COACH_EMAIL, signIn } from './helpers';
 // there, while a card their default capabilities do grant must be.
 test('a coach sees Manage without the owner-only sections', async ({ page }) => {
   await signIn(page, COACH_EMAIL, { expectBar: false });
-  await page.goto('/management');
-
-  // The settings sections live behind the Settings category pill — the
-  // landing view is category pills plus the active category's panel.
-  await page.getByText('Settings', { exact: true }).first().click();
+  // ?section= is the deep link /onboarding uses to land on Settings with
+  // a section open — viewport-agnostic, where the Settings pill is a
+  // desktop-only element that display:nones away at phone width.
+  await page.goto('/management?section=class-types');
 
   // Granted to coaches at the defaults (can_edit_classes).
   await expect(page.getByText('Class types').first()).toBeVisible({ timeout: 30_000 });
