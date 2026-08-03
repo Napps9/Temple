@@ -23,8 +23,11 @@ export async function signIn(page: Page, email: string): Promise<void> {
     window.localStorage.setItem('temple.cookieConsent', 'rejected');
   });
   await page.goto('/sign-in');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(PASSWORD);
+  // Role-scoped, not getByLabel: the show/hide toggle is aria-labelled
+  // "Show password", which getByLabel's substring match also catches —
+  // the first hosted run failed all twelve journeys on exactly that.
+  await page.getByRole('textbox', { name: 'Email' }).fill(email);
+  await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
   await page.getByText('Sign in', { exact: true }).last().click();
   // Staff land on the Timeline; the talk bar arriving is the whole
   // stack agreeing — auth, membership resolution, capability read,

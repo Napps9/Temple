@@ -343,6 +343,19 @@ async function main(): Promise<void> {
   }
 
   // ---- the ticks ----------------------------------------------------------
+  // Provenance by identity, not by timestamp: the seeder stamps some
+  // fixture proposals at fixed clock times later today, so a
+  // proposed_at >= runStart filter claimed a seeded card as this run's
+  // work on the first hosted run (and the 180-day dedup then made the
+  // real tick look silently broken).
+  const beforeIds = new Set(
+    (
+      await fetchAll<{ id: string }>((a, b) =>
+        sb.from('agent_actions').select('id').eq('gym_id', gym.id).range(a, b),
+      )
+    ).map((r) => r.id),
+  );
+
   console.log('\nTicks:');
   for (const tick of TICKS) {
     const { data, error } = await sb.rpc(tick as never);
@@ -351,12 +364,13 @@ async function main(): Promise<void> {
   }
 
   // ---- what the jobs decided ---------------------------------------------
-  const actions = await fetchAll<{
-    action_kind: string; status: string; payload: Json; evidence: Json;
+  const allActions = await fetchAll<{
+    id: string; action_kind: string; status: string; payload: Json; evidence: Json;
   }>((a, b) =>
-    sb.from('agent_actions').select('action_kind, status, payload, evidence')
-      .eq('gym_id', gym.id).gte('proposed_at', runStart).order('action_kind').range(a, b),
+    sb.from('agent_actions').select('id, action_kind, status, payload, evidence')
+      .eq('gym_id', gym.id).order('action_kind').range(a, b),
   );
+  const actions = allActions.filter((a) => !beforeIds.has(a.id));
   console.log(`\nProposals from this run (${actions.length}):`);
   for (const a of actions) {
     const p = (a.payload ?? {}) as Record<string, unknown>;
