@@ -68,7 +68,13 @@ export default function StaffLayout() {
   return (
     <View className="flex-1 bg-slate-100 dark:bg-gray-950">
       <TopNav sections={STAFF_SECTIONS} variant="staff" />
+      {/* backBehavior="history": when a back press bubbles past a tab's
+          inner stack, return to the tab the user was actually on. The
+          default is firstRoute, which sent Timeline -> member -> Back to
+          Programming analysis purely because "analysis" is declared first
+          below. */}
       <Tabs
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },

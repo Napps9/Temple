@@ -30,7 +30,12 @@ export default function MemberLayout() {
   return (
     <View className="flex-1 bg-slate-100 dark:bg-gray-950">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
+      {/* backBehavior="history": when a back press bubbles past a tab's
+          inner stack, return to the tab the user was actually on. The
+          default is firstRoute, which teleported an unhandled back to
+          whichever screen happens to be declared first below. */}
       <Tabs
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
