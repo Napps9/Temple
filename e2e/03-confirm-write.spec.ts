@@ -11,9 +11,11 @@ test('confirming a card lands the write, and its inverse undoes it', async ({ pa
   await signIn(page, OWNER_EMAIL);
 
   await say(page, 'Close the gym on 25 December');
-  // The preview card asks before anything happens. 'Yes, do it' is the
-  // registry default confirm label (timeline.tsx ProposalCard).
-  const confirm = page.getByText(/Yes, do it|Close/, { exact: false }).last();
+  // The preview card asks before anything happens. Role-scoped so the
+  // echo of the sentence in the feed can never be the click target;
+  // per-action confirm labels vary ('Yes, do it' default, 'Yes, send
+  // it' for message-bearing cards).
+  const confirm = page.getByRole('button', { name: /Yes,/ }).last();
   await expect(confirm).toBeVisible({ timeout: 30_000 });
   await confirm.click();
 
@@ -23,7 +25,7 @@ test('confirming a card lands the write, and its inverse undoes it', async ({ pa
   });
 
   await say(page, 'Reopen 25 December');
-  const reopen = page.getByText(/Yes, do it|Reopen/, { exact: false }).last();
+  const reopen = page.getByRole('button', { name: /Yes,/ }).last();
   await expect(reopen).toBeVisible({ timeout: 30_000 });
   await reopen.click();
   await expect(page.getByText(/reopened|back on|done/i).first()).toBeVisible({

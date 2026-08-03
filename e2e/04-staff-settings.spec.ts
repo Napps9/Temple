@@ -11,6 +11,10 @@ test('a coach sees Manage without the owner-only sections', async ({ page }) => 
   await signIn(page, COACH_EMAIL, { expectBar: false });
   await page.goto('/management');
 
+  // The settings sections live behind the Settings category pill — the
+  // landing view is category pills plus the active category's panel.
+  await page.getByText('Settings', { exact: true }).first().click();
+
   // Granted to coaches at the defaults (can_edit_classes).
   await expect(page.getByText('Class types').first()).toBeVisible({ timeout: 30_000 });
 

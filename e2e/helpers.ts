@@ -51,5 +51,8 @@ export async function signIn(
 export async function say(page: Page, sentence: string): Promise<void> {
   const bar = page.getByPlaceholder(TALK_BAR_PLACEHOLDER);
   await bar.fill(sentence);
-  await page.getByLabel('Send').click();
+  // exact: a card's own "Yes, send it" confirm also contains "Send" and
+  // getByLabel matches substrings — the second sentence of a journey
+  // otherwise hits a strict-mode violation against the previous card.
+  await page.getByLabel('Send', { exact: true }).click();
 }

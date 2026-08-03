@@ -13,20 +13,18 @@ test('the rule sheet opens, offers options on tap, and saves a value', async ({ 
 
   await expect(page.getByText('Your rules')).toBeVisible({ timeout: 30_000 });
 
-  // Value tokens are the tappable spans inside the rule sentences. Tap
-  // the first one and its options must appear as chips beneath the line.
-  const sheet = page.getByText('Your rules').locator('..');
-  const token = sheet.locator('[tabindex="0"]').first();
-  await token.click();
-
-  // Option chips carry short labels; at least two choices must appear
-  // (a rule with one option is not a choice).
-  const chips = sheet.locator('[tabindex="0"]');
-  await expect.poll(() => chips.count()).toBeGreaterThan(2);
+  // Value tokens are the tappable spans inside the rule sentences,
+  // marked with a ▾ (RuleSheet.tsx) — tapping one opens that field's
+  // options as chips beneath the line.
+  const before = await page.locator('[tabindex="0"]').count();
+  await page.getByText(/▾/).first().click();
+  await expect
+    .poll(() => page.locator('[tabindex="0"]').count(), { timeout: 15_000 })
+    .toBeGreaterThan(before);
 
   // Re-selecting the current value is a save that changes nothing —
-  // exercises the write path without altering the gym. The sheet must
-  // settle without an error line.
-  await chips.nth(1).click();
+  // exercises the write path without altering the gym. The selected
+  // chip carries bg-primary (NativeWind classes land verbatim on web).
+  await page.locator('[tabindex="0"].bg-primary').first().click();
   await expect(page.getByText(/couldn.t|failed|error/i)).toHaveCount(0);
 });
