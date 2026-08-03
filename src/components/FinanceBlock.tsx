@@ -273,7 +273,14 @@ function OverdueList({ gymId }: { gymId: string }) {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, subscriptionId) => {
+      // Mark the row chased before the refetch lands: with only the
+      // invalidation, the chip re-arms for a beat and a double-tap
+      // spends the second touch on a duplicate email.
+      queryClient.setQueryData<Set<string>>(
+        ['payment-chases', gymId],
+        (old) => new Set([...(old ?? []), subscriptionId]),
+      );
       // The outbound queue drains on a 15-minute cron; the owner just
       // asked, so nudge the worker now. Best-effort — quiet hours or a
       // failure here just leave it to the cron.
