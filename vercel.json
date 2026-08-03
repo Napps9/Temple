@@ -15,6 +15,7 @@
     { "source": "/athlete/movement/:movement", "destination": "/athlete/movement/[movement]" },
     { "source": "/track/group/:group", "destination": "/track/group/[group]" },
     { "source": "/track/workout/:id", "destination": "/track/workout/[id]" },
+    { "source": "/timeline/:action", "destination": "/timeline/[action]" },
     { "source": "/inbox/direct/:peer", "destination": "/inbox/direct/[peer]" },
     { "source": "/management/members/:profile", "destination": "/management/members/[profile]" },
     { "source": "/management/members/imported/:id", "destination": "/management/members/imported/[id]" },

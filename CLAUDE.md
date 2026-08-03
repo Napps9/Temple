@@ -183,8 +183,10 @@ Gotchas seen in this codebase:
 - **`<Input>`** is the shared text input (handles label, error,
   password show/hide). Pass `secureTextEntry` for password fields plus
   `textContentType` + `autoComplete` for password managers.
-- **`<BackLink label="Manage" />`** on every deep-link sub-page so
-  users have an explicit way back.
+- **`<BackLink />`** on every deep-link sub-page so users have an
+  explicit way back. Strict came-from contract: `router.back()` when
+  history exists, `fallbackHref` (the page's logical parent) only on a
+  cold open. The label is always "Back" — no destination labels.
 - **`<ChipButton>`** for inline actions (Copy, Share, Edit, etc.).
   Tones: `primary` / `neutral` / `amber` / `red` / `filled`.
 - **`<Button>`** for the main page action. Variants:
