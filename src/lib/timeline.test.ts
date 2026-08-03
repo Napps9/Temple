@@ -4,6 +4,7 @@ import {
   dayLabel,
   formatTimelineLine,
   groupTimelineByDay,
+  storyHref,
   stripeWarning,
   type TimelineEvent,
 } from './timeline';
@@ -20,11 +21,31 @@ function evt(partial: Partial<TimelineEvent>): TimelineEvent {
 }
 
 describe('formatTimelineLine', () => {
-  it('reads joins as one plain sentence', () => {
+  it('reads joins as one plain sentence, with the name to scan by', () => {
     expect(formatTimelineLine(evt({}))).toEqual({
       text: 'Sarah Jones joined.',
       tone: 'neutral',
+      lead: 'Sarah Jones',
     });
+  });
+
+  // The lead is a rendering contract: always a prefix of the text, so the
+  // screen can bold it by slicing rather than re-deriving the name.
+  it('only ever offers a lead that prefixes its own text', () => {
+    const kinds: TimelineEvent[] = [
+      evt({}),
+      evt({ kind: 'lead_captured', detail: { source: 'Walk-in' } }),
+      evt({ kind: 'payment_failing', detail: {} }),
+      evt({ kind: 'cover_requested', detail: { class_count: 2 } }),
+      evt({ kind: 'cover_claimed', detail: {} }),
+      evt({ kind: 'membership_request', detail: { request_kind: 'cancel' } }),
+      evt({ kind: 'campaign_sent', detail: { status: 'sent', sent: 3 } }),
+    ];
+    for (const e of kinds) {
+      const line = formatTimelineLine(e);
+      expect(line.lead).toBeTruthy();
+      expect(line.text.startsWith(line.lead!)).toBe(true);
+    }
   });
 
   it('speaks first-person only when Temple itself acted', () => {
@@ -106,6 +127,7 @@ describe('formatTimelineLine', () => {
     expect(cancel).toEqual({
       text: 'Marcus wants to cancel their membership.',
       tone: 'amber',
+      lead: 'Marcus',
     });
 
     const move = formatTimelineLine(
@@ -455,6 +477,51 @@ describe('the receipt for a send', () => {
     expect(campaign({ status: 'failed', sent: 0 }).text).toBe(
       '“Christmas hours” didn’t go out — nobody received it.',
     );
+  });
+});
+
+// A line's claim and its receipt (0247). The nudge lines open the story
+// page, a campaign opens its report, a join opens the member — and the
+// lines with nothing more to show open nowhere.
+describe('storyHref', () => {
+  it('sends a nudge line to its own story', () => {
+    expect(
+      storyHref(
+        evt({
+          item_id: 'action:8b6f7c2a-0000-4000-8000-000000000001',
+          kind: 'agent_action',
+          detail: { action_kind: 'chase_message', status: 'executed', payload: {} },
+        }),
+      ),
+    ).toBe('/timeline/8b6f7c2a-0000-4000-8000-000000000001');
+  });
+
+  it('sends a campaign line to the report that already exists', () => {
+    expect(
+      storyHref(
+        evt({
+          kind: 'campaign_sent',
+          detail: { campaign_id: 'c1', status: 'sent', sent: 3 },
+        }),
+      ),
+    ).toBe('/management/communications/c1');
+  });
+
+  it('sends a join and a failing payment to the member', () => {
+    expect(storyHref(evt({ detail: { profile_id: 'p1' } }))).toBe(
+      '/management/members/p1',
+    );
+    expect(
+      storyHref(evt({ kind: 'payment_failing', detail: { profile_id: 'p2' } })),
+    ).toBe('/management/members/p2');
+  });
+
+  it('opens nowhere when there is nothing more to show', () => {
+    // A join from before 0247 has no profile id — a dead tap would be a
+    // broken promise, so the row stays a plain line.
+    expect(storyHref(evt({ detail: {} }))).toBeNull();
+    expect(storyHref(evt({ kind: 'gym_closed', detail: {} }))).toBeNull();
+    expect(storyHref(evt({ kind: 'held_back', detail: { held: 2 } }))).toBeNull();
   });
 });
 

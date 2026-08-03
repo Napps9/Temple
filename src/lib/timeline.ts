@@ -46,23 +46,34 @@ export type TimelineLine = {
   // amber marks the lines that describe a live problem; everything else is
   // a quiet receipt.
   tone: 'neutral' | 'amber';
+  // The leading run of characters to render semibold — always a prefix of
+  // text, always the who (or the what, for a campaign). The stream is a
+  // hundred grey sentences; the name is what an owner scans for.
+  lead?: string;
 };
 
 export function formatTimelineLine(e: TimelineEvent): TimelineLine {
   switch (e.kind) {
-    case 'member_joined':
-      return { text: `${e.subject.trim() || 'A new member'} joined.`, tone: 'neutral' };
+    case 'member_joined': {
+      const name = e.subject.trim() || 'A new member';
+      return { text: `${name} joined.`, tone: 'neutral', lead: name };
+    }
     case 'lead_captured': {
       const name = e.subject.trim() || 'Someone';
       const source = str(e.detail, 'source');
       if (source && source.trim().toLowerCase() === AI_SOURCE) {
-        return { text: `${name} got in touch — I've taken their details.`, tone: 'neutral' };
+        return {
+          text: `${name} got in touch — I've taken their details.`,
+          tone: 'neutral',
+          lead: name,
+        };
       }
       return {
         text: source
           ? `${name} asked about joining, through ${source}.`
           : `${name} asked about joining.`,
         tone: 'neutral',
+        lead: name,
       };
     }
     case 'payment_failing': {
@@ -73,13 +84,18 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
           ? `${name}'s payment didn't go through — the card will be tried again.`
           : `${name}'s payment didn't go through, and no more tries are coming.`,
         tone: 'amber',
+        lead: name,
       };
     }
     case 'cover_requested': {
       const count = typeof e.detail.class_count === 'number' ? e.detail.class_count : 0;
       const name = firstName(e.subject);
       const classes = count === 1 ? 'a class' : `${count} classes`;
-      return { text: `${name} asked for cover on ${classes}.`, tone: 'neutral' };
+      return {
+        text: `${name} asked for cover on ${classes}.`,
+        tone: 'neutral',
+        lead: name,
+      };
     }
     case 'cover_claimed': {
       const coveredFor = str(e.detail, 'covered_for');
@@ -89,6 +105,7 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
           ? `${name} is covering for ${firstName(coveredFor)}.`
           : `${name} picked up a cover class.`,
         tone: 'neutral',
+        lead: name,
       };
     }
     case 'gym_closed': {
@@ -106,7 +123,11 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
       const name = firstName(e.subject);
       const kind = str(e.detail, 'request_kind');
       if (kind === 'cancel') {
-        return { text: `${name} wants to cancel their membership.`, tone: 'amber' };
+        return {
+          text: `${name} wants to cancel their membership.`,
+          tone: 'amber',
+          lead: name,
+        };
       }
       const target = str(e.detail, 'target_plan');
       return {
@@ -114,6 +135,7 @@ export function formatTimelineLine(e: TimelineEvent): TimelineLine {
           ? `${name} wants to move to ${target}.`
           : `${name} wants to change their membership.`,
         tone: 'amber',
+        lead: name,
       };
     }
     case 'held_back': {
@@ -152,13 +174,14 @@ function people(n: number): string {
 // "went to 214" this morning can say "and 211 arrived" this afternoon.
 function campaignSentLine(e: TimelineEvent): TimelineLine {
   const title = e.subject.trim() || 'A campaign';
+  const lead = `“${title}”`;
   const status = str(e.detail, 'status');
   const sent = num(e.detail, 'sent');
   const bounced = num(e.detail, 'bounced');
   const complained = num(e.detail, 'complained');
 
   if (status === 'failed') {
-    return { text: `“${title}” didn’t go out — nobody received it.`, tone: 'amber' };
+    return { text: `“${title}” didn’t go out — nobody received it.`, tone: 'amber', lead };
   }
   if (status === 'cancelled') {
     const skipped = num(e.detail, 'skipped');
@@ -171,6 +194,7 @@ function campaignSentLine(e: TimelineEvent): TimelineLine {
     return {
       text: `“${title}” was a practice run — nothing actually left the building.`,
       tone: 'neutral',
+      lead,
     };
   }
 
@@ -188,7 +212,7 @@ function campaignSentLine(e: TimelineEvent): TimelineLine {
   if (complained > 0) {
     text += ` ${complained === 1 ? 'Someone' : `${complained} people`} marked it as spam.`;
   }
-  return { text, tone: bounced > 0 || complained > 0 ? 'amber' : 'neutral' };
+  return { text, tone: bounced > 0 || complained > 0 ? 'amber' : 'neutral', lead };
 }
 
 // The money loop's receipts and questions (0206). Payload fields are
@@ -408,6 +432,32 @@ function agentActionLine(e: TimelineEvent): TimelineLine {
       };
     default:
       return { text: `I've been looking after ${first}'s payment.`, tone: 'neutral' };
+  }
+}
+
+// Where a line opens to, when it opens to anywhere. One sentence in the
+// stream is the claim; this is the receipt behind it — the nudge's own
+// story page, the campaign's report, the member who joined. Null means
+// the line already says everything there is (a closure, a held-back
+// count), or the row renders as a card that carries its own way through
+// (a proposed action, an open cover ask).
+export function storyHref(e: TimelineEvent): string | null {
+  switch (e.kind) {
+    case 'agent_action': {
+      const id = e.item_id.split(':')[1];
+      return id ? `/timeline/${id}` : null;
+    }
+    case 'campaign_sent': {
+      const id = str(e.detail, 'campaign_id');
+      return id ? `/management/communications/${id}` : null;
+    }
+    case 'member_joined':
+    case 'payment_failing': {
+      const id = str(e.detail, 'profile_id');
+      return id ? `/management/members/${id}` : null;
+    }
+    default:
+      return null;
   }
 }
 

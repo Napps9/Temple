@@ -5,7 +5,7 @@
 -- agent_actions ledger seed: staff-read only, no client writes.
 
 begin;
-select plan(12);
+select plan(14);
 
 \ir _helpers.psql
 
@@ -130,6 +130,24 @@ select is(
     where kind = 'membership_request'),
   'cancel',
   'request card carries its kind'
+);
+
+-- 0247: the lines that are about one member carry who, so the screen can
+-- open them.
+select is(
+  (select count(*)::int from timeline_feed(current_setting('test.gym')::uuid)
+    where kind = 'member_joined'
+      and detail->>'profile_id' is not null),
+  2,
+  'joined lines carry the profile id'
+);
+
+select is(
+  (select detail->>'profile_id'
+     from timeline_feed(current_setting('test.gym')::uuid)
+    where kind = 'payment_failing'),
+  current_setting('test.member'),
+  'the failing payment names its member'
 );
 
 -- Feed is newest-first and respects the limit.

@@ -1607,7 +1607,7 @@ describe('the parser is told the gym’s day', () => {
 // that retry would turn "the bar can't find the verb" into "Temple can't
 // do that", silently, on a fraction of sentences nobody could predict.
 describe('a shortlisted refusal is asked again', () => {
-  const screen = readFileSync('src/app/(staff)/timeline.tsx', 'utf8');
+  const screen = readFileSync('src/app/(staff)/timeline/index.tsx', 'utf8');
 
   it('sends the shortlist first', () => {
     expect(screen).toMatch(/ask\(shortlist\(text, vocabulary, SHORTLIST, keep\)\)/);
@@ -1635,7 +1635,7 @@ describe('a shortlisted refusal is asked again', () => {
 // So: every preview call has to be handed a collector, and an action that
 // offers has to have somewhere for the offer to land.
 describe('an offer made from a preview reaches the owner', () => {
-  const screen = readFileSync('src/app/(staff)/timeline.tsx', 'utf8');
+  const screen = readFileSync('src/app/(staff)/timeline/index.tsx', 'utf8');
 
   it('never runs a preview without collecting what it offered', () => {
     const bare = screen.match(/\.preview\(\s*\w+\s*,\s*actionCtx\(\)\s*\)/g) ?? [];

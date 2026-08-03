@@ -23,7 +23,7 @@ import { MemberTagChip } from '@/components/MemberTagChip';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
-import { REQUIRED_SETUP_KEYS } from './setup';
+import { REQUIRED_SETUP_KEYS } from '../setup';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import {
   ActionError,
@@ -62,6 +62,7 @@ import {
   formatClock,
   formatTimelineLine,
   groupTimelineByDay,
+  storyHref,
   stripeWarning,
   type TimelineEvent,
 } from '@/lib/timeline';
@@ -1402,41 +1403,85 @@ function ProposalCard({
 
 function ReceiptLine({ event }: { event: TimelineEvent }) {
   const line = formatTimelineLine(event);
-  return <SoftLine text={line.text} tone={line.tone} at={event.occurred_at} />;
+  return (
+    <SoftLine
+      text={line.text}
+      tone={line.tone}
+      lead={line.lead}
+      at={event.occurred_at}
+      href={storyHref(event) ?? undefined}
+    />
+  );
 }
 
 function SoftLine({
   text,
   tone,
+  lead,
   at,
   offer,
+  href,
 }: {
   text: string;
   tone: 'neutral' | 'amber' | 'red';
+  lead?: string;
   at?: string;
   offer?: { label: string; href: string };
+  // A line with somewhere to open becomes the tap itself — the whole row,
+  // not a chip, because the chevron is a promise about the row.
+  href?: string;
 }) {
+  const colors = useThemeColors();
+  const body = (
+    <>
+      <View
+        className={`w-2 h-2 rounded-full mt-[7px] ${
+          tone === 'red'
+            ? 'bg-red-500'
+            : tone === 'amber'
+              ? 'bg-amber-500'
+              : 'bg-gray-300 dark:bg-gray-600'
+        }`}
+      />
+      <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px]">
+        {lead && text.startsWith(lead) ? (
+          <>
+            <Text className="font-semibold text-gray-900 dark:text-gray-50">
+              {lead}
+            </Text>
+            {text.slice(lead.length)}
+          </>
+        ) : (
+          text
+        )}
+      </Text>
+      {at ? (
+        <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[3px]">
+          {formatClock(at)}
+        </Text>
+      ) : null}
+      {href ? (
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color={colors.iconSecondary}
+          style={{ marginTop: 4 }}
+        />
+      ) : null}
+    </>
+  );
   return (
     <View className="gap-2">
-      <View className="flex-row items-start gap-3 px-1">
-        <View
-          className={`w-2 h-2 rounded-full mt-[7px] ${
-            tone === 'red'
-              ? 'bg-red-500'
-              : tone === 'amber'
-                ? 'bg-amber-500'
-                : 'bg-gray-300 dark:bg-gray-600'
-          }`}
-        />
-        <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px]">
-          {text}
-        </Text>
-        {at ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[3px]">
-            {formatClock(at)}
-          </Text>
-        ) : null}
-      </View>
+      {href ? (
+        <Pressable
+          onPress={() => router.push(href as never)}
+          accessibilityRole="link"
+          className="flex-row items-start gap-3 px-1 active:opacity-60">
+          {body}
+        </Pressable>
+      ) : (
+        <View className="flex-row items-start gap-3 px-1">{body}</View>
+      )}
       {offer ? (
         <View className="flex-row pl-5">
           <OfferChip offer={offer} />
@@ -1561,6 +1606,7 @@ function AgentActionCard({
     return (
       <SoftLine
         tone="neutral"
+        href={actionId ? `/timeline/${actionId}` : undefined}
         text={
           decided === 'approve'
             ? kind === 'class_return_message'

@@ -626,6 +626,7 @@ export type Database = {
             | 'class_return_message';
           subject_profile: string | null;
           subject_subscription: string | null;
+          case_id: string | null;
           payload: Json;
           evidence: Json;
           status: 'proposed' | 'approved' | 'rejected' | 'executed' | 'expired';

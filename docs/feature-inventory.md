@@ -407,7 +407,28 @@ The staff area shows up when `can_access_staff_area` is on.
   one idea per line, first person only where Temple itself acted, no
   system vocabulary; amber dots mark live problems (a failing payment, a
   pending request). Day groups (Today / Yesterday / weekday), oldest at
-  the top, like a conversation.
+  the top, like a conversation. Lines lead with the name in semibold
+  (`TimelineLine.lead`, always a prefix of the text) — the stream is a
+  hundred grey sentences and the name is what an owner scans for.
+- **A line opens to its receipt** (0247) — `storyHref`
+  (`src/lib/timeline.ts`, pure + tested) says where each line goes:
+  a nudge line opens its own story page, a campaign line opens the
+  existing report (`/management/communications/[id]`), a join or a
+  failing payment opens the member (`timeline_feed` now carries
+  `profile_id` on those two kinds). Lines with nothing more to show
+  (closures, held-back counts) stay plain — no dead taps.
+- **The nudge's story page** (`/timeline/[action]`, 0247) — the full
+  answer to "what was the nudge, and what was said?": why it came up
+  (the SQL-derived evidence), who said yes and when (or that the job has
+  the standing go-ahead), the exact subject and body each member got
+  with its send status (sent / waiting for 9am–8pm gym time / didn't
+  send / skipped and why), and what came of it for payment cases
+  (`agent_cases` outcome). Copy lives in `src/lib/nudge-story.ts` (pure
+  + unit-tested, same register). Reads run in the viewer's own session —
+  `agent_actions`, `agent_outbound_messages` and `agent_cases` have
+  carried `can_see_money` SELECT policies since 0204/0206; no new RPC.
+  The page also says where replies land (the gym's email inbox), because
+  Temple doesn't read replies.
 - **Questions decided in place** — pending membership requests render as
   the stream's only cards: one question, exactly two choices with the
   yes labelled by the action ("Yes, move Marcus"), member note behind
