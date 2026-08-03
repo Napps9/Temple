@@ -1,0 +1,41 @@
+import { expect, type Page } from '@playwright/test';
+
+// The demo seeder's accounts (scripts/demo-gym/plan.ts): every account
+// shares DEMO_PASSWORD and lives on @<slug>.temple.test. Not imported —
+// plan.ts pulls in app modules that want Expo env at load.
+const SLUG = process.env.E2E_SLUG ?? 'demo-ironworks';
+export const OWNER_EMAIL = process.env.E2E_OWNER_EMAIL ?? `owner@${SLUG}.temple.test`;
+export const COACH_EMAIL = process.env.E2E_COACH_EMAIL ?? `coach1@${SLUG}.temple.test`;
+export const PASSWORD = process.env.E2E_PASSWORD ?? 'TempleDemo1!';
+
+// Journeys 2 and 3 need the parser edge functions reachable (and their
+// ANTHROPIC_API_KEY set). E2E_PARSER=0 skips them rather than failing a
+// stack that never claimed to have one.
+export const PARSER_AVAILABLE = process.env.E2E_PARSER !== '0';
+
+export const TALK_BAR_PLACEHOLDER =
+  'Show me a member, change a class, send a newsletter…';
+
+export async function signIn(page: Page, email: string): Promise<void> {
+  // Decide cookie consent before first paint so the PECR banner never
+  // overlaps a control the journey needs (key: src/lib/cookie-consent.ts).
+  await page.addInitScript(() => {
+    window.localStorage.setItem('temple.cookieConsent', 'rejected');
+  });
+  await page.goto('/sign-in');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill(PASSWORD);
+  await page.getByText('Sign in', { exact: true }).last().click();
+  // Staff land on the Timeline; the talk bar arriving is the whole
+  // stack agreeing — auth, membership resolution, capability read,
+  // timeline union.
+  await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toBeVisible({
+    timeout: 30_000,
+  });
+}
+
+export async function say(page: Page, sentence: string): Promise<void> {
+  const bar = page.getByPlaceholder(TALK_BAR_PLACEHOLDER);
+  await bar.fill(sentence);
+  await page.getByLabel('Send').click();
+}

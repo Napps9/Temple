@@ -55,5 +55,8 @@ export default defineConfig({
   test: {
     globals: false,
     setupFiles: [fileURLToPath(new URL('./test/setup-env.ts', import.meta.url))],
+    // e2e/ is Playwright's; vitest would otherwise pick up its *.spec.ts
+    // and try to run browser journeys in node.
+    exclude: ['**/node_modules/**', 'e2e/**'],
   },
 });

@@ -61,17 +61,42 @@ Both are pinned as tests in `simulate.test.ts`:
 Neither is reachable by a unit test of the SQL, because both are about the
 *shape of a gym* rather than the correctness of a predicate.
 
-### What still needs building
+### The runner — built
 
-The runner: apply a simulated day's events to a seeded gym, then invoke
-the real tick RPCs. They are `revoke all … from public, anon,
-authenticated`, so it calls them with the service-role key exactly as the
-seeder already does. Then print what each job proposed, what it held back,
-and what the Timeline would say.
+`npm run sim` (`scripts/run-sim.ts`, pure half in
+`scripts/demo-gym/runner.ts`, tested). Against a seeded demo gym it:
 
-Not built here because this environment cannot reach a database — the
-sandbox denies the Supabase host and the CLI is not installed. It needs a
-machine with a stack.
+1. Assigns every member a personality (seeded shuffle, so `--seed`
+   replays the same gym), moves up to three never-started joins into the
+   first-week job's 7–30 day window (never an imported member), and
+   simulates each day back to the previous Sunday, ending yesterday.
+2. Writes what a real month leaves behind: backdated `class_sessions`
+   where the slot has none, bookings with attendance and no-shows in the
+   seeder's own shapes, and dunning rows for simulated card failures —
+   always with `next_payment_attempt` in play, never claiming Stripe
+   gave up.
+3. Fills the one gap a seeded gym has: the class-return job postdates
+   the seeder, so its authority row and template are added at
+   `approval` if missing.
+4. Invokes all seven tick RPCs with the service-role key (they are
+   revoked from every other principal) and prints what each proposed,
+   what the ask budget held back, and — printed *before* the ticks run —
+   what the sim itself expects of the class-return predicate per slot,
+   so a disagreement between prediction and outcome is visible in one
+   screen of output.
+
+`--dry-run` prints the plan and predictions without writing;
+`--tick-only` re-runs the ticks on consecutive mornings without adding
+history. A run dirties the gym by design — teardown + re-seed is the
+reset. It still needs a machine with a stack (`npm run dev`, or
+`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `--yes` for a hosted
+project); this sandbox cannot reach one, so the first execution happens
+there.
+
+One honest limitation: the ticks read `now()`, so a run is "the morning
+after a month", not thirty mornings. The per-day cadence question is
+answered by running `--tick-only` on real consecutive days, or re-running
+against fresh seeds at different `--days`.
 
 ---
 
@@ -91,9 +116,16 @@ The questions only this answers:
 - Does the same member get chased by two jobs in one week?
 - Does the copy hold up forty lines deep, with real names and numbers?
 
-### 2. Playwright, at two viewports
+### 2. Playwright, at two viewports — scaffolded
 
-Chromium and Playwright are already configured here. Six journeys:
+`npm run e2e` (`playwright.config.ts` + `e2e/`). Two projects — an
+iPhone-13 viewport and 1280px desktop — because the StatTile wrap only
+shows narrow. Credentials default to the demo owner and coach1
+(override with `E2E_*` env); the config starts `expo start --web` itself
+unless `E2E_BASE_URL` points at a running one. Journeys 2 and 3 need the
+parser functions reachable — `E2E_PARSER=0` skips them. The specs are
+written against the real screens' copy and have not yet run against a
+live stack; expect first-run selector fixes. Six journeys:
 
 | Journey | What it catches |
 |---|---|
@@ -108,14 +140,20 @@ The fifth is the one that would have caught the wrapped label. jsdom has
 no layout engine and NativeWind is stubbed in the render tests, so a real
 browser is the only thing that can see a wrap.
 
-### 3. A parser eval
+### 3. A parser eval — built
 
-66 actions and **zero coverage** of the English → action mapping — the
-highest-variance part of the product. ~50 sentences with expected action
-and args, run against the real `parse-setup`. Include the refusals: "cancel
-Marcus's membership" must not become `money.refund`, and a rule that varies
-by day must land in `cannot` rather than being rounded to the nearest
-menu item.
+`npm run eval:parser` (`scripts/run-parser-eval.ts`, fixtures in
+`scripts/parser-eval/cases.ts`). 55 sentences through the real path —
+the bar's own shortlist, the deployed `parse-setup`, the same
+full-catalogue fallback — signed in as the demo owner with a real JWT.
+Five are refusal traps: "cancel Marcus's membership" must not become
+`money.refund`, and a rule that varies by day must land in `cannot`
+rather than being rounded to the nearest menu item. A CI guard test pins
+every expected action name to the live registry, so a renamed verb fails
+in CI rather than silently scoring as a parser miss. The run reports
+passes, shortlist-fallback rescues (a latency cost, not a correctness
+one), and exits non-zero only if a refusal trap emitted an action — the
+one class of failure that is never acceptable.
 
 ### 4. More render tests
 
