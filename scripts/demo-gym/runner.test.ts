@@ -150,6 +150,23 @@ describe('buildWritePlan', () => {
     expect(plan.bookings.some((b) => b.class_session_id === 'seeded-id')).toBe(true);
   });
 
+  // The bug the first hosted run found: PostgREST spells the same
+  // instant "+00:00" where localToUtc spells it "Z", and a text key
+  // re-created every seeded session straight into the (recurrence,
+  // starts_at) unique constraint.
+  it('matches an existing session however the timestamp is spelled', () => {
+    const days = simDays();
+    const first = buildWritePlan(days, [SLOT], ctx());
+    const postgrest = new Date(first.sessions[0].starts_at)
+      .toISOString()
+      .replace(/\.\d{3}Z$/, '+00:00');
+    expect(postgrest).not.toBe(first.sessions[0].starts_at);
+    const seeded = new Map([[sessionKey(postgrest, 'ct-1'), 'seeded-id']]);
+    const plan = buildWritePlan(days, [SLOT], ctx({ existingSessions: seeded }));
+    expect(plan.sessions.length).toBe(first.sessions.length - 1);
+    expect(plan.bookings.some((b) => b.class_session_id === 'seeded-id')).toBe(true);
+  });
+
   it('skips a booking pair the seeder already made', () => {
     const days = simDays();
     const first = buildWritePlan(days, [SLOT], ctx());

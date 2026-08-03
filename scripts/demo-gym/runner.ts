@@ -213,8 +213,14 @@ export type WritePlan = {
   failuresWithoutSubscription: number;
 };
 
+// Keyed on the instant, not the string: PostgREST returns
+// "2026-07-08T05:00:00+00:00" where localToUtc writes the same moment
+// as "...Z", and comparing text made the runner re-create sessions the
+// seeder already wrote — straight into
+// class_sessions_recurrence_starts_unique. Found by the first hosted
+// run.
 export function sessionKey(startsAtUtc: string, classTypeId: string): string {
-  return `${startsAtUtc}@${classTypeId}`;
+  return `${Date.parse(startsAtUtc)}@${classTypeId}`;
 }
 
 export function buildWritePlan(
