@@ -120,6 +120,23 @@ export function recipientName(
   return 'A member';
 }
 
+// The ask bar's copy (day-pager build). The thread is deliberately
+// ephemeral — see the screen — so the words here are all there is.
+export const ASK_PLACEHOLDER = 'Ask about this — why it came up, what they got…';
+export const ASK_FAILED = "I couldn't answer just now — try again in a moment.";
+export const ASK_UNAVAILABLE =
+  "I can't answer questions right now — the story above still tells it.";
+
+// Three openers that fit every kind; the answer engine grounds them in
+// this event's own records either way.
+export function suggestedQuestions(actionKind: string): string[] {
+  const third =
+    actionKind === 'chase_message' || actionKind === 'plan_adjustment_offer'
+      ? 'Has the payment come right since?'
+      : 'Has anything changed since?';
+  return ['Why did this come up?', 'What exactly did they get?', third];
+}
+
 // Only the payment kinds open a case; for the rest this stays null and
 // the screen says nothing — a retention note has no "since then" the
 // database could honestly report.

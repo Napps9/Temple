@@ -6,6 +6,7 @@ import {
   messageStatusLine,
   outcomeLine,
   recipientName,
+  suggestedQuestions,
   type StoryAction,
   type StoryMessage,
 } from './nudge-story';
@@ -162,6 +163,18 @@ describe('outcomeLine', () => {
     expect(
       outcomeLine({ stage: 'offer_pending', outcome: null, closed_at: null }),
     ).toBe('The offer is out — their call now.');
+  });
+});
+
+describe('suggestedQuestions', () => {
+  it('asks about the money only where money is the story', () => {
+    expect(suggestedQuestions('chase_message')).toContain(
+      'Has the payment come right since?',
+    );
+    expect(suggestedQuestions('retention_message')).toContain(
+      'Has anything changed since?',
+    );
+    expect(suggestedQuestions('retention_message')).toHaveLength(3);
   });
 });
 
