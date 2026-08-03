@@ -59,9 +59,11 @@ import { useThemeColors } from '@/lib/theme';
 import { useCanFn } from '@/lib/useCan';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import {
+  dedupeClosures,
   formatClock,
   formatTimelineLine,
   groupTimelineByDay,
+  splitTimeline,
   storyHref,
   stripeWarning,
   type TimelineEvent,
@@ -728,7 +730,15 @@ export default function Timeline() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openRules, isOwner]);
 
-  const groups = groupTimelineByDay(feed.data ?? []);
+  // The stream is the record; the block is the work. Splitting them is
+  // what answers "what do I need to care about" without reading every
+  // line — if it's in the stream, it already happened.
+  const { stream, waiting } = splitTimeline(
+    dedupeClosures(feed.data ?? []),
+    session?.user.id,
+  );
+  const groups = groupTimelineByDay(stream);
+  const feedEmpty = (feed.data ?? []).length === 0;
 
   return (
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
@@ -749,7 +759,7 @@ export default function Timeline() {
             <View className="py-16 items-center">
               <ActivityIndicator />
             </View>
-          ) : groups.length === 0 && local.length === 0 ? (
+          ) : feedEmpty && local.length === 0 ? (
             <View className="py-16 px-6 items-center gap-2">
               <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
                 Nothing here yet
@@ -765,35 +775,50 @@ export default function Timeline() {
                 <Text className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 text-center pt-2">
                   {g.label}
                 </Text>
-                {g.events.map((e) =>
-                  e.kind === 'membership_request' ? (
-                    <RequestCard key={e.item_id} event={e} gymId={gymId} />
-                  ) : e.kind === 'agent_action' &&
-                    (e.detail as { status?: string }).status === 'proposed' ? (
-                    <AgentActionCard key={e.item_id} event={e} gymId={gymId} />
-                  ) : e.kind === 'cover_requested' &&
-                    openOffers(e).length > 0 &&
-                    (e.detail as { requested_by?: string }).requested_by !==
-                      session?.user.id ? (
-                    <CoverOfferCard key={e.item_id} event={e} gymId={gymId} />
-                  ) : (
-                    <ReceiptLine key={e.item_id} event={e} />
-                  ),
-                )}
+                {g.events.map((e) => (
+                  <ReceiptLine key={e.item_id} event={e} />
+                ))}
               </View>
             ))
           )}
 
-          {/* Above the setup card and the job card because those are work
-              an owner chose to leave; this is money that has already
-              stopped arriving. */}
-          {stripe ? (
-            <SoftLine
-              text={stripe.text}
-              tone={stripe.tone}
-              icon="card-outline"
-              offer={{ label: 'Open billing', href: '/management/billing' }}
-            />
+          {/* The work, separated from the record. Everything in here is a
+              decision or a live problem; the stripe warning joins it
+              because money that has stopped arriving is exactly what this
+              block exists to surface. */}
+          {stripe || waiting.length > 0 ? (
+            <View className="gap-3 pt-2">
+              <View className="flex-row items-center gap-2 px-1">
+                <Ionicons name="hand-left-outline" size={15} color="#F59E0B" />
+                <Text className="text-gray-900 dark:text-gray-50 text-[12px] font-bold uppercase tracking-wider">
+                  Waiting on you
+                </Text>
+                <View className="bg-amber-500/15 rounded-full px-2 py-0.5">
+                  <Text className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+                    {waiting.length + (stripe ? 1 : 0)}
+                  </Text>
+                </View>
+              </View>
+              {stripe ? (
+                <SoftLine
+                  text={stripe.text}
+                  tone={stripe.tone}
+                  icon="card-outline"
+                  offer={{ label: 'Open billing', href: '/management/billing' }}
+                />
+              ) : null}
+              {waiting.map((e) =>
+                e.kind === 'membership_request' ? (
+                  <RequestCard key={e.item_id} event={e} gymId={gymId} />
+                ) : e.kind === 'agent_action' ? (
+                  <AgentActionCard key={e.item_id} event={e} gymId={gymId} />
+                ) : e.kind === 'cover_requested' ? (
+                  <CoverOfferCard key={e.item_id} event={e} gymId={gymId} />
+                ) : (
+                  <ReceiptLine key={e.item_id} event={e} />
+                ),
+              )}
+            </View>
           ) : null}
 
           {setupOutstanding ? (
@@ -1433,12 +1458,19 @@ const KIND_ICON: Record<
 
 function ReceiptLine({ event }: { event: TimelineEvent }) {
   const line = formatTimelineLine(event);
+  // Temple confirming its own work is the least newsworthy thing on the
+  // screen — kept, but spoken more quietly than what members and coaches
+  // did.
+  const quiet =
+    line.tone === 'neutral' &&
+    (event.kind === 'agent_action' || event.kind === 'held_back');
   return (
     <SoftLine
       text={line.text}
       tone={line.tone}
       lead={line.lead}
       icon={KIND_ICON[event.kind]}
+      quiet={quiet}
       at={event.occurred_at}
       href={storyHref(event) ?? undefined}
     />
@@ -1450,6 +1482,7 @@ function SoftLine({
   tone,
   lead,
   icon,
+  quiet,
   at,
   offer,
   href,
@@ -1458,6 +1491,8 @@ function SoftLine({
   tone: 'neutral' | 'amber' | 'red';
   lead?: string;
   icon?: React.ComponentProps<typeof Ionicons>['name'];
+  // Temple's own receipts step back so the people-lines step forward.
+  quiet?: boolean;
   at?: string;
   offer?: { label: string; href: string };
   // A line with somewhere to open becomes the tap itself — the whole row,
@@ -1470,7 +1505,13 @@ function SoftLine({
   // quiet receipts.
   const urgent = tone !== 'neutral';
   const iconColor =
-    tone === 'red' ? '#EF4444' : tone === 'amber' ? '#F59E0B' : colors.iconSecondary;
+    tone === 'red'
+      ? '#EF4444'
+      : tone === 'amber'
+        ? '#F59E0B'
+        : quiet
+          ? '#9CA3AF'
+          : colors.iconSecondary;
   const body = (
     <>
       {icon ? (
@@ -1480,7 +1521,9 @@ function SoftLine({
               ? 'bg-red-500/15'
               : tone === 'amber'
                 ? 'bg-amber-500/15'
-                : 'bg-gray-200/70 dark:bg-gray-800'
+                : quiet
+                  ? 'bg-transparent'
+                  : 'bg-gray-200/70 dark:bg-gray-800'
           }`}>
           <Ionicons name={icon} size={14} color={iconColor} />
         </View>
@@ -1495,7 +1538,12 @@ function SoftLine({
           }`}
         />
       )}
-      <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] mt-[3px]">
+      <Text
+        className={`flex-1 text-[15px] leading-[22px] mt-[3px] ${
+          quiet
+            ? 'text-gray-500 dark:text-gray-400'
+            : 'text-gray-700 dark:text-gray-200'
+        }`}>
         {lead && text.startsWith(lead) ? (
           <>
             <Text className="font-semibold text-gray-900 dark:text-gray-50">

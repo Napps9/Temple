@@ -513,6 +513,63 @@ export function dayLabel(key: string, now: Date): string {
   return `${weekday} ${day}`;
 }
 
+// The same closure said four times is one fact, not four events — every
+// staff sign-in during testing (or a fat-fingered double close) writes
+// another row, and a stream that repeats itself teaches people to skim.
+// Feed order is newest-first, so the survivor is the most recent telling.
+export function dedupeClosures(events: TimelineEvent[]): TimelineEvent[] {
+  const seen = new Set<string>();
+  return events.filter((e) => {
+    if (e.kind !== 'gym_closed') return true;
+    const key = `${e.detail.starts_on}|${e.detail.ends_on}|${e.detail.lifted}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// The one question the screen has to answer at a glance: is this waiting
+// on me, or is it just the record? Everything true here leaves the
+// stream and sits in the "Waiting on you" block; everything false is
+// history and reads like it.
+export function needsYou(e: TimelineEvent, viewerId?: string): boolean {
+  switch (e.kind) {
+    case 'membership_request':
+      // The feed only carries pending ones.
+      return true;
+    case 'payment_failing':
+      return true;
+    case 'agent_action':
+      return (e.detail as { status?: string }).status === 'proposed';
+    case 'cover_requested': {
+      // Claimable by this viewer: still-open offers, and not their own
+      // ask — claim_cover would refuse that anyway.
+      const open = Array.isArray(e.detail.open_sessions)
+        ? (e.detail.open_sessions as unknown[]).length
+        : 0;
+      const requester = e.detail.requested_by;
+      return open > 0 && (!viewerId || requester !== viewerId);
+    }
+    default:
+      return false;
+  }
+}
+
+export function splitTimeline(
+  events: TimelineEvent[],
+  viewerId?: string,
+): { stream: TimelineEvent[]; waiting: TimelineEvent[] } {
+  const stream: TimelineEvent[] = [];
+  const waiting: TimelineEvent[] = [];
+  for (const e of events) {
+    (needsYou(e, viewerId) ? waiting : stream).push(e);
+  }
+  // Feed is newest-first; the block reads oldest-first so the thing that
+  // has waited longest is the first thing seen.
+  waiting.reverse();
+  return { stream, waiting };
+}
+
 // Feed arrives newest-first from the RPC; the screen reads oldest-at-top
 // like a conversation, so groups come back oldest day first.
 export function groupTimelineByDay(

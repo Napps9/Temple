@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   dayLabel,
+  dedupeClosures,
   formatTimelineLine,
   groupTimelineByDay,
+  splitTimeline,
   storyHref,
   stripeWarning,
   type TimelineEvent,
@@ -525,6 +527,121 @@ describe('storyHref', () => {
     expect(storyHref(evt({ detail: {} }))).toBeNull();
     expect(storyHref(evt({ kind: 'gym_closed', detail: {} }))).toBeNull();
     expect(storyHref(evt({ kind: 'held_back', detail: { held: 2 } }))).toBeNull();
+  });
+});
+
+// The screen's one glanceable promise: the stream is the record, the
+// block is the work. Nothing that needs a decision may hide in the
+// stream, and nothing already settled may nag from the block.
+describe('splitTimeline', () => {
+  const proposed = evt({
+    item_id: 'action:a1',
+    kind: 'agent_action',
+    detail: { action_kind: 'chase_message', status: 'proposed', payload: {} },
+  });
+  const executed = evt({
+    item_id: 'action:a2',
+    kind: 'agent_action',
+    detail: { action_kind: 'chase_message', status: 'executed', payload: {} },
+  });
+  const request = evt({
+    item_id: 'mcr:r1',
+    kind: 'membership_request',
+    detail: { request_kind: 'cancel', request_id: 'r1' },
+  });
+  const failing = evt({
+    item_id: 'dunning:d1',
+    kind: 'payment_failing',
+    detail: { profile_id: 'p1' },
+  });
+  const joined = evt({ item_id: 'member:m1' });
+
+  it('pulls the questions and live problems out of the stream', () => {
+    const { stream, waiting } = splitTimeline([
+      proposed,
+      executed,
+      request,
+      failing,
+      joined,
+    ]);
+    expect(waiting.map((e) => e.item_id)).toEqual([
+      'dunning:d1',
+      'mcr:r1',
+      'action:a1',
+    ]);
+    expect(stream.map((e) => e.item_id)).toEqual(['action:a2', 'member:m1']);
+  });
+
+  it('offers a cover claim only to somebody who can take it', () => {
+    const cover = (requestedBy: string) =>
+      evt({
+        item_id: 'coverreq:c1',
+        kind: 'cover_requested',
+        detail: {
+          class_count: 1,
+          requested_by: requestedBy,
+          open_sessions: [{ offer_id: 'o1', name: 'Yoga', starts_at: 'x' }],
+        },
+      });
+    // Somebody else's ask, offers open: work.
+    expect(splitTimeline([cover('u2')], 'u1').waiting).toHaveLength(1);
+    // Your own ask is not a thing you can claim.
+    expect(splitTimeline([cover('u1')], 'u1').waiting).toHaveLength(0);
+    // Nothing left to claim: just the record of the ask.
+    const claimed = evt({
+      item_id: 'coverreq:c2',
+      kind: 'cover_requested',
+      detail: { class_count: 1, requested_by: 'u2', open_sessions: [] },
+    });
+    expect(splitTimeline([claimed], 'u1').waiting).toHaveLength(0);
+  });
+
+  it('reads the block oldest-first, so the longest wait comes first', () => {
+    const older = { ...proposed, item_id: 'action:old', occurred_at: '2026-07-28T09:00:00Z' };
+    const newer = { ...request, item_id: 'mcr:new', occurred_at: '2026-07-29T09:00:00Z' };
+    // Feed order is newest-first.
+    const { waiting } = splitTimeline([newer, older]);
+    expect(waiting.map((e) => e.item_id)).toEqual(['action:old', 'mcr:new']);
+  });
+});
+
+describe('dedupeClosures', () => {
+  it('says a closure once, however many times it was written', () => {
+    const closure = (id: string) =>
+      evt({
+        item_id: `closure:${id}`,
+        kind: 'gym_closed',
+        detail: { starts_on: '2026-12-25', ends_on: '2026-12-25', lifted: false },
+      });
+    const other = evt({
+      item_id: 'closure:other',
+      kind: 'gym_closed',
+      detail: { starts_on: '2026-12-31', ends_on: '2027-01-01', lifted: false },
+    });
+    const out = dedupeClosures([closure('a'), closure('b'), other, closure('c'), joinedEvt()]);
+    expect(out.map((e) => e.item_id)).toEqual([
+      'closure:a',
+      'closure:other',
+      'member:j1',
+    ]);
+  });
+
+  function joinedEvt() {
+    return evt({ item_id: 'member:j1' });
+  }
+
+  it('keeps a lifted closure distinct from a live one', () => {
+    const live = evt({
+      item_id: 'closure:live',
+      kind: 'gym_closed',
+      detail: { starts_on: '2026-12-25', ends_on: '2026-12-25', lifted: false },
+    });
+    const lifted = evt({
+      item_id: 'closure:lifted',
+      kind: 'gym_closed',
+      detail: { starts_on: '2026-12-25', ends_on: '2026-12-25', lifted: true },
+    });
+    expect(dedupeClosures([live, lifted])).toHaveLength(2);
   });
 });
 
