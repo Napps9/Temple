@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-// Mirrors buildFacts/buildSystem in
+// Mirrors buildFacts/buildDunningFacts/buildSystem in
 // supabase/functions/explain-event/facts.ts. Re-pasted rather than
 // imported because that file is Deno-only — the same arrangement as
 // safe-origin.test.ts and email/personalize.test.ts. Keep the two in
@@ -35,6 +35,13 @@ type FactsNames = {
   decider: string | null;
 };
 
+type FactsDunning = {
+  past_due_since: string;
+  payment_failure_count: number;
+  last_payment_error: string | null;
+  next_payment_attempt: string | null;
+};
+
 const KIND_WORDS: Record<string, string> = {
   chase_message: 'a nudge about a failing payment',
   plan_adjustment_offer: 'an offer to move to a smaller plan',
@@ -54,9 +61,51 @@ const STATUS_WORDS: Record<string, string> = {
   expired: 'lapsed unanswered — nothing was sent',
 };
 
+const REPLIES_LINE =
+  "Replies to these emails go to the gym's own inbox — Temple does not see them.";
+
 function payloadFact(label: string, v: unknown): string | null {
   if (v === null || v === undefined || v === '') return null;
   return `${label}: ${String(v)}`;
+}
+
+function messageLines(messages: FactsMessage[]): (string | null)[] {
+  const lines: (string | null)[] = [];
+  if (messages.length === 0) {
+    lines.push('No message has been sent for this.');
+  }
+  for (const m of messages) {
+    lines.push(
+      `A message with the subject "${m.subject}" saying: "${m.body}"`,
+      m.status === 'sent' && m.sent_at
+        ? `It was sent on ${m.sent_at}.`
+        : m.status === 'queued'
+          ? 'It is waiting to send — messages go out between 9am and 8pm, gym time.'
+          : m.status === 'failed'
+            ? 'It has not sent yet — it will be tried again.'
+            : m.status === 'skipped'
+              ? `It was not sent${m.error ? ` — ${m.error}` : ''}.`
+              : null,
+    );
+  }
+  return lines;
+}
+
+function caseLine(kase: FactsCase): string | null {
+  if (!kase) return null;
+  return kase.stage === 'closed'
+    ? kase.outcome === 'recovered'
+      ? `Since then their payment went through${kase.closed_at ? ` — settled on ${kase.closed_at}` : ''}.`
+      : kase.outcome === 'adjusted'
+        ? 'Since then they took the offer and moved plan.'
+        : kase.outcome === 'lapsed'
+          ? 'The payment never recovered and the membership lapsed.'
+          : kase.outcome === 'left'
+            ? 'They have since left the gym.'
+            : null
+    : kase.stage === 'offer_pending'
+      ? 'The offer is out — their call now.'
+      : 'Temple is still watching their payment.';
 }
 
 function buildFacts(
@@ -103,45 +152,41 @@ function buildFacts(
       : null,
   );
 
-  if (messages.length === 0) {
-    lines.push('No message has been sent for this.');
-  }
-  for (const m of messages) {
-    lines.push(
-      `A message with the subject "${m.subject}" saying: "${m.body}"`,
-      m.status === 'sent' && m.sent_at
-        ? `It was sent on ${m.sent_at}.`
-        : m.status === 'queued'
-          ? 'It is waiting to send — messages go out between 9am and 8pm, gym time.'
-          : m.status === 'failed'
-            ? 'It has not sent yet — it will be tried again.'
-            : m.status === 'skipped'
-              ? `It was not sent${m.error ? ` — ${m.error}` : ''}.`
-              : null,
-    );
-  }
+  lines.push(...messageLines(messages), caseLine(kase), REPLIES_LINE);
 
-  if (kase) {
-    lines.push(
-      kase.stage === 'closed'
-        ? kase.outcome === 'recovered'
-          ? `Since then their payment went through${kase.closed_at ? ` — settled on ${kase.closed_at}` : ''}.`
-          : kase.outcome === 'adjusted'
-            ? 'Since then they took the offer and moved plan.'
-            : kase.outcome === 'lapsed'
-              ? 'The payment never recovered and the membership lapsed.'
-              : kase.outcome === 'left'
-                ? 'They have since left the gym.'
-                : null
-        : kase.stage === 'offer_pending'
-          ? 'The offer is out — their call now.'
-          : 'Temple is still watching their payment.',
-    );
-  }
+  return lines.filter((l): l is string => typeof l === 'string' && l.length > 0).join('\n');
+}
 
-  lines.push(
-    "Replies to these emails go to the gym's own inbox — Temple does not see them.",
-  );
+function buildDunningFacts(
+  dunning: FactsDunning,
+  memberName: string | null,
+  planName: string | null,
+  amountText: string | null,
+  messages: FactsMessage[],
+  kase: FactsCase,
+): string {
+  const lines: (string | null)[] = [
+    'This is about a membership payment that keeps failing — it has not gone through yet.',
+    memberName ? `The member: ${memberName}.` : null,
+    planName
+      ? `They are on ${planName}${amountText ? ` at ${amountText} a month.` : '.'}`
+      : null,
+    `The payment first failed on ${dunning.past_due_since}.`,
+    dunning.payment_failure_count >= 1
+      ? `The card has been tried ${dunning.payment_failure_count} time${
+          dunning.payment_failure_count === 1 ? '' : 's'
+        } and declined each time.`
+      : null,
+    dunning.last_payment_error
+      ? `The last decline said: “${dunning.last_payment_error}”.`
+      : null,
+    dunning.next_payment_attempt
+      ? `Stripe tries the card again on ${dunning.next_payment_attempt}.`
+      : 'Stripe has stopped retrying — nothing collects this money on its own now.',
+    'If nothing changes, the membership stays unpaid. Temple never cancels anyone over a failed payment.',
+  ];
+
+  lines.push(...messageLines(messages), caseLine(kase), REPLIES_LINE);
 
   return lines.filter((l): l is string => typeof l === 'string' && l.length > 0).join('\n');
 }
@@ -240,6 +285,86 @@ describe('buildFacts', () => {
   it('always says where replies land, because Temple cannot see them', () => {
     const facts = buildFacts(act({}), [], null, { subject: null, decider: null });
     expect(facts).toContain("Replies to these emails go to the gym's own inbox");
+  });
+});
+
+describe('buildDunningFacts', () => {
+  const dun: FactsDunning = {
+    past_due_since: '2026-07-20T06:00:00Z',
+    payment_failure_count: 3,
+    last_payment_error: 'Your card was declined.',
+    next_payment_attempt: '2026-08-06T06:00:00Z',
+  };
+
+  it('tells the whole failing-payment story when a retry is coming', () => {
+    const facts = buildDunningFacts(dun, 'Ben Casey', 'Unlimited', '£45', [], null);
+    expect(facts).toContain(
+      'This is about a membership payment that keeps failing — it has not gone through yet.',
+    );
+    expect(facts).toContain('The member: Ben Casey.');
+    expect(facts).toContain('The payment first failed on 2026-07-20T06:00:00Z.');
+    expect(facts).toContain('The card has been tried 3 times and declined each time.');
+    expect(facts).toContain('The last decline said: “Your card was declined.”.');
+    expect(facts).toContain('Stripe tries the card again on 2026-08-06T06:00:00Z.');
+    expect(facts).not.toContain('stopped retrying');
+  });
+
+  it('says nothing collects on its own once Stripe gives up', () => {
+    const facts = buildDunningFacts(
+      { ...dun, next_payment_attempt: null },
+      null,
+      null,
+      null,
+      [],
+      null,
+    );
+    expect(facts).toContain(
+      'Stripe has stopped retrying — nothing collects this money on its own now.',
+    );
+    expect(facts).not.toContain('tries the card again');
+  });
+
+  it('joins the amount to the plan only when both are known', () => {
+    const withAmount = buildDunningFacts(dun, 'Ben Casey', 'Unlimited', '£45', [], null);
+    expect(withAmount).toContain('They are on Unlimited at £45 a month.');
+
+    const noAmount = buildDunningFacts(dun, 'Ben Casey', 'Unlimited', null, [], null);
+    expect(noAmount).toContain('They are on Unlimited.');
+    expect(noAmount).not.toContain('a month');
+
+    const noPlan = buildDunningFacts(dun, 'Ben Casey', null, '£45', [], null);
+    expect(noPlan).not.toContain('They are on');
+  });
+
+  it('carries sent messages, or says none has gone', () => {
+    const withMsg = buildDunningFacts(dun, null, null, null, [SENT], null);
+    expect(withMsg).toContain('subject "About your payment"');
+    expect(withMsg).toContain('It was sent on 2026-07-27T11:14:00Z.');
+    expect(withMsg).not.toContain('No message has been sent for this.');
+
+    const none = buildDunningFacts(dun, null, null, null, [], null);
+    expect(none).toContain('No message has been sent for this.');
+  });
+
+  it('promises the membership is never cancelled over a failed payment', () => {
+    const facts = buildDunningFacts(dun, null, null, null, [], null);
+    expect(facts).toContain(
+      'If nothing changes, the membership stays unpaid. Temple never cancels anyone over a failed payment.',
+    );
+    expect(facts).toContain("Replies to these emails go to the gym's own inbox");
+  });
+
+  it('speaks singular for one failed try and tells the open case', () => {
+    const facts = buildDunningFacts(
+      { ...dun, payment_failure_count: 1 },
+      null,
+      null,
+      null,
+      [],
+      { stage: 'watching', outcome: null, closed_at: null },
+    );
+    expect(facts).toContain('The card has been tried 1 time and declined each time.');
+    expect(facts).toContain('Temple is still watching their payment.');
   });
 });
 

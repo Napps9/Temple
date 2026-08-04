@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
@@ -20,6 +20,7 @@ import { runOnJS } from 'react-native-reanimated';
 import { AnswerFigures } from '@/components/AnswerFigures';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
@@ -47,6 +48,7 @@ import { chainStopLine, leftoverLine, travelTogether } from '@/lib/chain';
 import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
 import { formatDate } from '@/lib/format-date';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
+import { nextStepLine } from '@/lib/payment-story';
 import {
   choicesFromGym,
   GYM_RULES_SELECT,
@@ -70,9 +72,11 @@ import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import {
   dayLabel,
   dedupeClosures,
+  formatClock,
   formatTimelineLine,
   groupTimelineByDay,
   splitTimeline,
+  storyHref,
   stripeWarning,
   type TimelineEvent,
 } from '@/lib/timeline';
@@ -1015,6 +1019,8 @@ export default function Timeline() {
                   <AgentActionCard key={e.item_id} event={e} gymId={gymId} />
                 ) : e.kind === 'cover_requested' ? (
                   <CoverOfferCard key={e.item_id} event={e} gymId={gymId} />
+                ) : e.kind === 'payment_failing' ? (
+                  <PaymentFailingCard key={e.item_id} event={e} gymId={gymId} />
                 ) : (
                   <ReceiptLine key={e.item_id} event={e} />
                 ),
@@ -1831,6 +1837,185 @@ function AgentActionCard({
       {failed ? (
         <Text className="text-red-600 dark:text-red-400 text-sm">
           That didn&apos;t go through — try again.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+// A failing payment, finished as a sentence. The row used to be a fact
+// with a chevron; now it says who moves next, and carries the handover on
+// the row itself — 0248's request_payment_chase, the same one the Needs
+// chasing list has.
+function PaymentFailingCard({
+  event,
+  gymId,
+}: {
+  event: TimelineEvent;
+  gymId: string | undefined;
+}) {
+  const colors = useThemeColors();
+  const qc = useQueryClient();
+  const subscriptionId = event.item_id.split(':')[1];
+  const profileId =
+    typeof event.detail.profile_id === 'string' ? event.detail.profile_id : null;
+  const line = formatTimelineLine(event);
+  const retry =
+    typeof event.detail.next_payment_attempt === 'string'
+      ? event.detail.next_payment_attempt
+      : null;
+  const href = storyHref(event);
+
+  const authority = useMoneyAuthority(gymId, true);
+  const jobOn = (authority.data ?? []).some(
+    (a) => a.action_kind === 'chase_message',
+  );
+  // Same key and shape as FinanceBlock's chases query, so the two
+  // surfaces share one cache entry.
+  const chases = useQuery({
+    queryKey: ['payment-chases', gymId],
+    enabled: !!gymId && jobOn,
+    queryFn: async (): Promise<Set<string>> => {
+      const [cases, actions] = await Promise.all([
+        supabase
+          .from('agent_cases')
+          .select('id, plan_subscription_id')
+          .eq('gym_id', gymId!)
+          .neq('stage', 'closed'),
+        supabase
+          .from('agent_actions')
+          .select('case_id, status')
+          .eq('gym_id', gymId!)
+          .eq('action_kind', 'chase_message')
+          .in('status', ['approved', 'executed']),
+      ]);
+      if (cases.error) throw cases.error;
+      if (actions.error) throw actions.error;
+      const chasedCases = new Set(
+        (actions.data ?? []).map((a) => a.case_id).filter(Boolean),
+      );
+      return new Set(
+        (cases.data ?? [])
+          .filter((c) => chasedCases.has(c.id))
+          .map((c) => c.plan_subscription_id),
+      );
+    },
+  });
+  const chased = jobOn && !!chases.data?.has(subscriptionId);
+
+  const chase = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('request_payment_chase', {
+        p_gym_id: gymId!,
+        p_subscription_id: subscriptionId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // Mark the row chased before the refetch lands: with only the
+      // invalidation, the chip re-arms for a beat and a double-tap
+      // spends the second touch on a duplicate email.
+      qc.setQueryData<Set<string>>(
+        ['payment-chases', gymId],
+        (old) => new Set([...(old ?? []), subscriptionId]),
+      );
+      // The outbound queue drains on a 15-minute cron; the owner just
+      // asked, so nudge the worker now. Best-effort — quiet hours or a
+      // failure here just leave it to the cron.
+      void supabase.functions.invoke('send-agent-messages', {
+        body: { gym_id: gymId },
+      });
+      void qc.invalidateQueries({ queryKey: ['payment-chases', gymId] });
+      void qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
+    },
+  });
+
+  const sentence = (
+    <>
+      <View
+        className={`w-7 h-7 rounded-full items-center justify-center ${
+          line.tone === 'red' ? 'bg-red-500/15' : 'bg-amber-500/15'
+        }`}>
+        <Ionicons
+          name="card-outline"
+          size={14}
+          color={line.tone === 'red' ? '#EF4444' : '#F59E0B'}
+        />
+      </View>
+      <Text className="flex-1 text-[15px] leading-[22px] mt-[3px] text-gray-700 dark:text-gray-200">
+        {line.lead && line.text.startsWith(line.lead) ? (
+          <>
+            <Text className="font-semibold text-gray-900 dark:text-gray-50">
+              {line.lead}
+            </Text>
+            {line.text.slice(line.lead.length)}
+          </>
+        ) : (
+          line.text
+        )}
+      </Text>
+      <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[6px]">
+        {formatClock(event.occurred_at)}
+      </Text>
+      {href ? (
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color={colors.iconSecondary}
+          style={{ marginTop: 7 }}
+        />
+      ) : null}
+    </>
+  );
+
+  return (
+    <View
+      className={`rounded-xl border px-3 py-2.5 gap-2 ${
+        line.tone === 'red'
+          ? 'bg-red-500/10 border-red-500/20'
+          : 'bg-amber-500/10 border-amber-500/20'
+      }`}>
+      {href ? (
+        <Pressable
+          onPress={() => router.push(href as never)}
+          accessibilityRole="link"
+          className="flex-row items-start gap-3 active:opacity-60">
+          {sentence}
+        </Pressable>
+      ) : (
+        <View className="flex-row items-start gap-3">{sentence}</View>
+      )}
+      <Text className="text-[13px] leading-[18px] text-gray-500 dark:text-gray-400 pl-10">
+        {nextStepLine(
+          { next_payment_attempt: retry, full_name: event.subject },
+          jobOn,
+          chased,
+        )}
+      </Text>
+      <View className="pl-10 flex-row gap-2 items-center">
+        {chased ? (
+          <ChipButton label="Chasing" icon="sparkles" tone="neutral" />
+        ) : jobOn ? (
+          <ChipButton
+            label={chase.isPending ? 'Handing over…' : 'Chase for me'}
+            icon="sparkles-outline"
+            tone="primary"
+            disabled={chase.isPending}
+            onPress={() => chase.mutate()}
+          />
+        ) : null}
+        {profileId ? (
+          <ChipButton
+            label="Message"
+            icon="chatbubble-outline"
+            tone="neutral"
+            onPress={() => router.push(`/inbox/direct/${profileId}` as never)}
+          />
+        ) : null}
+      </View>
+      {chase.error ? (
+        <Text className="text-amber-700 dark:text-amber-500 text-[13px]">
+          {chase.error.message}
         </Text>
       ) : null}
     </View>

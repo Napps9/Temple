@@ -34,6 +34,13 @@ export type FactsNames = {
   decider: string | null;
 };
 
+export type FactsDunning = {
+  past_due_since: string;
+  payment_failure_count: number;
+  last_payment_error: string | null;
+  next_payment_attempt: string | null;
+};
+
 // Owner-language names for the machine words, so the fact block never
 // teaches the model vocabulary the answer must not use.
 const KIND_WORDS: Record<string, string> = {
@@ -55,9 +62,51 @@ const STATUS_WORDS: Record<string, string> = {
   expired: 'lapsed unanswered — nothing was sent',
 };
 
+const REPLIES_LINE =
+  "Replies to these emails go to the gym's own inbox — Temple does not see them.";
+
 function payloadFact(label: string, v: unknown): string | null {
   if (v === null || v === undefined || v === '') return null;
   return `${label}: ${String(v)}`;
+}
+
+function messageLines(messages: FactsMessage[]): (string | null)[] {
+  const lines: (string | null)[] = [];
+  if (messages.length === 0) {
+    lines.push('No message has been sent for this.');
+  }
+  for (const m of messages) {
+    lines.push(
+      `A message with the subject "${m.subject}" saying: "${m.body}"`,
+      m.status === 'sent' && m.sent_at
+        ? `It was sent on ${m.sent_at}.`
+        : m.status === 'queued'
+          ? 'It is waiting to send — messages go out between 9am and 8pm, gym time.'
+          : m.status === 'failed'
+            ? 'It has not sent yet — it will be tried again.'
+            : m.status === 'skipped'
+              ? `It was not sent${m.error ? ` — ${m.error}` : ''}.`
+              : null,
+    );
+  }
+  return lines;
+}
+
+function caseLine(kase: FactsCase): string | null {
+  if (!kase) return null;
+  return kase.stage === 'closed'
+    ? kase.outcome === 'recovered'
+      ? `Since then their payment went through${kase.closed_at ? ` — settled on ${kase.closed_at}` : ''}.`
+      : kase.outcome === 'adjusted'
+        ? 'Since then they took the offer and moved plan.'
+        : kase.outcome === 'lapsed'
+          ? 'The payment never recovered and the membership lapsed.'
+          : kase.outcome === 'left'
+            ? 'They have since left the gym.'
+            : null
+    : kase.stage === 'offer_pending'
+      ? 'The offer is out — their call now.'
+      : 'Temple is still watching their payment.';
 }
 
 export function buildFacts(
@@ -104,45 +153,41 @@ export function buildFacts(
       : null,
   );
 
-  if (messages.length === 0) {
-    lines.push('No message has been sent for this.');
-  }
-  for (const m of messages) {
-    lines.push(
-      `A message with the subject "${m.subject}" saying: "${m.body}"`,
-      m.status === 'sent' && m.sent_at
-        ? `It was sent on ${m.sent_at}.`
-        : m.status === 'queued'
-          ? 'It is waiting to send — messages go out between 9am and 8pm, gym time.'
-          : m.status === 'failed'
-            ? 'It has not sent yet — it will be tried again.'
-            : m.status === 'skipped'
-              ? `It was not sent${m.error ? ` — ${m.error}` : ''}.`
-              : null,
-    );
-  }
+  lines.push(...messageLines(messages), caseLine(kase), REPLIES_LINE);
 
-  if (kase) {
-    lines.push(
-      kase.stage === 'closed'
-        ? kase.outcome === 'recovered'
-          ? `Since then their payment went through${kase.closed_at ? ` — settled on ${kase.closed_at}` : ''}.`
-          : kase.outcome === 'adjusted'
-            ? 'Since then they took the offer and moved plan.'
-            : kase.outcome === 'lapsed'
-              ? 'The payment never recovered and the membership lapsed.'
-              : kase.outcome === 'left'
-                ? 'They have since left the gym.'
-                : null
-        : kase.stage === 'offer_pending'
-          ? 'The offer is out — their call now.'
-          : 'Temple is still watching their payment.',
-    );
-  }
+  return lines.filter((l): l is string => typeof l === 'string' && l.length > 0).join('\n');
+}
 
-  lines.push(
-    "Replies to these emails go to the gym's own inbox — Temple does not see them.",
-  );
+export function buildDunningFacts(
+  dunning: FactsDunning,
+  memberName: string | null,
+  planName: string | null,
+  amountText: string | null,
+  messages: FactsMessage[],
+  kase: FactsCase,
+): string {
+  const lines: (string | null)[] = [
+    'This is about a membership payment that keeps failing — it has not gone through yet.',
+    memberName ? `The member: ${memberName}.` : null,
+    planName
+      ? `They are on ${planName}${amountText ? ` at ${amountText} a month.` : '.'}`
+      : null,
+    `The payment first failed on ${dunning.past_due_since}.`,
+    dunning.payment_failure_count >= 1
+      ? `The card has been tried ${dunning.payment_failure_count} time${
+          dunning.payment_failure_count === 1 ? '' : 's'
+        } and declined each time.`
+      : null,
+    dunning.last_payment_error
+      ? `The last decline said: “${dunning.last_payment_error}”.`
+      : null,
+    dunning.next_payment_attempt
+      ? `Stripe tries the card again on ${dunning.next_payment_attempt}.`
+      : 'Stripe has stopped retrying — nothing collects this money on its own now.',
+    'If nothing changes, the membership stays unpaid. Temple never cancels anyone over a failed payment.',
+  ];
+
+  lines.push(...messageLines(messages), caseLine(kase), REPLIES_LINE);
 
   return lines.filter((l): l is string => typeof l === 'string' && l.length > 0).join('\n');
 }

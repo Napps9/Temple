@@ -1,7 +1,10 @@
 // Free-form questions about one Timeline event (day-pager build),
 // answered only from the event's own records. The story page shows the
 // standard answers; this is for the question the page didn't predict —
-// "did he ever pay?", "what did we say to her exactly?".
+// "did he ever pay?", "what did we say to her exactly?". A body naming
+// a subscription instead of an action grounds on the live failing
+// payment — the dunning row, forward-looking — for "when does the card
+// get tried again?", "how much is stuck?".
 //
 // The caller must hold can_see_money for the gym — the same capability
 // every row read here has carried since 0204/0206 — so this function
@@ -12,7 +15,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 import { requireGymCapability } from '../_shared/caller.ts';
-import { buildFacts, buildSystem, type FactsMessage } from './facts.ts';
+import {
+  buildDunningFacts,
+  buildFacts,
+  buildSystem,
+  type FactsMessage,
+} from './facts.ts';
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -69,6 +77,7 @@ Deno.serve(async (req: Request) => {
   let body: {
     gym_id?: string;
     action_id?: string;
+    subscription_id?: string;
     question?: string;
     turns?: unknown;
   };
@@ -79,9 +88,15 @@ Deno.serve(async (req: Request) => {
   }
   const gymId = body.gym_id ?? '';
   const actionId = body.action_id ?? '';
+  const subscriptionId = body.subscription_id ?? '';
   const question = (body.question ?? '').trim().slice(0, MAX_TEXT_CHARS);
-  if (!UUID.test(gymId) || !UUID.test(actionId) || !question) {
-    return json({ error: 'gym_id, action_id and question are required' }, 400);
+  const hasAction = UUID.test(actionId);
+  const hasSubscription = UUID.test(subscriptionId);
+  if (!UUID.test(gymId) || !question || hasAction === hasSubscription) {
+    return json(
+      { error: 'gym_id, question and one of action_id or subscription_id are required' },
+      400,
+    );
   }
 
   const who = await requireGymCapability(
@@ -92,68 +107,156 @@ Deno.serve(async (req: Request) => {
 
   const service = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  // The same rows the story page reads, scoped to the caller's gym. A
-  // foreign or unknown id gets the same 404 — a caller must not be able
-  // to tell "no such event" from "not your event".
-  const { data: action } = await service
-    .from('agent_actions')
-    .select(
-      'id, gym_id, action_kind, status, payload, evidence, proposed_at, decided_by, decided_at, subject_profile, case_id',
-    )
-    .eq('id', actionId)
-    .eq('gym_id', gymId)
-    .maybeSingle();
-  if (!action) return json({ error: 'Not found' }, 404);
+  let facts: string;
+  if (hasAction) {
+    // The same rows the story page reads, scoped to the caller's gym. A
+    // foreign or unknown id gets the same 404 — a caller must not be able
+    // to tell "no such event" from "not your event".
+    const { data: action } = await service
+      .from('agent_actions')
+      .select(
+        'id, gym_id, action_kind, status, payload, evidence, proposed_at, decided_by, decided_at, subject_profile, case_id',
+      )
+      .eq('id', actionId)
+      .eq('gym_id', gymId)
+      .maybeSingle();
+    if (!action) return json({ error: 'Not found' }, 404);
 
-  const [msgs, kase, subjectProfile, deciderProfile] = await Promise.all([
-    service
-      .from('agent_outbound_messages')
-      .select('recipient_profile_id, subject, body, status, error, sent_at')
-      .eq('action_id', actionId)
-      .order('created_at', { ascending: true }),
-    action.case_id
-      ? service
-          .from('agent_cases')
-          .select('stage, outcome, closed_at')
-          .eq('id', action.case_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    action.subject_profile
-      ? service
-          .from('profiles')
-          .select('full_name')
-          .eq('id', action.subject_profile)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    action.decided_by
-      ? service
-          .from('profiles')
-          .select('full_name')
-          .eq('id', action.decided_by)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
+    const [msgs, kase, subjectProfile, deciderProfile] = await Promise.all([
+      service
+        .from('agent_outbound_messages')
+        .select('recipient_profile_id, subject, body, status, error, sent_at')
+        .eq('action_id', actionId)
+        .order('created_at', { ascending: true }),
+      action.case_id
+        ? service
+            .from('agent_cases')
+            .select('stage, outcome, closed_at')
+            .eq('id', action.case_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      action.subject_profile
+        ? service
+            .from('profiles')
+            .select('full_name')
+            .eq('id', action.subject_profile)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      action.decided_by
+        ? service
+            .from('profiles')
+            .select('full_name')
+            .eq('id', action.decided_by)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
-  const facts = buildFacts(
-    {
-      action_kind: action.action_kind,
-      status: action.status,
-      proposed_at: action.proposed_at,
-      decided_at: action.decided_at,
-      payload: (action.payload ?? {}) as Record<string, unknown>,
-      evidence: action.evidence,
-    },
-    ((msgs.data ?? []) as FactsMessage[]),
-    (kase.data ?? null) as { stage: string; outcome: string | null; closed_at: string | null } | null,
-    {
-      subject:
-        (subjectProfile.data as { full_name: string | null } | null)?.full_name ??
-        null,
-      decider:
-        (deciderProfile.data as { full_name: string | null } | null)?.full_name ??
-        null,
-    },
-  );
+    facts = buildFacts(
+      {
+        action_kind: action.action_kind,
+        status: action.status,
+        proposed_at: action.proposed_at,
+        decided_at: action.decided_at,
+        payload: (action.payload ?? {}) as Record<string, unknown>,
+        evidence: action.evidence,
+      },
+      ((msgs.data ?? []) as FactsMessage[]),
+      (kase.data ?? null) as { stage: string; outcome: string | null; closed_at: string | null } | null,
+      {
+        subject:
+          (subjectProfile.data as { full_name: string | null } | null)?.full_name ??
+          null,
+        decider:
+          (deciderProfile.data as { full_name: string | null } | null)?.full_name ??
+          null,
+      },
+    );
+  } else {
+    // Recovery deletes the dunning row, so a settled payment 404s the
+    // same as a foreign or unknown id — deliberately indistinguishable.
+    const { data: dunning } = await service
+      .from('plan_subscription_dunning')
+      .select(
+        'plan_subscription_id, profile_id, gym_id, past_due_since, payment_failure_count, last_payment_error, next_payment_attempt',
+      )
+      .eq('plan_subscription_id', subscriptionId)
+      .eq('gym_id', gymId)
+      .maybeSingle();
+    if (!dunning) return json({ error: 'Not found' }, 404);
+
+    const [memberProfile, sub, gym, kase] = await Promise.all([
+      service
+        .from('profiles')
+        .select('full_name')
+        .eq('id', dunning.profile_id)
+        .maybeSingle(),
+      service
+        .from('plan_subscriptions')
+        .select('price_cents, membership_plans(name, monthly_price_cents)')
+        .eq('id', subscriptionId)
+        .maybeSingle(),
+      service.from('gyms').select('currency').eq('id', gymId).maybeSingle(),
+      service
+        .from('agent_cases')
+        .select('id, stage, outcome, closed_at')
+        .eq('plan_subscription_id', subscriptionId)
+        .neq('stage', 'closed')
+        .maybeSingle(),
+    ]);
+
+    let messages: FactsMessage[] = [];
+    if (kase.data) {
+      const { data: caseActions } = await service
+        .from('agent_actions')
+        .select('id')
+        .eq('case_id', kase.data.id)
+        .in('status', ['approved', 'executed']);
+      const actionIds = ((caseActions ?? []) as { id: string }[]).map((a) => a.id);
+      if (actionIds.length > 0) {
+        const { data: msgs } = await service
+          .from('agent_outbound_messages')
+          .select('recipient_profile_id, subject, body, status, error, sent_at')
+          .in('action_id', actionIds)
+          .order('created_at', { ascending: true });
+        messages = (msgs ?? []) as FactsMessage[];
+      }
+    }
+
+    const subRow = sub.data as {
+      price_cents: number | null;
+      membership_plans: { name: string | null; monthly_price_cents: number | null } | null;
+    } | null;
+    const cents = subRow?.price_cents ?? subRow?.membership_plans?.monthly_price_cents ?? null;
+    const currency =
+      (gym.data as { currency: string | null } | null)?.currency ?? 'GBP';
+    let amountText: string | null = null;
+    if (typeof cents === 'number') {
+      try {
+        amountText = new Intl.NumberFormat('en-GB', {
+          style: 'currency',
+          currency,
+          minimumFractionDigits: Number.isInteger(cents / 100) ? 0 : 2,
+          maximumFractionDigits: 2,
+        }).format(cents / 100);
+      } catch {
+        amountText = `${cents / 100} ${currency}`;
+      }
+    }
+
+    facts = buildDunningFacts(
+      {
+        past_due_since: dunning.past_due_since,
+        payment_failure_count: dunning.payment_failure_count,
+        last_payment_error: dunning.last_payment_error,
+        next_payment_attempt: dunning.next_payment_attempt,
+      },
+      (memberProfile.data as { full_name: string | null } | null)?.full_name ?? null,
+      subRow?.membership_plans?.name ?? null,
+      amountText,
+      messages,
+      (kase.data ?? null) as { stage: string; outcome: string | null; closed_at: string | null } | null,
+    );
+  }
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {

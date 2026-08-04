@@ -413,10 +413,11 @@ The staff area shows up when `can_access_staff_area` is on.
 - **A line opens to its receipt** (0247) — `storyHref`
   (`src/lib/timeline.ts`, pure + tested) says where each line goes:
   a nudge line opens its own story page, a campaign line opens the
-  existing report (`/management/communications/[id]`), a join or a
-  failing payment opens the member (`timeline_feed` now carries
-  `profile_id` on those two kinds). Lines with nothing more to show
-  (closures, held-back counts) stay plain — no dead taps.
+  existing report (`/management/communications/[id]`), a join opens the
+  member, a failing payment opens its own story page
+  (`/timeline/payment/[subscription]` — the id rides `item_id`). Lines
+  with nothing more to show (closures, held-back counts) stay plain —
+  no dead taps.
 - **The nudge's story page** (`/timeline/[action]`, 0247) — the full
   answer to "what was the nudge, and what was said?": why it came up
   (the SQL-derived evidence), who said yes and when (or that the job has
@@ -429,6 +430,26 @@ The staff area shows up when `can_access_staff_area` is on.
   carried `can_see_money` SELECT policies since 0204/0206; no new RPC.
   The page also says where replies land (the gym's email inbox), because
   Temple doesn't read replies.
+- **The failing payment's story page** (`/timeline/payment/[subscription]`,
+  0249) — the nudge story looks back; this one looks forward, because the
+  failure is still live. Why it has come up (tries, last decline,
+  next-retry or given-up, whether the member was told, whether they're
+  still training — off the dunning row + `gym_overdue_memberships`),
+  what Temple would do today, and the exact draft that would go: the
+  `payment_chase_preview` RPC (`0249_what_would_be_sent.sql`,
+  `can_see_money`) fills the owner-approved `chase_message` template
+  read-only — same substitution as `_agent_execute_action`, so what the
+  owner reads is what would be sent; no template means the job was never
+  taken on and the page shows the `MoneyJobCard` instead of the handover
+  button. Copy in `src/lib/payment-story.ts` (pure + unit-tested, same
+  register). The same ask bar as the nudge story — `explain-event` now
+  also grounds on a live failing payment.
+- **Waiting-on-you payment lines carry their next step** — each row in
+  the Waiting block grows a who-moves-next line (`nextStepLine`: Stripe's
+  retry date, given-up, or "I'm on it") plus Chase for me / Chasing /
+  Message chips — the same `request_payment_chase` handover as the Needs
+  chasing list (0248), so the chase no longer requires a detour through
+  the money screen.
 - **The Timeline pages by day** — one thread per day. Today is the
   conversation (stream + Waiting block + talk bar, unchanged); swipe
   right (or the ‹ arrow / month picker / TodayButton header shared with
@@ -2368,7 +2389,9 @@ The staff area shows up when `can_access_staff_area` is on.
   `send-agent-messages` best-effort so the email leaves now rather than
   on the 15-minute cron. Rows the teammate is already on show a static
   "Chasing" chip (open case with an approved/executed chase, read under
-  the same RLS).
+  the same RLS). The same chips (plus Message) now sit on the Timeline's
+  Waiting-on-you payment lines, and the line itself opens the payment
+  story page (0249).
   **The membership deliberately stays `active` while Stripe retries.**
   `ps.status = 'active'` is what gates booking eligibility
   (`0011_eligibility_predicates.sql`, `0050_multi_membership_booking.sql`),

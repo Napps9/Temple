@@ -454,10 +454,13 @@ export function storyHref(e: TimelineEvent): string | null {
       const id = str(e.detail, 'campaign_id');
       return id ? `/management/communications/${id}` : null;
     }
-    case 'member_joined':
-    case 'payment_failing': {
+    case 'member_joined': {
       const id = str(e.detail, 'profile_id');
       return id ? `/management/members/${id}` : null;
+    }
+    case 'payment_failing': {
+      const id = e.item_id.split(':')[1];
+      return id ? `/timeline/payment/${id}` : null;
     }
     default:
       return null;

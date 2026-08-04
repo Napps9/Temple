@@ -512,13 +512,25 @@ describe('storyHref', () => {
     ).toBe('/management/communications/c1');
   });
 
-  it('sends a join and a failing payment to the member', () => {
+  it('sends a join to the member and a failing payment to its own story', () => {
     expect(storyHref(evt({ detail: { profile_id: 'p1' } }))).toBe(
       '/management/members/p1',
     );
     expect(
-      storyHref(evt({ kind: 'payment_failing', detail: { profile_id: 'p2' } })),
-    ).toBe('/management/members/p2');
+      storyHref(
+        evt({
+          item_id: 'dunning:sub-1',
+          kind: 'payment_failing',
+          detail: { profile_id: 'p2' },
+        }),
+      ),
+    ).toBe('/timeline/payment/sub-1');
+  });
+
+  it('opens a failing payment nowhere when the row carries no id', () => {
+    expect(
+      storyHref(evt({ item_id: 'dunning:', kind: 'payment_failing', detail: {} })),
+    ).toBeNull();
   });
 
   it('opens nowhere when there is nothing more to show', () => {

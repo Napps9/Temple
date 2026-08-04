@@ -4325,6 +4325,16 @@ export type Database = {
         };
         Returns: string;
       };
+      payment_chase_preview: {
+        Args: {
+          p_gym_id: string;
+          p_subscription_id: string;
+        };
+        Returns: {
+          subject: string;
+          body: string;
+        }[];
+      };
       set_membership_change_policies: {
         Args: {
           p_gym_id: string;
