@@ -40,6 +40,7 @@ type FactsDunning = {
   payment_failure_count: number;
   last_payment_error: string | null;
   next_payment_attempt: string | null;
+  notice_status: string | null;
 };
 
 const KIND_WORDS: Record<string, string> = {
@@ -69,10 +70,13 @@ function payloadFact(label: string, v: unknown): string | null {
   return `${label}: ${String(v)}`;
 }
 
-function messageLines(messages: FactsMessage[]): (string | null)[] {
+function messageLines(
+  messages: FactsMessage[],
+  emptyLine = 'No message has been sent for this.',
+): (string | null)[] {
   const lines: (string | null)[] = [];
   if (messages.length === 0) {
-    lines.push('No message has been sent for this.');
+    lines.push(emptyLine);
   }
   for (const m of messages) {
     lines.push(
@@ -183,10 +187,21 @@ function buildDunningFacts(
     dunning.next_payment_attempt
       ? `Stripe tries the card again on ${dunning.next_payment_attempt}.`
       : 'Stripe has stopped retrying — nothing collects this money on its own now.',
-    'If nothing changes, the membership stays unpaid. Temple never cancels anyone over a failed payment.',
+    dunning.notice_status === 'sent'
+      ? 'The member was emailed automatically when the payment first failed, with the way to fix it.'
+      : dunning.notice_status === 'queued'
+        ? 'The automatic email about it has not gone out yet.'
+        : dunning.notice_status === 'failed'
+          ? 'The automatic email about it could not be delivered.'
+          : 'The member has not been emailed about it automatically.',
+    'If nothing changes, Stripe eventually gives up and the membership ends. Paying at any point brings it back. Temple itself never cancels anyone over a failed payment.',
   ];
 
-  lines.push(...messageLines(messages), caseLine(kase), REPLIES_LINE);
+  lines.push(
+    ...messageLines(messages, 'No follow-up nudge has gone out beyond that.'),
+    caseLine(kase),
+    REPLIES_LINE,
+  );
 
   return lines.filter((l): l is string => typeof l === 'string' && l.length > 0).join('\n');
 }
@@ -294,6 +309,7 @@ describe('buildDunningFacts', () => {
     payment_failure_count: 3,
     last_payment_error: 'Your card was declined.',
     next_payment_attempt: '2026-08-06T06:00:00Z',
+    notice_status: null,
   };
 
   it('tells the whole failing-payment story when a retry is coming', () => {
@@ -336,20 +352,39 @@ describe('buildDunningFacts', () => {
     expect(noPlan).not.toContain('They are on');
   });
 
-  it('carries sent messages, or says none has gone', () => {
+  it('carries sent messages, or says no follow-up nudge has gone beyond the notice', () => {
     const withMsg = buildDunningFacts(dun, null, null, null, [SENT], null);
     expect(withMsg).toContain('subject "About your payment"');
     expect(withMsg).toContain('It was sent on 2026-07-27T11:14:00Z.');
-    expect(withMsg).not.toContain('No message has been sent for this.');
+    expect(withMsg).not.toContain('No follow-up nudge has gone out beyond that.');
 
     const none = buildDunningFacts(dun, null, null, null, [], null);
-    expect(none).toContain('No message has been sent for this.');
+    expect(none).toContain('No follow-up nudge has gone out beyond that.');
+    expect(none).not.toContain('No message has been sent for this.');
   });
 
-  it('promises the membership is never cancelled over a failed payment', () => {
+  it('says whether the automatic payment-failed email reached the member', () => {
+    const sent = buildDunningFacts(
+      { ...dun, notice_status: 'sent' },
+      null,
+      null,
+      null,
+      [],
+      null,
+    );
+    expect(sent).toContain(
+      'The member was emailed automatically when the payment first failed, with the way to fix it.',
+    );
+
+    const never = buildDunningFacts(dun, null, null, null, [], null);
+    expect(never).toContain('The member has not been emailed about it automatically.');
+    expect(never).not.toContain('was emailed automatically');
+  });
+
+  it('tells the honest consequence and that Temple itself never cancels', () => {
     const facts = buildDunningFacts(dun, null, null, null, [], null);
     expect(facts).toContain(
-      'If nothing changes, the membership stays unpaid. Temple never cancels anyone over a failed payment.',
+      'If nothing changes, Stripe eventually gives up and the membership ends. Paying at any point brings it back. Temple itself never cancels anyone over a failed payment.',
     );
     expect(facts).toContain("Replies to these emails go to the gym's own inbox");
   });

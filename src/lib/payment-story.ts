@@ -143,7 +143,7 @@ export function whatIdDoLines(
         ? `Reach out today — ${first} is still training here, so this reads like a dead card rather than a goodbye.`
         : `Reach out today — ${first} has not been in lately, so a personal note means more than a template here.`,
       jobOn
-        ? "Hand it to me and the nudge below goes out. If nothing lands in a few days, I'll ask you before offering the smaller plan."
+        ? "Hand it to me and the nudge below goes out. I'll ask you before offering the smaller plan."
         : 'Nobody is chasing these for you yet — taking the job on below sorts that.',
     ];
   }
@@ -151,7 +151,7 @@ export function whatIdDoLines(
   return [
     `You could let Stripe try again on ${dayMonth(row.next_payment_attempt)} — a card that just expired often comes right on its own.`,
     jobOn
-      ? `Or hand it to me now and ${first} gets the nudge below today, instead of after my three-day wait.`
+      ? `Or hand it to me now and ${first} gets the nudge below — otherwise I pick it up on day three.`
       : `Or message ${first} yourself — a word from you beats a bank retry.`,
   ];
 }
@@ -165,7 +165,7 @@ export function nextStepLine(
   const retry = row.next_payment_attempt;
   if (retry) {
     return jobOn
-      ? `Stripe tries again on ${dayMonth(retry)} — or hand it to me and the nudge goes today.`
+      ? `Stripe tries again on ${dayMonth(retry)} — or hand it to me and the nudge goes out.`
       : `Stripe tries again on ${dayMonth(retry)} — nobody else is on it yet.`;
   }
   return (

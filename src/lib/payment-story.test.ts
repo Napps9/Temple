@@ -156,7 +156,7 @@ describe('whatIdDoLines', () => {
   it('urges reaching out when Stripe has given up', () => {
     expect(whatIdDoLines(row(), stillTraining, true, false, now)).toEqual([
       'Reach out today — Emma is still training here, so this reads like a dead card rather than a goodbye.',
-      "Hand it to me and the nudge below goes out. If nothing lands in a few days, I'll ask you before offering the smaller plan.",
+      "Hand it to me and the nudge below goes out. I'll ask you before offering the smaller plan.",
     ]);
     expect(whatIdDoLines(row(), gone, false, false, now)).toEqual([
       'Reach out today — Emma has not been in lately, so a personal note means more than a template here.',
@@ -181,7 +181,7 @@ describe('whatIdDoLines', () => {
     const amber = row({ next_payment_attempt: '2026-08-05T09:00:00Z' });
     expect(whatIdDoLines(amber, null, true, false, now)).toEqual([
       'You could let Stripe try again on 5 Aug — a card that just expired often comes right on its own.',
-      'Or hand it to me now and Emma gets the nudge below today, instead of after my three-day wait.',
+      'Or hand it to me now and Emma gets the nudge below — otherwise I pick it up on day three.',
     ]);
     expect(whatIdDoLines(amber, null, false, false, now)).toEqual([
       'You could let Stripe try again on 5 Aug — a card that just expired often comes right on its own.',
@@ -205,7 +205,7 @@ describe('nextStepLine', () => {
 
   it('names the retry date, and who else could move first', () => {
     expect(nextStepLine(amber, true, false)).toBe(
-      'Stripe tries again on 5 Aug — or hand it to me and the nudge goes today.',
+      'Stripe tries again on 5 Aug — or hand it to me and the nudge goes out.',
     );
     expect(nextStepLine(amber, false, false)).toBe(
       'Stripe tries again on 5 Aug — nobody else is on it yet.',

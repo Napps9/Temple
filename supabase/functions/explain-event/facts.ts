@@ -39,6 +39,7 @@ export type FactsDunning = {
   payment_failure_count: number;
   last_payment_error: string | null;
   next_payment_attempt: string | null;
+  notice_status: string | null;
 };
 
 // Owner-language names for the machine words, so the fact block never
@@ -70,10 +71,13 @@ function payloadFact(label: string, v: unknown): string | null {
   return `${label}: ${String(v)}`;
 }
 
-function messageLines(messages: FactsMessage[]): (string | null)[] {
+function messageLines(
+  messages: FactsMessage[],
+  emptyLine = 'No message has been sent for this.',
+): (string | null)[] {
   const lines: (string | null)[] = [];
   if (messages.length === 0) {
-    lines.push('No message has been sent for this.');
+    lines.push(emptyLine);
   }
   for (const m of messages) {
     lines.push(
@@ -184,10 +188,21 @@ export function buildDunningFacts(
     dunning.next_payment_attempt
       ? `Stripe tries the card again on ${dunning.next_payment_attempt}.`
       : 'Stripe has stopped retrying — nothing collects this money on its own now.',
-    'If nothing changes, the membership stays unpaid. Temple never cancels anyone over a failed payment.',
+    dunning.notice_status === 'sent'
+      ? 'The member was emailed automatically when the payment first failed, with the way to fix it.'
+      : dunning.notice_status === 'queued'
+        ? 'The automatic email about it has not gone out yet.'
+        : dunning.notice_status === 'failed'
+          ? 'The automatic email about it could not be delivered.'
+          : 'The member has not been emailed about it automatically.',
+    'If nothing changes, Stripe eventually gives up and the membership ends. Paying at any point brings it back. Temple itself never cancels anyone over a failed payment.',
   ];
 
-  lines.push(...messageLines(messages), caseLine(kase), REPLIES_LINE);
+  lines.push(
+    ...messageLines(messages, 'No follow-up nudge has gone out beyond that.'),
+    caseLine(kase),
+    REPLIES_LINE,
+  );
 
   return lines.filter((l): l is string => typeof l === 'string' && l.length > 0).join('\n');
 }

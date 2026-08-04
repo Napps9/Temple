@@ -227,6 +227,32 @@ export default function PaymentStory() {
           turns: thread.slice(-6),
         },
       });
+      // FunctionsHttpError's message is one fixed sentence; the status
+      // lives on the response it carries.
+      const status = (error as { context?: { status?: number } } | null)
+        ?.context?.status;
+      // A 404 means the failure settled after this page loaded — recovery
+      // deletes the row, so retrying can never succeed. Say so and let
+      // the page catch up.
+      if (status === 404) {
+        setThread((t) => [
+          ...t,
+          {
+            role: 'temple',
+            text: 'That payment has come right — nothing is failing here anymore.',
+          },
+        ]);
+        void queryClient.invalidateQueries({
+          queryKey: ['overdue-memberships', gymId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ['chase-preview', gymId, subscriptionId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ['payment-chase-story', gymId, subscriptionId],
+        });
+        return;
+      }
       const answer =
         !error && typeof (data as { answer?: unknown })?.answer === 'string'
           ? ((data as { answer: string }).answer)
@@ -235,11 +261,7 @@ export default function PaymentStory() {
         ...t,
         {
           role: 'temple',
-          text:
-            answer ??
-            (String(error?.message ?? '').includes('503')
-              ? ASK_UNAVAILABLE
-              : ASK_FAILED),
+          text: answer ?? (status === 503 ? ASK_UNAVAILABLE : ASK_FAILED),
         },
       ]);
     } catch {
@@ -279,6 +301,23 @@ export default function PaymentStory() {
           {loading ? (
             <View className="py-16 items-center">
               <ActivityIndicator />
+            </View>
+          ) : rows.error ? (
+            // A failed read must never dress up as a recovered payment —
+            // the empty state below claims the money came right.
+            <View className="py-16 px-6 items-center gap-3">
+              <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                Couldn&apos;t load this payment
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+                {errorMessage(rows.error, 'Something went wrong reading it')}
+              </Text>
+              <ChipButton
+                label="Try again"
+                icon="refresh-outline"
+                tone="neutral"
+                onPress={() => rows.refetch()}
+              />
             </View>
           ) : !row ? (
             <View className="py-16 px-6 items-center gap-2">
@@ -335,7 +374,9 @@ export default function PaymentStory() {
               {preview.data ? (
                 <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-2">
                   <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
-                    The message {first} would get
+                    {chased
+                      ? `The nudge on its way to ${first}`
+                      : `The message ${first} would get`}
                   </Text>
                   <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
                     {preview.data.subject}
@@ -346,14 +387,16 @@ export default function PaymentStory() {
                     </Text>
                   </View>
                   <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
-                    Your template, their details — nothing goes until you say.
+                    {chased
+                      ? 'The receipt in the Timeline has the delivery story.'
+                      : 'Your template, their details — nothing goes until you say.'}
                   </Text>
                 </View>
               ) : null}
 
               {chase.isSuccess ? (
                 <SoftLine
-                  text={`Handed over — I'm chasing ${first} now. The receipt lands in the Timeline.`}
+                  text={`Handed over — my nudge to ${first} is on its way. The receipt lands in the Timeline.`}
                   tone="neutral"
                   icon="sparkles-outline"
                 />

@@ -184,7 +184,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!dunning) return json({ error: 'Not found' }, 404);
 
-    const [memberProfile, sub, gym, kase] = await Promise.all([
+    const [memberProfile, sub, gym, kase, notice] = await Promise.all([
       service
         .from('profiles')
         .select('full_name')
@@ -202,6 +202,13 @@ Deno.serve(async (req: Request) => {
         .eq('plan_subscription_id', subscriptionId)
         .neq('stage', 'closed')
         .maybeSingle(),
+      service
+        .from('payment_notifications')
+        .select('status')
+        .eq('plan_subscription_id', subscriptionId)
+        .eq('channel', 'email')
+        .order('created_at', { ascending: false })
+        .limit(1),
     ]);
 
     let messages: FactsMessage[] = [];
@@ -249,6 +256,8 @@ Deno.serve(async (req: Request) => {
         payment_failure_count: dunning.payment_failure_count,
         last_payment_error: dunning.last_payment_error,
         next_payment_attempt: dunning.next_payment_attempt,
+        notice_status:
+          ((notice.data ?? []) as { status: string }[])[0]?.status ?? null,
       },
       (memberProfile.data as { full_name: string | null } | null)?.full_name ?? null,
       subRow?.membership_plans?.name ?? null,

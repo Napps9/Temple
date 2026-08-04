@@ -149,9 +149,12 @@ export default function NudgeStory() {
         ...t,
         {
           role: 'temple',
+          // FunctionsHttpError's message is one fixed sentence; the
+          // status lives on the response it carries.
           text:
             answer ??
-            (String(error?.message ?? '').includes('503')
+            ((error as { context?: { status?: number } } | null)?.context
+              ?.status === 503
               ? ASK_UNAVAILABLE
               : ASK_FAILED),
         },
