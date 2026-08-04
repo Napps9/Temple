@@ -1985,34 +1985,52 @@ function PaymentFailingCard({
       ) : (
         <View className="flex-row items-start gap-3">{sentence}</View>
       )}
-      <Text className="text-[13px] leading-[18px] text-gray-500 dark:text-gray-400 pl-10">
-        {nextStepLine(
-          { next_payment_attempt: retry, full_name: event.subject },
-          jobOn,
-          chased,
-        )}
-      </Text>
-      <View className="pl-10 flex-row gap-2 items-center">
-        {chased ? (
-          <ChipButton label="Chasing" icon="sparkles" tone="neutral" />
-        ) : jobOn ? (
-          <ChipButton
-            label={chase.isPending ? 'Handing over…' : 'Chase for me'}
-            icon="sparkles-outline"
-            tone="primary"
-            disabled={chase.isPending}
-            onPress={() => chase.mutate()}
-          />
-        ) : null}
-        {profileId ? (
-          <ChipButton
-            label="Message"
-            icon="chatbubble-outline"
-            tone="neutral"
-            onPress={() => router.push(`/inbox/direct/${profileId}` as never)}
-          />
-        ) : null}
-      </View>
+      {chased ? (
+        // Handed over: the row shrinks to a status line. Chips here would
+        // only repeat it, and the story page keeps the rest.
+        <View className="pl-10 flex-row items-center gap-1.5">
+          <Ionicons name="sparkles-outline" size={12} color="#9CA3AF" />
+          <Text className="text-[12.5px] text-gray-500 dark:text-gray-400">
+            {nextStepLine(
+              { next_payment_attempt: retry, full_name: event.subject },
+              jobOn,
+              true,
+            )}
+          </Text>
+        </View>
+      ) : (
+        <>
+          <Text className="text-[13px] leading-[18px] text-gray-500 dark:text-gray-400 pl-10">
+            {nextStepLine(
+              { next_payment_attempt: retry, full_name: event.subject },
+              jobOn,
+              false,
+            )}
+          </Text>
+          <View className="pl-10 flex-row gap-2 items-center">
+            {/* The chip waits for the chased set to load — offering a
+                handover before knowing one already happened is how a
+                member gets the same email twice. */}
+            {jobOn && chases.data ? (
+              <ChipButton
+                label={chase.isPending ? 'Handing over…' : 'Chase for me'}
+                icon="sparkles-outline"
+                tone="primary"
+                disabled={chase.isPending}
+                onPress={() => chase.mutate()}
+              />
+            ) : null}
+            {profileId ? (
+              <ChipButton
+                label="Message"
+                icon="chatbubble-outline"
+                tone="neutral"
+                onPress={() => router.push(`/inbox/direct/${profileId}` as never)}
+              />
+            ) : null}
+          </View>
+        </>
+      )}
       {chase.error ? (
         <Text className="text-amber-700 dark:text-amber-500 text-[13px]">
           {chase.error.message}

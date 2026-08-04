@@ -146,22 +146,25 @@ export default function PaymentStory() {
             .eq('gym_id', gymId!)
             .eq('profile_id', row!.profile_id)
             .gt('class_sessions.starts_at', new Date().toISOString())
-            .order('starts_at', { referencedTable: 'class_sessions', ascending: true })
-            .limit(1),
+            .limit(20),
         ]);
         if (last.error || next.error) return null;
-        const upcoming = (next.data?.[0] ?? null) as unknown as {
+        // Ordering by the embedded resource sorts inside each booking,
+        // not across bookings — the soonest is picked here instead.
+        const upcoming = ((next.data ?? []) as unknown as {
           class_sessions: {
             starts_at: string;
             class_types: { name: string | null } | null;
           };
-        } | null;
+        }[])
+          .map((b) => b.class_sessions)
+          .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))[0] ?? null;
         return {
           lastAttended: last.data?.[0]?.attended_at ?? null,
           nextClass: upcoming
             ? {
-                startsAt: upcoming.class_sessions.starts_at,
-                name: upcoming.class_sessions.class_types?.name ?? null,
+                startsAt: upcoming.starts_at,
+                name: upcoming.class_types?.name ?? null,
               }
             : null,
         };
@@ -365,7 +368,10 @@ export default function PaymentStory() {
                       : undefined
                   }
                 />
-              ) : jobOn && preview.data ? (
+              ) : jobOn && preview.data && story.isSuccess ? (
+                // The button waits for the chase story to load — offering a
+                // handover before knowing one already happened is how a
+                // member gets the same email twice.
                 <View className="gap-2">
                   <Button onPress={() => chase.mutate()} loading={chase.isPending}>
                     Chase for me

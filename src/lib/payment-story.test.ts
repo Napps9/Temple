@@ -196,10 +196,10 @@ describe('nextStepLine', () => {
 
   it('claims the work once the nudge is moving, whatever else is true', () => {
     expect(nextStepLine(amber, true, true)).toBe(
-      "I'm on it — my nudge is on its way, and the receipt lands here.",
+      "I'm on it — my nudge is on its way.",
     );
     expect(nextStepLine(red, false, true)).toBe(
-      "I'm on it — my nudge is on its way, and the receipt lands here.",
+      "I'm on it — my nudge is on its way.",
     );
   });
 

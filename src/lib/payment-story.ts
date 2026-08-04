@@ -161,7 +161,7 @@ export function nextStepLine(
   jobOn: boolean,
   chased: boolean,
 ): string {
-  if (chased) return "I'm on it — my nudge is on its way, and the receipt lands here.";
+  if (chased) return "I'm on it — my nudge is on its way.";
   const retry = row.next_payment_attempt;
   if (retry) {
     return jobOn
