@@ -48,7 +48,7 @@ import { chainStopLine, leftoverLine, travelTogether } from '@/lib/chain';
 import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
 import { formatDate } from '@/lib/format-date';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
-import { nextStepLine } from '@/lib/payment-story';
+import { nextStepLine, splitWaitingByChase } from '@/lib/payment-story';
 import {
   choicesFromGym,
   GYM_RULES_SELECT,
@@ -334,12 +334,49 @@ export default function Timeline() {
   };
   const setupOutstanding =
     (requiredLeft || optionalLeft) && setupDismissed.data === false;
-  const authority = useMoneyAuthority(gymId, isOwner);
   const [jobDismissed, setJobDismissed] = useState(false);
 
   const hasFailingPayment = (feed.data ?? []).some(
     (e) => e.kind === 'payment_failing',
   );
+  // Any money viewer with a failing payment on screen needs to know who
+  // holds it, not just the owner — the split into "waiting on you" vs
+  // "with me" depends on it.
+  const authority = useMoneyAuthority(gymId, isOwner || hasFailingPayment);
+  const jobOn = (authority.data ?? []).some(
+    (a) => a.action_kind === 'chase_message',
+  );
+  // Same key and shape as FinanceBlock's chases query, so the two
+  // surfaces share one cache entry.
+  const chases = useQuery({
+    queryKey: ['payment-chases', gymId],
+    enabled: !!gymId && jobOn && hasFailingPayment,
+    queryFn: async (): Promise<Set<string>> => {
+      const [cases, actions] = await Promise.all([
+        supabase
+          .from('agent_cases')
+          .select('id, plan_subscription_id')
+          .eq('gym_id', gymId!)
+          .neq('stage', 'closed'),
+        supabase
+          .from('agent_actions')
+          .select('case_id, status')
+          .eq('gym_id', gymId!)
+          .eq('action_kind', 'chase_message')
+          .in('status', ['approved', 'executed']),
+      ]);
+      if (cases.error) throw cases.error;
+      if (actions.error) throw actions.error;
+      const chasedCases = new Set(
+        (actions.data ?? []).map((a) => a.case_id).filter(Boolean),
+      );
+      return new Set(
+        (cases.data ?? [])
+          .filter((c) => chasedCases.has(c.id))
+          .map((c) => c.plan_subscription_id),
+      );
+    },
+  });
   const showMoneyJobCard =
     isOwner &&
     !jobDismissed &&
@@ -879,6 +916,10 @@ export default function Timeline() {
     dedupeClosures(feed.data ?? []),
     session?.user.id,
   );
+  const { waiting: stillWaiting, withMe } = splitWaitingByChase(
+    waiting,
+    chases.data ?? new Set(),
+  );
   // Today's page shows today's thread only; other days have their own
   // pages now, fetched by day window.
   const groups = groupTimelineByDay(stream).filter((g) => g.key === todayKey);
@@ -991,7 +1032,7 @@ export default function Timeline() {
               decision or a live problem; the stripe warning joins it
               because money that has stopped arriving is exactly what this
               block exists to surface. */}
-          {stripe || waiting.length > 0 ? (
+          {stripe || stillWaiting.length > 0 ? (
             <View className="gap-3 pt-2">
               <View className="flex-row items-center gap-2 px-1">
                 <Ionicons name="hand-left-outline" size={15} color="#F59E0B" />
@@ -1000,7 +1041,7 @@ export default function Timeline() {
                 </Text>
                 <View className="bg-amber-500/15 rounded-full px-2 py-0.5">
                   <Text className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
-                    {waiting.length + (stripe ? 1 : 0)}
+                    {stillWaiting.length + (stripe ? 1 : 0)}
                   </Text>
                 </View>
               </View>
@@ -1012,7 +1053,7 @@ export default function Timeline() {
                   offer={{ label: 'Open billing', href: '/management/billing' }}
                 />
               ) : null}
-              {waiting.map((e) =>
+              {stillWaiting.map((e) =>
                 e.kind === 'membership_request' ? (
                   <RequestCard key={e.item_id} event={e} gymId={gymId} />
                 ) : e.kind === 'agent_action' ? (
@@ -1020,11 +1061,51 @@ export default function Timeline() {
                 ) : e.kind === 'cover_requested' ? (
                   <CoverOfferCard key={e.item_id} event={e} gymId={gymId} />
                 ) : e.kind === 'payment_failing' ? (
-                  <PaymentFailingCard key={e.item_id} event={e} gymId={gymId} />
+                  <PaymentFailingCard
+                    key={e.item_id}
+                    event={e}
+                    gymId={gymId}
+                    jobOn={jobOn}
+                    chased={false}
+                    chipReady={!!chases.data}
+                  />
                 ) : (
                   <ReceiptLine key={e.item_id} event={e} />
                 ),
               )}
+            </View>
+          ) : null}
+
+          {/* Handed over, not finished: the money is still stopped, but the
+              next move is Temple's — so these lines leave "Waiting on you"
+              and sit under Temple's own name. */}
+          {withMe.length > 0 ? (
+            <View className="gap-3 pt-2">
+              <View className="flex-row items-center gap-2 px-1">
+                <Ionicons
+                  name="sparkles-outline"
+                  size={15}
+                  color={colors.iconSecondary}
+                />
+                <Text className="text-gray-500 dark:text-gray-400 text-[12px] font-bold uppercase tracking-wider">
+                  With me
+                </Text>
+                <View className="bg-gray-200/70 dark:bg-gray-800 rounded-full px-2 py-0.5">
+                  <Text className="text-gray-500 dark:text-gray-400 text-[11px] font-bold">
+                    {withMe.length}
+                  </Text>
+                </View>
+              </View>
+              {withMe.map((e) => (
+                <PaymentFailingCard
+                  key={e.item_id}
+                  event={e}
+                  gymId={gymId}
+                  jobOn={jobOn}
+                  chased
+                  chipReady
+                />
+              ))}
             </View>
           ) : null}
 
@@ -1850,9 +1931,18 @@ function AgentActionCard({
 function PaymentFailingCard({
   event,
   gymId,
+  jobOn,
+  chased,
+  chipReady,
 }: {
   event: TimelineEvent;
   gymId: string | undefined;
+  jobOn: boolean;
+  chased: boolean;
+  // The chip waits for the chased set to load — offering a handover
+  // before knowing one already happened is how a member gets the same
+  // email twice.
+  chipReady: boolean;
 }) {
   const colors = useThemeColors();
   const qc = useQueryClient();
@@ -1865,43 +1955,6 @@ function PaymentFailingCard({
       ? event.detail.next_payment_attempt
       : null;
   const href = storyHref(event);
-
-  const authority = useMoneyAuthority(gymId, true);
-  const jobOn = (authority.data ?? []).some(
-    (a) => a.action_kind === 'chase_message',
-  );
-  // Same key and shape as FinanceBlock's chases query, so the two
-  // surfaces share one cache entry.
-  const chases = useQuery({
-    queryKey: ['payment-chases', gymId],
-    enabled: !!gymId && jobOn,
-    queryFn: async (): Promise<Set<string>> => {
-      const [cases, actions] = await Promise.all([
-        supabase
-          .from('agent_cases')
-          .select('id, plan_subscription_id')
-          .eq('gym_id', gymId!)
-          .neq('stage', 'closed'),
-        supabase
-          .from('agent_actions')
-          .select('case_id, status')
-          .eq('gym_id', gymId!)
-          .eq('action_kind', 'chase_message')
-          .in('status', ['approved', 'executed']),
-      ]);
-      if (cases.error) throw cases.error;
-      if (actions.error) throw actions.error;
-      const chasedCases = new Set(
-        (actions.data ?? []).map((a) => a.case_id).filter(Boolean),
-      );
-      return new Set(
-        (cases.data ?? [])
-          .filter((c) => chasedCases.has(c.id))
-          .map((c) => c.plan_subscription_id),
-      );
-    },
-  });
-  const chased = jobOn && !!chases.data?.has(subscriptionId);
 
   const chase = useMutation({
     mutationFn: async () => {
@@ -2008,10 +2061,7 @@ function PaymentFailingCard({
             )}
           </Text>
           <View className="pl-10 flex-row gap-2 items-center">
-            {/* The chip waits for the chased set to load — offering a
-                handover before knowing one already happened is how a
-                member gets the same email twice. */}
-            {jobOn && chases.data ? (
+            {jobOn && chipReady ? (
               <ChipButton
                 label={chase.isPending ? 'Handing over…' : 'Chase for me'}
                 icon="sparkles-outline"

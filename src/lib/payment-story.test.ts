@@ -6,10 +6,12 @@ import {
   nextStepLine,
   paymentSubLine,
   whatIdDoLines,
+  splitWaitingByChase,
   whyLines,
   type AttendanceFacts,
   type OverdueRow,
 } from './payment-story';
+import type { TimelineEvent } from './timeline';
 
 const now = new Date('2026-08-04T12:00:00Z');
 
@@ -263,5 +265,47 @@ describe('how the payment story talks', () => {
     for (const line of lines) {
       expect(line).not.toMatch(/dunning|subscription|record\b/i);
     }
+  });
+});
+
+describe('splitWaitingByChase', () => {
+  const evt = (
+    item_id: string,
+    kind: TimelineEvent['kind'],
+  ): TimelineEvent => ({
+    item_id,
+    kind,
+    occurred_at: '2026-08-04T09:00:00Z',
+    subject: 'Emma Wilson',
+    detail: {},
+  });
+
+  it('moves only chased payment lines, keeping order on both sides', () => {
+    const waiting = [
+      evt('dunning:s1', 'payment_failing'),
+      evt('mcr:r1', 'membership_request'),
+      evt('dunning:s2', 'payment_failing'),
+    ];
+    const { waiting: still, withMe } = splitWaitingByChase(
+      waiting,
+      new Set(['s2']),
+    );
+    expect(still.map((e) => e.item_id)).toEqual(['dunning:s1', 'mcr:r1']);
+    expect(withMe.map((e) => e.item_id)).toEqual(['dunning:s2']);
+  });
+
+  it('touches nothing when nothing has been chased', () => {
+    const waiting = [evt('dunning:s1', 'payment_failing')];
+    const { waiting: still, withMe } = splitWaitingByChase(waiting, new Set());
+    expect(still).toHaveLength(1);
+    expect(withMe).toHaveLength(0);
+  });
+
+  // A request naming the same id is not a payment — the split reads the
+  // kind, never just the id.
+  it('never moves a non-payment line, whatever its id says', () => {
+    const waiting = [evt('mcr:s1', 'membership_request')];
+    const { withMe } = splitWaitingByChase(waiting, new Set(['s1']));
+    expect(withMe).toHaveLength(0);
   });
 });

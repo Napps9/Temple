@@ -6,6 +6,7 @@
 // the fetching.
 
 import { formatPrice } from '@/lib/setup-flow';
+import type { TimelineEvent } from '@/lib/timeline';
 
 export type OverdueRow = {
   subscription_id: string;
@@ -172,6 +173,23 @@ export function nextStepLine(
     'Stripe has given up — nothing happens on its own now. This one needs you' +
     (jobOn ? ' or me.' : '.')
   );
+}
+
+// A chased payment is not waiting on the owner — it is with Temple. The
+// feed cannot say which is which (chased lives in agent_cases, not on the
+// event), so the split happens here, where the screen holds both.
+export function splitWaitingByChase(
+  waiting: TimelineEvent[],
+  chased: Set<string>,
+): { waiting: TimelineEvent[]; withMe: TimelineEvent[] } {
+  const still: TimelineEvent[] = [];
+  const withMe: TimelineEvent[] = [];
+  for (const e of waiting) {
+    const handled =
+      e.kind === 'payment_failing' && chased.has(e.item_id.split(':')[1] ?? '');
+    (handled ? withMe : still).push(e);
+  }
+  return { waiting: still, withMe };
 }
 
 export const PAYMENT_QUESTIONS = [
