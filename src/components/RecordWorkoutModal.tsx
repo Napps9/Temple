@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 import { Text, TextInput } from './Text';
 
 import { Button } from './Button';
+import { Sheet, SheetAction } from './Sheet';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -634,33 +635,30 @@ export function RecordWorkoutModal({
   });
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={close}>
-      <Pressable
-        onPress={close}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          accessibilityViewIsModal
-          role="dialog"
-          aria-modal
-          accessibilityLabel="Record workout"
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[92vh]">
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              Record workout
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              Add sections from today's session and log your results.
-            </Text>
-          </View>
-
-          <ScrollView className="max-h-[62vh]" contentContainerClassName="gap-4">
+      title="Record workout"
+      subtitle="Add sections from today's session and log your results."
+      onClose={close}
+      dialogWidth={680}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={close}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              onPress={() => save.mutate()}
+              loading={save.isPending}
+              success={saved}>
+              Save workout
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-4 pb-1">
             <DatePicker label="Date" value={date} onChange={setDate} />
             <Input
               label="Workout title (optional)"
@@ -753,33 +751,14 @@ export function RecordWorkoutModal({
               style={{ minHeight: 80, textAlignVertical: 'top' }}
               autoCapitalize="sentences"
             />
-          </ScrollView>
-
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-sm">
+              className="text-red-500 dark:text-red-400 text-[13px]">
               {error}
             </Text>
           ) : null}
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={close}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button
-                onPress={() => save.mutate()}
-                loading={save.isPending}
-                success={saved}>
-                Save workout
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
+      </View>
 
       <PickerModal
         visible={pickerOpenFor !== null}
@@ -832,7 +811,7 @@ export function RecordWorkoutModal({
         }}
         onClose={() => setEditingTag(null)}
       />
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -1506,30 +1485,28 @@ function TagEditModal({
 }) {
   const meta = tag ? findMovement(tag.movement_key) : undefined;
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          accessibilityViewIsModal
-          role="dialog"
-          aria-modal
-          accessibilityLabel="Edit tag"
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-sm md:max-w-md gap-3">
+      title={meta?.movement.name ?? tag?.movement_key ?? 'Edit tag'}
+      subtitle={meta?.group.name}
+      onClose={onClose}
+      dialogWidth={420}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="destructive" onPress={onRemove}>
+              Remove
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button variant="secondary" onPress={onClose}>
+              Done
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-3 pb-1">
           <View className="gap-1">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
-              Edit tag
-            </Text>
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {meta?.movement.name ?? tag?.movement_key ?? '—'}
-            </Text>
             {meta ? (
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {meta.group.name}
@@ -1560,21 +1537,8 @@ function TagEditModal({
             </View>
           ) : null}
 
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="destructive" onPress={onRemove}>
-                Remove
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose}>
-                Done
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
   );
 }
 
@@ -1699,30 +1663,19 @@ function MovementTagPickerModal({
   );
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          accessibilityViewIsModal
-          role="dialog"
-          aria-modal
-          accessibilityLabel="Tag a movement"
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            Tag a movement
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-            Tag the movement (optionally with a rep scheme) so it lands
-            in your per-movement Journal.
-          </Text>
+      title="Tag a movement"
+      subtitle="Optionally with a rep scheme, so it lands in your per-movement Journal."
+      onClose={onClose}
+      actions={
+        <SheetAction grow>
+          <Button variant="secondary" onPress={onClose}>
+            Cancel
+          </Button>
+        </SheetAction>
+      }>
+      <View className="gap-3 pb-1">
           <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3">
             <Ionicons name="search" size={16} color={colors.ink3} />
             <TextInput
@@ -1744,7 +1697,7 @@ function MovementTagPickerModal({
               </Pressable>
             ) : null}
           </View>
-          <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
+          <View className="gap-2">
             {q ? (
               matches.length === 0 ? (
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm py-2">
@@ -1780,13 +1733,9 @@ function MovementTagPickerModal({
                 </View>
               ))
             )}
-          </ScrollView>
-          <Button variant="secondary" onPress={onClose}>
-            Cancel
-          </Button>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          </View>
+      </View>
+    </Sheet>
   );
 }
 
@@ -1804,44 +1753,33 @@ function PickerModal({
   const items = kind === 'category' ? SECTION_CATEGORIES : SECTION_FORMATS;
   const title = kind === 'category' ? 'Pick a category' : 'Pick a scoring format';
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          accessibilityViewIsModal
-          role="dialog"
-          aria-modal
-          accessibilityLabel={title}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            {title}
-          </Text>
-          <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-1">
-            {items.map((it) => (
-              <Pressable
-                key={it.key}
-                onPress={() => onPick(it.key)}
-                className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
-                <Text className="text-ink dark:text-ink-dk">
-                  {it.label}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+      title={title}
+      onClose={onClose}
+      actions={
+        <SheetAction grow>
           <Button variant="secondary" onPress={onClose}>
             Cancel
           </Button>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        </SheetAction>
+      }>
+      <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
+        {items.map((it, i) => (
+          <Pressable
+            key={it.key}
+            onPress={() => onPick(it.key)}
+            accessibilityRole="button"
+            className={`px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+              i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+            }`}>
+            <Text className="text-ink dark:text-ink-dk text-[14.5px]">
+              {it.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </Sheet>
   );
 }
 
