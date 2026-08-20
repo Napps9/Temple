@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 
 import { BrandGradientHero } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
 import {
   DATE_RE,
@@ -661,29 +662,28 @@ function AddLeadModal({
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90%]">
-          <ScrollView>
-            <View className="gap-4">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-                  Add a lead
-                </Text>
-                <Pressable
-                  onPress={onClose}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
-                  <Ionicons name="close" size={18} color={colors.ink2} />
-                </Pressable>
-              </View>
-
+    <Sheet
+      visible={visible}
+      title="Add a lead"
+      onClose={onClose}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              onPress={() => save.mutate()}
+              loading={save.isPending}
+              disabled={name.trim() === ''}>
+              Save
+            </Button>
+          </SheetAction>
+        </>
+      }>
+            <View className="gap-4 pb-1">
               <Input
                 label="Name"
                 value={name}
@@ -762,26 +762,8 @@ function AddLeadModal({
                 </Text>
               ) : null}
 
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Button variant="secondary" onPress={onClose}>
-                    Cancel
-                  </Button>
-                </View>
-                <View className="flex-1">
-                  <Button
-                    onPress={() => save.mutate()}
-                    loading={save.isPending}
-                    disabled={name.trim() === ''}>
-                    Save
-                  </Button>
-                </View>
-              </View>
             </View>
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -997,35 +979,24 @@ function LeadDetailModal({
       : n.status;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90%]">
-          <ScrollView>
-            <View className="gap-4">
-              <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-1 gap-1">
-                  <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-                    {lead.full_name}
-                  </Text>
-                  {lead.email || lead.phone ? (
-                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                      {[lead.email, lead.phone].filter(Boolean).join(' · ')}
-                    </Text>
-                  ) : null}
-                </View>
-                <Pressable
-                  onPress={onClose}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
-                  <Ionicons name="close" size={18} color={colors.ink2} />
-                </Pressable>
-              </View>
+    <Sheet
+      visible={visible}
+      title={lead.full_name}
+      subtitle={
+        lead.email || lead.phone
+          ? [lead.email, lead.phone].filter(Boolean).join(' · ')
+          : undefined
+      }
+      onClose={onClose}
+      dialogWidth={520}
+      actions={
+        <SheetAction grow>
+          <Button variant="secondary" onPress={onClose}>
+            Close
+          </Button>
+        </SheetAction>
+      }>
+            <View className="gap-4 pb-1">
 
               {lead.notes ? (
                 <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
@@ -1260,16 +1231,13 @@ function LeadDetailModal({
               )}
 
               {error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="text-red-500 dark:text-red-400 text-[13px]">
+                  {error}
+                </Text>
               ) : null}
-
-              <Button variant="secondary" onPress={onClose}>
-                Close
-              </Button>
             </View>
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }

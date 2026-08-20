@@ -2,11 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
-import { ActivityIndicator, Image, Linking, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, View } from 'react-native';
 import { Text, TextInput } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Sheet } from '@/components/Sheet';
 import { useSession } from '@/lib/auth';
 import { BRAND_THEMES, BRAND_THEME_LIST, composeThemeWithBrand, isThemeId } from '@/lib/brand-themes';
 import { errorMessage } from '@/lib/errors';
@@ -281,12 +282,13 @@ function StockPhotoPickerModal({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-3">
-          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">Stock photos</Text>
+    <Sheet
+      visible={visible}
+      title="Stock photos"
+      subtitle="Photos provided by Pexels"
+      onClose={onClose}
+      dialogWidth={680}>
+      <View className="gap-3 pb-1">
           <View className="flex-row gap-2 items-center">
             <TextInput
               value={query}
@@ -310,7 +312,7 @@ function StockPhotoPickerModal({
           {save.error ? (
             <Text className="text-red-500 dark:text-red-400 text-xs">{save.error.message}</Text>
           ) : null}
-          <ScrollView style={{ maxHeight: 420 }}>
+          <View>
             {search.isPending && photos.length === 0 ? (
               <View className="py-10 items-center">
                 <ActivityIndicator />
@@ -369,18 +371,18 @@ function StockPhotoPickerModal({
                 ) : null}
               </View>
             )}
-          </ScrollView>
+          </View>
           <Pressable
             onPress={() => openExternal('https://www.pexels.com')}
             hitSlop={4}
+            accessibilityRole="link"
             className="items-center pt-1">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs underline">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[12px] underline">
               Photos provided by Pexels
             </Text>
           </Pressable>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
   );
 }
 
@@ -1127,28 +1129,24 @@ function AddBlockModal({
 }) {
   const colors = useThemeColors();
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">Add a block</Text>
-          <View className="gap-2">
-            {ADDABLE.map((type) => (
-              <Pressable
-                key={type}
-                onPress={() => onPick(type)}
-                className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
-                <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color={colors.ink2} />
-                <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-                  {SITE_BLOCK_LABELS[type]}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    <Sheet visible={visible} title="Add a block" onClose={onClose}>
+      <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
+        {ADDABLE.map((type, i) => (
+          <Pressable
+            key={type}
+            onPress={() => onPick(type)}
+            accessibilityRole="button"
+            className={`flex-row items-center gap-3 px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+              i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+            }`}>
+            <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={17} color={colors.ink3} />
+            <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold">
+              {SITE_BLOCK_LABELS[type]}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </Sheet>
   );
 }
 
@@ -1164,22 +1162,18 @@ function TemplatePickerModal({
   brandPrimaryColor: string;
 }) {
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-            Apply a template
-          </Text>
-          <View className="gap-2">
-            {SITE_TEMPLATE_LIST.map((t) => {
+    <Sheet visible={visible} title="Apply a template" onClose={onClose}>
+      <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
+            {SITE_TEMPLATE_LIST.map((t, i) => {
               const composed = composeThemeWithBrand(BRAND_THEMES[t.themeId], brandPrimaryColor);
               return (
                 <Pressable
                   key={t.id}
                   onPress={() => onPick(t)}
-                  className="flex-row items-center gap-3 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
+                  accessibilityRole="button"
+                  className={`flex-row items-center gap-3 px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+                    i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+                  }`}>
                   <View
                     className="w-12 h-9 rounded-md overflow-hidden flex-row"
                     style={{ borderWidth: 1, borderColor: '#00000014' }}>
@@ -1187,16 +1181,14 @@ function TemplatePickerModal({
                     <View className="w-3" style={{ backgroundColor: composed.palette.accent }} />
                   </View>
                   <View className="flex-1 gap-0.5">
-                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">{t.name}</Text>
-                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{t.description}</Text>
+                    <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold">{t.name}</Text>
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">{t.description}</Text>
                   </View>
                 </Pressable>
               );
             })}
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
   );
 }
 

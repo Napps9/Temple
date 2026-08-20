@@ -14,6 +14,7 @@ import { AgentSettings } from '@/components/leads/AgentSettings';
 import { LeadsShell } from '@/components/LeadsNav';
 import { PageHead } from '@/components/PageHead';
 import { SectionLabel } from '@/components/SectionLabel';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { syncVapiAssistant } from '@/lib/agent-sync';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -646,28 +647,21 @@ function SourcesEditorModal({
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90%]">
-          <ScrollView>
-            <View className="gap-4">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-                  Lead sources
-                </Text>
-                <Pressable
-                  onPress={onClose}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
-                  <Ionicons name="close" size={18} color={colors.ink2} />
-                </Pressable>
-              </View>
+    <Sheet
+      visible={visible}
+      title="Lead sources"
+      onClose={onClose}
+      actions={
+        <SheetAction grow>
+          <Button
+            onPress={() => create.mutate()}
+            loading={create.isPending}
+            disabled={label.trim() === ''}>
+            Add source
+          </Button>
+        </SheetAction>
+      }>
+            <View className="gap-4 pb-1">
 
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Where your prospects come from — Instagram, walk-in,
@@ -733,21 +727,14 @@ function SourcesEditorModal({
                   })}
                 </View>
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    className="text-red-500 dark:text-red-400 text-[13px]">
                     {error}
                   </Text>
                 ) : null}
-                <Button
-                  onPress={() => create.mutate()}
-                  loading={create.isPending}
-                  disabled={label.trim() === ''}>
-                  Add source
-                </Button>
               </View>
             </View>
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }

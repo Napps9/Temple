@@ -2,11 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text, TextInput } from './Text';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
 import { ChipButton } from '@/components/ChipButton';
@@ -477,34 +479,30 @@ export function ClassDetailModal({
 
   return (
     <>
-    <Modal
+    // The class a member is deciding about. The date is the title and the
+    // time is the subtitle, so the sheet's own head carries what used to be
+    // a block inside the body — which also retires the hand-placed close X
+    // and the z-index note explaining why it had to outrank its siblings.
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={close}>
-      <Pressable
-        onPress={close}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5">
-          {/* Close X — discoverable affordance on mobile where the
-              tap-outside isn't obvious. Needs an explicit z-index: on
-              web every sibling defaults to zIndex 0 and paints in DOM
-              order, so without this the header block (a later sibling)
-              renders over the corner and swallows the tap. */}
-          <Pressable
-            onPress={close}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            className="absolute right-3 top-3 z-10 w-9 h-9 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
-            <Ionicons name="close" size={20} color={colors.ink2} />
-          </Pressable>
+      title={detail ? dateLabel : 'Class'}
+      subtitle={
+        detail && start && end
+          ? `${fmtTime(start)} — ${fmtTime(end)} · ${detail.duration_minutes} min`
+          : undefined
+      }
+      onClose={close}
+      dialogWidth={640}
+      actions={
+        <SheetAction grow>
+          <Button variant="secondary" onPress={close}>
+            Close
+          </Button>
+        </SheetAction>
+      }>
+      <View className="gap-5 pb-1">
           {sessionQuery.isLoading || !detail ? (
-            <View className="py-6 items-center">
-              <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
-            </View>
+            <EmptyState kind="loading" rows={3} title="Loading the class" />
           ) : (
             <>
               <View className="gap-2">
@@ -521,13 +519,6 @@ export function ClassDetailModal({
                   className="self-start rounded-full px-3 py-1">
                   <Text className="text-white text-xs font-semibold">{typeName}</Text>
                 </View>
-                <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-                  {dateLabel}
-                </Text>
-                <Text className="text-ink-2 dark:text-ink-2-dk">
-                  {start && end ? `${fmtTime(start)} — ${fmtTime(end)}` : ''} ·{' '}
-                  {detail.duration_minutes} min
-                </Text>
               </View>
 
               <ChipButton
@@ -812,14 +803,10 @@ export function ClassDetailModal({
                 </Button>
               ) : null}
 
-              <Button variant="secondary" onPress={close}>
-                Close
-              </Button>
             </>
           )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
     {detail && sessionId ? (
       <CancelClassDialog
         visible={showCancelClass}

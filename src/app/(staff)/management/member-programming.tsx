@@ -9,6 +9,7 @@ import { Text } from '@/components/Text';
 import { Avatar } from '@/components/Avatar';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import {
@@ -225,27 +226,26 @@ function DocumentsModal({
   });
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90vh]">
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              Programme documents
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              PDFs {memberName} can open from their Programming tab.
-            </Text>
-          </View>
-
-          <ScrollView className="max-h-[50vh]" contentContainerClassName="gap-2">
+      title="Programme documents"
+      subtitle={`PDFs ${memberName} can open from their Programming tab.`}
+      onClose={onClose}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose}>
+              Close
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button onPress={() => upload.mutate()} loading={upload.isPending}>
+              Upload PDF
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-2 pb-1">
             {files.data && files.data.length > 0 ? (
               files.data.map((f) => (
                 <View
@@ -280,31 +280,15 @@ function DocumentsModal({
                 No documents yet.
               </Text>
             )}
-          </ScrollView>
-
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-[13px]">
               {error}
             </Text>
           ) : null}
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose}>
-                Close
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button
-                onPress={() => upload.mutate()}
-                loading={upload.isPending}>
-                Upload PDF
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
   );
 }
 

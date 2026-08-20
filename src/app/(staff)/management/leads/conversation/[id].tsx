@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -718,16 +719,25 @@ function CoachModal({
   });
 
   return (
-    <Modal visible={!!message} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/50 items-center justify-center p-4">
-        <Pressable
-          onPress={(e) => e.stopPropagation()}
-          className="bg-surface dark:bg-surface-dk rounded-2xl w-full max-w-md p-5 gap-4">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            Coach this turn
-          </Text>
+    <Sheet
+      visible={!!message}
+      title="Coach this turn"
+      onClose={onClose}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button onPress={() => deploy.mutate()} loading={deploy.isPending}>
+              Deploy to agent
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-4 pb-1">
           <View className="gap-1">
             <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               The AI said
@@ -807,24 +817,14 @@ function CoachModal({
           ) : null}
 
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-[13px]">
+              {error}
+            </Text>
           ) : null}
-
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Button variant="ghost" onPress={onClose}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button onPress={() => deploy.mutate()} loading={deploy.isPending}>
-                Deploy to agent
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
   );
 }
 

@@ -12,6 +12,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SectionLabel } from '@/components/SectionLabel';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { Input } from '@/components/Input';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
@@ -846,60 +847,39 @@ export function AgentSettings() {
         </Button>
       </View>
 
-      <Modal
+      <Sheet
         visible={briefModalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setBriefModalOpen(false)}>
-        <Pressable
-          onPress={() => setBriefModalOpen(false)}
-          className="flex-1 bg-black/60 items-center justify-center px-6 py-10">
-          <Pressable
-            onPress={() => {}}
-            className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-xl gap-4 max-h-[90%]">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-                Rewrite with AI
-              </Text>
-              <Pressable
-                onPress={() => setBriefModalOpen(false)}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-                className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
-                <Ionicons name="close" size={18} color={colors.ink2} />
-              </Pressable>
-            </View>
-            <ScrollView>
-              <AgentBriefBuilder
-                gymId={membership.gymId}
-                value={briefDraft}
-                onChange={setBriefDraft}
-              />
-            </ScrollView>
-            <View className="flex-row gap-2">
-              <View className="flex-1">
-                <Button variant="secondary" onPress={() => setBriefModalOpen(false)}>
-                  Cancel
-                </Button>
-              </View>
-              <View className="flex-1">
-                <Button
-                  onPress={() => {
-                    setAgentContext(briefDraft);
-                    setBriefModalOpen(false);
-                  }}
-                  disabled={!briefDraft.trim()}>
-                  Use this
-                </Button>
-              </View>
-            </View>
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
-              This fills in the notes below — tap "Save notes" after to make it live.
-            </Text>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        title="Rewrite with AI"
+        subtitle={'This fills in the notes below — tap "Save notes" after to make it live.'}
+        onClose={() => setBriefModalOpen(false)}
+        dialogWidth={640}
+        actions={
+          <>
+            <SheetAction>
+              <Button variant="secondary" onPress={() => setBriefModalOpen(false)}>
+                Cancel
+              </Button>
+            </SheetAction>
+            <SheetAction grow>
+              <Button
+                onPress={() => {
+                  setAgentContext(briefDraft);
+                  setBriefModalOpen(false);
+                }}
+                disabled={!briefDraft.trim()}>
+                Use this
+              </Button>
+            </SheetAction>
+          </>
+        }>
+        <View className="pb-1">
+          <AgentBriefBuilder
+            gymId={membership.gymId}
+            value={briefDraft}
+            onChange={setBriefDraft}
+          />
+        </View>
+      </Sheet>
 
       <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
