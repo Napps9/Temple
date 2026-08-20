@@ -20,6 +20,7 @@ import { accentBoard } from './b-accent.mjs';
 import { shippedStatesBoard } from './b-loading.mjs';
 import { emailBoard } from './b-email.mjs';
 import { stepsBoard } from './b-steps.mjs';
+import { shippedAllBoard } from './b-shipped-all.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -57,6 +58,7 @@ const PAGES = [
   ['31-loading', shippedStatesBoard],
   ['32-email', emailBoard],
   ['33-steps', stepsBoard],
+  ['34-counted', shippedAllBoard],
 ];
 
 // Drop anything a previous numbering left behind.
