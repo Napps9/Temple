@@ -301,7 +301,7 @@ export default function OnboardingScreen() {
 
 function Loading() {
   return (
-    <View className="flex-1 bg-slate-100 dark:bg-gray-950 items-center justify-center">
+    <View className="flex-1 bg-ground dark:bg-ground-dk items-center justify-center">
       <ActivityIndicator color="#2563EB" />
     </View>
   );

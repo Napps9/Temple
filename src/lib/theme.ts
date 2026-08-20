@@ -41,7 +41,11 @@ export function useThemeColors() {
   const brand = useGymBrand();
   const dark = scheme === 'dark';
   return {
-    screenBg: dark ? '#030712' : '#F1F5F9',
+    // The ground the whole app sits on. Cool and near-white rather than
+    // slate, so a white card reads as a card rather than as more page.
+    // Drives the native scene backgrounds and the web theme-color meta,
+    // and is the runtime twin of the `ground` Tailwind token.
+    screenBg: dark ? '#0A0B0D' : '#F7F7F8',
     iconPrimary: dark ? '#E5E7EB' : '#1F2937',
     // Foreground for the "inverse" tonal chip — always reads against
     // the opposite scheme so it pops against ordinary chrome.
@@ -65,7 +69,6 @@ export function useThemeColors() {
     // rather than a class: Ionicon tints, SVG fills, shadow colours. Same
     // values as the `ground` / `surface` / `ink` Tailwind tokens, so a
     // component can mix classes and props without drifting.
-    ground: dark ? '#0A0B0D' : '#F7F7F8',
     surface: dark ? '#131519' : '#FFFFFF',
     raised: dark ? '#1B1E23' : '#F1F1F4',
     sunken: dark ? '#23272D' : '#E9E9EE',

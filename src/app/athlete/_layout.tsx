@@ -16,7 +16,7 @@ export default function AthleteLayout() {
 
   if (session === undefined || isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-100 dark:bg-gray-950">
+      <View className="flex-1 items-center justify-center bg-ground dark:bg-ground-dk">
         <ActivityIndicator />
       </View>
     );
@@ -25,7 +25,7 @@ export default function AthleteLayout() {
   if (membership) return <Redirect href="/" />;
 
   return (
-    <View className="flex-1 bg-slate-100 dark:bg-gray-950">
+    <View className="flex-1 bg-ground dark:bg-ground-dk">
       <Stack
         screenOptions={{
           headerShown: false,

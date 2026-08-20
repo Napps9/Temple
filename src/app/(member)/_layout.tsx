@@ -28,7 +28,7 @@ export default function MemberLayout() {
   if (session === null) return <Redirect href="/sign-in" />;
 
   return (
-    <View className="flex-1 bg-slate-100 dark:bg-gray-950">
+    <View className="flex-1 bg-ground dark:bg-ground-dk">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
       {/* backBehavior="history": when a back press bubbles past a tab's
           inner stack, return to the tab the user was actually on. The

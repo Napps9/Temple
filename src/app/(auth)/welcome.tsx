@@ -91,7 +91,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-slate-100 dark:bg-gray-950"
+      className="flex-1 bg-ground dark:bg-ground-dk"
       edges={['top', 'bottom', 'left', 'right']}>
       <View className="absolute top-3 right-3 z-10">
         <ThemeToggle />

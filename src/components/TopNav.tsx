@@ -106,8 +106,17 @@ export function TopNav({
   const crossTextClass =
     variant === 'staff' ? 'text-blue-500' : 'text-emerald-500';
 
+  // Selected is a soft tint, not a fill. The track it used to sit in has
+  // gone: a filled slate rail around three pills was the loudest thing on
+  // a screen whose job is to show a gym's own content, and the selected
+  // pill inside it needed a shadow to separate from it.
+  //
+  // The active icon is ink rather than the gym's colour. The accent is
+  // spent on the one action a page exists for; a nav that is always on
+  // screen is not that, and tinting it made every gym's chrome a
+  // different colour before any of their content had loaded.
   const pills = (
-    <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-1">
+    <View className="flex-row gap-1">
       {sections.map((s) => {
         const active = pathname.startsWith(s.href);
         return (
@@ -123,26 +132,24 @@ export function TopNav({
             // The label Text is display:none on phones for inactive
             // pills, so the accessible name must not depend on it.
             accessibilityLabel={s.label}
-            className={`flex-row items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full active:opacity-70 ${
+            className={`flex-row items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full active:opacity-70 ${
               active
-                ? 'bg-white dark:bg-gray-700 shadow-pill'
-                : 'hover:bg-white/50 dark:hover:bg-gray-700/40'
+                ? 'bg-raised dark:bg-raised-dk'
+                : 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
             }`}>
             <Ionicons
               name={s.icon}
               size={17}
-              color={active ? brand.primaryColor : colors.iconSecondary}
+              color={active ? colors.ink : colors.ink3}
             />
             {/* Inline with the logo on the phone means space is tight, so
                 only the active pill keeps its label there; wide screens
                 show them all. */}
             <Text
-              className={`text-sm font-medium ${
-                active ? 'flex' : 'hidden md:flex'
-              } ${
+              className={`text-sm ${active ? 'flex' : 'hidden md:flex'} ${
                 active
-                  ? 'text-gray-900 dark:text-gray-50'
-                  : 'text-gray-500 dark:text-gray-400'
+                  ? 'text-ink dark:text-ink-dk font-semibold'
+                  : 'text-ink-3 dark:text-ink-3-dk font-medium'
               }`}>
               {s.label}
             </Text>
@@ -155,7 +162,7 @@ export function TopNav({
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-slate-100 dark:bg-gray-950 px-3 md:px-6 pb-3 gap-2">
+      className="bg-ground dark:bg-ground-dk px-3 md:px-6 pb-3 gap-2">
       <View className="flex-row items-center gap-2 md:gap-3">
         {/* Three equal zones (flex-1 left/right) keep the pills on the
             bar's true centre regardless of how wide the side clusters
@@ -224,7 +231,7 @@ export function TopNav({
           <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={30} />
           {/* Unread messages surface a dot while the menu is closed. */}
           {notifCount > 0 ? (
-            <View className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-slate-100 dark:border-gray-950" />
+            <View className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-ground dark:border-ground-dk" />
           ) : null}
         </Pressable>
         </View>
