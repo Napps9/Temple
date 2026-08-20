@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { BrandGradientHero } from '@/components/BrandGradientHero';
@@ -1059,16 +1060,11 @@ function LeadDetailModal({
                     ) : (
                       <View className="gap-1.5">
                         {(members.data ?? []).map((m) => (
-                          <Pressable
+                          <ListRow
                             key={m.profile_id}
                             onPress={() => convert.mutate(m.profile_id)}
-                            disabled={convert.isPending}
-                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-raised dark:active:bg-raised-dk">
-                            <Text className="text-ink dark:text-ink-dk flex-1">
-                              {m.full_name ?? 'Member'}
-                            </Text>
-                            <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-                          </Pressable>
+                            title={m.full_name ?? 'Member'}
+                          />
                         ))}
                       </View>
                     )}

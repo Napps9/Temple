@@ -1,11 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { ListRow } from '@/components/ListRow';
 import { SectionLabel } from '@/components/SectionLabel';
 import { Text } from '@/components/Text';
 
 import { EmptyState } from '@/components/EmptyState';
-import { useThemeColors } from '@/lib/theme';
 import {
   campaignStatusMeta,
   formatDateTime,
@@ -32,7 +30,6 @@ export function StatusBadge({ status }: { status: CampaignListRow['status'] }) {
 }
 
 function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
-  const colors = useThemeColors();
   const subtitle =
     campaign.status === 'sent'
       ? `${campaign.recipient_count} sent · ${formatDateTime(campaign.sent_at)}`
@@ -40,26 +37,12 @@ function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
         ? campaign.subject
         : 'No subject yet';
   return (
-    <Link href={`/management/communications/${campaign.id}`} asChild>
-      <Pressable className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
-        <View className="flex-row items-center gap-3">
-          <View className="flex-1">
-            <View className="flex-row items-center gap-2">
-              <Text
-                className="text-ink dark:text-ink-dk font-semibold flex-shrink"
-                numberOfLines={1}>
-                {campaign.title || 'Untitled campaign'}
-              </Text>
-              <StatusBadge status={campaign.status} />
-            </View>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5" numberOfLines={1}>
-              {subtitle}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-        </View>
-      </Pressable>
-    </Link>
+    <ListRow
+      href={`/management/communications/${campaign.id}`}
+      title={campaign.title || 'Untitled campaign'}
+      subtitle={subtitle}
+      chip={<StatusBadge status={campaign.status} />}
+    />
   );
 }
 

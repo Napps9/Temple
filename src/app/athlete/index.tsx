@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -363,20 +364,12 @@ export default function AthleteHome() {
           ) : (
             <View className="gap-2">
               {logged.map((m) => (
-                <Pressable
+                <ListRow
                   key={m.key}
                   onPress={() => router.push(`/athlete/movement/${m.key}` as never)}
-                  className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
-                  <View className="flex-1">
-                    <Text className="text-ink dark:text-ink-dk font-medium">
-                      {m.name}
-                    </Text>
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-                      {m.group}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-                </Pressable>
+                  title={m.name}
+                  subtitle={m.group}
+                />
               ))}
             </View>
           )}

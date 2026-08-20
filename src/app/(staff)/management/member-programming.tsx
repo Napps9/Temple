@@ -4,6 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { Avatar } from '@/components/Avatar';
@@ -433,20 +434,18 @@ function IndividualsList() {
             autoCapitalize="none"
           />
           {candidates.map((m) => (
-            <Pressable
+            <ListRow
               key={m.profile_id}
               onPress={() => open(m.profile_id)}
-              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:bg-raised dark:active:bg-raised-dk">
-              <Avatar
-                name={m.profiles?.full_name}
-                avatarUrl={m.profiles?.avatar_url}
-                size={36}
-              />
-              <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
-                {m.profiles?.full_name ?? 'Member'}
-              </Text>
-              <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-            </Pressable>
+              lead={
+                <Avatar
+                  name={m.profiles?.full_name}
+                  avatarUrl={m.profiles?.avatar_url}
+                  size={36}
+                />
+              }
+              title={m.profiles?.full_name ?? 'Member'}
+            />
           ))}
           {cohort.data && candidates.length === 0 ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">

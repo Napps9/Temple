@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { ListRow, RuledList } from './ListRow';
 import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
@@ -233,25 +234,19 @@ export function StaffBookingSheet({
                     No matching members not already booked.
                   </Text>
                 ) : (
-                  <View className="gap-1.5">
-                    {filteredMembers.map((c) => (
-                      <Pressable
+                  <RuledList>
+                    {filteredMembers.map((c, i) => (
+                      <ListRow
+                        ruled
+                        first={i === 0}
                         key={c.profile_id}
                         onPress={() => setSelectedMember(c)}
-                        className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-raised dark:active:bg-raised-dk">
-                        <Avatar name={c.full_name} size={32} />
-                        <View className="flex-1">
-                          <Text className="text-ink dark:text-ink-dk">
-                            {c.full_name ?? 'Member'}
-                          </Text>
-                          <FieldLabel>
-                            {c.role}
-                          </FieldLabel>
-                        </View>
-                        <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-                      </Pressable>
+                        lead={<Avatar name={c.full_name} size={32} />}
+                        title={c.full_name ?? 'Member'}
+                        subtitle={c.role}
+                      />
                     ))}
-                  </View>
+                  </RuledList>
                 )}
               </ScrollView>
             </>
