@@ -174,23 +174,29 @@ function ManageNav({
         onPress={() => onSelect(c)}
         accessibilityRole="tab"
         accessibilityState={{ selected }}
-        className={`flex-row items-center gap-2.5 rounded-lg px-3 py-2.5 active:opacity-80 ${
+        // Selected is a soft tint, not the gym's colour — the last nav in
+        // the product that was still filling itself with the brand. A nav
+        // is on screen the whole time and is never the one action a page
+        // exists for.
+        className={`flex-row items-center gap-2.5 rounded-ctl px-3 py-2.5 active:opacity-80 ${
           vertical ? 'w-full' : ''
         } ${
           selected
-            ? 'bg-primary shadow-soft'
+            ? 'bg-raised dark:bg-raised-dk'
             : vertical
-              ? 'hover:bg-sunken/60 dark:hover:bg-raised-dk'
+              ? 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
               : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <Ionicons
           name={CATEGORY_ICONS[c]}
           size={17}
-          color={selected ? '#FFFFFF' : colors.ink2}
+          color={selected ? colors.ink : colors.ink3}
         />
         <Text
-          className={`text-sm font-medium ${
-            selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+          className={`text-sm ${
+            selected
+              ? 'text-ink dark:text-ink-dk font-semibold'
+              : 'text-ink-2 dark:text-ink-2-dk font-medium'
           }`}>
           {CATEGORY_LABELS[c]}
         </Text>
