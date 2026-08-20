@@ -110,7 +110,7 @@ export function ImportDataModal({
                 {o.description}
               </Text>
             </View>
-            <Text className="text-primary">→</Text>
+            <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
           </Pressable>
         ))}
       </View>

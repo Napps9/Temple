@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { ListRow, RuledList } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -510,24 +511,18 @@ function MemberPermissionsSection() {
             No coaches or staff yet. Invite a teammate above first.
           </Text>
         ) : (
-          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card divide-y divide-line dark:divide-line-dk">
-            {rows.map((r) => (
-              <Pressable
+          <RuledList>
+            {rows.map((r, i) => (
+              <ListRow
+                ruled
+                first={i === 0}
                 key={r.profile_id}
                 onPress={() => setSelected(r)}
-                className="flex-row items-center justify-between gap-3 p-4">
-                <View className="gap-0.5">
-                  <Text className="text-ink dark:text-ink-dk font-medium">
-                    {r.profiles?.full_name ?? 'Unnamed teammate'}
-                  </Text>
-                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs capitalize">
-                    {r.role}
-                  </Text>
-                </View>
-                <Text className="text-primary text-sm">Configure</Text>
-              </Pressable>
+                title={r.profiles?.full_name ?? 'Unnamed teammate'}
+                subtitle={r.role}
+              />
             ))}
-          </View>
+          </RuledList>
         )}
       </View>
     );

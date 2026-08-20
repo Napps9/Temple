@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -5,6 +6,7 @@ import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { TagRuleEditor } from '@/components/TagRuleEditor';
+import { useThemeColors } from '@/lib/theme';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +16,7 @@ import { describeTagRule, type TagRule } from '@/lib/tag-rules';
 // and the create/edit form. Shared by the standalone /management/tags
 // route and the Members-tab "Tag rules" modal so both stay in sync.
 export function TagRulesPanel() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<TagRule | null>(null);
@@ -137,7 +140,7 @@ export function TagRulesPanel() {
                   })}
                 </Text>
               </View>
-              <Text className="text-primary">›</Text>
+              <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
             </Pressable>
           ))}
         </View>

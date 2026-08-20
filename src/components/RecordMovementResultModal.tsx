@@ -510,7 +510,7 @@ function SchemePickerStep({
                                 key={`${opt.movementKey}-${opt.schemeKey}`}
                                 onPress={() => onPick(opt)}
                                 className="rounded-lg px-3 py-2 active:bg-raised dark:active:bg-raised-dk">
-                                <Text className="text-primary text-sm">
+                                <Text className="text-ink dark:text-ink-dk text-sm">
                                   {opt.schemeLabel}
                                 </Text>
                               </Pressable>

@@ -1683,7 +1683,7 @@ function MovementTagPickerStep({
               key={s.key}
               onPress={() => onPick({ movement_key: m.key, track_key: s.key })}
               className="rounded-lg px-3 py-2 hover:bg-raised dark:hover:bg-raised-dk/60 active:bg-raised dark:active:bg-raised-dk">
-              <Text className="text-primary text-xs">{s.label}</Text>
+              <Text className="text-ink dark:text-ink-dk text-xs">{s.label}</Text>
             </Pressable>
           ))}
         </View>

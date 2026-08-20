@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { ListRow } from '@/components/ListRow';
 import { Text, TextInput } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -231,22 +232,13 @@ export default function SopsScreen() {
         ) : (
           <View className="gap-2">
             {(docsQuery.data ?? []).map((d) => (
-              <Pressable
+              <ListRow
                 key={d.id}
                 onPress={() => setActiveId(d.id)}
-                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
-                <Text className="text-ink dark:text-ink-dk font-semibold">
-                  {d.title}
-                </Text>
-                {d.category ? (
-                  <FieldLabel>
-                    {d.category}
-                  </FieldLabel>
-                ) : null}
-                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                  Updated {formatDate(d.updated_at)}
-                </Text>
-              </Pressable>
+                title={d.title}
+                subtitle={`Updated ${formatDate(d.updated_at)}`}
+                chip={d.category ? <FieldLabel>{d.category}</FieldLabel> : undefined}
+              />
             ))}
           </View>
         )}

@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useThemeColors } from '@/lib/theme';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
@@ -169,11 +171,12 @@ function PresetOption({
   active: boolean;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
       className={`flex-row items-center justify-between px-3 py-3 rounded-lg ${
-        active ? 'bg-primary/10' : 'active:bg-raised dark:active:bg-raised-dk'
+        active ? 'bg-raised dark:bg-raised-dk' : 'active:bg-raised dark:active:bg-raised-dk'
       }`}>
       <Text
         className={
@@ -183,7 +186,9 @@ function PresetOption({
         }>
         {label}
       </Text>
-      {active ? <Text className="text-primary">✓</Text> : null}
+      {active ? (
+        <Ionicons name="checkmark" size={15} color={colors.ink} />
+      ) : null}
     </Pressable>
   );
 }

@@ -1129,7 +1129,7 @@ function CoachEarningsSummary({ profileId }: { profileId: string }) {
               ? '—'
               : `${formatMoney(total.cents, total.currency)} · ${total.classes} classes`}
           </Text>
-          <Text className="text-primary text-sm">→</Text>
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         </View>
       </Pressable>
     </Link>
