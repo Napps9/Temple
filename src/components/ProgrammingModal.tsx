@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
 import { Input } from './Input';
+import { Sheet, SheetAction } from './Sheet';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -290,17 +291,31 @@ export function ProgrammingModal({
   }
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={close}>
-      <Pressable
-        onPress={close}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
+      title="Programming"
+      onClose={close}
+      dialogWidth={620}
+      actions={
+        target && date ? (
+          <>
+            <SheetAction>
+              <Button variant="secondary" onPress={close}>
+                Cancel
+              </Button>
+            </SheetAction>
+            <SheetAction grow>
+              <Button
+                onPress={() => save.mutate()}
+                loading={save.isPending}
+                success={saved}>
+                Save changes
+              </Button>
+            </SheetAction>
+          </>
+        ) : undefined
+      }>
+      <View className="gap-5 pb-1">
           {!target || !date ? (
             <View className="py-6 items-center">
               <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
@@ -370,25 +385,9 @@ export function ProgrammingModal({
                 </Text>
               ) : null}
 
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Button variant="secondary" onPress={close}>
-                    Cancel
-                  </Button>
-                </View>
-                <View className="flex-1">
-                  <Button
-                    onPress={() => save.mutate()}
-                    loading={save.isPending}
-                    success={saved}>
-                    Save changes
-                  </Button>
-                </View>
-              </View>
             </>
           )}
-        </Pressable>
-      </Pressable>
+      </View>
 
       <PickerModal
         visible={pickerOpenFor !== null}
@@ -404,7 +403,7 @@ export function ProgrammingModal({
         }}
         onClose={() => setPickerOpenFor(null)}
       />
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -550,37 +549,32 @@ function PickerModal({
   const items = kind === 'category' ? SECTION_CATEGORIES : SECTION_FORMATS;
   const title = kind === 'category' ? 'Pick a category' : 'Pick a scoring format';
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            {title}
-          </Text>
-          <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-1">
-            {items.map((it) => (
-              <Pressable
-                key={it.key}
-                onPress={() => onPick(it.key)}
-                className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
-                <Text className="text-ink dark:text-ink-dk">
-                  {it.label}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+      title={title}
+      onClose={onClose}
+      actions={
+        <SheetAction grow>
           <Button variant="secondary" onPress={onClose}>
             Cancel
           </Button>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        </SheetAction>
+      }>
+      <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
+        {items.map((it, i) => (
+          <Pressable
+            key={it.key}
+            onPress={() => onPick(it.key)}
+            accessibilityRole="button"
+            className={`px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+              i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+            }`}>
+            <Text className="text-ink dark:text-ink-dk text-[14.5px]">
+              {it.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </Sheet>
   );
 }

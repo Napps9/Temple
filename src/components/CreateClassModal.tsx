@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
@@ -9,6 +9,7 @@ import { ClassTypePicker } from '@/components/ClassTypePicker';
 import { DatePicker } from '@/components/DatePicker';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import {
   EMPTY_RECURRENCE,
   RecurrenceEditor,
@@ -287,26 +288,48 @@ export function CreateClassModal({
   });
 
   return (
-    <Modal
+    // Two stages, one sheet. The head and the foot both restate which
+    // stage you are on, which is what makes Review -> Edit legible as a
+    // step back rather than a different screen.
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <View className="flex-1 bg-black/60 items-center justify-center px-6">
-        <View className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5">
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              {stage === 'form' ? 'New class' : 'Ready to schedule?'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk">
-              {stage === 'form'
-                ? 'Pick a date and time, or have it repeat.'
-                : 'Have a quick look — tap Edit if anything needs changing.'}
-            </Text>
-          </View>
-
+      title={stage === 'form' ? 'New class' : 'Ready to schedule?'}
+      subtitle={
+        stage === 'form'
+          ? 'Pick a date and time, or have it repeat.'
+          : 'Have a quick look — tap Edit if anything needs changing.'
+      }
+      onClose={onClose}
+      dialogWidth={620}
+      actions={
+        stage === 'form' ? (
+          <>
+            <SheetAction>
+              <Button variant="secondary" onPress={onClose}>
+                Cancel
+              </Button>
+            </SheetAction>
+            <SheetAction grow>
+              <Button onPress={onReview}>Review</Button>
+            </SheetAction>
+          </>
+        ) : (
+          <>
+            <SheetAction>
+              <Button variant="secondary" onPress={() => setStage('form')}>
+                Edit
+              </Button>
+            </SheetAction>
+            <SheetAction grow>
+              <Button onPress={() => create.mutate()} loading={create.isPending}>
+                Confirm
+              </Button>
+            </SheetAction>
+          </>
+        )
+      }>
+      <View className="pb-1">
           {stage === 'form' ? (
-          <ScrollView className="max-h-[36rem]">
             <View className="gap-4">
               <ClassTypePicker value={classTypeId} onChange={setClassTypeId} />
 
@@ -375,7 +398,6 @@ export function CreateClassModal({
                 multiline
               />
             </View>
-          </ScrollView>
           ) : (
             <ConfirmView
               selectedType={selectedType}
@@ -393,36 +415,15 @@ export function CreateClassModal({
             />
           )}
 
-          {error ? <Text className="text-red-500 text-sm">{error}</Text> : null}
-
-          {stage === 'form' ? (
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Button variant="secondary" onPress={onClose}>
-                  Cancel
-                </Button>
-              </View>
-              <View className="flex-1">
-                <Button onPress={onReview}>Review</Button>
-              </View>
-            </View>
-          ) : (
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Button variant="secondary" onPress={() => setStage('form')}>
-                  Edit
-                </Button>
-              </View>
-              <View className="flex-1">
-                <Button onPress={() => create.mutate()} loading={create.isPending}>
-                  Confirm
-                </Button>
-              </View>
-            </View>
-          )}
-        </View>
+          {error ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-[13px] pt-3">
+              {error}
+            </Text>
+          ) : null}
       </View>
-    </Modal>
+    </Sheet>
   );
 }
 

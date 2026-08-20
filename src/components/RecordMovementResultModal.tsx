@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
+import { Sheet, SheetAction } from './Sheet';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { displayToKg, type WeightUnit } from '@/lib/weight';
 import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
@@ -223,33 +224,30 @@ export function RecordMovementResultModal({
   });
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          accessibilityViewIsModal
-          role="dialog"
-          aria-modal
-          accessibilityLabel="Record workout"
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              Record workout
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              Log a session and any movement results.
-            </Text>
-          </View>
-
-          <ScrollView className="max-h-[55vh]" contentContainerClassName="gap-4">
+      title="Record workout"
+      subtitle="Log a session and any movement results."
+      onClose={onClose}
+      dialogWidth={620}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              onPress={() => save.mutate()}
+              loading={save.isPending}
+              success={saved}>
+              Save workout
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-4 pb-1">
             <DatePicker label="Date" value={date} onChange={setDate} />
             <Input
               label="Title (optional)"
@@ -294,33 +292,14 @@ export function RecordMovementResultModal({
               style={{ minHeight: 80, textAlignVertical: 'top' }}
               autoCapitalize="sentences"
             />
-          </ScrollView>
-
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-sm">
+              className="text-red-500 dark:text-red-400 text-[13px]">
               {error}
             </Text>
           ) : null}
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button
-                onPress={() => save.mutate()}
-                loading={save.isPending}
-                success={saved}>
-                Save workout
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
+      </View>
 
       <SchemePickerModal
         visible={pickerOpenFor !== null}
@@ -331,7 +310,7 @@ export function RecordMovementResultModal({
         }}
         onClose={() => setPickerOpenFor(null)}
       />
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -466,27 +445,18 @@ function SchemePickerModal({
   }, [visible]);
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          accessibilityViewIsModal
-          role="dialog"
-          aria-modal
-          accessibilityLabel="Pick a movement"
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            Pick a movement
-          </Text>
-          <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
+      title="Pick a movement"
+      onClose={onClose}
+      actions={
+        <SheetAction grow>
+          <Button variant="secondary" onPress={onClose}>
+            Close
+          </Button>
+        </SheetAction>
+      }>
+      <View className="gap-2 pb-1">
             {groups.map((g) => (
               <View key={g.key}>
                 <Pressable
@@ -551,15 +521,8 @@ function SchemePickerModal({
                 ) : null}
               </View>
             ))}
-          </ScrollView>
-          <View>
-            <Button variant="secondary" onPress={onClose}>
-              Close
-            </Button>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
   );
 }
 
