@@ -18,6 +18,7 @@ import { labelsBoard } from './b-labels.mjs';
 import { oneRailBoard } from './b-onerail.mjs';
 import { accentBoard } from './b-accent.mjs';
 import { shippedStatesBoard } from './b-loading.mjs';
+import { emailBoard } from './b-email.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -53,6 +54,7 @@ const PAGES = [
   ['29-one-rail', oneRailBoard],
   ['30-accent-rule', accentBoard],
   ['31-loading', shippedStatesBoard],
+  ['32-email', emailBoard],
 ];
 
 // Drop anything a previous numbering left behind.

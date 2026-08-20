@@ -182,14 +182,18 @@ Still open:
     Then the loading state (board 31): nine list-level spinners became
     skeletons of the rows they stand in for, so the page no longer jumps
     when the data lands, and eight full-screen boot spinners at four
-    different colours share one. Next: the Manage hub, Timeline,
-    `setup.tsx`.
+    different colours share one. Then the first consolidation (board
+    32): Communications was seven routes for three jobs and is four —
+    the automations list and the topics editor are sections, and
+    creating a campaign is a button rather than a screen that inserts a
+    row and redirects. Next: member import 4 → 1, `track/` 7 → fewer,
+    then the Manage hub, Timeline and `setup.tsx`.
 
 ## Rebuilding
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..31.html
+node build.mjs   # writes 01..32.html
 node shot.mjs    # screenshots them to png/ at 2x
 node shot.mjs 05 # just one board
 ```
@@ -198,7 +202,7 @@ node shot.mjs 05 # just one board
 constant that swaps the machine's glyph across all sixteen places it
 appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states` hold the
 proposal boards; `b-shipped`, `b-decisions`, `b-parts`, `b-rail`,
-`b-leads`, `b-heads`, `b-labels`, `b-onerail`, `b-accent` and `b-loading` hold the record ones, which are drawn from the code rather than
+`b-leads`, `b-heads`, `b-labels`, `b-onerail`, `b-accent`, `b-loading` and `b-email` hold the record ones, which are drawn from the code rather than
 ahead of it — several of them cover screens behind auth that the exported
 bundle cannot photograph. `system.css` is the proposed design
 system, `legacy.css` approximates today's app for the before/after.

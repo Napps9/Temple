@@ -158,6 +158,34 @@ export type BackOfficeEntry = {
 // that leaves a record of itself is reviewable, one that leaves a gap is
 // just a thing somebody cannot find any more.
 export const RETIRED_ROUTES: { route: string; because: string }[] = [
+  // The Communications section was seven routes for three jobs. Three of
+  // them go; the two records stay, because a campaign and an automation
+  // are different objects with different fields, and merging them would
+  // cost more than the route saved.
+  {
+    route: '/management/communications/automations',
+    because:
+      'A Screen, a BackLink and a PageHead around a list of four rows and ' +
+      'a switch each, reached by a card on the directory that already had ' +
+      'room for the list itself. It is a section of the Email directory ' +
+      'now, so the automations are visible without a tap and next to the ' +
+      'campaigns they sit alongside.',
+  },
+  {
+    route: '/management/communications/topics',
+    because:
+      'One decision — what a member can unsubscribe from separately — and ' +
+      'the Settings pattern is one card per decision. It is a section of ' +
+      'Email settings, beside the sender and the footer it is part of.',
+  },
+  {
+    route: '/management/communications/new',
+    because:
+      'A screen whose entire job was to insert a row and redirect, shown ' +
+      'for about a second with nothing on it but a spinner. Creating a ' +
+      'campaign is a button with a loading state on the directory, the ' +
+      'same shape the automations list already used to create one.',
+  },
   {
     route: '/management?section=messaging',
     because:
@@ -351,8 +379,8 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
   // --- Comms ---------------------------------------------------------
   {
     href: '/management/communications',
-    title: 'Email campaigns',
-    blurb: 'Design, send and analyse email campaigns to your members.',
+    title: 'Email',
+    blurb: 'Campaigns you send, and the ones that send themselves.',
     keywords: ['newsletter', 'unsubscribe', 'bounce', 'sending domain', 'dns', 'spam', 'automations', 'topics', 'mailout'],
     category: 'comms',
     capabilities: ['can_manage_comms'],

@@ -10,6 +10,7 @@ import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
 import { SendingDomainCard } from '@/components/email/SendingDomainCard';
 import { SuppressedAddressesCard } from '@/components/email/SuppressedAddressesCard';
+import { TopicsCard } from '@/components/email/TopicsCard';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCommsSettings, useSendingDomain } from '@/lib/comms';
 import { errorMessage } from '@/lib/errors';
@@ -91,8 +92,8 @@ export default function CommsSettingsScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" />
         <PageHead
-          title="Sender & footer"
-          subtitle="How your emails are addressed, and the postal address every marketing email is legally required to carry."
+          title="Email settings"
+          subtitle="How your emails are addressed, the postal address every marketing email is legally required to carry, and what a member can unsubscribe from separately."
         />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
@@ -188,6 +189,7 @@ export default function CommsSettingsScreen() {
 
         <SuppressedAddressesCard />
 
+        <TopicsCard />
       </ScrollView>
     </Screen>
   );

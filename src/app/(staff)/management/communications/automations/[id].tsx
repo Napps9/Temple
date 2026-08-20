@@ -31,7 +31,7 @@ import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
 import type { Json } from '@/types/database';
 
-import { TRIGGER_LABELS } from '../automations';
+import { TRIGGER_LABELS } from '@/components/email/AutomationList';
 
 type TriggerType =
   | 'member_joined'
@@ -643,7 +643,7 @@ export default function AutomationEditor() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="py-6 px-4">
-          <BackLink fallbackHref="/management/communications/automations" />
+          <BackLink fallbackHref="/management/communications" />
           <Text className="text-ink-2 dark:text-ink-2-dk mt-4">Loading…</Text>
         </View>
       </Screen>
@@ -736,7 +736,7 @@ export default function AutomationEditor() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management/communications/automations" />
+        <BackLink fallbackHref="/management/communications" />
 
         <PageHead
           title="Edit automation"

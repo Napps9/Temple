@@ -1,14 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 import { Text } from '@/components/Text';
 
-import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
-import { PageHead } from '@/components/PageHead';
-import { Screen } from '@/components/Screen';
+import { SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { DEFAULT_AUTOMATION_WAIT_DAYS } from '@/lib/email/automation-knob';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
@@ -42,7 +40,11 @@ export const TRIGGER_LABELS: Record<TriggerType, string> = {
   member_tagged: 'When a member is tagged',
 };
 
-export default function AutomationsScreen() {
+// The automations list, as a section of the Communications directory
+// rather than a screen of its own. It was one: a Screen, a BackLink and a
+// PageHead around this list, reached by a card on the directory — a whole
+// page whose body is four rows and a switch each.
+export function AutomationList() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const brand = useGymBrand();
@@ -114,73 +116,62 @@ export default function AutomationsScreen() {
     onError: (e) => setError(errorMessage(e, 'Could not create the automation')),
   });
 
-  if (canManageComms === false) {
-    return (
-      <Screen edges={['bottom', 'left', 'right']}>
-        <View className="py-6 px-4 gap-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink fallbackHref="/management/communications" />
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            You don’t have permission to manage communications.
-          </Text>
-        </View>
-      </Screen>
-    );
-  }
-  if (!membership) return null;
+  if (canManageComms !== true) return null;
 
   return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management/communications" />
-        <PageHead
-          title="Automations"
-          subtitle="Emails that send themselves when something happens — a member joins, attends their first class, goes quiet, or a lead stays cold."
-          action={
-            <Button onPress={() => create.mutate()} loading={create.isPending}>
-              New
-            </Button>
-          }
+    <View className="gap-2">
+      <SectionLabel
+        right={
+          <Button
+            variant="secondary"
+            onPress={() => create.mutate()}
+            loading={create.isPending}>
+            New
+          </Button>
+        }>
+        Automations
+      </SectionLabel>
+
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+
+      {automations.isLoading ? (
+        <EmptyState kind="loading" rows={2} />
+      ) : (automations.data?.length ?? 0) === 0 ? (
+        <EmptyState
+          icon="flash-outline"
+          title="No automations yet"
+          description="Emails that send themselves when something happens — a member joins, attends their first class, goes quiet, or a lead stays cold."
+          actionLabel="Set one up"
+          onAction={() => create.mutate()}
         />
-
-        {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-        ) : null}
-
-        {automations.isLoading ? (
-          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
-        ) : (automations.data?.length ?? 0) === 0 ? (
-          <EmptyState
-            icon="flash-outline"
-            title="No automations yet"
-            description="Tap “New” to set your first one up."
-          />
-        ) : (
-          <View className="gap-2">
-            {automations.data!.map((a) => (
-              <View
-                key={a.id}
-                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3">
-                <Link href={`/management/communications/automations/${a.id}`} asChild>
-                  <Pressable className="flex-1 active:opacity-70">
-                    <Text className="text-ink dark:text-ink-dk font-medium">
-                      {a.name}
-                    </Text>
-                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                      {TRIGGER_LABELS[a.trigger_type]}
-                      {a.compiled_html ? '' : ' · draft'}
-                    </Text>
-                  </Pressable>
-                </Link>
-                <Switch
-                  accessibilityLabel={a.name}
-                  value={a.enabled}
-                  onValueChange={(v) => toggle.mutate({ id: a.id, enabled: v })}
-                />
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </Screen>
+      ) : (
+        <View className="gap-2">
+          {automations.data!.map((a) => (
+            <View
+              key={a.id}
+              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3">
+              <Link href={`/management/communications/automations/${a.id}`} asChild>
+                <Pressable className="flex-1 active:opacity-70">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
+                    {a.name}
+                  </Text>
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                    {TRIGGER_LABELS[a.trigger_type]}
+                    {a.compiled_html ? '' : ' · draft'}
+                  </Text>
+                </Pressable>
+              </Link>
+              <Switch
+                accessibilityLabel={a.name}
+                value={a.enabled}
+                onValueChange={(v) => toggle.mutate({ id: a.id, enabled: v })}
+              />
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }

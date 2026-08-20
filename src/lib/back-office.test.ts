@@ -23,11 +23,8 @@ const MANAGEMENT = 'src/app/(staff)/management';
 // Everything else has to be in the manifest, or nobody can find it.
 const PARENTED: Record<string, string> = {
   'communications/[id]': 'management/communications',
-  'communications/new': 'management/communications',
   'communications/settings': 'management/communications',
-  'communications/topics': 'management/communications',
-  'communications/automations': 'management/communications',
-  'communications/automations/[id]': 'management/communications/automations',
+  'communications/automations/[id]': 'management/communications (the automations section)',
   'members/[profile]': 'management/members',
   'members/imported/[id]': 'management/members/import',
   'members/import-stripe': 'management/members/import',
@@ -319,7 +316,10 @@ describe('the burndown has a baseline', () => {
     // Nine: the Messaging section went. One switch, and the rule sheet
     // already said it — see RETIRED_ROUTES for why Leaderboards, the
     // switch beside it, could not go with it.
-    expect(retiredCount()).toBe(9);
+    // Twelve: Communications was seven routes for three jobs. The
+    // automations list, the topics editor and the create-a-campaign
+    // interstitial are sections and a button now.
+    expect(retiredCount()).toBe(12);
     expect(retiredCount()).toBe(RETIRED_ROUTES.length);
     expect(byStatus('primary') + byStatus('back-office')).toBe(BACK_OFFICE.length);
   });

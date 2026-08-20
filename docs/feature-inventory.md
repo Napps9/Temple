@@ -3821,8 +3821,9 @@ suppression actually fires at send.
 
 ### Email topics
 
-[`can_manage_comms`] Reachable from Manage → Communications → Email
-topics (`/management/communications/topics`). Per-gym vocabulary of
+[`can_manage_comms`] A section of Email settings
+(`/management/communications/settings`); it was its own route until the
+Communications consolidation. Per-gym vocabulary of
 categories — Newsletter, Programming, Promos, Billing — that
 campaigns can be tagged with. The audience resolver
 (`comms_audience_rows`) honours both blanket unsubscribes (the
@@ -3941,8 +3942,10 @@ surface, reachable from the **Comms** tab on Manage or
 ### Email automations
 
 [`can_manage_comms`] Event-triggered emails an owner configures once and the
-platform fires unattended, reachable from Comms → Automations
-(`/management/communications/automations`). Built on the Comms Suite: the
+platform fires unattended, listed as a section of the Email directory
+(`/management/communications`) with a switch per row; each opens its own
+record at `/management/communications/automations/<id>`. Built on the
+Comms Suite: the
 same block editor + renderer author the email, `comms_audience_rows`
 resolves recipients and applies per-topic/blanket suppression, and the gym's
 sender identity / sending domain carry the send. Five triggers (0116, 0201):

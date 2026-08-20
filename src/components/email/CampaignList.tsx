@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, View } from 'react-native';
+import { SectionLabel } from '@/components/SectionLabel';
 import { Text } from '@/components/Text';
 
 import { EmptyState } from '@/components/EmptyState';
@@ -62,32 +63,25 @@ function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
   );
 }
 
-export function CampaignList() {
+export function CampaignList({ onNew }: { onNew?: () => void }) {
   const campaigns = useCampaigns();
 
   return (
-    <View className="gap-3">
-      <Link href="/management/communications/new" asChild>
-        <Pressable className="flex-row items-center justify-center gap-2 bg-primary rounded-xl py-3 active:bg-primary-dark">
-          <Ionicons name="add" size={18} color="#FFFFFF" />
-          <Text className="text-white font-semibold">New campaign</Text>
-        </Pressable>
-      </Link>
+    <View className="gap-2">
+      <SectionLabel>Campaigns</SectionLabel>
 
       {campaigns.isLoading ? (
-        <Text className="text-ink-2 dark:text-ink-2-dk">Loading campaigns…</Text>
+        <EmptyState kind="loading" rows={3} />
       ) : (campaigns.data ?? []).length === 0 ? (
         <EmptyState
           icon="mail-outline"
           title="No campaigns yet"
-          description="Create your first email campaign to reach your members."
+          description="Write one and it goes to whichever of your members you choose."
+          actionLabel={onNew ? 'New campaign' : undefined}
+          onAction={onNew}
         />
       ) : (
-        <View className="gap-2">
-          {(campaigns.data ?? []).map((c) => (
-            <CampaignRow key={c.id} campaign={c} />
-          ))}
-        </View>
+        (campaigns.data ?? []).map((c) => <CampaignRow key={c.id} campaign={c} />)
       )}
     </View>
   );
