@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 import { router } from 'expo-router';
 
@@ -81,9 +82,9 @@ export function WorkoutSectionCard({
 
       {programmed ? (
         <View className="bg-primary/5 border-l-2 border-primary rounded-r-lg px-3 py-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest mb-1">
+          <FieldLabel className="mb-1">
             Programmed
-          </Text>
+          </FieldLabel>
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-snug">
             {programmed}
           </Text>
@@ -92,9 +93,9 @@ export function WorkoutSectionCard({
 
       {headline ? (
         <View className="flex-row items-baseline gap-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+          <FieldLabel>
             Result
-          </Text>
+          </FieldLabel>
           <Text className="flex-1 text-ink dark:text-ink-dk text-lg font-semibold">
             {headline}
           </Text>

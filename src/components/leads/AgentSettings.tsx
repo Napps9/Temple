@@ -11,7 +11,7 @@ import { BrowserInterviewCall } from '@/components/BrowserInterviewCall';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { SectionLabel } from '@/components/SectionLabel';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { Input } from '@/components/Input';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
@@ -502,9 +502,9 @@ export function AgentSettings() {
 
             {isCalling ? (
               <View className="items-center gap-3 py-2">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs font-semibold uppercase tracking-widest">
+                <FieldLabel>
                   {callClock < 3 ? 'Ringing…' : 'In call'}
-                </Text>
+                </FieldLabel>
                 <Text
                   className="text-ink dark:text-ink-dk text-3xl font-semibold"
                   style={{ fontVariant: ['tabular-nums'] }}>
@@ -687,9 +687,9 @@ export function AgentSettings() {
 
       {canShareNumber ? (
         <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Share your number
-          </Text>
+          </FieldLabel>
           <View className="flex-row items-center justify-between bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5">
             <Text className="text-ink dark:text-ink-dk font-medium">{agentNumber}</Text>
             <ChipButton
@@ -770,9 +770,9 @@ export function AgentSettings() {
       ) : null}
 
       <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           Voice
-        </Text>
+        </FieldLabel>
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           How the assistant sounds on calls.
           {currentVoice ? ` Currently ${currentVoice.name} · ${currentVoice.region}.` : ''}
@@ -815,9 +815,9 @@ export function AgentSettings() {
 
       <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         <View className="flex-row items-start justify-between gap-3">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest pt-1">
+          <FieldLabel className="pt-1">
             What the agent knows
-          </Text>
+          </FieldLabel>
           <ChipButton
             label="Rewrite with AI"
             icon="sparkles"
@@ -882,9 +882,9 @@ export function AgentSettings() {
       </Sheet>
 
       <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           Coaching rules
-        </Text>
+        </FieldLabel>
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Rules and examples you've taught the agent from call reviews. Turn one off to stop
           applying it on future calls. The agent applies your 25 most recent active rules (and 5
@@ -918,9 +918,9 @@ export function AgentSettings() {
         <>
           <View className="flex-row items-center gap-2 px-0.5 pt-1">
             <View className="w-1 h-3.5 rounded-full bg-red-500" />
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-bold uppercase tracking-widest">
+            <FieldLabel>
               Danger Zone
-            </Text>
+            </FieldLabel>
           </View>
           <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 border border-red-200 dark:border-red-900/40">
             <Text className="text-ink dark:text-ink-dk font-medium">

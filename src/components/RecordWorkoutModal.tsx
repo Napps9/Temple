@@ -8,6 +8,7 @@ import { Button } from './Button';
 import { Sheet, SheetAction } from './Sheet';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
+import { FieldLabel } from './SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { displayToKg, type WeightUnit } from '@/lib/weight';
 import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
@@ -670,9 +671,9 @@ export function RecordWorkoutModal({
             {programmingByClassType.length > 0 ||
             (myProgramme?.sections.length ?? 0) > 0 ? (
               <View className="gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3">
-                <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold uppercase tracking-widest">
+                <FieldLabel>
                   Pre-fill from today's programming
-                </Text>
+                </FieldLabel>
                 <View className="flex-row flex-wrap gap-2">
                   {(myProgramme?.sections.length ?? 0) > 0 ? (
                     <Pressable
@@ -844,9 +845,9 @@ function SectionDraftCard({
   return (
     <View className="bg-raised dark:bg-raised-dk rounded-xl p-4 gap-3">
       <View className="flex-row items-center justify-between">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+        <FieldLabel>
           Section
-        </Text>
+        </FieldLabel>
         {removable ? (
           <Pressable
             onPress={onRemove}

@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { useEffect, useState } from 'react';
 import { Linking, Platform, Pressable, Switch, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
@@ -159,9 +160,9 @@ export function WaiverPanel() {
             <Text className="flex-1 text-ink dark:text-ink-dk font-medium" numberOfLines={1}>
               {active.data.title}
             </Text>
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               v{active.data.version}
-            </Text>
+            </FieldLabel>
           </View>
           <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {sigCount.data ?? 0}{' '}
@@ -177,9 +178,9 @@ export function WaiverPanel() {
           </View>
         </View>
       ) : (
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           No waiver published yet
-        </Text>
+        </FieldLabel>
       )}
 
       <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
@@ -453,13 +454,13 @@ export function ParqPanel() {
       </Text>
 
       {active.data ? (
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           Current version: v{active.data.version}
-        </Text>
+        </FieldLabel>
       ) : (
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           No PAR-Q published yet
-        </Text>
+        </FieldLabel>
       )}
 
       <View className="gap-3">

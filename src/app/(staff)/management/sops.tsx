@@ -9,6 +9,7 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
@@ -127,9 +128,9 @@ export default function SopsScreen() {
               {active.title}
             </Text>
             {active.category ? (
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 {active.category}
-              </Text>
+              </FieldLabel>
             ) : null}
           </View>
           <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
@@ -236,9 +237,9 @@ export default function SopsScreen() {
                   {d.title}
                 </Text>
                 {d.category ? (
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                  <FieldLabel>
                     {d.category}
-                  </Text>
+                  </FieldLabel>
                 ) : null}
                 <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Updated {formatDate(d.updated_at)}

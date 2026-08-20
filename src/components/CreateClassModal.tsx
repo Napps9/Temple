@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
@@ -551,9 +552,9 @@ function ConfirmRow({
 }) {
   return (
     <View className="gap-1">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+      <FieldLabel>
         {label}
-      </Text>
+      </FieldLabel>
       {children}
     </View>
   );

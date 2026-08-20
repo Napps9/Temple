@@ -19,6 +19,7 @@ import {
 import { FinanceBlock } from '@/components/FinanceBlock';
 import { GymSetupChecklist } from '@/components/GymSetupChecklist';
 import { ImportDataModal } from '@/components/ImportDataModal';
+import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
 import { BrandingPanel } from '@/components/BrandingPanel';
 import { ClassTypesPanel } from '@/components/ClassTypesPanel';
@@ -30,6 +31,7 @@ import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { MembersList } from '@/components/MembersList';
 import { OperatingDefaultsPanel } from '@/components/OperatingDefaultsPanel';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { TagRulesModal } from '@/components/TagRulesModal';
 import { StatTile } from '@/components/StatTile';
 import {
@@ -105,19 +107,22 @@ function ManagementCard({
   // telling them they need not have.
   saidInstead?: string;
 }) {
+  const colors = useThemeColors();
   const body = (
     <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-1 border border-line dark:border-line-dk">
-      <View className="flex-row justify-between items-center">
-        <Text className="text-ink dark:text-ink-dk font-semibold">{title}</Text>
+      <View className="flex-row justify-between items-center gap-3">
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
+          {title}
+        </Text>
         {comingSoon ? (
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-[1px]">
             Coming soon
           </Text>
         ) : (
-          <Text className="text-primary">→</Text>
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         )}
       </View>
-      <Text className="text-ink-2 dark:text-ink-2-dk">{description}</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{description}</Text>
       {saidInstead ? (
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           or say “{saidInstead}”
@@ -242,15 +247,11 @@ function SearchResults({
 }) {
   if (results.length === 0) {
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-1 border border-line dark:border-line-dk">
-        <Text className="text-ink dark:text-ink-dk font-semibold">
-          Nothing here matches “{query.trim()}”.
-        </Text>
-        <Text className="text-ink-2 dark:text-ink-2-dk">
-          It may be something you can just say — try asking for it in the
-          Timeline.
-        </Text>
-      </View>
+      <EmptyState
+        kind="filtered"
+        title={`Nothing here matches “${query.trim()}”`}
+        description="It may be something you can just say — try asking for it in the Timeline."
+      />
     );
   }
   return (
@@ -902,9 +903,9 @@ function TeamMemberRow({
           <Text className="text-ink dark:text-ink-dk font-semibold">
             {name}
           </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             {member.role}
-          </Text>
+          </FieldLabel>
         </View>
         <CountPill
           icon="checkbox-outline"
@@ -1470,9 +1471,9 @@ function MembersTab() {
 
       {canViewAttendance ? (
         <View className="gap-3">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <SectionLabel>
             Attendance
-          </Text>
+          </SectionLabel>
           <View className="flex-row gap-3 flex-wrap">
             <StatTile
               title="Attended"

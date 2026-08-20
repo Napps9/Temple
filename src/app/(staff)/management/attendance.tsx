@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership } from '@/lib/auth';
 import { useClassTypes } from '@/lib/useClassCatalog';
 import {
@@ -192,9 +193,9 @@ export default function AttendanceScreen() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <SectionLabel>
             Attended per day
-          </Text>
+          </SectionLabel>
           <AttendanceChart
             data={dayBuckets.map((d) => ({ label: d.day.slice(5), value: d.attended }))}
           />
@@ -215,9 +216,9 @@ export default function AttendanceScreen() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <SectionLabel>
             By class type
-          </Text>
+          </SectionLabel>
           {typeBuckets.length === 0 ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {loading ? 'Loading…' : 'No bookings to bucket.'}

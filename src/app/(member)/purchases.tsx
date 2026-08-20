@@ -9,6 +9,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
@@ -68,9 +69,9 @@ export default function PurchasesScreen() {
 
         {subRows.length > 0 ? (
           <View className="gap-2">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <SectionLabel>
               Subscriptions
-            </Text>
+            </SectionLabel>
             {subRows.map((s) => (
               <SubscriptionCard key={s.id} sub={s} />
             ))}
@@ -87,11 +88,7 @@ export default function PurchasesScreen() {
           ) : null
         ) : (
           <View className="gap-2">
-            {subRows.length > 0 ? (
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
-                Orders
-              </Text>
-            ) : null}
+            {subRows.length > 0 ? <SectionLabel>Orders</SectionLabel> : null}
             {rows.map((o) => (
               <OrderCard key={o.id} order={o} />
             ))}

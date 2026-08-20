@@ -8,6 +8,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useSession, useSignOut } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -51,9 +52,9 @@ export default function AthleteAccount() {
         </View>
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Signed in as
-          </Text>
+          </FieldLabel>
           <Text className="text-ink dark:text-ink-dk">
             {session?.user.email ?? '—'}
           </Text>

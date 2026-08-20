@@ -7,6 +7,7 @@ import { Text } from './Text';
 import { Button } from './Button';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
+import { FieldLabel } from './SectionLabel';
 import { Sheet, SheetAction } from './Sheet';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { displayToKg, type WeightUnit } from '@/lib/weight';
@@ -385,9 +386,9 @@ function DraftCard({
           />
         </>
       ) : null}
-      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+      <FieldLabel>
         Result {index + 1}
-      </Text>
+      </FieldLabel>
     </View>
   );
 }

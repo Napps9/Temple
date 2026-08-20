@@ -15,6 +15,7 @@ import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { campaignReport } from '@/lib/campaign-report';
 import { StatTile } from '@/components/StatTile';
 import { useGymMembership } from '@/lib/auth';
@@ -522,9 +523,9 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
         {/* Topic */}
         <View className="gap-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Topic
-          </Text>
+          </FieldLabel>
           <TopicPicker
             gymId={membership?.gymId ?? null}
             value={topicId}
@@ -534,9 +535,9 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
         {/* Audience */}
         <View className="gap-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Audience
-          </Text>
+          </FieldLabel>
           <AudienceBuilder value={audience} onChange={setAudience} />
         </View>
 
@@ -1041,9 +1042,9 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       ) : null}
 
       <View className="gap-2">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <SectionLabel>
           What you sent
-        </Text>
+        </SectionLabel>
         <HtmlPreview html={previewHtml} height={420} />
       </View>
       </ScrollView>

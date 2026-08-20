@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { type Href, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -207,9 +208,9 @@ export function MovementDetailView({
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref={backHref as Href} />
           <View className="flex-1">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               {group.name}
-            </Text>
+            </FieldLabel>
             <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               {movement.name}
             </Text>

@@ -8,7 +8,7 @@ import { fireEvent, renderWithProviders as render, screen } from '../../test/ren
 import { AIMark } from './AIMark';
 import { ListRow, RuledList } from './ListRow';
 import { PageHead } from './PageHead';
-import { SectionLabel } from './SectionLabel';
+import { FieldLabel, SectionLabel } from './SectionLabel';
 import { SettingCard } from './SettingCard';
 
 // The six parts every screen is assembled from. jsdom cannot see any of
@@ -41,6 +41,16 @@ describe('SectionLabel', () => {
   it('carries the group\u2019s own context on the right', () => {
     render(<SectionLabel right={<Text>5 classes</Text>}>Thursday</SectionLabel>);
     expect(screen.getByText('5 classes')).toBeTruthy();
+  });
+});
+
+describe('FieldLabel', () => {
+  // Same token as SectionLabel and deliberately not a heading: a form of
+  // fifteen fields is not fifteen headings to navigate past.
+  it('is not a heading', () => {
+    render(<FieldLabel>Race type</FieldLabel>);
+    expect(screen.getByText('Race type')).toBeTruthy();
+    expect(screen.queryByRole('heading')).toBeNull();
   });
 });
 

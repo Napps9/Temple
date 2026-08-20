@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
@@ -193,9 +194,9 @@ export function AgentBriefBuilder({
       ) : null}
 
       <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           The agent's brief
-        </Text>
+        </FieldLabel>
         <Input
           label="Edit anything before saving — it's yours"
           value={value}

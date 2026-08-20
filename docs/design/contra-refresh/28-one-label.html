@@ -1,0 +1,209 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>One label</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="system.css">
+<link rel="stylesheet" href="legacy.css">
+<style></style></head>
+<body class="board">
+<svg style="position:absolute;width:0;height:0" aria-hidden="true"><symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3.5"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol><symbol id="i-barbell" viewBox="0 0 24 24"><path d="M4 9v6M7 6.5v11M17 6.5v11M20 9v6M7 12h10"/></symbol><symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 16.5l6-6 4 4 7.5-7.5"/><path d="M14.5 7h6v6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19.5V5"/><path d="M6 11l6-6 6 6"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13"/><path d="M12.5 5.5 19 12l-6.5 6.5"/></symbol><symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol><symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="3.4"/><path d="M2.5 10h19"/></symbol><symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.2 19.5a5.8 5.8 0 0 1 11.6 0"/><path d="M16.2 5.4a3.2 3.2 0 0 1 0 5.9"/><path d="M17.4 14.6a5.8 5.8 0 0 1 3.4 4.9"/></symbol><symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4"/><path d="M5.5 5h11l-2 3.6 2 3.6h-11z"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h7.5L18 8v12.5H6z"/><path d="M13.5 3.5V8H18"/><path d="M9 12.5h6M9 16h4"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.2 9.5a5.8 5.8 0 0 1 11.6 0c0 4.7 1.9 5.8 1.9 5.8H4.3s1.9-1.1 1.9-5.8z"/><path d="M10 19a2 2 0 0 0 4 0"/></symbol><symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 14.8a3 3 0 0 1-3 3H9.4L5 21v-3.6a3 3 0 0 1-1-2.6V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.6l1.5 2.5 2.9-.5.6 2.9 2.7 1.2-1.4 2.6 1.4 2.6-2.7 1.2-.6 2.9-2.9-.5L12 21.4l-1.5-2.5-2.9.5-.6-2.9-2.7-1.2L5.7 12 4.3 9.4l2.7-1.2.6-2.9 2.9.5z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20.5 20.5"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4.6a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.4A2.6 2.6 0 0 0 8 10.6M16 5.5h2.6A2.6 2.6 0 0 1 16 10.6"/><path d="M12 12.6v3.2M8.8 20h6.4l-.6-4H9.4z"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 5.2A2.2 2.2 0 0 1 7.2 3H19v14.4H7.2A2.2 2.2 0 0 0 5 19.6z"/><path d="M5 19.6A1.6 1.6 0 0 1 6.6 18H19v3H6.6A1.6 1.6 0 0 1 5 19.6z"/></symbol><symbol id="i-body" viewBox="0 0 24 24"><circle cx="12" cy="4.4" r="2"/><path d="M12 7v7.2M12 7.6 7.2 9.4M12 7.6l4.8 1.8M12 14.2 9 20.4M12 14.2l3 6.2"/></symbol><symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5h3.6v14H4zM9.6 5h3.6v14H9.6z"/><path d="M16.4 5.6l3.3 12.8-2.2.6-3.3-12.8z"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="m3.8 7 8.2 6 8.2-6"/></symbol><symbol id="i-panel" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></symbol><symbol id="i-bag" viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.3S3.8 15 3.8 9.5A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.2 3.1c0 5.5-8.2 10.8-8.2 10.8z"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 5-3.4 8-7.5 9.5C7.9 20 4.5 17 4.5 12V6z"/><path d="M9 12l2.2 2.2L15.4 10"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20.2 4.6 16 16.4 4.2a2.1 2.1 0 0 1 3 3L7.7 19z"/><path d="M13.8 6.8l3.4 3.4"/></symbol><symbol id="i-qr" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><path d="M13.5 13.5h3v3h-3zM20.5 13.5v3M17 20.5h3.5M13.5 20.5h1"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.3 1.3"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.3-1.3"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 2.5 4.8 13.6H11l-.8 7.9 8.9-11.1H13z"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path d="M4.5 10.5a10 10 0 0 1 15 0M7.5 13.8a5.6 5.6 0 0 1 9 0"/><circle cx="12" cy="17.6" r="1.2"/></symbol><symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6.5h16M7 12h10M10 17.5h4"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.6"/><path d="M15.5 5.5H5.8a2.3 2.3 0 0 0-2.3 2.3v9.7"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 5.2 19 12 7.5 18.8z"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5"/><path d="M20 4.5v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5"/><path d="M4 19.5v-4h4"/></symbol></svg>
+<div class="board-head">
+  <h1 class="board-title">One label</h1>
+  <p class="board-sub">The same idiom was written by hand 112 times across 47 files, at four sizes, four weights and two greys — and Input drew a fifth thing, so a text field and a picker in the same form disagreed. There is now one token, defined once.</p>
+</div>
+
+<div class="board-row" style="">
+<div class="frame-wrap">
+  <div class="frame-label">before — two idioms, one form</div>
+  <div class="frame" style="">
+    <div class="screen app "
+         style="background:var(--bg);color:var(--ink)">
+      
+<div class="statusbar">
+  <span class="num" style="font-size:14.5px">9:41</span>
+  <span class="row" style="gap:5px;opacity:.85">
+    <svg style="width:17px;height:11px" viewBox="0 0 17 11"><g fill="currentColor">
+      <rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/>
+      <rect x="8.6" y="2.6" width="3" height="8.4" rx="1"/><rect x="12.9" width="3" height="11" rx="1"/></g></svg>
+    <svg style="width:15px;height:11px" viewBox="0 0 15 11"><path d="M7.5 9.4l2-2a2.9 2.9 0 0 0-4 0zM3.6 5.5a5.6 5.6 0 0 1 7.8 0l1.5-1.6a7.8 7.8 0 0 0-10.8 0z" fill="currentColor"/></svg>
+    <svg style="width:24px;height:11px" viewBox="0 0 24 11"><rect x=".5" y=".5" width="19" height="10" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/><rect x="2" y="2" width="15" height="7" rx="1.6" fill="currentColor"/><path d="M21 3.6v3.8a2 2 0 0 0 0-3.8z" fill="currentColor" fill-opacity=".5"/></svg>
+  </span>
+</div><div class="scrollarea">
+<div class="topbar">
+  <div class="row g8 grow" style="min-width:0"><div class="gymtile" style="width:30px;height:30px;border-radius:9px;font-size:14px">F</div></div>
+  <div class="row g4" style="min-width:0"><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-chat"/></svg></span><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-barbell"/></svg></span><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-cal"/></svg></span><span class="chip chip-on" style=""><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-gear"/></svg>Manage</span></div>
+  <div class="row g6 grow" style="justify-content:flex-end;flex:none"><span class="chip chip-sm" style="width:26px;padding:0;justify-content:center"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-refresh"/></svg></span><div class="avatar" style="width:30px;height:30px;font-size:11px">do</div></div>
+</div><div style="display:flex;flex-direction:column;gap:16px;padding-bottom:20px"><div style="padding:0 16px"><span class="chip chip-sm" style="padding-left:7px"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-left"/></svg>Back</span></div>
+<div style="display:flex;align-items:flex-start;gap:12px;padding:0 16px">
+  <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+    <span style="font-size:26px;font-weight:700;letter-spacing:-.8px;line-height:29px">Edit campaign</span>
+    <span class="body" style="font-size:14px;line-height:20px">Build your email, choose who gets it, then send.</span>
+  </div>
+  
+</div><div style="padding:0 16px">
+<div class="card" style="padding:14px;flex-direction:row;align-items:center;gap:12px;display:flex">
+  <span style="width:44px;height:44px;border-radius:999px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center"><svg class="i" style="width:20px;height:20px;flex:none;color:var(--accent)"><use href="#i-pen"/></svg></span>
+  <div class="stack g2 grow" style="min-width:0">
+    <span class="h3">Design your email</span>
+    <span class="small dim" style="font-size:12.5px">4 blocks · open the builder</span>
+  </div>
+  <svg class="i" style="width:16px;height:16px;flex:none;color:var(--ink-3)"><use href="#i-right"/></svg>
+</div></div><div class="stack g14" style="padding:0 16px">
+    
+<div class="stack g6">
+  <span style="font-size:14px;font-weight:500;color:var(--ink-2)">Title</span>
+  <div class="input "><span class="grow">March newsletter</span></div>
+</div>
+    
+<div class="stack g6">
+  <span style="font-size:14px;font-weight:500;color:var(--ink-2)">Subject</span>
+  <div class="input empty"><span class="grow">What is on this month at Forge</span></div>
+</div>
+  </div><div class="stack g8" style="padding:0 16px"><span style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">Topic</span><div class="row g6 wrap"><span class="chip chip-sm chip-on">Newsletter</span><span class="chip chip-sm ">Promos</span><span class="chip chip-sm ">Billing</span></div></div><div class="stack g8" style="padding:0 16px"><span style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">Audience</span>
+<div class="card" style="padding:14px;gap:8px">
+  <span class="h3">All active members</span>
+  <span class="small dim" style="font-size:12.5px">214 recipients · 3 unsubscribed from this topic</span>
+</div></div></div></div>
+      <div class="homebar"><span></span></div>
+    </div>
+  </div>
+</div>
+<div class="frame-wrap">
+  <div class="frame-label">after — one token</div>
+  <div class="frame" style="">
+    <div class="screen app "
+         style="background:var(--bg);color:var(--ink)">
+      
+<div class="statusbar">
+  <span class="num" style="font-size:14.5px">9:41</span>
+  <span class="row" style="gap:5px;opacity:.85">
+    <svg style="width:17px;height:11px" viewBox="0 0 17 11"><g fill="currentColor">
+      <rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/>
+      <rect x="8.6" y="2.6" width="3" height="8.4" rx="1"/><rect x="12.9" width="3" height="11" rx="1"/></g></svg>
+    <svg style="width:15px;height:11px" viewBox="0 0 15 11"><path d="M7.5 9.4l2-2a2.9 2.9 0 0 0-4 0zM3.6 5.5a5.6 5.6 0 0 1 7.8 0l1.5-1.6a7.8 7.8 0 0 0-10.8 0z" fill="currentColor"/></svg>
+    <svg style="width:24px;height:11px" viewBox="0 0 24 11"><rect x=".5" y=".5" width="19" height="10" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/><rect x="2" y="2" width="15" height="7" rx="1.6" fill="currentColor"/><path d="M21 3.6v3.8a2 2 0 0 0 0-3.8z" fill="currentColor" fill-opacity=".5"/></svg>
+  </span>
+</div><div class="scrollarea">
+<div class="topbar">
+  <div class="row g8 grow" style="min-width:0"><div class="gymtile" style="width:30px;height:30px;border-radius:9px;font-size:14px">F</div></div>
+  <div class="row g4" style="min-width:0"><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-chat"/></svg></span><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-barbell"/></svg></span><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-cal"/></svg></span><span class="chip chip-on" style=""><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-gear"/></svg>Manage</span></div>
+  <div class="row g6 grow" style="justify-content:flex-end;flex:none"><span class="chip chip-sm" style="width:26px;padding:0;justify-content:center"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-refresh"/></svg></span><div class="avatar" style="width:30px;height:30px;font-size:11px">do</div></div>
+</div><div style="display:flex;flex-direction:column;gap:16px;padding-bottom:20px"><div style="padding:0 16px"><span class="chip chip-sm" style="padding-left:7px"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-left"/></svg>Back</span></div>
+<div style="display:flex;align-items:flex-start;gap:12px;padding:0 16px">
+  <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+    <span style="font-size:26px;font-weight:700;letter-spacing:-.8px;line-height:29px">Edit campaign</span>
+    <span class="body" style="font-size:14px;line-height:20px">Build your email, choose who gets it, then send.</span>
+  </div>
+  
+</div><div style="padding:0 16px">
+<div class="card" style="padding:14px;flex-direction:row;align-items:center;gap:12px;display:flex">
+  <span style="width:44px;height:44px;border-radius:999px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center"><svg class="i" style="width:20px;height:20px;flex:none;color:var(--accent)"><use href="#i-pen"/></svg></span>
+  <div class="stack g2 grow" style="min-width:0">
+    <span class="h3">Design your email</span>
+    <span class="small dim" style="font-size:12.5px">4 blocks · open the builder</span>
+  </div>
+  <svg class="i" style="width:16px;height:16px;flex:none;color:var(--ink-3)"><use href="#i-right"/></svg>
+</div></div><div class="stack g14" style="padding:0 16px">
+    
+<div class="stack g6">
+  <span class="lbl" style="letter-spacing:.06em">Title</span>
+  <div class="input   ">
+    <span class="grow">March newsletter</span>
+  </div>
+  
+</div>
+    
+<div class="stack g6">
+  <span class="lbl" style="letter-spacing:.06em">Subject</span>
+  <div class="input empty  ">
+    <span class="grow">What is on this month at Forge</span>
+  </div>
+  
+</div>
+  </div><div class="stack g8" style="padding:0 16px"><span class="lbl">Topic</span><div class="row g6 wrap"><span class="chip chip-sm chip-on">Newsletter</span><span class="chip chip-sm ">Promos</span><span class="chip chip-sm ">Billing</span></div></div><div class="stack g8" style="padding:0 16px"><span class="lbl">Audience</span>
+<div class="card" style="padding:14px;gap:8px">
+  <span class="h3">All active members</span>
+  <span class="small dim" style="font-size:12.5px">214 recipients · 3 unsubscribed from this topic</span>
+</div></div></div></div>
+      <div class="homebar"><span></span></div>
+    </div>
+  </div>
+</div>
+<div class="frame-wrap">
+  <div class="frame-label">after — dark</div>
+  <div class="frame" style="">
+    <div class="screen app dark"
+         style="background:var(--bg);color:var(--ink)">
+      
+<div class="statusbar">
+  <span class="num" style="font-size:14.5px">9:41</span>
+  <span class="row" style="gap:5px;opacity:.85">
+    <svg style="width:17px;height:11px" viewBox="0 0 17 11"><g fill="currentColor">
+      <rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/>
+      <rect x="8.6" y="2.6" width="3" height="8.4" rx="1"/><rect x="12.9" width="3" height="11" rx="1"/></g></svg>
+    <svg style="width:15px;height:11px" viewBox="0 0 15 11"><path d="M7.5 9.4l2-2a2.9 2.9 0 0 0-4 0zM3.6 5.5a5.6 5.6 0 0 1 7.8 0l1.5-1.6a7.8 7.8 0 0 0-10.8 0z" fill="currentColor"/></svg>
+    <svg style="width:24px;height:11px" viewBox="0 0 24 11"><rect x=".5" y=".5" width="19" height="10" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/><rect x="2" y="2" width="15" height="7" rx="1.6" fill="currentColor"/><path d="M21 3.6v3.8a2 2 0 0 0 0-3.8z" fill="currentColor" fill-opacity=".5"/></svg>
+  </span>
+</div><div class="scrollarea">
+<div class="topbar">
+  <div class="row g8 grow" style="min-width:0"><div class="gymtile" style="width:30px;height:30px;border-radius:9px;font-size:14px">F</div></div>
+  <div class="row g4" style="min-width:0"><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-chat"/></svg></span><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-barbell"/></svg></span><span class="chip " style="border-color:transparent;background:transparent"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-cal"/></svg></span><span class="chip chip-on" style=""><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-gear"/></svg>Manage</span></div>
+  <div class="row g6 grow" style="justify-content:flex-end;flex:none"><span class="chip chip-sm" style="width:26px;padding:0;justify-content:center"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-refresh"/></svg></span><div class="avatar" style="width:30px;height:30px;font-size:11px">do</div></div>
+</div><div style="display:flex;flex-direction:column;gap:16px;padding-bottom:20px"><div style="padding:0 16px"><span class="chip chip-sm" style="padding-left:7px"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-left"/></svg>Back</span></div>
+<div style="display:flex;align-items:flex-start;gap:12px;padding:0 16px">
+  <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+    <span style="font-size:26px;font-weight:700;letter-spacing:-.8px;line-height:29px">Record a race</span>
+    <span class="body" style="font-size:14px;line-height:20px">Hyrox splits, station by station.</span>
+  </div>
+  
+</div><div class="stack g8" style="padding:0 16px"><span class="lbl">Race type</span><div class="row g6 wrap"><span class="chip chip-sm chip-on">Full</span><span class="chip chip-sm ">Doubles</span><span class="chip chip-sm ">Relay</span></div></div><div class="stack g8" style="padding:0 16px"><span class="lbl">Division</span><div class="row g6 wrap"><span class="chip chip-sm ">Open</span><span class="chip chip-sm chip-on">Pro</span></div></div><div class="stack g8" style="padding:0 16px"><span class="lbl">Category</span><div class="row g6 wrap"><span class="chip chip-sm chip-on">Individual</span><span class="chip chip-sm ">Team</span></div></div><div style="padding:0 16px">
+<div class="stack g6">
+  <span class="lbl" style="letter-spacing:.06em">Finish time</span>
+  <div class="input   ">
+    <span class="grow">1:12:44</span>
+  </div>
+  
+</div></div><div style="padding:0 16px"><span class="btn btn-accent btn-full">Save race</span></div></div></div>
+      <div class="homebar"><span></span></div>
+    </div>
+  </div>
+</div></div>
+<div class="board-row" style="margin-top:6px"><p class="board-sub" style="text-align:center;max-width:900px">Left: Title and Subject carry Input’s 14px medium sentence-case label; Topic and Audience carry the hand-rolled 12px caps one, four pixels apart in size and nothing alike in weight. Right: all four are the same 11px / 600 / uppercase / +1px rule. <code>uppercase</code> is a style rather than a transform of the string, so a screen reader still hears “Email address” and not the shouted version.</p></div>
+<div class="board-row" style=""><div class="card flush" style="max-width:900px;width:100%">
+    <div class="row g12" style="padding:12px 16px">
+      <span class="lbl" style="width:150px;flex:none">Where it was</span>
+      <span class="lbl" style="width:210px;flex:none">What it drew</span>
+      <span class="lbl grow">Now</span>
+    </div>
+    <div class="row g12" style="padding:11px 16px;border-top:1px solid var(--line)">
+          <span class="small" style="width:150px;flex:none;font-size:12.5px">65 call sites</span>
+          <span class="small dim" style="width:210px;flex:none;font-size:12.5px">12px · normal · ink-3</span>
+          <span class="small grow" style="font-size:12.5px">FieldLabel</span>
+        </div><div class="row g12" style="padding:11px 16px;border-top:1px solid var(--line)">
+          <span class="small" style="width:150px;flex:none;font-size:12.5px">17 call sites</span>
+          <span class="small dim" style="width:210px;flex:none;font-size:12.5px">10px · normal · ink-3</span>
+          <span class="small grow" style="font-size:12.5px">FieldLabel</span>
+        </div><div class="row g12" style="padding:11px 16px;border-top:1px solid var(--line)">
+          <span class="small" style="width:150px;flex:none;font-size:12.5px">13 call sites</span>
+          <span class="small dim" style="width:210px;flex:none;font-size:12.5px">12px · normal · ink-2</span>
+          <span class="small grow" style="font-size:12.5px">FieldLabel</span>
+        </div><div class="row g12" style="padding:11px 16px;border-top:1px solid var(--line)">
+          <span class="small" style="width:150px;flex:none;font-size:12.5px">EmailEditor</span>
+          <span class="small dim" style="width:210px;flex:none;font-size:12.5px">its own local component — 12px · medium · ink-2</span>
+          <span class="small grow" style="font-size:12.5px">FieldLabel</span>
+        </div><div class="row g12" style="padding:11px 16px;border-top:1px solid var(--line)">
+          <span class="small" style="width:150px;flex:none;font-size:12.5px">SiteEditor</span>
+          <span class="small dim" style="width:210px;flex:none;font-size:12.5px">its own local component — the same one, again</span>
+          <span class="small grow" style="font-size:12.5px">FieldLabel</span>
+        </div><div class="row g12" style="padding:11px 16px;border-top:1px solid var(--line)">
+          <span class="small" style="width:150px;flex:none;font-size:12.5px">Input (47 files)</span>
+          <span class="small dim" style="width:210px;flex:none;font-size:12.5px">14px · medium · sentence case · ink-2</span>
+          <span class="small grow" style="font-size:12.5px">the same token</span>
+        </div><div class="row g12" style="padding:11px 16px;border-top:1px solid var(--line)">
+          <span class="small" style="width:150px;flex:none;font-size:12.5px">18 groups</span>
+          <span class="small dim" style="width:210px;flex:none;font-size:12.5px">the caps label above a list</span>
+          <span class="small grow" style="font-size:12.5px">SectionLabel</span>
+        </div>
+  </div></div>
+<div class="board-row" style="margin-top:6px"><p class="board-sub" style="text-align:center;max-width:900px">Left alone deliberately: the coloured badges. Amber, emerald, rose and purple caps chips carry their meaning in the colour, so they are status pills rather than labels and belong to their own token, not this one.</p></div>
+
+</body></html>

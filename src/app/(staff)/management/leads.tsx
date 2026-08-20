@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/Input';
 import { LeadsShell, type LeadsTab } from '@/components/LeadsNav';
 import { PageHead } from '@/components/PageHead';
+import { FieldLabel } from '@/components/SectionLabel';
 import { StatTile } from '@/components/StatTile';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { useGymMembership } from '@/lib/auth';
@@ -1032,9 +1033,9 @@ function LeadDetailModal({
 
               {convertPicker ? (
                 <View className="gap-2">
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                  <FieldLabel>
                     Link to a member
-                  </Text>
+                  </FieldLabel>
                   <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Pick the member this lead became. (Future signups with a
                     matching email auto-link inside the gym's conversion
@@ -1087,9 +1088,9 @@ function LeadDetailModal({
                 </View>
               ) : reassignOpen ? (
                 <View className="gap-2">
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                  <FieldLabel>
                     Assign to
-                  </Text>
+                  </FieldLabel>
                   <ScrollView className="max-h-56">
                     <View className="gap-1.5">
                       {coaches.map((c) => {
@@ -1122,9 +1123,9 @@ function LeadDetailModal({
               ) : (
                 <>
                   <View className="gap-2">
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                    <FieldLabel>
                       Assigned to
-                    </Text>
+                    </FieldLabel>
                     <View className="flex-row items-center justify-between gap-3">
                       <View className="flex-row items-center gap-2">
                         <Ionicons
@@ -1177,9 +1178,9 @@ function LeadDetailModal({
                   </View>
 
                   <View className="gap-2">
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                    <FieldLabel>
                       Status
-                    </Text>
+                    </FieldLabel>
                     <View className="flex-row flex-wrap gap-2">
                       {STATUS_ORDER.map((s) => {
                         const sel = lead.status === s;

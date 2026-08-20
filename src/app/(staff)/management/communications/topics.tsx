@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -126,9 +127,9 @@ export default function EmailTopicsScreen() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <SectionLabel>
             Live topics
-          </Text>
+          </SectionLabel>
           {topics.isLoading ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Loading…

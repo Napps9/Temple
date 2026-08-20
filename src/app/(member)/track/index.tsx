@@ -9,6 +9,7 @@ import { Text } from '@/components/Text';
 
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { TileGrid } from '@/components/TileGrid';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
@@ -252,9 +253,9 @@ export default function TrackHome() {
                 />
               </View>
               <View className="gap-2">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                <FieldLabel>
                   Last 12 weeks
-                </Text>
+                </FieldLabel>
                 <WorkoutHeatmap
                   loggedDays={recentWorkouts.data ?? new Set()}
                   anchor={new Date()}

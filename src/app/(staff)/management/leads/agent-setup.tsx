@@ -11,6 +11,7 @@ import { BrandGradientHero } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
@@ -321,9 +322,9 @@ export default function AgentSetupWizard() {
               review every conversation and can coach any reply.
             </Text>
             <View className="gap-1.5">
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Already in its brief — nothing to type
-              </Text>
+              </FieldLabel>
               <View className="flex-row flex-wrap gap-2">
                 {[
                   `${gymInfo.data?.plans ?? '…'} membership plans`,
@@ -387,9 +388,9 @@ export default function AgentSetupWizard() {
             </Text>
             {suggestedVoices.length > 0 ? (
               <>
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                <FieldLabel>
                   Suggested for your gym
-                </Text>
+                </FieldLabel>
                 <View className="gap-2">
                   {suggestedVoices.map((v) => (
                     <VoiceRow
@@ -408,9 +409,9 @@ export default function AgentSetupWizard() {
             ) : null}
             {otherVoices.length > 0 ? (
               <>
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                <FieldLabel>
                   {suggestedVoices.length > 0 ? 'More voices & accents' : 'Choose a voice'}
-                </Text>
+                </FieldLabel>
                 <View className="gap-2">
                   {otherVoices.map((v) => (
                     <VoiceRow

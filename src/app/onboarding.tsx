@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { StatusDisk } from '@/components/StatusDisk';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import type { SettingsSectionId } from '@/lib/back-office';
@@ -245,9 +246,9 @@ export default function OnboardingScreen() {
             <Text className="text-ink dark:text-ink-dk font-semibold">
               {requiredDone} of {requiredSteps.length} done
             </Text>
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               Required
-            </Text>
+            </FieldLabel>
           </View>
           <View className="h-2 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
             <View
@@ -266,9 +267,9 @@ export default function OnboardingScreen() {
 
         {optionalSteps.length > 0 ? (
           <View className="gap-2">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest px-1">
+            <SectionLabel>
               Optional · do these later
-            </Text>
+            </SectionLabel>
             <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-2">
               {optionalSteps.map((step) => (
                 <StepRow key={step.key} step={step} accent={colors.primary} />

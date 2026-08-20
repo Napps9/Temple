@@ -17,6 +17,7 @@ import {
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import {
   computeMovementTrends,
   type MovementTrendSummary,
@@ -761,9 +762,9 @@ function useProgrammingBalance(
 function GroupLabel({ label }: { label: string }) {
   return (
     <View className="flex-row items-center gap-2.5 mt-1">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-[11px] font-bold uppercase tracking-widest">
+      <FieldLabel>
         {label}
-      </Text>
+      </FieldLabel>
       <View className="flex-1 h-px bg-sunken dark:bg-raised-dk" />
     </View>
   );
@@ -978,9 +979,9 @@ function RatioBadge({
 }) {
   return (
     <View className="bg-raised dark:bg-raised-dk rounded-full px-3 py-1">
-      <Text className="text-ink-3 dark:text-ink-3-dk text-[9px] uppercase tracking-widest">
+      <FieldLabel>
         {label}
-      </Text>
+      </FieldLabel>
       <Text className="text-ink dark:text-ink-dk text-sm font-semibold">
         {left} : {right}
       </Text>
@@ -1325,9 +1326,9 @@ function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
         <View
           key={i}
           className="flex-row items-baseline gap-2 border-t border-line dark:border-line-dk pt-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest w-20">
+          <FieldLabel className="w-20">
             {s.date.slice(5)}
-          </Text>
+          </FieldLabel>
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk text-sm font-medium">
               {s.title || categoryLabel(s.section_category)}

@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useSession } from '@/lib/auth';
 import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { findGroup } from '@/lib/movements';
@@ -218,9 +219,9 @@ export default function GroupPage() {
                     {display ?? '—'}
                   </Text>
                   {merged.length > 0 ? (
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+                    <FieldLabel>
                       {merged.length} logged
-                    </Text>
+                    </FieldLabel>
                   ) : null}
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.ink3} />

@@ -8,6 +8,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { InviteSection } from '@/components/InviteSection';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { can, type Capability } from '@/lib/can';
 import { errorMessage } from '@/lib/errors';
@@ -277,9 +278,9 @@ function RolePermissionsSection() {
         <View className="gap-4">
           {CAPABILITY_GROUPS.map((group) => (
             <View key={group.title} className="gap-2">
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 {group.title}
-              </Text>
+              </FieldLabel>
               <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card divide-y divide-line dark:divide-line-dk">
                 {group.caps.map((c) => {
                   const overrideValue = overrideMap.get(`${activeRole}:${c.value}`);
@@ -558,9 +559,9 @@ function MemberPermissionsSection() {
         <View className="gap-4">
           {CAPABILITY_GROUPS.map((group) => (
             <View key={group.title} className="gap-2">
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 {group.title}
-              </Text>
+              </FieldLabel>
               <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card divide-y divide-line dark:divide-line-dk">
                 {group.caps.map((c) => {
                   const memberValue = memberOverrideMap.get(c.value);

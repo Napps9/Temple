@@ -11,6 +11,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { EmptyState } from '@/components/EmptyState';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { embedOne } from '@/lib/embed';
@@ -171,9 +172,9 @@ function NoticePeriodBar({
   return (
     <View className="gap-2 pt-1">
       <View className="flex-row items-center justify-between">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           If you cancel today
-        </Text>
+        </FieldLabel>
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {noticeDays}-day notice
         </Text>
@@ -330,9 +331,9 @@ function PendingMembershipCard({
 }) {
   return (
     <View className="gap-2">
-      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+      <SectionLabel>
         Your membership
-      </Text>
+      </SectionLabel>
       <View
         className={`bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border ${
           stuck
@@ -394,9 +395,9 @@ function InvoiceRow({ inv }: { inv: MemberInvoice }) {
           </Text>
         </View>
         {hasDoc ? null : (
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Paid
-          </Text>
+          </FieldLabel>
         )}
       </View>
       {hasDoc ? (
@@ -772,9 +773,9 @@ export default function MembershipScreen() {
 
         {currentSubs.length > 0 ? (
           <View className="gap-2">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <SectionLabel>
               Your membership
-            </Text>
+            </SectionLabel>
             {currentSubs.map((s) => (
               <CurrentSubCard
                 key={s.id}
@@ -837,9 +838,9 @@ export default function MembershipScreen() {
         ) : null}
 
         <View className="gap-3">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             {currentSubs.length > 0 ? 'Switch or add a plan' : 'Plans'}
-          </Text>
+          </FieldLabel>
 
           {plans.isLoading ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
@@ -1016,9 +1017,9 @@ export default function MembershipScreen() {
 
         {(invoices.data?.length ?? 0) > 0 ? (
           <View className="gap-2">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <SectionLabel>
               Payment history
-            </Text>
+            </SectionLabel>
             {(invoices.data ?? []).map((inv) => (
               <InvoiceRow key={inv.provider_event_id} inv={inv} />
             ))}

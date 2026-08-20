@@ -5,6 +5,7 @@ import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { StrengthLeaderboard } from '@/components/StrengthLeaderboard';
 import { useGymMembership } from '@/lib/auth';
 import { HYROX_BENCHMARKS } from '@/lib/hyrox';
@@ -130,9 +131,9 @@ export default function LeaderboardsIndex() {
         {active ? (
           <View className="gap-3">
             <View>
-              <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+              <FieldLabel>
                 {active.scheme.label}
-              </Text>
+              </FieldLabel>
               <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
                 {active.movement.name}
               </Text>

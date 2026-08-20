@@ -12,6 +12,7 @@ import { Screen } from '@/components/Screen';
 import { TagRulesPanel } from '@/components/TagRulesPanel';
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -133,9 +134,9 @@ function MemberTags({ profileId }: { profileId: string }) {
         />
 
         <View className="gap-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <SectionLabel>
             Current tags
-          </Text>
+          </SectionLabel>
           {tagsQuery.isLoading ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
           ) : (tagsQuery.data ?? []).length === 0 ? (

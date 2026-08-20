@@ -8,6 +8,7 @@ import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { TempleMark } from '@/components/TempleMark';
 import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -183,9 +184,9 @@ export default function AthleteHome() {
         <View className="flex-row items-center gap-3">
           <TempleMark size={44} />
           <View className="flex-1">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               Athlete
-            </Text>
+            </FieldLabel>
             <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Your training
             </Text>
@@ -338,9 +339,9 @@ export default function AthleteHome() {
               <Ionicons name="time-outline" size={20} color={inkOrCream} />
             </View>
             <View className="flex-1 flex-row items-center justify-between">
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Movements you've logged
-              </Text>
+              </FieldLabel>
               {workoutCount.data ? (
                 <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                   {workoutCount.data} workout{workoutCount.data === 1 ? '' : 's'}

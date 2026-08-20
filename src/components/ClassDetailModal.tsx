@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { FieldLabel, SectionLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
 import { Avatar } from '@/components/Avatar';
@@ -534,9 +535,9 @@ export function ClassDetailModal({
               />
 
               <View className="gap-2">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                <SectionLabel>
                   Coach
-                </Text>
+                </SectionLabel>
                 <View className="flex-row items-center gap-3">
                   <Avatar name={coachName} avatarUrl={detail?.coach?.avatar_url} />
                   <Text className="text-ink dark:text-ink-dk font-medium">
@@ -546,9 +547,9 @@ export function ClassDetailModal({
               </View>
 
               <View className="gap-2">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                <SectionLabel>
                   Booked
-                </Text>
+                </SectionLabel>
                 <Text className="text-ink dark:text-ink-dk font-medium">
                   {bookings.length} / {detail.capacity}{' '}
                   {bookings.length === 1 ? 'spot' : 'spots'} taken
@@ -557,9 +558,9 @@ export function ClassDetailModal({
 
               {detail.notes ? (
                 <View className="gap-2">
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                  <SectionLabel>
                     Notes
-                  </Text>
+                  </SectionLabel>
                   <Text className="text-ink dark:text-ink-dk">{detail.notes}</Text>
                 </View>
               ) : null}
@@ -567,9 +568,9 @@ export function ClassDetailModal({
               {mode === 'manage' ? (
                 <View className="gap-2">
                   <View className="flex-row items-center justify-between gap-2">
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                    <FieldLabel>
                       Members
-                    </Text>
+                    </FieldLabel>
                     <View className="flex-row gap-2">
                       {canBroadcastClass &&
                       (bookings.length > 0 || (staffWaitlist.data?.length ?? 0) > 0) ? (
@@ -720,9 +721,9 @@ export function ClassDetailModal({
 
               {mode === 'manage' && (staffWaitlist.data?.length ?? 0) > 0 ? (
                 <View className="gap-2">
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                  <SectionLabel>
                     Waitlist
-                  </Text>
+                  </SectionLabel>
                   <View className="gap-1">
                     {staffWaitlist.data!.map((w) => (
                       <View key={w.profile_id} className="flex-row items-center gap-2">
@@ -887,9 +888,9 @@ function DependentBookRow({
 
   return (
     <View className="gap-2 border-t border-line dark:border-line-dk pt-3">
-      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+      <FieldLabel>
         Book a child
-      </Text>
+      </FieldLabel>
       {error ? (
         <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
@@ -1103,9 +1104,9 @@ function BookActions({
                     {e.label}
                   </Text>
                   {e.is_default ? (
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+                    <FieldLabel>
                       Default
-                    </Text>
+                    </FieldLabel>
                   ) : null}
                 </Pressable>
               );

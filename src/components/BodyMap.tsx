@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
@@ -235,9 +236,9 @@ function Figure({
           );
         })}
       </Svg>
-      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+      <FieldLabel>
         {view === 'front' ? 'Front' : 'Back'}
-      </Text>
+      </FieldLabel>
     </View>
   );
 }

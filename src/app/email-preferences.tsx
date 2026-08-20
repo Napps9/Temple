@@ -6,6 +6,7 @@ import { BackLink } from '@/components/BackLink';
 import { EmptyState } from '@/components/EmptyState';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -106,9 +107,9 @@ export default function EmailPreferencesScreen() {
           />
         ) : (
           <View className="gap-2">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <SectionLabel>
               Topics
-            </Text>
+            </SectionLabel>
             {topics.map((t) => (
               <Pressable
                 key={t.topic_id}

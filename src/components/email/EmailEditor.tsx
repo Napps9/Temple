@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { FieldLabel } from '@/components/SectionLabel';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState, type ComponentProps } from 'react';
 import { Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
@@ -149,14 +150,6 @@ function AlignToggle({
         { value: 'right', label: 'Right' },
       ]}
     />
-  );
-}
-
-function FieldLabel({ children }: { children: string }) {
-  return (
-    <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
-      {children}
-    </Text>
   );
 }
 
@@ -610,9 +603,9 @@ export function EmailEditor({
 
   const paletteCard = (
     <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+      <FieldLabel>
         Add a block
-      </Text>
+      </FieldLabel>
       <View className="flex-row flex-wrap gap-2">{blockButtons}</View>
     </View>
   );
@@ -621,9 +614,9 @@ export function EmailEditor({
   // the website builder's accordion.
   const listCard = (
     <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+      <FieldLabel>
         Content{document.blocks.length ? ` (${document.blocks.length})` : ''}
-      </Text>
+      </FieldLabel>
       {document.blocks.length === 0 ? (
         <View className="py-10 items-center px-6">
           <Ionicons name="mail-open-outline" size={30} color={colors.ink3} />
@@ -707,9 +700,9 @@ export function EmailEditor({
 
   const styleCard = (
     <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+      <FieldLabel>
         Email style
-      </Text>
+      </FieldLabel>
       <SettingsInspector document={document} onChange={handleChange} brand={brand} />
     </View>
   );

@@ -13,6 +13,7 @@ import { MemberTagChip } from '@/components/MemberTagChip';
 import { RefundDialog } from '@/components/RefundDialog';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useUnreachableEmails } from '@/lib/comms';
 import { unreachableNote } from '@/lib/comms-report';
@@ -783,9 +784,9 @@ function PaymentTroubleCard({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="gap-2">
-      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+      <FieldLabel>
         {title}
-      </Text>
+      </FieldLabel>
       {children}
     </View>
   );

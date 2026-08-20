@@ -7,6 +7,7 @@ import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -118,9 +119,9 @@ export default function DirectThread() {
           ) : (
             grouped.map((group) => (
               <View key={group.key} className="gap-2">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest text-center">
+                <FieldLabel className="text-center">
                   {group.label}
-                </Text>
+                </FieldLabel>
                 {group.rows.map((m) => {
                   const fromMe = m.sender_id === session?.user.id;
                   return (

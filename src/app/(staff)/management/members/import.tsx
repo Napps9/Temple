@@ -11,6 +11,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { joinUrl } from '@/lib/brand';
 import { errorMessage, functionErrorMessage } from '@/lib/errors';
@@ -780,9 +781,9 @@ export default function ImportMembersScreen() {
                 {mappingLoading ? (
                   <View className="flex-row items-center gap-1.5">
                     <ActivityIndicator size="small" color={brand.primaryColor} />
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-semibold uppercase tracking-widest">
+                    <FieldLabel>
                       Matching
-                    </Text>
+                    </FieldLabel>
                   </View>
                 ) : mappingSource === 'ai' ? (
                   <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
@@ -1014,13 +1015,13 @@ function ReviewPanel({
           </Text>
           {inference ? (
             <View className="px-2 py-0.5 rounded-full bg-raised dark:bg-raised-dk">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-widest">
+              <FieldLabel>
                 {inference.source === 'ai'
                   ? 'AI suggestions'
                   : inference.source === 'mixed'
                     ? 'AI + learned'
                     : 'Heuristic'}
-              </Text>
+              </FieldLabel>
             </View>
           ) : null}
         </View>
@@ -1035,9 +1036,7 @@ function ReviewPanel({
 
       {/* Plans */}
       <View className="gap-3">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest px-1">
-          Plans found ({planEntries.length})
-        </Text>
+        <SectionLabel>{`Plans found (${planEntries.length})`}</SectionLabel>
         {loading && planEntries.length === 0 ? (
           <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
@@ -1075,9 +1074,9 @@ function ReviewPanel({
 
       {/* Tags */}
       <View className="gap-2">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest px-1">
+        <SectionLabel>
           Tags found
-        </Text>
+        </SectionLabel>
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
           {(inference?.tags.keep.length ?? 0) +
             (inference?.tags.drop.length ?? 0) >
@@ -1193,9 +1192,9 @@ function PlanReviewCard({
           style={{ backgroundColor: confidenceColor }}
           className="w-2 h-2 rounded-full"
         />
-        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest font-mono flex-1">
+        <FieldLabel className="font-mono flex-1">
           From "{suggestion.raw_name}"
-        </Text>
+        </FieldLabel>
         {hint ? (
           <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
             Most common
@@ -1868,9 +1867,9 @@ function Stat({
 }) {
   return (
     <View className="flex-1">
-      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+      <FieldLabel>
         {label}
-      </Text>
+      </FieldLabel>
       <Text
         style={accent ? { color: accent } : undefined}
         className="text-ink dark:text-ink-dk text-2xl font-semibold">

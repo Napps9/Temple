@@ -5,6 +5,7 @@ import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import {
   WorkoutSectionCard,
   type WorkoutSectionShape,
@@ -76,9 +77,9 @@ export default function WorkoutDetail() {
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/track/journal" />
           <View className="flex-1">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+            <FieldLabel>
               Session
-            </Text>
+            </FieldLabel>
             <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               {workout.data?.title?.trim() || 'Workout'}
             </Text>
@@ -113,9 +114,9 @@ export default function WorkoutDetail() {
             ) : null}
             {workout.data.notes ? (
               <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+                <FieldLabel>
                   Notes
-                </Text>
+                </FieldLabel>
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {workout.data.notes}
                 </Text>

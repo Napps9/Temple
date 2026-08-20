@@ -9,6 +9,7 @@ import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
@@ -354,9 +355,9 @@ function GymHeader({ info }: { info: InviteGym }) {
         name={info.name}
         primaryColor={info.primary_color}
       />
-      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+      <FieldLabel>
         You're joining
-      </Text>
+      </FieldLabel>
       <Text className="text-ink dark:text-ink-dk text-2xl font-semibold text-center">
         {info.name}
       </Text>

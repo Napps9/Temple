@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
 import { ActionButton } from '@/components/ActionButton';
@@ -754,9 +755,9 @@ export function ClassTypesPanel() {
                             : 'gap-3'
                         }>
                         {r.schedules.length > 1 ? (
-                          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                          <FieldLabel>
                             Schedule {sIdx + 1}
-                          </Text>
+                          </FieldLabel>
                         ) : null}
                         <RecurrenceEditor
                           value={sched.form}

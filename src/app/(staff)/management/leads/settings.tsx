@@ -13,7 +13,7 @@ import { Input } from '@/components/Input';
 import { AgentSettings } from '@/components/leads/AgentSettings';
 import { LeadsShell } from '@/components/LeadsNav';
 import { PageHead } from '@/components/PageHead';
-import { SectionLabel } from '@/components/SectionLabel';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { syncVapiAssistant } from '@/lib/agent-sync';
 import { useGymMembership } from '@/lib/auth';
@@ -471,9 +471,9 @@ export default function LeadSettingsScreen() {
         <SectionLabel>Limits and retention</SectionLabel>
 
         <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Usage &amp; limits
-          </Text>
+          </FieldLabel>
           <View className="flex-row gap-3">
             <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">

@@ -9,6 +9,7 @@ import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import {
   joinGymBySlug,
   joinGymWithSignup,
@@ -236,9 +237,9 @@ export default function JoinGymScreen() {
                 name={info.name}
                 primaryColor={primary}
               />
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 You're joining
-              </Text>
+              </FieldLabel>
               <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 {info.name}
               </Text>

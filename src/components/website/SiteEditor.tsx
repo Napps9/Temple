@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
@@ -59,12 +60,6 @@ const ADDABLE: SiteBlockType[] = [
 // Small shared controls — local to this editor, matching the email
 // builder's own convention of not sharing UI primitives across editors.
 // ---------------------------------------------------------------------------
-
-function FieldLabel({ children }: { children: string }) {
-  return (
-    <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">{children}</Text>
-  );
-}
 
 function TextField({
   label,
@@ -1105,9 +1100,7 @@ function CollapsibleSection({
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-2.5 active:opacity-70">
         <Ionicons name={icon} size={16} color={colors.ink2} />
-        <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
-          {title}
-        </Text>
+        <FieldLabel className="flex-1">{title}</FieldLabel>
         <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={colors.ink3} />
       </Pressable>
       {open ? <View className="gap-3 pt-3">{children}</View> : null}
@@ -1300,9 +1293,9 @@ export function SiteEditor({
     <>
       <ThemePicker document={document} onChange={onChange} brandPrimaryColor={brandPrimaryColor} />
       <View className="gap-2 pt-3 border-t border-line dark:border-line-dk">
-        <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           Templates
-        </Text>
+        </FieldLabel>
         <ChipButton
           label="Apply a template"
           icon="color-wand-outline"
@@ -1315,9 +1308,9 @@ export function SiteEditor({
       </View>
       {Platform.OS === 'web' ? (
         <View className="gap-2 pt-3 border-t border-line dark:border-line-dk">
-          <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Ownership
-          </Text>
+          </FieldLabel>
           <ChipButton
             label="Download design (JSON)"
             icon="download-outline"
@@ -1343,17 +1336,17 @@ export function SiteEditor({
         </Pressable>
       ) : (
         <View className="lg:w-48 lg:shrink-0 bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
-          <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             Add a block
-          </Text>
+          </FieldLabel>
           <View className="gap-2">{blockButtons}</View>
         </View>
       )}
 
       <View className="flex-1 bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
-        <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           Page ({document.blocks.length} block{document.blocks.length === 1 ? '' : 's'})
-        </Text>
+        </FieldLabel>
         {document.blocks.length === 0 ? (
           <View className="py-12 items-center px-6">
             <Ionicons name="globe-outline" size={32} color={colors.ink3} />

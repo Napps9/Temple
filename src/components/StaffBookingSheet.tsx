@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
 import { Avatar } from '@/components/Avatar';
@@ -243,9 +244,9 @@ export function StaffBookingSheet({
                           <Text className="text-ink dark:text-ink-dk">
                             {c.full_name ?? 'Member'}
                           </Text>
-                          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+                          <FieldLabel>
                             {c.role}
-                          </Text>
+                          </FieldLabel>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
                       </Pressable>
@@ -302,13 +303,13 @@ export function StaffBookingSheet({
                           {e.label}
                         </Text>
                         {mode === 'swap' && swapCurrent ? (
-                          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+                          <FieldLabel>
                             Current
-                          </Text>
+                          </FieldLabel>
                         ) : e.is_default ? (
-                          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+                          <FieldLabel>
                             Default
-                          </Text>
+                          </FieldLabel>
                         ) : null}
                       </Pressable>
                     );
@@ -331,9 +332,9 @@ export function StaffBookingSheet({
                     <Text className="text-ink dark:text-ink-dk text-sm flex-1">
                       No charge
                     </Text>
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+                    <FieldLabel>
                       Free
-                    </Text>
+                    </FieldLabel>
                   </Pressable>
                 </View>
               )}

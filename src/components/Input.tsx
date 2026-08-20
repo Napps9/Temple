@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, type TextInputProps, View } from 'react-native';
+import { LABEL_TYPE } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
 import { useThemeColors } from '@/lib/theme';
@@ -39,7 +40,7 @@ export function Input({
   // forceDark is for the screens that are dark whatever the scheme — the
   // logged-out landing. It names the dark end of the ramp directly rather
   // than relying on a `dark:` variant that the light scheme would win.
-  const labelCls = forceDark ? 'text-ink-2-dk' : 'text-ink-2 dark:text-ink-2-dk';
+  const labelCls = forceDark ? 'text-ink-3-dk' : 'text-ink-3 dark:text-ink-3-dk';
   const boxCls = forceDark
     ? 'bg-surface-dk border-line-dk'
     : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk';
@@ -48,7 +49,7 @@ export function Input({
 
   return (
     <View className="gap-1.5">
-      <Text className={`text-sm font-medium ${labelCls}`}>{label}</Text>
+      <Text className={`${LABEL_TYPE} ${labelCls}`}>{label}</Text>
       <View className={`flex-row items-center border rounded-lg ${boxCls}`}>
         <TextInput
           className={`flex-1 px-4 py-3 text-base ${inputCls} ${

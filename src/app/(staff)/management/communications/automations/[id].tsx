@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { EmailEditor } from '@/components/email/EmailEditor';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -772,9 +773,9 @@ export default function AutomationEditor() {
         <Input label="Automation name" value={name} onChangeText={setName} placeholder="Welcome new members" />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             When it fires
-          </Text>
+          </FieldLabel>
           {(['member_joined', 'member_first_class', 'member_inactive', 'member_tagged', 'lead_cold'] as TriggerType[]).map(
             (t) => {
               const sel = trigger === t;
@@ -855,9 +856,9 @@ export default function AutomationEditor() {
           return (
             <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
               <View className="gap-1">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+                <FieldLabel>
                   Only send to
-                </Text>
+                </FieldLabel>
                 <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Leave everything unticked to send to everyone the trigger matches.
                 </Text>
@@ -894,9 +895,9 @@ export default function AutomationEditor() {
         })()}
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+          <FieldLabel>
             The email
-          </Text>
+          </FieldLabel>
           <Input label="Subject" value={subject} onChangeText={setSubject} placeholder="Welcome to the gym" />
           <Input
             label="Preview text"
@@ -970,9 +971,9 @@ export default function AutomationEditor() {
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="gap-1">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               Follow-up emails
-            </Text>
+            </FieldLabel>
             <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Send more emails later in the same sequence. Each one’s wait is
               measured from the trigger, not the email before it.

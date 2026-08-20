@@ -14,6 +14,7 @@ import { DraggableImageStrip } from '@/components/DraggableImageStrip';
 import { Input } from '@/components/Input';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
@@ -824,9 +825,9 @@ function OrderCard({ order }: { order: StaffOrder }) {
 
       {order.has_physical && (order.shipping_name || addr.line1) ? (
         <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 mt-1">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest mb-1">
+          <FieldLabel className="mb-1">
             Ship to
-          </Text>
+          </FieldLabel>
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {order.shipping_name}
           </Text>
@@ -994,9 +995,9 @@ function RevenuePanel() {
 
   return (
     <View className="gap-2">
-      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+      <SectionLabel>
         Sales this month
-      </Text>
+      </SectionLabel>
       {revenue.isLoading ? (
         <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : rows.length === 0 ? (

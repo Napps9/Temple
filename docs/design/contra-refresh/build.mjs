@@ -14,6 +14,7 @@ import { partsBoard } from './b-parts.mjs';
 import { railBoard } from './b-rail.mjs';
 import { leadsBoard } from './b-leads.mjs';
 import { headsBoard } from './b-heads.mjs';
+import { labelsBoard } from './b-labels.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +46,7 @@ const PAGES = [
   ['25-staff-rail', railBoard],
   ['26-lead-settings', leadsBoard],
   ['27-page-heads', headsBoard],
+  ['28-one-label', labelsBoard],
 ];
 
 // Drop anything a previous numbering left behind.

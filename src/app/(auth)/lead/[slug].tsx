@@ -9,6 +9,7 @@ import { Button } from '@/components/Button';
 import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
@@ -157,9 +158,9 @@ export default function LeadCaptureScreen() {
           <View className="gap-6 w-full max-w-md mx-auto">
             <View className="items-center gap-3 pt-4">
               <GymLogo size={64} logoUrl={info.logo_url} name={info.name} primaryColor={primary} />
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Enquire at
-              </Text>
+              </FieldLabel>
               <Text className="text-ink dark:text-ink-dk text-2xl font-semibold text-center">
                 {info.name}
               </Text>

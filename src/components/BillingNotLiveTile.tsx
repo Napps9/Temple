@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
 import { useThemeColors } from '@/lib/theme';
@@ -13,9 +14,9 @@ export function BillingNotLiveTile({ title }: { title: string }) {
   return (
     <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2 opacity-70">
       <View className="flex-row justify-between items-center">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+        <FieldLabel>
           {title}
-        </Text>
+        </FieldLabel>
         <Ionicons name="card-outline" size={16} color={colors.ink3} />
       </View>
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">

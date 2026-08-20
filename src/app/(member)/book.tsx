@@ -10,6 +10,7 @@ import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
 import { MemberGetStartedChecklist } from '@/components/MemberGetStartedChecklist';
 import { PostClassLogPrompt } from '@/components/PostClassLogPrompt';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { invalidateBookingCaches } from '@/lib/bookings';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
@@ -250,9 +251,9 @@ function RecommendedClassCard() {
         <View className="flex-1">
           <View className="flex-row items-center gap-1">
             <Ionicons name="sparkles" size={11} color="#A855F7" />
-            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+            <FieldLabel>
               Recommended
-            </Text>
+            </FieldLabel>
           </View>
           <Text className="text-ink dark:text-ink-dk font-medium">
             {fmtNext(start)}
@@ -325,9 +326,9 @@ function NextClassCard() {
         <Ionicons name="ticket-outline" size={16} color={colors.ink2} />
       </View>
       <View className="flex-1">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+        <FieldLabel>
           {start ? 'Your next class' : 'My bookings'}
-        </Text>
+        </FieldLabel>
         <Text className="text-ink dark:text-ink-dk font-medium">
           {start ? fmtNext(start) : 'Nothing booked yet'}
         </Text>

@@ -7,6 +7,7 @@ import { Button } from './Button';
 import { Sheet, SheetAction } from './Sheet';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
+import { FieldLabel } from './SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -227,9 +228,9 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-2">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Race type
-              </Text>
+              </FieldLabel>
               <ChipRow
                 value={raceType}
                 onChange={setRaceType}
@@ -238,9 +239,9 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-2">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Division
-              </Text>
+              </FieldLabel>
               <ChipRow
                 value={division}
                 onChange={setDivision}
@@ -249,9 +250,9 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-2">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Category
-              </Text>
+              </FieldLabel>
               <ChipRow
                 value={genderCategory}
                 onChange={setGenderCategory}
@@ -260,9 +261,9 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-1.5">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Age group (optional)
-              </Text>
+              </FieldLabel>
               {Platform.OS === 'web' ? (
                 // eslint-disable-next-line jsx-a11y/no-onchange
                 <select
@@ -344,9 +345,9 @@ function LapCard({
 }) {
   return (
     <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
-      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
+      <FieldLabel>
         Lap {lapNumber}
-      </Text>
+      </FieldLabel>
       {splits.map((s, i) => (
         <Input
           key={`${s.segmentType}-${s.segmentIndex}`}

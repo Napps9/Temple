@@ -12,6 +12,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { syncVapiAssistant } from '@/lib/agent-sync';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -511,9 +512,9 @@ export default function AgentConversationScreen() {
         {/* Recording playback (voice, reviewers only) */}
         {isVoice && canReview === true && recording.data ? (
           <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               Call recording
-            </Text>
+            </FieldLabel>
             {audio.supported ? (
               <>
                 <View className="flex-row items-center gap-3">
@@ -576,9 +577,9 @@ export default function AgentConversationScreen() {
         {isVoice ? (
           <>
             <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 Call transcript
-              </Text>
+              </FieldLabel>
               <View className="gap-2" ref={transcriptRef}>
                 {transcriptRows.map(renderBubble)}
                 {messages.isSuccess && transcriptRows.length === 0 ? (
@@ -590,9 +591,9 @@ export default function AgentConversationScreen() {
             </View>
 
             <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+              <FieldLabel>
                 SMS
-              </Text>
+              </FieldLabel>
               {smsRows.length > 0 ? (
                 <View className="gap-2">
                   {smsRows.map((m) => (
@@ -738,9 +739,9 @@ function CoachModal({
       }>
       <View className="gap-4 pb-1">
           <View className="gap-1">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               The AI said
-            </Text>
+            </FieldLabel>
             <View className="bg-primary/10 rounded-lg p-3">
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 {message?.body}
@@ -749,9 +750,9 @@ function CoachModal({
           </View>
 
           <View className="gap-1.5">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            <FieldLabel>
               What needs to change?
-            </Text>
+            </FieldLabel>
             <View className="flex-row flex-wrap gap-2">
               {(['fact', 'tone', 'rule', 'exemplar'] as CoachKind[]).map((k) => (
                 <Pressable
