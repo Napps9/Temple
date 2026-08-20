@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
-import { Text } from './Text';
+import { RefreshControl, ScrollView, View } from 'react-native';
+import { EmptyState } from './EmptyState';
 
 import { ReceiptLine } from '@/components/TimelineLines';
 import { supabase } from '@/lib/supabase';
@@ -65,14 +65,16 @@ export function TimelinePastDay({
         />
       }>
       {day.isLoading ? (
-        <View className="py-16 items-center">
-          <ActivityIndicator />
+        <View className="px-4 py-4">
+          <EmptyState kind="loading" rows={3} />
         </View>
       ) : events.length === 0 ? (
-        <View className="py-16 px-6 items-center">
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
-            {QUIET_PAST_DAY}
-          </Text>
+        <View className="px-4 py-4">
+          <EmptyState
+            icon="moon-outline"
+            title={QUIET_PAST_DAY.title}
+            description={QUIET_PAST_DAY.body}
+          />
         </View>
       ) : (
         events.map((e) => <ReceiptLine key={e.item_id} event={e} />)

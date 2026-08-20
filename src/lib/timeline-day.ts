@@ -79,7 +79,13 @@ export function classifyDay(key: string, now: Date = new Date()): DayPage {
   };
 }
 
-// A day with nothing to say, said in the register.
-export const QUIET_PAST_DAY =
-  'A quiet day — nothing happened that was worth keeping.';
-export const QUIET_FUTURE_DAY = 'Nothing on the books yet.';
+// A day with nothing to say, said in the register. Split into the two
+// halves EmptyState draws — the line it leads with, and the one under it.
+export const QUIET_PAST_DAY = {
+  title: 'A quiet day',
+  body: 'Nothing happened that was worth keeping.',
+};
+export const QUIET_FUTURE_DAY = {
+  title: 'Nothing on the books',
+  body: 'No classes, no bookings, nothing due — yet.',
+};

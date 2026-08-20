@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -304,7 +305,7 @@ export default function OnboardingScreen() {
 function Loading() {
   return (
     <View className="flex-1 bg-ground dark:bg-ground-dk items-center justify-center">
-      <ActivityIndicator color="#2563EB" />
+      <Spinner />
     </View>
   );
 }

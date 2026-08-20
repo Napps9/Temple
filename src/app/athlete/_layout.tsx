@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { Spinner } from '@/components/EmptyState';
+import { View } from 'react-native';
 
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
@@ -17,7 +18,7 @@ export default function AthleteLayout() {
   if (session === undefined || isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-ground dark:bg-ground-dk">
-        <ActivityIndicator />
+        <Spinner />
       </View>
     );
   }

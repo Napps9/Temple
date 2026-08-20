@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { EmptyState } from '@/components/EmptyState';
 import { FieldLabel } from '@/components/SectionLabel';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -309,13 +310,13 @@ function StockPhotoPickerModal({
           ) : null}
           <View>
             {search.isPending && photos.length === 0 ? (
-              <View className="py-10 items-center">
-                <ActivityIndicator />
-              </View>
+              <EmptyState kind="loading" rows={3} title="Searching photos" />
             ) : photos.length === 0 && search.isSuccess ? (
-              <Text className="text-ink-3 dark:text-ink-3-dk text-sm text-center py-8">
-                No photos found — try a different search.
-              </Text>
+              <EmptyState
+                kind="filtered"
+                title="No photos found"
+                description="Try a different search."
+              />
             ) : (
               <View className="gap-2">
                 <View className="flex-row flex-wrap gap-2">

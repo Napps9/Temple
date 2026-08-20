@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { EmptyState } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -291,8 +292,8 @@ export default function PaymentStory() {
           <BackLink fallbackHref="/timeline" />
 
           {loading ? (
-            <View className="py-16 items-center">
-              <ActivityIndicator />
+            <View className="px-4 py-4">
+              <EmptyState kind="loading" rows={3} />
             </View>
           ) : rows.error ? (
             // A failed read must never dress up as a recovered payment —

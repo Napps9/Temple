@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
 
 import { AudienceBuilder } from '@/components/email/AudienceBuilder';
@@ -93,8 +94,8 @@ export default function CampaignDetailScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator />
-        </View>
+        <Spinner />
+      </View>
       </Screen>
     );
   }

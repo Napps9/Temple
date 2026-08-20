@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { EmptyState } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -995,18 +996,16 @@ export default function Timeline() {
             />
           }>
           {feed.isLoading ? (
-            <View className="py-16 items-center">
-              <ActivityIndicator />
+            <View className="px-4 py-4">
+              <EmptyState kind="loading" rows={4} title="Loading the timeline" />
             </View>
           ) : feedEmpty && local.length === 0 ? (
-            <View className="py-16 px-6 items-center gap-2">
-              <Text className="text-ink dark:text-ink-dk font-semibold text-base">
-                Nothing here yet
-              </Text>
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
-                As things happen — someone joins, asks about their membership,
-                needs looking after — it shows up here.
-              </Text>
+            <View className="px-4 py-4">
+              <EmptyState
+                icon="chatbubbles-outline"
+                title="Nothing here yet"
+                description="As things happen — someone joins, asks about their membership, needs looking after — it shows up here."
+              />
             </View>
           ) : (
             groups.map((g) => (

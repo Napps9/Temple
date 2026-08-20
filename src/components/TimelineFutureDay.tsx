@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
-import { Text } from './Text';
+import { RefreshControl, ScrollView, View } from 'react-native';
+import { EmptyState } from './EmptyState';
 
 import { SoftLine } from '@/components/TimelineLines';
 import { supabase } from '@/lib/supabase';
@@ -219,14 +219,16 @@ export function TimelineFutureDay({
         />
       }>
       {loading ? (
-        <View className="py-16 items-center">
-          <ActivityIndicator />
+        <View className="px-4 py-4">
+          <EmptyState kind="loading" rows={3} />
         </View>
       ) : lines.length === 0 ? (
-        <View className="py-16 px-6 items-center">
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
-            {QUIET_FUTURE_DAY}
-          </Text>
+        <View className="px-4 py-4">
+          <EmptyState
+            icon="calendar-clear-outline"
+            title={QUIET_FUTURE_DAY.title}
+            description={QUIET_FUTURE_DAY.body}
+          />
         </View>
       ) : (
         lines.map((l) => (

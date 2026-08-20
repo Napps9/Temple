@@ -1,6 +1,7 @@
 import { Redirect } from 'expo-router';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
+import { Spinner } from '@/components/EmptyState';
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
@@ -25,8 +26,8 @@ export default function WebsiteDomainScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator />
-        </View>
+        <Spinner />
+      </View>
       </Screen>
     );
   }

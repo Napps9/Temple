@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { EmptyState } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -171,8 +172,8 @@ export default function NudgeStory() {
           <BackLink fallbackHref="/timeline" />
 
           {story.isLoading ? (
-            <View className="py-16 items-center">
-              <ActivityIndicator />
+            <View className="px-4 py-4">
+              <EmptyState kind="loading" rows={3} />
             </View>
           ) : !story.data ? (
             <View className="py-16 px-6 items-center gap-2">

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Redirect, useNavigation } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -492,8 +493,8 @@ export default function WebsiteManageScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator />
-        </View>
+        <Spinner />
+      </View>
       </Screen>
     );
   }

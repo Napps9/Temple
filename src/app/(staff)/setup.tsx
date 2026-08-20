@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Spinner } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
 
 import * as DocumentPicker from 'expo-document-picker';
@@ -708,8 +709,8 @@ export default function SetupScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.primary} />
-        </View>
+        <Spinner />
+      </View>
       </Screen>
     );
   }

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
+import { EmptyState } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
@@ -42,11 +43,7 @@ export function SuppressedAddressesCard() {
   });
 
   if (rows.isLoading) {
-    return (
-      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
-        <ActivityIndicator />
-      </View>
-    );
+    return <EmptyState kind="loading" rows={2} />;
   }
   if ((rows.data ?? []).length === 0) return null;
 
