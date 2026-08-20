@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from './Text';
 import QRCode from 'react-native-qrcode-svg';
 
 import { Button } from '@/components/Button';

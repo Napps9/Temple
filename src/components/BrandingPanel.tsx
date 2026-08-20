@@ -7,7 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, Switch, View } from 'react-native';
+import { Text } from './Text';
 
 import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';

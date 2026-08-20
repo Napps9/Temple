@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, type ComponentProps, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, View as RNView, type View } from 'react-native';
+import { ActivityIndicator, Pressable, View as RNView, type View } from 'react-native';
+import { Text } from './Text';
 
 import { contrastRatio } from '@/lib/brand-derivation';
 import { haptic } from '@/lib/haptic';

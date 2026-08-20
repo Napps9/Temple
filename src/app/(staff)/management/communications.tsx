@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { CampaignList } from '@/components/email/CampaignList';
 import { Screen } from '@/components/Screen';

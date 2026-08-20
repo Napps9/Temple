@@ -1,5 +1,6 @@
 import { Link, usePathname } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { Screen } from '@/components/Screen';
 

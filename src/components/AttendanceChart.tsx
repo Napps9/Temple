@@ -1,4 +1,5 @@
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg';
 
 import { useThemeColors } from '@/lib/theme';

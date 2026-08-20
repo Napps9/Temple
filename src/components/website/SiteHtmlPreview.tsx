@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View, type DimensionValue } from 'react-native';
+import { View, type DimensionValue } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { useThemeColors } from '@/lib/theme';
 

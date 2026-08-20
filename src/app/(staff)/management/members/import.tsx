@@ -2,15 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text, TextInput } from '@/components/Text';
 import QRCode from 'react-native-qrcode-svg';
 
 import { BackLink } from '@/components/BackLink';

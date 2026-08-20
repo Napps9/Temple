@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
+import { Text } from './Text';
 
 import { SoftLine } from '@/components/TimelineLines';
 import { supabase } from '@/lib/supabase';

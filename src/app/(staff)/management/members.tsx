@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';

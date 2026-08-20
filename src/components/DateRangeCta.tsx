@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { DatePicker } from '@/components/DatePicker';
 

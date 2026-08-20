@@ -57,7 +57,7 @@ module.exports = {
         ctl: '12px',
       },
       fontFamily: {
-        display: ['SplineSans', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Geist_400Regular', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         // Selective elevation so a few raised surfaces read as layered
@@ -78,5 +78,28 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  // Every font-weight utility carries its own family, because React
+  // Native does not synthesise weights for a custom font: `fontFamily:
+  // 'Geist'` with `fontWeight: '700'` renders regular on Android and
+  // fake-bolds on iOS. @expo-google-fonts ships one file per weight, so
+  // the weight utility has to pick the file.
+  //
+  // Order matters and is load-bearing: these are emitted in object order
+  // after Tailwind's own, and two utilities of equal specificity are
+  // resolved by source order. Lightest first means `font-bold` still wins
+  // over the `font-normal` that components/Text.tsx prepends.
+  //
+  // Weights not listed here (thin, light, extrabold, black) are not
+  // loaded and would fall back to the platform font mid-sentence, so the
+  // app deliberately has four.
+  plugins: [
+    ({ addUtilities }) => {
+      addUtilities({
+        '.font-normal': { fontFamily: 'Geist_400Regular', fontWeight: '400' },
+        '.font-medium': { fontFamily: 'Geist_500Medium', fontWeight: '500' },
+        '.font-semibold': { fontFamily: 'Geist_600SemiBold', fontWeight: '600' },
+        '.font-bold': { fontFamily: 'Geist_700Bold', fontWeight: '700' },
+      });
+    },
+  ],
 };

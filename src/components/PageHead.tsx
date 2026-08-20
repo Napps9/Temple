@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 
 // The top of a page: what it is, what it is showing, and at most one
 // action. The action is the only place on the page allowed to carry the

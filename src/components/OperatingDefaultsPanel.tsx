@@ -7,7 +7,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { Text, TextInput } from './Text';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';

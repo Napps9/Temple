@@ -2,15 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';

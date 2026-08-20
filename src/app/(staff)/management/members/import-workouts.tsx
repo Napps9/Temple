@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';

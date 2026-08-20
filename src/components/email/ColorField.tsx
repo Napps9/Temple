@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text, TextInput } from '@/components/Text';
 
 import { ColorSwatchPicker } from '@/components/ColorSwatchPicker';
 import { normaliseHex } from '@/lib/brand';

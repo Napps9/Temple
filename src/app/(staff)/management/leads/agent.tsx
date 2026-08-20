@@ -1,18 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Animated,
-  Easing,
-  Linking,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Animated, Easing, Linking, Modal, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { Ionicons } from '@expo/vector-icons';
 

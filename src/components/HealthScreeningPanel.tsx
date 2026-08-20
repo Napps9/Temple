@@ -7,7 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { useEffect, useState } from 'react';
-import { Linking, Platform, Pressable, Switch, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, Switch, View } from 'react-native';
+import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';

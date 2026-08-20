@@ -1,5 +1,6 @@
 import { createElement } from 'react';
-import { Platform, Text, TextInput, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text, TextInput } from './Text';
 
 import { formatDate } from '@/lib/format-date';
 import { useThemePreference } from '@/lib/theme';

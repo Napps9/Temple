@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Text } from 'react-native';
+import { Text } from './Text';
 
 // Shown beneath account-creation actions so sign-up is an informed
 // agreement to Temple's Terms and Privacy Policy. Inline tappable segments

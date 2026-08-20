@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import type { DnsRecordDisplay, StatusTone } from '@/lib/domain-utils';
 

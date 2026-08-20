@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 
 // A small caps rule above a group of rows. It replaces the card heading:
 // where the old pattern gave every group a white box with a bold title

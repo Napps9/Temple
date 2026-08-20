@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';

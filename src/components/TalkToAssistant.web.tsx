@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, View } from 'react-native';
+import { Text } from './Text';
 
 import { copyToClipboard } from '@/lib/clipboard';
 import { useThemeColors } from '@/lib/theme';

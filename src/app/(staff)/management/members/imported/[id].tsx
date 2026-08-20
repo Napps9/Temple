@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, ScrollView, Switch, Text, View } from 'react-native';
+import { Platform, ScrollView, Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { Avatar } from '@/components/Avatar';
 import { BackLink } from '@/components/BackLink';

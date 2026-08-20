@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';

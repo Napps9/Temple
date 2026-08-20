@@ -1,4 +1,5 @@
-import { Text, TextInput, View } from 'react-native';
+import { View } from 'react-native';
+import { Text, TextInput } from './Text';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ColorSwatchPicker } from '@/components/ColorSwatchPicker';

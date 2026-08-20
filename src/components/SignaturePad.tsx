@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  type LayoutChangeEvent,
-  PanResponder,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { type LayoutChangeEvent, PanResponder, Pressable, View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Path } from 'react-native-svg';
 
 // Drawn-signature capture. Strokes are stored as an array of SVG path

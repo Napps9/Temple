@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
+import { Text } from './Text';
 
 import { ReceiptLine } from '@/components/TimelineLines';
 import { supabase } from '@/lib/supabase';

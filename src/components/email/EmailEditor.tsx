@@ -1,15 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState, type ComponentProps } from 'react';
-import {
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Text, TextInput } from '@/components/Text';
 
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';

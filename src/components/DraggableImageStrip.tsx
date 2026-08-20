@@ -1,12 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import {
-  Image,
-  type LayoutRectangle,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { Image, type LayoutRectangle, Pressable, View } from 'react-native';
+import { Text } from './Text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,

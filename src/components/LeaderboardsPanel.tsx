@@ -5,7 +5,8 @@
 // surface, one of which nothing in the app linked to.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Switch, Text, View } from 'react-native';
+import { Switch, View } from 'react-native';
+import { Text } from './Text';
 
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';

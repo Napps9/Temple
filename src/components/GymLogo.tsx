@@ -1,4 +1,5 @@
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
+import { Text } from './Text';
 
 import { gymInitial, DEFAULT_BRAND } from '@/lib/brand';
 

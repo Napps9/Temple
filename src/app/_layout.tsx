@@ -1,11 +1,20 @@
 import '@/global.css';
 
+// Per-weight subpaths, not the package root: the root re-exports all
+// eighteen cuts and every one of them ends up in the bundle. Four files
+// instead of eighteen.
+import { Geist_400Regular } from '@expo-google-fonts/geist/400Regular';
+import { Geist_500Medium } from '@expo-google-fonts/geist/500Medium';
+import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
+import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { vars } from 'nativewind';
 import { Component, useEffect, useMemo, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -130,6 +139,21 @@ class CrashScreen extends Component<
 }
 
 export default function RootLayout() {
+  // Four cuts, because React Native does not synthesise weights for a
+  // custom family — see the font-weight plugin in tailwind.config.js.
+  const [fontsLoaded, fontError] = useFonts({
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+  });
+
+  // Hold on loading, but never on failure: a font that will not load is a
+  // reason to render in the platform face, not a reason to show nothing.
+  // Until this resolves the native splash screen is still up, so the hold
+  // is invisible rather than a blank frame.
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

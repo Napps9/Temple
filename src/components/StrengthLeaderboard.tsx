@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 
 import { useGymMembership } from '@/lib/auth';
 import { useGymWeightUnit } from '@/lib/useGymWeightUnit';

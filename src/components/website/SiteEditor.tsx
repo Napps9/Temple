@@ -2,18 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Linking,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Linking, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text, TextInput } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';

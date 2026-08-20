@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, router, useLocalSearchParams } from 'expo-router';
-import { Pressable, Text } from 'react-native';
+import { Pressable } from 'react-native';
+import { Text } from './Text';
 
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { useGymMembership, useSession } from '@/lib/auth';

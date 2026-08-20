@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text } from './Text';
 
 import { Button } from './Button';
 import { DatePicker } from './DatePicker';

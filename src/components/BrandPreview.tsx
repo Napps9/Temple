@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 
 import { GymLogo } from './GymLogo';
 import { contrastRatio } from '@/lib/brand-derivation';

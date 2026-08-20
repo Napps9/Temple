@@ -1,16 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Animated,
-  Easing,
-  PanResponder,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { Animated, Easing, PanResponder, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';

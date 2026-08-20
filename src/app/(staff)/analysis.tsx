@@ -2,13 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { BodyMap } from '@/components/BodyMap';
 import { CardHeading } from '@/components/CardHeading';

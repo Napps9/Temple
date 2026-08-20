@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';

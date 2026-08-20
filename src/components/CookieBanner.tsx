@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { getCookieConsent, setCookieConsent } from '@/lib/cookie-consent';

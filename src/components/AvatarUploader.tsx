@@ -1,7 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 
 import { Avatar } from './Avatar';
 import { ChipButton } from './ChipButton';

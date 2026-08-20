@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';

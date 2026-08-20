@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 type Tone = 'default' | 'green' | 'red' | 'muted';
 type LinkHref = ComponentProps<typeof Link>['href'];

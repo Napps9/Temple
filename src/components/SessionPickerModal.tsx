@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/Button';

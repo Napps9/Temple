@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
 import { useGymMembership } from '@/lib/auth';

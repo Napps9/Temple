@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Text, TextInput } from './Text';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';

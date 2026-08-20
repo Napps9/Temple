@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { AttendanceChart } from '@/components/AttendanceChart';
 import { Button } from '@/components/Button';

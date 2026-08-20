@@ -8,7 +8,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { ChipButton } from '@/components/ChipButton';
 import { ReopenClosureModal } from '@/components/ReopenClosureModal';

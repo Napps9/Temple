@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { errorMessage } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';

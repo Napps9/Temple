@@ -1,14 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';

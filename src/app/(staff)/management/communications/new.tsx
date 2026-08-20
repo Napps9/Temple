@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';

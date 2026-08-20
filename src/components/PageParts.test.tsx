@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import { describe, expect, it, vi } from 'vitest';
 
 import { fireEvent, renderWithProviders as render, screen } from '../../test/render';

@@ -1,4 +1,5 @@
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from './Text';
 
 import { ChipButton } from '@/components/ChipButton';
 import { joinUrl } from '@/lib/brand';

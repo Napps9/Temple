@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
+import { Text, TextInput } from './Text';
 
 import { useThemeColors } from '@/lib/theme';
 

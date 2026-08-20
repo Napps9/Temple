@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
 import { useThemePreference } from '@/lib/theme';

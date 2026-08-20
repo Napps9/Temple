@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { type Href, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import { Text } from './Text';
 
 import { BackLink } from '@/components/BackLink';
 import { ChipButton } from '@/components/ChipButton';

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 // Small coloured pill: label + colour from the tag, optional close button
 // for manual tags. Auto tags are read-only (the rule materialises them);

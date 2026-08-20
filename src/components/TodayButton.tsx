@@ -1,4 +1,5 @@
-import { Pressable, Text } from 'react-native';
+import { Pressable } from 'react-native';
+import { Text } from './Text';
 
 // Shared "jump to today" CTA — same pill on the Classes/Book calendar
 // and the Programming calendar, so the two screens read as one system.

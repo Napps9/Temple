@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, Redirect } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { LeadsShell, type LeadsTab } from '@/components/LeadsNav';
 import { useGymMembership } from '@/lib/auth';

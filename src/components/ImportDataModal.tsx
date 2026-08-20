@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { type ComponentProps, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { ManageModal } from '@/components/ManageModal';
 import { useThemeColors } from '@/lib/theme';
