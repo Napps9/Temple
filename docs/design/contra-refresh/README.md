@@ -1,8 +1,10 @@
 # A Contra-flavoured look for Temple
 
-Exploration, not shipped. Nothing here is wired into the app: twenty-one static
-HTML boards rendered to PNG so the direction can be judged before any code
-moves. Open `png/*.png`; everything else is the machinery.
+Twenty-two static HTML boards rendered to PNG. Boards 01-21 are the
+proposal, drawn so the direction could be judged before any code moved;
+board 22 is the record of what has since shipped. Open `png/*.png`;
+everything else is the machinery. Where a board and the app disagree, the
+app is right — see **Shipping it** at the bottom for what is live.
 
 **Third pass.** The first version was built from memory of contra.com and
 got the register wrong. The second was rebuilt against real screenshots.
@@ -94,6 +96,7 @@ a subtly recut sparkle that is one line to switch to.
 | `19-staff-desktop` | The three-column shell, Members and Settings, light + dark |
 | `20-states` | **Nothing yet · nothing matches · loading · failed** |
 | `21-before-after` | Member Book today vs proposed |
+| `22-modals-shipped` | **The record, not the proposal** — what is live in production |
 
 ## Deliberate departures from the reference
 
@@ -112,24 +115,30 @@ a subtly recut sparkle that is one line to switch to.
   the largest structural change here, with routing work behind it.
 - **Icons.** Hand-drawn monoline set on these boards, not Ionicons.
 
-## If it were to ship
+## Shipping it — where this has got to
 
-1. `tailwind.config.js` — the cool ramp as tokens; delete the three
-   `boxShadow` entries.
-2. `src/global.css` + `src/lib/theme.ts` — the ramp per scheme.
-3. Load Geist + Fraunces via `expo-font`.
-4. Build the six page parts as components (`<PageHead>`, `<SectionLabel>`,
-   `<ListRow>`, `<SettingCard>`, `<Field>`, `<Foot>`) — this is the step
-   that makes the other 95 cheap.
-5. One `<Modal>` that renders a sheet under `md` and a dialog above it,
-   then retire the 26 bespoke ones.
-6. Surfaces highest-traffic first: Book, Timeline, Track, Manage.
+1. ~~`tailwind.config.js` — the cool ramp as tokens.~~ **Done.** The old
+   `card` / `pop` / `pill` shadows are still there, marked deprecated;
+   they go once nothing references them.
+2. ~~`src/lib/theme.ts` — the ramp per scheme.~~ **Done**, including the
+   runtime twins for Ionicon tints and SVG fills.
+3. Load Geist + Fraunces via `expo-font`. **Not started** — React Native
+   has no font inheritance, so this needs a strategy, not a call.
+4. ~~Build the page parts as components.~~ **Done**: `PageHead`,
+   `SectionLabel`, `ListRow`/`RuledList`, `SettingCard`, `AIMark`, `Check`.
+5. ~~One modal that renders a sheet under 768 and a dialog above it.~~
+   **Done** — `Sheet` + `SheetAction`, breakpoint in `lib/modal-shape.ts`.
+   Twelve of the bespoke ones are retired (see board 22); around twenty
+   remain, the large record-a-workout / create-a-class ones among them.
+6. The app shell: ground colour and the nav rail. **Done.**
+7. Surfaces highest-traffic first: Book, Timeline, Track, Manage.
+   **Not started** — the pages themselves still use the old classes.
 
 ## Rebuilding
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..21.html
+node build.mjs   # writes 01..22.html
 node shot.mjs    # screenshots them to png/ at 2x
 node shot.mjs 05 # just one board
 ```

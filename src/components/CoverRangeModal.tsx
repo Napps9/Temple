@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Check } from '@/components/Check';
 import { DatePicker } from '@/components/DatePicker';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { dateRangeWindow, validateDateRange } from '@/lib/date-range';
 import { errorMessage } from '@/lib/errors';
@@ -110,139 +112,119 @@ export function CoverRangeModal({ visible, onClose, onConfirm, pending }: Props)
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <Pressable
-        onPress={close}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            Pick the dates you need covered
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            Every class you coach between these dates goes into the cover
-            feed. Anything scheduled into the window later is offered
-            automatically.
-          </Text>
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <DatePicker
-                label="From"
-                value={start}
-                onChange={setStart}
-                min={todayIso()}
-              />
-            </View>
-            <View className="flex-1">
-              <DatePicker
-                label="To"
-                value={end}
-                onChange={setEnd}
-                min={start || todayIso()}
-              />
-            </View>
+    <Sheet
+      visible={visible}
+      title="Pick the dates you need covered"
+      subtitle="Anything scheduled into the window later is offered automatically"
+      onClose={close}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={close}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              onPress={() =>
+                onConfirm({ start, end, excludeSessionIds: [...excluded] })
+              }
+              loading={pending}
+              disabled={!window || previewQuery.isLoading}>
+              Request cover ({selectedCount})
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-3 pb-1">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <DatePicker
+              label="From"
+              value={start}
+              onChange={setStart}
+              min={todayIso()}
+            />
           </View>
+          <View className="flex-1">
+            <DatePicker
+              label="To"
+              value={end}
+              onChange={setEnd}
+              min={start || todayIso()}
+            />
+          </View>
+        </View>
 
-          {rangeError ? (
-            <Text
-              accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-sm">
-              {rangeError}
+        {rangeError ? (
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-red-500 dark:text-red-400 text-[13px]">
+            {rangeError}
+          </Text>
+        ) : null}
+
+        {window ? (
+          previewQuery.isLoading ? (
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
+              Finding your classes…
             </Text>
-          ) : null}
-
-          {window ? (
-            <ScrollView className="max-h-64">
-              {previewQuery.isLoading ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                  Finding your classes…
-                </Text>
-              ) : previewQuery.error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">
-                  {errorMessage(previewQuery.error, 'Could not load your classes')}
-                </Text>
-              ) : rows.length === 0 ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                  You have no classes scheduled in this window yet. You can
-                  still request cover — anything added later will be offered
-                  automatically.
-                </Text>
-              ) : (
-                <View className="gap-2">
-                  {rows.map((r) => {
-                    const offered = alreadyOffered(r);
-                    const checked = !offered && !excluded.has(r.id);
-                    const startsAt = new Date(r.starts_at);
-                    return (
-                      <Pressable
-                        key={r.id}
-                        onPress={() => (offered ? undefined : toggle(r.id))}
-                        disabled={offered}
-                        className="flex-row items-center gap-3 p-2 rounded-lg">
-                        <View
-                          className={`w-5 h-5 rounded border ${
-                            checked
-                              ? 'bg-primary border-primary'
-                              : 'border-gray-300 dark:border-gray-600'
-                          }`}>
-                          {checked ? (
-                            <Text className="text-white text-center text-xs leading-5">
-                              ✓
-                            </Text>
-                          ) : null}
-                        </View>
-                        <View className="flex-1">
-                          <Text
-                            className={
-                              offered
-                                ? 'text-gray-400 dark:text-gray-500'
-                                : 'text-gray-900 dark:text-gray-50'
-                            }>
-                            {r.class_types?.name ?? r.name}
-                          </Text>
-                          <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                            {startsAt.toLocaleDateString(undefined, {
-                              weekday: 'short',
-                              day: 'numeric',
-                              month: 'short',
-                            })}{' '}
-                            at{' '}
-                            {startsAt.toLocaleTimeString(undefined, {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                            {offered ? ' · already offered' : ''}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              )}
-            </ScrollView>
-          ) : null}
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={close}>
-                Cancel
-              </Button>
+          ) : previewQuery.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-[13px]">
+              {errorMessage(previewQuery.error, 'Could not load your classes')}
+            </Text>
+          ) : rows.length === 0 ? (
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] leading-5">
+              You have no classes scheduled in this window yet. You can still
+              request cover — anything added later will be offered automatically.
+            </Text>
+          ) : (
+            <View className="rounded-card border border-line dark:border-line-dk overflow-hidden">
+              {rows.map((r, i) => {
+                const offered = alreadyOffered(r);
+                const checked = !offered && !excluded.has(r.id);
+                const startsAt = new Date(r.starts_at);
+                return (
+                  <Pressable
+                    key={r.id}
+                    onPress={() => (offered ? undefined : toggle(r.id))}
+                    disabled={offered}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked, disabled: offered }}
+                    className={`flex-row items-center gap-3 px-3.5 py-3 ${
+                      offered ? '' : 'active:bg-raised dark:active:bg-raised-dk'
+                    } ${i === 0 ? '' : 'border-t border-line dark:border-line-dk'}`}>
+                    <Check on={checked} />
+                    <View className="flex-1 gap-0.5">
+                      <Text
+                        className={`text-[14.5px] font-semibold ${
+                          offered
+                            ? 'text-ink-3 dark:text-ink-3-dk'
+                            : 'text-ink dark:text-ink-dk'
+                        }`}>
+                        {r.class_types?.name ?? r.name}
+                      </Text>
+                      <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
+                        {startsAt.toLocaleDateString(undefined, {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short',
+                        })}{' '}
+                        at{' '}
+                        {startsAt.toLocaleTimeString(undefined, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                        {offered ? ' · already offered' : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
-            <View className="flex-1">
-              <Button
-                onPress={() =>
-                  onConfirm({ start, end, excludeSessionIds: [...excluded] })
-                }
-                loading={pending}
-                disabled={!window || previewQuery.isLoading}>
-                Request cover ({selectedCount})
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          )
+        ) : null}
+      </View>
+    </Sheet>
   );
 }

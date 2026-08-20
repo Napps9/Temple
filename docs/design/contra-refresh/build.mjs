@@ -8,6 +8,7 @@ import { authBoard, bookBoard, planStoreBoard, trackBoard, healthBoard, inboxBoa
 import { timelineBoard, classesBoard, programmingBoard, membersBoard, moneyBoard, commsBoard, desktopBoard } from './b-staff.mjs';
 import { statesBoard, beforeAfterBoard } from './b-states.mjs';
 import { aiMarkBoard } from './b-aimark.mjs';
+import { shippedModalsBoard } from './b-shipped.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -33,6 +34,7 @@ const PAGES = [
   ['19-staff-desktop', desktopBoard],
   ['20-states', statesBoard],
   ['21-before-after', beforeAfterBoard],
+  ['22-modals-shipped', shippedModalsBoard],
 ];
 
 // Drop anything a previous numbering left behind.

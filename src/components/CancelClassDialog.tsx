@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { errorMessage } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
@@ -224,86 +225,88 @@ export function CancelClassDialog({
   const isRecurring = !!recurrenceId;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <Pressable
-        onPress={close}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
-              Cancel {classTypeName}
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              {fmtSessionWhen(startsAt, durationMinutes)}
-            </Text>
-          </View>
-
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
-            Members lose access to this class. Credit-pack and comp credits are
-            refunded automatically. Members on unlimited plans don't lose
-            anything.
-          </Text>
-
-          {isRecurring ? (
-            <View className="gap-2">
-              <ScopeOption
-                label="Just this one"
-                effect="The rest of the series keeps running"
-                selected={scope === 'one'}
-                onPress={() => setScope('one')}
-                detail={
-                  counts
-                    ? `${counts.thisBookings} booking${
-                        counts.thisBookings === 1 ? '' : 's'
-                      } · ${counts.thisWaitlist} waitlisted`
-                    : '…'
-                }
-              />
-              <ScopeOption
-                label="This and all future"
-                effect={`Any sessions in this series before ${anchorDate} will not be cancelled`}
-                selected={scope === 'from'}
-                onPress={() => setScope('from')}
-                detail={`${patternLabel}, from this date onward`}
-              />
-              <ScopeOption
-                label="The whole series"
-                effect="Past sessions kept as history; the recurring schedule is removed"
-                selected={scope === 'series'}
-                onPress={() => setScope('series')}
-                detail={patternLabel}
-              />
-            </View>
-          ) : counts ? (
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-1">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm">
-                {counts.thisBookings} booking{counts.thisBookings === 1 ? '' : 's'}{' '}
-                will be cancelled.
-              </Text>
-              <Text className="text-gray-700 dark:text-gray-200 text-sm">
-                {counts.thisWaitlist} waitlist entr
-                {counts.thisWaitlist === 1 ? 'y' : 'ies'} will be removed.
-              </Text>
-            </View>
-          ) : null}
-
-          {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-          ) : null}
-
-          <View className="flex-row gap-2 justify-end">
+    <Sheet
+      visible={visible}
+      title={`Cancel ${classTypeName}?`}
+      subtitle={fmtSessionWhen(startsAt, durationMinutes)}
+      onClose={close}
+      dialogWidth={520}
+      actions={
+        <>
+          <SheetAction>
             <Button variant="secondary" onPress={close}>
               Keep it
             </Button>
-            <Button onPress={() => cancelMut.mutate()} loading={cancelMut.isPending}>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              variant="destructive"
+              onPress={() => cancelMut.mutate()}
+              loading={cancelMut.isPending}>
               Cancel class
             </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-3 pb-1">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px] leading-5">
+          Members lose access to this class. Credit-pack and comp credits are
+          refunded automatically. Members on unlimited plans don&apos;t lose
+          anything.
+        </Text>
+
+        {isRecurring ? (
+          <View className="gap-2">
+            <ScopeOption
+              label="Just this one"
+              effect="The rest of the series keeps running"
+              selected={scope === 'one'}
+              onPress={() => setScope('one')}
+              detail={
+                counts
+                  ? `${counts.thisBookings} booking${
+                      counts.thisBookings === 1 ? '' : 's'
+                    } · ${counts.thisWaitlist} waitlisted`
+                  : '…'
+              }
+            />
+            <ScopeOption
+              label="This and all future"
+              effect={`Any sessions in this series before ${anchorDate} will not be cancelled`}
+              selected={scope === 'from'}
+              onPress={() => setScope('from')}
+              detail={`${patternLabel}, from this date onward`}
+            />
+            <ScopeOption
+              label="The whole series"
+              effect="Past sessions kept as history; the recurring schedule is removed"
+              selected={scope === 'series'}
+              onPress={() => setScope('series')}
+              detail={patternLabel}
+            />
           </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        ) : counts ? (
+          <View className="rounded-card border border-line dark:border-line-dk px-3.5 py-3 gap-1">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px]">
+              {counts.thisBookings} booking{counts.thisBookings === 1 ? '' : 's'} will
+              be cancelled.
+            </Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px]">
+              {counts.thisWaitlist} waitlist entr
+              {counts.thisWaitlist === 1 ? 'y' : 'ies'} will be removed.
+            </Text>
+          </View>
+        ) : null}
+
+        {error ? (
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-red-500 dark:text-red-400 text-[13px]">
+            {error}
+          </Text>
+        ) : null}
+      </View>
+    </Sheet>
   );
 }
 
@@ -323,32 +326,29 @@ function ScopeOption({
   return (
     <Pressable
       onPress={onPress}
-      className={`rounded-lg p-3 border ${
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      className={`rounded-ctl p-3 border ${
         selected
-          ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700'
+          ? 'border-ink dark:border-ink-dk bg-raised dark:bg-raised-dk'
+          : 'border-line dark:border-line-dk'
       }`}>
       <View className="flex-row items-center gap-2">
         <View
-          className={`w-4 h-4 rounded-full border ${
+          className={`w-[18px] h-[18px] rounded-full border-[1.5px] ${
             selected
-              ? 'bg-primary border-primary'
-              : 'border-gray-400 dark:border-gray-500'
+              ? 'border-ink dark:border-ink-dk border-[6px]'
+              : 'border-line-strong dark:border-line-strong-dk'
           }`}
         />
-        <Text
-          className={
-            selected
-              ? 'text-primary font-medium'
-              : 'text-gray-900 dark:text-gray-50 font-medium'
-          }>
+        <Text className="text-ink dark:text-ink-dk text-[14px] font-semibold">
           {label}
         </Text>
       </View>
-      <Text className="text-gray-700 dark:text-gray-200 text-xs mt-1 ml-6">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px] mt-1 ml-[26px] leading-4">
         {effect}
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 ml-6">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px] mt-0.5 ml-[26px]">
         {detail}
       </Text>
     </Pressable>

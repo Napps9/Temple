@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/Button';
+import { Check } from '@/components/Check';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -75,96 +77,78 @@ export function SessionPickerModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <Pressable
-        onPress={close}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-            Pick classes you need covered
+    <Sheet
+      visible={visible}
+      title="Pick classes you need covered"
+      subtitle="Coaches at this gym will see and claim them"
+      onClose={close}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={close}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              onPress={() => onConfirm([...selected])}
+              loading={pending}
+              disabled={selected.size === 0}>
+              {confirmLabel} ({selected.size})
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="pb-1">
+        {sessionsQuery.isLoading ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">Loading…</Text>
+        ) : sessionsQuery.error ? (
+          <Text className="text-red-500 dark:text-red-400 text-[13px]">
+            {errorMessage(sessionsQuery.error, 'Could not load sessions')}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
-            Showing your upcoming classes. Pick one or more — coaches at this
-            gym will see and claim them.
+        ) : (sessionsQuery.data ?? []).length === 0 ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
+            You have no upcoming sessions.
           </Text>
-
-          <ScrollView className="max-h-72">
-            {sessionsQuery.isLoading ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Loading…
-              </Text>
-            ) : sessionsQuery.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
-                {errorMessage(sessionsQuery.error, 'Could not load sessions')}
-              </Text>
-            ) : (sessionsQuery.data ?? []).length === 0 ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                You have no upcoming sessions.
-              </Text>
-            ) : (
-              <View className="gap-2">
-                {(sessionsQuery.data ?? []).map((s) => {
-                  const checked = selected.has(s.id);
-                  const start = new Date(s.starts_at);
-                  return (
-                    <Pressable
-                      key={s.id}
-                      onPress={() => toggle(s.id)}
-                      className="flex-row items-center gap-3 p-2 rounded-lg">
-                      <View
-                        className={`w-5 h-5 rounded border ${
-                          checked
-                            ? 'bg-primary border-primary'
-                            : 'border-gray-300 dark:border-gray-600'
-                        }`}>
-                        {checked ? (
-                          <Text className="text-white text-center text-xs leading-5">✓</Text>
-                        ) : null}
-                      </View>
-                      <View className="flex-1">
-                        <Text className="text-gray-900 dark:text-gray-50">
-                          {s.class_types?.name ?? s.name}
-                        </Text>
-                        <Text className="text-gray-500 dark:text-gray-400 text-xs">
-                          {start.toLocaleDateString(undefined, {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                          })}{' '}
-                          at{' '}
-                          {start.toLocaleTimeString(undefined, {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}{' '}
-                          · {s.duration_minutes} min
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-          </ScrollView>
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={close}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button
-                onPress={() => onConfirm([...selected])}
-                loading={pending}
-                disabled={selected.size === 0}>
-                {confirmLabel} ({selected.size})
-              </Button>
-            </View>
+        ) : (
+          <View className="rounded-card border border-line dark:border-line-dk overflow-hidden">
+            {(sessionsQuery.data ?? []).map((s, i) => {
+              const checked = selected.has(s.id);
+              const start = new Date(s.starts_at);
+              return (
+                <Pressable
+                  key={s.id}
+                  onPress={() => toggle(s.id)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked }}
+                  className={`flex-row items-center gap-3 px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+                    i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+                  }`}>
+                  <Check on={checked} />
+                  <View className="flex-1 gap-0.5">
+                    <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold">
+                      {s.class_types?.name ?? s.name}
+                    </Text>
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
+                      {start.toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                      })}{' '}
+                      at{' '}
+                      {start.toLocaleTimeString(undefined, {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}{' '}
+                      · {s.duration_minutes} min
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        )}
+      </View>
+    </Sheet>
   );
 }

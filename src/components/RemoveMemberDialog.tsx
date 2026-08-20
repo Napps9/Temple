@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { errorMessage } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
@@ -92,68 +93,80 @@ export function RemoveMemberDialog({
   });
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
-            Remove {memberName}
-          </Text>
-
-          <Text className="text-gray-700 dark:text-gray-200">
-            This member will lose access to bookings, eligibility, and any
-            active subscriptions or comp grants. History is preserved. You
-            can restore the member from the archived view; subscriptions and
-            comps will need to be re-issued.
-          </Text>
-
-          {counts.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
-              Counting what will be cancelled…
-            </Text>
-          ) : counts.data ? (
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-1">
-              <CountRow label="Future bookings" value={counts.data.bookings} />
-              <CountRow label="Active subscriptions" value={counts.data.subs} />
-              <CountRow label="Active comp grants" value={counts.data.comps} />
-              <CountRow label="Waitlist entries" value={counts.data.waitlist} />
-            </View>
-          ) : null}
-
-          {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-          ) : null}
-
-          <View className="flex-row gap-2 justify-end">
+      title={`Remove ${memberName} from the gym?`}
+      onClose={onClose}
+      actions={
+        <>
+          <SheetAction>
             <Button variant="secondary" onPress={onClose}>
-              Cancel
+              Keep them
             </Button>
-            <Button onPress={() => remove.mutate()} loading={remove.isPending}>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              variant="destructive"
+              onPress={() => remove.mutate()}
+              loading={remove.isPending}>
               Remove
             </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-3 pb-1">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-5">
+          They lose access to bookings, eligibility, and any active
+          subscriptions or comp grants. History is preserved — you can restore
+          them from the archived view, but subscriptions and comps have to be
+          re-issued.
+        </Text>
+
+        {counts.isLoading ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
+            Counting what will be cancelled…
+          </Text>
+        ) : counts.data ? (
+          <View className="rounded-card border border-line dark:border-line-dk overflow-hidden">
+            <CountRow label="Future bookings" value={counts.data.bookings} first />
+            <CountRow label="Active subscriptions" value={counts.data.subs} />
+            <CountRow label="Active comp grants" value={counts.data.comps} />
+            <CountRow label="Waitlist entries" value={counts.data.waitlist} />
           </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        ) : null}
+
+        {error ? (
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-red-500 dark:text-red-400 text-[13px]">
+            {error}
+          </Text>
+        ) : null}
+      </View>
+    </Sheet>
   );
 }
 
-function CountRow({ label, value }: { label: string; value: number }) {
+function CountRow({
+  label,
+  value,
+  first,
+}: {
+  label: string;
+  value: number;
+  first?: boolean;
+}) {
   return (
-    <View className="flex-row justify-between">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm">{label}</Text>
+    <View
+      className={`flex-row justify-between px-3.5 py-2.5 ${
+        first ? '' : 'border-t border-line dark:border-line-dk'
+      }`}>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px]">{label}</Text>
       <Text
-        className={`text-sm font-medium ${
+        className={`text-[13.5px] font-semibold ${
           value === 0
-            ? 'text-gray-400 dark:text-gray-500'
-            : 'text-gray-900 dark:text-gray-50'
+            ? 'text-ink-3 dark:text-ink-3-dk'
+            : 'text-ink dark:text-ink-dk'
         }`}>
         {value}
       </Text>

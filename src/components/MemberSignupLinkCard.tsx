@@ -140,7 +140,6 @@ export function MemberSignupLinkCard() {
         title={`Join ${brand.gymName}`}
         subtitle="Scan to sign up as a member"
         url={url}
-        primaryColor={brand.primaryColor}
       />
     </View>
   );

@@ -58,6 +58,10 @@ export default defineConfig({
       // every component containing a button was untestable.
       { find: /^expo-haptics$/, replacement: stubTs('expo-haptics') },
       { find: /^react-native-svg$/, replacement: stub('react-native-svg') },
+      {
+        find: /^react-native-qrcode-svg$/,
+        replacement: stub('react-native-qrcode-svg'),
+      },
     ],
   },
   test: {

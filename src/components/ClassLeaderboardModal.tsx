@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { Button } from './Button';
+import { Sheet } from './Sheet';
 import {
   formatClassScore,
   ordinal,
@@ -42,66 +42,49 @@ export function ClassLeaderboardModal({
   const rows = query.data ?? [];
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[85vh]">
-          <View>
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
-              Leaderboard
-            </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
-              {sectionTitle}
-            </Text>
-          </View>
-
-          {query.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
-          ) : rows.length === 0 ? (
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                No results logged yet for this section. Be the first.
-              </Text>
-            </View>
-          ) : (
-            <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-1.5">
-              {rows.map((r) => (
-                <View
-                  key={r.profile_id}
-                  className="flex-row items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                  <View className="w-9 items-center">
-                    <Text
-                      className={
-                        r.rank <= 3
-                          ? 'text-primary font-bold text-sm'
-                          : 'text-gray-500 dark:text-gray-400 text-sm'
-                      }>
-                      {ordinal(r.rank)}
-                    </Text>
-                  </View>
-                  <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm" numberOfLines={1}>
-                    {r.display_name}
-                  </Text>
-                  <Text className="text-gray-900 dark:text-gray-50 font-semibold">
-                    {formatClassScore(r, weightUnit)}
+      title={sectionTitle}
+      subtitle="Leaderboard"
+      onClose={onClose}>
+      <View className="pb-1">
+        {query.isLoading ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">Loading…</Text>
+        ) : rows.length === 0 ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
+            No results logged yet for this section. Be the first.
+          </Text>
+        ) : (
+          <View className="rounded-card border border-line dark:border-line-dk overflow-hidden">
+            {rows.map((r, i) => (
+              <View
+                key={r.profile_id}
+                className={`flex-row items-center gap-3 px-3.5 py-3 ${
+                  i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+                }`}>
+                <View className="w-8">
+                  <Text
+                    className={`text-[13px] ${
+                      r.rank <= 3
+                        ? 'text-ink dark:text-ink-dk font-bold'
+                        : 'text-ink-3 dark:text-ink-3-dk'
+                    }`}>
+                    {ordinal(r.rank)}
                   </Text>
                 </View>
-              ))}
-            </ScrollView>
-          )}
-
-          <Button variant="secondary" onPress={onClose}>
-            Close
-          </Button>
-        </Pressable>
-      </Pressable>
-    </Modal>
+                <Text
+                  className="flex-1 text-ink dark:text-ink-dk text-[14.5px]"
+                  numberOfLines={1}>
+                  {r.display_name}
+                </Text>
+                <Text className="text-ink dark:text-ink-dk text-[14.5px] font-bold">
+                  {formatClassScore(r, weightUnit)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </Sheet>
   );
 }

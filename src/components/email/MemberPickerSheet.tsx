@@ -1,9 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Check } from '@/components/Check';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { useGymMembership } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
@@ -84,65 +85,12 @@ export function MemberPickerSheet({
   }
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}>
-      <View className="flex-1 bg-black/40 justify-end">
-        <View className="bg-gray-50 dark:bg-gray-950 rounded-t-3xl max-h-[85%] gap-3 p-4">
-          <View className="flex-row items-center gap-2">
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
-              Pick members
-            </Text>
-            <Pressable onPress={onClose} className="p-1 active:opacity-70">
-              <Ionicons name="close" size={22} color={colors.iconTertiary} />
-            </Pressable>
-          </View>
-
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search by name"
-            placeholderTextColor={colors.iconTertiary}
-            className="bg-white dark:bg-gray-900 rounded-xl px-3 py-3 text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-gray-700"
-          />
-
-          <ScrollView contentContainerClassName="gap-1 pb-2">
-            {members.isLoading ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                Loading members…
-              </Text>
-            ) : shown.length === 0 ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                {search.trim() ? 'Nobody by that name.' : 'No members yet.'}
-              </Text>
-            ) : (
-              shown.map((m) => {
-                const on = picked.has(m.profile_id);
-                return (
-                  <Pressable
-                    key={m.profile_id}
-                    onPress={() => toggle(m.profile_id)}
-                    className={`flex-row items-center gap-3 rounded-xl px-3 py-3 border ${
-                      on
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
-                    } active:opacity-70`}>
-                    <Ionicons
-                      name={on ? 'checkbox' : 'square-outline'}
-                      size={20}
-                      color={on ? colors.primary : colors.iconTertiary}
-                    />
-                    <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm">
-                      {m.full_name ?? 'Member'}
-                    </Text>
-                  </Pressable>
-                );
-              })
-            )}
-          </ScrollView>
-
+      title="Pick members"
+      onClose={onClose}
+      actions={
+        <SheetAction grow>
           <Button
             onPress={() => {
               onConfirm([...picked]);
@@ -150,8 +98,48 @@ export function MemberPickerSheet({
             }}>
             {picked.size === 1 ? 'Use 1 member' : `Use ${picked.size} members`}
           </Button>
-        </View>
+        </SheetAction>
+      }>
+      <View className="gap-2 pb-1">
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search by name"
+          placeholderTextColor={colors.ink3}
+          className="bg-surface dark:bg-surface-dk rounded-ctl px-3 py-3 text-ink dark:text-ink-dk text-[15px] border border-line-strong dark:border-line-strong-dk"
+        />
+
+        {members.isLoading ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
+            Loading members…
+          </Text>
+        ) : shown.length === 0 ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
+            {search.trim() ? 'Nobody by that name.' : 'No members yet.'}
+          </Text>
+        ) : (
+          <View className="rounded-card border border-line dark:border-line-dk overflow-hidden">
+            {shown.map((m, i) => {
+              const on = picked.has(m.profile_id);
+              return (
+                <Pressable
+                  key={m.profile_id}
+                  onPress={() => toggle(m.profile_id)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: on }}
+                  className={`flex-row items-center gap-3 px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+                    i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+                  }`}>
+                  <Check on={on} />
+                  <Text className="flex-1 text-ink dark:text-ink-dk text-[14.5px]">
+                    {m.full_name ?? 'Member'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
       </View>
-    </Modal>
+    </Sheet>
   );
 }

@@ -1,6 +1,6 @@
 // Screenshots every board built by build.mjs into png/ at 2x.
 // Run: node build.mjs && node shot.mjs
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
@@ -21,7 +21,13 @@ const pages = readdirSync(HERE)
   .filter((f) => only.length === 0 || only.some((o) => f.includes(o)))
   .sort();
 
-const browser = await chromium.launch();
+// The container ships one Chromium at a fixed path; the playwright build
+// resolved above may expect a different revision folder and refuse to
+// launch. Point it at what is actually installed when that path exists.
+const PREINSTALLED = '/opt/pw-browsers/chromium';
+const browser = await chromium.launch(
+  existsSync(PREINSTALLED) ? { executablePath: PREINSTALLED } : {},
+);
 const ctx = await browser.newContext({
   viewport: { width: 1400, height: 1200 },
   deviceScaleFactor: 2,

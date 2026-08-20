@@ -145,6 +145,9 @@
 .btn-accent { background: var(--accent); color: var(--accent-ink); }
 .btn-plain { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
 .btn-soft { background: var(--surface-2); color: var(--ink); }
+/* Destructive: outlined, not filled. Red appears once in a modal and this
+   is where — a wall of red reads as an error, not as a decision. */
+.btn-bad { background: var(--surface); color: var(--bad); border-color: var(--bad); }
 .btn-sm { height: 34px; padding: 0 15px; font-size: 13.5px; }
 .btn-lg { height: 48px; padding: 0 26px; font-size: 16px; }
 .btn-full { width: 100%; }
