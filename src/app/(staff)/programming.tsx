@@ -17,7 +17,7 @@ export default function StaffProgramming() {
   const [view, setView] = useState<'week' | 'year'>('week');
 
   const toggle = (
-    <View className="flex-row bg-slate-200 dark:bg-gray-800 rounded-full p-0.5">
+    <View className="flex-row bg-sunken dark:bg-raised-dk rounded-full p-0.5">
       {(['week', 'year'] as const).map((v) => (
         <Pressable
           key={v}
@@ -25,7 +25,7 @@ export default function StaffProgramming() {
           accessibilityRole="tab"
           accessibilityState={{ selected: view === v }}
           className={`px-3 py-1 rounded-full ${
-            view === v ? 'bg-white dark:bg-gray-700 shadow-pill' : ''
+            view === v ? 'bg-white dark:bg-sunken-dk' : ''
           }`}>
           <Text
             className={`text-[13px] font-semibold ${

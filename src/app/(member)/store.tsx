@@ -257,7 +257,7 @@ function ProductCard({
       : 'Ships to you';
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl overflow-hidden shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card overflow-hidden">
       <ProductImages
         images={images}
         onOpen={(i) => {

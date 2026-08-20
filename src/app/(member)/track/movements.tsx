@@ -56,7 +56,7 @@ export default function MovementLibrary() {
           </Text>
         </View>
 
-        <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-gray-300 dark:border-gray-700 rounded-xl px-3">
+        <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-dk rounded-xl px-3">
           <Ionicons name="search" size={18} color={colors.ink2} />
           <TextInput
             value={query}
@@ -159,7 +159,7 @@ function GroupSection({
         className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border rounded-xl px-4 py-3 active:opacity-70 ${
           open
             ? 'border-primary/50'
-            : 'border-gray-200 dark:border-gray-800 hover:border-line-strong dark:hover:border-line-strong-dk'
+            : 'border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <View
           style={{ backgroundColor: `${group.accent}26` }}
@@ -264,7 +264,7 @@ function MovementRow({
   return (
     <Pressable
       onPress={() => router.push(`/track/movement/${movement.key}` as never)}
-      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-line-strong dark:hover:border-line-strong-dk active:opacity-70">
+      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl px-4 py-3 hover:border-line-strong dark:hover:border-line-strong-dk active:opacity-70">
       <View
         style={{ backgroundColor: `${group.accent}26` }}
         className="w-9 h-9 rounded-full items-center justify-center">

@@ -299,7 +299,7 @@ export default function ImportedMemberDetailScreen() {
               </View>
             ) : null}
 
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
               <Text className="text-ink dark:text-ink-dk font-semibold">
                 Account details
               </Text>
@@ -345,7 +345,7 @@ export default function ImportedMemberDetailScreen() {
               />
             </View>
 
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
               <Text className="text-ink dark:text-ink-dk font-semibold">
                 Membership
               </Text>
@@ -383,7 +383,7 @@ export default function ImportedMemberDetailScreen() {
               />
             </View>
 
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
               <Text className="text-ink dark:text-ink-dk font-semibold">
                 Tags & notes
               </Text>
@@ -451,7 +451,7 @@ export default function ImportedMemberDetailScreen() {
               ) : null}
             </View>
 
-            <View className="border-t border-gray-200 dark:border-gray-800 pt-4 gap-2">
+            <View className="border-t border-line dark:border-line-dk pt-4 gap-2">
               {confirmDelete ? (
                 <View className="gap-2">
                   <Text className="text-ink-2 dark:text-ink-2-dk text-xs">

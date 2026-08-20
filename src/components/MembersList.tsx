@@ -452,7 +452,7 @@ export function MembersList() {
             return (
               <View
                 key={m.profile_id}
-                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
                 <Link
                   href={{
                     pathname: '/management/members/[profile]',
@@ -748,7 +748,7 @@ function PlanChip({
     <View
       className={`rounded-full px-2 py-0.5 border ${
         dimmed
-          ? 'border-gray-300 dark:border-gray-700'
+          ? 'border-line-strong dark:border-line-dk'
           : 'border-blue-300 dark:border-blue-700'
       }`}>
       <Text
@@ -818,7 +818,7 @@ function PendingMemberCard({
     : null;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <Link
         href={{
           pathname: '/management/members/imported/[id]',
@@ -841,7 +841,7 @@ function PendingMemberCard({
           </View>
           {planLabel ? (
             <View className="flex-row flex-wrap gap-1">
-              <View className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
+              <View className="rounded-full px-2 py-0.5 border border-line-strong dark:border-line-dk">
                 <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold">
                   {planLabel}
                 </Text>
@@ -853,7 +853,7 @@ function PendingMemberCard({
               {row.tags.map((t, i) => (
                 <View
                   key={`t-${i}`}
-                  className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
+                  className="rounded-full px-2 py-0.5 border border-line-strong dark:border-line-dk">
                   <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold">
                     {t}
                   </Text>

@@ -25,7 +25,7 @@ export function GymShareCard() {
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <Text className="text-ink dark:text-ink-dk font-semibold">
         Invite a friend
       </Text>

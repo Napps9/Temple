@@ -241,7 +241,7 @@ function RecommendedClassCard() {
           haptic.tap();
           setDetailOpen(true);
         }}
-        className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:opacity-70">
         <View
           style={{ backgroundColor: typeColor }}
           className="rounded-full px-2 py-0.5">
@@ -320,7 +320,7 @@ function NextClassCard() {
   return (
     <Pressable
       onPress={() => router.push('/bookings')}
-      className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
+      className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:opacity-70">
       <View className="w-8 h-8 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
         <Ionicons name="ticket-outline" size={16} color={colors.ink2} />
       </View>

@@ -373,7 +373,7 @@ export default function AnalysisScreen() {
                 Loading programming…
               </Text>
             ) : !pb.hasData ? (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No programmed sections in this window. Programme a few
                   classes and the matrices will populate.
@@ -434,7 +434,7 @@ export default function AnalysisScreen() {
                 onPress={() =>
                   router.push(`/management/members/${r.profile_id}` as never)
                 }
-                className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:opacity-70">
                 <View
                   style={{ backgroundColor: painColour(r.pain_level) }}
                   className="w-7 h-7 rounded-full items-center justify-center">
@@ -483,7 +483,7 @@ export default function AnalysisScreen() {
                 Loading…
               </Text>
             ) : trends.length === 0 ? (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Not enough logged results yet — trends need at least two
                   results per member on a movement.
@@ -505,7 +505,7 @@ export default function AnalysisScreen() {
           <View className="gap-3">
             <Pressable
               onPress={() => setShowUntagged((v) => !v)}
-              className="bg-surface dark:bg-surface-dk rounded-xl px-4 py-3 flex-row items-center gap-3 shadow-card active:opacity-70">
+              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-4 py-3 flex-row items-center gap-3 active:opacity-70">
               <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
                 {pb.untagged.length === 1
                   ? "1 section couldn't be classified"
@@ -768,7 +768,7 @@ function GroupLabel({ label }: { label: string }) {
       <Text className="text-ink-2 dark:text-ink-2-dk text-[11px] font-bold uppercase tracking-widest">
         {label}
       </Text>
-      <View className="flex-1 h-px bg-slate-200 dark:bg-gray-800" />
+      <View className="flex-1 h-px bg-sunken dark:bg-raised-dk" />
     </View>
   );
 }
@@ -778,7 +778,7 @@ const VERDICT_DRIFT = '#F59E0B';
 
 function VerdictTile({ label, verdict }: { label: string; verdict: Verdict }) {
   return (
-    <View className="flex-1 bg-surface dark:bg-surface-dk rounded-xl px-3 py-2.5 shadow-card">
+    <View className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-3 py-2.5">
       <Text
         className="text-ink-3 dark:text-ink-3-dk text-[9px] font-bold uppercase tracking-wider"
         numberOfLines={1}>
@@ -891,7 +891,7 @@ function PatternEnergyMatrix({
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 md:p-4 gap-3">
       <CardHeading
         title="Pattern × energy"
         what="Rows are movement patterns, columns are the three energy systems — phosphagen (short, heavy, near-maximal), glycolytic (hard 1–10 min efforts), oxidative (longer aerobic work). Each cell counts the sections that train that pattern through that system. The badges show your push-to-pull and front-to-back (anterior vs posterior) balance."
@@ -957,7 +957,7 @@ function PatternEnergyMatrix({
                     className={`text-sm font-semibold ${
                       r.cells[e] > 0
                         ? 'text-ink dark:text-ink-dk'
-                        : 'text-gray-300 dark:text-gray-700'
+                        : 'text-ink-3 dark:text-ink-2'
                     }`}>
                     {r.cells[e]}
                   </Text>
@@ -998,7 +998,7 @@ function EnergyMixCard({
   mix: ReturnType<typeof computeEnergyMix>;
 }) {
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 md:p-4 gap-3">
       <CardHeading
         title="Energy system mix"
         what="The share of your programmed sections that fall under each energy system across the window."
@@ -1042,7 +1042,7 @@ function TimeDomainCard({
   const total = mix.reduce((n, m) => n + m.count, 0);
   if (total === 0) return null;
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 md:p-4 gap-3">
       <CardHeading
         title="Time domains"
         subtitle="How long your conditioning pieces run, read by AI from what you wrote."
@@ -1082,7 +1082,7 @@ function LoadBalanceCard({
   const total = mix.reduce((n, m) => n + m.count, 0);
   if (total === 0) return null;
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 md:p-4 gap-3">
       <CardHeading
         title="Load balance"
         subtitle="The heavy / light split, read by AI from what you wrote."
@@ -1128,7 +1128,7 @@ function PatternMixCard({
   const max = nonzero[0]?.count ?? 0;
   if (nonzero.length === 0) return null;
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 md:p-4 gap-3">
       <CardHeading
         title="Movement pattern volume"
         what="How many sections touched each movement pattern, ranked highest to lowest."
@@ -1202,7 +1202,7 @@ function RegionInjuriesCard({
 
   if (!showVolume && !canSeeHealth) {
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           You don't have permission to view health data.
         </Text>
@@ -1211,7 +1211,7 @@ function RegionInjuriesCard({
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 md:p-4 gap-3">
       <CardHeading
         title={
           both
@@ -1318,7 +1318,7 @@ function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 6);
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <CardHeading
         title="Untagged sections"
         subtitle="No movement we recognise in these sections' bodies, even after an AI read. Add specific movement names so they get counted."
@@ -1368,7 +1368,7 @@ function TrendCard({
   const colors = useThemeColors();
   const scheme = findScheme(trend.movement_key, trend.track_key);
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card">
       <Pressable
         onPress={() => setOpenCard((v) => !v)}
         className="p-3 md:p-4 gap-1 active:opacity-70">
@@ -1415,7 +1415,7 @@ function TrendCard({
                     ? 'bg-emerald-500/10'
                     : m.trend === 'declining'
                       ? 'bg-red-500/10'
-                      : 'bg-gray-500/10'
+                      : 'bg-ink-3/10'
                 }`}>
                 <Text
                   className={`text-[10px] font-bold ${

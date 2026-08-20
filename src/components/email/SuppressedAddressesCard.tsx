@@ -43,7 +43,7 @@ export function SuppressedAddressesCard() {
 
   if (rows.isLoading) {
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
         <ActivityIndicator />
       </View>
     );
@@ -51,7 +51,7 @@ export function SuppressedAddressesCard() {
   if ((rows.data ?? []).length === 0) return null;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk font-semibold">
         Addresses we can no longer reach
       </Text>

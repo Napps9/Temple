@@ -106,7 +106,7 @@ export function AgentBriefBuilder({
       </View>
 
       {promptMode === 'generate' ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Your plans, schedule, class types and coaches are included automatically. These five
             fill in what only you know — every one is optional, but the first is where the sales
@@ -192,7 +192,7 @@ export function AgentBriefBuilder({
         </View>
       ) : null}
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           The agent's brief
         </Text>

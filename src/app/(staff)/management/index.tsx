@@ -106,7 +106,7 @@ function ManagementCard({
   saidInstead?: string;
 }) {
   const body = (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 border border-line dark:border-line-dk shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-1 border border-line dark:border-line-dk">
       <View className="flex-row justify-between items-center">
         <Text className="text-ink dark:text-ink-dk font-semibold">{title}</Text>
         {comingSoon ? (
@@ -178,10 +178,10 @@ function ManageNav({
           vertical ? 'w-full' : ''
         } ${
           selected
-            ? 'bg-primary shadow-card'
+            ? 'bg-primary shadow-soft'
             : vertical
-              ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
-              : 'bg-surface dark:bg-surface-dk border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
+              ? 'hover:bg-sunken/60 dark:hover:bg-raised-dk'
+              : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <Ionicons
           name={CATEGORY_ICONS[c]}
@@ -236,7 +236,7 @@ function SearchResults({
 }) {
   if (results.length === 0) {
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 border border-line dark:border-line-dk shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-1 border border-line dark:border-line-dk">
         <Text className="text-ink dark:text-ink-dk font-semibold">
           Nothing here matches “{query.trim()}”.
         </Text>
@@ -390,7 +390,7 @@ export default function ManagementHome() {
         {/* Desktop: a full-height left sidebar menu. Mobile: hidden — the
             pills render inside the scroll area instead. */}
         {availableCategories.length > 1 ? (
-          <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-gray-200 dark:border-gray-800 px-4 py-6">
+          <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-line dark:border-line-dk px-4 py-6">
             <ManageNav
               categories={availableCategories}
               active={activeCategory}
@@ -604,7 +604,7 @@ function SettingsSection({
   }, [defaultOpen]);
   const colors = useThemeColors();
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card">
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
@@ -670,7 +670,7 @@ function PolicyRow({
               className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                 selected
                   ? 'bg-primary border-primary'
-                  : 'bg-surface dark:bg-surface-dk border-gray-200 dark:border-gray-800'
+                  : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-sm font-medium ${
@@ -885,7 +885,7 @@ function TeamMemberRow({
   });
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card">
       <View className="flex-row items-center gap-3 p-4">
         <Avatar
           name={name}
@@ -1588,7 +1588,7 @@ function ActionCta({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      className={`flex-1 min-w-[150px] flex-row items-center gap-2.5 bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-3 shadow-card active:opacity-70 ${
+      className={`flex-1 min-w-[150px] flex-row items-center gap-2.5 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-3.5 py-3 active:opacity-70 ${
         disabled ? 'opacity-50' : ''
       }`}>
       <View className="w-8 h-8 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">

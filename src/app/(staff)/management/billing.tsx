@@ -262,7 +262,7 @@ export default function BillingScreen() {
           </Text>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             What that's worth
           </Text>
@@ -312,7 +312,7 @@ export default function BillingScreen() {
           </View>
         ) : null}
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-3">
           {account.isLoading ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Checking connection…
@@ -445,7 +445,7 @@ export default function BillingScreen() {
           )}
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-3">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -471,7 +471,7 @@ export default function BillingScreen() {
           ) : null}
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-3">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-ink dark:text-ink-dk font-semibold">

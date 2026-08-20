@@ -91,7 +91,7 @@ export function MemberGetStartedChecklist() {
         />
       </Pressable>
 
-      <View className="h-2 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
+      <View className="h-2 rounded-full bg-sunken dark:bg-raised-dk overflow-hidden">
         <View
           style={{ width: `${(requiredDone / requiredTotal) * 100}%` }}
           className="h-full bg-primary rounded-full"
@@ -104,7 +104,7 @@ export function MemberGetStartedChecklist() {
             <Pressable
               key={step.key}
               onPress={() => runStep(step.key)}
-              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 bg-white dark:bg-gray-800 active:opacity-70">
+              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 bg-white dark:bg-raised-dk active:opacity-70">
               <StatusDisk
                 size={28}
                 done={step.done}

@@ -162,7 +162,7 @@ export default function StartSoloScreen() {
             </View>
 
             {pendingEmail ? (
-              <View className="gap-4 bg-surface dark:bg-surface-dk rounded-xl p-5 shadow-card">
+              <View className="gap-4 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5">
                 <View className="gap-2">
                   <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                     Check your email

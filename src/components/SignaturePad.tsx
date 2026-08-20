@@ -101,7 +101,7 @@ export function SignaturePad({
         onLayout={onLayout}
         {...responder.panHandlers}
         style={{ height }}
-        className="bg-white rounded-xl border border-gray-300 overflow-hidden">
+        className="bg-white rounded-xl border border-line-strong overflow-hidden">
         <Svg width="100%" height="100%">
           {paths.map((d, i) => (
             <Path
@@ -129,7 +129,7 @@ export function SignaturePad({
           <View
             pointerEvents="none"
             className="absolute inset-0 items-center justify-center">
-            <Text className="text-gray-400 text-sm">Sign here</Text>
+            <Text className="text-ink-3 text-sm">Sign here</Text>
           </View>
         ) : null}
       </View>
@@ -164,7 +164,7 @@ export function SignatureView({
   return (
     <View
       style={{ height }}
-      className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      className="bg-white rounded-lg border border-line overflow-hidden">
       <Svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`}>
         {value.paths.map((d, i) => (
           <Path

@@ -332,7 +332,7 @@ export default function ImportStripeScreen() {
             </Button>
           </View>
         ) : (preview.data?.prices?.length ?? 0) === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-2">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               No recurring plans found
             </Text>
@@ -359,7 +359,7 @@ export default function ImportStripeScreen() {
               {plans.map((p) => (
                 <View
                   key={p.price_id}
-                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+                  className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
                   <Pressable
                     onPress={() => updatePlan(p.price_id, { include: !p.include })}
                     className="flex-row items-center gap-2">
@@ -448,7 +448,7 @@ export default function ImportStripeScreen() {
             </View>
 
             {members.length === 0 ? (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No active subscribers on Stripe — you're importing the plans
                   only. Assign members to them, or import subscribers later.

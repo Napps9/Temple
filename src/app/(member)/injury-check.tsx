@@ -55,7 +55,7 @@ export default function InjuryCheck() {
         </View>
 
         {open.length > 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               You're already tracking {open.length}
             </Text>

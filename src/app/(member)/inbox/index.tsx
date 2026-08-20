@@ -292,7 +292,7 @@ function DirectList() {
       {inbox.isLoading ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : (inbox.data?.length ?? 0) === 0 ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No conversations yet. Tap New to send a message.
           </Text>
@@ -304,7 +304,7 @@ function DirectList() {
             onPress={() =>
               router.push(`/inbox/direct/${row.peer_profile_id}` as never)
             }
-            className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70 flex-row items-center gap-3">
+            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70 flex-row items-center gap-3">
             <View className="flex-1">
               <View className="flex-row items-center gap-2">
                 <Text className="flex-1 text-ink dark:text-ink-dk font-semibold" numberOfLines={1}>
@@ -453,7 +453,7 @@ function AnnouncementsTab({
       </View>
 
       {composeOpen ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Input
             label="Title"
             value={title}
@@ -493,7 +493,7 @@ function AnnouncementsTab({
       {list.isLoading ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No announcements yet.
           </Text>
@@ -502,7 +502,7 @@ function AnnouncementsTab({
         list.data!.map((a) => (
           <View
             key={a.id}
-            className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
             <View className="flex-row items-center gap-2">
               {a.pinned ? (
                 <Ionicons name="pin" size={14} color={colors.primary} />
@@ -696,7 +696,7 @@ function ClassesTab({
       {list.isLoading ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {role === 'member'
               ? 'No class messages yet. You\'ll see anything your coach sends to a class you\'re booked into.'
@@ -712,7 +712,7 @@ function ClassesTab({
           return (
             <View
               key={b.id}
-              className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
               <View className="flex-row items-center gap-2">
                 <View
                   style={{ backgroundColor: typeColor }}
@@ -965,7 +965,7 @@ function CoverTab({ gymId }: { gymId: string }) {
               className={`rounded-xl p-4 gap-2 border ${
                 uncovered
                   ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
-                  : 'border-transparent bg-surface dark:bg-surface-dk shadow-card'
+                  : 'border-transparent bg-surface dark:bg-surface-dk border border-line dark:border-line-dk'
               }`}>
               <View className="flex-row items-center gap-2">
                 <Ionicons

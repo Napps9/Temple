@@ -91,7 +91,7 @@ export default function WorkoutDetail() {
         {workout.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
         ) : !workout.data ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Workout not found.
             </Text>
@@ -102,7 +102,7 @@ export default function WorkoutDetail() {
               <WorkoutSectionCard key={s.id} section={s} />
             ))}
             {workout.data.legacy_results.length > 0 ? (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
                 <Text className="text-ink dark:text-ink-dk font-semibold">
                   Results
                 </Text>
@@ -112,7 +112,7 @@ export default function WorkoutDetail() {
               </View>
             ) : null}
             {workout.data.notes ? (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
                 <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                   Notes
                 </Text>

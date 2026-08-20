@@ -199,7 +199,7 @@ export default function GroupPage() {
                 onPress={() =>
                   router.push(`/track/movement/${m.key}` as never)
                 }
-                className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3 active:opacity-70">
                 <View className="flex-1">
                   <Text className="text-ink dark:text-ink-dk font-semibold">
                     {m.name}

@@ -230,7 +230,7 @@ export default function TrackHome() {
             flip only engage at lg. */}
         <View className="gap-4 lg:flex-row lg:items-start">
           {(recentWorkouts.data?.size ?? 0) > 0 ? (
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card lg:w-80">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-4 lg:w-80">
               <View className="flex-row gap-2">
                 <Stat
                   icon="flame"
@@ -303,7 +303,7 @@ function Stat({
   label: string;
 }) {
   return (
-    <View className="flex-1 bg-slate-100 dark:bg-gray-800 rounded-xl p-3 gap-1">
+    <View className="flex-1 bg-raised dark:bg-raised-dk rounded-xl p-3 gap-1">
       <View
         style={{ backgroundColor: `${tint}26` }}
         className="w-8 h-8 rounded-full items-center justify-center">
@@ -354,7 +354,7 @@ function TrackHowItWorks() {
     },
   ];
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card border border-primary/20">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 border border-primary/20">
       <View className="flex-row items-start gap-3">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
           <Ionicons name="compass-outline" size={22} color={colors.primary} />
@@ -399,13 +399,13 @@ function TrackHowItWorks() {
   );
 }
 
-// Same elevated white shadow-card shell the movement tiles use — kept
+// Same elevated white shadow-soft shell the movement tiles use — kept
 // identical so this row doesn't read as washed-out or lower-priority —
 // plus a colored top edge in the tile's own accent so the row still
 // reads as a distinct kind of tile (navigation/tools) rather than more
 // pinned-movement content.
 const TOOL_TILE_CLASS =
-  'bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70 border-t-4';
+  'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70 border-t-4';
 
 // Group-tile shape (slate background, rounded icon, accent blob).
 function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
@@ -638,7 +638,7 @@ function MyMovementsCard({
     <View className="gap-5">
       <View className="gap-3">
         <View className="flex-row items-center gap-3">
-          <View className="w-11 h-11 rounded-full bg-gray-500/15 items-center justify-center">
+          <View className="w-11 h-11 rounded-full bg-ink-3/15 items-center justify-center">
             <Ionicons name="grid-outline" size={22} color="#6B7280" />
           </View>
           <View className="flex-1">
@@ -733,7 +733,7 @@ function StationTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -773,7 +773,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"

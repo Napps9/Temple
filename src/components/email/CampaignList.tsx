@@ -40,7 +40,7 @@ function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
         : 'No subject yet';
   return (
     <Link href={`/management/communications/${campaign.id}`} asChild>
-      <Pressable className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+      <Pressable className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
             <View className="flex-row items-center gap-2">

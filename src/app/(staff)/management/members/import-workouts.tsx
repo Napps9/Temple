@@ -264,7 +264,7 @@ export default function ImportWorkoutsScreen() {
         </View>
 
         {phase === 'upload' ? (
-          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             {Platform.OS === 'web' ? (
               <>
                 <div
@@ -295,7 +295,7 @@ export default function ImportWorkoutsScreen() {
                   className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
                     dragOver
                       ? 'border-primary bg-primary/5'
-                      : 'border-gray-300 dark:border-gray-700 hover:bg-raised dark:hover:bg-raised-dk/40'
+                      : 'border-line-strong dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Ionicons name="cloud-upload-outline" size={24} color={colors.ink2} />
@@ -357,7 +357,7 @@ export default function ImportWorkoutsScreen() {
         ) : null}
 
         {phase === 'map' ? (
-          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <View className="gap-1">
               <Text className="text-ink dark:text-ink-dk font-semibold">
                 Map your columns
@@ -420,7 +420,7 @@ export default function ImportWorkoutsScreen() {
         ) : null}
 
         {phase === 'preview' ? (
-          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Preview
             </Text>
@@ -445,7 +445,7 @@ export default function ImportWorkoutsScreen() {
             {built.sections.length > 0 ? (
               <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
                 {built.sections.slice(0, 6).map((s, i) => (
-                  <View key={`s${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
+                  <View key={`s${i}`} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                     <Text className="text-ink dark:text-ink-dk text-sm">
                       {s.email} · {s.date} · {s.title}
                     </Text>
@@ -468,7 +468,7 @@ export default function ImportWorkoutsScreen() {
             {built.hyrox.length > 0 ? (
               <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
                 {built.hyrox.slice(0, 6).map((h, i) => (
-                  <View key={`h${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
+                  <View key={`h${i}`} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                     <Text className="text-ink dark:text-ink-dk text-sm">
                       {h.email} · {h.date} · {hyroxLabel(h.movement_key)}
                     </Text>
@@ -489,7 +489,7 @@ export default function ImportWorkoutsScreen() {
             {built.weighted.length > 0 ? (
               <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
                 {built.weighted.slice(0, 6).map((r, i) => (
-                  <View key={`w${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
+                  <View key={`w${i}`} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                     <Text className="text-ink dark:text-ink-dk text-sm">
                       {r.email} · {r.date} · {r.movement_key}
                     </Text>

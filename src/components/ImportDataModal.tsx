@@ -98,7 +98,7 @@ export function ImportDataModal({
           <Pressable
             key={o.title}
             onPress={() => go(o.href)}
-            className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-start gap-3 border border-line dark:border-line-dk shadow-card active:opacity-70">
+            className="bg-surface dark:bg-surface-dk rounded-card p-4 flex-row items-start gap-3 border border-line dark:border-line-dk active:opacity-70">
             <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
               <Ionicons name={o.icon} size={18} color={colors.ink2} />
             </View>

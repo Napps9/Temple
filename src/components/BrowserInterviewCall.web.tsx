@@ -184,7 +184,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
                 className={`max-w-[86%] rounded-xl px-3 py-2 ${
                   t.role === 'user'
                     ? 'self-end bg-primary/10'
-                    : 'self-start bg-white dark:bg-gray-800'
+                    : 'self-start bg-white dark:bg-raised-dk'
                 }`}>
                 <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
               </View>

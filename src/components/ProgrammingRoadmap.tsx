@@ -102,7 +102,7 @@ export function ProgrammingRoadmap({
           </Pressable>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="gap-1.5">
             <View className="h-8 rounded-lg bg-raised dark:bg-raised-dk overflow-hidden">
               {lanes.map((l) => (
@@ -274,7 +274,7 @@ function BlockModal({
         accessibilityLabel="Close"
       />
       <View className="absolute inset-x-0 bottom-0 md:inset-0 md:items-center md:justify-center pointer-events-box-none">
-        <View className="bg-surface dark:bg-surface-dk rounded-t-3xl md:rounded-2xl p-5 gap-4 md:w-[440px] shadow-pop">
+        <View className="bg-surface dark:bg-surface-dk rounded-t-3xl md:rounded-2xl p-5 gap-4 md:w-[440px] shadow-float">
           <Text className="text-ink dark:text-ink-dk text-lg font-bold">
             {draft.id ? 'Edit block' : 'Add a block'}
           </Text>
@@ -318,7 +318,7 @@ function BlockModal({
                   onPress={() => onChange({ ...draft, color: c })}
                   accessibilityLabel={`Colour ${c}`}
                   className={`w-8 h-8 rounded-full items-center justify-center ${
-                    draft.color === c ? 'border-2 border-gray-900 dark:border-gray-50' : ''
+                    draft.color === c ? 'border-2 border-ink dark:border-ink-dk' : ''
                   }`}
                   style={{ backgroundColor: c }}
                 />

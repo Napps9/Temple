@@ -11,7 +11,7 @@ import type { PropsWithChildren } from 'react';
 // preference via the NavModal).
 //
 // Hex values mirror src/lib/theme.ts (screenBg) and tailwind.config.js
-// (gray-50 / gray-950). Single-sourcing is a small follow-up; not worth the
+// (the ramp's ground / ground-dk). Single-sourcing is a small follow-up; not worth the
 // CSS-variable pipework for two extra references right now.
 export default function Root({ children }: PropsWithChildren) {
   return (

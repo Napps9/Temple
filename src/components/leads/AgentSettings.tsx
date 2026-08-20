@@ -942,7 +942,7 @@ export function AgentSettings() {
               Danger Zone
             </Text>
           </View>
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card border border-red-200 dark:border-red-900/40">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 border border-red-200 dark:border-red-900/40">
             <Text className="text-ink dark:text-ink-dk font-medium">
               Turn off the AI front desk
             </Text>

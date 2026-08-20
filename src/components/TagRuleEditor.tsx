@@ -141,7 +141,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
   });
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-4">
       <Text className="text-ink dark:text-ink-dk font-semibold">
         {rule ? 'Edit rule' : 'New rule'}
       </Text>

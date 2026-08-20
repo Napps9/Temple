@@ -131,7 +131,7 @@ export default function SopsScreen() {
               </Text>
             ) : null}
           </View>
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink dark:text-ink-dk whitespace-pre-wrap">
               {active.body_markdown || 'No content.'}
             </Text>
@@ -235,7 +235,7 @@ export default function SopsScreen() {
               <Pressable
                 key={d.id}
                 onPress={() => setActiveId(d.id)}
-                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
                 <Text className="text-ink dark:text-ink-dk font-semibold">
                   {d.title}
                 </Text>

@@ -132,7 +132,7 @@ export default function Roster() {
           The team
         </Text>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center gap-3">
             <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
               People
@@ -168,7 +168,7 @@ export default function Roster() {
           count — those can&apos;t wait a day.
         </Text>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center gap-3">
             <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
               The front desk
@@ -189,7 +189,7 @@ export default function Roster() {
         </View>
 
         {moneyOn ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <View className="flex-row items-center gap-3">
               <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
                 The money
@@ -443,7 +443,7 @@ function SimpleJob({
   if (level === undefined) {
     if (!isOwner) return null;
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
           {offTitle}
         </Text>
@@ -464,7 +464,7 @@ function SimpleJob({
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center gap-3">
         <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
           {name}
@@ -525,7 +525,7 @@ function DialRow({
             }`}>
             <Text
               className={`text-[13px] font-semibold ${
-                selected ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {l === 'approval' ? 'asks first' : 'on its own'}
             </Text>

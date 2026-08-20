@@ -62,7 +62,7 @@ const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
     'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300',
   warn: 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400',
   muted:
-    'bg-gray-500/10 border-gray-400/40 text-ink-2 dark:text-ink-2-dk',
+    'bg-ink-3/10 border-ink-3/40 text-ink-2 dark:text-ink-2-dk',
 };
 
 // A failed payment leaves the membership 'active' on purpose — Stripe
@@ -181,7 +181,7 @@ function NoticePeriodBar({
       <View className="relative h-2.5 rounded-full bg-primary/15">
         {renewalPct != null ? (
           <View
-            className="absolute w-3 h-3 rounded-full bg-primary border-2 border-white dark:border-gray-900"
+            className="absolute w-3 h-3 rounded-full bg-primary border-2 border-white dark:border-line-dk"
             style={{ left: `${renewalPct * 100}%`, top: -1, marginLeft: -6 }}
           />
         ) : null}
@@ -235,7 +235,7 @@ function CurrentSubCard({
   const notice = plan?.notice_period_days ?? 0;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -336,7 +336,7 @@ function PendingMembershipCard({
         className={`bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border ${
           stuck
             ? 'border-amber-300 dark:border-amber-700'
-            : 'border-gray-200 dark:border-gray-800'
+            : 'border-line dark:border-line-dk'
         }`}>
         <View className="flex-row items-center justify-between gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
@@ -381,7 +381,7 @@ function money(cents: number, currency: string): string {
 function InvoiceRow({ inv }: { inv: MemberInvoice }) {
   const hasDoc = !!(inv.invoice_url || inv.invoice_pdf);
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-medium">
@@ -701,7 +701,7 @@ export default function MembershipScreen() {
             </Text>
           </View>
         ) : params.checkout === 'cancelled' ? (
-          <View className="bg-gray-500/10 border border-gray-400/30 rounded-xl p-4">
+          <View className="bg-ink-3/10 border border-ink-3/30 rounded-xl p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Checkout cancelled — you haven't been charged.
             </Text>
@@ -861,7 +861,7 @@ export default function MembershipScreen() {
               return (
                 <View
                   key={plan.plan_id}
-                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+                  className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
                       <View className="flex-row items-center gap-2">
@@ -1007,7 +1007,7 @@ export default function MembershipScreen() {
           )}
 
           {!canSelfCheckout && (plans.data ?? []).length > 0 ? (
-            <View className="bg-raised dark:bg-raised-dk/50 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+            <View className="bg-raised dark:bg-raised-dk/50 border border-line dark:border-line-dk rounded-xl p-4">
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Your gym sets up memberships for you — ask a coach to put you on
                 a plan.

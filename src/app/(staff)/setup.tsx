@@ -957,7 +957,7 @@ export default function SetupScreen() {
 
         {step !== null ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
-            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -972,7 +972,7 @@ export default function SetupScreen() {
                 onPress={submitText}
                 disabled={busy || !input.trim()}
                 accessibilityLabel="Send"
-                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-gray-200 dark:bg-gray-800' : 'bg-primary'}`}>
+                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary'}`}>
                 <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
               </Pressable>
             </View>
@@ -1138,7 +1138,7 @@ function MessageRow({
   }
 
   const card = (children: React.ReactNode, confirmLabel: string, onConfirm: () => void) => (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       {children}
       {msg.open ? (
         <View className="flex-row gap-2.5">
@@ -1221,7 +1221,7 @@ function MessageRow({
     );
   }
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <RuleSheet choices={msg.choices} editable={msg.open} onEdit={onEditRule} />
       {msg.open ? (
         <Button onPress={() => onConfirmRules(msg.choices)} loading={busy}>
@@ -1284,7 +1284,7 @@ function RuleQuestion({
               }`}>
               <Text
                 className={`text-sm font-semibold ${
-                  i === 0 ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                  i === 0 ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {o.label}
               </Text>
@@ -1321,7 +1321,7 @@ function GoLive({
     (r) => !doneKeys.has(r.key) && !handled.has(r.step),
   );
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         {left.length === 0
           ? 'Everything’s set. Members can find you, book, sign and pay.'
@@ -1440,7 +1440,7 @@ function ColumnMapper({
                   setAssigning(null);
                 }}
                 className="px-3 py-1.5 rounded-full border border-line dark:border-line-dk bg-raised dark:bg-raised-dk active:opacity-70">
-                <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">
+                <Text className="text-[13px] font-semibold text-ink-2 dark:text-ink-2-dk">
                   {TEMPLE_FIELD_LABELS[f]}
                 </Text>
               </Pressable>
@@ -1607,7 +1607,7 @@ function MembersImportCard({
 
   if (!file) {
     return (
-      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           Export a CSV from wherever you are now — Mindbody, PushPress, Glofox,
           Wodify, a spreadsheet. I’ll match the columns and show you everything
@@ -1658,7 +1658,7 @@ function MembersImportCard({
   }
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
         {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
         {file.name ? ` in ${file.name}` : ''}
@@ -1895,7 +1895,7 @@ function WorkoutsImportCard({
 
   if (!file) {
     return (
-      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           One row per result — weighted lifts, WODs scored for time or AMRAP,
           Hyrox splits. Members open the app to their own PRs and leaderboards
@@ -1942,7 +1942,7 @@ function WorkoutsImportCard({
   ].filter(Boolean);
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
         {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
         {file.name ? ` in ${file.name}` : ''}
@@ -2100,7 +2100,7 @@ function LogoCard({
   });
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <View className="flex-row items-center gap-3">
         <GymLogo size={56} logoUrl={preview} name="?" primaryColor="#2563EB" />
         <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm leading-5">
@@ -2187,7 +2187,7 @@ function ClassBuilderCard({
   }
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-4">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-4">
       {entries.length > 0 ? (
         <View className="gap-2">
           {entries.map((e, i) => (
@@ -2235,7 +2235,7 @@ function ClassBuilderCard({
               onPress={() => setColor(c)}
               accessibilityLabel={`Colour ${c}`}
               className={`w-6 h-6 rounded-full ${
-                color === c ? 'border-2 border-gray-900 dark:border-gray-50' : ''
+                color === c ? 'border-2 border-ink dark:border-ink-dk' : ''
               }`}
               style={{ backgroundColor: c }}
             />
@@ -2307,7 +2307,7 @@ function StripeCard({ onSkip }: { onSkip: () => void }) {
   });
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         Your own Stripe account takes the money and pays out to your bank.
         Card processing is Stripe's usual rate; Temple adds nothing on top and
@@ -2421,7 +2421,7 @@ function PlanBuilderCard({
   }
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-4">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-4">
       {entries.length > 0 ? (
         <View className="gap-2">
           {entries.map((e, i) => (
@@ -2472,7 +2472,7 @@ function PlanBuilderCard({
               }`}>
               <Text
                 className={`text-[13px] font-semibold ${
-                  sel ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                  sel ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {PLAN_KIND_LABEL[k]}
               </Text>
@@ -2669,7 +2669,7 @@ function WaiverCard({
   });
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         A PDF is all it takes — members sign it with their finger in the app,
         and it’s kept as a liability record. Or ask the standard health
@@ -2709,7 +2709,7 @@ function WaiverCard({
 // manual-link fallback when email isn't configured.
 function TeamCard({ onDone }: { onDone: (receipt: string) => void }) {
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <InviteSection
         title="Invite a coach"
         subtitle="They'll get a link to join with the right access."

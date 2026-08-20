@@ -33,7 +33,7 @@ export function CommunicationsHome() {
       </View>
 
       <Link href="/management/communications/settings" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="settings-outline" size={18} color={colors.ink2} />
           </View>
@@ -50,7 +50,7 @@ export function CommunicationsHome() {
       </Link>
 
       <Link href="/management/communications/topics" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="layers-outline" size={18} color={colors.ink2} />
           </View>
@@ -67,7 +67,7 @@ export function CommunicationsHome() {
       </Link>
 
       <Link href="/management/communications/automations" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="flash-outline" size={18} color={colors.ink2} />
           </View>

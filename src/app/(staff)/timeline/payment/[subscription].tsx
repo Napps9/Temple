@@ -331,7 +331,7 @@ export default function PaymentStory() {
                 </Text>
               </View>
 
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1.5">
                 <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                   Why this has come up
                 </Text>
@@ -344,7 +344,7 @@ export default function PaymentStory() {
                 ))}
               </View>
 
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1.5">
                 <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                   What I&apos;d do today
                 </Text>
@@ -364,7 +364,7 @@ export default function PaymentStory() {
               </View>
 
               {preview.data ? (
-                <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-2">
+                <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
                   <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                     {chased
                       ? `The nudge on its way to ${first}`
@@ -480,7 +480,7 @@ export default function PaymentStory() {
                       onPress={() => ask(q)}
                       disabled={busy}
                       className="px-3.5 py-2 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
-                      <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] font-semibold">
                         {q}
                       </Text>
                     </Pressable>
@@ -493,7 +493,7 @@ export default function PaymentStory() {
 
         {row ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
-            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -508,7 +508,7 @@ export default function PaymentStory() {
                 onPress={() => ask(input)}
                 disabled={busy || !input.trim()}
                 accessibilityLabel="Ask"
-                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-gray-200 dark:bg-gray-800' : 'bg-primary'}`}>
+                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary'}`}>
                 <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
               </Pressable>
             </View>

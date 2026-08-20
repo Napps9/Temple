@@ -82,8 +82,8 @@ export function WorkoutHeatmap({
                     logged
                       ? ''
                       : inFuture
-                        ? 'bg-gray-50 dark:bg-gray-900'
-                        : 'bg-gray-200 dark:bg-gray-800'
+                        ? 'bg-raised dark:bg-surface-dk'
+                        : 'bg-sunken dark:bg-raised-dk'
                   }`}
                 />
               );

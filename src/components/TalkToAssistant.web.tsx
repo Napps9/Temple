@@ -14,7 +14,7 @@ export type TalkToAssistantProps = {
   assistantId: string | null;
   gymName?: string;
   // 'inline' sits in a card in the normal page flow (wizard, settings).
-  // 'docked' floats bottom-right, its own shadow (shadow-pop) doing the
+  // 'docked' floats bottom-right, its own shadow (shadow-float) doing the
   // elevation instead of dimming the page behind it — the dashboard stays
   // fully readable and interactive while this is open. Calls
   // onRequestClose when the owner closes it (the dashboard placement).
@@ -33,7 +33,7 @@ export function TalkToAssistant({
 
   if (!call.available) {
     const card = (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
         <Text className="text-ink dark:text-ink-dk font-medium">Talk to it</Text>
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {assistantId
@@ -75,7 +75,7 @@ export function TalkToAssistant({
     <View
       // Fixed overlay: an invisible click-outside-to-dismiss layer, not a
       // dimmed one — the dashboard stays fully visible and readable behind
-      // the floating panel, whose own shadow (shadow-pop) is what reads as
+      // the floating panel, whose own shadow (shadow-float) is what reads as
       // "above" the page.
       style={{ position: 'fixed' as 'absolute', inset: 0, zIndex: 50 }}
       pointerEvents="box-none">
@@ -104,7 +104,7 @@ function CallPanel({
   onRequestClose?: () => void;
 }) {
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-3 shadow-pop">
+    <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-3 shadow-float">
       {call.phase === 'ready' ? (
         <ReadyBody call={call} colors={colors} onCancel={onRequestClose} />
       ) : call.phase === 'connecting' ? (

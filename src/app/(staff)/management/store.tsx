@@ -58,7 +58,7 @@ export function StoreHome() {
               key={t}
               onPress={() => setTab(t)}
               className={`px-4 py-2 rounded-full ${
-                selected ? 'bg-primary' : 'bg-slate-200 dark:bg-gray-800'
+                selected ? 'bg-primary' : 'bg-sunken dark:bg-raised-dk'
               }`}>
               <Text
                 className={`text-sm font-medium capitalize ${
@@ -205,7 +205,7 @@ function ProductsTab() {
           <Pressable
             key={p.id}
             onPress={() => setEditing(draftFrom(p))}
-            className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
+            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3 active:opacity-70">
             {productImages(p)[0] ? (
               <Image
                 source={{ uri: productImages(p)[0] }}
@@ -435,7 +435,7 @@ function ProductEditor({
         <Text className="text-ink-2 dark:text-ink-2-dk">All products</Text>
       </Pressable>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-4">
         <Input
           label="Name"
           value={d.name}
@@ -494,7 +494,7 @@ function ProductEditor({
                   className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                     selected
                       ? 'bg-primary border-primary'
-                      : 'bg-surface dark:bg-surface-dk border-gray-200 dark:border-gray-800'
+                      : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={`text-sm font-medium ${
@@ -726,7 +726,7 @@ function SubscriberCard({ sub }: { sub: StaffSubscription }) {
       : 'text-green-600 dark:text-green-400';
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
       <View className="flex-row items-center justify-between">
         <Text className="text-ink dark:text-ink-dk font-semibold">
           {sub.buyer_name ?? 'Member'}
@@ -804,7 +804,7 @@ function OrderCard({ order }: { order: StaffOrder }) {
   const st = STATUS_STYLE[order.status] ?? STATUS_STYLE.refunded;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <View className="flex-row items-center justify-between">
         <Text className="text-ink dark:text-ink-dk font-semibold">
           {order.buyer_name ?? 'Member'}
@@ -937,7 +937,7 @@ function StoreSettingsPanel() {
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-3">
           <Text className="text-ink dark:text-ink-dk font-medium">
@@ -1003,7 +1003,7 @@ function RevenuePanel() {
       {revenue.isLoading ? (
         <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : rows.length === 0 ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk">
             No sales yet this month.
           </Text>
@@ -1013,7 +1013,7 @@ function RevenuePanel() {
           {rows.map((r) => (
             <View
               key={r.currency}
-              className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 flex-1 min-w-[150px] shadow-card">
+              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1 flex-1 min-w-[150px]">
               <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 {formatMoney(r.gross_cents, r.currency)}
               </Text>

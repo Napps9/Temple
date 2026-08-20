@@ -105,7 +105,7 @@ export function SoftLine({
                 ? 'bg-amber-500/15'
                 : quiet
                   ? 'bg-transparent'
-                  : 'bg-gray-200/70 dark:bg-gray-800'
+                  : 'bg-sunken/70 dark:bg-raised-dk'
           }`}>
           <Ionicons name={icon} size={14} color={iconColor} />
         </View>
@@ -116,7 +116,7 @@ export function SoftLine({
               ? 'bg-red-500'
               : tone === 'amber'
                 ? 'bg-amber-500'
-                : 'bg-gray-300 dark:bg-gray-600'
+                : 'bg-sunken dark:bg-sunken-dk'
           }`}
         />
       )}
@@ -189,7 +189,7 @@ export function OfferChip({ offer }: { offer: { label: string; href: string } })
     <Pressable
       onPress={() => router.push(offer.href as never)}
       className="px-4 py-2 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
-      <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] font-semibold">
         {offer.label}
       </Text>
     </Pressable>

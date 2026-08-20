@@ -125,7 +125,7 @@ export default function Journal() {
         {journal.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
         ) : (journal.data?.length ?? 0) === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No workouts yet.
             </Text>
@@ -150,7 +150,7 @@ function WorkoutCard({ workout }: { workout: WorkoutRow }) {
       onPress={() =>
         router.push(`/track/workout/${workout.id}` as never)
       }
-      className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card active:opacity-70">
+      className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 active:opacity-70">
       <View className="flex-row items-center">
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">

@@ -11,7 +11,7 @@ import { useThemeColors } from '@/lib/theme';
 export function BillingNotLiveTile({ title }: { title: string }) {
   const colors = useThemeColors();
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 opacity-70 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2 opacity-70">
       <View className="flex-row justify-between items-center">
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           {title}

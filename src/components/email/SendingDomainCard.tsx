@@ -87,7 +87,7 @@ export function SendingDomainCard() {
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center gap-2">
         <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           Sending domain

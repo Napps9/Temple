@@ -58,11 +58,11 @@ export function ColorSwatchPicker({
               style={{ backgroundColor: c.hex }}
               className={`w-8 h-8 rounded-full items-center justify-center ${
                 selected
-                  ? 'border-2 border-gray-900 dark:border-gray-50'
-                  : 'border border-white dark:border-gray-900'
+                  ? 'border-2 border-ink dark:border-ink-dk'
+                  : 'border border-white dark:border-line-dk'
               }`}>
               {taken ? (
-                <View className="w-2.5 h-2.5 rounded-full bg-white border border-gray-900/30" />
+                <View className="w-2.5 h-2.5 rounded-full bg-white border border-ink/30" />
               ) : null}
             </Pressable>
           );
@@ -70,7 +70,7 @@ export function ColorSwatchPicker({
       </View>
       {used.size > 0 ? (
         <View className="flex-row items-center gap-1.5">
-          <View className="w-2.5 h-2.5 rounded-full bg-white border border-gray-900/30" />
+          <View className="w-2.5 h-2.5 rounded-full bg-white border border-ink/30" />
           <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Already used by another class type
           </Text>

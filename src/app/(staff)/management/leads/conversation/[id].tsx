@@ -510,7 +510,7 @@ export default function AgentConversationScreen() {
 
         {/* Recording playback (voice, reviewers only) */}
         {isVoice && canReview === true && recording.data ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Call recording
             </Text>
@@ -575,7 +575,7 @@ export default function AgentConversationScreen() {
 
         {isVoice ? (
           <>
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
               <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 Call transcript
               </Text>
@@ -589,7 +589,7 @@ export default function AgentConversationScreen() {
               </View>
             </View>
 
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
               <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 SMS
               </Text>
@@ -623,7 +623,7 @@ export default function AgentConversationScreen() {
             </View>
 
             {c && status !== 'closed' ? (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
                 {replyBox}
               </View>
             ) : null}
@@ -879,7 +879,7 @@ function InlineCoachForm({
   });
 
   return (
-    <View className="w-full max-w-[86%] bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2.5 shadow-card border border-primary/20">
+    <View className="w-full max-w-[86%] bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 gap-2.5 border border-primary/20">
       <View className="bg-primary/5 rounded-lg px-3 py-2 border-l-2 border-primary">
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">"{excerpt}"</Text>
       </View>

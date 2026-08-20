@@ -115,7 +115,7 @@ function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
   const renews = sub.current_period_end ? formatDate(sub.current_period_end) : null;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -285,7 +285,7 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
   const status = STATUS_LABEL[order.status] ?? STATUS_LABEL.paid;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <View className="flex-row items-center justify-between">
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {formatDate(order.created_at)}
@@ -300,7 +300,7 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
       <View className="gap-0.5">
         {order.items.map((it, i) => (
           <View key={i} className="flex-row justify-between">
-            <Text className="text-gray-800 dark:text-gray-100 text-sm">
+            <Text className="text-ink-2 dark:text-ink-dk text-sm">
               {it.quantity}× {it.name_snapshot}
             </Text>
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">

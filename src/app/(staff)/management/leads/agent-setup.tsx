@@ -310,7 +310,7 @@ export default function AgentSetupWizard() {
 
         {/* STEP 0 — Welcome */}
         {step === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               An assistant that answers and sells for you
             </Text>
@@ -380,7 +380,7 @@ export default function AgentSetupWizard() {
 
         {/* STEP 2 — Voice */}
         {step === 2 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               How the assistant sounds on calls. Change it any time — texts are
               unaffected.
@@ -444,7 +444,7 @@ export default function AgentSetupWizard() {
 
         {/* STEP 3 — Recording */}
         {step === 3 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <View className="flex-row items-center justify-between gap-3">
               <View className="flex-1">
                 <Text className="text-ink dark:text-ink-dk font-medium">
@@ -497,7 +497,7 @@ export default function AgentSetupWizard() {
             onDone={() => router.replace('/management/leads')}
           />
         ) : step === 4 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               Test it, then turn it on
             </Text>

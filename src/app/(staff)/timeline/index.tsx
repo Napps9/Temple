@@ -941,7 +941,7 @@ export default function Timeline() {
               accessibilityLabel="Previous day"
               className="w-8 h-8 items-center justify-center">
               <Text
-                className={`text-lg ${atFloor ? 'text-gray-300 dark:text-gray-700' : 'text-ink-3 dark:text-ink-3-dk'}`}>
+                className={`text-lg ${atFloor ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
                 ‹
               </Text>
             </Pressable>
@@ -962,7 +962,7 @@ export default function Timeline() {
               accessibilityLabel="Next day"
               className="w-8 h-8 items-center justify-center">
               <Text
-                className={`text-lg ${atCeiling ? 'text-gray-300 dark:text-gray-700' : 'text-ink-3 dark:text-ink-3-dk'}`}>
+                className={`text-lg ${atCeiling ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
                 ›
               </Text>
             </Pressable>
@@ -1080,7 +1080,7 @@ export default function Timeline() {
                 <Text className="text-ink-2 dark:text-ink-2-dk text-[12px] font-bold uppercase tracking-wider">
                   With me
                 </Text>
-                <View className="bg-gray-200/70 dark:bg-gray-800 rounded-full px-2 py-0.5">
+                <View className="bg-sunken/70 dark:bg-raised-dk rounded-full px-2 py-0.5">
                   <Text className="text-ink-2 dark:text-ink-2-dk text-[11px] font-bold">
                     {withMe.length}
                   </Text>
@@ -1170,7 +1170,7 @@ export default function Timeline() {
                 onPress={() => router.push('/management/goals' as never)}
               />
             </View>
-            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -1185,7 +1185,7 @@ export default function Timeline() {
                 onPress={send}
                 disabled={busy || !input.trim()}
                 accessibilityLabel="Send"
-                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-gray-200 dark:bg-gray-800' : 'bg-primary'}`}>
+                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary'}`}>
                 <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
               </Pressable>
             </View>
@@ -1225,7 +1225,7 @@ function BarChip({
       onPress={onPress}
       className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-70">
       <Ionicons name={icon} size={14} color={colors.ink2} />
-      <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] font-semibold">
         {label}
       </Text>
     </Pressable>
@@ -1290,7 +1290,7 @@ function LocalRow({
   if (msg.kind === 'rules-sheet') {
     if (!choices) return null;
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
         <RuleSheet choices={choices} editable={!busy} onEdit={onEditRule} />
       </View>
     );
@@ -1351,7 +1351,7 @@ function LocalRow({
               onPress={() => onPickChoice(msg.spec, c.label, c.args)}
               disabled={busy}
               className="px-4 py-2.5 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
-              <Text className="text-gray-700 dark:text-gray-300 text-sm font-semibold">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-semibold">
                 {c.label}
               </Text>
             </Pressable>
@@ -1365,7 +1365,7 @@ function LocalRow({
   }
   if (msg.spec.kind === 'ask') {
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1.5">
         <Text className="text-ink dark:text-ink-dk font-semibold text-[15px]">
           {msg.preview.title}
         </Text>
@@ -1482,7 +1482,7 @@ function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
         </View>
       ) : null}
 
-      <View className="bg-white dark:bg-gray-950">
+      <View className="bg-white dark:bg-ground-dk">
         {draft.emails.map((e, i) => (
           <View
             key={`${e.subject}-${i}`}
@@ -1507,7 +1507,7 @@ function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
               // while sitting on top of the draft they wanted to read.
               e.sections.map((sec, j) => (
                 <View key={`${sec.heading}-${j}`} className="gap-0.5">
-                  <Text className="text-gray-800 dark:text-gray-100 text-[13.5px] font-semibold">
+                  <Text className="text-ink-2 dark:text-ink-dk text-[13.5px] font-semibold">
                     {sec.heading}
                   </Text>
                   <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px] leading-[19px]">
@@ -1583,7 +1583,7 @@ function MemberSummaryCard({ member }: { member: MemberCard }) {
     });
   }
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-3">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center gap-3">
         <Avatar name={member.name} size={40} />
         <View className="flex-1">
@@ -1652,7 +1652,7 @@ function ProgrammingChangePreview({ card }: { card: ProgrammingChangeCard }) {
       {card.rows.map((row, i) => (
         <View
           key={`${row.date}:${row.classType}:${i}`}
-          className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 gap-1.5">
+          className="border border-line dark:border-line-dk rounded-lg p-3 gap-1.5">
           <View className="flex-row items-baseline gap-2">
             <Text className="text-ink dark:text-ink-dk text-[13px] font-semibold">
               {row.day}
@@ -1711,7 +1711,7 @@ function ProposalCard({
   onNo: () => void;
 }) {
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         {title}
       </Text>
@@ -1860,7 +1860,7 @@ function AgentActionCard({
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         {line.text}
       </Text>
@@ -2146,7 +2146,7 @@ function CoverOfferCard({
   const left = offers.filter((o) => !taken.includes(o.offer_id));
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-3">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk font-semibold text-[15px] leading-[22px]">
         {who} needs cover.{' '}
         {left.length === 0 ? 'You picked it up.' : 'Take one?'}
@@ -2247,7 +2247,7 @@ function RequestCard({
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         {line.text}
       </Text>
@@ -2339,7 +2339,7 @@ function SetupCard({
     );
   }
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center gap-2.5">
         <View className="w-8 h-8 rounded-xl bg-primary/15 items-center justify-center">
           <Ionicons name="rocket-outline" size={17} color={colors.primary} />

@@ -175,7 +175,7 @@ function Thumb({
           hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel="Remove photo"
-          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-900/85 items-center justify-center active:opacity-70">
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-ink/85 items-center justify-center active:opacity-70">
           <Ionicons name="close" size={12} color="#FFFFFF" />
         </Pressable>
       </Animated.View>

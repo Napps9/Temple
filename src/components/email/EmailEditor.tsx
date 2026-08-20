@@ -75,7 +75,7 @@ function IconBtn({
       onPress={onPress}
       disabled={disabled}
       hitSlop={6}
-      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-gray-800 border border-line dark:border-line-dk active:opacity-60 ${
+      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-raised-dk border border-line dark:border-line-dk active:opacity-60 ${
         disabled ? 'opacity-30' : ''
       }`}>
       <Ionicons
@@ -649,7 +649,7 @@ export function EmailEditor({
                     size={16}
                     color={colors.ink2}
                   />
-                  <Text className="flex-1 text-gray-800 dark:text-gray-100 text-sm font-medium">
+                  <Text className="flex-1 text-ink-2 dark:text-ink-dk text-sm font-medium">
                     {BLOCK_LABELS[block.type]}
                   </Text>
                   <Ionicons

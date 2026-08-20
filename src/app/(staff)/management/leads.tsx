@@ -468,7 +468,7 @@ export default function LeadsScreen() {
         {leads.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : (leads.data?.length ?? 0) === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-6 items-center gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-6 items-center gap-2">
             <Ionicons name="people-outline" size={32} color={colors.ink3} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
               No leads yet. Tap “Add lead” to capture your first prospect.
@@ -516,7 +516,7 @@ export default function LeadsScreen() {
                         <Pressable
                           key={l.id}
                           onPress={() => setOpenLead(l)}
-                          className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2 active:opacity-70 shadow-card">
+                          className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 gap-2 active:opacity-70">
                           <Text className="text-ink dark:text-ink-dk font-medium">
                             {l.full_name}
                           </Text>

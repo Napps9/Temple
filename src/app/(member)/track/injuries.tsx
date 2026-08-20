@@ -91,7 +91,7 @@ export default function InjuriesScreen() {
           </View>
         ) : null}
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <BodyMap
             selected={picking}
             highlights={highlights}
@@ -118,7 +118,7 @@ export default function InjuriesScreen() {
           {injuries.isLoading ? (
             <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
           ) : open.length === 0 ? (
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Nothing logged. Long may it last.
               </Text>
@@ -247,7 +247,7 @@ function InjuryCard({ injury }: { injury: InjuryRow }) {
   const updatedDays = daysAgo(injury.updated_at);
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: painColour(injury.pain_level) }}
@@ -518,7 +518,7 @@ function PainPicker({
             }}
             className={`flex-1 h-8 rounded-md items-center justify-center ${
               i <= value ? '' : 'bg-sunken dark:bg-sunken-dk'
-            } ${i === value ? 'border-2 border-gray-900 dark:border-white' : ''}`}>
+            } ${i === value ? 'border-2 border-ink dark:border-white' : ''}`}>
             <Text
               className={`text-[10px] font-bold ${
                 i <= value ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'

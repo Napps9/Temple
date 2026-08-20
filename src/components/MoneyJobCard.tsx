@@ -38,7 +38,7 @@ export function MoneyJobCard({
   };
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         Failed payments — want me to chase them?
       </Text>

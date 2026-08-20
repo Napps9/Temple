@@ -669,7 +669,7 @@ export function ClassTypesPanel() {
             return (
               <View
                 key={r.id ?? `new-${idx}`}
-                className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-3 shadow-card">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 gap-3">
                 <View className="flex-row items-center gap-3">
                   <Pressable
                     onPress={() =>
@@ -677,7 +677,7 @@ export function ClassTypesPanel() {
                     }
                     hitSlop={4}
                     style={{ backgroundColor: r.color }}
-                    className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-900"
+                    className="w-10 h-10 rounded-full border-2 border-white dark:border-line-dk"
                   />
                   <View className="flex-1">
                     <Input

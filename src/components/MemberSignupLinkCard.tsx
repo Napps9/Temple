@@ -61,7 +61,7 @@ export function MemberSignupLinkCard() {
   if (!url) return null;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center gap-2">
         <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           Signup link
@@ -89,7 +89,7 @@ export function MemberSignupLinkCard() {
             onPress={() => setQrOpen(true)}
             accessibilityRole="button"
             accessibilityLabel="Show large QR"
-            className="bg-white p-2 rounded-lg border border-gray-200 active:opacity-70">
+            className="bg-white p-2 rounded-lg border border-line active:opacity-70">
             <QRCode value={url} size={88} />
           </Pressable>
           <View className="flex-1 gap-2">

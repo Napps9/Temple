@@ -156,7 +156,7 @@ export default function TasksScreen() {
         </View>
 
         {canManage ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               New task
             </Text>
@@ -248,7 +248,7 @@ export default function TasksScreen() {
                     next: t.status === 'open' ? 'done' : 'open',
                   })
                 }
-                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
                 <View className="flex-row items-center gap-2">
                   <View
                     className={`w-5 h-5 rounded border ${

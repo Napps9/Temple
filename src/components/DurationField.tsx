@@ -264,7 +264,7 @@ function UnitDropdown({
         {pos ? (
           <View
             style={{ position: 'absolute', top: pos.top, left: pos.left, width: pos.width }}
-            className="bg-surface dark:bg-surface-dk rounded-lg border border-line dark:border-line-dk shadow-pop p-1">
+            className="bg-surface dark:bg-surface-dk rounded-lg border border-line dark:border-line-dk shadow-float p-1">
             {units.map((u) => {
               const on = u === unit;
               return (

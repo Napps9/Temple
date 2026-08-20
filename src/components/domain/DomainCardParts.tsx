@@ -64,7 +64,7 @@ export function CopyableValue({ label, value }: { label: string; value: string }
       <View className="flex-row items-center gap-2">
         <Text
           selectable
-          className="flex-1 text-gray-800 dark:text-gray-100 text-xs font-mono break-all"
+          className="flex-1 text-ink-2 dark:text-ink-dk text-xs font-mono break-all"
           style={Platform.OS === 'web' ? ({ wordBreak: 'break-all' } as object) : undefined}>
           {value}
         </Text>
@@ -98,7 +98,7 @@ export function RecordCard({ record }: { record: DnsRecordDisplay }) {
           </View>
         ) : null}
         {record.priority != null ? (
-          <Text className="text-gray-400 text-[10px]">priority {record.priority}</Text>
+          <Text className="text-ink-3 text-[10px]">priority {record.priority}</Text>
         ) : null}
       </View>
       {record.name ? <CopyableValue label="Host / name" value={record.name} /> : null}

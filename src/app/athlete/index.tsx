@@ -44,7 +44,7 @@ function AccentCard({
         className="absolute rounded-2xl"
         style={{ backgroundColor: accent, top: 5, left: 5, right: -5, bottom: -5 }}
       />
-      <View className="bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-4 gap-3">
         {children}
       </View>
     </View>
@@ -194,7 +194,7 @@ export default function AthleteHome() {
             <Pressable
               hitSlop={8}
               accessibilityLabel="Account"
-              className="w-10 h-10 rounded-full bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 items-center justify-center active:opacity-70">
+              className="w-10 h-10 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk items-center justify-center active:opacity-70">
               <Ionicons name="person-outline" size={18} color={colors.ink} />
             </Pressable>
           </Link>
@@ -365,7 +365,7 @@ export default function AthleteHome() {
                 <Pressable
                   key={m.key}
                   onPress={() => router.push(`/athlete/movement/${m.key}` as never)}
-                  className="bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
+                  className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
                   <View className="flex-1">
                     <Text className="text-ink dark:text-ink-dk font-medium">
                       {m.name}

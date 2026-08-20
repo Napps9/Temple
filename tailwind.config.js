@@ -28,8 +28,8 @@ module.exports = {
         //
         // Paired at the call site rather than driven by a CSS variable
         // because that is how every existing screen already switches, and
-        // one mechanism beats two. The slate/gray utilities are still here
-        // and still work — this ramp only applies where it is used.
+        // one mechanism beats two. Nothing in src/ names a slate or gray
+        // utility any more — 5,604 of them became these.
         // ------------------------------------------------------------------
         ground: '#F7F7F8', // behind the cards
         'ground-dk': '#0A0B0D',
@@ -60,19 +60,18 @@ module.exports = {
         sans: ['Geist_400Regular', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        // Selective elevation so a few raised surfaces read as layered
-        // against the flat slate ground — depth comes from contrast, not
-        // from shadowing everything. card = content containers + primary
-        // buttons; pop = hero / brand accents; pill = small active toggles.
+        // Two, and only for things that genuinely leave the page. A card
+        // is a hairline and a tone step; that is where depth comes from
+        // now, and 257 cards that used to carry a drop shadow have one
+        // instead.
         //
-        // These three are on the way out: the new ramp gets its depth from
-        // a hairline and a tone step, and only things that genuinely float
-        // (a sheet, a raised selected row) keep a shadow. `soft` and
-        // `float` below are what replaces them. Nothing has been removed
-        // yet because ~90 screens still name the old three.
-        card: '0 1px 2px rgb(15 23 42 / 0.04), 0 4px 14px rgb(15 23 42 / 0.08)',
-        pop: '0 6px 20px rgb(15 23 42 / 0.16)',
-        pill: '0 1px 3px rgb(15 23 42 / 0.12)',
+        //   soft   a control that sits slightly proud — a primary button.
+        //   float  something over the page: a sheet, a dialog, a popover.
+        //
+        // The three this replaced — card, pop, pill — were cool-slate
+        // shadows sized for a slate ground, and `pill` existed only to
+        // separate a selected segment from the filled track it sat in.
+        // That track is gone.
         soft: '0 1px 2px rgb(16 18 22 / 0.05), 0 8px 24px rgb(16 18 22 / 0.06)',
         float: '0 2px 6px rgb(16 18 22 / 0.07), 0 16px 40px rgb(16 18 22 / 0.12)',
       },

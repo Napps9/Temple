@@ -264,7 +264,7 @@ export function MovementDetailView({
                 scheme.better,
               );
               const row = (
-                <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card">
+                <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3">
                   <View className="flex-1">
                     <Text className="text-ink dark:text-ink-dk font-semibold">
                       {scheme.label}
@@ -337,7 +337,7 @@ export function MovementDetailView({
               Loading…
             </Text>
           ) : merged.length === 0 ? (
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No results for {movement.name} yet.
               </Text>
@@ -411,7 +411,7 @@ function MovementPercentagesCard({
       <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
         Percentages
       </Text>
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         {resolved === null ? (
           <>
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
@@ -573,7 +573,7 @@ function JournalRowView({
   );
   if (!linkable) {
     return (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3">
         {body}
       </View>
     );
@@ -585,7 +585,7 @@ function JournalRowView({
           ? router.push(`/track/workout/${row.workout_id}` as never)
           : router.push('/track/journal' as never)
       }
-      className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
+      className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:opacity-70">
       {body}
     </Pressable>
   );

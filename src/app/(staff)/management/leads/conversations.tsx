@@ -66,7 +66,7 @@ export default function AgentConversationsScreen() {
         <View className="gap-2">
           {(conversations.data ?? []).map((c) => (
             <Link key={c.id} href={`/management/leads/conversation/${c.id}`} asChild>
-              <Pressable className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card active:opacity-80">
+              <Pressable className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1 active:opacity-80">
                 <View className="flex-row items-center justify-between gap-2">
                   <Text className="text-ink dark:text-ink-dk font-medium flex-1">
                     {c.lead?.full_name ?? c.phone}
@@ -99,7 +99,7 @@ export default function AgentConversationsScreen() {
             </Link>
           ))}
           {conversations.isSuccess && (conversations.data ?? []).length === 0 ? (
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-6 items-center shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-6 items-center">
               <Text className="text-ink-2 dark:text-ink-2-dk text-center">
                 No conversations yet. When someone texts or calls your gym's
                 number, the thread appears here.

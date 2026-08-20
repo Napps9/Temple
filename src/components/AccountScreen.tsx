@@ -233,7 +233,7 @@ export function AccountScreen() {
         <View className="gap-6 lg:flex-row lg:items-start">
         <View className="gap-6 lg:flex-1">
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <AvatarUploader
             currentUrl={profile?.avatar_url}
             fullName={displayName}
@@ -258,7 +258,7 @@ export function AccountScreen() {
         <LeaderboardPrivacyCard />
 
         {membership && session ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Family
             </Text>
@@ -276,7 +276,7 @@ export function AccountScreen() {
         ) : null}
 
         {membership && session ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Communication preferences
             </Text>
@@ -299,7 +299,7 @@ export function AccountScreen() {
         </View>
         <View className="gap-6 lg:flex-1">
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Your details
           </Text>
@@ -376,7 +376,7 @@ export function AccountScreen() {
           </Button>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Pressable
             onPress={() => setShowPasswordFields((v) => !v)}
             className="flex-row items-center gap-2 hover:opacity-80 active:opacity-70">
@@ -431,7 +431,7 @@ export function AccountScreen() {
         </View>
 
         {membership && session ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Health data & consent
             </Text>
@@ -461,7 +461,7 @@ export function AccountScreen() {
         ) : null}
 
         {role && role !== 'owner' && membership && session ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Leave this gym
             </Text>

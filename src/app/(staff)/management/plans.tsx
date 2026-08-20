@@ -713,7 +713,7 @@ export function PlansPanel() {
                 <Pressable
                   key={r.localId}
                   onPress={() => beginEdit(r.localId)}
-                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card active:opacity-70">
+                  className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 active:opacity-70">
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
                       <Text className="text-ink dark:text-ink-dk font-semibold text-base">
@@ -744,7 +744,7 @@ export function PlansPanel() {
             return (
               <View
                 key={r.localId}
-                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
                 <Input
                   label="Name"
                   value={r.name}

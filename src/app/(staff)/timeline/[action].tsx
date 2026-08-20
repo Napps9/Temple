@@ -217,7 +217,7 @@ export default function NudgeStory() {
                       onPress={() => ask(q)}
                       disabled={busy}
                       className="px-3.5 py-2 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
-                      <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] font-semibold">
                         {q}
                       </Text>
                     </Pressable>
@@ -230,7 +230,7 @@ export default function NudgeStory() {
 
         {story.data ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
-            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -245,7 +245,7 @@ export default function NudgeStory() {
                 onPress={() => ask(input)}
                 disabled={busy || !input.trim()}
                 accessibilityLabel="Ask"
-                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-gray-200 dark:bg-gray-800' : 'bg-primary'}`}>
+                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary'}`}>
                 <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
               </Pressable>
             </View>
@@ -302,7 +302,7 @@ function StoryBody({
       </View>
 
       {evidence.length > 0 ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1.5">
           <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
             Why it came up
           </Text>
@@ -316,7 +316,7 @@ function StoryBody({
         </View>
       ) : null}
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1.5">
         <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
           The decision
         </Text>
@@ -332,7 +332,7 @@ function StoryBody({
             return (
               <View
                 key={i}
-                className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-2">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
                 <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                   What {recipientName(m, payload)} got
                 </Text>
@@ -361,14 +361,14 @@ function StoryBody({
           </Text>
         </View>
       ) : action.status === 'executed' && action.action_kind === 'cover_ask' ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
             This one nudged the coaches through their cover offers — nothing
             was emailed from here.
           </Text>
         </View>
       ) : (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
             Nothing has been sent.
           </Text>
@@ -376,7 +376,7 @@ function StoryBody({
       )}
 
       {since ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1.5">
           <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
             Since then
           </Text>

@@ -351,7 +351,7 @@ export function BrandingPanel() {
         {/* Colours sit beside the live preview so each edit is visible
             the moment it's typed or picked. Stacks on small screens. */}
         <View className="md:flex-row gap-4 items-stretch">
-          <View className="flex-1 bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <View className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Colours
             </Text>
@@ -396,7 +396,7 @@ export function BrandingPanel() {
           </View>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Logo
           </Text>
@@ -463,7 +463,7 @@ export function BrandingPanel() {
           saveProps={cardSaveProps('dark')}
         />
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Gym details
           </Text>
@@ -493,7 +493,7 @@ export function BrandingPanel() {
           <Button {...cardSaveProps('details')}>Save</Button>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -533,7 +533,7 @@ export function BrandingPanel() {
           ) : null}
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -650,7 +650,7 @@ function AdvancedBrandingCard({
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card">
       <Pressable
         onPress={onToggle}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
@@ -686,7 +686,7 @@ function AdvancedBrandingCard({
               the light-mode logo.
             </Text>
             <View className="flex-row items-center gap-3">
-              <View className="bg-gray-900 p-2 rounded-lg">
+              <View className="bg-ink p-2 rounded-lg">
                 <GymLogo
                   size={56}
                   logoUrl={previewLogoDark}

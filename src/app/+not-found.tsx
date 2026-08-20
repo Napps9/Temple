@@ -38,7 +38,7 @@ export default function NotFound() {
           </Link>
         </View>
         {path ? (
-          <Text className="text-gray-400 dark:text-gray-600 text-xs font-mono text-center">
+          <Text className="text-ink-3 dark:text-ink-2 text-xs font-mono text-center">
             Path: {path}
           </Text>
         ) : null}

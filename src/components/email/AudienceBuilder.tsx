@@ -273,7 +273,7 @@ export function AudienceBuilder({
       </View>
 
       {/* Live recipient count */}
-      <View className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-3 shadow-card">
+      <View className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3">
         <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center">
           <Ionicons name="send-outline" size={18} color={colors.primary} />
         </View>

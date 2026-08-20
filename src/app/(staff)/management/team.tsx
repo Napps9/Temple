@@ -234,7 +234,7 @@ function RolePermissionsSection() {
   });
 
   return (
-    <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+    <View className="gap-4 pt-4 border-t border-line dark:border-line-dk">
       <View className="gap-2">
         <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
           Role permissions
@@ -280,7 +280,7 @@ function RolePermissionsSection() {
               <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 {group.title}
               </Text>
-              <View className="bg-surface dark:bg-surface-dk rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card divide-y divide-line dark:divide-line-dk">
                 {group.caps.map((c) => {
                   const overrideValue = overrideMap.get(`${activeRole}:${c.value}`);
                   const isOverridden = overrideValue !== undefined;
@@ -491,7 +491,7 @@ function MemberPermissionsSection() {
   if (!selected) {
     const rows = roster.data ?? [];
     return (
-      <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+      <View className="gap-4 pt-4 border-t border-line dark:border-line-dk">
         <View className="gap-2">
           <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             Individual permissions
@@ -509,7 +509,7 @@ function MemberPermissionsSection() {
             No coaches or staff yet. Invite a teammate above first.
           </Text>
         ) : (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card divide-y divide-line dark:divide-line-dk">
             {rows.map((r) => (
               <Pressable
                 key={r.profile_id}
@@ -533,7 +533,7 @@ function MemberPermissionsSection() {
   }
 
   return (
-    <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+    <View className="gap-4 pt-4 border-t border-line dark:border-line-dk">
       <View className="gap-2">
         <ChipButton
           tone="neutral"
@@ -561,7 +561,7 @@ function MemberPermissionsSection() {
               <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 {group.title}
               </Text>
-              <View className="bg-surface dark:bg-surface-dk rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card divide-y divide-line dark:divide-line-dk">
                 {group.caps.map((c) => {
                   const memberValue = memberOverrideMap.get(c.value);
                   const isOverridden = memberValue !== undefined;
@@ -652,7 +652,7 @@ function CapabilityRow({
         </View>
         <View
           className={`w-11 h-6 rounded-full justify-center px-0.5 ${
-            enabled ? 'bg-primary items-end' : 'bg-gray-300 dark:bg-gray-700 items-start'
+            enabled ? 'bg-primary items-end' : 'bg-sunken dark:bg-sunken-dk items-start'
           }`}>
           <View className="w-5 h-5 rounded-full bg-white" />
         </View>

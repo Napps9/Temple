@@ -749,7 +749,7 @@ export default function AutomationEditor() {
           </Button>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center justify-between gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center justify-between gap-3">
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-medium">
               Automation is live
@@ -770,7 +770,7 @@ export default function AutomationEditor() {
 
         <Input label="Automation name" value={name} onChangeText={setName} placeholder="Welcome new members" />
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             When it fires
           </Text>
@@ -852,7 +852,7 @@ export default function AutomationEditor() {
             (showSource && (leadSources.data?.length ?? 0) > 0);
           if (!anyOptions) return null;
           return (
-            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
               <View className="gap-1">
                 <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                   Only send to
@@ -892,7 +892,7 @@ export default function AutomationEditor() {
           );
         })()}
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             The email
           </Text>
@@ -951,7 +951,7 @@ export default function AutomationEditor() {
             setEditingStep(null);
             setMode('design');
           }}
-          className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+          className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="brush-outline" size={18} color={colors.ink2} />
           </View>
@@ -967,7 +967,7 @@ export default function AutomationEditor() {
           <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
         </Pressable>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="gap-1">
             <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Follow-up emails

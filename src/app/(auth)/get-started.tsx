@@ -205,7 +205,7 @@ export default function GetStartedScreen() {
 
           {/* Header */}
           <View className="gap-2">
-            <Text className="text-gray-900 dark:text-white text-3xl font-semibold text-center">
+            <Text className="text-ink dark:text-white text-3xl font-semibold text-center">
               Welcome to Temple
             </Text>
             <Text className="text-ink-2 dark:text-ink-2-dk text-center">
@@ -426,7 +426,7 @@ function Arrow({
     <Pressable
       onPress={onPress}
       hitSlop={8}
-      className="w-10 h-10 rounded-full items-center justify-center border border-gray-300 bg-white dark:border-white/20 dark:bg-white/5">
+      className="w-10 h-10 rounded-full items-center justify-center border border-line-strong bg-white dark:border-white/20 dark:bg-white/5">
       <Ionicons
         name={dir === 'left' ? 'chevron-back' : 'chevron-forward'}
         size={20}

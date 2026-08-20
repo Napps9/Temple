@@ -39,14 +39,14 @@ type Props = {
 // previous near-invisible white-on-white version disappeared inside
 // modal footers and on light-mode pages.
 const containerStyles: Record<Variant, string> = {
-  primary: 'bg-primary hover:opacity-90 active:bg-primary-dark shadow-card',
+  primary: 'bg-primary hover:opacity-90 active:bg-primary-dark shadow-soft',
   plain:
     'bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-strong-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk',
   secondary:
     'bg-secondary/10 border border-secondary/30 hover:bg-secondary/15 active:bg-secondary/20',
   ghost: 'bg-transparent hover:opacity-70',
   destructive:
-    'bg-surface dark:bg-surface-dk border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-50 dark:active:bg-red-900/20 shadow-card',
+    'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-50 dark:active:bg-red-900/20',
 };
 
 // Primary label colour comes from the contrast check below, not a class

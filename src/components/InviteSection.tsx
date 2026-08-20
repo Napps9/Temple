@@ -103,7 +103,7 @@ export function InviteSection({
   });
 
   return (
-    <View className="bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-5">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-5 gap-5">
       <View className="gap-1">
         <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
           {title}

@@ -182,7 +182,7 @@ export function WaiverPanel() {
         </Text>
       )}
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         <Input
           label="Waiver title (optional)"
           value={title}
@@ -263,7 +263,7 @@ export function HealthScreeningPanel() {
       {/* Same card treatment as WaiverPanel so the two halves of the
           health-screening surface read as siblings rather than the
           PAR-Q section feeling orphaned underneath. */}
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         <Pressable
           onPress={() => setShowParq((v) => !v)}
           className="flex-row items-center gap-2 active:opacity-70">
@@ -472,7 +472,7 @@ export function ParqPanel() {
         {rows.map((r, idx) => (
           <View
             key={r.localId}
-            className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
             <Input
               label={`Question ${idx + 1}`}
               value={r.prompt}

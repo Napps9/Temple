@@ -431,7 +431,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         </View>
 
         {/* Details */}
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Input
             label="Campaign name (internal)"
             value={title}
@@ -935,7 +935,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
           between two subject lines is a difference in who opened,
           measured twice. */}
       {(variantStats.data ?? []).length > 1 ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Subject line test
           </Text>
@@ -978,11 +978,11 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       ) : null}
 
       {unmeasured ? (
-        <View className="bg-gray-500/10 border border-gray-500/30 rounded-xl p-4 gap-1">
+        <View className="bg-ink-3/10 border border-ink-3/30 rounded-xl p-4 gap-1">
           <Text className="text-ink-2 dark:text-ink-2-dk font-semibold text-sm">
             Not measured
           </Text>
-          <Text className="text-gray-600 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-3 text-xs">
             No delivery reports came back for this send, so we know it went out
             and nothing more. Sends from before delivery reporting was switched
             on will always read this way — an unmeasured zero and a real zero
@@ -993,7 +993,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
 
       {/* What left, what arrived, what came of it — one hero number and
           only the tiles with something to say (src/lib/campaign-report). */}
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-0.5 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-0.5">
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">
           {report.hero.label}
         </Text>
@@ -1023,7 +1023,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       ) : null}
 
       {troubleRows.length > 0 ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Addresses we can no longer reach
           </Text>

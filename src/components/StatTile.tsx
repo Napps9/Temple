@@ -93,7 +93,7 @@ export function StatTile({
     </>
   );
 
-  const className = 'bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 flex-1 shadow-card';
+  const className = 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1 flex-1';
   const style = { minWidth };
 
   if (href) {

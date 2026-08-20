@@ -119,7 +119,7 @@ export function TagRulesPanel() {
                 setEditing(r);
                 setCreating(false);
               }}
-              className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 border border-line dark:border-line-dk shadow-card">
+              className="bg-surface dark:bg-surface-dk rounded-card p-4 flex-row items-center gap-3 border border-line dark:border-line-dk">
               <View
                 style={{ backgroundColor: r.color }}
                 className="w-3 h-3 rounded-full"

@@ -191,7 +191,7 @@ export default function CoachEarningsPage() {
           </Text>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Credit policy
           </Text>
@@ -261,7 +261,7 @@ export default function CoachEarningsPage() {
         </View>
 
         {coaches.length === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No coaches yet. Invite one from the Team page.
             </Text>
@@ -331,7 +331,7 @@ function CoachCard({
   const rateByCt = new Map(rates.map((r) => [r.class_type_id, r.per_class_cents]));
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <Pressable
         onPress={() => setExpanded((v) => !v)}
         className="flex-row items-center gap-3 active:opacity-70">

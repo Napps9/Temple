@@ -482,7 +482,7 @@ export function ProgrammingCalendar({
               ) : null}
               {dayTypes.length === 0 ? (
                 !personalLocked && !showPersonalCard ? (
-                  <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+                  <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
                     <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       No classes scheduled for this day.
                     </Text>
@@ -629,7 +629,7 @@ function ClassTypeCard({
       <>
         <Pressable
           onPress={onEdit}
-          className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-raised dark:active:bg-raised-dk shadow-card">
+          className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 active:bg-raised dark:active:bg-raised-dk">
           {header}
           {body}
         </Pressable>
@@ -646,7 +646,7 @@ function ClassTypeCard({
 
   return (
     <>
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         {header}
         {body}
       </View>
@@ -758,7 +758,7 @@ function PersonalCard({
     return (
       <Pressable
         onPress={onEdit}
-        className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-raised dark:active:bg-raised-dk shadow-card">
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 active:bg-raised dark:active:bg-raised-dk">
         {header}
         {body}
         {filesFooter}
@@ -767,7 +767,7 @@ function PersonalCard({
   }
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       {header}
       {body}
       {filesFooter}
@@ -799,7 +799,7 @@ function LockedProgrammingCard({
       : null;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: colors.primary }}

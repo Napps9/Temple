@@ -163,7 +163,7 @@ export default function AutomationsScreen() {
             {automations.data!.map((a) => (
               <View
                 key={a.id}
-                className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3">
                 <Link href={`/management/communications/automations/${a.id}`} asChild>
                   <Pressable className="flex-1 active:opacity-70">
                     <Text className="text-ink dark:text-ink-dk font-medium">

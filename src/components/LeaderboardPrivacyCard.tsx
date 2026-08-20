@@ -52,7 +52,7 @@ export function LeaderboardPrivacyCard() {
   const value = state.data ?? true;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
       <View className="flex-row items-center gap-3">
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">

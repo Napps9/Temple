@@ -50,7 +50,7 @@ export default function AthleteAccount() {
           </Text>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
           <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Signed in as
           </Text>
@@ -60,7 +60,7 @@ export default function AthleteAccount() {
         </View>
 
         {athleteActive.data ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
             <View className="flex-row items-center gap-2">
               <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
                 Solo tracking
@@ -91,7 +91,7 @@ export default function AthleteAccount() {
           </View>
         ) : null}
 
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Train with a gym
           </Text>

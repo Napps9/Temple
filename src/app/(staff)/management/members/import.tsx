@@ -679,7 +679,7 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'upload' ? (
-          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             {Platform.OS === 'web' ? (
               <>
                 {/* A real <div> rather than <Pressable> so the standard
@@ -713,7 +713,7 @@ export default function ImportMembersScreen() {
                   className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
                     dragOver
                       ? 'border-primary bg-primary/5'
-                      : 'border-gray-300 dark:border-gray-700 hover:bg-raised dark:hover:bg-raised-dk/40'
+                      : 'border-line-strong dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Ionicons name="cloud-upload-outline" size={24} color={colors.ink2} />
@@ -776,7 +776,7 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'map' ? (
-          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <View className="gap-1">
               <View className="flex-row items-center gap-2">
                 <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
@@ -869,7 +869,7 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'preview' ? (
-          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Preview
             </Text>
@@ -925,7 +925,7 @@ export default function ImportMembersScreen() {
             ) : null}
             <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
               {importRows.slice(0, 5).map((r, i) => (
-                <View key={i} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
+                <View key={i} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                   <Text className="text-ink dark:text-ink-dk text-sm">
                     {String(r.full_name ?? '(no name)')} · {String(r.email)}
                   </Text>
@@ -1011,7 +1011,7 @@ function ReviewPanel({
   const fallback = inference?.source === 'fallback';
   return (
     <View className="gap-4">
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
         <View className="flex-row items-center gap-2">
           <Ionicons name="sparkles" size={18} color={colors.ink2} />
           <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
@@ -1044,13 +1044,13 @@ function ReviewPanel({
           Plans found ({planEntries.length})
         </Text>
         {loading && planEntries.length === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Reading the rows and inferring plans…
             </Text>
           </View>
         ) : planEntries.length === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No plan_name column was mapped. Members will be staged without a
               linked plan — staff can attach one later.
@@ -1083,7 +1083,7 @@ function ReviewPanel({
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest px-1">
           Tags found
         </Text>
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
           {(inference?.tags.keep.length ?? 0) +
             (inference?.tags.drop.length ?? 0) >
           0 ? (
@@ -1130,7 +1130,7 @@ function ReviewPanel({
       </View>
 
       {/* Cohort summary */}
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
         <Text className="text-ink dark:text-ink-dk font-semibold">
           What you're bringing across
         </Text>
@@ -1190,7 +1190,7 @@ function PlanReviewCard({
   const bodyDimmed = final.drop || usingExisting;
   return (
     <View
-      className={`bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card ${
+      className={`bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 ${
         final.drop ? 'opacity-60' : ''
       }`}>
       <View className="flex-row items-center gap-2">
@@ -1742,7 +1742,7 @@ function HandoverPanel({
         </Text>
       </View>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         <View className="gap-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Hand the join link to your members
@@ -1754,7 +1754,7 @@ function HandoverPanel({
         </View>
         {url ? (
           <View className="flex-row items-center gap-3">
-            <View className="bg-white p-2 rounded-lg border border-gray-200">
+            <View className="bg-white p-2 rounded-lg border border-line">
               <QRCode value={url} size={96} />
             </View>
             <View className="flex-1 gap-2">
@@ -1779,7 +1779,7 @@ function HandoverPanel({
         )}
       </View>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         <View className="gap-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Or, let Temple send the welcome
@@ -1810,7 +1810,7 @@ function HandoverPanel({
         ) : null}
       </View>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         <View className="gap-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Or just send the join link now
@@ -1843,7 +1843,7 @@ function HandoverPanel({
       </View>
 
       {stats.data ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
           <Text className="text-ink dark:text-ink-dk font-semibold">
             Linking progress
           </Text>

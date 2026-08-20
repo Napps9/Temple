@@ -93,8 +93,9 @@ export function DatePicker({
 }
 
 // Shared shape between light + dark; only colours change. Matches
-// Input.tsx visually: gray-200 border + gray-900 text in light,
-// gray-700 border + gray-50 text in dark.
+// Input.tsx visually: the ramp's `line` border over `ink` text in
+// light, `line-strong-dk` over `ink-dk` in dark. Hexes rather than
+// classes because a native date input is styled by prop, not className.
 const webInputBase = {
   backgroundColor: 'transparent',
   borderWidth: 1,
@@ -110,8 +111,8 @@ const webInputBase = {
 
 const webInputStyleLight = {
   ...webInputBase,
-  borderColor: '#E5E7EB', // gray-200
-  color: '#111827', // gray-900
+  borderColor: '#E9E9EE', // line
+  color: '#14161A', // ink
   // colorScheme tells the browser's native picker UI which palette to
   // render — without it, the calendar popup stays in light-mode chrome
   // even when the rest of the app is dark.
@@ -120,7 +121,7 @@ const webInputStyleLight = {
 
 const webInputStyleDark = {
   ...webInputBase,
-  borderColor: '#374151', // gray-700
-  color: '#F9FAFB', // gray-50
+  borderColor: '#34373D', // line-strong-dk
+  color: '#F4F5F6', // ink-dk
   colorScheme: 'dark' as const,
 } as const;

@@ -47,7 +47,7 @@ export function RuleSheet({
             const field = lineField && 'f' in lineField ? lineField.f : null;
             return (
               <View key={li} className="gap-1.5">
-                <Text className="text-gray-700 dark:text-gray-300 text-sm leading-5">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
                   {l.parts.map((p, pi) =>
                     't' in p ? (
                       <Text key={pi}>{p.t}</Text>
@@ -84,7 +84,7 @@ export function RuleSheet({
                           }`}>
                           <Text
                             className={`text-[13px] font-semibold ${
-                              selected ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                              selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                             }`}>
                             {o.label}
                           </Text>
