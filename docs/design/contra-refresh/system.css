@@ -138,6 +138,7 @@
   height: 42px; padding: 0 20px; border-radius: 999px;
   border: 1px solid transparent; font-family: var(--font);
   font-size: 15px; font-weight: 600; letter-spacing: -0.012em; cursor: default;
+  white-space: nowrap;
 }
 .btn-dark { background: var(--ink); color: var(--surface); }
 .dark .btn-dark { background: var(--ink); color: #0a0b0d; }
@@ -331,3 +332,89 @@ body.board {
   background: var(--surface); border: 1px solid var(--line);
   font-size: 11.5px; color: var(--ink-3); display: flex; align-items: center;
 }
+
+/* =========================================================================
+   Second wave — the parts every screen is made of, so ~95 routes collapse
+   into eight page shapes and one modal.
+   ========================================================================= */
+
+/* ---- page head: title, sub, at most one primary action ---- */
+.pagehead { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px 14px; }
+.pagehead .h1 { font-size: 26px; }
+
+/* ---- list row: the single row shape behind every directory ---- */
+.listrow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r-card);
+}
+.listrow + .listrow { margin-top: 8px; }
+/* Ruled variant — same row, no gaps, for dense tables */
+.ruled { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; }
+.ruled > .listrow { border: 0; border-radius: 0; }
+.ruled > .listrow + .listrow { margin-top: 0; border-top: 1px solid var(--line); }
+
+/* ---- settings: one card per decision, its own save ---- */
+.setting { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 15px; }
+.setting + .setting { margin-top: 10px; }
+.setting .cap { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* ---- form fields ---- */
+.input {
+  display: flex; align-items: center; min-height: 46px; padding: 0 14px;
+  background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl); font-size: 15px; color: var(--ink);
+}
+.input.empty { color: var(--ink-3); }
+.input.area { min-height: 84px; align-items: flex-start; padding-top: 12px; }
+.input.bad { border-color: var(--bad); }
+.switch { width: 44px; height: 26px; border-radius: 999px; background: var(--surface-3); position: relative; flex: none; }
+.switch > i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-soft); }
+.switch.on { background: var(--ink); }
+.switch.on > i { left: 21px; }
+.radio { width: 20px; height: 20px; border-radius: 999px; border: 1.5px solid var(--line-strong); flex: none; }
+.radio.on { border-color: var(--ink); border-width: 6px; }
+.check { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--line-strong); flex: none; display: flex; align-items: center; justify-content: center; }
+.check.on { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+
+/* ---- segmented control (day/week/month, tabs) ---- */
+.segmented { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--surface-2); }
+.segmented > * { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 13px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.segmented > .on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-soft); }
+
+/* ---- tabs, underline style, for record pages ---- */
+.tabs { display: flex; gap: 18px; border-bottom: 1px solid var(--line); padding: 0 16px; }
+.tabs > * { padding: 9px 0 10px; font-size: 14px; font-weight: 500; color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs > .on { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+
+/* ---- the modal: a sheet on a phone, a dialog on a desktop ---- */
+.backdrop { position: absolute; inset: 0; background: rgba(10, 11, 13, 0.45); z-index: 5; }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+  background: var(--surface); border-top: 1px solid var(--line);
+  border-radius: 22px 22px 0 0; box-shadow: var(--shadow-pop);
+  display: flex; flex-direction: column; max-height: 88%;
+}
+.sheet > .grab { padding: 8px 0 2px; display: flex; justify-content: center; flex: none; }
+.sheet > .grab > i { width: 36px; height: 4px; border-radius: 999px; background: var(--surface-3); display: block; }
+.sheet-head { display: flex; align-items: flex-start; gap: 12px; padding: 8px 16px 12px; flex: none; }
+.sheet-body { padding: 0 16px 4px; overflow: hidden; flex: 1; }
+.sheet-foot { padding: 12px 16px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; flex: none; }
+.sheet-foot > * { flex: 1; }
+.dialog {
+  width: 460px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; box-shadow: var(--shadow-pop); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.dialog-foot { padding: 14px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ---- states ---- */
+.skel { background: var(--surface-2); border-radius: 8px; display: block; }
+.dark .skel { background: var(--surface-2); }
+.empty-icon {
+  width: 46px; height: 46px; border-radius: 14px; background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center; color: var(--ink-3);
+}
+
+/* ---- desktop sidebar shell ---- */
+.side { width: 246px; flex: none; background: var(--surface); border-right: 1px solid var(--line); padding: 16px 12px; display: flex; flex-direction: column; gap: 14px; }

@@ -1,114 +1,128 @@
 # A Contra-flavoured look for Temple
 
-Exploration, not shipped. Nothing here is wired into the app: eight static
+Exploration, not shipped. Nothing here is wired into the app: twenty static
 HTML boards rendered to PNG so the direction can be judged before any code
 moves. Open `png/*.png`; everything else is the machinery.
 
-**Second pass.** The first version was built from memory of contra.com and
-got the register wrong in three specific ways — uppercase grotesque wordmark
-in a rounded tile, warm cream palette, Luma-style timeline rails. This
-version is built against actual screenshots of the marketing site, the
-logged-in app and the Contra Labs lockup. Both versions are in git history;
-only this one is on disk.
+**Third pass.** The first version was built from memory of contra.com and
+got the register wrong. The second was rebuilt against real screenshots.
+This one applies it to every surface — and, more importantly, replaces
+"redesign each screen" with a set of patterns each screen is an instance
+of.
 
 ---
 
-## What the reference actually does
+## The spine: eight page shapes, one modal
 
-1. **A bold lowercase serif wordmark next to one small solid geometric
-   glyph.** Two parts, no container tile, no illustration. The serif carries
-   all the warmth; nothing else in the product is serif.
-2. **Monochrome chrome, cool not warm.** White surfaces on a cool near-white
-   ground (`#F7F7F8`), hairline borders, near-black ink. Colour arrives from
-   *content* — imagery, avatars, one iridescent orb — never from furniture.
-3. **One sans for everything else.** Headings, body, numbers, labels.
-4. **Selected ≠ filled.** The selected nav row is a raised white card; the
-   selected filter is a soft tint. Nothing gets an ink fill just for being
-   active.
-5. **Small radii and pill buttons.** 12–16px on cards and controls, fully
-   round on buttons and chips, tiny letterspaced caps for section labels.
-6. **Full-bleed image cards.** White text over a scrim, a pill CTA, and an
-   overlapping stack of the faces already involved.
-7. **An iridescent orb** marks anything the machine is doing, with a soft
-   pastel bloom behind the box you talk to it in.
-8. **A three-column app shell**: sidebar, working column, right rail of what
-   is happening now.
+Temple has ~95 routes and 26 modal components. They are not 95 designs.
 
-## Applied to Temple
+**Eight page patterns** (`png/03-page-patterns.png`), each assembled from
+the same six parts in the same order — bar · page head · filters · section
+label · rows or cards · foot:
 
-| Reference move | Where it lands |
-|---|---|
-| Serif lowercase wordmark + solid glyph | `temple` in Fraunces beside a Portico mark |
-| Cool monochrome ground | `#F1F5F9` slate → `#F7F7F8`; shadows → hairlines |
-| One sans | Geist, 40px display down to an 11px caps label |
-| Raised-card selected state | Day strip, sidebar nav, filter chips |
-| Full-bleed cards with faces | The three paths on `/get-started` |
-| Avatar stacks | Every class row — who is already in |
-| The orb + bloom | The Timeline agent and its composer |
-| Three-column shell | The staff area on desktop |
+| # | Pattern | The rule | Surfaces |
+|---|---------|----------|----------|
+| 1 | Feed | Receipts are ruled lines; only a decision gets a card. Composer at the foot. | Timeline, Inbox, Lead conversation |
+| 2 | Agenda | Time in a gutter, one card per thing. Never an hourly grid on a phone. | Book, Classes, Bookings, Attendance, Programming |
+| 3 | Directory | Search, filters, one row shape. Rows on a ground when tappable; rows in one ruled card when it is a table. | Members, Leads, Plans, Products, Movements, Roster, Team, Tasks |
+| 4 | Record | Identity block, tabs, facts, related lists. Actions in the header. | Member profile, Movement, Workout, Plan, Campaign, Product |
+| 5 | Dashboard | Numbers first, split by hairlines, then the list that explains them. | Manage insights, Analysis, Coach earnings, Attendance, Track |
+| 6 | Settings | One card per decision, each with its own save. | Gym settings, Branding, Account, Comms, Website, Store |
+| 7 | Form | One job, top to bottom. Back replaces the nav; the action sticks to the foot. | Sign in, Create gym, PAR-Q, Waiver, Injury check, Invite, Onboarding |
+| 8 | Workspace | A canvas and an inspector. Desktop-first; the inspector is a sheet on a phone. | Programming editor, Website editor, Campaign composer |
 
-Two deliberate departures, both flagged on the boards:
+**One modal** (`png/04-modal-system.png`): a **sheet on a phone, a dialog
+on a desktop**. Same title, same body, same actions, same order — only the
+container changes. Four sizes (confirm · form · detail · takeover), and a
+written rule for the destructive case: the title is the question, the body
+is the consequence, red appears once, and the safe option is named
+("Keep the class", never "Cancel" in a cancel dialog).
 
-- **The primary action keeps the gym's colour.** The reference's primary
-  button is near-black; Temple sells "make it look like your gym", so the
-  accent stays on the one action a page exists for. It is a single token if
-  you would rather it were ink. Repeated row actions (five Book buttons in a
-  list) are already ink, because five brand-coloured pills is a wash, not an
-  accent.
-- **Dark mode.** Every screenshot is light. The dark palette is derived, not
-  observed.
+Plus **four states every pattern owes you** (`png/19-states.png`): nothing
+yet, nothing matches, loading, and failed — four genuinely different
+screens, not one spinner.
+
+## The visual system
+
+- **Cool monochrome.** White surfaces on `#F7F7F8`, hairline `#E9E9EE`
+  borders, `#14161A` ink. Shadows only on things that float.
+- **Two faces.** Fraunces for the lowercase `temple` wordmark — one place
+  only. Geist for the entire product.
+- **Selected is never an ink fill.** A raised white card or a soft tint.
+- **Colour comes from content.** The gym's accent is allowed on exactly
+  five things: the logo tile, the one primary action per page, class-type
+  dots, a member's own data, and the gym's photography. Repeated row
+  actions (five Book buttons) are ink.
+- **One orb.** Anything the machine did carries the iridescent sphere and
+  nothing else — one glyph across the product instead of five amber
+  banners.
 
 ## The boards
 
 | File | What it shows |
 |------|---------------|
-| `png/01-identity.png` | Four mark directions, lockup on both grounds, icon sizes, palette |
-| `png/02-type-controls.png` | Fraunces + Geist, the scale, every control light + dark, where the accent is allowed |
-| `png/03-landing.png` | `/get-started` — the three paths as full-bleed cards |
-| `png/04-member-book.png` | Member Book — day strip, filters, agenda with avatar stacks |
-| `png/05-member-track.png` | Member Track — streaks, 12-week heatmap, tool tiles |
-| `png/06-owner-timeline.png` | Owner Timeline — receipts, the orb, the glowing composer |
-| `png/07-staff-desktop.png` | Manage/Members in the three-column shell, light and dark |
-| `png/08-before-after.png` | Member Book today vs proposed, both schemes |
+| `01-identity` | Four mark directions, lockup, icon sizes, palette |
+| `02-type-controls` | Fraunces + Geist, the scale, every control light + dark |
+| `03-page-patterns` | **The eight shapes, the rule for each, the surfaces that use them** |
+| `04-modal-system` | **Sheet vs dialog, four sizes, the destructive confirm in full** |
+| `05-auth` | Landing, sign in, start a gym, accept an invite |
+| `06-member-book` | Book (light + dark), Programming, My bookings |
+| `07-member-money` | Membership, Store, buying, Purchases |
+| `08-member-track` | Track, a movement, Journal, recording |
+| `09-member-health` | Consent, PAR-Q, waiver signing, injury check-in |
+| `10-member-inbox` | Inbox, a notice, a thread, empty |
+| `11-member-account` | Account, leaving, family, email preferences |
+| `12-staff-timeline` | Today, your rules, a past day |
+| `13-staff-classes` | Classes, new class, the roster, cancelling |
+| `14-staff-programming` | The week, a session, Analysis |
+| `15-staff-members` | Members, a member, inviting, tags |
+| `16-staff-money` | Plans, Billing, Coach earnings, Refund |
+| `17-staff-comms` | Communications, a campaign, Leads, a conversation |
+| `18-staff-desktop` | The three-column shell, Members and Settings, light + dark |
+| `19-states` | **Nothing yet · nothing matches · loading · failed** |
+| `20-before-after` | Member Book today vs proposed |
+
+## Deliberate departures from the reference
+
+- **The primary action keeps the gym's colour.** Contra's primary button
+  is near-black; Temple sells "make it look like your gym". One token if
+  you would rather it were ink.
+- **Dark mode is derived, not observed** — every screenshot of the
+  reference is light.
 
 ## Open questions
 
-- **The mark.** Portico is recommended — it is the only one of the four that
-  still reads as a building at 15px and cannot be mistaken for a letter (the
-  first attempt at an arch read as a lowercase `n` beside a lowercase
-  wordmark). Doorway is bolder and more generic; Pediment is the most
-  abstract.
-- **Lowercase wordmark.** `temple`, not `TEMPLE`. It is a real change in
-  voice — warmer, less monumental.
-- **The sidebar.** Moving staff from a top pill bar to a left sidebar is the
-  largest structural change here and the one with real routing work behind
-  it.
-- **Icons.** Hand-drawn monoline set on these boards rather than Ionicons.
-  A real swap means picking a shipped set.
+- **The mark.** Portico recommended: the only one of the four that still
+  reads as a building at 15px and cannot be mistaken for a letter.
+- **Lowercase `temple`.** A real change in voice — warmer, less monumental.
+- **The sidebar.** Moving staff from a top pill bar to a left sidebar is
+  the largest structural change here, with routing work behind it.
+- **Icons.** Hand-drawn monoline set on these boards, not Ionicons.
 
 ## If it were to ship
 
-1. `tailwind.config.js` — the cool neutral ramp as tokens; delete the three
+1. `tailwind.config.js` — the cool ramp as tokens; delete the three
    `boxShadow` entries.
-2. `src/global.css` — the ramp per scheme.
-3. `src/lib/theme.ts` — `screenBg` and icon tints onto the new ramp.
-4. Load Geist + Fraunces via `expo-font`; `fontFamily.serif` for the
-   wordmark only.
-5. Sweep `bg-white dark:bg-gray-900 … shadow-card` to the new `card` idiom.
-   The single most repeated string in the app, and the bulk of the work.
+2. `src/global.css` + `src/lib/theme.ts` — the ramp per scheme.
+3. Load Geist + Fraunces via `expo-font`.
+4. Build the six page parts as components (`<PageHead>`, `<SectionLabel>`,
+   `<ListRow>`, `<SettingCard>`, `<Field>`, `<Foot>`) — this is the step
+   that makes the other 95 cheap.
+5. One `<Modal>` that renders a sheet under `md` and a dialog above it,
+   then retire the 26 bespoke ones.
 6. Surfaces highest-traffic first: Book, Timeline, Track, Manage.
-7. Sidebar shell for `(staff)` on desktop — separate, larger piece.
 
-## Rebuilding the boards
+## Rebuilding
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 0*.html
+node build.mjs   # writes 01..20.html
 node shot.mjs    # screenshots them to png/ at 2x
-node shot.mjs 04 # just one board
+node shot.mjs 13 # just one board
 ```
 
-`system.css` is the proposed design system; `legacy.css` approximates
-today's app for the before/after board. `fonts/` holds the woff2 files (all
-SIL OFL) with `fonts.css` pointing at them locally, so a rebuild does not
-depend on Google Fonts serving the same URLs.
+`kit.mjs` holds every shared part; `b-foundation`, `b-member`, `b-staff`
+and `b-states` hold the boards. `system.css` is the proposed design
+system, `legacy.css` approximates today's app for the before/after.
+`fonts/` holds the woff2 files (all SIL OFL) so a rebuild does not depend
+on Google Fonts serving the same URLs.

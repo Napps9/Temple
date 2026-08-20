@@ -1,0 +1,553 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Staff on desktop — the three-column shell</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="system.css">
+<link rel="stylesheet" href="legacy.css">
+<style>.board-row{flex-wrap:nowrap}body.board{width:max-content;min-width:100%}.board-head{max-width:none}</style></head>
+<body class="board">
+<svg style="position:absolute;width:0;height:0" aria-hidden="true"><symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3.5"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol><symbol id="i-barbell" viewBox="0 0 24 24"><path d="M4 9v6M7 6.5v11M17 6.5v11M20 9v6M7 12h10"/></symbol><symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 16.5l6-6 4 4 7.5-7.5"/><path d="M14.5 7h6v6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19.5V5"/><path d="M6 11l6-6 6 6"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13"/><path d="M12.5 5.5 19 12l-6.5 6.5"/></symbol><symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol><symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="3.4"/><path d="M2.5 10h19"/></symbol><symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.2 19.5a5.8 5.8 0 0 1 11.6 0"/><path d="M16.2 5.4a3.2 3.2 0 0 1 0 5.9"/><path d="M17.4 14.6a5.8 5.8 0 0 1 3.4 4.9"/></symbol><symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4"/><path d="M5.5 5h11l-2 3.6 2 3.6h-11z"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h7.5L18 8v12.5H6z"/><path d="M13.5 3.5V8H18"/><path d="M9 12.5h6M9 16h4"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.2 9.5a5.8 5.8 0 0 1 11.6 0c0 4.7 1.9 5.8 1.9 5.8H4.3s1.9-1.1 1.9-5.8z"/><path d="M10 19a2 2 0 0 0 4 0"/></symbol><symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 14.8a3 3 0 0 1-3 3H9.4L5 21v-3.6a3 3 0 0 1-1-2.6V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.6l1.5 2.5 2.9-.5.6 2.9 2.7 1.2-1.4 2.6 1.4 2.6-2.7 1.2-.6 2.9-2.9-.5L12 21.4l-1.5-2.5-2.9.5-.6-2.9-2.7-1.2L5.7 12 4.3 9.4l2.7-1.2.6-2.9 2.9.5z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20.5 20.5"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4.6a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.4A2.6 2.6 0 0 0 8 10.6M16 5.5h2.6A2.6 2.6 0 0 1 16 10.6"/><path d="M12 12.6v3.2M8.8 20h6.4l-.6-4H9.4z"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 5.2A2.2 2.2 0 0 1 7.2 3H19v14.4H7.2A2.2 2.2 0 0 0 5 19.6z"/><path d="M5 19.6A1.6 1.6 0 0 1 6.6 18H19v3H6.6A1.6 1.6 0 0 1 5 19.6z"/></symbol><symbol id="i-body" viewBox="0 0 24 24"><circle cx="12" cy="4.4" r="2"/><path d="M12 7v7.2M12 7.6 7.2 9.4M12 7.6l4.8 1.8M12 14.2 9 20.4M12 14.2l3 6.2"/></symbol><symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5h3.6v14H4zM9.6 5h3.6v14H9.6z"/><path d="M16.4 5.6l3.3 12.8-2.2.6-3.3-12.8z"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="m3.8 7 8.2 6 8.2-6"/></symbol><symbol id="i-panel" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></symbol><symbol id="i-bag" viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.3S3.8 15 3.8 9.5A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.2 3.1c0 5.5-8.2 10.8-8.2 10.8z"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 5-3.4 8-7.5 9.5C7.9 20 4.5 17 4.5 12V6z"/><path d="M9 12l2.2 2.2L15.4 10"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20.2 4.6 16 16.4 4.2a2.1 2.1 0 0 1 3 3L7.7 19z"/><path d="M13.8 6.8l3.4 3.4"/></symbol><symbol id="i-qr" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><path d="M13.5 13.5h3v3h-3zM20.5 13.5v3M17 20.5h3.5M13.5 20.5h1"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.3 1.3"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.3-1.3"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 2.5 4.8 13.6H11l-.8 7.9 8.9-11.1H13z"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path d="M4.5 10.5a10 10 0 0 1 15 0M7.5 13.8a5.6 5.6 0 0 1 9 0"/><circle cx="12" cy="17.6" r="1.2"/></symbol><symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6.5h16M7 12h10M10 17.5h4"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.6"/><path d="M15.5 5.5H5.8a2.3 2.3 0 0 0-2.3 2.3v9.7"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 5.2 19 12 7.5 18.8z"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5"/><path d="M20 4.5v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5"/><path d="M4 19.5v-4h4"/></symbol></svg>
+<div class="board-head">
+  <h1 class="board-title">Staff on desktop — the three-column shell</h1>
+  <p class="board-sub">The same parts, re-laid for a wide screen: the bar becomes a sidebar, the page keeps its head and its one primary action, and the right rail holds what is happening now. Settings is the same shell with a single 760px column.</p>
+</div>
+<div class="board-row" style=""><div class="frame-wrap"><div class="frame-label">Members · light</div><div class="desk">
+<div class="app " style="background:var(--bg);color:var(--ink)">
+  <div class="deskbar"><b></b><b></b><b></b><span class="url">app.jointemple.io/management/members</span></div>
+  <div style="display:flex;align-items:stretch;min-height:700px">
+    
+    <div class="side">
+      <div class="row between" style="padding:2px 4px 0"><span class="row" style="gap:6px"><svg viewBox="0 0 48 48" width="16" height="16" style="flex:none;display:block"><path fill="#14161a" fill-rule="evenodd" d="M3 6h42v7H3zM8.5 17h6.4v16H8.5zM20.8 17h6.4v16h-6.4zM33.1 17h6.4v16h-6.4zM3 36h42v7H3z"/></svg><span class="wordmark" style="font-size:17px;color:#14161a">temple</span></span><span style="color:var(--ink-3)"><svg class="i" style="width:17px;height:17px;flex:none;"><use href="#i-panel"/></svg></span></div>
+      <div class="card" style="padding:9px 11px;border-radius:var(--r-ctl)">
+        <div class="row g10"><div class="gymtile" style="width:30px;height:30px;border-radius:9px;font-size:14px">F</div>
+          <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Forge Barbell Club</span><span class="small dim trunc" style="font-size:12px">Dani Okafor · Owner</span></div>
+          <svg class="i" style="width:14px;height:14px;flex:none;color:var(--ink-3)"><use href="#i-right"/></svg></div>
+      </div>
+      <span class="btn btn-dark btn-full" style="height:40px;border-radius:var(--r-ctl)"><svg class="i" style="width:16px;height:16px;flex:none;"><use href="#i-plus"/></svg>Create</span>
+      <div class="stack g2">
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-chat"/></svg></span>
+      <span class="grow">Timeline</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-barbell"/></svg></span>
+      <span class="grow">Programming</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-cal"/></svg></span>
+      <span class="grow">Classes</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-grid"/></svg></span>
+      <span class="grow">Manage</span>
+    </div>
+        
+    <div class="navrow ">
+      <span class="orb" style="width:19px;height:19px;display:block"></span>
+      <span class="grow">Co—Agent</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-bell"/></svg></span>
+      <span class="grow">Notifications</span>
+    </div>
+      </div>
+      <div class="stack g2" style="margin-top:4px">
+        <span class="lbl" style="padding:8px 12px 4px">The gym</span>
+        
+    <div class="navrow on">
+      <span style="color:var(--ink)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-people"/></svg></span>
+      <span class="grow">Members</span><span class="small dim" style="font-size:12.5px">214</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-card"/></svg></span>
+      <span class="grow">Billing</span><span class="small dim" style="font-size:12.5px">£14.3k</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-mail"/></svg></span>
+      <span class="grow">Communications</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-gear"/></svg></span>
+      <span class="grow">Settings</span>
+    </div>
+      </div>
+      <div style="margin-top:auto">
+        <div class="card" style="padding:12px;border-radius:var(--r-ctl)">
+          <div class="row g10"><span class="orb" style="width:26px;height:26px;display:block"></span><div class="stack g2 grow" style="min-width:0"><span class="h3" style="font-size:13px">Finish setting up</span><span class="small dim" style="font-size:11.5px">3 of 8 left</span></div></div>
+          <div class="bar" style="margin-top:10px"><i style="width:62%"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="grow" style="padding:22px 24px 30px;min-width:0">
+      <div class="row between" style="align-items:flex-end">
+        <div class="stack g4"><span class="h1" style="font-size:30px">Members</span><span class="body">214 active · 6 joined this month · 3 lapsing</span></div>
+        <div class="row g8"><span class="chip"><svg class="i" style="width:14px;height:14px;flex:none;"><use href="#i-cal"/></svg>This month</span><span class="btn btn-plain btn-sm">Import</span><span class="btn btn-accent btn-sm"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-plus"/></svg>Invite</span></div>
+      </div>
+      <div class="row g12" style="margin-top:20px">
+        
+    <div class="card grow" style="min-width:0">
+      <span class="lbl">Revenue</span>
+      <div class="num" style="font-size:32px;margin-top:8px">£14,280</div>
+      <div class="row g6" style="margin-top:8px"><span class="chip chip-sm chip-ok">+8.2%</span><span class="small dim" style="font-size:12px">vs previous period</span></div>
+    </div>
+        
+    <div class="card grow" style="min-width:0">
+      <span class="lbl">Members</span>
+      <div class="num" style="font-size:32px;margin-top:8px">214</div>
+      <div class="row g6" style="margin-top:8px"><span class="chip chip-sm chip-ok">+3.4%</span><span class="small dim" style="font-size:12px">vs previous period</span></div>
+    </div>
+        
+    <div class="card grow" style="min-width:0">
+      <span class="lbl">Attendance</span>
+      <div class="num" style="font-size:32px;margin-top:8px">62%</div>
+      <div class="row g6" style="margin-top:8px"><span class="chip chip-sm chip-ok">+2pp</span><span class="small dim" style="font-size:12px">of members checked in</span></div>
+    </div>
+      </div>
+      <div class="card flush" style="margin-top:18px">
+        <div class="row g12" style="padding:13px 16px;border-bottom:1px solid var(--line)">
+          <div class="field grow" style="min-height:36px;padding-left:14px;font-size:14px"><svg class="i" style="width:15px;height:15px;flex:none;color:var(--ink-3)"><use href="#i-search"/></svg><span class="grow">Search members</span></div>
+          <span class="chip chip-sm">All plans</span><span class="chip chip-sm">All tags</span><span class="chip chip-sm"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-doc"/></svg>Export</span>
+        </div>
+        <div class="row g12" style="padding:9px 16px;border-bottom:1px solid var(--line)">
+          <span style="width:30px"></span><span class="lbl" style="width:200px">Member</span><span class="lbl" style="width:148px">Plan</span><span class="lbl grow">Tags</span>
+        </div>
+        
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">an</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Amara Nwosu</span><span class="small dim" style="font-size:12.5px">Trained 4× this week</span></div>
+            <div style="width:148px"><span class="chip chip-sm chip-bad">Payment failed</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Evenings</span><span class="chip chip-sm">Metcon</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">mb</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Marcus Bell</span><span class="small dim" style="font-size:12.5px">Joined today</span></div>
+            <div style="width:148px"><span class="chip chip-sm chip-ok">Unlimited</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">New</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">pr</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Priya Raman</span><span class="small dim" style="font-size:12.5px">Coached 3 classes today</span></div>
+            <div style="width:148px"><span class="chip chip-sm ">Coach — staff</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Coach</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">je</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Jonah Ellis</span><span class="small dim" style="font-size:12.5px">From the join link · 11:20</span></div>
+            <div style="width:148px"><span class="chip chip-sm chip-warn">Requested</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Lead</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">sw</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Sam Whitlock</span><span class="small dim" style="font-size:12.5px">2 credits left · last in 21 Jul</span></div>
+            <div style="width:148px"><span class="chip chip-sm ">10-class pack</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Lapsing</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+      </div>
+    </div>
+    <div style="width:296px;flex:none;padding:22px 20px 30px;min-width:0">
+      <div class="row between"><span class="lbl">Waiting on you</span><span class="small" style="font-size:12.5px;color:var(--link)">View all</span></div>
+      <div class="card lift" style="margin-top:10px;padding:13px">
+        <div class="row g8"><span style="color:var(--warn)"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-card"/></svg></span><span class="h3 grow" style="font-size:13.5px">Payment failed</span></div>
+        <div class="small" style="margin-top:6px;font-size:12.5px">Amara Nwosu · £48 · 2 attempts</div>
+        <div class="row g6" style="margin-top:11px"><span class="btn btn-dark btn-sm" style="height:30px;font-size:12.5px">Chase it</span><span class="btn btn-plain btn-sm" style="height:30px;font-size:12.5px">Details</span></div>
+      </div>
+      <div class="lbl" style="margin-top:22px">Today at the gym</div>
+      <div class="stack g10" style="margin-top:10px">
+        
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">06:00</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Strength</span><span class="small dim" style="font-size:12px">Dani Okafor · 12/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">jm</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ro</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ka</div></div>
+          </div>
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">07:15</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Metcon</span><span class="small dim" style="font-size:12px">Dani Okafor · 18/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">an</div><div class="avatar" style="width:20px;height:20px;font-size:7px">lk</div><div class="avatar" style="width:20px;height:20px;font-size:7px">tm</div></div>
+          </div>
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">17:30</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Metcon</span><span class="small dim" style="font-size:12px">Priya Raman · 17/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">lk</div><div class="avatar" style="width:20px;height:20px;font-size:7px">mb</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ro</div></div>
+          </div>
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">18:45</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Barbell Club</span><span class="small dim" style="font-size:12px">Marcus Bell · 20/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">tm</div><div class="avatar" style="width:20px;height:20px;font-size:7px">jm</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ka</div></div>
+          </div>
+      </div>
+      <div class="lbl" style="margin-top:22px">This week</div>
+      <div class="stack g12" style="margin-top:10px">
+        <div class="stack g2"><span class="h3" style="font-size:13.5px">Attendance is up 6%</span><span class="small dim" style="font-size:12.5px;line-height:1.4">Evening Metcon is filling earlier than it did in July.</span></div><div class="stack g2"><span class="h3" style="font-size:13.5px">Three members are lapsing</span><span class="small dim" style="font-size:12.5px;line-height:1.4">No visit in 21 days. Two are on credit packs with credits left.</span></div>
+      </div>
+    </div>
+  </div>
+</div></div></div>
+           <div class="frame-wrap"><div class="frame-label">Members · dark</div><div class="desk">
+<div class="app dark" style="background:var(--bg);color:var(--ink)">
+  <div class="deskbar"><b></b><b></b><b></b><span class="url">app.jointemple.io/management/members</span></div>
+  <div style="display:flex;align-items:stretch;min-height:700px">
+    
+    <div class="side">
+      <div class="row between" style="padding:2px 4px 0"><span class="row" style="gap:6px"><svg viewBox="0 0 48 48" width="16" height="16" style="flex:none;display:block"><path fill="#f4f5f6" fill-rule="evenodd" d="M3 6h42v7H3zM8.5 17h6.4v16H8.5zM20.8 17h6.4v16h-6.4zM33.1 17h6.4v16h-6.4zM3 36h42v7H3z"/></svg><span class="wordmark" style="font-size:17px;color:#f4f5f6">temple</span></span><span style="color:var(--ink-3)"><svg class="i" style="width:17px;height:17px;flex:none;"><use href="#i-panel"/></svg></span></div>
+      <div class="card" style="padding:9px 11px;border-radius:var(--r-ctl)">
+        <div class="row g10"><div class="gymtile" style="width:30px;height:30px;border-radius:9px;font-size:14px">F</div>
+          <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Forge Barbell Club</span><span class="small dim trunc" style="font-size:12px">Dani Okafor · Owner</span></div>
+          <svg class="i" style="width:14px;height:14px;flex:none;color:var(--ink-3)"><use href="#i-right"/></svg></div>
+      </div>
+      <span class="btn btn-dark btn-full" style="height:40px;border-radius:var(--r-ctl)"><svg class="i" style="width:16px;height:16px;flex:none;"><use href="#i-plus"/></svg>Create</span>
+      <div class="stack g2">
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-chat"/></svg></span>
+      <span class="grow">Timeline</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-barbell"/></svg></span>
+      <span class="grow">Programming</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-cal"/></svg></span>
+      <span class="grow">Classes</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-grid"/></svg></span>
+      <span class="grow">Manage</span>
+    </div>
+        
+    <div class="navrow ">
+      <span class="orb" style="width:19px;height:19px;display:block"></span>
+      <span class="grow">Co—Agent</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-bell"/></svg></span>
+      <span class="grow">Notifications</span>
+    </div>
+      </div>
+      <div class="stack g2" style="margin-top:4px">
+        <span class="lbl" style="padding:8px 12px 4px">The gym</span>
+        
+    <div class="navrow on">
+      <span style="color:var(--ink)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-people"/></svg></span>
+      <span class="grow">Members</span><span class="small dim" style="font-size:12.5px">214</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-card"/></svg></span>
+      <span class="grow">Billing</span><span class="small dim" style="font-size:12.5px">£14.3k</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-mail"/></svg></span>
+      <span class="grow">Communications</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-gear"/></svg></span>
+      <span class="grow">Settings</span>
+    </div>
+      </div>
+      <div style="margin-top:auto">
+        <div class="card" style="padding:12px;border-radius:var(--r-ctl)">
+          <div class="row g10"><span class="orb" style="width:26px;height:26px;display:block"></span><div class="stack g2 grow" style="min-width:0"><span class="h3" style="font-size:13px">Finish setting up</span><span class="small dim" style="font-size:11.5px">3 of 8 left</span></div></div>
+          <div class="bar" style="margin-top:10px"><i style="width:62%"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="grow" style="padding:22px 24px 30px;min-width:0">
+      <div class="row between" style="align-items:flex-end">
+        <div class="stack g4"><span class="h1" style="font-size:30px">Members</span><span class="body">214 active · 6 joined this month · 3 lapsing</span></div>
+        <div class="row g8"><span class="chip"><svg class="i" style="width:14px;height:14px;flex:none;"><use href="#i-cal"/></svg>This month</span><span class="btn btn-plain btn-sm">Import</span><span class="btn btn-accent btn-sm"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-plus"/></svg>Invite</span></div>
+      </div>
+      <div class="row g12" style="margin-top:20px">
+        
+    <div class="card grow" style="min-width:0">
+      <span class="lbl">Revenue</span>
+      <div class="num" style="font-size:32px;margin-top:8px">£14,280</div>
+      <div class="row g6" style="margin-top:8px"><span class="chip chip-sm chip-ok">+8.2%</span><span class="small dim" style="font-size:12px">vs previous period</span></div>
+    </div>
+        
+    <div class="card grow" style="min-width:0">
+      <span class="lbl">Members</span>
+      <div class="num" style="font-size:32px;margin-top:8px">214</div>
+      <div class="row g6" style="margin-top:8px"><span class="chip chip-sm chip-ok">+3.4%</span><span class="small dim" style="font-size:12px">vs previous period</span></div>
+    </div>
+        
+    <div class="card grow" style="min-width:0">
+      <span class="lbl">Attendance</span>
+      <div class="num" style="font-size:32px;margin-top:8px">62%</div>
+      <div class="row g6" style="margin-top:8px"><span class="chip chip-sm chip-ok">+2pp</span><span class="small dim" style="font-size:12px">of members checked in</span></div>
+    </div>
+      </div>
+      <div class="card flush" style="margin-top:18px">
+        <div class="row g12" style="padding:13px 16px;border-bottom:1px solid var(--line)">
+          <div class="field grow" style="min-height:36px;padding-left:14px;font-size:14px"><svg class="i" style="width:15px;height:15px;flex:none;color:var(--ink-3)"><use href="#i-search"/></svg><span class="grow">Search members</span></div>
+          <span class="chip chip-sm">All plans</span><span class="chip chip-sm">All tags</span><span class="chip chip-sm"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-doc"/></svg>Export</span>
+        </div>
+        <div class="row g12" style="padding:9px 16px;border-bottom:1px solid var(--line)">
+          <span style="width:30px"></span><span class="lbl" style="width:200px">Member</span><span class="lbl" style="width:148px">Plan</span><span class="lbl grow">Tags</span>
+        </div>
+        
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">an</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Amara Nwosu</span><span class="small dim" style="font-size:12.5px">Trained 4× this week</span></div>
+            <div style="width:148px"><span class="chip chip-sm chip-bad">Payment failed</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Evenings</span><span class="chip chip-sm">Metcon</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">mb</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Marcus Bell</span><span class="small dim" style="font-size:12.5px">Joined today</span></div>
+            <div style="width:148px"><span class="chip chip-sm chip-ok">Unlimited</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">New</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">pr</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Priya Raman</span><span class="small dim" style="font-size:12.5px">Coached 3 classes today</span></div>
+            <div style="width:148px"><span class="chip chip-sm ">Coach — staff</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Coach</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">je</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Jonah Ellis</span><span class="small dim" style="font-size:12.5px">From the join link · 11:20</span></div>
+            <div style="width:148px"><span class="chip chip-sm chip-warn">Requested</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Lead</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+          <div class="row g12" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px">sw</div>
+            <div class="stack g2" style="width:200px"><span class="h3" style="font-size:14px">Sam Whitlock</span><span class="small dim" style="font-size:12.5px">2 credits left · last in 21 Jul</span></div>
+            <div style="width:148px"><span class="chip chip-sm ">10-class pack</span></div>
+            <div class="row g6 grow"><span class="chip chip-sm">Lapsing</span></div>
+            <span class="chip chip-sm">Open</span>
+          </div>
+      </div>
+    </div>
+    <div style="width:296px;flex:none;padding:22px 20px 30px;min-width:0">
+      <div class="row between"><span class="lbl">Waiting on you</span><span class="small" style="font-size:12.5px;color:var(--link)">View all</span></div>
+      <div class="card lift" style="margin-top:10px;padding:13px">
+        <div class="row g8"><span style="color:var(--warn)"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-card"/></svg></span><span class="h3 grow" style="font-size:13.5px">Payment failed</span></div>
+        <div class="small" style="margin-top:6px;font-size:12.5px">Amara Nwosu · £48 · 2 attempts</div>
+        <div class="row g6" style="margin-top:11px"><span class="btn btn-dark btn-sm" style="height:30px;font-size:12.5px">Chase it</span><span class="btn btn-plain btn-sm" style="height:30px;font-size:12.5px">Details</span></div>
+      </div>
+      <div class="lbl" style="margin-top:22px">Today at the gym</div>
+      <div class="stack g10" style="margin-top:10px">
+        
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">06:00</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Strength</span><span class="small dim" style="font-size:12px">Dani Okafor · 12/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">jm</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ro</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ka</div></div>
+          </div>
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">07:15</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Metcon</span><span class="small dim" style="font-size:12px">Dani Okafor · 18/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">an</div><div class="avatar" style="width:20px;height:20px;font-size:7px">lk</div><div class="avatar" style="width:20px;height:20px;font-size:7px">tm</div></div>
+          </div>
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">17:30</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Metcon</span><span class="small dim" style="font-size:12px">Priya Raman · 17/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">lk</div><div class="avatar" style="width:20px;height:20px;font-size:7px">mb</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ro</div></div>
+          </div>
+          <div class="row g10">
+            <span class="num" style="font-size:12.5px;width:38px;color:var(--ink-2)">18:45</span>
+            <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Barbell Club</span><span class="small dim" style="font-size:12px">Marcus Bell · 20/20</span></div>
+            <div class="avstack faces "><div class="avatar" style="width:20px;height:20px;font-size:7px">tm</div><div class="avatar" style="width:20px;height:20px;font-size:7px">jm</div><div class="avatar" style="width:20px;height:20px;font-size:7px">ka</div></div>
+          </div>
+      </div>
+      <div class="lbl" style="margin-top:22px">This week</div>
+      <div class="stack g12" style="margin-top:10px">
+        <div class="stack g2"><span class="h3" style="font-size:13.5px">Attendance is up 6%</span><span class="small dim" style="font-size:12.5px;line-height:1.4">Evening Metcon is filling earlier than it did in July.</span></div><div class="stack g2"><span class="h3" style="font-size:13.5px">Three members are lapsing</span><span class="small dim" style="font-size:12.5px;line-height:1.4">No visit in 21 days. Two are on credit packs with credits left.</span></div>
+      </div>
+    </div>
+  </div>
+</div></div></div></div><div class="board-row" style="margin-top:34px"><div class="frame-wrap"><div class="frame-label">Settings · one card, one save</div><div class="desk">
+<div class="app" style="background:var(--bg);color:var(--ink)">
+  <div class="deskbar"><b></b><b></b><b></b><span class="url">app.jointemple.io/management/settings</span></div>
+  <div style="display:flex;align-items:stretch;min-height:660px">
+    
+    <div class="side">
+      <div class="row between" style="padding:2px 4px 0"><span class="row" style="gap:6px"><svg viewBox="0 0 48 48" width="16" height="16" style="flex:none;display:block"><path fill="#14161a" fill-rule="evenodd" d="M3 6h42v7H3zM8.5 17h6.4v16H8.5zM20.8 17h6.4v16h-6.4zM33.1 17h6.4v16h-6.4zM3 36h42v7H3z"/></svg><span class="wordmark" style="font-size:17px;color:#14161a">temple</span></span><span style="color:var(--ink-3)"><svg class="i" style="width:17px;height:17px;flex:none;"><use href="#i-panel"/></svg></span></div>
+      <div class="card" style="padding:9px 11px;border-radius:var(--r-ctl)">
+        <div class="row g10"><div class="gymtile" style="width:30px;height:30px;border-radius:9px;font-size:14px">F</div>
+          <div class="stack g2 grow" style="min-width:0"><span class="h3 trunc" style="font-size:13.5px">Forge Barbell Club</span><span class="small dim trunc" style="font-size:12px">Dani Okafor · Owner</span></div>
+          <svg class="i" style="width:14px;height:14px;flex:none;color:var(--ink-3)"><use href="#i-right"/></svg></div>
+      </div>
+      <span class="btn btn-dark btn-full" style="height:40px;border-radius:var(--r-ctl)"><svg class="i" style="width:16px;height:16px;flex:none;"><use href="#i-plus"/></svg>Create</span>
+      <div class="stack g2">
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-chat"/></svg></span>
+      <span class="grow">Timeline</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-barbell"/></svg></span>
+      <span class="grow">Programming</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-cal"/></svg></span>
+      <span class="grow">Classes</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-grid"/></svg></span>
+      <span class="grow">Manage</span>
+    </div>
+        
+    <div class="navrow ">
+      <span class="orb" style="width:19px;height:19px;display:block"></span>
+      <span class="grow">Co—Agent</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-bell"/></svg></span>
+      <span class="grow">Notifications</span>
+    </div>
+      </div>
+      <div class="stack g2" style="margin-top:4px">
+        <span class="lbl" style="padding:8px 12px 4px">The gym</span>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-people"/></svg></span>
+      <span class="grow">Members</span><span class="small dim" style="font-size:12.5px">214</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-card"/></svg></span>
+      <span class="grow">Billing</span><span class="small dim" style="font-size:12.5px">£14.3k</span>
+    </div>
+        
+    <div class="navrow ">
+      <span style="color:var(--ink-3)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-mail"/></svg></span>
+      <span class="grow">Communications</span>
+    </div>
+        
+    <div class="navrow on">
+      <span style="color:var(--ink)"><svg class="i" style="width:19px;height:19px;flex:none;"><use href="#i-gear"/></svg></span>
+      <span class="grow">Settings</span>
+    </div>
+      </div>
+      <div style="margin-top:auto">
+        <div class="card" style="padding:12px;border-radius:var(--r-ctl)">
+          <div class="row g10"><span class="orb" style="width:26px;height:26px;display:block"></span><div class="stack g2 grow" style="min-width:0"><span class="h3" style="font-size:13px">Finish setting up</span><span class="small dim" style="font-size:11.5px">3 of 8 left</span></div></div>
+          <div class="bar" style="margin-top:10px"><i style="width:62%"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="grow" style="padding:22px 24px 30px;min-width:0;max-width:760px">
+      <div class="stack g4"><span class="h1" style="font-size:30px">Settings</span><span class="body">Every card saves on its own. Nothing here waits for a Save at the bottom of the page.</span></div>
+      <div style="margin-top:20px">
+        
+<div class="setting">
+  <div class="cap">
+    <div class="stack g2 grow" style="min-width:0">
+      <span class="h3">Gym name</span>
+      <span class="small dim" style="font-size:12.5px;line-height:1.4">What members see everywhere in the app and in every email.</span>
+    </div>
+    
+  </div>
+  <div style="margin-top:12px">
+<div class="stack g6">
+  <span class="lbl" style="letter-spacing:.06em"></span>
+  <div class="input   ">
+    <span class="grow">Forge Barbell Club</span>
+  </div>
+  
+</div></div>
+  <div class="row between" style="margin-top:13px"><span class="small dim" style="font-size:12px">Last saved 3 days ago</span><span class="btn btn-dark btn-sm">Save</span></div>
+</div>
+        
+<div class="setting">
+  <div class="cap">
+    <div class="stack g2 grow" style="min-width:0">
+      <span class="h3">Brand colour</span>
+      <span class="small dim" style="font-size:12.5px;line-height:1.4">Used on your logo tile and on the one primary action per screen.</span>
+    </div>
+    
+  </div>
+  <div style="margin-top:12px"><div class="row g8"><span style="width:34px;height:34px;border-radius:10px;background:#c2410c;box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink)"></span><span style="width:34px;height:34px;border-radius:10px;background:#3b6ba5;"></span><span style="width:34px;height:34px;border-radius:10px;background:#0f766e;"></span><span style="width:34px;height:34px;border-radius:10px;background:#7c3aed;"></span><span style="width:34px;height:34px;border-radius:10px;background:#b91c1c;"></span><span style="width:34px;height:34px;border-radius:10px;background:#14161a;"></span></div></div>
+  <div class="row between" style="margin-top:13px"><span class="small dim" style="font-size:12px"></span><span class="btn btn-dark btn-sm">Save</span></div>
+</div>
+        
+<div class="setting">
+  <div class="cap">
+    <div class="stack g2 grow" style="min-width:0">
+      <span class="h3">Week starts on</span>
+      <span class="small dim" style="font-size:12.5px;line-height:1.4">Drives every calendar, every streak and every report.</span>
+    </div>
+    <div class="segmented"><span class="on">Monday</span><span>Sunday</span></div>
+  </div>
+  
+  
+</div>
+        
+<div class="setting">
+  <div class="cap">
+    <div class="stack g2 grow" style="min-width:0">
+      <span class="h3">Weights shown in</span>
+      <span class="small dim" style="font-size:12.5px;line-height:1.4">Stored in kilograms either way — this only changes the display.</span>
+    </div>
+    <div class="segmented"><span class="on">kg</span><span>lb</span></div>
+  </div>
+  
+  
+</div>
+        
+<div class="setting">
+  <div class="cap">
+    <div class="stack g2 grow" style="min-width:0">
+      <span class="h3">Booking opens</span>
+      <span class="small dim" style="font-size:12.5px;line-height:1.4">How far ahead members can take a spot.</span>
+    </div>
+    <span class="chip">7 days<svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-down"/></svg></span>
+  </div>
+  
+  
+</div>
+        
+<div class="setting">
+  <div class="cap">
+    <div class="stack g2 grow" style="min-width:0">
+      <span class="h3">Cancellation cutoff</span>
+      <span class="small dim" style="font-size:12.5px;line-height:1.4">Cancel later than this and the credit is not returned.</span>
+    </div>
+    <span class="chip">4 hours<svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-down"/></svg></span>
+  </div>
+  
+  
+</div>
+        
+<div class="setting">
+  <div class="cap">
+    <div class="stack g2 grow" style="min-width:0">
+      <span class="h3">Public join page</span>
+      <span class="small dim" style="font-size:12.5px;line-height:1.4">jointemple.io/forge-barbell — anyone with the link can request to join.</span>
+    </div>
+    <span class="switch on"><i></i></span>
+  </div>
+  
+  
+</div>
+      </div>
+    </div>
+  </div>
+</div></div></div></div>
+</body></html>
