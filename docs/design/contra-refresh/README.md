@@ -43,9 +43,13 @@ yet, nothing matches, loading, and failed — four genuinely different
 screens, not one spinner.
 
 And **one glyph for the machine** (`png/05-ai-mark.png`): the iridescent
-orb was lifted almost verbatim from the reference, so it is replaced by
-Temple's own housemark on a squared tile. People are circles; the machine
-is a rounded square. Ink on light, paper on dark, never the gym's colour.
+orb was lifted almost verbatim from the reference, so it is replaced by the
+four-point sparkle — the one glyph nobody has to be taught. It is not
+distinctive, and it is not meant to be: what makes it Temple's is that it
+is solid among thirty monoline icons, and that it takes a rounded-square
+tile where every person in the product is a circle. Ink on light, paper on
+dark, never the gym's colour. Six alternatives are on the board, including
+a subtly recut sparkle that is one line to switch to.
 
 ## The visual system
 
@@ -58,11 +62,12 @@ is a rounded square. Ink on light, paper on dark, never the gym's colour.
   five things: the logo tile, the one primary action per page, class-type
   dots, a member's own data, and the gym's photography. Repeated row
   actions (five Book buttons) are ink.
-- **One mark for the machine.** Anything the agent did carries the Temple
-  housemark and nothing else — one glyph across the product instead of five
-  amber banners. It is the only solid-filled icon among ~30 monoline ones,
-  and in avatar slots it takes a rounded-square tile because every person
-  in the product is a circle.
+- **One mark for the machine.** Anything the agent did carries the sparkle
+  and nothing else — one glyph across the product instead of five amber
+  banners. It is the only solid-filled icon among ~30 monoline ones, and in
+  avatar slots it takes a rounded-square tile because every person in the
+  product is a circle. Shape and weight do the work that the glyph itself,
+  being the industry's, cannot.
 
 ## The boards
 
@@ -72,7 +77,7 @@ is a rounded square. Ink on light, paper on dark, never the gym's colour.
 | `02-type-controls` | Fraunces + Geist, the scale, every control light + dark |
 | `03-page-patterns` | **The eight shapes, the rule for each, the surfaces that use them** |
 | `04-modal-system` | **Sheet vs dialog, four sizes, the destructive confirm in full** |
-| `05-ai-mark` | **Six candidates for the machine's glyph, in every context it appears** |
+| `05-ai-mark` | **Seven candidates for the machine's glyph, in every context it appears** |
 | `06-auth` | Landing, sign in, start a gym, accept an invite |
 | `07-member-book` | Book (light + dark), Programming, My bookings |
 | `08-member-money` | Membership, Store, buying, Purchases |

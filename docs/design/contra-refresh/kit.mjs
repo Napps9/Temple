@@ -128,12 +128,16 @@ export const AI = {
   ember: () =>
     `<circle cx="12" cy="12" r="9.1" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".3"/>
      <circle cx="12" cy="12" r="5.5" fill="currentColor"/>`,
+  // Same star, taller than wide and with deeper waists — a Temple cut of it
+  // rather than the stock four-point.
+  sparkleCut: () =>
+    `<path fill="currentColor" d="M12 1.6c.8 5 2.1 7.5 5.2 8.6l2.6.9-2.6.9c-3.1 1.1-4.4 3.6-5.2 8.6-.8-5-2.1-7.5-5.2-8.6L4.2 11l2.6-.9C9.9 9 11.2 6.6 12 1.6z"/>`,
   engraved: () =>
     `<circle cx="12" cy="12" r="9.2" fill="currentColor"/>
      <path d="M7.3 8.9a6.1 6.1 0 0 1 7.5-1.5" fill="none" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" opacity=".85"/>`,
 };
 
-export const AI_CHOICE = 'housemark';
+export const AI_CHOICE = 'sparkle';
 
 export const aiGlyph = (size, kind = AI_CHOICE, style = '') =>
   `<svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px;flex:none;display:block;${style}">${AI[kind]()}</svg>`;

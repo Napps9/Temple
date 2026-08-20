@@ -5,10 +5,11 @@ import {
 } from './kit.mjs';
 
 const CANDIDATES = [
-  ['housemark', 'Housemark', 'Temple’s own mark, on a squared tile. Inside a gym the gym’s logo leads and this glyph appears nowhere else — so in-product it can mean exactly one thing: Temple is doing the work.', true],
+  ['sparkle', 'Sparkle', 'The four-point star. Nobody has to be taught what it means, and it is the only candidate that survives 12px with room to spare. The cost is that it is not ours — every product shipping an assistant is using it.', true],
+  ['sparkleCut', 'Sparkle · Temple cut', 'The same star, taller than it is wide with deeper waists. Reads identically at a glance and stops being the stock glyph at a second look. One line to switch.', false, 'Variant'],
+  ['housemark', 'Housemark', 'Temple’s own mark, on a squared tile. The most ownable — it says who did the work rather than what did it — and the one that needs the most explaining.', false],
   ['ember', 'Ember', 'A solid core inside a faint ring. Reads as something running rather than something built. Calm, and the closest in spirit to the sphere without being one.', false],
   ['aperture', 'Aperture', 'Three arcs around a core. The most explicitly mechanical, and the most legible as “not a person” — but it mushes below 14px.', false],
-  ['sparkle', 'Sparkle', 'The four-point star. Instantly understood as AI in 2026 — because every product on earth is using it. Says nothing about Temple.', false],
   ['engraved', 'Engraved', 'The sphere, in ink, with the highlight cut out. Keeps the silhouette we had and drops the rainbow. Safest, least distinctive.', false],
   ['keystone', 'Keystone', 'The stone that holds an arch together — the right idea, and the first thing I drew. Rejected on sight: below about 20px a trapezoid wider at the top is a bucket.', false],
 ];
@@ -55,22 +56,22 @@ const ctxRow = (kind) => `
 /* --------------------------------------------------------------- board */
 
 export function aiMarkBoard() {
-  const candidate = ([kind, name, blurb, rec]) => `
-  <div class="card" style="width:172px;padding:13px;${rec ? 'border-color:var(--ink)' : ''}">
+  const candidate = ([kind, name, blurb, rec, tag]) => `
+  <div class="card" style="width:145px;padding:11px;${rec ? 'border-color:var(--ink)' : ''}">
     <div class="row between" style="height:22px">
-      <span class="lbl" style="font-size:10px;letter-spacing:.07em">${rec ? 'Recommended' : 'Alternative'}</span>
-      ${rec ? `<span class="badge" style="background:var(--ink);color:#fff">Pick</span>` : ''}
+      <span class="lbl" style="font-size:9.5px;letter-spacing:.06em">${rec ? 'Chosen' : (tag ?? 'Alternative')}</span>
+      ${rec ? `<span class="badge" style="background:var(--ink);color:#fff">In use</span>` : ''}
     </div>
-    <div class="row g12" style="margin-top:14px;align-items:flex-end;height:44px;gap:10px;color:var(--ink)">
-      ${aiGlyph(38, kind)}${aiGlyph(20, kind)}${aiGlyph(15, kind)}${aiGlyph(12, kind)}
+    <div class="row g12" style="margin-top:13px;align-items:flex-end;height:40px;gap:8px;color:var(--ink)">
+      ${aiGlyph(34, kind)}${aiGlyph(19, kind)}${aiGlyph(14, kind)}${aiGlyph(12, kind)}
     </div>
     <div class="row g6" style="margin-top:14px">
-      <span class="aimark" style="width:32px;height:32px;border-radius:10px">${aiGlyph(20, kind)}</span>
-      <span class="btn btn-dark btn-sm" style="width:32px;height:32px;padding:0;border-radius:999px">${aiGlyph(16, kind)}</span>
-      <span style="width:32px;height:32px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--ink-3)">${aiGlyph(16, kind)}</span>
+      <span class="aimark" style="width:30px;height:30px;border-radius:9px">${aiGlyph(18, kind)}</span>
+      <span class="btn btn-dark btn-sm" style="width:30px;height:30px;padding:0;border-radius:999px">${aiGlyph(15, kind)}</span>
+      <span style="width:30px;height:30px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--ink-3)">${aiGlyph(15, kind)}</span>
     </div>
-    <div class="h2" style="margin-top:13px;font-size:16px">${name}</div>
-    <div class="small" style="margin-top:5px;font-size:12px;line-height:1.42">${blurb}</div>
+    <div class="h2" style="margin-top:12px;font-size:15px">${name}</div>
+    <div class="small" style="margin-top:5px;font-size:11.5px;line-height:1.42">${blurb}</div>
   </div>`;
 
   const contexts = (kind, label) => `
@@ -102,8 +103,8 @@ export function aiMarkBoard() {
           ${[
             'Sit in an avatar slot without reading as a person.',
             'Survive 12px inside a chat label and 15px inside a dark pill.',
-            'Not be a sparkle, and not be a sphere.',
             'Work in one colour, on light and on dark.',
+            'Never be mistaken for the gym’s own colour or logo.',
           ].map((t) => `<div class="row g8" style="align-items:flex-start">${ic('check', 14, 'color:var(--ink-3);margin-top:2px')}<span class="small" style="font-size:13px">${t}</span></div>`).join('')}
         </div>
       </div>
@@ -122,17 +123,17 @@ export function aiMarkBoard() {
   </div>
 
   <div class="rule" style="margin:26px 0"></div>
-  <span class="lbl">Six candidates, at the four sizes they actually ship at</span>
+  <span class="lbl">Seven candidates, at the four sizes they actually ship at</span>
   <div class="row wrap" style="margin-top:14px;gap:12px;align-items:stretch">
     ${CANDIDATES.map(candidate).join('')}
   </div>
 
   <div class="rule" style="margin:26px 0"></div>
-  <span class="lbl">The recommendation, in every place it appears</span>
+  <span class="lbl">The choice, in every place it appears</span>
   <div class="stack g20" style="margin-top:14px;gap:20px">
-    ${contexts('housemark', 'Housemark — light')}
+    ${contexts('sparkle', 'Sparkle — light')}
     <div class="app dark" style="background:var(--bg);border-radius:18px;padding:18px">
-      ${contexts('housemark', 'Housemark — dark')}
+      ${contexts('sparkle', 'Sparkle — dark')}
     </div>
   </div>
 
@@ -150,13 +151,13 @@ export function aiMarkBoard() {
       </div>
     </div>
     <div class="card" style="flex:1;padding:18px">
-      <span class="lbl">Why the housemark over the others</span>
+      <span class="lbl">What we give up, and what carries it instead</span>
       <div class="stack g10" style="margin-top:11px">
         ${[
-          ['The slot was already empty', 'Board 01 says the Temple mark never takes a gym’s colour and never leads inside a gym. That leaves it with no job in-product — so it can take this one and mean something precise.'],
-          ['It says who, not what', 'A sparkle says “AI”. The housemark says “Temple did this, not your coach and not you” — which is the actual question an owner is asking when they see it.'],
-          ['It holds at 12px', 'Five solid bars, proven down to 15px on board 01 and legible at 12. Aperture loses its arcs, engraved loses its highlight, ember becomes a plain dot.'],
-          ['Shape does the work, not hue', 'Circles are people, squares are not. That survives greyscale, colour blindness and a 1-bit render — which a rainbow gradient does not.'],
+          ['Given up: distinctiveness', 'The four-point star is the industry’s glyph, not Temple’s. Nobody will see it and think of this product — which is a fair trade for nobody ever having to work out what it means.'],
+          ['Carried by shape instead', 'Every person in the product is a circle; the machine takes a rounded square. That reads before the glyph inside it does, and it survives greyscale and a 1-bit render.'],
+          ['Carried by weight instead', 'It is the only solid-filled icon among about thirty 1.6px monoline ones. “A machine did this” lands from the fill before the silhouette is parsed.'],
+          ['Carried by discipline instead', 'One glyph, sixteen places, never the accent colour, never a second AI badge alongside it. Consistency is what will make it feel owned.'],
         ].map(([t, d]) => `<div class="stack g2"><span class="h3" style="font-size:13.5px">${t}</span><span class="small dim" style="font-size:12.5px;line-height:1.45">${d}</span></div>`).join('')}
       </div>
     </div>
@@ -164,8 +165,8 @@ export function aiMarkBoard() {
 </div>`;
 
   return page({
-    title: 'The AI mark',
-    sub: 'The glyph that means "a machine did this" appears on sixteen surfaces, so it is worth being deliberate about. Six candidates at the sizes they actually ship at, the recommendation in every context it appears, and the rule that keeps it from spreading.',
+    title: 'The AI mark — sparkle',
+    sub: 'The iridescent orb was the reference’s, so it goes. The four-point star is what replaces it — the one glyph nobody has to be taught. Seven candidates at the sizes they actually ship at, the choice in every context it appears, and the rules that do the work distinctiveness will not.',
     content,
   });
 }
