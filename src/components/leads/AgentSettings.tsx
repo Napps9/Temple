@@ -474,7 +474,7 @@ export function AgentSettings() {
                     Dial {agentNumber} to hear exactly what a prospect hears.
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.ink2} />
+                <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
               </Pressable>
             ) : null}
             {!canTestWeb && !canTestPhone ? (

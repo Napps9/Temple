@@ -8,6 +8,7 @@ import { Text } from './Text';
 import { CardHeading } from '@/components/CardHeading';
 import { ChipButton } from '@/components/ChipButton';
 import { StatTile } from '@/components/StatTile';
+import { useThemeColors } from '@/lib/theme';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/format-date';
@@ -202,6 +203,7 @@ export function FinanceBlock({ gymId }: { gymId: string }) {
 // returns no email or phone, since those are governed by can_see_email /
 // can_see_full_pii and routing them through a money RPC would sidestep it.
 function OverdueList({ gymId }: { gymId: string }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const rows = useQuery({
     queryKey: ['overdue-memberships', gymId],
@@ -398,7 +400,7 @@ function OverdueList({ gymId }: { gymId: string }) {
                 </Text>
               ) : null}
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
           </Pressable>
         ))}
         {list.length > shown.length ? (

@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -414,7 +413,7 @@ export default function MemberDetailScreen() {
             {cohort.data.is_expiring_soon && cohort.data.days_until_expiry !== null ? (
               <Badge label={`Expires in ${cohort.data.days_until_expiry}d`} color="#F97316" />
             ) : null}
-            {cohort.data.is_expired ? <Badge label="Expired" color="#9CA3AF" /> : null}
+            {cohort.data.is_expired ? <Badge label="Expired" color={colors.ink3} /> : null}
           </View>
         ) : null}
 

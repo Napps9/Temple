@@ -248,7 +248,7 @@ export function StaffBookingSheet({
                             {c.role}
                           </FieldLabel>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+                        <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
                       </Pressable>
                     ))}
                   </View>

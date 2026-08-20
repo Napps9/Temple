@@ -249,7 +249,7 @@ function UnitDropdown({
         <Text className="text-ink dark:text-ink-dk text-base">
           {UNIT_LABEL[unit]}
         </Text>
-        <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-down" size={16} color={colors.ink3} />
       </Pressable>
       <Modal
         visible={open}

@@ -46,7 +46,7 @@ export function CommunicationsHome() {
               From name, reply-to, and the required postal-address footer.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         </Pressable>
       </Link>
 
@@ -63,7 +63,7 @@ export function CommunicationsHome() {
               Let members subscribe and unsubscribe per topic — newsletter, promos, billing.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         </Pressable>
       </Link>
 
@@ -80,7 +80,7 @@ export function CommunicationsHome() {
               Emails that send themselves — welcome, first-class follow-up, win-back, lead nurture.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         </Pressable>
       </Link>
 

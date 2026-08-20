@@ -966,7 +966,7 @@ export default function AutomationEditor() {
               layout and content
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         </Pressable>
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">

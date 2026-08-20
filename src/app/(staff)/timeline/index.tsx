@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Check } from '@/components/Check';
 import { EmptyState } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -1876,11 +1877,7 @@ function AgentActionCard({
             className="flex-row items-center gap-2 pt-1.5"
             accessibilityRole="checkbox"
             accessibilityState={{ checked: always }}>
-            <Ionicons
-              name={always ? 'checkbox' : 'square-outline'}
-              size={18}
-              color={always ? '#2563EB' : '#9CA3AF'}
-            />
+            <Check on={always} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Always allow this — stop asking first
             </Text>
@@ -2002,7 +1999,7 @@ function PaymentFailingCard({
       {href ? (
         <Ionicons
           name="chevron-forward"
-          size={14}
+          size={15}
           color={colors.ink2}
           style={{ marginTop: 7 }}
         />
@@ -2031,7 +2028,7 @@ function PaymentFailingCard({
         // Handed over: the row shrinks to a status line. Chips here would
         // only repeat it, and the story page keeps the rest.
         <View className="pl-10 flex-row items-center gap-1.5">
-          <Ionicons name="sparkles-outline" size={12} color="#9CA3AF" />
+          <Ionicons name="sparkles-outline" size={12} color={colors.ink3} />
           <Text className="text-[12.5px] text-ink-2 dark:text-ink-2-dk">
             {nextStepLine(
               { next_payment_attempt: retry, full_name: event.subject },

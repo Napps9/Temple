@@ -375,7 +375,7 @@ export default function AthleteHome() {
                       {m.group}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+                  <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
                 </Pressable>
               ))}
             </View>

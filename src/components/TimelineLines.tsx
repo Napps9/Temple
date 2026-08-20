@@ -145,7 +145,7 @@ export function SoftLine({
       {href ? (
         <Ionicons
           name="chevron-forward"
-          size={14}
+          size={15}
           color={colors.ink2}
           style={{ marginTop: 7 }}
         />

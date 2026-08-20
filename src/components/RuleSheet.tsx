@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useThemeColors } from '@/lib/theme';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
@@ -26,6 +27,7 @@ export function RuleSheet({
   editable: boolean;
   onEdit: (field: RuleField, value: RuleChoices[RuleField]) => void;
 }) {
+  const colors = useThemeColors();
   const [openField, setOpenField] = useState<RuleField | null>(null);
   const [showFine, setShowFine] = useState(false);
 
@@ -113,7 +115,7 @@ export function RuleSheet({
           <Ionicons
             name={showFine ? 'chevron-up' : 'chevron-down'}
             size={14}
-            color="#9CA3AF"
+            color={colors.ink3}
           />
           <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] font-medium">
             {showFine ? 'Hide the small print' : `The small print — ${fineCount} sensible defaults`}

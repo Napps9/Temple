@@ -519,7 +519,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                   } · open the builder`}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         </Pressable>
 
         {/* Topic */}

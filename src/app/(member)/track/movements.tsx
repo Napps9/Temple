@@ -289,7 +289,7 @@ function MovementRow({
           color={starred ? '#F59E0B' : colors.ink3}
         />
       </Pressable>
-      <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
+      <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
     </Pressable>
   );
 }

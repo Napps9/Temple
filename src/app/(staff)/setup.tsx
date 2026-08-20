@@ -1318,6 +1318,7 @@ function GoLive({
   onReopen: (step: Exclude<Step, 'golive'>) => void;
   handled: Set<Step>;
 }) {
+  const colors = useThemeColors();
   const left = FINISH_ROWS.filter(
     (r) => !doneKeys.has(r.key) && !handled.has(r.step),
   );
@@ -1333,11 +1334,11 @@ function GoLive({
           key={it.key}
           onPress={() => onReopen(it.step)}
           className="flex-row items-center gap-2.5 active:opacity-70">
-          <Ionicons name="ellipse-outline" size={20} color="#9CA3AF" />
+          <Ionicons name="ellipse-outline" size={20} color={colors.ink3} />
           <Text className="flex-1 text-[15px] font-medium text-ink dark:text-ink-dk">
             {STEP_META[it.step].label}
           </Text>
-          <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
         </Pressable>
       ))}
       <Button onPress={onFinish} loading={finishing}>
@@ -2035,6 +2036,7 @@ function LogoCard({
   onDone: (receipt: string) => void;
   onSkip: () => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -2103,7 +2105,7 @@ function LogoCard({
   return (
     <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
       <View className="flex-row items-center gap-3">
-        <GymLogo size={56} logoUrl={preview} name="?" primaryColor="#2563EB" />
+        <GymLogo size={56} logoUrl={preview} name="?" primaryColor={colors.primary} />
         <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           Square works best — it becomes the app icon your members install.
         </Text>

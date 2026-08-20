@@ -138,7 +138,7 @@ export function MemberGetStartedChecklist() {
               </View>
               <Ionicons
                 name="chevron-forward"
-                size={16}
+                size={15}
                 color={step.done ? colors.ink2 : colors.ink3}
               />
             </Pressable>

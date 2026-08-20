@@ -340,7 +340,7 @@ function NextClassCard() {
           <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
         </View>
       ) : null}
-      <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
+      <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
     </Pressable>
   );
 }

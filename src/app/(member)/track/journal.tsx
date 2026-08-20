@@ -160,7 +160,7 @@ function WorkoutCard({ workout }: { workout: WorkoutRow }) {
             {fmtDateLong(workout.performed_at)}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
+        <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
       </View>
 
       {workout.sections.length > 0 ? (

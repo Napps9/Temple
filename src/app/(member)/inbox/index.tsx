@@ -820,7 +820,7 @@ function PaymentNoticeBanner({
             ? 'Your membership is about to stop'
             : "We couldn't take your payment"}
         </Text>
-        <Ionicons name="chevron-forward" size={16} color="#DC2626" />
+        <Ionicons name="chevron-forward" size={15} color="#DC2626" />
       </View>
       <Text className="text-red-900 dark:text-red-100 text-sm">{notice.body}</Text>
     </Pressable>

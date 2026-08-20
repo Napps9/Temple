@@ -640,7 +640,7 @@ function MyMovementsCard({
       <View className="gap-3">
         <View className="flex-row items-center gap-3">
           <View className="w-11 h-11 rounded-full bg-ink-3/15 items-center justify-center">
-            <Ionicons name="grid-outline" size={22} color="#6B7280" />
+            <Ionicons name="grid-outline" size={22} color={colors.ink3} />
           </View>
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-semibold">

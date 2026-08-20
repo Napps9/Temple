@@ -310,6 +310,7 @@ type SearchRow = {
 };
 
 function IndividualsList() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const [search, setSearch] = useState('');
 
@@ -444,7 +445,7 @@ function IndividualsList() {
               <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                 {m.profiles?.full_name ?? 'Member'}
               </Text>
-              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+              <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
             </Pressable>
           ))}
           {cohort.data && candidates.length === 0 ? (

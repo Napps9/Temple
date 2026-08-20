@@ -643,7 +643,7 @@ function CohortBadges({
       {row.is_expiring_soon ? (
         <Badge label={`${row.days_until_expiry}d`} color="#F97316" />
       ) : null}
-      {row.is_expired ? <Badge label="Expired" color="#9CA3AF" /> : null}
+      {row.is_expired ? <Badge label="Expired" color={colors.ink3} /> : null}
       {row.is_paying ? <Badge label="Paying" color={colors.primary} /> : null}
     </View>
   );

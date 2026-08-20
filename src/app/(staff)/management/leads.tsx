@@ -406,7 +406,7 @@ export default function LeadsScreen() {
                   Set up an assistant that answers and sells memberships to new leads.
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+              <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
             </Pressable>
           </Link>
         ) : null}
@@ -1067,7 +1067,7 @@ function LeadDetailModal({
                             <Text className="text-ink dark:text-ink-dk flex-1">
                               {m.full_name ?? 'Member'}
                             </Text>
-                            <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
+                            <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
                           </Pressable>
                         ))}
                       </View>

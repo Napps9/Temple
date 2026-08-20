@@ -346,7 +346,7 @@ export default function AnalysisScreen() {
                     contentContainerClassName="gap-2 pb-1 md:pb-0">
                     <ClassTypeChip
                       label="All"
-                      color="#9CA3AF"
+                      color={colors.ink3}
                       active={pb.classTypeFilter === null}
                       onPress={() => pb.setClassTypeFilter(null)}
                     />
@@ -459,7 +459,7 @@ export default function AnalysisScreen() {
                 </View>
                 <Ionicons
                   name="chevron-forward"
-                  size={16}
+                  size={15}
                   color={colors.ink3}
                 />
               </Pressable>
