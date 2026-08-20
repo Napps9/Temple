@@ -86,7 +86,7 @@ export function Input({
             <Ionicons
               name={revealed ? 'eye-off-outline' : 'eye-outline'}
               size={18}
-              color={forceDark ? '#9CA3AF' : '#6B7280'}
+              color={forceDark ? DARK_INK_3 : colors.ink3}
             />
           </Pressable>
         ) : null}

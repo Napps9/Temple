@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
 import { FieldLabel } from '@/components/SectionLabel';
+import { useThemeColors } from '@/lib/theme';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
@@ -26,6 +27,7 @@ type Doc = {
 };
 
 export default function SopsScreen() {
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
@@ -185,7 +187,7 @@ export default function SopsScreen() {
               multiline
               numberOfLines={12}
               placeholder="Markdown supported in a future update — plain text for now."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base min-h-[200px]"
               style={{ textAlignVertical: 'top' }}
             />

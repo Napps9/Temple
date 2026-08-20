@@ -8,6 +8,7 @@ import { Text, TextInput } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import { FieldLabel } from '@/components/SectionLabel';
+import { useThemeColors } from '@/lib/theme';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -17,6 +18,7 @@ import {
 import { supabase } from '@/lib/supabase';
 
 export default function DirectThread() {
+  const colors = useThemeColors();
   const { peer } = useLocalSearchParams<{ peer: string }>();
   const session = useSession();
   const { data: membership } = useGymMembership();
@@ -164,7 +166,7 @@ export default function DirectThread() {
             value={draft}
             onChangeText={setDraft}
             placeholder="Type a message"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.ink3}
             multiline
             className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl px-4 py-3 text-ink dark:text-ink-dk text-base"
             style={{ minHeight: 44, maxHeight: 120 }}

@@ -617,6 +617,7 @@ function Field({
   blurb?: string;
   placeholder?: string;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-1.5">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
@@ -631,7 +632,7 @@ function Field({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.ink3}
         autoCapitalize="none"
         autoCorrect={false}
         className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"

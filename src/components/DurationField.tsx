@@ -136,6 +136,7 @@ export function DurationField({
   units: DurationUnit[];
   placeholder?: string;
 }) {
+  const colors = useThemeColors();
   const seed = computeSeed(value, base, units);
   const [amount, setAmount] = useState<string>(seed.amount);
   const [unit, setUnit] = useState<DurationUnit>(seed.unit);
@@ -208,7 +209,7 @@ export function DurationField({
           onChangeText={changeAmount}
           keyboardType="number-pad"
           placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
         />
         <UnitDropdown units={units} unit={unit} onChange={changeUnit} />

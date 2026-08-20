@@ -80,6 +80,7 @@ function TextField({
   // underline formatting only applies on the canvas, not here).
   note?: string;
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-1.5">
       <FieldLabel>{label}</FieldLabel>
@@ -87,7 +88,7 @@ function TextField({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.ink3}
         multiline={multiline}
         className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
         style={multiline ? { minHeight: 88, textAlignVertical: 'top' } : undefined}
@@ -290,7 +291,7 @@ function StockPhotoPickerModal({
               value={query}
               onChangeText={setQuery}
               placeholder="Search photos…"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               returnKeyType="search"
               onSubmitEditing={() => runSearch(query, 1)}
               className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"

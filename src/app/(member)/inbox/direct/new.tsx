@@ -6,6 +6,7 @@ import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
+import { useThemeColors } from '@/lib/theme';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import type { GymRole } from '@/types/database';
@@ -17,6 +18,7 @@ type Candidate = {
 };
 
 export default function NewDirectMessage() {
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const [query, setQuery] = useState('');
@@ -123,7 +125,7 @@ export default function NewDirectMessage() {
           value={query}
           onChangeText={setQuery}
           placeholder="Search by name"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           autoCapitalize="none"
           autoCorrect={false}
           className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base"

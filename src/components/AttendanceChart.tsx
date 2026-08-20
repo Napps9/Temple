@@ -59,7 +59,7 @@ export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
           x={PADDING_LEFT - 6}
           y={PADDING_TOP + 4}
           textAnchor="end"
-          fill="#9CA3AF"
+          fill={colors.ink3}
           fontSize={10}>
           {String(maxValue)}
         </SvgText>
@@ -67,7 +67,7 @@ export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
           x={PADDING_LEFT - 6}
           y={PADDING_TOP + chartH + 3}
           textAnchor="end"
-          fill="#9CA3AF"
+          fill={colors.ink3}
           fontSize={10}>
           0
         </SvgText>

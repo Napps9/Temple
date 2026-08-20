@@ -10,6 +10,7 @@ import {
   type RuleChoices,
   type RuleField,
 } from '@/lib/setup-flow';
+import { useThemeColors } from '@/lib/theme';
 
 // The off-menu answer, as one more chip in the same row. It is not a mode
 // you enter: the presets stay tappable the whole time, because a picker
@@ -27,6 +28,7 @@ export function CustomRuleChip({
   // roomier than the rule sheet's.
   size?: 'sm' | 'lg';
 }) {
+  const colors = useThemeColors();
   const units = unitsFor(field);
   const [amount, setAmount] = useState('');
   const [unitIndex, setUnitIndex] = useState(0);
@@ -72,7 +74,7 @@ export function CustomRuleChip({
           }}
           keyboardType="number-pad"
           placeholder="00"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           onSubmitEditing={submit}
           accessibilityLabel="A different amount"
           className={`text-center text-ink dark:text-ink-dk font-semibold ${

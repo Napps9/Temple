@@ -324,7 +324,7 @@ export default function ImportWorkoutsScreen() {
               multiline
               numberOfLines={6}
               placeholder="email,date,movement,weight,reps,unit,score type,score"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               autoCapitalize="none"
               autoCorrect={false}
               style={{ minHeight: 140, textAlignVertical: 'top' }}

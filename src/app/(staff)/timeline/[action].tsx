@@ -9,6 +9,7 @@ import { Text, TextInput } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
 import { ChipButton } from '@/components/ChipButton';
 import { Screen } from '@/components/Screen';
+import { useThemeColors } from '@/lib/theme';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatDate } from '@/lib/format-date';
 import {
@@ -106,6 +107,7 @@ function useNudgeStory(gymId: string | undefined, actionId: string) {
 type AskTurn = { role: 'owner' | 'temple'; text: string };
 
 export default function NudgeStory() {
+  const colors = useThemeColors();
   const { action: actionParam } = useLocalSearchParams<{ action: string }>();
   const actionId = typeof actionParam === 'string' ? actionParam : '';
   const { data: membership } = useGymMembership();
@@ -237,7 +239,7 @@ export default function NudgeStory() {
                 onChangeText={setInput}
                 editable={!busy}
                 placeholder={ASK_PLACEHOLDER}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.ink3}
                 multiline
                 className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={() => ask(input)}

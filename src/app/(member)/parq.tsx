@@ -8,6 +8,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { useThemeColors } from '@/lib/theme';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -31,6 +32,7 @@ type Answer = {
 };
 
 export default function ParqForm() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const queryClient = useQueryClient();
@@ -188,7 +190,7 @@ export default function ParqForm() {
                   value={answer.explanation}
                   onChangeText={(t) => set(idx, { explanation: t })}
                   placeholder="Add detail (optional but helpful)"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.ink3}
                   multiline
                   numberOfLines={3}
                   style={{ minHeight: 60, textAlignVertical: 'top' }}

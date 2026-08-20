@@ -964,7 +964,7 @@ export default function SetupScreen() {
                 onChangeText={setInput}
                 editable={!busy}
                 placeholder="Type it like you'd say it…"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.ink3}
                 multiline
                 className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={submitText}
@@ -1493,6 +1493,7 @@ function MembersImportCard({
   // A file the workout step recognised as a member list and sent here.
   initial?: { csv: string; name: string | null } | null;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [paste, setPaste] = useState('');
   const [file, setFile] = useState<{
@@ -1634,7 +1635,7 @@ function MembersImportCard({
           onBlur={() => paste.trim() && take(paste, null)}
           multiline
           placeholder="…or paste it here: Email,First Name,Last Name,Plan"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
         />
         {/* The only step that deliberately keeps a screen. A CSV only
@@ -1737,6 +1738,7 @@ function WorkoutsImportCard({
   onSkip: () => void;
   onWrongStep: (csv: string, name: string | null) => void;
 }) {
+  const colors = useThemeColors();
   const queryClient = useQueryClient();
   const [paste, setPaste] = useState('');
   const [file, setFile] = useState<{
@@ -1915,7 +1917,7 @@ function WorkoutsImportCard({
           onBlur={() => paste.trim() && take(paste, null)}
           multiline
           placeholder="…or paste it here: email,date,movement,weight,reps,unit"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
         />
         <StepSkip label="Nothing to bring across" onPress={onSkip} />
@@ -2228,7 +2230,7 @@ function ClassBuilderCard({
               value={name}
               onChangeText={setName}
               placeholder="CrossFit"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
@@ -2456,7 +2458,7 @@ function PlanBuilderCard({
           value={draft.name}
           onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
           placeholder="Unlimited"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
         />
       </View>
@@ -2496,7 +2498,7 @@ function PlanBuilderCard({
             onChangeText={(pounds) => setDraft((d) => ({ ...d, pounds }))}
             placeholder="89"
             keyboardType="decimal-pad"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.ink3}
             className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
           />
         </View>
@@ -2509,7 +2511,7 @@ function PlanBuilderCard({
               value={draft.credits}
               onChangeText={(credits) => setDraft((d) => ({ ...d, credits }))}
               keyboardType="number-pad"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
@@ -2523,7 +2525,7 @@ function PlanBuilderCard({
               value={draft.notice}
               onChangeText={(notice) => setDraft((d) => ({ ...d, notice }))}
               keyboardType="number-pad"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>

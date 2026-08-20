@@ -1176,7 +1176,7 @@ export default function Timeline() {
                 onChangeText={setInput}
                 editable={!busy}
                 placeholder="Show me a member, change a class, send a newsletter…"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.ink3}
                 multiline
                 className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={send}

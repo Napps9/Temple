@@ -169,6 +169,7 @@ function TextField({
   multiline?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words';
 }) {
+  const colors = useThemeColors();
   return (
     <View className="gap-1.5">
       <FieldLabel>{label}</FieldLabel>
@@ -176,7 +177,7 @@ function TextField({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.ink3}
         multiline={multiline}
         autoCapitalize={autoCapitalize}
         autoCorrect={!multiline ? false : undefined}

@@ -21,6 +21,9 @@ import { useThemeColors } from '@/lib/theme';
 //     says "swipe me"
 //   - the title on the left and a close on the right; the title names the
 //     thing, not the verb
+//   - a back chevron before the title when the sheet is showing a step
+//     rather than its own body — which is how a modal that used to open
+//     another modal works now: the sheet stays, its body changes
 //   - a body that scrolls while the head and the foot do not
 //   - a foot whose primary sits right on desktop and which is a
 //     full-width pair on a phone, where both thumbs can reach it
@@ -33,6 +36,7 @@ export function Sheet({
   onClose,
   children,
   actions,
+  onBack,
   dialogWidth = 460,
 }: {
   visible: boolean;
@@ -40,6 +44,12 @@ export function Sheet({
   subtitle?: string;
   onClose: () => void;
   children: ReactNode;
+  // Set while the sheet is showing a step: picking a movement, choosing a
+  // format, editing a tag. Board 04's rule — a modal never opens another
+  // modal, because two sheets stacked on a phone is two grabbers, two
+  // backdrops, and the first one still scrolled behind the second. Back
+  // returns to the body; close still closes the whole thing.
+  onBack?: () => void;
   // The foot. Order them cancel-first: on desktop that puts the primary
   // on the right, on a phone it puts it under the dominant thumb.
   actions?: ReactNode;
@@ -51,6 +61,16 @@ export function Sheet({
 
   const head = (
     <View className="flex-row items-start gap-3 px-4 pb-3 pt-2">
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          className="w-[30px] h-[30px] rounded-full items-center justify-center border border-line-strong dark:border-line-strong-dk active:opacity-70">
+          <Ionicons name="chevron-back" size={15} color={colors.ink2} />
+        </Pressable>
+      ) : null}
       <View className="flex-1 gap-0.5">
         <Text
           accessibilityRole="header"

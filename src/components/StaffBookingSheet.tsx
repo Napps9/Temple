@@ -218,7 +218,7 @@ export function StaffBookingSheet({
                 value={query}
                 onChangeText={setQuery}
                 placeholder="Search members"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.ink3}
                 autoCapitalize="none"
                 autoCorrect={false}
                 className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"

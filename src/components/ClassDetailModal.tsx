@@ -600,7 +600,7 @@ export function ClassDetailModal({
                         value={broadcastBody}
                         onChangeText={setBroadcastBody}
                         placeholder="What does the class need to know?"
-                        placeholderTextColor="#9CA3AF"
+                        placeholderTextColor={colors.ink3}
                         multiline
                         autoFocus
                         editable={!broadcast.isPending}

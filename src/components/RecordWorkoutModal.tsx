@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Switch, View } from 'react-native';
 import { Text, TextInput } from './Text';
@@ -635,6 +636,121 @@ export function RecordWorkoutModal({
     onError: (e) => setError(errorMessage(e, 'Could not save workout')),
   });
 
+  // Board 04: a modal never opens another modal. Picking a category, a
+  // format, a movement or a rep scheme used to open a second sheet over
+  // this one — on a phone that is two grabbers, two backdrops, and this
+  // form still scrolled behind whatever landed on top of it. They are
+  // steps of this sheet now: the container stays, the head names the
+  // step, back returns here, and close still means close.
+  const editingTagDraft = editingTag
+    ? drafts[editingTag.sectionIdx]?.movement_tags[editingTag.tagIdx] ?? null
+    : null;
+  const editingTagMeta = editingTagDraft
+    ? findMovement(editingTagDraft.movement_key)
+    : undefined;
+
+  const step: {
+    title: string;
+    subtitle?: string;
+    body: ReactNode;
+    actions?: ReactNode;
+    back: () => void;
+  } | null = pickerOpenFor
+    ? {
+        title:
+          pickerOpenFor.kind === 'category'
+            ? 'Pick a category'
+            : 'Pick a scoring format',
+        body: (
+          <PickerStep
+            kind={pickerOpenFor.kind}
+            onPick={(key) => {
+              if (pickerOpenFor.kind === 'category') {
+                pickCategory(pickerOpenFor.idx, key as SectionCategoryKey);
+              } else {
+                pickFormat(pickerOpenFor.idx, key as SectionFormatKey);
+              }
+              setPickerOpenFor(null);
+            }}
+          />
+        ),
+        back: () => setPickerOpenFor(null),
+      }
+    : movementPickerForIdx !== null
+      ? {
+          title: 'Tag a movement',
+          subtitle:
+            'Optionally with a rep scheme, so it lands in your per-movement Journal.',
+          body: (
+            <MovementTagPickerStep
+              visible
+              groups={allGroupsDisciplineFirst(discipline)}
+              onPick={(tag) => {
+                addTag(movementPickerForIdx, tag);
+                setMovementPickerForIdx(null);
+              }}
+            />
+          ),
+          back: () => setMovementPickerForIdx(null),
+        }
+      : editingTag
+        ? {
+            title:
+              editingTagMeta?.movement.name ??
+              editingTagDraft?.movement_key ??
+              'Edit tag',
+            subtitle: editingTagMeta?.group.name,
+            body: (
+              <TagEditStep
+                tag={editingTagDraft}
+                onPickScheme={(trackKey) => {
+                  updateTagTrackKey(
+                    editingTag.sectionIdx,
+                    editingTag.tagIdx,
+                    trackKey,
+                  );
+                  setEditingTag(null);
+                }}
+              />
+            ),
+            actions: (
+              <>
+                <SheetAction>
+                  <Button
+                    variant="destructive"
+                    onPress={() => {
+                      removeTag(editingTag.sectionIdx, editingTag.tagIdx);
+                      setEditingTag(null);
+                    }}>
+                    Remove
+                  </Button>
+                </SheetAction>
+                <SheetAction grow>
+                  <Button variant="secondary" onPress={() => setEditingTag(null)}>
+                    Done
+                  </Button>
+                </SheetAction>
+              </>
+            ),
+            back: () => setEditingTag(null),
+          }
+        : null;
+
+  if (step) {
+    return (
+      <Sheet
+        visible={visible}
+        title={step.title}
+        subtitle={step.subtitle}
+        onClose={close}
+        onBack={step.back}
+        dialogWidth={680}
+        actions={step.actions}>
+        {step.body}
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet
       visible={visible}
@@ -761,57 +877,6 @@ export function RecordWorkoutModal({
           ) : null}
       </View>
 
-      <PickerModal
-        visible={pickerOpenFor !== null}
-        kind={pickerOpenFor?.kind ?? 'category'}
-        onPick={(key) => {
-          if (!pickerOpenFor) return;
-          if (pickerOpenFor.kind === 'category') {
-            pickCategory(pickerOpenFor.idx, key as SectionCategoryKey);
-          } else {
-            pickFormat(pickerOpenFor.idx, key as SectionFormatKey);
-          }
-          setPickerOpenFor(null);
-        }}
-        onClose={() => setPickerOpenFor(null)}
-      />
-
-      <MovementTagPickerModal
-        visible={movementPickerForIdx !== null}
-        groups={allGroupsDisciplineFirst(discipline)}
-        onPick={(tag) => {
-          if (movementPickerForIdx !== null) addTag(movementPickerForIdx, tag);
-          setMovementPickerForIdx(null);
-        }}
-        onClose={() => setMovementPickerForIdx(null)}
-      />
-
-      <TagEditModal
-        visible={editingTag !== null}
-        tag={
-          editingTag
-            ? drafts[editingTag.sectionIdx]?.movement_tags[editingTag.tagIdx] ??
-              null
-            : null
-        }
-        onPickScheme={(trackKey) => {
-          if (editingTag) {
-            updateTagTrackKey(
-              editingTag.sectionIdx,
-              editingTag.tagIdx,
-              trackKey,
-            );
-          }
-          setEditingTag(null);
-        }}
-        onRemove={() => {
-          if (editingTag) {
-            removeTag(editingTag.sectionIdx, editingTag.tagIdx);
-          }
-          setEditingTag(null);
-        }}
-        onClose={() => setEditingTag(null)}
-      />
     </Sheet>
   );
 }
@@ -1471,75 +1536,38 @@ function PickerButton({
   );
 }
 
-function TagEditModal({
-  visible,
+function TagEditStep({
   tag,
   onPickScheme,
-  onRemove,
-  onClose,
 }: {
-  visible: boolean;
   tag: MovementTagDraft | null;
   onPickScheme: (trackKey: string | null) => void;
-  onRemove: () => void;
-  onClose: () => void;
 }) {
   const meta = tag ? findMovement(tag.movement_key) : undefined;
+  if (!meta || meta.movement.schemes.length === 0) {
+    return (
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm pb-1">
+        This movement has no rep schemes to choose from.
+      </Text>
+    );
+  }
   return (
-    <Sheet
-      visible={visible}
-      title={meta?.movement.name ?? tag?.movement_key ?? 'Edit tag'}
-      subtitle={meta?.group.name}
-      onClose={onClose}
-      dialogWidth={420}
-      actions={
-        <>
-          <SheetAction>
-            <Button variant="destructive" onPress={onRemove}>
-              Remove
-            </Button>
-          </SheetAction>
-          <SheetAction grow>
-            <Button variant="secondary" onPress={onClose}>
-              Done
-            </Button>
-          </SheetAction>
-        </>
-      }>
-      <View className="gap-3 pb-1">
-          <View className="gap-1">
-            {meta ? (
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                {meta.group.name}
-              </Text>
-            ) : null}
-          </View>
-
-          {meta && meta.movement.schemes.length > 0 ? (
-            <View className="gap-1">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-                Rep scheme
-              </Text>
-              <View className="gap-1">
-                <SchemeRow
-                  label="No scheme"
-                  selected={!tag?.track_key}
-                  onPress={() => onPickScheme(null)}
-                />
-                {meta.movement.schemes.map((s) => (
-                  <SchemeRow
-                    key={s.key}
-                    label={s.label}
-                    selected={tag?.track_key === s.key}
-                    onPress={() => onPickScheme(s.key)}
-                  />
-                ))}
-              </View>
-            </View>
-          ) : null}
-
-      </View>
-    </Sheet>
+    <View className="gap-1 pb-1">
+      <FieldLabel>Rep scheme</FieldLabel>
+      <SchemeRow
+        label="No scheme"
+        selected={!tag?.track_key}
+        onPress={() => onPickScheme(null)}
+      />
+      {meta.movement.schemes.map((sc) => (
+        <SchemeRow
+          key={sc.key}
+          label={sc.label}
+          selected={tag?.track_key === sc.key}
+          onPress={() => onPickScheme(sc.key)}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -1578,16 +1606,16 @@ function SchemeRow({
   );
 }
 
-function MovementTagPickerModal({
+function MovementTagPickerStep({
   visible,
   groups,
   onPick,
-  onClose,
 }: {
+  // Kept so the step resets its search and expansions when the sheet
+  // leaves it, the same way it reset when it was a modal of its own.
   visible: boolean;
   groups: MovementGroup[];
   onPick: (tag: MovementTagDraft) => void;
-  onClose: () => void;
 }) {
   const colors = useThemeColors();
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
@@ -1664,19 +1692,7 @@ function MovementTagPickerModal({
   );
 
   return (
-    <Sheet
-      visible={visible}
-      title="Tag a movement"
-      subtitle="Optionally with a rep scheme, so it lands in your per-movement Journal."
-      onClose={onClose}
-      actions={
-        <SheetAction grow>
-          <Button variant="secondary" onPress={onClose}>
-            Cancel
-          </Button>
-        </SheetAction>
-      }>
-      <View className="gap-3 pb-1">
+    <View className="gap-3 pb-1">
           <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3">
             <Ionicons name="search" size={16} color={colors.ink3} />
             <TextInput
@@ -1684,7 +1700,7 @@ function MovementTagPickerModal({
               onChangeText={setSearch}
               placeholder="Search all movements"
               accessibilityLabel="Search all movements"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               autoCorrect={false}
               className="flex-1 py-2.5 text-ink dark:text-ink-dk text-sm"
             />
@@ -1734,53 +1750,35 @@ function MovementTagPickerModal({
                 </View>
               ))
             )}
-          </View>
       </View>
-    </Sheet>
+    </View>
   );
 }
 
-function PickerModal({
-  visible,
+function PickerStep({
   kind,
   onPick,
-  onClose,
 }: {
-  visible: boolean;
   kind: 'category' | 'format';
   onPick: (key: string) => void;
-  onClose: () => void;
 }) {
   const items = kind === 'category' ? SECTION_CATEGORIES : SECTION_FORMATS;
-  const title = kind === 'category' ? 'Pick a category' : 'Pick a scoring format';
   return (
-    <Sheet
-      visible={visible}
-      title={title}
-      onClose={onClose}
-      actions={
-        <SheetAction grow>
-          <Button variant="secondary" onPress={onClose}>
-            Cancel
-          </Button>
-        </SheetAction>
-      }>
-      <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
-        {items.map((it, i) => (
-          <Pressable
-            key={it.key}
-            onPress={() => onPick(it.key)}
-            accessibilityRole="button"
-            className={`px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
-              i === 0 ? '' : 'border-t border-line dark:border-line-dk'
-            }`}>
-            <Text className="text-ink dark:text-ink-dk text-[14.5px]">
-              {it.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-    </Sheet>
+    <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
+      {items.map((it, i) => (
+        <Pressable
+          key={it.key}
+          onPress={() => onPick(it.key)}
+          accessibilityRole="button"
+          className={`px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+            i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+          }`}>
+          <Text className="text-ink dark:text-ink-dk text-[14.5px]">
+            {it.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 

@@ -102,6 +102,39 @@ describe('Sheet', () => {
       screen.getByRole('dialog', { name: 'Cancel Thursday 17:30 Metcon?' }),
     ).toBeTruthy();
   });
+
+  // Board 04's rule: a modal never opens another modal. When the sheet is
+  // showing a step, back returns to the body and close still closes the
+  // whole thing — two different exits, and a step must not swallow the
+  // second one.
+  it('offers back only while it is showing a step', () => {
+    const onBack = vi.fn();
+    const { rerender } = render(
+      <Sheet visible title="Record workout" onClose={() => {}}>
+        <Text>Body</Text>
+      </Sheet>,
+    );
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    rerender(
+      <Sheet visible title="Tag a movement" onClose={() => {}} onBack={onBack}>
+        <Text>Body</Text>
+      </Sheet>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it('still closes from a step', () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet visible title="Tag a movement" onClose={onClose} onBack={() => {}}>
+        <Text>Body</Text>
+      </Sheet>,
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    expect(onClose).toHaveBeenCalled();
+  });
+
 });
 
 // ConfirmDialog is seven call sites' worth of destructive decisions, and

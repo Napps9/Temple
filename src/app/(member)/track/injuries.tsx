@@ -557,6 +557,7 @@ function MovementMultiPick({
   value: string[];
   onChange: (next: string[]) => void;
 }) {
+  const colors = useThemeColors();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
 
@@ -602,7 +603,7 @@ function MovementMultiPick({
             value={filter}
             onChangeText={setFilter}
             placeholder="Filter movements…"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.ink3}
             className="bg-raised dark:bg-raised-dk rounded-md px-3 py-2 text-ink dark:text-ink-dk text-sm"
           />
           <View className="flex-row flex-wrap gap-1">

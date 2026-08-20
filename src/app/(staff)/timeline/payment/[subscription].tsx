@@ -12,6 +12,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { Screen } from '@/components/Screen';
 import { SoftLine } from '@/components/TimelineLines';
+import { useThemeColors } from '@/lib/theme';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { ASK_FAILED, ASK_UNAVAILABLE } from '@/lib/nudge-story';
@@ -39,6 +40,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type AskTurn = { role: 'owner' | 'temple'; text: string };
 
 export default function PaymentStory() {
+  const colors = useThemeColors();
   const { subscription } = useLocalSearchParams<{ subscription: string }>();
   const subscriptionId = typeof subscription === 'string' ? subscription : '';
   const validId = UUID.test(subscriptionId);
@@ -500,7 +502,7 @@ export default function PaymentStory() {
                 onChangeText={setInput}
                 editable={!busy}
                 placeholder={PAYMENT_ASK_PLACEHOLDER}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.ink3}
                 multiline
                 className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={() => ask(input)}

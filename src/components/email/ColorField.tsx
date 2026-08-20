@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { Text, TextInput } from '@/components/Text';
 
 import { ColorSwatchPicker } from '@/components/ColorSwatchPicker';
+import { useThemeColors } from '@/lib/theme';
 import { normaliseHex } from '@/lib/brand';
 
 // Compact colour control for the email editor: a swatch that toggles a
@@ -18,6 +19,7 @@ export function ColorField({
   value: string;
   onChange: (hex: string) => void;
 }) {
+  const colors = useThemeColors();
   const [draft, setDraft] = useState(value);
   const [open, setOpen] = useState(false);
 
@@ -48,7 +50,7 @@ export function ColorField({
           autoCapitalize="characters"
           autoCorrect={false}
           placeholder="#000000"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm"
         />
       </View>

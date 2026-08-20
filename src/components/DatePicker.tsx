@@ -3,7 +3,7 @@ import { Platform, View } from 'react-native';
 import { Text, TextInput } from './Text';
 
 import { formatDate } from '@/lib/format-date';
-import { useThemePreference } from '@/lib/theme';
+import { useThemeColors, useThemePreference } from '@/lib/theme';
 
 type Props = {
   label: string;
@@ -36,6 +36,7 @@ export function DatePicker({
   min,
   max,
 }: Props) {
+  const colors = useThemeColors();
   const { scheme } = useThemePreference();
   const display = formatDate(value);
 
@@ -68,7 +69,7 @@ export function DatePicker({
       ) : (
         <TextInput
           className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.ink3}
           accessibilityLabel={label}
           value={value}
           onChangeText={onChange}

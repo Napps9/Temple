@@ -901,7 +901,7 @@ export function ClassTypesPanel() {
                                   editRow(idx, { cancelCutoffTime: v })
                                 }
                                 placeholder="21:00"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.ink3}
                                 autoCapitalize="none"
                                 autoCorrect={false}
                                 className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
@@ -917,7 +917,7 @@ export function ClassTypesPanel() {
                                   editRow(idx, { cancelCutoffDaysBefore: v })
                                 }
                                 placeholder="1"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.ink3}
                                 keyboardType="number-pad"
                                 className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
                               />

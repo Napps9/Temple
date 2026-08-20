@@ -63,7 +63,7 @@ export function ColourField({
             autoCapitalize="characters"
             autoCorrect={false}
             placeholder={placeholderHex ?? colors.primary}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.ink3}
             className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
           />
         </View>

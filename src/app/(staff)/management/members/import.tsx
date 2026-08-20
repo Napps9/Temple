@@ -747,7 +747,7 @@ export default function ImportMembersScreen() {
               multiline
               numberOfLines={6}
               placeholder="Email,First Name,Last Name,Plan,Start Date..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               autoCapitalize="none"
               autoCorrect={false}
               style={{ minHeight: 140, textAlignVertical: 'top' }}
@@ -1163,6 +1163,7 @@ function PlanReviewCard({
   existingPlans: { plan_id: string; name: string; kind: string }[];
   onChange: (patch: Partial<ReviewedPlan>) => void;
 }) {
+  const colors = useThemeColors();
   const { scheme } = useThemePreference();
   const currency = useGymCurrency();
   const nameMatch = existingPlans.find(
@@ -1290,7 +1291,7 @@ function PlanReviewCard({
             editable={!bodyDimmed}
             value={final.name}
             onChangeText={(v) => onChange({ name: v })}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.ink3}
             className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
           />
         </View>
@@ -1332,7 +1333,7 @@ function PlanReviewCard({
                 onChange({ credit_count: v === '' ? null : parseInt(v, 10) })
               }
               keyboardType="number-pad"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.ink3}
               className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
             />
           </View>
@@ -1346,7 +1347,7 @@ function PlanReviewCard({
             value={final.monthly_price}
             onChangeText={(v) => onChange({ monthly_price: v })}
             keyboardType="decimal-pad"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.ink3}
             className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
           />
         </View>
