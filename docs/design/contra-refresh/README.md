@@ -146,6 +146,9 @@ Still open:
    `SiteEditor`. Two are deliberately not sheets: `ImageGalleryModal` is
    a full-bleed pinch-and-pan viewer with its own gesture root, and
    `DurationField`'s picker is a popover anchored to its field.
+   Board 04's other half — a modal never opens another modal — is done
+   for the biggest offender: Record a workout's four nested sheets are
+   steps of one sheet (board 33). `Sheet` gained `onBack` for it.
 6. The app shell: ground colour and the nav rail. **Done.**
 7. **The neutral ramp, everywhere.** **Done to 197 occurrences**, from
    5,604 — thirteen exact light/dark pairs by codemod, then 57 more
@@ -193,7 +196,7 @@ Still open:
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..32.html
+node build.mjs   # writes 01..33.html
 node shot.mjs    # screenshots them to png/ at 2x
 node shot.mjs 05 # just one board
 ```
@@ -202,7 +205,7 @@ node shot.mjs 05 # just one board
 constant that swaps the machine's glyph across all sixteen places it
 appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states` hold the
 proposal boards; `b-shipped`, `b-decisions`, `b-parts`, `b-rail`,
-`b-leads`, `b-heads`, `b-labels`, `b-onerail`, `b-accent`, `b-loading` and `b-email` hold the record ones, which are drawn from the code rather than
+`b-leads`, `b-heads`, `b-labels`, `b-onerail`, `b-accent`, `b-loading`, `b-email` and `b-steps` hold the record ones, which are drawn from the code rather than
 ahead of it — several of them cover screens behind auth that the exported
 bundle cannot photograph. `system.css` is the proposed design
 system, `legacy.css` approximates today's app for the before/after.
