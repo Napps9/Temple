@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ComponentProps } from 'react';
 import { Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/components/Text';
 
+import { staffContentWidth } from '@/lib/breakpoint';
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
 import { errorMessage } from '@/lib/errors';
@@ -719,7 +720,8 @@ export function EmailEditor({
   // like the website builder's split view — so heading/text/button-label
   // edits can happen straight in the canvas, not just the sidebar; narrow
   // stacks the rail (the caller offers a read-only Preview toggle).
-  if (Platform.OS === 'web' && width >= 1280) {
+  // The column, not the window — see website.tsx for the same call.
+  if (Platform.OS === 'web' && staffContentWidth(width) >= 1280) {
     return (
       <View className="flex-1 flex-row">
         <View className="w-[420px] shrink-0 border-r border-line dark:border-line-dk">

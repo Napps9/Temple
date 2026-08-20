@@ -30,19 +30,12 @@ function goToTab(tab: LeadsTab) {
   else router.push('/management/leads/settings' as never);
 }
 
-// Same pill idiom as the Manage screen's own sidebar (ManageNav) — a
-// vertical list on desktop, a horizontal scroller on mobile — so the
-// Leads section reads as part of the same system rather than a
-// one-off screen with its own nav language.
-function LeadsPills({
-  tabs,
-  active,
-  vertical,
-}: {
-  tabs: LeadsTab[];
-  active: LeadsTab;
-  vertical: boolean;
-}) {
+// Same pill idiom as the Manage screen's section nav (ManageNav), so the
+// Leads section reads as part of the same system rather than a one-off
+// screen with its own nav language. One layout, at every width: this used
+// to become a full-height sidebar at 1024, which is where the staff rail
+// arrives, and two bordered nav columns is not a layout.
+function LeadsPills({ tabs, active }: { tabs: LeadsTab[]; active: LeadsTab }) {
   const colors = useThemeColors();
   const pills = tabs.map((t) => {
     const selected = t === active;
@@ -57,13 +50,9 @@ function LeadsPills({
         // for, so filling it with the brand made every gym's chrome a
         // different colour before any of their content had loaded.
         className={`flex-row items-center gap-2.5 rounded-ctl px-3 py-2.5 active:opacity-80 ${
-          vertical ? 'w-full' : ''
-        } ${
           selected
             ? 'bg-raised dark:bg-raised-dk'
-            : vertical
-              ? 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
-              : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
+            : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <Ionicons
           name={TAB_ICONS[t]}
@@ -81,7 +70,6 @@ function LeadsPills({
       </Pressable>
     );
   });
-  if (vertical) return <View className="gap-1">{pills}</View>;
   return (
     <ScrollView
       horizontal
@@ -94,8 +82,7 @@ function LeadsPills({
 }
 
 // Shell for the Leads section's screens (pipeline, conversations,
-// settings) — a persistent left sidebar on desktop matching the Manage
-// screen's own sidebar, a pill row above the content on mobile.
+// settings): back, the section's pill row, then the page.
 export function LeadsShell({
   active,
   tabs,
@@ -107,21 +94,15 @@ export function LeadsShell({
 }) {
   return (
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
-      <View className="flex-1 lg:flex-row">
-        <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-line dark:border-line-dk px-4 py-6 gap-4">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="gap-5 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
+        <View className="gap-3">
           <BackLink fallbackHref="/management" />
-          <LeadsPills tabs={tabs} active={active} vertical />
+          <LeadsPills tabs={tabs} active={active} />
         </View>
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="gap-5 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
-          <View className="lg:hidden gap-3">
-            <BackLink fallbackHref="/management" />
-            <LeadsPills tabs={tabs} active={active} vertical={false} />
-          </View>
-          {children}
-        </ScrollView>
-      </View>
+        {children}
+      </ScrollView>
     </Screen>
   );
 }

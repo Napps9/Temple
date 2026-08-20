@@ -14,6 +14,7 @@ import { Screen } from '@/components/Screen';
 import { PageManagerModal } from '@/components/website/PageManagerModal';
 import { SiteEditor } from '@/components/website/SiteEditor';
 import { SiteHtmlPreview } from '@/components/website/SiteHtmlPreview';
+import { staffContentWidth } from '@/lib/breakpoint';
 import { BRAND_THEMES, composeThemeWithBrand, isThemeId, type ThemeId } from '@/lib/brand-themes';
 import { useCustomDomain } from '@/lib/custom-domain';
 import { errorMessage } from '@/lib/errors';
@@ -348,7 +349,9 @@ export default function WebsiteManageScreen() {
   const debouncedSyncKey = useDebouncedValue(structuralVersion, 350);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { width } = useWindowDimensions();
-  const isSplitView = Platform.OS === 'web' && width >= 1280;
+  // The column, not the window: the staff rail takes 246px before this
+  // screen sees any of it, and a split view needs the real number.
+  const isSplitView = Platform.OS === 'web' && staffContentWidth(width) >= 1280;
 
   const initialized = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

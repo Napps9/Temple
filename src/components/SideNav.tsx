@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { GymLogo } from './GymLogo';
 import { NavAccountMenu } from './NavAccountMenu';
+import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 import { TempleWordmark } from './TempleMark';
 import type { NavSection } from './TopNav';
@@ -114,9 +115,7 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
 
         {gymLinks.length ? (
           <View className="gap-0.5">
-            <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-[0.09em] px-3 pt-1.5 pb-1">
-              The gym
-            </Text>
+            <FieldLabel className="px-3 pt-1.5 pb-1">The gym</FieldLabel>
             {gymLinks.map((l) => (
               <NavRow
                 key={l.href}

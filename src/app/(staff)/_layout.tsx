@@ -4,7 +4,7 @@ import { useWindowDimensions, View } from 'react-native';
 
 import { SideNav } from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
-import { MD } from '@/lib/breakpoint';
+import { LG } from '@/lib/breakpoint';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { shouldRecord } from '@/lib/route-usage';
 import { supabase } from '@/lib/supabase';
@@ -68,12 +68,15 @@ export default function StaffLayout() {
     return <Redirect href="/book" />;
   }
 
-  // A rail beside the pages at 768 and up, a top bar below it. The router
-  // is the same either way — this swaps the chrome, not the navigation:
-  // four sections centred in a 1400px window left the top third of the
-  // screen doing nothing and gave Members, Plans, Communications and
-  // Billing nowhere to live except behind Manage.
-  const rail = width >= MD;
+  // A rail beside the pages at 1024 and up, a top bar below it. The
+  // router is the same either way — this swaps the chrome, not the
+  // navigation: four sections centred in a 1400px window left the top
+  // third of the screen doing nothing and gave Members, Plans,
+  // Communications and Billing nowhere to live except behind Manage.
+  //
+  // 1024 rather than 768 because the rail is 246px the page never sees;
+  // see lib/breakpoint.ts.
+  const rail = width >= LG;
 
   const tabs = (
     <>

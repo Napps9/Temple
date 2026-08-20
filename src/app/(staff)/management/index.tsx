@@ -156,19 +156,18 @@ const CATEGORY_ICONS: Record<BackOfficeCategory, IconName> = {
   settings: 'settings-outline',
 };
 
-// Section nav, shared by the desktop sidebar menu (vertical, transparent
-// rows in a bordered panel) and the mobile pill row (horizontal white
-// cards on the page). Same items, two layouts.
+// Section nav: one horizontal strip of pills, at every width. It was two
+// layouts — a vertical sidebar on desktop, this row below it — and the
+// sidebar arrived at the same width as the staff rail, so a desktop
+// window carried two bordered nav columns.
 function ManageNav({
   categories,
   active,
   onSelect,
-  vertical,
 }: {
   categories: BackOfficeCategory[];
   active: BackOfficeCategory;
   onSelect: (c: BackOfficeCategory) => void;
-  vertical: boolean;
 }) {
   const colors = useThemeColors();
   const pills = categories.map((c) => {
@@ -184,13 +183,9 @@ function ManageNav({
         // is on screen the whole time and is never the one action a page
         // exists for.
         className={`flex-row items-center gap-2.5 rounded-ctl px-3 py-2.5 active:opacity-80 ${
-          vertical ? 'w-full' : ''
-        } ${
           selected
             ? 'bg-raised dark:bg-raised-dk'
-            : vertical
-              ? 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
-              : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
+            : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <Ionicons
           name={CATEGORY_ICONS[c]}
@@ -209,14 +204,10 @@ function ManageNav({
     );
   });
 
-  if (vertical) {
-    return <View className="gap-1">{pills}</View>;
-  }
-
-  // Mobile: a single horizontal strip that bleeds to the screen edges
-  // (the parent content padding is px-4) rather than wrapping into
-  // ragged rows. The last pill peeking off the right edge is the scroll
-  // affordance.
+  // A single horizontal strip that bleeds to the screen edges (the parent
+  // content padding is px-4) rather than wrapping into ragged rows. The
+  // last pill peeking off the right edge is the scroll affordance; on a
+  // wide window all eight fit and there is nothing to scroll.
   return (
     <ScrollView
       horizontal
@@ -393,19 +384,7 @@ export default function ManagementHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
-      <View className="flex-1 lg:flex-row">
-        {/* Desktop: a full-height left sidebar menu. Mobile: hidden — the
-            pills render inside the scroll area instead. */}
-        {availableCategories.length > 1 ? (
-          <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-line dark:border-line-dk px-4 py-6">
-            <ManageNav
-              categories={availableCategories}
-              active={activeCategory}
-              onSelect={selectCategory}
-              vertical
-            />
-          </View>
-        ) : null}
+      <View className="flex-1">
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
@@ -419,15 +398,17 @@ export default function ManagementHome() {
               autoCorrect={false}
             />
           ) : null}
+          {/* The section nav is a pill row at every width. It used to
+              become a second full-height sidebar at 1024, which is
+              exactly where the staff rail arrives — two bordered nav
+              columns side by side, 490px of chrome before any of the
+              page. There is one vertical nav in the product. */}
           {searching ? null : availableCategories.length > 1 ? (
-            <View className="lg:hidden">
-              <ManageNav
-                categories={availableCategories}
-                active={activeCategory}
-                onSelect={selectCategory}
-                vertical={false}
-              />
-            </View>
+            <ManageNav
+              categories={availableCategories}
+              active={activeCategory}
+              onSelect={selectCategory}
+            />
           ) : null}
           {/* Owner-only setup nudge. Self-hides once all five steps are done
               so the card never nags a finished gym. */}

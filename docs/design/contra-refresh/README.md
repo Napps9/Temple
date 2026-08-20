@@ -156,9 +156,16 @@ Still open:
    board 20 defines — plus Avatar, StatTile and CardHeading. The four
    icon tints were a second ramp and are gone; 193 call sites take ink,
    ink-2 or ink-3.
-9. **The staff rail.** **Done** — `SideNav` at 768 and up, chrome only.
-   The account menu came out of TopNav so the two navs cannot drift, and
-   `breakpoint.ts` holds the one width three things turn on.
+9. **The staff rail.** **Done** — `SideNav` at 1024 and up, chrome only.
+   The account menu came out of TopNav so the two navs cannot drift.
+   It shipped at 768 and was wrong twice (board 29): the Manage hub and
+   the Leads section already had a sidebar of their own at 1024, so a
+   desktop window drew two nav columns; and the rail takes 246px before
+   the page sees any of it, so at a 768 window the column was 522px
+   while every `md:` class inside it fired. There is now one vertical
+   nav, it waits for 1024, and `breakpoint.ts` carries both widths plus
+   `staffContentWidth()` for the two split views that need the column
+   rather than the window.
 10. Surfaces, staff first, restructured onto their page pattern and
     consolidated where two screens serve one job. **Started**: Lead
     settings is on the page parts, and the AI Agent tab folded into it —
@@ -166,14 +173,16 @@ Still open:
     not touched. Then the page head: 41 screens were hand-rolling a
     24px title block and now call `PageHead` (board 27), which also
     settled the padding question — the parts draw none, because every
-    screen's ScrollView already carries `px-4`. Next: the Manage hub,
-    Timeline, `setup.tsx`.
+    screen's ScrollView already carries `px-4`. Then the label (board
+    28): one small-caps token instead of 112 hand-written ones at four
+    sizes and four weights, with `Input`'s own label — a fifth idiom —
+    brought onto it. Next: the Manage hub, Timeline, `setup.tsx`.
 
 ## Rebuilding
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..27.html
+node build.mjs   # writes 01..29.html
 node shot.mjs    # screenshots them to png/ at 2x
 node shot.mjs 05 # just one board
 ```
@@ -182,7 +191,7 @@ node shot.mjs 05 # just one board
 constant that swaps the machine's glyph across all sixteen places it
 appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states` hold the
 proposal boards; `b-shipped`, `b-decisions`, `b-parts`, `b-rail`,
-`b-leads` and `b-heads` hold the record ones, which are drawn from the code rather than
+`b-leads`, `b-heads`, `b-labels` and `b-onerail` hold the record ones, which are drawn from the code rather than
 ahead of it — several of them cover screens behind auth that the exported
 bundle cannot photograph. `system.css` is the proposed design
 system, `legacy.css` approximates today's app for the before/after.
