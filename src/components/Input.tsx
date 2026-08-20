@@ -10,14 +10,22 @@ import { useThemeColors } from '@/lib/theme';
 // cannot come from a `dark:` class when the scheme is light.
 const DARK_INK_3 = '#6C727B';
 
-type Props = TextInputProps & {
-  label: string;
+// `label` draws the small-caps rule above the field. It is optional
+// because a questionnaire prompt — a full sentence ending in a question
+// mark — is not a field label and reads as shouting in caps; those
+// screens draw the question themselves and name the field for a screen
+// reader instead. The union makes that a requirement rather than an
+// invitation: drop the label and you owe an accessibilityLabel.
+type Base = TextInputProps & {
   error?: string;
   // Opt into dark styling regardless of the system colour scheme — used by
   // the always-dark logged-out auth surfaces, where NativeWind's `dark:`
   // variant wouldn't otherwise fire.
   forceDark?: boolean;
 };
+
+type Props = Base &
+  ({ label: string } | { label?: undefined; accessibilityLabel: string });
 
 // Field shell that also handles the password show/hide affordance when
 // `secureTextEntry` is set. The border + background live on a wrapper View
@@ -49,7 +57,9 @@ export function Input({
 
   return (
     <View className="gap-1.5">
-      <Text className={`${LABEL_TYPE} ${labelCls}`}>{label}</Text>
+      {label ? (
+        <Text className={`${LABEL_TYPE} ${labelCls}`}>{label}</Text>
+      ) : null}
       <View className={`flex-row items-center border rounded-lg ${boxCls}`}>
         <TextInput
           className={`flex-1 px-4 py-3 text-base ${inputCls} ${

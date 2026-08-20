@@ -281,7 +281,7 @@ export default function CreateGymScreen() {
                   placeholder="Iron Temple"
                 />
                 <Input
-                  label="Slug (used in your join link)"
+                  label="Join link"
                   value={slugTouched ? gymSlug : slugify(gymName)}
                   onChangeText={(v) => setGymSlug(slugify(v))}
                   autoCapitalize="none"

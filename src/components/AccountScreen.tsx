@@ -230,9 +230,12 @@ export function AccountScreen() {
 
         {/* Two-column dashboard on desktop; the two groups stack in the
             same order on mobile. Left = identity + gym; right = account
-            details, security and data controls. */}
-        <View className="gap-6 lg:flex-row lg:items-start">
-        <View className="gap-6 lg:flex-1">
+            details, security and data controls.
+            xl rather than lg because this screen renders on both sides:
+            on staff it sits inside the 246px rail, so an lg: split gave
+            it two 380px columns in a 1024 window. */}
+        <View className="gap-6 xl:flex-row xl:items-start">
+        <View className="gap-6 xl:flex-1">
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <AvatarUploader
@@ -298,7 +301,7 @@ export function AccountScreen() {
         ) : null}
 
         </View>
-        <View className="gap-6 lg:flex-1">
+        <View className="gap-6 xl:flex-1">
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">

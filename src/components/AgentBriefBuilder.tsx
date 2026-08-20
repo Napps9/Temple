@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { FieldLabel } from './SectionLabel';
@@ -41,6 +42,18 @@ const EMPTY_ANSWERS: Answers = {
 // "Rewrite with AI" modal — both draft the agent's brief the same way, from
 // the gym's real data (plans, schedule, coaches) plus these owner answers,
 // via the generate-agent-prompt edge function.
+// The five prompts are questions, not field names: a full sentence in
+// small caps reads as shouting, and the field below is the answer to it.
+// So the question is body copy and the field carries its name only for a
+// screen reader.
+function Question({ children }: { children: ReactNode }) {
+  return (
+    <Text className="text-ink dark:text-ink-dk text-[15px] leading-[21px]">
+      {children}
+    </Text>
+  );
+}
+
 export function AgentBriefBuilder({
   gymId,
   value,
@@ -113,36 +126,41 @@ export function AgentBriefBuilder({
             fill in what only you know — every one is optional, but the first is where the sales
             happen.
           </Text>
+          <Question>Your intro offer — what gets someone through the door?</Question>
           <Input
-            label="Your intro offer — what gets someone through the door?"
+            accessibilityLabel="Your intro offer — what gets someone through the door?"
             value={answers.intro_offer}
             onChangeText={(t) => setAnswers((a) => ({ ...a, intro_offer: t }))}
             multiline
             placeholder={`First class free. Or: ${symbol}19 trial week, no commitment…`}
           />
+          <Question>Where should a brand-new member start?</Question>
           <Input
-            label="Where should a brand-new member start?"
+            accessibilityLabel="Where should a brand-new member start?"
             value={answers.beginner_start}
             onChangeText={(t) => setAnswers((a) => ({ ...a, beginner_start: t }))}
             multiline
             placeholder="Book any Foundations class — coaches take it from there…"
           />
+          <Question>Which classes suit beginners vs advanced?</Question>
           <Input
-            label="Which classes suit beginners vs advanced?"
+            accessibilityLabel="Which classes suit beginners vs advanced?"
             value={answers.levels}
             onChangeText={(t) => setAnswers((a) => ({ ...a, levels: t }))}
             multiline
             placeholder="Foundations & Sweat are beginner-friendly; Comp is advanced…"
           />
+          <Question>Location, parking, how to find you</Question>
           <Input
-            label="Location, parking, how to find you"
+            accessibilityLabel="Location, parking, how to find you"
             value={answers.location}
             onChangeText={(t) => setAnswers((a) => ({ ...a, location: t }))}
             multiline
             placeholder="Rivington St, behind the station; free parking after 6pm…"
           />
+          <Question>The questions you answer most — with your answers</Question>
           <Input
-            label="The questions you answer most — with your answers"
+            accessibilityLabel="The questions you answer most — with your answers"
             value={answers.faq}
             onChangeText={(t) => setAnswers((a) => ({ ...a, faq: t }))}
             multiline
@@ -197,8 +215,9 @@ export function AgentBriefBuilder({
         <FieldLabel>
           The agent's brief
         </FieldLabel>
+        <Question>Edit anything before saving — it&rsquo;s yours</Question>
         <Input
-          label="Edit anything before saving — it's yours"
+          accessibilityLabel="Edit anything before saving — it's yours"
           value={value}
           onChangeText={onChange}
           multiline
