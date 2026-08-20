@@ -55,23 +55,29 @@ function LeadsPills({
         onPress={() => goToTab(t)}
         accessibilityRole="tab"
         accessibilityState={{ selected }}
-        className={`flex-row items-center gap-2.5 rounded-lg px-3 py-2.5 active:opacity-80 ${
+        // Selected is a soft tint, not the gym's colour. A nav is on
+        // screen the whole time and is never the one action a page exists
+        // for, so filling it with the brand made every gym's chrome a
+        // different colour before any of their content had loaded.
+        className={`flex-row items-center gap-2.5 rounded-ctl px-3 py-2.5 active:opacity-80 ${
           vertical ? 'w-full' : ''
         } ${
           selected
-            ? 'bg-primary shadow-card'
+            ? 'bg-raised dark:bg-raised-dk'
             : vertical
-              ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
-              : 'bg-surface dark:bg-surface-dk border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
+              ? 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
+              : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <Ionicons
           name={TAB_ICONS[t]}
           size={17}
-          color={selected ? '#FFFFFF' : colors.ink2}
+          color={selected ? colors.ink : colors.ink3}
         />
         <Text
-          className={`text-sm font-medium ${
-            selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+          className={`text-sm ${
+            selected
+              ? 'text-ink dark:text-ink-dk font-semibold'
+              : 'text-ink-2 dark:text-ink-2-dk font-medium'
           }`}>
           {TAB_LABELS[t]}
         </Text>
@@ -105,7 +111,7 @@ export function LeadsShell({
   return (
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <View className="flex-1 lg:flex-row">
-        <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-gray-200 dark:border-gray-800 px-4 py-6 gap-4">
+        <View className="hidden lg:flex lg:w-60 lg:shrink-0 border-r border-line dark:border-line-dk px-4 py-6 gap-4">
           <BackLink fallbackHref="/management" />
           <LeadsPills tabs={tabs} active={active} vertical />
         </View>

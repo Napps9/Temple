@@ -11,6 +11,8 @@ import { ChipButton } from '@/components/ChipButton';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
 import { LeadsShell } from '@/components/LeadsNav';
+import { PageHead } from '@/components/PageHead';
+import { SectionLabel } from '@/components/SectionLabel';
 import { syncVapiAssistant } from '@/lib/agent-sync';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -54,19 +56,6 @@ const STRATEGY_COPY: Record<Strategy, { title: string; blurb: string }> = {
     blurb: "Don't auto-assign — you'll pick a coach on each lead yourself.",
   },
 };
-
-// Plain grouping label, not a collapsible accordion — every card stays
-// visible, this just gives the scroll a scannable shape.
-function SectionHeader({ label }: { label: string }) {
-  return (
-    <View className="flex-row items-center gap-2 px-0.5 pt-1">
-      <View className="w-1 h-3.5 rounded-full bg-primary" />
-      <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-bold uppercase tracking-widest">
-        {label}
-      </Text>
-    </View>
-  );
-}
 
 export default function LeadSettingsScreen() {
   const { data: membership } = useGymMembership();
@@ -339,16 +328,14 @@ export default function LeadSettingsScreen() {
 
   return (
     <LeadsShell active="settings" tabs={['leads', 'agent', 'conversations', 'settings']}>
-      <View className="gap-1">
-        <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">Settings</Text>
-        <Text className="text-ink-2 dark:text-ink-2-dk">
-          How leads are routed, recorded, and retained.
-        </Text>
-      </View>
+      <PageHead
+        title="Lead settings"
+        subtitle="How leads are routed, recorded, and how long any of it is kept."
+      />
 
-      <SectionHeader label="When a lead comes in" />
+      <SectionLabel>When a lead comes in</SectionLabel>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         {(['round_robin', 'single_default', 'manual'] as Strategy[]).map((s) => {
           const sel = strategy === s;
           return (
@@ -401,7 +388,7 @@ export default function LeadSettingsScreen() {
         </Button>
       </View>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-medium">Text the coach too</Text>
@@ -417,7 +404,7 @@ export default function LeadSettingsScreen() {
         </View>
       </View>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-medium">Lead sources</Text>
@@ -434,9 +421,9 @@ export default function LeadSettingsScreen() {
         </View>
       </View>
 
-      <SectionHeader label="Call Recording & Consent" />
+      <SectionLabel>Recording and consent</SectionLabel>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-medium">
@@ -472,9 +459,9 @@ export default function LeadSettingsScreen() {
         </Text>
       </View>
 
-      <SectionHeader label="Usage & Data" />
+      <SectionLabel>Limits and retention</SectionLabel>
 
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           Usage &amp; limits
         </Text>
@@ -559,9 +546,7 @@ export default function LeadSettingsScreen() {
         </Button>
       </View>
 
-      <SectionHeader label="Data Retention" />
-
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Leads that never convert are deleted after this window. Converted leads become members
           and are kept.
@@ -738,7 +723,7 @@ function SourcesEditorModal({
                         onPress={() => setColor(c)}
                         style={{ backgroundColor: c }}
                         className={`w-8 h-8 rounded-full ${
-                          sel ? 'border-2 border-gray-900 dark:border-gray-50' : ''
+                          sel ? 'border-2 border-ink dark:border-ink-dk' : ''
                         }`}
                       />
                     );

@@ -419,7 +419,7 @@ export default function LeadsScreen() {
             <View className="w-8 h-8 rounded-full items-center justify-center bg-amber-400">
               <Ionicons name="sparkles" size={15} color="#3A2C05" />
             </View>
-            <Text className="flex-1 text-gray-800 dark:text-gray-100 text-xs leading-5">
+            <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs leading-5">
               <Text className="font-semibold">Your AI just had its first real conversation</Text>{' '}
               with a prospect.
             </Text>

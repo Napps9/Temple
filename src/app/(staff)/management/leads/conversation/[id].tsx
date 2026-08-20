@@ -411,7 +411,7 @@ export default function AgentConversationScreen() {
           // can tell which turn a highlighted phrase is in.
           nativeID={isAgent ? `${MESSAGE_ID_PREFIX}${m.id}` : undefined}
           className={`max-w-[88%] rounded-xl px-3 py-2 ${
-            fromLead ? 'self-start bg-gray-200 dark:bg-gray-800' : 'self-end bg-primary/10'
+            fromLead ? 'self-start bg-raised dark:bg-raised-dk' : 'self-end bg-primary/10'
           } ${active ? 'border border-primary' : 'border border-transparent'}`}>
           <Text className="text-ink dark:text-ink-dk">{m.body}</Text>
           <View className="flex-row items-center justify-between mt-1 gap-3">
@@ -733,7 +733,7 @@ function CoachModal({
               The AI said
             </Text>
             <View className="bg-primary/10 rounded-lg p-3">
-              <Text className="text-gray-800 dark:text-gray-100 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 {message?.body}
               </Text>
             </View>

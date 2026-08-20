@@ -864,7 +864,7 @@ export default function LeadAgentScreen() {
           className="flex-1 bg-black/60 items-center justify-center px-6 py-10">
           <Pressable
             onPress={() => {}}
-            className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-xl gap-4 max-h-[90%]">
+            className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-xl gap-4 max-h-[90%]">
             <View className="flex-row items-center justify-between">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 Rewrite with AI
@@ -874,7 +874,7 @@ export default function LeadAgentScreen() {
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel="Close"
-                className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-200 dark:active:bg-gray-800">
+                className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
                 <Ionicons name="close" size={18} color={colors.ink2} />
               </Pressable>
             </View>
@@ -926,7 +926,7 @@ export default function LeadAgentScreen() {
         ) : (
           (rules.data ?? []).map((r) => (
             <View key={r.id} className="rounded-lg border border-line dark:border-line-dk p-3 gap-2">
-              <Text className="text-gray-800 dark:text-gray-100 text-sm">{r.correction}</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{r.correction}</Text>
               <View className="flex-row items-center justify-between">
                 <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-wide">
                   {r.field_kind} · {r.scope === 'standing_rule' ? 'always' : 'example'}

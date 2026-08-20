@@ -716,7 +716,7 @@ function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boo
               ) : (
                 <View
                   className={`w-1.5 h-1.5 rounded-full ${
-                    i === step ? 'bg-primary' : 'bg-gray-400 dark:bg-gray-600'
+                    i === step ? 'bg-primary' : 'bg-sunken dark:bg-sunken-dk'
                   }`}
                 />
               )}
