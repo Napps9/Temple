@@ -176,13 +176,16 @@ Still open:
     screen's ScrollView already carries `px-4`. Then the label (board
     28): one small-caps token instead of 112 hand-written ones at four
     sizes and four weights, with `Input`'s own label — a fifth idiom —
-    brought onto it. Next: the Manage hub, Timeline, `setup.tsx`.
+    brought onto it. Then the accent rule finished (board 30): 61
+    controls said "picked" by filling with the gym's colour, so on a
+    form every answer competed with the one button that did something.
+    Next: the Manage hub, Timeline, `setup.tsx`.
 
 ## Rebuilding
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..29.html
+node build.mjs   # writes 01..30.html
 node shot.mjs    # screenshots them to png/ at 2x
 node shot.mjs 05 # just one board
 ```
@@ -191,7 +194,7 @@ node shot.mjs 05 # just one board
 constant that swaps the machine's glyph across all sixteen places it
 appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states` hold the
 proposal boards; `b-shipped`, `b-decisions`, `b-parts`, `b-rail`,
-`b-leads`, `b-heads`, `b-labels` and `b-onerail` hold the record ones, which are drawn from the code rather than
+`b-leads`, `b-heads`, `b-labels`, `b-onerail` and `b-accent` hold the record ones, which are drawn from the code rather than
 ahead of it — several of them cover screens behind auth that the exported
 bundle cannot photograph. `system.css` is the proposed design
 system, `legacy.css` approximates today's app for the before/after.

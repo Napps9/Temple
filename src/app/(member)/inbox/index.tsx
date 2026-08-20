@@ -242,13 +242,13 @@ function TabChip({
       onPress={onPress}
       className={`px-3 py-1 rounded-full border ${
         active
-          ? 'border-primary bg-primary/10'
+          ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <Text
         className={
           active
-            ? 'text-primary text-sm'
+            ? 'text-ink dark:text-ink-dk text-sm font-semibold'
             : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}

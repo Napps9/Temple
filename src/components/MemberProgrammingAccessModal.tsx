@@ -121,13 +121,13 @@ export function MemberProgrammingAccessModal({
                   onPress={() => setMode(m)}
                   className={`flex-1 rounded-xl border px-4 py-3 items-center ${
                     active
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={
                       active
-                        ? 'text-primary font-semibold'
+                        ? 'text-ink dark:text-ink-dk font-semibold'
                         : 'text-ink-2 dark:text-ink-2-dk font-medium'
                     }>
                     {m === 'free' ? 'Free' : 'Paid'}

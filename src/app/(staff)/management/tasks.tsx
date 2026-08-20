@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -184,13 +185,13 @@ export default function TasksScreen() {
                     onPress={() => setAssignTo(a.profile_id)}
                     className={`px-3 py-1.5 rounded-full border ${
                       assignTo === a.profile_id
-                        ? 'border-primary bg-primary/10'
+                        ? 'border-transparent bg-raised dark:bg-raised-dk'
                         : 'border-line dark:border-line-dk'
                     }`}>
                     <Text
                       className={
                         assignTo === a.profile_id
-                          ? 'text-primary text-sm'
+                          ? 'text-ink dark:text-ink-dk text-sm font-semibold'
                           : 'text-ink-2 dark:text-ink-2-dk text-sm'
                       }>
                       {a.profiles?.full_name ?? a.role}
@@ -245,16 +246,7 @@ export default function TasksScreen() {
                 }
                 className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
                 <View className="flex-row items-center gap-2">
-                  <View
-                    className={`w-5 h-5 rounded border ${
-                      t.status === 'done'
-                        ? 'bg-primary border-primary'
-                        : 'border-line-strong dark:border-line-strong-dk'
-                    }`}>
-                    {t.status === 'done' ? (
-                      <Text className="text-white text-center text-xs leading-5">✓</Text>
-                    ) : null}
-                  </View>
+                  <Check on={t.status === 'done'} />
                   <Text className={`flex-1 ${
                       t.status === 'done'
                         ? 'text-ink-3 dark:text-ink-3-dk line-through'
@@ -299,12 +291,12 @@ function Tab({
       onPress={onPress}
       className={`px-3 py-1 rounded-full border ${
         active
-          ? 'border-primary bg-primary/10'
+          ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <Text
         className={
-          active ? 'text-primary text-sm' : 'text-ink-2 dark:text-ink-2-dk text-sm'
+          active ? 'text-ink dark:text-ink-dk text-sm font-semibold' : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>

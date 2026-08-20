@@ -760,12 +760,12 @@ function CoachModal({
                   onPress={() => setKind(k)}
                   className={`px-3 py-1.5 rounded-full border ${
                     kind === k
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={`text-xs font-semibold ${
-                      kind === k ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                      kind === k ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {KIND_LABEL[k].label}
                   </Text>
@@ -802,12 +802,12 @@ function CoachModal({
                   onPress={() => setScope(s)}
                   className={`flex-1 px-3 py-2 rounded-lg border ${
                     scope === s
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={`text-xs font-semibold ${
-                      scope === s ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                      scope === s ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {label}
                   </Text>
@@ -890,11 +890,11 @@ function InlineCoachForm({
             key={k}
             onPress={() => setKind(k)}
             className={`px-2.5 py-1 rounded-full border ${
-              kind === k ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+              kind === k ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-[11px] font-semibold ${
-                kind === k ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                kind === k ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {KIND_LABEL[k].label}
             </Text>
@@ -924,11 +924,11 @@ function InlineCoachForm({
               key={s}
               onPress={() => setScope(s)}
               className={`flex-1 px-2.5 py-1.5 rounded-lg border ${
-                scope === s ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                scope === s ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-[11px] font-semibold text-center ${
-                  scope === s ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                  scope === s ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {label}
               </Text>

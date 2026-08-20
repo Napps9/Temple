@@ -112,13 +112,13 @@ export default function LeaderboardsIndex() {
                 accessibilityState={{ selected }}
                 className={`rounded-full px-3 py-1.5 border active:opacity-70 ${
                   selected
-                    ? 'bg-primary border-primary'
+                    ? 'bg-raised dark:bg-raised-dk border-transparent'
                     : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
                 }`}>
                 <Text
                   className={
                     selected
-                      ? 'text-white text-xs font-medium'
+                      ? 'text-ink dark:text-ink-dk text-xs font-medium'
                       : 'text-ink-2 dark:text-ink-2-dk text-xs'
                   }>
                   {b.movement.name} · {b.scheme.label}

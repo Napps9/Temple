@@ -79,12 +79,12 @@ export function ImportDataModal({
               accessibilityState={{ selected: active }}
               className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                 active
-                  ? 'bg-primary border-primary'
+                  ? 'bg-raised dark:bg-raised-dk border-transparent'
                   : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-sm font-medium ${
-                  active ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                  active ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {t === 'members' ? 'Members' : 'Workouts'}
               </Text>

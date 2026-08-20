@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -160,15 +161,8 @@ export default function WaiverForm() {
         <Pressable
           onPress={() => setAgreed((v) => !v)}
           className="flex-row items-start gap-3 active:opacity-70">
-          <View
-            className={`w-6 h-6 rounded-md border-2 items-center justify-center mt-0.5 ${
-              agreed
-                ? 'bg-primary border-primary'
-                : 'border-line-strong dark:border-line-strong-dk'
-            }`}>
-            {agreed ? (
-              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-            ) : null}
+          <View className="mt-0.5">
+            <Check on={agreed} />
           </View>
           <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
             I have read and agree to the waiver, and the signature above is

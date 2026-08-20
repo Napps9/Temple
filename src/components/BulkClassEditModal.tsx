@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { Check } from './Check';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
@@ -219,12 +220,14 @@ export function BulkClassEditModal({
                 accessibilityState={{ selected: mode === value }}
                 className={`flex-1 py-2 rounded-lg border items-center ${
                   mode === value
-                    ? 'bg-primary border-primary'
+                    ? 'bg-raised dark:bg-raised-dk border-transparent'
                     : 'border-line-strong dark:border-line-strong-dk'
                 }`}>
                 <Text
                   className={`text-sm font-medium ${
-                    mode === value ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                    mode === value
+                      ? 'text-ink dark:text-ink-dk'
+                      : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {label}
                 </Text>
@@ -329,18 +332,7 @@ export function BulkClassEditModal({
                         key={r.id}
                         onPress={() => toggle(r.id)}
                         className="flex-row items-center gap-3 p-2 rounded-lg">
-                        <View
-                          className={`w-5 h-5 rounded border ${
-                            checked
-                              ? 'bg-primary border-primary'
-                              : 'border-line-strong dark:border-line-strong-dk'
-                          }`}>
-                          {checked ? (
-                            <Text className="text-white text-center text-xs leading-5">
-                              ✓
-                            </Text>
-                          ) : null}
-                        </View>
+                        <Check on={checked} />
                         <View className="flex-1">
                           <Text className="text-ink dark:text-ink-dk">
                             {r.class_types?.name ?? r.name}

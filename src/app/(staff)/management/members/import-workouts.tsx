@@ -286,7 +286,7 @@ export default function ImportWorkoutsScreen() {
                   }}
                   className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
                     dragOver
-                      ? 'border-primary bg-primary/5'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line-strong dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -607,7 +607,7 @@ export default function ImportWorkoutsScreen() {
               insertedCount > 0
                 ? 'bg-emerald-500/10 border-emerald-500/30'
                 : result.staged > 0
-                  ? 'bg-primary/10 border-primary/30'
+                  ? 'border-transparent bg-raised dark:bg-raised-dk/30'
                   : 'bg-amber-500/10 border-amber-500/30'
             }`}>
             {insertedCount > 0 ? (

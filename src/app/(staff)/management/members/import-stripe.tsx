@@ -392,13 +392,13 @@ export default function ImportStripeScreen() {
                                 onPress={() => updatePlan(p.price_id, { kind: k })}
                                 className={`px-3 py-1.5 rounded-md border ${
                                   p.kind === k
-                                    ? 'border-primary bg-primary/10'
+                                    ? 'border-transparent bg-raised dark:bg-raised-dk'
                                     : 'border-line dark:border-line-dk'
                                 }`}>
                                 <Text
                                   className={`text-xs uppercase tracking-widest ${
                                     p.kind === k
-                                      ? 'text-primary'
+                                      ? 'text-ink dark:text-ink-dk font-semibold'
                                       : 'text-ink-2 dark:text-ink-2-dk'
                                   }`}>
                                   {k.replace('_', ' ')}

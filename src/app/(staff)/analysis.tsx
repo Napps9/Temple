@@ -815,7 +815,7 @@ function ClassTypeChip({
       hitSlop={4}
       className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
         active
-          ? 'border-primary bg-primary/10'
+          ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <View
@@ -824,7 +824,7 @@ function ClassTypeChip({
       />
       <Text
         className={`text-xs font-semibold ${
-          active ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+          active ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
         } ${archived ? 'line-through opacity-70' : ''}`}>
         {label}
       </Text>

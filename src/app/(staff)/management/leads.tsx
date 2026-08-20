@@ -439,11 +439,11 @@ export default function LeadsScreen() {
                 key={s}
                 onPress={() => setScope(s)}
                 className={`px-3 py-1.5 rounded-full border ${
-                  sel ? 'bg-primary border-primary' : 'border-line dark:border-line-dk'
+                  sel ? 'bg-raised dark:bg-raised-dk border-transparent' : 'border-line dark:border-line-dk'
                 }`}>
                 <Text
                   className={`text-xs font-medium ${
-                    sel ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                    sel ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {s === 'active'
                     ? `Active pipeline${followUpCount > 0 ? ` · ${followUpCount} to chase` : ''}`
@@ -715,7 +715,7 @@ function AddLeadModal({
                       onPress={() => setSourceId(null)}
                       className={`px-3 py-1.5 rounded-full border ${
                         sourceId === null
-                          ? 'border-primary bg-primary/10'
+                          ? 'border-transparent bg-raised dark:bg-raised-dk'
                           : 'border-line dark:border-line-dk'
                       }`}>
                       <Text className="text-xs">None</Text>

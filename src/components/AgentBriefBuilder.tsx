@@ -106,12 +106,12 @@ export function AgentBriefBuilder({
             onPress={() => setPromptMode(m)}
             className={`flex-1 px-3 py-2.5 rounded-lg border ${
               promptMode === m
-                ? 'border-primary bg-primary/10'
+                ? 'border-transparent bg-raised dark:bg-raised-dk'
                 : 'border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-sm font-semibold text-center ${
-                promptMode === m ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                promptMode === m ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {label}
             </Text>
@@ -181,11 +181,11 @@ export function AgentBriefBuilder({
                     key={t.id}
                     onPress={() => setAnswers((a) => ({ ...a, tone: t.id }))}
                     className={`flex-1 rounded-lg border px-2 py-2 ${
-                      sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                      sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                     }`}>
                     <Text
                       className={`text-xs font-semibold text-center ${
-                        sel ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                        sel ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                       }`}>
                       {t.label}
                     </Text>

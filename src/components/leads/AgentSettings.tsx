@@ -438,11 +438,11 @@ export function AgentSettings() {
                 key={t}
                 onPress={() => setHeroTab(t)}
                 className={`flex-1 px-3 py-2 rounded-lg border ${
-                  sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                  sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                 }`}>
                 <Text
                   className={`text-sm font-semibold text-center ${
-                    sel ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                    sel ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {t === 'teach' ? 'Teach it' : 'Test it'}
                 </Text>
@@ -785,7 +785,7 @@ export function AgentSettings() {
                 key={v.id}
                 onPress={() => setSelectedVoice(v.id)}
                 className={`flex-row items-center justify-between rounded-lg border p-3 ${
-                  sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
+                  sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                 }`}>
                 <View className="flex-1">
                   <Text className="text-ink dark:text-ink-dk font-medium">

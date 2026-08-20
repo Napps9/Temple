@@ -256,13 +256,13 @@ function RolePermissionsSection() {
               onPress={() => setActiveRole(r)}
               className={`px-4 py-2 rounded-full border ${
                 selected
-                  ? 'border-primary bg-primary/10'
+                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                   : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={
                   selected
-                    ? 'text-primary capitalize'
+                    ? 'text-ink dark:text-ink-dk capitalize font-semibold'
                     : 'text-ink-2 dark:text-ink-2-dk capitalize'
                 }>
                 {r}

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -186,16 +187,7 @@ function MemberTags({ profileId }: { profileId: string }) {
           <Pressable
             onPress={() => setMemberVisible(!memberVisible)}
             className="flex-row items-center gap-2">
-            <View
-              className={`w-5 h-5 rounded border ${
-                memberVisible
-                  ? 'bg-primary border-primary'
-                  : 'border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk'
-              }`}>
-              {memberVisible ? (
-                <Text className="text-white text-center text-xs leading-5">✓</Text>
-              ) : null}
-            </View>
+            <Check on={memberVisible} />
             <Text className="text-ink dark:text-ink-dk">Visible to the member</Text>
           </Pressable>
           {error ? (

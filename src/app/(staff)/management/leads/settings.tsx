@@ -348,7 +348,7 @@ export default function LeadSettingsScreen() {
                 key={s}
                 onPress={() => setStrategy(s)}
                 className={`rounded-lg border p-3 gap-1 ${
-                  sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
+                  sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                 }`}>
                 <Text className="text-ink dark:text-ink-dk font-medium">
                   {STRATEGY_COPY[s].title}
@@ -373,7 +373,7 @@ export default function LeadSettingsScreen() {
                       key={c.profile_id}
                       onPress={() => setDefaultCoach(c.profile_id)}
                       className={`px-3 py-1.5 rounded-full border ${
-                        sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                        sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                       }`}>
                       <Text className="text-xs text-ink-2 dark:text-ink-2-dk">
                         {c.full_name ?? 'Coach'}

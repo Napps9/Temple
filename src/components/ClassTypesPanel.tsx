@@ -861,13 +861,13 @@ export function ClassTypesPanel() {
                               }
                               className={`flex-1 px-3 py-2 rounded-lg border ${
                                 on
-                                  ? 'border-primary bg-primary/10'
+                                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                                   : 'border-line dark:border-line-dk'
                               }`}>
                               <Text
                                 className={`text-xs text-center ${
                                   on
-                                    ? 'text-primary font-medium'
+                                    ? 'text-ink dark:text-ink-dk font-semibold'
                                     : 'text-ink-2 dark:text-ink-2-dk'
                                 }`}>
                                 {label}

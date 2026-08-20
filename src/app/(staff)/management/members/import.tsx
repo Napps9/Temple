@@ -708,7 +708,7 @@ export default function ImportMembersScreen() {
                   }}
                   className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
                     dragOver
-                      ? 'border-primary bg-primary/5'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line-strong dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -1098,13 +1098,13 @@ function ReviewPanel({
                       onPress={() => onToggleTagKeep(value)}
                       className={`px-3 py-1.5 rounded-full border ${
                         on
-                          ? 'bg-primary/10 border-primary/30'
+                          ? 'border-transparent bg-raised dark:bg-raised-dk/30'
                           : 'bg-raised dark:bg-raised-dk border-line dark:border-line-dk opacity-50'
                       }`}>
                       <Text
                         className={`text-xs ${
                           on
-                            ? 'text-primary font-medium'
+                            ? 'text-ink dark:text-ink-dk font-semibold'
                             : 'text-ink-2 dark:text-ink-2-dk'
                         }`}>
                         {value}
@@ -1304,13 +1304,13 @@ function PlanReviewCard({
                   onPress={() => !bodyDimmed && onChange({ kind: k })}
                   className={`px-3 py-1.5 rounded-md border ${
                     final.kind === k
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={
                       final.kind === k
-                        ? 'text-primary text-xs uppercase tracking-widest'
+                        ? 'text-ink dark:text-ink-dk text-[11px] font-semibold uppercase tracking-[1px]'
                         : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                     }>
                     {k.replace('_', ' ')}
@@ -1378,7 +1378,7 @@ function PlanModeChip({
         on
           ? tone === 'warn'
             ? 'bg-amber-500/10 border-amber-500/40'
-            : 'bg-primary/10 border-primary'
+            : 'border-transparent bg-raised dark:bg-raised-dk'
           : 'bg-transparent border-line dark:border-line-dk'
       }`}>
       <Text
@@ -1386,7 +1386,7 @@ function PlanModeChip({
           on
             ? tone === 'warn'
               ? 'text-amber-700 dark:text-amber-400 font-semibold'
-              : 'text-primary font-semibold'
+              : 'text-ink dark:text-ink-dk font-semibold'
             : 'text-ink-2 dark:text-ink-2-dk'
         }`}>
         {label}

@@ -86,7 +86,7 @@ export function ClassTypePicker({
                 onPress={() => onChange(t.id)}
                 className={`flex-row items-center gap-2 px-3 py-2 rounded-full border ${
                   selected
-                    ? 'border-primary bg-primary/10'
+                    ? 'border-transparent bg-raised dark:bg-raised-dk'
                     : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
                 }`}>
                 <View
@@ -96,7 +96,7 @@ export function ClassTypePicker({
                 <Text
                   className={
                     selected
-                      ? 'text-primary text-sm font-medium'
+                      ? 'text-ink dark:text-ink-dk text-sm font-semibold'
                       : 'text-ink dark:text-ink-dk text-sm'
                   }>
                   {t.name}

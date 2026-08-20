@@ -16,6 +16,7 @@ import { leadsBoard } from './b-leads.mjs';
 import { headsBoard } from './b-heads.mjs';
 import { labelsBoard } from './b-labels.mjs';
 import { oneRailBoard } from './b-onerail.mjs';
+import { accentBoard } from './b-accent.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -49,6 +50,7 @@ const PAGES = [
   ['27-page-heads', headsBoard],
   ['28-one-label', labelsBoard],
   ['29-one-rail', oneRailBoard],
+  ['30-accent-rule', accentBoard],
 ];
 
 // Drop anything a previous numbering left behind.

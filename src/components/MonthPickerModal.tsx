@@ -122,7 +122,7 @@ export function MonthPickerModal({
                         isSelected
                           ? 'text-white font-bold'
                           : isToday
-                            ? 'text-primary font-bold'
+                            ? 'text-ink dark:text-ink-dk font-bold'
                             : inMonth
                               ? 'text-ink dark:text-ink-dk'
                               : 'text-ink-3/50 dark:text-ink-3-dk/50'

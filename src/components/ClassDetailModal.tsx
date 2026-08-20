@@ -1092,7 +1092,7 @@ function BookActions({
                   }
                   className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
                     isSel
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Ionicons

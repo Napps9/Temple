@@ -405,7 +405,7 @@ function ClassTypeFilterRow({
             onPress={() => toggle(ct.id)}
             className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
               active
-                ? 'border-primary bg-primary/10'
+                ? 'border-transparent bg-raised dark:bg-raised-dk'
                 : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
             }`}>
             <View
@@ -414,7 +414,7 @@ function ClassTypeFilterRow({
             />
             <Text
               className={`text-xs font-semibold ${
-                active ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                active ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {ct.name}
             </Text>
@@ -1204,7 +1204,7 @@ function AgendaView({
                       selected
                         ? 'text-white'
                         : today
-                          ? 'text-primary'
+                          ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}
@@ -1487,7 +1487,7 @@ function DayView({
                       selected
                         ? 'text-white'
                         : today
-                          ? 'text-primary'
+                          ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}
@@ -1856,7 +1856,7 @@ function WeekView({
                 <Text
                   className={`text-xs uppercase tracking-wide ${
                     today
-                      ? 'text-primary font-semibold'
+                      ? 'text-ink dark:text-ink-dk font-semibold'
                       : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {d.toLocaleDateString(undefined, { weekday: 'short' })}
@@ -2162,7 +2162,7 @@ function MonthView({
                           : !inMonth
                             ? 'text-ink-3 dark:text-ink-3-dk'
                             : today
-                              ? 'text-primary font-semibold'
+                              ? 'text-ink dark:text-ink-dk font-semibold'
                               : 'text-ink dark:text-ink-dk font-medium'
                       }>
                       {d.getDate()}
@@ -2183,7 +2183,7 @@ function MonthView({
                         {dayClasses.length > 3 ? (
                           <Text
                             className={`text-[10px] ml-0.5 ${
-                              selected ? 'text-white' : 'text-primary'
+                              selected ? 'text-white' : 'text-ink dark:text-ink-dk font-semibold'
                             }`}>
                             +{dayClasses.length - 3}
                           </Text>

@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { Check } from './Check';
 import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
@@ -357,14 +357,7 @@ export function CreateClassModal({
               <Pressable
                 onPress={() => setRecurring(!recurring)}
                 className="flex-row items-center gap-2">
-                <View
-                  className={`w-5 h-5 rounded border-2 items-center justify-center ${
-                    recurring
-                      ? 'border-primary bg-primary'
-                      : 'border-line-strong dark:border-line-strong-dk'
-                  }`}>
-                  {recurring ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
-                </View>
+                <Check on={recurring} />
                 <Text className="text-ink dark:text-ink-dk">Recurring</Text>
               </Pressable>
 

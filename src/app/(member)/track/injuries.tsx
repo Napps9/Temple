@@ -368,7 +368,7 @@ function CheckInForm({
               onPress={() => setFeeling(key)}
               className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
                 feeling === key
-                  ? 'border-primary bg-primary/10'
+                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                   : 'border-line dark:border-line-dk'
               }`}>
               <Ionicons
@@ -379,7 +379,7 @@ function CheckInForm({
               <Text
                 className={`text-xs font-semibold ${
                   feeling === key
-                    ? 'text-primary'
+                    ? 'text-ink dark:text-ink-dk font-semibold'
                     : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {label}
@@ -400,13 +400,13 @@ function CheckInForm({
               onPress={() => setStatus(s)}
               className={`px-3 py-1.5 rounded-full border ${
                 status === s
-                  ? 'border-primary bg-primary/10'
+                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                   : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-xs font-semibold ${
                   status === s
-                    ? 'text-primary'
+                    ? 'text-ink dark:text-ink-dk font-semibold'
                     : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {STATUS_META[s].label}
@@ -471,13 +471,13 @@ function SidePicker({
             onPress={() => onChange(key)}
             className={`px-3 py-1.5 rounded-full border ${
               value === key
-                ? 'border-primary bg-primary/10'
+                ? 'border-transparent bg-raised dark:bg-raised-dk'
                 : 'border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-xs font-semibold ${
                 value === key
-                  ? 'text-primary'
+                  ? 'text-ink dark:text-ink-dk font-semibold'
                   : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {label}
@@ -614,13 +614,13 @@ function MovementMultiPick({
                   onPress={() => toggle(m.key)}
                   className={`rounded-full px-2.5 py-1 border ${
                     on
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={`text-[11px] font-medium ${
                       on
-                        ? 'text-primary'
+                        ? 'text-ink dark:text-ink-dk font-semibold'
                         : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {m.name}

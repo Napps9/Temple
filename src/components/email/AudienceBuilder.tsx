@@ -42,12 +42,12 @@ function PillToggle({
       onPress={onPress}
       className={`px-3 py-2 rounded-full border ${
         selected
-          ? 'bg-primary border-primary'
+          ? 'bg-raised dark:bg-raised-dk border-transparent'
           : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
       } active:opacity-70`}>
       <Text
         className={`text-sm font-medium ${
-          selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+          selected ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
         }`}>
         {label}
       </Text>
@@ -115,7 +115,7 @@ export function AudienceBuilder({
               onPress={() => selectKind(opt.kind)}
               className={`flex-1 items-center gap-1 py-3 rounded-xl border ${
                 selected
-                  ? 'border-primary bg-primary/5'
+                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                   : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
               } active:opacity-70`}>
               <Ionicons
@@ -125,7 +125,7 @@ export function AudienceBuilder({
               />
               <Text
                 className={`text-xs font-medium text-center ${
-                  selected ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                  selected ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {opt.label}
               </Text>
@@ -252,13 +252,13 @@ export function AudienceBuilder({
             }}
             className={`rounded-xl px-3 py-2 border ${
               segmentName.trim()
-                ? 'border-primary bg-primary/5'
+                ? 'border-transparent bg-raised dark:bg-raised-dk'
                 : 'border-line dark:border-line-dk'
             } active:opacity-70`}>
             <Text
               className={`text-sm font-medium ${
                 segmentName.trim()
-                  ? 'text-primary'
+                  ? 'text-ink dark:text-ink-dk font-semibold'
                   : 'text-ink-3 dark:text-ink-3-dk'
               }`}>
               Save

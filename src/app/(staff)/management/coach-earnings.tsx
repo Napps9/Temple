@@ -204,7 +204,7 @@ export default function CoachEarningsPage() {
                   onPress={() => setPolicy.mutate(p.key)}
                   className={`rounded-lg border p-3 flex-row gap-3 items-start active:opacity-70 ${
                     selected
-                      ? 'border-primary bg-primary/5'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Ionicons
@@ -216,7 +216,7 @@ export default function CoachEarningsPage() {
                     <Text
                       className={
                         selected
-                          ? 'text-primary font-medium'
+                          ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink dark:text-ink-dk font-medium'
                       }>
                       {p.label}

@@ -137,7 +137,7 @@ function ConditionChips({
               key={o.id}
               onPress={() => onToggle(o.id)}
               className={`px-3 py-1.5 rounded-full border ${
-                sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
               }`}>
               <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{o.label}</Text>
             </Pressable>
@@ -215,7 +215,7 @@ function SendTimeControls({
                   key={h}
                   onPress={() => onHour(h)}
                   className={`px-2.5 py-1 rounded-full border ${
-                    sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                    sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                   }`}>
                   <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{formatHour(h)}</Text>
                 </Pressable>
@@ -230,7 +230,7 @@ function SendTimeControls({
                   key={d.n}
                   onPress={() => onDays((prev) => (prev.includes(d.n) ? prev.filter((x) => x !== d.n) : [...prev, d.n]))}
                   className={`px-2.5 py-1 rounded-full border ${
-                    sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                    sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                   }`}>
                   <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{d.label}</Text>
                 </Pressable>
@@ -784,7 +784,7 @@ export default function AutomationEditor() {
                   key={t}
                   onPress={() => setTrigger(t)}
                   className={`rounded-lg border p-3 gap-1 ${
-                    sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
+                    sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                   }`}>
                   <Text className="text-ink dark:text-ink-dk font-medium">
                     {TRIGGER_LABELS[t]}
@@ -816,7 +816,7 @@ export default function AutomationEditor() {
                         key={label}
                         onPress={() => setTagLabel(label)}
                         className={`px-3 py-1.5 rounded-full border ${
-                          sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                          sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                         }`}>
                         <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{label}</Text>
                       </Pressable>
@@ -923,7 +923,7 @@ export default function AutomationEditor() {
                 <Pressable
                   onPress={() => setTopicId(null)}
                   className={`px-3 py-1.5 rounded-full border ${
-                    topicId === null ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                    topicId === null ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                   }`}>
                   <Text className="text-xs text-ink-2 dark:text-ink-2-dk">No topic</Text>
                 </Pressable>
@@ -934,7 +934,7 @@ export default function AutomationEditor() {
                       key={t.id}
                       onPress={() => setTopicId(t.id)}
                       className={`px-3 py-1.5 rounded-full border ${
-                        sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                        sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                       }`}>
                       <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{t.label}</Text>
                     </Pressable>

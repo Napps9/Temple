@@ -78,7 +78,7 @@ export function StrengthLeaderboard({
             <Text
               className={
                 r.rank <= 3
-                  ? 'text-primary font-bold text-sm'
+                  ? 'text-ink dark:text-ink-dk text-sm font-bold'
                   : 'text-ink-2 dark:text-ink-2-dk text-sm'
               }>
               {ordinal(r.rank)}

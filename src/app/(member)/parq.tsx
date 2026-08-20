@@ -226,13 +226,13 @@ function YesNoOption({
       onPress={onPress}
       className={`flex-1 px-4 py-3 rounded-lg border items-center active:opacity-70 ${
         selected
-          ? 'border-primary bg-primary/10'
+          ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk'
       }`}>
       <Text
         className={
           selected
-            ? 'text-primary font-medium'
+            ? 'text-ink dark:text-ink-dk font-semibold'
             : 'text-ink-2 dark:text-ink-2-dk'
         }>
         {label}

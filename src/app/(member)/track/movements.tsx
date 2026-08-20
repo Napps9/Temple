@@ -214,13 +214,13 @@ function GroupSection({
                     onPress={() => onSetGrouped(mode === 'grouped')}
                     className={`px-3 py-1 rounded-full border ${
                       active
-                        ? 'border-primary bg-primary/10'
+                        ? 'border-transparent bg-raised dark:bg-raised-dk'
                         : 'border-line dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/60'
                     }`}>
                     <Text
                       className={`text-xs font-medium ${
                         active
-                          ? 'text-primary'
+                          ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink-2 dark:text-ink-2-dk'
                       }`}>
                       {mode === 'grouped' ? 'One group tile' : 'Separate tiles'}

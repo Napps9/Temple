@@ -1091,13 +1091,13 @@ function TopicPicker({
           onPress={() => onChange(null)}
           className={`px-3 py-1.5 rounded-full border ${
             value === null
-              ? 'border-primary bg-primary/10'
+              ? 'border-transparent bg-raised dark:bg-raised-dk'
               : 'border-line dark:border-line-dk'
           }`}>
           <Text
             className={`text-xs font-medium ${
               value === null
-                ? 'text-primary'
+                ? 'text-ink dark:text-ink-dk font-semibold'
                 : 'text-ink-2 dark:text-ink-2-dk'
             }`}>
             No topic
@@ -1111,12 +1111,12 @@ function TopicPicker({
               onPress={() => onChange(t.id)}
               className={`px-3 py-1.5 rounded-full border ${
                 sel
-                  ? 'border-primary bg-primary/10'
+                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                   : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-xs font-medium ${
-                  sel ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                  sel ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {t.label}
               </Text>

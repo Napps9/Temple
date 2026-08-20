@@ -573,12 +573,12 @@ function FilterChip({
       onPress={onPress}
       className={`px-3 py-1 rounded-full border ${
         active
-          ? 'border-primary bg-primary/10'
+          ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <Text
         className={
-          active ? 'text-primary text-sm' : 'text-ink-2 dark:text-ink-2-dk text-sm'
+          active ? 'text-ink dark:text-ink-dk text-sm font-semibold' : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>
@@ -602,13 +602,13 @@ function TagFilterChip({
       onPress={onPress}
       className={`px-3 py-1 rounded-full border flex-row items-center gap-1.5 ${
         active
-          ? 'border-primary bg-primary/10'
+          ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <View style={{ backgroundColor: color }} className="w-2 h-2 rounded-full" />
       <Text
         className={
-          active ? 'text-primary text-sm' : 'text-ink-2 dark:text-ink-2-dk text-sm'
+          active ? 'text-ink dark:text-ink-dk text-sm font-semibold' : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>

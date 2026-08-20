@@ -291,7 +291,7 @@ export function StaffBookingSheet({
                         }}
                         className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
                           sel
-                            ? 'border-primary bg-primary/10'
+                            ? 'border-transparent bg-raised dark:bg-raised-dk'
                             : 'border-line dark:border-line-dk'
                         }`}>
                         <Ionicons
@@ -321,7 +321,7 @@ export function StaffBookingSheet({
                     }}
                     className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
                       noCharge
-                        ? 'border-primary bg-primary/10'
+                        ? 'border-transparent bg-raised dark:bg-raised-dk'
                         : 'border-line dark:border-line-dk'
                     }`}>
                     <Ionicons

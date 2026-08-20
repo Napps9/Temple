@@ -426,12 +426,12 @@ function ChipRow<T extends string>({
             onPress={() => onChange(opt.value)}
             className={`px-3 py-1.5 rounded-full border ${
               on
-                ? 'bg-primary border-primary'
+                ? 'bg-raised dark:bg-raised-dk border-transparent'
                 : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-xs font-medium ${
-                on ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                on ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {opt.label}
             </Text>

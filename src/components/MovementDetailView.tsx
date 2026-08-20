@@ -500,13 +500,13 @@ function MovementLeaderboardSection({
             accessibilityState={{ selected: s.key === scheme.key }}
             className={`rounded-full px-3 py-1 border active:opacity-70 ${
               s.key === scheme.key
-                ? 'bg-primary border-primary'
+                ? 'bg-raised dark:bg-raised-dk border-transparent'
                 : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
             }`}>
             <Text
               className={
                 s.key === scheme.key
-                  ? 'text-white text-xs'
+                  ? 'text-ink dark:text-ink-dk text-xs font-semibold'
                   : 'text-ink-2 dark:text-ink-2-dk text-xs'
               }>
               {s.label}

@@ -1569,7 +1569,7 @@ function SchemeRow({
       <Text
         className={
           selected
-            ? 'text-primary text-sm font-medium'
+            ? 'text-ink dark:text-ink-dk text-sm font-semibold'
             : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}

@@ -1284,7 +1284,7 @@ function RuleQuestion({
               }`}>
               <Text
                 className={`text-sm font-semibold ${
-                  i === 0 ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                  i === 0 ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {o.label}
               </Text>
@@ -2467,12 +2467,12 @@ function PlanBuilderCard({
               onPress={() => setDraft((d) => ({ ...d, kind: k }))}
               className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
                 sel
-                  ? 'bg-primary border-primary'
+                  ? 'bg-raised dark:bg-raised-dk border-transparent'
                   : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-[13px] font-semibold ${
-                  sel ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                  sel ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {PLAN_KIND_LABEL[k]}
               </Text>

@@ -178,7 +178,7 @@ function PresetOption({
       <Text
         className={
           active
-            ? 'text-primary font-medium'
+            ? 'text-ink dark:text-ink-dk font-semibold'
             : 'text-ink dark:text-ink-dk'
         }>
         {label}

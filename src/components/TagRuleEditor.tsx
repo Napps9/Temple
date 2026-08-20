@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { Check } from './Check';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
@@ -166,13 +167,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
               onPress={() => changeKind(o.value)}
               className={`px-3 py-1.5 rounded-full border ${
                 kind === o.value
-                  ? 'border-primary bg-primary/10'
+                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                   : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={
                   kind === o.value
-                    ? 'text-primary text-sm'
+                    ? 'text-ink dark:text-ink-dk text-sm font-semibold'
                     : 'text-ink-2 dark:text-ink-2-dk text-sm'
                 }>
                 {o.label}
@@ -201,7 +202,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
                   onPress={() => setClassTypeId(ct.id)}
                   className={`px-3 py-1.5 rounded-full border flex-row items-center gap-1.5 ${
                     classTypeId === ct.id
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <View
@@ -211,7 +212,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
                   <Text
                     className={
                       classTypeId === ct.id
-                        ? 'text-primary text-sm'
+                        ? 'text-ink dark:text-ink-dk text-sm font-semibold'
                         : 'text-ink-2 dark:text-ink-2-dk text-sm'
                     }>
                     {ct.name}
@@ -242,13 +243,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
                   onPress={() => setPlanId(p.plan_id)}
                   className={`px-3 py-1.5 rounded-full border ${
                     planId === p.plan_id
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={
                       planId === p.plan_id
-                        ? 'text-primary text-sm'
+                        ? 'text-ink dark:text-ink-dk text-sm font-semibold'
                         : 'text-ink-2 dark:text-ink-2-dk text-sm'
                     }>
                     {p.name}
@@ -275,16 +276,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
       <Pressable
         onPress={() => setMemberVisible(!memberVisible)}
         className="flex-row items-center gap-2">
-        <View
-          className={`w-5 h-5 rounded border ${
-            memberVisible
-              ? 'bg-primary border-primary'
-              : 'border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk'
-          }`}>
-          {memberVisible ? (
-            <Text className="text-white text-center text-xs leading-5">✓</Text>
-          ) : null}
-        </View>
+        <Check on={memberVisible} />
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk">Visible to the member</Text>
           <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
@@ -297,16 +289,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
       <Pressable
         onPress={() => setActive(!active)}
         className="flex-row items-center gap-2">
-        <View
-          className={`w-5 h-5 rounded border ${
-            active
-              ? 'bg-primary border-primary'
-              : 'border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk'
-          }`}>
-          {active ? (
-            <Text className="text-white text-center text-xs leading-5">✓</Text>
-          ) : null}
-        </View>
+        <Check on={active} />
         <Text className="text-ink dark:text-ink-dk">Active</Text>
       </Pressable>
 

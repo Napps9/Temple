@@ -663,7 +663,7 @@ function VoiceRow({
     <Pressable
       onPress={onPress}
       className={`flex-row items-center justify-between rounded-lg border p-3 ${
-        selected ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
+        selected ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
       }`}>
       <View className="flex-1">
         <Text className="text-ink dark:text-ink-dk font-medium">

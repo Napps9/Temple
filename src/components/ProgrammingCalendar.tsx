@@ -413,7 +413,7 @@ export function ProgrammingCalendar({
                       selected
                         ? 'text-white'
                         : today
-                          ? 'text-primary'
+                          ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}

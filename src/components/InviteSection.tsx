@@ -122,12 +122,12 @@ export function InviteSection({
                   onPress={() => setRole(r)}
                   className={`px-4 py-2 rounded-full border ${
                     selected
-                      ? 'border-primary bg-primary/10'
+                      ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={
-                      selected ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
+                      selected ? 'text-ink dark:text-ink-dk font-semibold' : 'text-ink-2 dark:text-ink-2-dk'
                     }>
                     {r}
                   </Text>

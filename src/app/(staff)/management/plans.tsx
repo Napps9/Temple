@@ -784,13 +784,13 @@ export function PlansPanel() {
                           }}
                           className={`px-3 py-1.5 rounded-md border ${
                             active
-                              ? 'border-primary bg-primary/10'
+                              ? 'border-transparent bg-raised dark:bg-raised-dk'
                               : 'border-line dark:border-line-dk'
                           }`}>
                           <Text
                             className={
                               active
-                                ? 'text-primary text-xs uppercase tracking-widest'
+                                ? 'text-ink dark:text-ink-dk text-[11px] font-semibold uppercase tracking-[1px]'
                                 : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                             }>
                             {t.label}
@@ -832,13 +832,13 @@ export function PlansPanel() {
                           onPress={() => update(idx, { kind: t.key })}
                           className={`px-3 py-1.5 rounded-md border ${
                             r.kind === t.key
-                              ? 'border-primary bg-primary/10'
+                              ? 'border-transparent bg-raised dark:bg-raised-dk'
                               : 'border-line dark:border-line-dk'
                           }`}>
                           <Text
                             className={
                               r.kind === t.key
-                                ? 'text-primary text-xs uppercase tracking-widest'
+                                ? 'text-ink dark:text-ink-dk text-[11px] font-semibold uppercase tracking-[1px]'
                                 : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                             }>
                             {t.label}
@@ -945,13 +945,13 @@ export function PlansPanel() {
                         onPress={() => update(idx, { coverageMode: m })}
                         className={`px-3 py-1.5 rounded-md border ${
                           r.coverageMode === m
-                            ? 'border-primary bg-primary/10'
+                            ? 'border-transparent bg-raised dark:bg-raised-dk'
                             : 'border-line dark:border-line-dk'
                         }`}>
                         <Text
                           className={
                             r.coverageMode === m
-                              ? 'text-primary text-xs uppercase tracking-widest'
+                              ? 'text-ink dark:text-ink-dk text-[11px] font-semibold uppercase tracking-[1px]'
                               : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                           }>
                           {m === 'all' ? 'All classes' : 'Specific classes'}
@@ -978,7 +978,7 @@ export function PlansPanel() {
                               onPress={() => toggleClassType(idx, ct.id)}
                               className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
                                 on
-                                  ? 'border-primary bg-primary/10'
+                                  ? 'border-transparent bg-raised dark:bg-raised-dk'
                                   : 'border-line dark:border-line-dk'
                               }`}>
                               <View

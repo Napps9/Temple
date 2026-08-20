@@ -79,12 +79,12 @@ export function RuleSheet({
                           }}
                           className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
                             selected
-                              ? 'bg-primary border-primary'
+                              ? 'bg-raised dark:bg-raised-dk border-transparent'
                               : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
                           }`}>
                           <Text
                             className={`text-[13px] font-semibold ${
-                              selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                              selected ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
                             }`}>
                             {o.label}
                           </Text>

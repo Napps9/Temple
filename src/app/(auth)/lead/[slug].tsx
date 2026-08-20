@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -205,15 +205,8 @@ export default function LeadCaptureScreen() {
               <Pressable
                 onPress={() => setMarketingConsent((v) => !v)}
                 className="flex-row items-start gap-3 active:opacity-70">
-                <View
-                  className={`w-5 h-5 rounded border items-center justify-center mt-0.5 ${
-                    marketingConsent
-                      ? 'bg-primary border-primary'
-                      : 'border-line-strong dark:border-line-strong-dk'
-                  }`}>
-                  {marketingConsent ? (
-                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                  ) : null}
+                <View className="mt-0.5">
+                  <Check on={marketingConsent} />
                 </View>
                 <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs leading-5">
                   I'm happy for {info.name} to email or text me about
