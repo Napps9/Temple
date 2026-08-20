@@ -1,8 +1,8 @@
 # A Contra-flavoured look for Temple
 
-Twenty-two static HTML boards rendered to PNG. Boards 01-21 are the
+Twenty-six static HTML boards rendered to PNG. Boards 01-21 are the
 proposal, drawn so the direction could be judged before any code moved;
-board 22 is the record of what has since shipped. Open `png/*.png`;
+22-26 are the record of what has since shipped. Open `png/*.png`;
 everything else is the machinery. Where a board and the app disagree, the
 app is right — see **Shipping it** at the bottom for what is live.
 
@@ -96,7 +96,11 @@ a subtly recut sparkle that is one line to switch to.
 | `19-staff-desktop` | The three-column shell, Members and Settings, light + dark |
 | `20-states` | **Nothing yet · nothing matches · loading · failed** |
 | `21-before-after` | Member Book today vs proposed |
-| `22-modals-shipped` | **The record, not the proposal** — what is live in production |
+| `22-modals-shipped` | **Record** — the ten modals that moved onto Sheet |
+| `23-decisions` | **Record** — the four decisions, as answered |
+| `24-shared-parts` | **Record** — the chip, the four states, the icon tints |
+| `25-staff-rail` | **Record** — the sidebar at 768 and up |
+| `26-lead-settings` | **Record** — the first staff surface on the page parts |
 
 ## Deliberate departures from the reference
 
@@ -106,13 +110,19 @@ a subtly recut sparkle that is one line to switch to.
 - **Dark mode is derived, not observed** — every screenshot of the
   reference is light.
 
-## Open questions
+## Answered (board 23)
 
-- **The mark.** Portico recommended: the only one of the four that still
-  reads as a building at 15px and cannot be mistaken for a letter.
-- **Lowercase `temple`.** A real change in voice — warmer, less monumental.
-- **The sidebar.** Moving staff from a top pill bar to a left sidebar is
-  the largest structural change here, with routing work behind it.
+- **The mark** — Portico. Straight lines, no enclosing shape, one ink; it
+  still reads as a building at 15px and cannot be mistaken for a letter,
+  which matters beside a lowercase wordmark.
+- **Lowercase `temple`** — yes, in Fraunces 700. No tagline.
+- **The sidebar** — yes, at 768 and up. It turned out to be chrome, not
+  routing: the tab router underneath is untouched.
+- **The accent** — rows are ink, the page's one action keeps the gym's
+  colour. `Button` gained a `plain` variant for the repeated case.
+
+Still open:
+
 - **Icons.** Hand-drawn monoline set on these boards, not Ionicons.
 
 ## Shipping it — where this has got to
@@ -122,8 +132,11 @@ a subtly recut sparkle that is one line to switch to.
    they go once nothing references them.
 2. ~~`src/lib/theme.ts` — the ramp per scheme.~~ **Done**, including the
    runtime twins for Ionicon tints and SVG fills.
-3. Load Geist + Fraunces via `expo-font`. **Not started** — React Native
-   has no font inheritance, so this needs a strategy, not a call.
+3. ~~Load Geist + Fraunces via `expo-font`.~~ **Done.** React Native has
+   no font inheritance and does not synthesise weights, so it needed two
+   things rather than a config line: `components/Text.tsx` wraps Text and
+   TextInput (188 files import it instead of react-native's), and every
+   font-weight utility in `tailwind.config.js` carries its own file.
 4. ~~Build the page parts as components.~~ **Done**: `PageHead`,
    `SectionLabel`, `ListRow`/`RuledList`, `SettingCard`, `AIMark`, `Check`.
 5. ~~One modal that renders a sheet under 768 and a dialog above it.~~
@@ -131,22 +144,40 @@ a subtly recut sparkle that is one line to switch to.
    Twelve of the bespoke ones are retired (see board 22); around twenty
    remain, the large record-a-workout / create-a-class ones among them.
 6. The app shell: ground colour and the nav rail. **Done.**
-7. Surfaces highest-traffic first: Book, Timeline, Track, Manage.
-   **Not started** — the pages themselves still use the old classes.
+7. **The neutral ramp, everywhere.** **Done to 197 occurrences**, from
+   5,604 — thirteen exact light/dark pairs by codemod, then 57 more
+   behind hover/active prefixes. What is left is genuinely unpaired and
+   travels with its surface.
+8. **The shared components.** **Done**: ChipButton (54 importers),
+   BackLink (54), Input (47), EmptyState — which grew the four states
+   board 20 defines — plus Avatar, StatTile and CardHeading. The four
+   icon tints were a second ramp and are gone; 193 call sites take ink,
+   ink-2 or ink-3.
+9. **The staff rail.** **Done** — `SideNav` at 768 and up, chrome only.
+   The account menu came out of TopNav so the two navs cannot drift, and
+   `breakpoint.ts` holds the one width three things turn on.
+10. Surfaces, staff first, restructured onto their page pattern and
+    consolidated where two screens serve one job. **Started**: Lead
+    settings is on the page parts, and the AI Agent tab folded into it —
+    four tabs to three, moved as a component so the per-card saves were
+    not touched. Next: the Manage hub, Timeline, `setup.tsx`.
 
 ## Rebuilding
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..22.html
+node build.mjs   # writes 01..26.html
 node shot.mjs    # screenshots them to png/ at 2x
 node shot.mjs 05 # just one board
 ```
 
 `kit.mjs` holds every shared part — including `AI_CHOICE`, the single
 constant that swaps the machine's glyph across all sixteen places it
-appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states`
-hold the boards. `system.css` is the proposed design
+appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states` hold the
+proposal boards; `b-shipped`, `b-decisions`, `b-parts`, `b-rail` and
+`b-leads` hold the record ones, which are drawn from the code rather than
+ahead of it — several of them cover screens behind auth that the exported
+bundle cannot photograph. `system.css` is the proposed design
 system, `legacy.css` approximates today's app for the before/after.
 `fonts/` holds the woff2 files (all SIL OFL) so a rebuild does not depend
 on Google Fonts serving the same URLs.
