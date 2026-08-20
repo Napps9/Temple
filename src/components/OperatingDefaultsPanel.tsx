@@ -702,7 +702,7 @@ function Choice<T extends string>({
             <Ionicons
               name={selected ? 'radio-button-on' : 'radio-button-off'}
               size={18}
-              color={selected ? colors.primary : colors.iconTertiary}
+              color={selected ? colors.primary : colors.ink3}
             />
             <Text
               className={`text-sm ${

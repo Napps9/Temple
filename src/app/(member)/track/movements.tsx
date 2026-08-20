@@ -57,18 +57,18 @@ export default function MovementLibrary() {
         </View>
 
         <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-gray-300 dark:border-gray-700 rounded-xl px-3">
-          <Ionicons name="search" size={18} color={colors.iconSecondary} />
+          <Ionicons name="search" size={18} color={colors.ink2} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search movements"
-            placeholderTextColor={colors.iconSecondary}
+            placeholderTextColor={colors.ink2}
             autoCorrect={false}
             className="flex-1 py-3 text-ink dark:text-ink-dk"
           />
           {searching ? (
             <Pressable onPress={() => setQuery('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={colors.iconSecondary} />
+              <Ionicons name="close-circle" size={18} color={colors.ink2} />
             </Pressable>
           ) : null}
         </View>
@@ -194,13 +194,13 @@ function GroupSection({
           <Ionicons
             name={anyStarred ? 'star' : 'star-outline'}
             size={20}
-            color={anyStarred ? '#F59E0B' : colors.iconTertiary}
+            color={anyStarred ? '#F59E0B' : colors.ink3}
           />
         </Pressable>
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={colors.iconTertiary}
+          color={colors.ink3}
         />
       </Pressable>
       {open ? (
@@ -290,10 +290,10 @@ function MovementRow({
         <Ionicons
           name={starred ? 'star' : 'star-outline'}
           size={20}
-          color={starred ? '#F59E0B' : colors.iconTertiary}
+          color={starred ? '#F59E0B' : colors.ink3}
         />
       </Pressable>
-      <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
+      <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
     </Pressable>
   );
 }

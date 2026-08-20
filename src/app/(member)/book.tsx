@@ -322,7 +322,7 @@ function NextClassCard() {
       onPress={() => router.push('/bookings')}
       className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
       <View className="w-8 h-8 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-        <Ionicons name="ticket-outline" size={16} color={colors.iconSecondary} />
+        <Ionicons name="ticket-outline" size={16} color={colors.ink2} />
       </View>
       <View className="flex-1">
         <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
@@ -339,7 +339,7 @@ function NextClassCard() {
           <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
         </View>
       ) : null}
-      <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
+      <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
     </Pressable>
   );
 }

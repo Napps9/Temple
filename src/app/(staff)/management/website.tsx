@@ -649,7 +649,7 @@ export default function WebsiteManageScreen() {
                   {creatingId === t.id ? (
                     <ActivityIndicator />
                   ) : (
-                    <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
+                    <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
                   )}
                 </Pressable>
               );
@@ -968,7 +968,7 @@ export default function WebsiteManageScreen() {
           ) : null}
           <Link href="/management/website/domain" asChild>
             <Pressable hitSlop={6} className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
-              <Ionicons name="globe-outline" size={15} color={colors.iconSecondary} />
+              <Ionicons name="globe-outline" size={15} color={colors.ink2} />
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">Domain</Text>
             </Pressable>
           </Link>
@@ -1000,7 +1000,7 @@ export default function WebsiteManageScreen() {
             accessibilityRole="button"
             accessibilityLabel="Manage pages"
             className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk hover:bg-gray-50 dark:hover:bg-gray-800/60">
-            <Ionicons name="add" size={12} color={colors.iconSecondary} />
+            <Ionicons name="add" size={12} color={colors.ink2} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">Pages</Text>
           </Pressable>
           <View className="flex-1" />

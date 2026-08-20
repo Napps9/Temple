@@ -254,7 +254,7 @@ function DocumentsModal({
                   <Ionicons
                     name="document-text-outline"
                     size={18}
-                    color={colors.iconSecondary}
+                    color={colors.ink2}
                   />
                   <Pressable
                     className="flex-1 active:opacity-70"
@@ -271,7 +271,7 @@ function DocumentsModal({
                     hitSlop={6}
                     accessibilityLabel={`Remove ${f.title}`}
                     className="w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-700">
-                    <Ionicons name="trash-outline" size={16} color={colors.iconTertiary} />
+                    <Ionicons name="trash-outline" size={16} color={colors.ink3} />
                   </Pressable>
                 </View>
               ))

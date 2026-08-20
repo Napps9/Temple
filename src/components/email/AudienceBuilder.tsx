@@ -121,7 +121,7 @@ export function AudienceBuilder({
               <Ionicons
                 name={opt.icon as keyof typeof Ionicons.glyphMap}
                 size={18}
-                color={selected ? colors.primary : colors.iconTertiary}
+                color={selected ? colors.primary : colors.ink3}
               />
               <Text
                 className={`text-xs font-medium text-center ${
@@ -225,7 +225,7 @@ export function AudienceBuilder({
                 <Ionicons
                   name="bookmark-outline"
                   size={14}
-                  color={colors.iconTertiary}
+                  color={colors.ink3}
                 />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {seg.name}
@@ -239,7 +239,7 @@ export function AudienceBuilder({
             value={segmentName}
             onChangeText={setSegmentName}
             placeholder="Save this audience as…"
-            placeholderTextColor={colors.iconTertiary}
+            placeholderTextColor={colors.ink3}
             className="flex-1 bg-surface dark:bg-surface-dk rounded-xl px-3 py-2 text-sm text-ink dark:text-ink-dk border border-line dark:border-line-dk"
           />
           <Pressable

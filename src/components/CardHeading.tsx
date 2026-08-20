@@ -26,11 +26,11 @@ function InfoButton({
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel="What this shows"
-      className="w-6 h-6 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+      className="w-6 h-6 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
       <Ionicons
         name={active ? 'information-circle' : 'information-circle-outline'}
         size={18}
-        color={active ? colors.primary : colors.iconTertiary}
+        color={active ? colors.primary : colors.ink3}
       />
     </Pressable>
   );

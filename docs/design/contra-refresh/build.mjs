@@ -10,6 +10,7 @@ import { statesBoard, beforeAfterBoard } from './b-states.mjs';
 import { aiMarkBoard } from './b-aimark.mjs';
 import { shippedModalsBoard } from './b-shipped.mjs';
 import { decisionsBoard } from './b-decisions.mjs';
+import { partsBoard } from './b-parts.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -37,6 +38,7 @@ const PAGES = [
   ['21-before-after', beforeAfterBoard],
   ['22-modals-shipped', shippedModalsBoard],
   ['23-decisions', decisionsBoard],
+  ['24-shared-parts', partsBoard],
 ];
 
 // Drop anything a previous numbering left behind.

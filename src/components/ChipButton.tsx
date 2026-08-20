@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { contrastRatio } from '@/lib/brand-derivation';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
@@ -13,22 +14,27 @@ type IconName = ComponentProps<typeof Ionicons>['name'];
 // emphasis chips (e.g. "Auto-generate from light") that need to
 // stand out against ordinary tonal chrome without competing with
 // the brand primary.
-type Tone = 'primary' | 'neutral' | 'amber' | 'red' | 'filled' | 'inverse';
+type Tone = 'neutral' | 'primary' | 'amber' | 'red' | 'filled' | 'inverse';
 
 // Small inline action chips (Edit, View, Copy, Cancel, ...) that live
 // inside cards and rows. The old treatment — bare uppercase text links —
-// read as labels, not actions. These share ActionButton's tonal
-// language: a tinted pill, an icon, and a pressed state.
+// read as labels, not actions.
+//
+// `neutral` is the default, and that is the accent rule rather than a
+// preference: a chip is by nature a repeated action — three on a card,
+// five down a list — and the gym's colour belongs to the one action a
+// page exists for. `primary` and `filled` are still there for the chip
+// that genuinely is that action.
 const TONE_STYLES: Record<Tone, { container: string; text: string }> = {
+  neutral: {
+    container:
+      'bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-strong-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk',
+    text: 'text-ink-2 dark:text-ink-2-dk',
+  },
   primary: {
     container:
       'bg-secondary/10 border border-secondary/30 hover:bg-secondary/15 active:bg-secondary/20',
     text: 'text-secondary',
-  },
-  neutral: {
-    container:
-      'bg-white dark:bg-gray-800 border border-line-strong dark:border-line-strong-dk hover:bg-gray-50 dark:hover:bg-gray-700/60 active:bg-gray-100 dark:active:bg-gray-700',
-    text: 'text-ink-2 dark:text-ink-2-dk',
   },
   amber: {
     container:
@@ -42,12 +48,12 @@ const TONE_STYLES: Record<Tone, { container: string; text: string }> = {
   },
   filled: {
     container: 'bg-primary border border-primary hover:opacity-90 active:bg-primary-dark',
-    text: 'text-white',
+    text: 'font-semibold',
   },
   inverse: {
     container:
-      'bg-gray-900 dark:bg-gray-50 border border-gray-900 dark:border-gray-50 hover:opacity-90 active:bg-gray-700 dark:active:bg-gray-200',
-    text: 'text-white dark:text-gray-900',
+      'bg-ink dark:bg-ink-dk border border-ink dark:border-ink-dk hover:opacity-90 active:opacity-80',
+    text: 'text-surface dark:text-surface-dk',
   },
 };
 
@@ -55,7 +61,7 @@ export function ChipButton({
   label,
   icon,
   iconSide = 'left',
-  tone = 'primary',
+  tone = 'neutral',
   onPress,
   disabled,
   className,
@@ -73,26 +79,33 @@ export function ChipButton({
 }) {
   const colors = useThemeColors();
   const s = TONE_STYLES[tone];
-  const iconColor =
-    tone === 'primary'
-      ? colors.secondary
-      : tone === 'amber'
-        ? '#F59E0B'
-        : tone === 'red'
-          ? '#EF4444'
-          : tone === 'filled'
-            ? '#FFFFFF'
-            : tone === 'inverse'
-              ? colors.iconInverse
-              : colors.iconPrimary;
-  const iconEl = <Ionicons name={icon} size={13} color={iconColor} />;
+  // The filled chip is the gym's own colour, so white is not guaranteed
+  // readable on it — same check the primary Button makes.
+  const filledLabel =
+    contrastRatio(colors.primary, '#FFFFFF') >=
+    contrastRatio(colors.primary, '#111827')
+      ? '#FFFFFF'
+      : '#111827';
+  const iconColor: Record<Tone, string> = {
+    neutral: colors.ink2,
+    primary: colors.secondary,
+    amber: '#F59E0B',
+    red: '#EF4444',
+    filled: filledLabel,
+    inverse: colors.surface,
+  };
+  const iconEl = <Ionicons name={icon} size={13} color={iconColor[tone]} />;
   const containerClass = `flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${
     s.container
   } ${disabled ? 'opacity-50' : ''} ${className ?? ''}`;
   const content = (
     <>
       {iconSide === 'left' ? iconEl : null}
-      <Text className={`text-xs font-semibold ${s.text}`}>{label}</Text>
+      <Text
+        className={`text-xs font-semibold ${s.text}`}
+        style={tone === 'filled' ? { color: filledLabel } : undefined}>
+        {label}
+      </Text>
       {iconSide === 'right' ? iconEl : null}
     </>
   );

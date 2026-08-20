@@ -463,7 +463,7 @@ export default function AnalysisScreen() {
                 <Ionicons
                   name="chevron-forward"
                   size={16}
-                  color={colors.iconTertiary}
+                  color={colors.ink3}
                 />
               </Pressable>
             ))}
@@ -1383,7 +1383,7 @@ function TrendCard({
           <Ionicons
             name={openCard ? 'chevron-up' : 'chevron-down'}
             size={16}
-            color={colors.iconTertiary}
+            color={colors.ink3}
           />
         </View>
         <View className="flex-row items-center gap-3">

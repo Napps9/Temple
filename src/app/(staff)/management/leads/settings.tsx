@@ -677,7 +677,7 @@ function SourcesEditorModal({
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-                  <Ionicons name="close" size={18} color={colors.iconSecondary} />
+                  <Ionicons name="close" size={18} color={colors.ink2} />
                 </Pressable>
               </View>
 
@@ -711,7 +711,7 @@ function SourcesEditorModal({
                         <Ionicons
                           name="trash-outline"
                           size={16}
-                          color={colors.iconTertiary}
+                          color={colors.ink3}
                         />
                       </Pressable>
                     </View>

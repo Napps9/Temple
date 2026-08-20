@@ -55,7 +55,7 @@ function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
               {subtitle}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
         </View>
       </Pressable>
     </Link>

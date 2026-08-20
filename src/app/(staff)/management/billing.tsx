@@ -423,7 +423,7 @@ export default function BillingScreen() {
           ) : (
             <>
               <View className="flex-row items-center gap-2">
-                <Ionicons name="card-outline" size={20} color={colors.iconSecondary} />
+                <Ionicons name="card-outline" size={20} color={colors.ink2} />
                 <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
                   Not connected yet
                 </Text>

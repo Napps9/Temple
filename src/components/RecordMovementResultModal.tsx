@@ -277,7 +277,7 @@ export function RecordMovementResultModal({
               <Pressable
                 onPress={addDraft}
                 className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
-                <Ionicons name="add" size={16} color={colors.iconSecondary} />
+                <Ionicons name="add" size={16} color={colors.ink2} />
                 <Text className="text-ink-2 dark:text-ink-2-dk">
                   Add result
                 </Text>
@@ -375,7 +375,7 @@ function DraftCard({
               </Text>
             )}
           </View>
-          <Ionicons name="chevron-down" size={16} color={colors.iconTertiary} />
+          <Ionicons name="chevron-down" size={16} color={colors.ink3} />
         </Pressable>
         {total > 1 ? (
           <Pressable
@@ -383,7 +383,7 @@ function DraftCard({
             hitSlop={4}
             className="w-9 h-9 rounded-lg items-center justify-center active:bg-gray-200 dark:active:bg-gray-700"
           accessibilityLabel="Close">
-            <Ionicons name="close" size={18} color={colors.iconTertiary} />
+            <Ionicons name="close" size={18} color={colors.ink3} />
           </Pressable>
         ) : null}
       </View>
@@ -502,7 +502,7 @@ function SchemePickerModal({
                   <Ionicons
                     name={expandedGroup === g.key ? 'chevron-up' : 'chevron-down'}
                     size={16}
-                    color={colors.iconTertiary}
+                    color={colors.ink3}
                   />
                 </Pressable>
                 {expandedGroup === g.key ? (
@@ -528,7 +528,7 @@ function SchemePickerModal({
                                 : 'chevron-down'
                             }
                             size={14}
-                            color={colors.iconTertiary}
+                            color={colors.ink3}
                           />
                         </Pressable>
                         {expandedMovement === m.key ? (

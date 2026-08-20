@@ -35,7 +35,7 @@ export function CommunicationsHome() {
       <Link href="/management/communications/settings" asChild>
         <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-            <Ionicons name="settings-outline" size={18} color={colors.iconSecondary} />
+            <Ionicons name="settings-outline" size={18} color={colors.ink2} />
           </View>
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -45,14 +45,14 @@ export function CommunicationsHome() {
               From name, reply-to, and the required postal-address footer.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
         </Pressable>
       </Link>
 
       <Link href="/management/communications/topics" asChild>
         <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-            <Ionicons name="layers-outline" size={18} color={colors.iconSecondary} />
+            <Ionicons name="layers-outline" size={18} color={colors.ink2} />
           </View>
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -62,14 +62,14 @@ export function CommunicationsHome() {
               Let members subscribe and unsubscribe per topic — newsletter, promos, billing.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
         </Pressable>
       </Link>
 
       <Link href="/management/communications/automations" asChild>
         <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-            <Ionicons name="flash-outline" size={18} color={colors.iconSecondary} />
+            <Ionicons name="flash-outline" size={18} color={colors.ink2} />
           </View>
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -79,7 +79,7 @@ export function CommunicationsHome() {
               Emails that send themselves — welcome, first-class follow-up, win-back, lead nurture.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
         </Pressable>
       </Link>
 

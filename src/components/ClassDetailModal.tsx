@@ -499,7 +499,7 @@ export function ClassDetailModal({
             accessibilityRole="button"
             accessibilityLabel="Close"
             className="absolute right-3 top-3 z-10 w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-            <Ionicons name="close" size={20} color={colors.iconSecondary} />
+            <Ionicons name="close" size={20} color={colors.ink2} />
           </Pressable>
           {sessionQuery.isLoading || !detail ? (
             <View className="py-6 items-center">
@@ -703,7 +703,7 @@ export function ClassDetailModal({
                                 <Ionicons
                                   name="swap-horizontal-outline"
                                   size={16}
-                                  color={colors.iconSecondary}
+                                  color={colors.ink2}
                                 />
                               </Pressable>
                             ) : null}
@@ -1110,7 +1110,7 @@ function BookActions({
                   <Ionicons
                     name={isSel ? 'radio-button-on' : 'radio-button-off'}
                     size={18}
-                    color={isSel ? colors.primary : colors.iconTertiary}
+                    color={isSel ? colors.primary : colors.ink3}
                   />
                   <Text className="text-ink dark:text-ink-dk text-sm flex-1">
                     {e.label}

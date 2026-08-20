@@ -366,7 +366,7 @@ export default function ImportStripeScreen() {
                     <Ionicons
                       name={p.include ? 'checkbox' : 'square-outline'}
                       size={20}
-                      color={p.include ? colors.primary : colors.iconTertiary}
+                      color={p.include ? colors.primary : colors.ink3}
                     />
                     <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                       {p.label}
@@ -481,7 +481,7 @@ export default function ImportStripeScreen() {
                       <Ionicons
                         name={on ? 'checkbox' : 'square-outline'}
                         size={20}
-                        color={on ? colors.primary : colors.iconTertiary}
+                        color={on ? colors.primary : colors.ink3}
                       />
                       <View className="flex-1">
                         <Text

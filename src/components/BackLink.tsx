@@ -70,7 +70,7 @@ export function BackLink({
         accessibilityRole="button"
         accessibilityLabel={a11yLabel}
         className="active:opacity-70">
-        <Ionicons name="chevron-back" size={22} color={colors.iconTertiary} />
+        <Ionicons name="chevron-back" size={22} color={colors.ink3} />
       </Pressable>
     );
   }
@@ -82,7 +82,7 @@ export function BackLink({
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
       className="flex-row items-center gap-1 self-start py-1 active:opacity-70">
-      <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
+      <Ionicons name="chevron-back" size={18} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk">{label}</Text>
     </Pressable>
   );

@@ -683,7 +683,7 @@ export default function AutomationEditor() {
               onPress={() => setMode('setup')}
               hitSlop={6}
               className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
-              <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
+              <Ionicons name="chevron-back" size={18} color={colors.ink2} />
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Setup
               </Text>
@@ -706,7 +706,7 @@ export default function AutomationEditor() {
                 <Ionicons
                   name={showPreview ? 'create-outline' : 'eye-outline'}
                   size={15}
-                  color={colors.iconSecondary}
+                  color={colors.ink2}
                 />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   {showPreview ? 'Back to editor' : 'Preview'}
@@ -953,7 +953,7 @@ export default function AutomationEditor() {
           }}
           className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
           <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-            <Ionicons name="brush-outline" size={18} color={colors.iconSecondary} />
+            <Ionicons name="brush-outline" size={18} color={colors.ink2} />
           </View>
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -964,7 +964,7 @@ export default function AutomationEditor() {
               layout and content
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
         </Pressable>
 
         <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
@@ -990,7 +990,7 @@ export default function AutomationEditor() {
                   onPress={() => deleteStep.mutate(s.id)}
                   hitSlop={6}
                   className="active:opacity-70">
-                  <Ionicons name="trash-outline" size={18} color={colors.iconSecondary} />
+                  <Ionicons name="trash-outline" size={18} color={colors.ink2} />
                 </Pressable>
               </View>
               <View className="flex-row items-center gap-3">
@@ -1025,7 +1025,7 @@ export default function AutomationEditor() {
                     setMode('design');
                   }}
                   className="flex-row items-center gap-2 active:opacity-70">
-                  <Ionicons name="brush-outline" size={16} color={colors.iconSecondary} />
+                  <Ionicons name="brush-outline" size={16} color={colors.ink2} />
                   <Text className="text-primary text-sm font-medium">
                     Design this email · {s.doc.blocks.length} block
                     {s.doc.blocks.length === 1 ? '' : 's'}

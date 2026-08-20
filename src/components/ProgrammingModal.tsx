@@ -355,7 +355,7 @@ export function ProgrammingModal({
                     <Pressable
                       onPress={addDraft}
                       className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
-                      <Ionicons name="add" size={16} color={colors.iconSecondary} />
+                      <Ionicons name="add" size={16} color={colors.ink2} />
                       <Text className="text-ink-2 dark:text-ink-2-dk">
                         Add section
                       </Text>
@@ -431,7 +431,7 @@ function DraftCard({
         hitSlop={4}
         className="self-end w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-700"
           accessibilityLabel="Close">
-        <Ionicons name="close" size={18} color={colors.iconTertiary} />
+        <Ionicons name="close" size={18} color={colors.ink3} />
       </Pressable>
 
       <PickerButton
@@ -486,7 +486,7 @@ function DraftCard({
           <Ionicons
             name={draft.leaderboard_enabled ? 'checkbox' : 'square-outline'}
             size={20}
-            color={draft.leaderboard_enabled ? colors.primary : colors.iconTertiary}
+            color={draft.leaderboard_enabled ? colors.primary : colors.ink3}
           />
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk text-sm font-medium">
@@ -530,7 +530,7 @@ function PickerButton({
           }>
           {value ?? placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={16} color={colors.iconTertiary} />
+        <Ionicons name="chevron-down" size={16} color={colors.ink3} />
       </Pressable>
     </View>
   );

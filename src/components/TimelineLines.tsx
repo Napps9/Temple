@@ -93,7 +93,7 @@ export function SoftLine({
         ? '#F59E0B'
         : quiet
           ? '#9CA3AF'
-          : colors.iconSecondary;
+          : colors.ink2;
   const body = (
     <>
       {icon ? (
@@ -146,7 +146,7 @@ export function SoftLine({
         <Ionicons
           name="chevron-forward"
           size={14}
-          color={colors.iconSecondary}
+          color={colors.ink2}
           style={{ marginTop: 7 }}
         />
       ) : null}

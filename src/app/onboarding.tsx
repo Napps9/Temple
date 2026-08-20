@@ -362,7 +362,7 @@ function StepRow({
       <Ionicons
         name="chevron-forward"
         size={16}
-        color={step.done ? colors.iconSecondary : colors.iconTertiary}
+        color={step.done ? colors.ink2 : colors.ink3}
       />
     </Pressable>
   );

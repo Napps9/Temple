@@ -222,7 +222,7 @@ export function MovementDetailView({
             <Ionicons
               name={starred ? 'star' : 'star-outline'}
               size={20}
-              color={starred ? '#F59E0B' : colors.iconSecondary}
+              color={starred ? '#F59E0B' : colors.ink2}
             />
           </Pressable>
           {isMember ? (

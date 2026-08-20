@@ -358,7 +358,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
               onPress={() => setMode('setup')}
               hitSlop={6}
               className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
-              <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
+              <Ionicons name="chevron-back" size={18} color={colors.ink2} />
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Setup
               </Text>
@@ -389,7 +389,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                 <Ionicons
                   name={showPreview ? 'create-outline' : 'eye-outline'}
                   size={15}
-                  color={colors.iconSecondary}
+                  color={colors.ink2}
                 />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   {showPreview ? 'Back to editor' : 'Preview'}
@@ -522,7 +522,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                   } · open the builder`}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+          <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
         </Pressable>
 
         {/* Topic */}
@@ -686,7 +686,7 @@ function HistoryButton({
       className={`w-8 h-8 rounded-lg items-center justify-center active:opacity-70 ${
         disabled ? 'opacity-30' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
       }`}>
-      <Ionicons name={icon} size={18} color={colors.iconSecondary} />
+      <Ionicons name={icon} size={18} color={colors.ink2} />
     </Pressable>
   );
 }

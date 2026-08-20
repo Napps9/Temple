@@ -82,12 +82,12 @@ export function MemberGetStartedChecklist() {
           hitSlop={8}
           accessibilityLabel="Dismiss get-started tips"
           className="w-7 h-7 items-center justify-center active:opacity-60">
-          <Ionicons name="close" size={18} color={colors.iconTertiary} />
+          <Ionicons name="close" size={18} color={colors.ink3} />
         </Pressable>
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={colors.iconTertiary}
+          color={colors.ink3}
         />
       </Pressable>
 
@@ -139,7 +139,7 @@ export function MemberGetStartedChecklist() {
               <Ionicons
                 name="chevron-forward"
                 size={16}
-                color={step.done ? colors.iconSecondary : colors.iconTertiary}
+                color={step.done ? colors.ink2 : colors.ink3}
               />
             </Pressable>
           ))}

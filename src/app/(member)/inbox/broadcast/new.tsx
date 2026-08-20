@@ -161,7 +161,7 @@ export default function NewClassBroadcast() {
                   <Ionicons
                     name={selectedNow ? 'checkmark-circle' : 'ellipse-outline'}
                     size={18}
-                    color={selectedNow ? colors.primary : colors.iconTertiary}
+                    color={selectedNow ? colors.primary : colors.ink3}
                   />
                 </Pressable>
               );

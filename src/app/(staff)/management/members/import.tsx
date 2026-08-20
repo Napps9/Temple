@@ -716,7 +716,7 @@ export default function ImportMembersScreen() {
                       : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Ionicons name="cloud-upload-outline" size={24} color={colors.iconSecondary} />
+                  <Ionicons name="cloud-upload-outline" size={24} color={colors.ink2} />
                   <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
                     {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
@@ -818,7 +818,7 @@ export default function ImportMembersScreen() {
                     numberOfLines={1}>
                     {h || `(column ${i + 1})`}
                   </Text>
-                  <Ionicons name="arrow-forward" size={14} color={colors.iconTertiary} />
+                  <Ionicons name="arrow-forward" size={14} color={colors.ink3} />
                   <FieldPicker
                     value={mapping[i] ?? 'ignore'}
                     onChange={(v) =>
@@ -1013,7 +1013,7 @@ function ReviewPanel({
     <View className="gap-4">
       <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="sparkles" size={18} color={colors.iconSecondary} />
+          <Ionicons name="sparkles" size={18} color={colors.ink2} />
           <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
             What we found in your CSV
           </Text>

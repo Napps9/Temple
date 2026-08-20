@@ -389,7 +389,7 @@ export function AccountScreen() {
             <Ionicons
               name={showPasswordFields ? 'chevron-up' : 'chevron-down'}
               size={16}
-              color={colors.iconTertiary}
+              color={colors.ink3}
             />
           </Pressable>
           {showPasswordFields ? (

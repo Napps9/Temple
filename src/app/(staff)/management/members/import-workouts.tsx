@@ -298,7 +298,7 @@ export default function ImportWorkoutsScreen() {
                       : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Ionicons name="cloud-upload-outline" size={24} color={colors.iconSecondary} />
+                  <Ionicons name="cloud-upload-outline" size={24} color={colors.ink2} />
                   <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
                     {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
@@ -378,7 +378,7 @@ export default function ImportWorkoutsScreen() {
                     numberOfLines={1}>
                     {h || `(column ${i + 1})`}
                   </Text>
-                  <Ionicons name="arrow-forward" size={14} color={colors.iconTertiary} />
+                  <Ionicons name="arrow-forward" size={14} color={colors.ink3} />
                   <FieldPicker
                     value={mapping[i] ?? 'ignore'}
                     onChange={(v) =>
@@ -559,7 +559,7 @@ export default function ImportWorkoutsScreen() {
                       <Ionicons
                         name={on ? 'checkbox' : 'square-outline'}
                         size={18}
-                        color={on ? colors.primary : colors.iconTertiary}
+                        color={on ? colors.primary : colors.ink3}
                       />
                       <Text className="flex-1 text-ink dark:text-ink-dk text-sm">
                         {r.name} → {MOVEMENT_NAME_BY_KEY.get(r.key) ?? r.key}

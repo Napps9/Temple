@@ -918,7 +918,7 @@ export function PlansPanel() {
                     <Ionicons
                       name={r.includesProgramming ? 'checkbox' : 'square-outline'}
                       size={20}
-                      color={r.includesProgramming ? colors.primary : colors.iconTertiary}
+                      color={r.includesProgramming ? colors.primary : colors.ink3}
                     />
                     <View className="flex-1">
                       <Text className="text-ink dark:text-ink-dk text-sm font-medium">
@@ -1065,7 +1065,7 @@ export function PlansPanel() {
               <Ionicons
                 name={showArchived ? 'chevron-down' : 'chevron-forward'}
                 size={16}
-                color={colors.iconSecondary}
+                color={colors.ink2}
               />
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Archived ({archivedRows.length})

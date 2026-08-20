@@ -155,7 +155,7 @@ function IconBtn({
       className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-gray-800 border border-line dark:border-line-dk active:opacity-60 ${
         disabled ? 'opacity-30' : ''
       }`}>
-      <Ionicons name={icon} size={15} color={danger ? '#EF4444' : colors.iconSecondary} />
+      <Ionicons name={icon} size={15} color={danger ? '#EF4444' : colors.ink2} />
     </Pressable>
   );
 }
@@ -631,7 +631,7 @@ function PricingInspector({
                 <Ionicons
                   name={isHidden ? 'square-outline' : 'checkbox'}
                   size={18}
-                  color={isHidden ? colors.iconTertiary : colors.primary}
+                  color={isHidden ? colors.ink3 : colors.primary}
                 />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{p.name}</Text>
               </Pressable>
@@ -703,7 +703,7 @@ function TeamInspector({
                 <Ionicons
                   name={isHidden ? 'square-outline' : 'checkbox'}
                   size={18}
-                  color={isHidden ? colors.iconTertiary : colors.primary}
+                  color={isHidden ? colors.ink3 : colors.primary}
                 />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {m.full_name ?? 'Team member'}
@@ -776,7 +776,7 @@ function TestimonialsInspector({
           })
         }
         className="flex-row items-center justify-center gap-2 bg-raised dark:bg-raised-dk rounded-lg py-2.5 active:opacity-70">
-        <Ionicons name="add" size={16} color={colors.iconSecondary} />
+        <Ionicons name="add" size={16} color={colors.ink2} />
         <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">Add a quote</Text>
       </Pressable>
     </View>
@@ -1102,11 +1102,11 @@ function CollapsibleSection({
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-2.5 active:opacity-70">
-        <Ionicons name={icon} size={16} color={colors.iconSecondary} />
+        <Ionicons name={icon} size={16} color={colors.ink2} />
         <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
           {title}
         </Text>
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={colors.iconTertiary} />
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={colors.ink3} />
       </Pressable>
       {open ? <View className="gap-3 pt-3">{children}</View> : null}
     </View>
@@ -1139,7 +1139,7 @@ function AddBlockModal({
                 key={type}
                 onPress={() => onPick(type)}
                 className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
-                <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color={colors.iconSecondary} />
+                <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color={colors.ink2} />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   {SITE_BLOCK_LABELS[type]}
                 </Text>
@@ -1297,7 +1297,7 @@ export function SiteEditor({
       key={type}
       onPress={() => addBlock(type)}
       className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
-      <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={15} color={colors.iconSecondary} />
+      <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={15} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {SITE_BLOCK_LABELS[type]}
       </Text>
@@ -1346,7 +1346,7 @@ export function SiteEditor({
         <Pressable
           onPress={() => setAddBlockModalOpen(true)}
           className="flex-row items-center justify-center gap-2 bg-surface dark:bg-surface-dk rounded-xl p-3 active:opacity-70">
-          <Ionicons name="add" size={16} color={colors.iconSecondary} />
+          <Ionicons name="add" size={16} color={colors.ink2} />
           <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">Add block</Text>
         </Pressable>
       ) : (
@@ -1364,7 +1364,7 @@ export function SiteEditor({
         </Text>
         {document.blocks.length === 0 ? (
           <View className="py-12 items-center px-6">
-            <Ionicons name="globe-outline" size={32} color={colors.iconTertiary} />
+            <Ionicons name="globe-outline" size={32} color={colors.ink3} />
             <Text className="text-ink-3 dark:text-ink-3-dk text-sm mt-2 text-center">
               Your page is empty. Add blocks from the left to start building.
             </Text>
@@ -1384,7 +1384,7 @@ export function SiteEditor({
                   <Ionicons
                     name={SITE_BLOCK_ICONS[block.type] as IconName}
                     size={16}
-                    color={colors.iconSecondary}
+                    color={colors.ink2}
                   />
                   <Text className="flex-1 text-gray-800 dark:text-gray-100 text-sm font-medium">
                     {SITE_BLOCK_LABELS[block.type]}
@@ -1392,7 +1392,7 @@ export function SiteEditor({
                   <Ionicons
                     name={isSelected ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color={colors.iconTertiary}
+                    color={colors.ink3}
                   />
                 </Pressable>
                 {isSelected ? (

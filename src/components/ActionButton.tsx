@@ -66,7 +66,7 @@ export function ActionButton({
       <Pressable
         disabled
         className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk">
-        <Ionicons name="lock-closed-outline" size={14} color={colors.iconTertiary} />
+        <Ionicons name="lock-closed-outline" size={14} color={colors.ink3} />
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs font-semibold">
           {disabledLabel ?? label}
         </Text>

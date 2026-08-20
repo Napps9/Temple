@@ -223,7 +223,7 @@ export default function GroupPage() {
                     </Text>
                   ) : null}
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+                <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
               </Pressable>
             );
           })}

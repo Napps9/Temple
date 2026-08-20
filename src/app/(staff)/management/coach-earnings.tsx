@@ -213,7 +213,7 @@ export default function CoachEarningsPage() {
                   <Ionicons
                     name={selected ? 'radio-button-on' : 'radio-button-off'}
                     size={18}
-                    color={selected ? colors.primary : colors.iconTertiary}
+                    color={selected ? colors.primary : colors.ink3}
                   />
                   <View className="flex-1">
                     <Text
@@ -347,7 +347,7 @@ function CoachCard({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={colors.iconTertiary}
+          color={colors.ink3}
         />
       </Pressable>
 

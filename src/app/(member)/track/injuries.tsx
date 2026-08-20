@@ -378,7 +378,7 @@ function CheckInForm({
               <Ionicons
                 name={icon as never}
                 size={13}
-                color={feeling === key ? colors.primary : colors.iconTertiary}
+                color={feeling === key ? colors.primary : colors.ink3}
               />
               <Text
                 className={`text-xs font-semibold ${

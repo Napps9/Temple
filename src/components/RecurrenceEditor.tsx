@@ -131,14 +131,14 @@ export function RecurrenceEditor({
                     ? 'opacity-40 bg-raised dark:bg-raised-dk'
                     : 'bg-raised dark:bg-raised-dk'
                 }`}>
-                <Ionicons name="close" size={18} color={colors.iconSecondary} />
+                <Ionicons name="close" size={18} color={colors.ink2} />
               </Pressable>
             </View>
           ))}
           <Pressable
             onPress={addTime}
             className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
-            <Ionicons name="add" size={14} color={colors.iconSecondary} />
+            <Ionicons name="add" size={14} color={colors.ink2} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Add time
             </Text>

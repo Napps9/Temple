@@ -195,7 +195,7 @@ export default function AthleteHome() {
               hitSlop={8}
               accessibilityLabel="Account"
               className="w-10 h-10 rounded-full bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 items-center justify-center active:opacity-70">
-              <Ionicons name="person-outline" size={18} color={colors.iconPrimary} />
+              <Ionicons name="person-outline" size={18} color={colors.ink} />
             </Pressable>
           </Link>
         </View>
@@ -353,7 +353,7 @@ export default function AthleteHome() {
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
           ) : logged.length === 0 ? (
             <View className="items-center gap-2 py-2">
-              <Ionicons name="barbell-outline" size={28} color={colors.iconTertiary} />
+              <Ionicons name="barbell-outline" size={28} color={colors.ink3} />
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
                 No logged movements yet. Start solo tracking above, or join a
                 gym — your PRs and history live here either way.
@@ -374,7 +374,7 @@ export default function AthleteHome() {
                       {m.group}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+                  <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
                 </Pressable>
               ))}
             </View>

@@ -429,7 +429,7 @@ export default function LeadsScreen() {
               </Pressable>
             </Link>
             <Pressable onPress={() => setMilestoneDismissed(true)} hitSlop={6}>
-              <Ionicons name="close" size={14} color={colors.iconTertiary} />
+              <Ionicons name="close" size={14} color={colors.ink3} />
             </Pressable>
           </View>
         ) : null}
@@ -469,7 +469,7 @@ export default function LeadsScreen() {
           <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : (leads.data?.length ?? 0) === 0 ? (
           <View className="bg-surface dark:bg-surface-dk rounded-xl p-6 items-center gap-2 shadow-card">
-            <Ionicons name="people-outline" size={32} color={colors.iconTertiary} />
+            <Ionicons name="people-outline" size={32} color={colors.ink3} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
               No leads yet. Tap “Add lead” to capture your first prospect.
             </Text>
@@ -544,7 +544,7 @@ export default function LeadsScreen() {
                               <Ionicons
                                 name="person-circle-outline"
                                 size={14}
-                                color={colors.iconTertiary}
+                                color={colors.ink3}
                               />
                               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                                 {l.assignee?.full_name ??
@@ -680,7 +680,7 @@ function AddLeadModal({
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-                  <Ionicons name="close" size={18} color={colors.iconSecondary} />
+                  <Ionicons name="close" size={18} color={colors.ink2} />
                 </Pressable>
               </View>
 
@@ -1023,7 +1023,7 @@ function LeadDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                   className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-                  <Ionicons name="close" size={18} color={colors.iconSecondary} />
+                  <Ionicons name="close" size={18} color={colors.ink2} />
                 </Pressable>
               </View>
 
@@ -1100,7 +1100,7 @@ function LeadDetailModal({
                             <Text className="text-ink dark:text-ink-dk flex-1">
                               {m.full_name ?? 'Member'}
                             </Text>
-                            <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
+                            <Ionicons name="chevron-forward" size={16} color={colors.ink3} />
                           </Pressable>
                         ))}
                       </View>
@@ -1164,7 +1164,7 @@ function LeadDetailModal({
                         <Ionicons
                           name="person-circle-outline"
                           size={18}
-                          color={colors.iconTertiary}
+                          color={colors.ink3}
                         />
                         <Text className="text-ink dark:text-ink-dk">
                           {lead.assignee?.full_name ??

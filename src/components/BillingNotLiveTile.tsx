@@ -16,7 +16,7 @@ export function BillingNotLiveTile({ title }: { title: string }) {
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           {title}
         </Text>
-        <Ionicons name="card-outline" size={16} color={colors.iconTertiary} />
+        <Ionicons name="card-outline" size={16} color={colors.ink3} />
       </View>
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Billing not yet live — connect Stripe to populate.

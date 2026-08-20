@@ -204,7 +204,7 @@ export function WaiverPanel() {
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Remove file">
-              <Ionicons name="close" size={16} color={colors.iconTertiary} />
+              <Ionicons name="close" size={16} color={colors.ink3} />
             </Pressable>
           </View>
         ) : null}
@@ -213,7 +213,7 @@ export function WaiverPanel() {
           onPress={() => pick.mutate()}
           disabled={pick.isPending}
           className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk active:opacity-70">
-          <Ionicons name="cloud-upload-outline" size={18} color={colors.iconSecondary} />
+          <Ionicons name="cloud-upload-outline" size={18} color={colors.ink2} />
           <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
             {pick.isPending
               ? 'Uploading…'
@@ -270,7 +270,7 @@ export function HealthScreeningPanel() {
           <Ionicons
             name={showParq ? 'chevron-down' : 'chevron-forward'}
             size={18}
-            color={colors.iconSecondary}
+            color={colors.ink2}
           />
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -512,7 +512,7 @@ export function ParqPanel() {
       <Pressable
         onPress={add}
         className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
-        <Ionicons name="add" size={16} color={colors.iconSecondary} />
+        <Ionicons name="add" size={16} color={colors.ink2} />
         <Text className="text-ink-2 dark:text-ink-2-dk">Add question</Text>
       </Pressable>
 

@@ -362,7 +362,7 @@ function ViewIconToggle({ view }: { view: string }) {
             <Ionicons
               name={o.icon}
               size={16}
-              color={active ? colors.iconPrimary : colors.iconSecondary}
+              color={active ? colors.ink : colors.ink2}
             />
           </Pressable>
         );
@@ -816,7 +816,7 @@ export function ClassesCalendar({
                 accessibilityRole="button"
                 accessibilityLabel="Jump to today"
                 className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                <Ionicons name="locate-outline" size={18} color={colors.iconSecondary} />
+                <Ionicons name="locate-outline" size={18} color={colors.ink2} />
               </Pressable>
             </View>
             <View className="flex-row items-center gap-0.5">
@@ -1253,7 +1253,7 @@ function AgendaView({
               <Ionicons
                 name="calendar-clear-outline"
                 size={24}
-                color={colors.iconTertiary}
+                color={colors.ink3}
               />
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No classes on this day.

@@ -1075,7 +1075,7 @@ export default function Timeline() {
                 <Ionicons
                   name="sparkles-outline"
                   size={15}
-                  color={colors.iconSecondary}
+                  color={colors.ink2}
                 />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-[12px] font-bold uppercase tracking-wider">
                   With me
@@ -1224,7 +1224,7 @@ function BarChip({
     <Pressable
       onPress={onPress}
       className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-70">
-      <Ionicons name={icon} size={14} color={colors.iconSecondary} />
+      <Ionicons name={icon} size={14} color={colors.ink2} />
       <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
         {label}
       </Text>
@@ -2004,7 +2004,7 @@ function PaymentFailingCard({
         <Ionicons
           name="chevron-forward"
           size={14}
-          color={colors.iconSecondary}
+          color={colors.ink2}
           style={{ marginTop: 7 }}
         />
       ) : null}
@@ -2316,7 +2316,7 @@ function SetupCard({
   if (!blocking) {
     return (
       <View className="flex-row items-center gap-2.5 px-1">
-        <Ionicons name="rocket-outline" size={15} color={colors.iconSecondary} />
+        <Ionicons name="rocket-outline" size={15} color={colors.ink2} />
         <Pressable
           onPress={() => router.push('/setup' as never)}
           className="flex-1 active:opacity-70">
@@ -2333,7 +2333,7 @@ function SetupCard({
           onPress={onDismiss}
           hitSlop={8}
           accessibilityLabel="Don't show this again">
-          <Ionicons name="close" size={16} color={colors.iconSecondary} />
+          <Ionicons name="close" size={16} color={colors.ink2} />
         </Pressable>
       </View>
     );

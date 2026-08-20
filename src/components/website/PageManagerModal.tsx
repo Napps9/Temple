@@ -76,7 +76,7 @@ export function PageManagerModal({
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel="Close">
-                <Ionicons name="close" size={20} color={colors.iconTertiary} />
+                <Ionicons name="close" size={20} color={colors.ink3} />
               </Pressable>
             </View>
 

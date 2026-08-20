@@ -186,7 +186,7 @@ function ManageNav({
         <Ionicons
           name={CATEGORY_ICONS[c]}
           size={17}
-          color={selected ? '#FFFFFF' : colors.iconSecondary}
+          color={selected ? '#FFFFFF' : colors.ink2}
         />
         <Text
           className={`text-sm font-medium ${
@@ -609,7 +609,7 @@ function SettingsSection({
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
         <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-          <Ionicons name={icon} size={18} color={colors.iconSecondary} />
+          <Ionicons name={icon} size={18} color={colors.ink2} />
         </View>
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -622,7 +622,7 @@ function SettingsSection({
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={colors.iconTertiary}
+          color={colors.ink3}
         />
       </Pressable>
       {open ? (
@@ -935,7 +935,7 @@ function CountPill({
   const colors = useThemeColors();
   const body = (
     <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-raised dark:bg-raised-dk">
-      <Ionicons name={icon} size={13} color={colors.iconSecondary} />
+      <Ionicons name={icon} size={13} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold min-w-[10px] text-center">
         {value === null ? '—' : value}
       </Text>
@@ -1046,7 +1046,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center justify-between active:opacity-70 py-1">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="ribbon-outline" size={16} color={colors.iconSecondary} />
+          <Ionicons name="ribbon-outline" size={16} color={colors.ink2} />
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Class type qualifications
           </Text>
@@ -1054,7 +1054,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color={colors.iconTertiary}
+          color={colors.ink3}
         />
       </Pressable>
       {open ? (
@@ -1130,7 +1130,7 @@ function CoachEarningsSummary({ profileId }: { profileId: string }) {
     <Link href="/management/coach-earnings" asChild>
       <Pressable className="flex-row items-center justify-between active:opacity-70">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="cash-outline" size={16} color={colors.iconSecondary} />
+          <Ionicons name="cash-outline" size={16} color={colors.ink2} />
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Earnings this month
           </Text>
@@ -1592,7 +1592,7 @@ function ActionCta({
         disabled ? 'opacity-50' : ''
       }`}>
       <View className="w-8 h-8 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-        <Ionicons name={icon} size={16} color={colors.iconSecondary} />
+        <Ionicons name={icon} size={16} color={colors.ink2} />
       </View>
       <Text className="text-ink dark:text-ink-dk font-medium text-sm">
         {label}

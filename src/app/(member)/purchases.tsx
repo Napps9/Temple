@@ -340,7 +340,7 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
 
       {order.has_physical && order.status === 'paid' ? (
         <View className="flex-row items-center gap-1.5 mt-1">
-          <Ionicons name="cube-outline" size={14} color={colors.iconTertiary} />
+          <Ionicons name="cube-outline" size={14} color={colors.ink3} />
           <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Being prepared for shipping.
           </Text>

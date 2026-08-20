@@ -481,7 +481,7 @@ export default function LeadAgentScreen() {
                     Dial {agentNumber} to hear exactly what a prospect hears.
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.iconSecondary} />
+                <Ionicons name="chevron-forward" size={16} color={colors.ink2} />
               </Pressable>
             ) : null}
             {!canTestWeb && !canTestPhone ? (
@@ -875,7 +875,7 @@ export default function LeadAgentScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Close"
                 className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-200 dark:active:bg-gray-800">
-                <Ionicons name="close" size={18} color={colors.iconSecondary} />
+                <Ionicons name="close" size={18} color={colors.ink2} />
               </Pressable>
             </View>
             <ScrollView>

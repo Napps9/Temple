@@ -526,7 +526,7 @@ export function BrandingPanel() {
                   onPress={() => copyToClipboard(joinUrl(origin, cleanedSlug))}
                   hitSlop={6}
                   className="active:opacity-70">
-                  <Ionicons name="copy-outline" size={18} color={colors.iconTertiary} />
+                  <Ionicons name="copy-outline" size={18} color={colors.ink3} />
                 </Pressable>
               </View>
             </View>
@@ -567,7 +567,7 @@ export function BrandingPanel() {
                   onPress={() => copyToClipboard(leadUrl(origin, cleanedSlug))}
                   hitSlop={6}
                   className="active:opacity-70">
-                  <Ionicons name="copy-outline" size={18} color={colors.iconTertiary} />
+                  <Ionicons name="copy-outline" size={18} color={colors.ink3} />
                 </Pressable>
               </View>
             </View>
@@ -669,7 +669,7 @@ function AdvancedBrandingCard({
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={colors.iconTertiary}
+          color={colors.ink3}
         />
       </Pressable>
 

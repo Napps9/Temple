@@ -743,12 +743,12 @@ function PersonalCard({
             <Ionicons
               name="document-text-outline"
               size={16}
-              color={colors.iconSecondary}
+              color={colors.ink2}
             />
             <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
               {f.title}
             </Text>
-            <Ionicons name="open-outline" size={14} color={colors.iconTertiary} />
+            <Ionicons name="open-outline" size={14} color={colors.ink3} />
           </Pressable>
         ))}
       </View>
@@ -808,7 +808,7 @@ function LockedProgrammingCard({
         <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           Individual programming
         </Text>
-        <Ionicons name="lock-closed" size={16} color={colors.iconSecondary} />
+        <Ionicons name="lock-closed" size={16} color={colors.ink2} />
       </View>
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Your coach has written you a personal programme

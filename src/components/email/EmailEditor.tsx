@@ -81,7 +81,7 @@ function IconBtn({
       <Ionicons
         name={icon}
         size={15}
-        color={danger ? '#EF4444' : colors.iconSecondary}
+        color={danger ? '#EF4444' : colors.ink2}
       />
     </Pressable>
   );
@@ -112,7 +112,7 @@ function Segmented<T extends string | number>({
               <Ionicons
                 name={opt.icon}
                 size={14}
-                color={selected ? colors.primary : colors.iconTertiary}
+                color={selected ? colors.primary : colors.ink3}
               />
             ) : null}
             {opt.label ? (
@@ -601,7 +601,7 @@ export function EmailEditor({
       key={type}
       onPress={() => addBlock(type)}
       className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
-      <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color={colors.iconSecondary} />
+      <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {BLOCK_LABELS[type]}
       </Text>
@@ -626,7 +626,7 @@ export function EmailEditor({
       </Text>
       {document.blocks.length === 0 ? (
         <View className="py-10 items-center px-6">
-          <Ionicons name="mail-open-outline" size={30} color={colors.iconTertiary} />
+          <Ionicons name="mail-open-outline" size={30} color={colors.ink3} />
           <Text className="text-ink-3 dark:text-ink-3-dk text-sm mt-2 text-center">
             Your email is empty. Add a block above to start building.
           </Text>
@@ -647,7 +647,7 @@ export function EmailEditor({
                   <Ionicons
                     name={BLOCK_ICONS[block.type] as IconName}
                     size={16}
-                    color={colors.iconSecondary}
+                    color={colors.ink2}
                   />
                   <Text className="flex-1 text-gray-800 dark:text-gray-100 text-sm font-medium">
                     {BLOCK_LABELS[block.type]}
@@ -655,7 +655,7 @@ export function EmailEditor({
                   <Ionicons
                     name={isSelected ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color={colors.iconTertiary}
+                    color={colors.ink3}
                   />
                 </Pressable>
                 {isSelected ? (

@@ -92,7 +92,7 @@ export function DraggableImageStrip({
           <Ionicons
             name={uploading ? 'cloud-upload-outline' : 'add'}
             size={22}
-            color={colors.iconSecondary}
+            color={colors.ink2}
           />
         </Pressable>
       ) : null}

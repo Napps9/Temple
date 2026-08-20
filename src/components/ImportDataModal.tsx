@@ -100,7 +100,7 @@ export function ImportDataModal({
             onPress={() => go(o.href)}
             className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-start gap-3 border border-line dark:border-line-dk shadow-card active:opacity-70">
             <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-              <Ionicons name={o.icon} size={18} color={colors.iconSecondary} />
+              <Ionicons name={o.icon} size={18} color={colors.ink2} />
             </View>
             <View className="flex-1 gap-0.5">
               <Text className="text-ink dark:text-ink-dk font-semibold">

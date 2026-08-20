@@ -153,7 +153,7 @@ export function MemberProgrammingAccessModal({
                 <Ionicons
                   name="chevron-down"
                   size={16}
-                  color={colors.iconTertiary}
+                  color={colors.ink3}
                 />
               </Pressable>
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">

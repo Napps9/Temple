@@ -120,7 +120,7 @@ export function PostClassLogPrompt() {
           accessibilityRole="button"
           accessibilityLabel="Dismiss"
           className="active:opacity-70">
-          <Ionicons name="close" size={18} color={colors.iconTertiary} />
+          <Ionicons name="close" size={18} color={colors.ink3} />
         </Pressable>
       </View>
       <Pressable

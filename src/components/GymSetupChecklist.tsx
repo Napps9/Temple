@@ -239,7 +239,7 @@ export function GymSetupChecklist({
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={colors.iconTertiary}
+          color={colors.ink3}
         />
       </Pressable>
 
@@ -303,7 +303,7 @@ export function GymSetupChecklist({
             <Ionicons
               name="chevron-forward"
               size={16}
-              color={step.done ? colors.iconSecondary : colors.iconTertiary}
+              color={step.done ? colors.ink2 : colors.ink3}
             />
           </Pressable>
         ))}

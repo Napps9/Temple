@@ -265,7 +265,7 @@ export function TopNav({
             <MenuRow
               icon="chatbubble-ellipses-outline"
               label="Messages"
-              iconColor={colors.iconPrimary}
+              iconColor={colors.ink}
               badge={notifCount}
               onPress={() => {
                 haptic.tap();
@@ -276,7 +276,7 @@ export function TopNav({
             <MenuRow
               icon={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
               label={scheme === 'dark' ? 'Light mode' : 'Dark mode'}
-              iconColor={colors.iconPrimary}
+              iconColor={colors.ink}
               onPress={() => {
                 haptic.selection();
                 set(scheme === 'dark' ? 'light' : 'dark');
@@ -286,7 +286,7 @@ export function TopNav({
             <MenuRow
               icon="person-circle-outline"
               label="Account"
-              iconColor={colors.iconPrimary}
+              iconColor={colors.ink}
               onPress={() => {
                 haptic.tap();
                 setMenuOpen(false);
@@ -297,7 +297,7 @@ export function TopNav({
               <MenuRow
                 icon="card-outline"
                 label="Membership"
-                iconColor={colors.iconPrimary}
+                iconColor={colors.ink}
                 onPress={() => {
                   haptic.tap();
                   setMenuOpen(false);
@@ -309,7 +309,7 @@ export function TopNav({
               <MenuRow
                 icon="bag-handle-outline"
                 label="Store"
-                iconColor={colors.iconPrimary}
+                iconColor={colors.ink}
                 onPress={() => {
                   haptic.tap();
                   setMenuOpen(false);

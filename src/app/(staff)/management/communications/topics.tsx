@@ -169,7 +169,7 @@ export default function EmailTopicsScreen() {
                       <Ionicons
                         name="trash-outline"
                         size={16}
-                        color={colors.iconTertiary}
+                        color={colors.ink3}
                       />
                     </Pressable>
                   </View>

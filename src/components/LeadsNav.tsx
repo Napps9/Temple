@@ -67,7 +67,7 @@ function LeadsPills({
         <Ionicons
           name={TAB_ICONS[t]}
           size={17}
-          color={selected ? '#FFFFFF' : colors.iconSecondary}
+          color={selected ? '#FFFFFF' : colors.ink2}
         />
         <Text
           className={`text-sm font-medium ${

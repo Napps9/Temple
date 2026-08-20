@@ -2208,7 +2208,7 @@ function ClassBuilderCard({
                 onPress={() => setEntries((prev) => prev.filter((_, j) => j !== i))}
                 hitSlop={6}
                 accessibilityLabel={`Remove ${e.name}`}>
-                <Ionicons name="close" size={16} color={colors.iconSecondary} />
+                <Ionicons name="close" size={16} color={colors.ink2} />
               </Pressable>
             </View>
           ))}
@@ -2438,7 +2438,7 @@ function PlanBuilderCard({
                 onPress={() => setEntries((prev) => prev.filter((_, j) => j !== i))}
                 hitSlop={6}
                 accessibilityLabel={`Remove ${e.name}`}>
-                <Ionicons name="close" size={16} color={colors.iconSecondary} />
+                <Ionicons name="close" size={16} color={colors.ink2} />
               </Pressable>
             </View>
           ))}

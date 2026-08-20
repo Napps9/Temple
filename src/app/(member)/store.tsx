@@ -327,7 +327,7 @@ function ProductCard({
                   onPress={() => setQty((q) => Math.max(1, q - 1))}
                   hitSlop={6}
                   className="px-3 py-2 active:opacity-60">
-                  <Ionicons name="remove" size={16} color={colors.iconSecondary} />
+                  <Ionicons name="remove" size={16} color={colors.ink2} />
                 </Pressable>
                 <Text className="text-ink dark:text-ink-dk w-8 text-center">
                   {clamped}
@@ -336,7 +336,7 @@ function ProductCard({
                   onPress={() => setQty((q) => Math.min(max, q + 1))}
                   hitSlop={6}
                   className="px-3 py-2 active:opacity-60">
-                  <Ionicons name="add" size={16} color={colors.iconSecondary} />
+                  <Ionicons name="add" size={16} color={colors.ink2} />
                 </Pressable>
               </View>
             ) : null}

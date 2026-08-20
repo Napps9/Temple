@@ -3,6 +3,12 @@ import { useState } from 'react';
 import { Pressable, type TextInputProps, View } from 'react-native';
 import { Text, TextInput } from './Text';
 
+import { useThemeColors } from '@/lib/theme';
+
+// The dark end of the ramp, for the forceDark screens — a runtime value
+// cannot come from a `dark:` class when the scheme is light.
+const DARK_INK_3 = '#6C727B';
+
 type Props = TextInputProps & {
   label: string;
   error?: string;
@@ -23,21 +29,21 @@ export function Input({
   forceDark,
   ...props
 }: Props) {
+  const colors = useThemeColors();
   const [revealed, setRevealed] = useState(false);
   const isPassword = !!secureTextEntry;
   // Keep `secureTextEntry` on the prop chain whenever hidden so iOS /
   // Android still treat the value as a credential.
   const effectiveSecure = isPassword && !revealed;
 
-  const labelCls = forceDark
-    ? 'text-gray-200'
-    : 'text-ink-2 dark:text-ink-2-dk';
+  // forceDark is for the screens that are dark whatever the scheme — the
+  // logged-out landing. It names the dark end of the ramp directly rather
+  // than relying on a `dark:` variant that the light scheme would win.
+  const labelCls = forceDark ? 'text-ink-2-dk' : 'text-ink-2 dark:text-ink-2-dk';
   const boxCls = forceDark
-    ? 'bg-gray-900 border-gray-700'
+    ? 'bg-surface-dk border-line-dk'
     : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk';
-  const inputCls = forceDark
-    ? 'text-gray-50'
-    : 'text-ink dark:text-ink-dk';
+  const inputCls = forceDark ? 'text-ink-dk' : 'text-ink dark:text-ink-dk';
   const errorCls = forceDark ? 'text-red-400' : 'text-red-500 dark:text-red-400';
 
   return (
@@ -48,7 +54,7 @@ export function Input({
           className={`flex-1 px-4 py-3 text-base ${inputCls} ${
             isPassword ? 'pr-2' : ''
           }`}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={forceDark ? DARK_INK_3 : colors.ink3}
           autoCapitalize="none"
           autoCorrect={false}
           secureTextEntry={effectiveSecure}

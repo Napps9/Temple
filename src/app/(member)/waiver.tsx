@@ -151,7 +151,7 @@ export default function WaiverForm() {
               Opens the full document — v{active.data.version}
             </Text>
           </View>
-          <Ionicons name="open-outline" size={18} color={colors.iconTertiary} />
+          <Ionicons name="open-outline" size={18} color={colors.ink3} />
         </Pressable>
 
         <View className="gap-2">

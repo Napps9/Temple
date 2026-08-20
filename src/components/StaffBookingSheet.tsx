@@ -207,7 +207,7 @@ export function StaffBookingSheet({
               accessibilityRole="button"
               accessibilityLabel="Close"
               className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
-              <Ionicons name="close" size={18} color={colors.iconSecondary} />
+              <Ionicons name="close" size={18} color={colors.ink2} />
             </Pressable>
           </View>
 
@@ -247,7 +247,7 @@ export function StaffBookingSheet({
                             {c.role}
                           </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+                        <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
                       </Pressable>
                     ))}
                   </View>
@@ -296,7 +296,7 @@ export function StaffBookingSheet({
                         <Ionicons
                           name={sel ? 'radio-button-on' : 'radio-button-off'}
                           size={18}
-                          color={sel ? colors.primary : colors.iconTertiary}
+                          color={sel ? colors.primary : colors.ink3}
                         />
                         <Text className="text-ink dark:text-ink-dk text-sm flex-1">
                           {e.label}
@@ -326,7 +326,7 @@ export function StaffBookingSheet({
                     <Ionicons
                       name={noCharge ? 'radio-button-on' : 'radio-button-off'}
                       size={18}
-                      color={noCharge ? colors.primary : colors.iconTertiary}
+                      color={noCharge ? colors.primary : colors.ink3}
                     />
                     <Text className="text-ink dark:text-ink-dk text-sm flex-1">
                       No charge

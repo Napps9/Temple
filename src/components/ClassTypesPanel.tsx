@@ -698,7 +698,7 @@ export function ClassTypesPanel() {
                       accessibilityRole="button"
                       accessibilityLabel="Remove"
                       className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
-                      <Ionicons name="close" size={18} color={colors.iconTertiary} />
+                      <Ionicons name="close" size={18} color={colors.ink3} />
                     </Pressable>
                   ) : null}
                 </View>
@@ -775,7 +775,7 @@ export function ClassTypesPanel() {
                     <Pressable
                       onPress={() => addSchedule(idx)}
                       className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
-                      <Ionicons name="add" size={14} color={colors.iconSecondary} />
+                      <Ionicons name="add" size={14} color={colors.ink2} />
                       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         Add another schedule
                       </Text>
@@ -984,7 +984,7 @@ export function ClassTypesPanel() {
               <Ionicons
                 name={showArchived ? 'chevron-down' : 'chevron-forward'}
                 size={16}
-                color={colors.iconSecondary}
+                color={colors.ink2}
               />
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Archived ({archivedRows.length})

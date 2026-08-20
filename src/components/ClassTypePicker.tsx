@@ -107,7 +107,7 @@ export function ClassTypePicker({
           <Pressable
             onPress={() => setCreating(!creating)}
             className="flex-row items-center gap-1 px-3 py-2 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk">
-            <Ionicons name="add" size={14} color={colors.iconSecondary} />
+            <Ionicons name="add" size={14} color={colors.ink2} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               New type
             </Text>

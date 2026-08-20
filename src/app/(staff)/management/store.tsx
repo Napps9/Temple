@@ -216,7 +216,7 @@ function ProductsTab() {
                 <Ionicons
                   name={p.kind === 'digital' ? 'cloud-download-outline' : 'cube-outline'}
                   size={20}
-                  color={colors.iconTertiary}
+                  color={colors.ink3}
                 />
               </View>
             )}
@@ -245,7 +245,7 @@ function ProductsTab() {
                 </Text>
               </View>
             ) : (
-              <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
+              <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
             )}
           </Pressable>
         ))
@@ -431,7 +431,7 @@ function ProductEditor({
       <Pressable
         onPress={onClose}
         className="flex-row items-center gap-1 self-start active:opacity-70">
-        <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
+        <Ionicons name="chevron-back" size={18} color={colors.ink2} />
         <Text className="text-ink-2 dark:text-ink-2-dk">All products</Text>
       </Pressable>
 
@@ -582,7 +582,7 @@ function ProductEditor({
               <Ionicons
                 name={d.digital_asset_path ? 'document-text' : 'document-outline'}
                 size={22}
-                color={d.digital_asset_path ? '#16A34A' : colors.iconTertiary}
+                color={d.digital_asset_path ? '#16A34A' : colors.ink3}
               />
               <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm" numberOfLines={1}>
                 {d.digital_asset_name ?? 'No file yet'}
