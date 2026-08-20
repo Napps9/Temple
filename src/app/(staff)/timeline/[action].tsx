@@ -176,10 +176,10 @@ export default function NudgeStory() {
             </View>
           ) : !story.data ? (
             <View className="py-16 px-6 items-center gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+              <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                 Nothing here
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
                 This one may belong to another gym, or the link is stale.
               </Text>
             </View>
@@ -199,7 +199,7 @@ export default function NudgeStory() {
                 ) : (
                   <Text
                     key={i}
-                    className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
+                    className="text-ink-2 dark:text-ink-2-dk text-[15px] leading-[22px] px-1">
                     {t.text}
                   </Text>
                 ),
@@ -216,7 +216,7 @@ export default function NudgeStory() {
                       key={q}
                       onPress={() => ask(q)}
                       disabled={busy}
-                      className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+                      className="px-3.5 py-2 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
                       <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
                         {q}
                       </Text>
@@ -230,7 +230,7 @@ export default function NudgeStory() {
 
         {story.data ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
-            <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -238,7 +238,7 @@ export default function NudgeStory() {
                 placeholder={ASK_PLACEHOLDER}
                 placeholderTextColor="#9CA3AF"
                 multiline
-                className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] max-h-24 py-1.5"
+                className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={() => ask(input)}
               />
               <Pressable
@@ -292,35 +292,35 @@ function StoryBody({
   return (
     <>
       <View className="gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 text-xl font-bold leading-[28px]">
+        <Text className="text-ink dark:text-ink-dk text-xl font-bold leading-[28px]">
           {line.text}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">
           Noticed {formatDate(action.proposed_at)} at{' '}
           {formatClock(action.proposed_at)}
         </Text>
       </View>
 
       {evidence.length > 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
             Why it came up
           </Text>
           {evidence.map((s, i) => (
             <Text
               key={i}
-              className="text-gray-700 dark:text-gray-200 text-[14px] leading-[20px]">
+              className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
               {s}
             </Text>
           ))}
         </View>
       ) : null}
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
-        <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
           The decision
         </Text>
-        <Text className="text-gray-700 dark:text-gray-200 text-[14px] leading-[20px]">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
           {decision}
         </Text>
       </View>
@@ -332,15 +332,15 @@ function StoryBody({
             return (
               <View
                 key={i}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-2">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                   What {recipientName(m, payload)} got
                 </Text>
-                <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
+                <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold leading-[20px]">
                   {m.subject}
                 </Text>
-                <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                  <Text className="text-gray-700 dark:text-gray-200 text-[14px] leading-[21px]">
+                <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[21px]">
                     {m.body}
                   </Text>
                 </View>
@@ -348,39 +348,39 @@ function StoryBody({
                   className={
                     status.tone === 'amber'
                       ? 'text-amber-700 dark:text-amber-500 text-[13px]'
-                      : 'text-gray-500 dark:text-gray-400 text-[13px]'
+                      : 'text-ink-2 dark:text-ink-2-dk text-[13px]'
                   }>
                   {status.text}
                 </Text>
               </View>
             );
           })}
-          <Text className="text-gray-400 dark:text-gray-500 text-[12.5px] px-1">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px] px-1">
             If they reply, it lands in your gym&apos;s email inbox — replies
             don&apos;t come back here.
           </Text>
         </View>
       ) : action.status === 'executed' && action.action_kind === 'cover_ask' ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-          <Text className="text-gray-700 dark:text-gray-200 text-[14px] leading-[20px]">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
             This one nudged the coaches through their cover offers — nothing
             was emailed from here.
           </Text>
         </View>
       ) : (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-          <Text className="text-gray-700 dark:text-gray-200 text-[14px] leading-[20px]">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
             Nothing has been sent.
           </Text>
         </View>
       )}
 
       {since ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
             Since then
           </Text>
-          <Text className="text-gray-700 dark:text-gray-200 text-[14px] leading-[20px]">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
             {since}
           </Text>
         </View>

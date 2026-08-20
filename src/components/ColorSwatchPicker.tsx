@@ -71,7 +71,7 @@ export function ColorSwatchPicker({
       {used.size > 0 ? (
         <View className="flex-row items-center gap-1.5">
           <View className="w-2.5 h-2.5 rounded-full bg-white border border-gray-900/30" />
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Already used by another class type
           </Text>
         </View>

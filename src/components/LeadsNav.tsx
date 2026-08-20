@@ -62,7 +62,7 @@ function LeadsPills({
             ? 'bg-primary shadow-card'
             : vertical
               ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
-              : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
+              : 'bg-surface dark:bg-surface-dk border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
         }`}>
         <Ionicons
           name={TAB_ICONS[t]}
@@ -71,7 +71,7 @@ function LeadsPills({
         />
         <Text
           className={`text-sm font-medium ${
-            selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+            selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
           }`}>
           {TAB_LABELS[t]}
         </Text>

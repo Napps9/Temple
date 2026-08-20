@@ -43,7 +43,7 @@ export function SuppressedAddressesCard() {
 
   if (rows.isLoading) {
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
         <ActivityIndicator />
       </View>
     );
@@ -51,11 +51,11 @@ export function SuppressedAddressesCard() {
   if ((rows.data ?? []).length === 0) return null;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         Addresses we can no longer reach
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Mail to these came back permanently, or the person marked it as spam.
         They are held back from every send until you clear them — which is
         worth doing for a typo that has since been corrected, and worth
@@ -69,10 +69,10 @@ export function SuppressedAddressesCard() {
       {(rows.data ?? []).map((r) => (
         <View
           key={r.id}
-          className="flex-row items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+          className="flex-row items-center gap-3 border-t border-line dark:border-line-dk pt-3">
           <View className="flex-1 gap-0.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">{r.email}</Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{r.email}</Text>
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
               {r.reason === 'complaint'
                 ? 'Marked it as spam'
                 : (r.detail ?? 'The address bounced')}

@@ -70,21 +70,21 @@ export default function EmailPreferencesScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/account" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Email preferences
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Choose which messages from this gym land in your inbox.
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Receive any emails from this gym
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Turn this off to stop everything. Per-topic choices below come back the next time you turn it on.
               </Text>
             </View>
@@ -98,7 +98,7 @@ export default function EmailPreferencesScreen() {
         </View>
 
         {prefs.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Loading…
           </Text>
         ) : topics.length === 0 ? (
@@ -109,7 +109,7 @@ export default function EmailPreferencesScreen() {
           />
         ) : (
           <View className="gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Topics
             </Text>
             {topics.map((t) => (
@@ -122,16 +122,16 @@ export default function EmailPreferencesScreen() {
                     subscribed: !t.subscribed,
                   })
                 }
-                className={`bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card ${
+                className={`bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card ${
                   blanketUnsub ? 'opacity-50' : ''
                 }`}>
                 <View className="flex-row items-center gap-3">
                   <View className="flex-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       {t.label}
                     </Text>
                     {t.description ? (
-                      <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5">
                         {t.description}
                       </Text>
                     ) : null}

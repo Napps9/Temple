@@ -941,7 +941,7 @@ export default function Timeline() {
               accessibilityLabel="Previous day"
               className="w-8 h-8 items-center justify-center">
               <Text
-                className={`text-lg ${atFloor ? 'text-gray-300 dark:text-gray-700' : 'text-gray-400 dark:text-gray-500'}`}>
+                className={`text-lg ${atFloor ? 'text-gray-300 dark:text-gray-700' : 'text-ink-3 dark:text-ink-3-dk'}`}>
                 ‹
               </Text>
             </Pressable>
@@ -951,7 +951,7 @@ export default function Timeline() {
               accessibilityRole="button"
               accessibilityLabel="Pick a date"
               className="px-1.5 py-1 items-center justify-center active:opacity-70">
-              <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-base font-semibold">
                 {dayLabel(dayKey, new Date())}
               </Text>
             </Pressable>
@@ -962,7 +962,7 @@ export default function Timeline() {
               accessibilityLabel="Next day"
               className="w-8 h-8 items-center justify-center">
               <Text
-                className={`text-lg ${atCeiling ? 'text-gray-300 dark:text-gray-700' : 'text-gray-400 dark:text-gray-500'}`}>
+                className={`text-lg ${atCeiling ? 'text-gray-300 dark:text-gray-700' : 'text-ink-3 dark:text-ink-3-dk'}`}>
                 ›
               </Text>
             </Pressable>
@@ -1000,10 +1000,10 @@ export default function Timeline() {
             </View>
           ) : feedEmpty && local.length === 0 ? (
             <View className="py-16 px-6 items-center gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+              <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                 Nothing here yet
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
                 As things happen — someone joins, asks about their membership,
                 needs looking after — it shows up here.
               </Text>
@@ -1026,7 +1026,7 @@ export default function Timeline() {
             <View className="gap-3 pt-2">
               <View className="flex-row items-center gap-2 px-1">
                 <Ionicons name="hand-left-outline" size={15} color="#F59E0B" />
-                <Text className="text-gray-900 dark:text-gray-50 text-[12px] font-bold uppercase tracking-wider">
+                <Text className="text-ink dark:text-ink-dk text-[12px] font-bold uppercase tracking-wider">
                   Waiting on you
                 </Text>
                 <View className="bg-amber-500/15 rounded-full px-2 py-0.5">
@@ -1077,11 +1077,11 @@ export default function Timeline() {
                   size={15}
                   color={colors.iconSecondary}
                 />
-                <Text className="text-gray-500 dark:text-gray-400 text-[12px] font-bold uppercase tracking-wider">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[12px] font-bold uppercase tracking-wider">
                   With me
                 </Text>
                 <View className="bg-gray-200/70 dark:bg-gray-800 rounded-full px-2 py-0.5">
-                  <Text className="text-gray-500 dark:text-gray-400 text-[11px] font-bold">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-[11px] font-bold">
                     {withMe.length}
                   </Text>
                 </View>
@@ -1141,7 +1141,7 @@ export default function Timeline() {
           {busy ? (
             <View className="flex-row items-center gap-2 px-1">
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Working on it…
               </Text>
             </View>
@@ -1170,7 +1170,7 @@ export default function Timeline() {
                 onPress={() => router.push('/management/goals' as never)}
               />
             </View>
-            <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -1178,7 +1178,7 @@ export default function Timeline() {
                 placeholder="Show me a member, change a class, send a newsletter…"
                 placeholderTextColor="#9CA3AF"
                 multiline
-                className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] max-h-24 py-1.5"
+                className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={send}
               />
               <Pressable
@@ -1223,7 +1223,7 @@ function BarChip({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:opacity-70">
+      className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-70">
       <Ionicons name={icon} size={14} color={colors.iconSecondary} />
       <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
         {label}
@@ -1272,7 +1272,7 @@ function LocalRow({
   }
   if (msg.kind === 'temple') {
     return (
-      <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[15px] leading-[22px] px-1">
         {msg.text}
       </Text>
     );
@@ -1290,7 +1290,7 @@ function LocalRow({
   if (msg.kind === 'rules-sheet') {
     if (!choices) return null;
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
         <RuleSheet choices={choices} editable={!busy} onEdit={onEditRule} />
       </View>
     );
@@ -1311,14 +1311,14 @@ function LocalRow({
             {msg.steps.map((st, i) => (
               <View
                 key={`${st.spec.name}-${i}`}
-                className={`gap-1 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3' : ''}`}>
-                <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
+                className={`gap-1 ${i > 0 ? 'border-t border-line dark:border-line-dk pt-3' : ''}`}>
+                <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold leading-[20px]">
                   {st.preview.title}
                 </Text>
                 {st.preview.lines.map((l) => (
                   <Text
                     key={l}
-                    className="text-gray-500 dark:text-gray-400 text-[13px] leading-[18px]">
+                    className="text-ink-2 dark:text-ink-2-dk text-[13px] leading-[18px]">
                     {l}
                   </Text>
                 ))}
@@ -1341,7 +1341,7 @@ function LocalRow({
   if (msg.preview.choices?.length) {
     return (
       <View className="gap-3">
-        <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[15px] leading-[22px] px-1">
           {msg.preview.title}
         </Text>
         <View className="flex-row flex-wrap gap-2 px-1">
@@ -1350,7 +1350,7 @@ function LocalRow({
               key={c.label}
               onPress={() => onPickChoice(msg.spec, c.label, c.args)}
               disabled={busy}
-              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+              className="px-4 py-2.5 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
               <Text className="text-gray-700 dark:text-gray-300 text-sm font-semibold">
                 {c.label}
               </Text>
@@ -1365,8 +1365,8 @@ function LocalRow({
   }
   if (msg.spec.kind === 'ask') {
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+        <Text className="text-ink dark:text-ink-dk font-semibold text-[15px]">
           {msg.preview.title}
         </Text>
         {msg.preview.answer ? (
@@ -1377,7 +1377,7 @@ function LocalRow({
         {msg.preview.lines.map((l) => (
           <Text
             key={l}
-            className="text-gray-500 dark:text-gray-400 text-[13.5px] leading-[19px]">
+            className="text-ink-2 dark:text-ink-2-dk text-[13.5px] leading-[19px]">
             {l}
           </Text>
         ))}
@@ -1396,7 +1396,7 @@ function LocalRow({
   // as nothing.
   if (msg.preview.lines.length === 0 && !msg.preview.card) {
     return (
-      <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[15px] leading-[22px] px-1">
         {msg.preview.title}
       </Text>
     );
@@ -1458,7 +1458,7 @@ function frameHeight(sections: number): number {
 // it; a sequence is several, each stamped with when it goes.
 function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
   return (
-    <View className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+    <View className="rounded-xl overflow-hidden border border-line dark:border-line-dk">
       <View
         className="px-4 py-3 flex-row items-center gap-2.5"
         style={{ backgroundColor: draft.primaryColor }}>
@@ -1475,8 +1475,8 @@ function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
       </View>
 
       {draft.audience ? (
-        <View className="px-4 py-2 bg-gray-50 dark:bg-gray-800/60">
-          <Text className="text-gray-600 dark:text-gray-300 text-xs font-semibold">
+        <View className="px-4 py-2 bg-raised dark:bg-raised-dk/60">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">
             {draft.audience}
           </Text>
         </View>
@@ -1486,13 +1486,13 @@ function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
         {draft.emails.map((e, i) => (
           <View
             key={`${e.subject}-${i}`}
-            className={`px-4 py-3 gap-2 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-800' : ''}`}>
+            className={`px-4 py-3 gap-2 ${i > 0 ? 'border-t border-line dark:border-line-dk' : ''}`}>
             {e.when ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                 {e.when}
               </Text>
             ) : null}
-            <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
+            <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold leading-[20px]">
               {e.subject}
             </Text>
             {WEB ? (
@@ -1510,7 +1510,7 @@ function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
                   <Text className="text-gray-800 dark:text-gray-100 text-[13.5px] font-semibold">
                     {sec.heading}
                   </Text>
-                  <Text className="text-gray-600 dark:text-gray-300 text-[13.5px] leading-[19px]">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px] leading-[19px]">
                     {sec.body}
                   </Text>
                 </View>
@@ -1538,7 +1538,7 @@ const STATUS_TONE: Record<
   good: { bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300' },
   warn: { bg: 'bg-amber-50 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300' },
   bad: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300' },
-  neutral: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-300' },
+  neutral: { bg: 'bg-raised dark:bg-raised-dk', text: 'text-ink-2 dark:text-ink-2-dk' },
 };
 
 // The member, in the chat. A summary and not the profile: who they are,
@@ -1583,14 +1583,14 @@ function MemberSummaryCard({ member }: { member: MemberCard }) {
     });
   }
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-3">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-3">
       <View className="flex-row items-center gap-3">
         <Avatar name={member.name} size={40} />
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+          <Text className="text-ink dark:text-ink-dk font-semibold text-[15px]">
             {member.name}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Member since {formatDate(member.joinedAt)}
           </Text>
         </View>
@@ -1604,10 +1604,10 @@ function MemberSummaryCard({ member }: { member: MemberCard }) {
       <View className="gap-1">
         {facts.map((f) => (
           <View key={f.label} className="flex-row items-baseline gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs w-16">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs w-16">
               {f.label}
             </Text>
-            <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[13.5px]">
+            <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-[13.5px]">
               {f.value}
             </Text>
           </View>
@@ -1654,10 +1654,10 @@ function ProgrammingChangePreview({ card }: { card: ProgrammingChangeCard }) {
           key={`${row.date}:${row.classType}:${i}`}
           className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 gap-1.5">
           <View className="flex-row items-baseline gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-[13px] font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-[13px] font-semibold">
               {row.day}
             </Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-[12px] flex-1">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[12px] flex-1">
               {row.classType}
             </Text>
           </View>
@@ -1665,13 +1665,13 @@ function ProgrammingChangePreview({ card }: { card: ProgrammingChangeCard }) {
           {row.incoming.map((line, j) => (
             <Text
               key={`in:${j}`}
-              className="text-gray-700 dark:text-gray-200 text-[13px] leading-[18px]">
+              className="text-ink-2 dark:text-ink-2-dk text-[13px] leading-[18px]">
               {line}
             </Text>
           ))}
 
           {row.replacing.length > 0 ? (
-            <View className="gap-1 pt-1.5 border-t border-gray-100 dark:border-gray-800">
+            <View className="gap-1 pt-1.5 border-t border-line dark:border-line-dk">
               <Text className="text-red-600 dark:text-red-400 text-[11px] font-semibold uppercase tracking-wide">
                 {row.incoming.length > 0 ? 'Replaces' : 'Deletes'}
               </Text>
@@ -1711,14 +1711,14 @@ function ProposalCard({
   onNo: () => void;
 }) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         {title}
       </Text>
       {body ?? null}
       <View className="gap-1.5">
         {lines.map((l, i) => (
-          <Text key={i} className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+          <Text key={i} className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
             {l}
           </Text>
         ))}
@@ -1860,15 +1860,15 @@ function AgentActionCard({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         {line.text}
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">{reasoning}</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{reasoning}</Text>
       {open ? (
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-1.5">
+        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-1.5">
           {evidence.map((s, i) => (
-            <Text key={i} className="text-gray-700 dark:text-gray-200 text-sm">
+            <Text key={i} className="text-ink-2 dark:text-ink-2-dk text-sm">
               {s}
             </Text>
           ))}
@@ -1882,7 +1882,7 @@ function AgentActionCard({
               size={18}
               color={always ? '#2563EB' : '#9CA3AF'}
             />
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Always allow this — stop asking first
             </Text>
           </Pressable>
@@ -1985,10 +1985,10 @@ function PaymentFailingCard({
           color={line.tone === 'red' ? '#EF4444' : '#F59E0B'}
         />
       </View>
-      <Text className="flex-1 text-[15px] leading-[22px] mt-[3px] text-gray-700 dark:text-gray-200">
+      <Text className="flex-1 text-[15px] leading-[22px] mt-[3px] text-ink-2 dark:text-ink-2-dk">
         {line.lead && line.text.startsWith(line.lead) ? (
           <>
-            <Text className="font-semibold text-gray-900 dark:text-gray-50">
+            <Text className="font-semibold text-ink dark:text-ink-dk">
               {line.lead}
             </Text>
             {line.text.slice(line.lead.length)}
@@ -1997,7 +1997,7 @@ function PaymentFailingCard({
           line.text
         )}
       </Text>
-      <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[6px]">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs mt-[6px]">
         {formatClock(event.occurred_at)}
       </Text>
       {href ? (
@@ -2033,7 +2033,7 @@ function PaymentFailingCard({
         // only repeat it, and the story page keeps the rest.
         <View className="pl-10 flex-row items-center gap-1.5">
           <Ionicons name="sparkles-outline" size={12} color="#9CA3AF" />
-          <Text className="text-[12.5px] text-gray-500 dark:text-gray-400">
+          <Text className="text-[12.5px] text-ink-2 dark:text-ink-2-dk">
             {nextStepLine(
               { next_payment_attempt: retry, full_name: event.subject },
               jobOn,
@@ -2043,7 +2043,7 @@ function PaymentFailingCard({
         </View>
       ) : (
         <>
-          <Text className="text-[13px] leading-[18px] text-gray-500 dark:text-gray-400 pl-10">
+          <Text className="text-[13px] leading-[18px] text-ink-2 dark:text-ink-2-dk pl-10">
             {nextStepLine(
               { next_payment_attempt: retry, full_name: event.subject },
               jobOn,
@@ -2146,8 +2146,8 @@ function CoverOfferCard({
   const left = offers.filter((o) => !taken.includes(o.offer_id));
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px] leading-[22px]">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-3">
+      <Text className="text-ink dark:text-ink-dk font-semibold text-[15px] leading-[22px]">
         {who} needs cover.{' '}
         {left.length === 0 ? 'You picked it up.' : 'Take one?'}
       </Text>
@@ -2155,10 +2155,10 @@ function CoverOfferCard({
       {left.map((o) => (
         <View key={o.offer_id} className="flex-row items-center gap-3">
           <View className="flex-1">
-            <Text className="text-gray-700 dark:text-gray-200 text-[14px]">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-[14px]">
               {o.name}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-[12.5px]">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px]">
               {new Date(o.starts_at).toLocaleString('en-GB', {
                 weekday: 'short',
                 day: 'numeric',
@@ -2181,7 +2181,7 @@ function CoverOfferCard({
       ))}
 
       {taken.length > 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">
           It&apos;s yours — it&apos;s on your schedule now.
         </Text>
       ) : null}
@@ -2192,7 +2192,7 @@ function CoverOfferCard({
         </Text>
       ) : null}
 
-      <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
         First to claim takes it.
       </Text>
     </View>
@@ -2247,20 +2247,20 @@ function RequestCard({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         {line.text}
       </Text>
       {currentPlan ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           {kind === 'cancel'
             ? `They're on ${currentPlan} at the moment.`
             : `From ${currentPlan}${targetPlan ? ` to ${targetPlan}` : ''}.`}
         </Text>
       ) : null}
       {open && note ? (
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm italic">
+        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm italic">
             &ldquo;{note}&rdquo;
           </Text>
         </View>
@@ -2320,7 +2320,7 @@ function SetupCard({
         <Pressable
           onPress={() => router.push('/setup' as never)}
           className="flex-1 active:opacity-70">
-          <Text className="text-gray-500 dark:text-gray-400 text-[13.5px]">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px]">
             Your gym is ready. A few optional bits are still there if you want
             them —{' '}
             <Text className="text-link font-medium">
@@ -2339,7 +2339,7 @@ function SetupCard({
     );
   }
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2.5">
         <View className="w-8 h-8 rounded-xl bg-primary/15 items-center justify-center">
           <Ionicons name="rocket-outline" size={17} color={colors.primary} />
@@ -2348,18 +2348,18 @@ function SetupCard({
           <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
             Setting up
           </Text>
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+          <Text className="text-ink dark:text-ink-dk font-semibold text-[15px]">
             {done} of {total} done
           </Text>
         </View>
       </View>
-      <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <View className="h-1.5 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
         <View
           style={{ width: `${(done / total) * 100}%` }}
           className="h-full bg-primary rounded-full"
         />
       </View>
-      <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         A few things left before members can join and book. It picks up right
         where you left off.
       </Text>
@@ -2370,7 +2370,7 @@ function SetupCard({
         onPress={onDismiss}
         hitSlop={6}
         className="items-center active:opacity-70">
-        <Text className="text-gray-400 dark:text-gray-500 text-[13px] font-medium">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] font-medium">
           Don&apos;t show this again
         </Text>
       </Pressable>

@@ -41,7 +41,7 @@ export function DatePicker({
 
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label}
       </Text>
       {Platform.OS === 'web' ? (
@@ -67,7 +67,7 @@ export function DatePicker({
         })
       ) : (
         <TextInput
-          className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-50 text-base"
+          className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base"
           placeholderTextColor="#9CA3AF"
           accessibilityLabel={label}
           value={value}
@@ -78,7 +78,7 @@ export function DatePicker({
           keyboardType="numbers-and-punctuation"
         />
       )}
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         {display ? display : 'DD/MM/YYYY'}
       </Text>
       {error ? (

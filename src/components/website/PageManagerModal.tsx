@@ -68,9 +68,9 @@ export function PageManagerModal({
             role="dialog"
             aria-modal
             accessibilityLabel="Manage pages"
-            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4 max-h-[85vh]">
+            className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4 max-h-[85vh]">
             <View className="flex-row items-center justify-between">
-              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">Pages</Text>
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">Pages</Text>
               <Pressable
                 onPress={onClose}
                 hitSlop={8}
@@ -84,7 +84,7 @@ export function PageManagerModal({
               {document.pages.map((p, i) => (
                 <View
                   key={p.id}
-                  className="gap-2 border border-gray-100 dark:border-gray-800 rounded-xl p-3">
+                  className="gap-2 border border-line dark:border-line-dk rounded-xl p-3">
                   <View className="flex-row items-end gap-2">
                     <View className="flex-1">
                       <Input
@@ -111,7 +111,7 @@ export function PageManagerModal({
                         autoCapitalize="none"
                       />
                       <Text
-                        className="text-gray-400 dark:text-gray-500 text-xs"
+                        className="text-ink-3 dark:text-ink-3-dk text-xs"
                         numberOfLines={1}>
                         /site/{gymSlug}/{p.slug}
                       </Text>

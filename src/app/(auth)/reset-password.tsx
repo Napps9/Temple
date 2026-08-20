@@ -82,11 +82,11 @@ export default function ResetPasswordScreen() {
           <View className="items-center gap-3">
             <TempleLockup size={28} />
             <View className="items-center gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 Choose a new password
               </Text>
               {phase === 'ready' ? (
-                <Text className="text-gray-500 dark:text-gray-400">
+                <Text className="text-ink-2 dark:text-ink-2-dk">
                   Pick something you haven't used before.
                 </Text>
               ) : null}
@@ -94,14 +94,14 @@ export default function ResetPasswordScreen() {
           </View>
 
           {phase === 'checking' ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-center">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-center">
               Verifying your reset link…
             </Text>
           ) : null}
 
           {phase === 'invalid' ? (
             <View className="gap-4">
-              <Text className="text-gray-500 dark:text-gray-400 text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-center">
                 This link isn't valid or has expired. Request a new one and
                 try again.
               </Text>

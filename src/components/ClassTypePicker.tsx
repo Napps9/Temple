@@ -73,7 +73,7 @@ export function ClassTypePicker({
 
   return (
     <View className="gap-2">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         Class type
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -87,7 +87,7 @@ export function ClassTypePicker({
                 className={`flex-row items-center gap-2 px-3 py-2 rounded-full border ${
                   selected
                     ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                    : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
                 }`}>
                 <View
                   style={{ backgroundColor: t.color }}
@@ -97,7 +97,7 @@ export function ClassTypePicker({
                   className={
                     selected
                       ? 'text-primary text-sm font-medium'
-                      : 'text-gray-900 dark:text-gray-50 text-sm'
+                      : 'text-ink dark:text-ink-dk text-sm'
                   }>
                   {t.name}
                 </Text>
@@ -106,9 +106,9 @@ export function ClassTypePicker({
           })}
           <Pressable
             onPress={() => setCreating(!creating)}
-            className="flex-row items-center gap-1 px-3 py-2 rounded-full border border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
+            className="flex-row items-center gap-1 px-3 py-2 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk">
             <Ionicons name="add" size={14} color={colors.iconSecondary} />
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               New type
             </Text>
           </Pressable>
@@ -116,7 +116,7 @@ export function ClassTypePicker({
       </ScrollView>
 
       {creating ? (
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-3">
+        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-3">
           <Input
             label="Type name"
             value={newName}
@@ -125,7 +125,7 @@ export function ClassTypePicker({
             autoCapitalize="words"
           />
           <View className="gap-1.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Colour
             </Text>
             <ColorSwatchPicker value={newColor} onChange={setNewColor} />

@@ -219,7 +219,7 @@ export function GymSetupChecklist({
   if (status.every((s) => s.done)) return null;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-primary/30">
       <Pressable
         onPress={() => setOpen(!open)}
         className="flex-row items-center gap-3 active:opacity-70">
@@ -227,10 +227,10 @@ export function GymSetupChecklist({
           <Ionicons name="rocket-outline" size={22} color={colors.primary} />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Get your gym ready
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {requiredComplete
               ? 'You’re all set — optional extras below'
               : `${requiredDone} of ${requiredSteps.length} done`}
@@ -245,7 +245,7 @@ export function GymSetupChecklist({
 
       {/* Progress bar tracks the required steps so the bar fills 100%
           even if the optional team step is still untouched. */}
-      <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <View className="h-2 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
         <View
           style={{ width: `${(requiredDone / requiredSteps.length) * 100}%` }}
           className="h-full bg-primary rounded-full"
@@ -264,8 +264,8 @@ export function GymSetupChecklist({
             }
             className={`flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:opacity-70 ${
               step.done
-                ? 'bg-gray-50 dark:bg-gray-800/40'
-                : 'bg-gray-50 dark:bg-gray-800'
+                ? 'bg-raised dark:bg-raised-dk/40'
+                : 'bg-raised dark:bg-raised-dk'
             }`}>
             <StatusDisk
               size={28}
@@ -283,19 +283,19 @@ export function GymSetupChecklist({
                 <Text
                   className={`text-sm font-medium ${
                     step.done
-                      ? 'text-gray-400 dark:text-gray-500 line-through'
-                      : 'text-gray-900 dark:text-gray-50'
+                      ? 'text-ink-3 dark:text-ink-3-dk line-through'
+                      : 'text-ink dark:text-ink-dk'
                   }`}>
                   {step.label}
                 </Text>
                 {step.optional && !step.done ? (
-                  <Text className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                  <Text className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 dark:text-ink-3-dk bg-sunken dark:bg-sunken-dk px-1.5 py-0.5 rounded">
                     Optional
                   </Text>
                 ) : null}
               </View>
               {!step.done ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {step.description}
                 </Text>
               ) : null}
@@ -323,7 +323,7 @@ export function GymSetupChecklist({
           disabled={dismiss.isPending}
           hitSlop={8}
           className="self-center active:opacity-70">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             {dismiss.isPending ? 'Hiding…' : 'I’ll finish setup later'}
           </Text>
         </Pressable>

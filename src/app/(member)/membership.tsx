@@ -62,7 +62,7 @@ const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
     'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300',
   warn: 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400',
   muted:
-    'bg-gray-500/10 border-gray-400/40 text-gray-600 dark:text-gray-300',
+    'bg-gray-500/10 border-gray-400/40 text-ink-2 dark:text-ink-2-dk',
 };
 
 // A failed payment leaves the membership 'active' on purpose — Stripe
@@ -129,12 +129,12 @@ function DetailRow({
 }) {
   return (
     <View className="flex-row items-center justify-between gap-3">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">{label}</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{label}</Text>
       <Text
         className={`text-sm font-medium ${
           tone === 'warn'
             ? 'text-amber-600 dark:text-amber-400'
-            : 'text-gray-900 dark:text-gray-50'
+            : 'text-ink dark:text-ink-dk'
         }`}>
         {value}
       </Text>
@@ -170,10 +170,10 @@ function NoticePeriodBar({
   return (
     <View className="gap-2 pt-1">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           If you cancel today
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {noticeDays}-day notice
         </Text>
       </View>
@@ -188,15 +188,15 @@ function NoticePeriodBar({
       </View>
 
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
           Today
         </Text>
-        <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
           Access ends {fmtDate(accessEnds)}
         </Text>
       </View>
 
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         {renewalDate != null
           ? `Your last payment would be ${
               priceLabel ? `${priceLabel} ` : ''
@@ -235,20 +235,20 @@ function CurrentSubCard({
   const notice = plan?.notice_period_days ?? 0;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {plan?.name ?? 'Plan'}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {planKindLabel({ kind, credit_count: plan?.credit_count ?? null })}
           </Text>
         </View>
         <StatusChip status={sub.status} />
       </View>
 
-      <View className="border-t border-gray-100 dark:border-gray-800" />
+      <View className="border-t border-line dark:border-line-dk" />
 
       <View className="gap-1.5">
         {priceLabel != null ? (
@@ -281,7 +281,7 @@ function CurrentSubCard({
 
       {!cancelling && notice > 0 ? (
         <>
-          <View className="border-t border-gray-100 dark:border-gray-800" />
+          <View className="border-t border-line dark:border-line-dk" />
           <NoticePeriodBar
             noticeDays={notice}
             renewalDate={sub.paid_period_end}
@@ -329,17 +329,17 @@ function PendingMembershipCard({
 }) {
   return (
     <View className="gap-2">
-      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
         Your membership
       </Text>
       <View
-        className={`bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border ${
+        className={`bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border ${
           stuck
             ? 'border-amber-300 dark:border-amber-700'
             : 'border-gray-200 dark:border-gray-800'
         }`}>
         <View className="flex-row items-center justify-between gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+          <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
             {stuck ? 'Membership not showing yet' : 'Setting up your membership…'}
           </Text>
           <View className="rounded-full border px-2.5 py-0.5 bg-amber-500/10 border-amber-500/40">
@@ -350,7 +350,7 @@ function PendingMembershipCard({
         </View>
         {stuck ? (
           <>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Your payment went through, but we haven't been able to confirm
               your membership{gymName ? ` with ${gymName}` : ''} yet. Try again
               in a moment — if it's still not here, contact your gym and they'll
@@ -363,7 +363,7 @@ function PendingMembershipCard({
         ) : (
           <View className="flex-row items-center gap-2">
             <ActivityIndicator size="small" />
-            <Text className="text-gray-500 dark:text-gray-400 text-sm flex-1">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm flex-1">
               We're confirming your payment with the gym. This page updates
               automatically.
             </Text>
@@ -381,19 +381,19 @@ function money(cents: number, currency: string): string {
 function InvoiceRow({ inv }: { inv: MemberInvoice }) {
   const hasDoc = !!(inv.invoice_url || inv.invoice_pdf);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          <Text className="text-ink dark:text-ink-dk font-medium">
             {money(inv.amount_cents, inv.currency)}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {fmtDate(inv.occurred_at)}
             {inv.invoice_number ? ` · ${inv.invoice_number}` : ''}
           </Text>
         </View>
         {hasDoc ? null : (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Paid
           </Text>
         )}
@@ -478,8 +478,8 @@ function MembershipActions({
   const cancelBusy = modify.isPending && modify.variables?.kind === 'cancel';
   if (cancelPolicy === 'self_serve') {
     return confirm ? (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-red-300 dark:border-red-800">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-red-300 dark:border-red-800">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Cancel at the end of your paid period? You'll keep access until then.
         </Text>
         <View className="flex-row gap-2">
@@ -684,10 +684,10 @@ export default function MembershipScreen() {
         {failingSub ? <PaymentFailedNotice sub={failingSub} /> : null}
 
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Membership
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Pick a plan to book classes
             {membership?.gymName ? ` at ${membership.gymName}` : ''}.
           </Text>
@@ -702,7 +702,7 @@ export default function MembershipScreen() {
           </View>
         ) : params.checkout === 'cancelled' ? (
           <View className="bg-gray-500/10 border border-gray-400/30 rounded-xl p-4">
-            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Checkout cancelled — you haven't been charged.
             </Text>
           </View>
@@ -759,7 +759,7 @@ export default function MembershipScreen() {
                 Pay for {agreedPlan.data.plan_name}
               </Button>
             ) : (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Ask at the front desk to finish setting up your plan.
               </Text>
             )}
@@ -774,7 +774,7 @@ export default function MembershipScreen() {
 
         {currentSubs.length > 0 ? (
           <View className="gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Your membership
             </Text>
             {currentSubs.map((s) => (
@@ -839,12 +839,12 @@ export default function MembershipScreen() {
         ) : null}
 
         <View className="gap-3">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             {currentSubs.length > 0 ? 'Switch or add a plan' : 'Plans'}
           </Text>
 
           {plans.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Loading plans…
             </Text>
           ) : (plans.data ?? []).length === 0 ? (
@@ -861,11 +861,11 @@ export default function MembershipScreen() {
               return (
                 <View
                   key={plan.plan_id}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
                       <View className="flex-row items-center gap-2">
-                        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                        <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                           {plan.name}
                         </Text>
                         {agreedPlan.data?.plan_id === plan.plan_id ? (
@@ -876,16 +876,16 @@ export default function MembershipScreen() {
                           </View>
                         ) : null}
                       </View>
-                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         {planKindLabel(plan)}
                       </Text>
                     </View>
                     <View className="items-end">
-                      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                      <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                         {planPriceLabel(plan, currency)}
                       </Text>
                       {plan.notice_period_days ? (
-                        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                           {plan.notice_period_days}-day notice
                         </Text>
                       ) : null}
@@ -908,7 +908,7 @@ export default function MembershipScreen() {
                     }
                     if (awaitingActivation) {
                       return (
-                        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                           Setting up your membership…
                         </Text>
                       );
@@ -929,7 +929,7 @@ export default function MembershipScreen() {
                     if (recurringSub) {
                       if (recurringSub.imported_legacy) {
                         return (
-                          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                             Add a payment method to your current plan above
                             before switching.
                           </Text>
@@ -937,7 +937,7 @@ export default function MembershipScreen() {
                       }
                       if (pendingForSub) {
                         return (
-                          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                             Resolve your pending change first.
                           </Text>
                         );
@@ -1007,8 +1007,8 @@ export default function MembershipScreen() {
           )}
 
           {!canSelfCheckout && (plans.data ?? []).length > 0 ? (
-            <View className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <View className="bg-raised dark:bg-raised-dk/50 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Your gym sets up memberships for you — ask a coach to put you on
                 a plan.
               </Text>
@@ -1018,7 +1018,7 @@ export default function MembershipScreen() {
 
         {(invoices.data?.length ?? 0) > 0 ? (
           <View className="gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Payment history
             </Text>
             {(invoices.data ?? []).map((inv) => (

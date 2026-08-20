@@ -30,8 +30,8 @@ export default function StaffProgramming() {
           <Text
             className={`text-[13px] font-semibold ${
               view === v
-                ? 'text-gray-900 dark:text-gray-50'
-                : 'text-gray-500 dark:text-gray-400'
+                ? 'text-ink dark:text-ink-dk'
+                : 'text-ink-2 dark:text-ink-2-dk'
             }`}>
             {v === 'week' ? 'Week' : 'Year'}
           </Text>

@@ -14,10 +14,10 @@ export type Delta = {
 };
 
 const valueToneClass: Record<Tone, string> = {
-  default: 'text-gray-900 dark:text-gray-50',
+  default: 'text-ink dark:text-ink-dk',
   green: 'text-green-600 dark:text-green-400',
   red: 'text-red-600 dark:text-red-400',
-  muted: 'text-gray-500 dark:text-gray-400',
+  muted: 'text-ink-2 dark:text-ink-2-dk',
 };
 
 const deltaIcon: Record<DeltaDirection, ComponentProps<typeof Ionicons>['name']> = {
@@ -29,7 +29,7 @@ const deltaIcon: Record<DeltaDirection, ComponentProps<typeof Ionicons>['name']>
 const deltaClass: Record<DeltaDirection, string> = {
   up: 'text-green-600 dark:text-green-400',
   down: 'text-red-600 dark:text-red-400',
-  flat: 'text-gray-500 dark:text-gray-400',
+  flat: 'text-ink-2 dark:text-ink-2-dk',
 };
 
 const deltaColor: Record<DeltaDirection, string> = {
@@ -67,7 +67,7 @@ export function StatTile({
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
-        className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wider">
+        className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-wider">
         {title}
       </Text>
       <Text
@@ -88,12 +88,12 @@ export function StatTile({
         </View>
       ) : null}
       {subtitle ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">{subtitle}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{subtitle}</Text>
       ) : null}
     </>
   );
 
-  const className = 'bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 flex-1 shadow-card';
+  const className = 'bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 flex-1 shadow-card';
   const style = { minWidth };
 
   if (href) {

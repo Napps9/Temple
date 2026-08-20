@@ -113,7 +113,7 @@ export function FinanceBlock({ gymId }: { gymId: string }) {
   if (error) {
     return (
       <View className="gap-3">
-        <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+        <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
           Money
         </Text>
         <Text className="text-red-500 dark:text-red-400 text-sm">
@@ -308,18 +308,18 @@ function OverdueList({ gymId }: { gymId: string }) {
   const shown = list.slice(0, 6);
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         Needs chasing
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Stripe has tried to take these and been declined. It keeps retrying for
         about two weeks and gives up after that. Unlimited members can keep
         booking meanwhile; members on a credit plan cannot, because their
         credits only arrive when the payment goes through.
       </Text>
       {jobOn ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Chase for me skips my three-day wait — I send the nudge now, and
           the receipt lands in the Timeline.
         </Text>
@@ -329,18 +329,18 @@ function OverdueList({ gymId }: { gymId: string }) {
           <Pressable
             key={r.subscription_id}
             onPress={() => router.push(`/management/members/${r.profile_id}` as never)}
-            className="flex-row items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 active:opacity-70">
+            className="flex-row items-center gap-3 border border-line dark:border-line-dk rounded-lg px-3 py-2 active:opacity-70">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 text-sm">
+              <Text className="text-ink dark:text-ink-dk text-sm">
                 {r.full_name ?? 'Member'}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {r.plan_name} · failing since {formatDate(r.past_due_since)}
                 {r.payment_failure_count > 1
                   ? ` · ${r.payment_failure_count} attempts`
                   : ''}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {r.next_payment_attempt
                   ? `Stripe retries ${formatDate(r.next_payment_attempt)}`
                   : 'Stripe has stopped retrying'}
@@ -348,7 +348,7 @@ function OverdueList({ gymId }: { gymId: string }) {
               </Text>
               {/* Whether they have actually been told. "Emailed, ignored"
                   and "never emailed" need different phone calls. */}
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                 {r.notice_status === 'sent'
                   ? 'Emailed'
                   : r.notice_status === 'queued'
@@ -358,7 +358,7 @@ function OverdueList({ gymId }: { gymId: string }) {
                       : 'Not emailed — no address on file'}
               </Text>
             </View>
-            <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-sm font-semibold">
               {formatMoney(r.amount_cents, r.currency)}
             </Text>
             <View className="items-stretch gap-1.5">
@@ -402,7 +402,7 @@ function OverdueList({ gymId }: { gymId: string }) {
           </Pressable>
         ))}
         {list.length > shown.length ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             +{list.length - shown.length} more
           </Text>
         ) : null}

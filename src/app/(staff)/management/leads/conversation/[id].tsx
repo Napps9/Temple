@@ -108,7 +108,7 @@ function ScrubBar({
       accessibilityLabel="Seek within the recording"
       // Tall hit target around a thin track — a 6px bar is miserable to tap.
       className="flex-1 h-8 justify-center">
-      <View className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+      <View className="h-1.5 rounded-full bg-sunken dark:bg-sunken-dk overflow-hidden">
         <View className="h-full bg-primary" style={{ width: `${frac * 100}%` }} />
       </View>
     </Pressable>
@@ -382,7 +382,7 @@ export default function AgentConversationScreen() {
     ) : null;
   const closedText =
     c && status === 'closed' ? (
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         This person replied STOP, so the thread is closed and no more texts can be
         sent.
       </Text>
@@ -392,7 +392,7 @@ export default function AgentConversationScreen() {
     if (m.role === 'system') {
       return (
         <View key={m.id} className="px-4 py-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic">
             {m.body}
           </Text>
         </View>
@@ -413,9 +413,9 @@ export default function AgentConversationScreen() {
           className={`max-w-[88%] rounded-xl px-3 py-2 ${
             fromLead ? 'self-start bg-gray-200 dark:bg-gray-800' : 'self-end bg-primary/10'
           } ${active ? 'border border-primary' : 'border border-transparent'}`}>
-          <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
+          <Text className="text-ink dark:text-ink-dk">{m.body}</Text>
           <View className="flex-row items-center justify-between mt-1 gap-3">
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px]">
               {m.role === 'agent' ? 'AI' : m.role === 'staff' ? 'Staff' : 'Lead'}
               {m.seconds_from_start != null ? ` · ${fmtClock(m.seconds_from_start)}` : ''}
             </Text>
@@ -492,10 +492,10 @@ export default function AgentConversationScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/leads/conversations" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             {c?.lead?.full_name ?? c?.phone ?? 'Conversation'}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             {c
               ? `${isVoice ? 'Phone call' : 'SMS'} · ${c.phone} · ${
                   status === 'active'
@@ -510,8 +510,8 @@ export default function AgentConversationScreen() {
 
         {/* Recording playback (voice, reviewers only) */}
         {isVoice && canReview === true && recording.data ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Call recording
             </Text>
             {audio.supported ? (
@@ -533,19 +533,19 @@ export default function AgentConversationScreen() {
                     onSeek={audio.seek}
                   />
                   <Text
-                    className="text-gray-600 dark:text-gray-300 text-xs"
+                    className="text-ink-2 dark:text-ink-2-dk text-xs"
                     style={{ fontVariant: ['tabular-nums'] }}>
                     {fmtClock(audio.currentTime)} /{' '}
                     {fmtClock(audio.duration || recording.data.duration_seconds || 0)}
                   </Text>
                 </View>
-                <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                   The transcript follows the audio — tap a line to jump, or drag
                   across a phrase in an AI reply to coach just that part.
                 </Text>
               </>
             ) : (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Open this call on the web app to play the recording. The transcript is
                 below either way.
               </Text>
@@ -575,22 +575,22 @@ export default function AgentConversationScreen() {
 
         {isVoice ? (
           <>
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 Call transcript
               </Text>
               <View className="gap-2" ref={transcriptRef}>
                 {transcriptRows.map(renderBubble)}
                 {messages.isSuccess && transcriptRows.length === 0 ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-center py-6">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-center py-6">
                     No call transcript yet.
                   </Text>
                 ) : null}
               </View>
             </View>
 
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 SMS
               </Text>
               {smsRows.length > 0 ? (
@@ -598,8 +598,8 @@ export default function AgentConversationScreen() {
                   {smsRows.map((m) => (
                     <View key={m.id} className="items-end">
                       <View className="max-w-[88%] rounded-xl px-3 py-2 bg-primary/10">
-                        <Text className="text-gray-900 dark:text-gray-50">{m.body}</Text>
-                        <Text className="text-gray-400 dark:text-gray-500 text-[10px] mt-1">
+                        <Text className="text-ink dark:text-ink-dk">{m.body}</Text>
+                        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] mt-1">
                           Staff · {fmtSmsTime(m.created_at)}
                         </Text>
                       </View>
@@ -616,14 +616,14 @@ export default function AgentConversationScreen() {
             <View className="gap-2" ref={transcriptRef}>
               {rows.map(renderBubble)}
               {messages.isSuccess && rows.length === 0 ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-center py-6">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-center py-6">
                   No messages yet.
                 </Text>
               ) : null}
             </View>
 
             {c && status !== 'closed' ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
                 {replyBox}
               </View>
             ) : null}
@@ -724,12 +724,12 @@ function CoachModal({
         className="flex-1 bg-black/50 items-center justify-center p-4">
         <Pressable
           onPress={(e) => e.stopPropagation()}
-          className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-5 gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl w-full max-w-md p-5 gap-4">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Coach this turn
           </Text>
           <View className="gap-1">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               The AI said
             </Text>
             <View className="bg-primary/10 rounded-lg p-3">
@@ -740,7 +740,7 @@ function CoachModal({
           </View>
 
           <View className="gap-1.5">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               What needs to change?
             </Text>
             <View className="flex-row flex-wrap gap-2">
@@ -751,18 +751,18 @@ function CoachModal({
                   className={`px-3 py-1.5 rounded-full border ${
                     kind === k
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={`text-xs font-semibold ${
-                      kind === k ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                      kind === k ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {KIND_LABEL[k].label}
                   </Text>
                 </Pressable>
               ))}
             </View>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
               {KIND_LABEL[kind].hint}
             </Text>
           </View>
@@ -793,11 +793,11 @@ function CoachModal({
                   className={`flex-1 px-3 py-2 rounded-lg border ${
                     scope === s
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={`text-xs font-semibold ${
-                      scope === s ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                      scope === s ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {label}
                   </Text>
@@ -879,9 +879,9 @@ function InlineCoachForm({
   });
 
   return (
-    <View className="w-full max-w-[86%] bg-white dark:bg-gray-900 rounded-xl p-3 gap-2.5 shadow-card border border-primary/20">
+    <View className="w-full max-w-[86%] bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2.5 shadow-card border border-primary/20">
       <View className="bg-primary/5 rounded-lg px-3 py-2 border-l-2 border-primary">
-        <Text className="text-gray-600 dark:text-gray-300 text-xs italic">"{excerpt}"</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">"{excerpt}"</Text>
       </View>
 
       <View className="flex-row flex-wrap gap-1.5">
@@ -890,11 +890,11 @@ function InlineCoachForm({
             key={k}
             onPress={() => setKind(k)}
             className={`px-2.5 py-1 rounded-full border ${
-              kind === k ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+              kind === k ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-[11px] font-semibold ${
-                kind === k ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                kind === k ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {KIND_LABEL[k].label}
             </Text>
@@ -924,11 +924,11 @@ function InlineCoachForm({
               key={s}
               onPress={() => setScope(s)}
               className={`flex-1 px-2.5 py-1.5 rounded-lg border ${
-                scope === s ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                scope === s ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-[11px] font-semibold text-center ${
-                  scope === s ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                  scope === s ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {label}
               </Text>

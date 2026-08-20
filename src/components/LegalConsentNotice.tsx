@@ -6,7 +6,7 @@ import { Text } from './Text';
 // route to the public /terms and /privacy screens (reachable signed-out).
 export function LegalConsentNotice() {
   return (
-    <Text className="text-center text-xs text-gray-400 dark:text-gray-500 leading-5">
+    <Text className="text-center text-xs text-ink-3 dark:text-ink-3-dk leading-5">
       By continuing you agree to Temple’s{' '}
       <Text
         className="text-[#3B6BA5] dark:text-[#6E97C6] underline"

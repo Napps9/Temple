@@ -47,10 +47,10 @@ export default function ForgotPasswordScreen() {
           <View className="items-center gap-3">
             <TempleLockup size={28} />
             <View className="items-center gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 Reset your password
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-center">
                 {sentTo
                   ? 'Check your email for the link.'
                   : "Enter your email and we'll send you a link to choose a new one."}
@@ -60,9 +60,9 @@ export default function ForgotPasswordScreen() {
 
           {sentTo ? (
             <View className="gap-4">
-              <Text className="text-gray-500 dark:text-gray-400 text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-center">
                 We sent a password reset link to{' '}
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   {sentTo}
                 </Text>
                 . Click it, then come back and sign in with your new password.
@@ -73,7 +73,7 @@ export default function ForgotPasswordScreen() {
                   setError(null);
                 }}
                 className="self-center">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Use a different email
                 </Text>
               </Pressable>

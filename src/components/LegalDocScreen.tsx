@@ -16,36 +16,36 @@ export function LegalDocScreen({ doc }: { doc: LegalDoc }) {
         <BackLink fallbackHref="/" />
 
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-3xl font-semibold">
             {doc.title}
           </Text>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Last updated {doc.updated}
           </Text>
         </View>
 
         {doc.intro.map((p, i) => (
-          <Text key={`intro-${i}`} className="text-gray-600 dark:text-gray-300 leading-6">
+          <Text key={`intro-${i}`} className="text-ink-2 dark:text-ink-2-dk leading-6">
             {p}
           </Text>
         ))}
 
         {doc.sections.map((section) => (
           <View key={section.heading} className="gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {section.heading}
             </Text>
             {section.body.map((p, i) => (
               <Text
                 key={`${section.heading}-${i}`}
-                className="text-gray-600 dark:text-gray-300 leading-6">
+                className="text-ink-2 dark:text-ink-2-dk leading-6">
                 {p}
               </Text>
             ))}
           </View>
         ))}
 
-        <Text className="text-gray-500 dark:text-gray-400 text-sm pt-2">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm pt-2">
           {doc.contact}
         </Text>
       </ScrollView>

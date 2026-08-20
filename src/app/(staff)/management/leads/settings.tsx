@@ -61,7 +61,7 @@ function SectionHeader({ label }: { label: string }) {
   return (
     <View className="flex-row items-center gap-2 px-0.5 pt-1">
       <View className="w-1 h-3.5 rounded-full bg-primary" />
-      <Text className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-bold uppercase tracking-widest">
         {label}
       </Text>
     </View>
@@ -340,15 +340,15 @@ export default function LeadSettingsScreen() {
   return (
     <LeadsShell active="settings" tabs={['leads', 'agent', 'conversations', 'settings']}>
       <View className="gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">Settings</Text>
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">Settings</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           How leads are routed, recorded, and retained.
         </Text>
       </View>
 
       <SectionHeader label="When a lead comes in" />
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         {(['round_robin', 'single_default', 'manual'] as Strategy[]).map((s) => {
           const sel = strategy === s;
           return (
@@ -356,12 +356,12 @@ export default function LeadSettingsScreen() {
               key={s}
               onPress={() => setStrategy(s)}
               className={`rounded-lg border p-3 gap-1 ${
-                sel ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'
+                sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
               }`}>
-              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+              <Text className="text-ink dark:text-ink-dk font-medium">
                 {STRATEGY_COPY[s].title}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {STRATEGY_COPY[s].blurb}
               </Text>
             </Pressable>
@@ -370,7 +370,7 @@ export default function LeadSettingsScreen() {
 
         {strategy === 'single_default' ? (
           <View className="gap-1.5 pt-1">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Send every lead to
             </Text>
             <View className="flex-row flex-wrap gap-2">
@@ -381,9 +381,9 @@ export default function LeadSettingsScreen() {
                     key={c.profile_id}
                     onPress={() => setDefaultCoach(c.profile_id)}
                     className={`px-3 py-1.5 rounded-full border ${
-                      sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                      sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                     }`}>
-                    <Text className="text-xs text-gray-700 dark:text-gray-200">
+                    <Text className="text-xs text-ink-2 dark:text-ink-2-dk">
                       {c.full_name ?? 'Coach'}
                     </Text>
                   </Pressable>
@@ -401,11 +401,11 @@ export default function LeadSettingsScreen() {
         </Button>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">Text the coach too</Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink dark:text-ink-dk font-medium">Text the coach too</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Send an SMS alongside the email. Requires an SMS plan — off by default.
             </Text>
           </View>
@@ -417,11 +417,11 @@ export default function LeadSettingsScreen() {
         </View>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">Lead sources</Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink dark:text-ink-dk font-medium">Lead sources</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Where your prospects come from — Instagram, walk-in, referral, open day.
             </Text>
           </View>
@@ -436,13 +436,13 @@ export default function LeadSettingsScreen() {
 
       <SectionHeader label="Call Recording & Consent" />
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Record calls for review
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               A short consent line plays at the start of every call. Recordings let you review and
               coach the AI.
             </Text>
@@ -466,7 +466,7 @@ export default function LeadSettingsScreen() {
         <Button onPress={() => saveRecordingRetention.mutate()} loading={saveRecordingRetention.isPending}>
           Save retention
         </Button>
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           Recordings are stored privately, every playback is logged, and a caller who replies STOP
           is opted out.
         </Text>
@@ -474,45 +474,45 @@ export default function LeadSettingsScreen() {
 
       <SectionHeader label="Usage & Data" />
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           Usage &amp; limits
         </Text>
         <View className="flex-row gap-3">
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {usage.data?.sentToday ?? '—'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">Texts sent (24h)</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Texts sent (24h)</Text>
           </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {usage.data?.conversations7d ?? '—'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">Threads (7d)</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Threads (7d)</Text>
           </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {usage.data?.calls7d ?? '—'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">Calls (7d)</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Calls (7d)</Text>
           </View>
         </View>
         <View className="flex-row gap-3">
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {outcomes.data?.leads_30d ?? '—'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">Leads (30d)</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Leads (30d)</Text>
           </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {outcomes.data?.converted_30d ?? '—'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">Joined (30d)</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Joined (30d)</Text>
           </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 py-3">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {outcomes.data
                 ? new Intl.NumberFormat('en-GB', {
                     style: 'currency',
@@ -521,10 +521,10 @@ export default function LeadSettingsScreen() {
                   }).format(outcomes.data.attributed_monthly_cents / 100)
                 : '—'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">Won per month</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Won per month</Text>
           </View>
         </View>
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           Bottom row counts leads the agent sourced: captured, signed up as members, and the
           monthly value of those members' current plans.
           {outcomes.data?.committed
@@ -540,7 +540,7 @@ export default function LeadSettingsScreen() {
             placeholder="200"
           />
         ) : null}
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           Past the cap the AI stops replying for the day and hands threads to a coach — it bounds
           what a hostile or chatty texter can cost you.
         </Text>
@@ -561,8 +561,8 @@ export default function LeadSettingsScreen() {
 
       <SectionHeader label="Data Retention" />
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Leads that never convert are deleted after this window. Converted leads become members
           and are kept.
         </Text>
@@ -664,11 +664,11 @@ function SourcesEditorModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4 max-h-[90%]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90%]">
           <ScrollView>
             <View className="gap-4">
               <View className="flex-row items-center justify-between">
-                <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                   Lead sources
                 </Text>
                 <Pressable
@@ -681,7 +681,7 @@ function SourcesEditorModal({
                 </Pressable>
               </View>
 
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Where your prospects come from — Instagram, walk-in,
                 referral, open day. The chip colour shows up on every
                 lead card.
@@ -689,19 +689,19 @@ function SourcesEditorModal({
 
               <View className="gap-2">
                 {(sources.data ?? []).length === 0 ? (
-                  <Text className="text-gray-400 dark:text-gray-500 text-sm">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
                     No sources yet.
                   </Text>
                 ) : (
                   (sources.data ?? []).map((s) => (
                     <View
                       key={s.id}
-                      className="flex-row items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                      className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
                       <View
                         style={{ backgroundColor: s.color }}
                         className="w-4 h-4 rounded-full"
                       />
-                      <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                      <Text className="text-ink dark:text-ink-dk flex-1">
                         {s.label}
                       </Text>
                       <Pressable
@@ -719,8 +719,8 @@ function SourcesEditorModal({
                 )}
               </View>
 
-              <View className="gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              <View className="gap-2 pt-2 border-t border-line dark:border-line-dk">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   Add a source
                 </Text>
                 <Input

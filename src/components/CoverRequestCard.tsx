@@ -73,7 +73,7 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
   const isSelf = session?.user.id === offer.original_coach_id;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: typeColor }}
@@ -81,7 +81,7 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
           <Text className="text-white text-xs font-semibold">{typeName}</Text>
         </View>
         {start ? (
-          <Text className="text-gray-900 dark:text-gray-50 font-medium flex-1">
+          <Text className="text-ink dark:text-ink-dk font-medium flex-1">
             {start.toLocaleDateString(undefined, {
               weekday: 'short',
               day: 'numeric',
@@ -96,7 +96,7 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
         ) : null}
       </View>
 
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Originally coached by {offer.original_coach?.full_name ?? 'a coach'}.
       </Text>
 
@@ -115,7 +115,7 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
           Claim cover
         </Button>
       ) : isSelf ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           You can't claim your own offer.
         </Text>
       ) : null}

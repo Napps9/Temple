@@ -69,7 +69,7 @@ export default function NewCampaign() {
         ) : (
           <View className="items-center py-12 gap-3">
             <ActivityIndicator />
-            <Text className="text-gray-500 dark:text-gray-400">Creating your campaign…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk">Creating your campaign…</Text>
           </View>
         )}
       </View>

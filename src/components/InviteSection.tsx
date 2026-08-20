@@ -103,12 +103,12 @@ export function InviteSection({
   });
 
   return (
-    <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-5">
+    <View className="bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-2xl p-5 gap-5">
       <View className="gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+        <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
           {title}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400">{subtitle}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">{subtitle}</Text>
       </View>
 
       <View className="gap-3">
@@ -123,11 +123,11 @@ export function InviteSection({
                   className={`px-4 py-2 rounded-full border ${
                     selected
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={
-                      selected ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                      selected ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                     }>
                     {r}
                   </Text>
@@ -168,9 +168,9 @@ export function InviteSection({
           </Text>
         ) : null}
         {manualLink ? (
-          <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+          <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg p-3">
             <Text
-              className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono"
+              className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-mono"
               numberOfLines={1}>
               {manualLink}
             </Text>

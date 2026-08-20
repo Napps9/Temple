@@ -18,7 +18,7 @@ export function Avatar({
   return (
     <View
       style={{ width: size, height: size, borderRadius: size / 2 }}
-      className="bg-gray-200 dark:bg-gray-700 items-center justify-center overflow-hidden">
+      className="bg-sunken dark:bg-sunken-dk items-center justify-center overflow-hidden">
       {showImage ? (
         <Image
           source={{ uri: avatarUrl! }}
@@ -27,7 +27,7 @@ export function Avatar({
         />
       ) : (
         <Text
-          className="text-gray-600 dark:text-gray-300 font-semibold"
+          className="text-ink-2 dark:text-ink-2-dk font-semibold"
           style={{ fontSize }}>
           {initial}
         </Text>

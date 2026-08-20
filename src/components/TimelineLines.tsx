@@ -123,12 +123,12 @@ export function SoftLine({
       <Text
         className={`flex-1 text-[15px] leading-[22px] mt-[3px] ${
           quiet
-            ? 'text-gray-500 dark:text-gray-400'
-            : 'text-gray-700 dark:text-gray-200'
+            ? 'text-ink-2 dark:text-ink-2-dk'
+            : 'text-ink-2 dark:text-ink-2-dk'
         }`}>
         {lead && text.startsWith(lead) ? (
           <>
-            <Text className="font-semibold text-gray-900 dark:text-gray-50">
+            <Text className="font-semibold text-ink dark:text-ink-dk">
               {lead}
             </Text>
             {text.slice(lead.length)}
@@ -138,7 +138,7 @@ export function SoftLine({
         )}
       </Text>
       {at ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs mt-[6px]">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs mt-[6px]">
           {formatClock(at)}
         </Text>
       ) : null}
@@ -188,7 +188,7 @@ export function OfferChip({ offer }: { offer: { label: string; href: string } })
   return (
     <Pressable
       onPress={() => router.push(offer.href as never)}
-      className="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+      className="px-4 py-2 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
       <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
         {offer.label}
       </Text>

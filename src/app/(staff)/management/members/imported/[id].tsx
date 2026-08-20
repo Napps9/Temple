@@ -263,7 +263,7 @@ export default function ImportedMemberDetailScreen() {
         <BackLink fallbackHref="/management/members" />
 
         {canManageStaff !== true || query.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : query.error || !row ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">
             {errorMessage(query.error, 'This imported member could not be found.')}
@@ -273,10 +273,10 @@ export default function ImportedMemberDetailScreen() {
             <View className="flex-row items-center gap-3">
               <Avatar name={form.full_name || row.email} size={44} />
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+                <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
                   {form.full_name || row.email}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Imported {formatDate(row.created_at)} · not signed up
                   {row.imported_status ? ` · was "${row.imported_status}"` : ''}
                 </Text>
@@ -299,11 +299,11 @@ export default function ImportedMemberDetailScreen() {
               </View>
             ) : null}
 
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Account details
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 These carry onto the member's account automatically when they
                 sign up with this email. Fix anything before you invite them.
               </Text>
@@ -345,8 +345,8 @@ export default function ImportedMemberDetailScreen() {
               />
             </View>
 
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Membership
               </Text>
               <Input
@@ -383,8 +383,8 @@ export default function ImportedMemberDetailScreen() {
               />
             </View>
 
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Tags & notes
               </Text>
               <Input
@@ -403,10 +403,10 @@ export default function ImportedMemberDetailScreen() {
               />
               <View className="flex-row items-center justify-between">
                 <View className="flex-1 pr-3">
-                  <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                  <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                     Do not email
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Carries into your marketing suppression list on signup.
                   </Text>
                 </View>
@@ -431,7 +431,7 @@ export default function ImportedMemberDetailScreen() {
               </Button>
 
               {invited ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs text-center">
                   Invite already sent — waiting for them to sign up.
                 </Text>
               ) : row.status === 'pending' ? (
@@ -454,7 +454,7 @@ export default function ImportedMemberDetailScreen() {
             <View className="border-t border-gray-200 dark:border-gray-800 pt-4 gap-2">
               {confirmDelete ? (
                 <View className="gap-2">
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Remove this staged import? This only deletes the imported
                     row — it can be re-imported from your CSV.
                   </Text>

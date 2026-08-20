@@ -59,10 +59,10 @@ export default function StoreScreen() {
             />
           ) : null}
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Store
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               {brand.gymName}
             </Text>
           </View>
@@ -104,19 +104,19 @@ export default function StoreScreen() {
         ) : null}
 
         {config.data && !config.data.store_enabled ? (
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             The store isn't open at {brand.gymName} right now. Check back soon.
           </Text>
         ) : products.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : list.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Nothing in the store yet.
           </Text>
         ) : (
           <>
             {hasPhysical && shippingFee > 0 ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                 {formatMoney(shippingFee, currency)} shipping is added to orders
                 with a physical item.
               </Text>
@@ -257,7 +257,7 @@ function ProductCard({
       : 'Ships to you';
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl overflow-hidden shadow-card">
       <ProductImages
         images={images}
         onOpen={(i) => {
@@ -274,23 +274,23 @@ function ProductCard({
       <View className="p-4 gap-2">
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+            <Text className="text-ink dark:text-ink-dk font-semibold text-base">
               {product.name}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5">
               {subtitle}
               {!product.recurring && product.track_inventory && !product.sold_out
                 ? ` · ${product.stock_quantity} left`
                 : ''}
             </Text>
           </View>
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {priceLabel}
           </Text>
         </View>
 
         {product.description ? (
-          <Text className="text-gray-600 dark:text-gray-300 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {product.description}
           </Text>
         ) : null}
@@ -314,22 +314,22 @@ function ProductCard({
             </View>
           )
         ) : product.sold_out ? (
-          <View className="self-start px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 mt-1">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+          <View className="self-start px-3 py-1.5 rounded-full bg-raised dark:bg-raised-dk mt-1">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Sold out
             </Text>
           </View>
         ) : (
           <View className="flex-row items-center gap-3 mt-1">
             {max > 1 ? (
-              <View className="flex-row items-center rounded-lg border border-gray-200 dark:border-gray-700">
+              <View className="flex-row items-center rounded-lg border border-line dark:border-line-dk">
                 <Pressable
                   onPress={() => setQty((q) => Math.max(1, q - 1))}
                   hitSlop={6}
                   className="px-3 py-2 active:opacity-60">
                   <Ionicons name="remove" size={16} color={colors.iconSecondary} />
                 </Pressable>
-                <Text className="text-gray-900 dark:text-gray-50 w-8 text-center">
+                <Text className="text-ink dark:text-ink-dk w-8 text-center">
                   {clamped}
                 </Text>
                 <Pressable

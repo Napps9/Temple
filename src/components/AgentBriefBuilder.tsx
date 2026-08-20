@@ -93,11 +93,11 @@ export function AgentBriefBuilder({
             className={`flex-1 px-3 py-2.5 rounded-lg border ${
               promptMode === m
                 ? 'border-primary bg-primary/10'
-                : 'border-gray-200 dark:border-gray-700'
+                : 'border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-sm font-semibold text-center ${
-                promptMode === m ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                promptMode === m ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {label}
             </Text>
@@ -106,8 +106,8 @@ export function AgentBriefBuilder({
       </View>
 
       {promptMode === 'generate' ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Your plans, schedule, class types and coaches are included automatically. These five
             fill in what only you know — every one is optional, but the first is where the sales
             happen.
@@ -151,7 +151,7 @@ export function AgentBriefBuilder({
             }
           />
           <View className="gap-1.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               How should it sound?
             </Text>
             <View className="flex-row gap-2">
@@ -162,11 +162,11 @@ export function AgentBriefBuilder({
                     key={t.id}
                     onPress={() => setAnswers((a) => ({ ...a, tone: t.id }))}
                     className={`flex-1 rounded-lg border px-2 py-2 ${
-                      sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                      sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                     }`}>
                     <Text
                       className={`text-xs font-semibold text-center ${
-                        sel ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                        sel ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                       }`}>
                       {t.label}
                     </Text>
@@ -174,7 +174,7 @@ export function AgentBriefBuilder({
                 );
               })}
             </View>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
               {TONES.find((t) => t.id === answers.tone)?.desc}
             </Text>
           </View>
@@ -192,8 +192,8 @@ export function AgentBriefBuilder({
         </View>
       ) : null}
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           The agent's brief
         </Text>
         <Input

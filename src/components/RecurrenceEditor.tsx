@@ -79,7 +79,7 @@ export function RecurrenceEditor({
   return (
     <View className="gap-4">
       <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Days
         </Text>
         <View className="flex-row gap-1.5">
@@ -90,13 +90,13 @@ export function RecurrenceEditor({
                 key={i}
                 onPress={() => toggleDay(i)}
                 className={`flex-1 aspect-square rounded-lg items-center justify-center ${
-                  sel ? 'bg-primary' : 'bg-gray-100 dark:bg-gray-800'
+                  sel ? 'bg-primary' : 'bg-raised dark:bg-raised-dk'
                 }`}>
                 <Text
                   className={
                     sel
                       ? 'text-white font-semibold'
-                      : 'text-gray-500 dark:text-gray-400 font-medium'
+                      : 'text-ink-2 dark:text-ink-2-dk font-medium'
                   }>
                   {DAY_LETTERS[i]}
                 </Text>
@@ -107,7 +107,7 @@ export function RecurrenceEditor({
       </View>
 
       <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Times
         </Text>
         <View className="gap-2">
@@ -128,8 +128,8 @@ export function RecurrenceEditor({
                 accessibilityLabel="Remove"
                 className={`w-11 h-11 rounded-lg items-center justify-center ${
                   value.times.length === 1
-                    ? 'opacity-40 bg-gray-100 dark:bg-gray-800'
-                    : 'bg-gray-100 dark:bg-gray-800'
+                    ? 'opacity-40 bg-raised dark:bg-raised-dk'
+                    : 'bg-raised dark:bg-raised-dk'
                 }`}>
                 <Ionicons name="close" size={18} color={colors.iconSecondary} />
               </Pressable>
@@ -137,9 +137,9 @@ export function RecurrenceEditor({
           ))}
           <Pressable
             onPress={addTime}
-            className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+            className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
             <Ionicons name="add" size={14} color={colors.iconSecondary} />
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Add time
             </Text>
           </Pressable>
@@ -178,13 +178,13 @@ export function RecurrenceEditor({
           className={`w-5 h-5 rounded border-2 items-center justify-center ${
             value.indefinite
               ? 'border-primary bg-primary'
-              : 'border-gray-300 dark:border-gray-600'
+              : 'border-line-strong dark:border-line-strong-dk'
           }`}>
           {value.indefinite ? (
             <Ionicons name="checkmark" size={14} color="#FFFFFF" />
           ) : null}
         </View>
-        <Text className="text-gray-900 dark:text-gray-50">Repeat indefinitely</Text>
+        <Text className="text-ink dark:text-ink-dk">Repeat indefinitely</Text>
       </Pressable>
       )}
     </View>

@@ -167,10 +167,10 @@ export default function TrackHome() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-3">
           <View className="flex-1 gap-0.5">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Track
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {isHyrox
                 ? 'Log your stations, run splits and race times.'
                 : 'Log workouts and PRs across movements.'}
@@ -193,18 +193,18 @@ export default function TrackHome() {
         ) : null}
 
         {(logNudge.data?.length ?? 0) > 0 ? (
-          <View className="bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 gap-2">
+          <View className="bg-surface dark:bg-surface-dk border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 gap-2">
             <View className="flex-row items-center gap-2">
               <Ionicons name="checkmark-done-circle" size={18} color="#10B981" />
               <Text
-                className="flex-1 text-gray-900 dark:text-gray-50 font-semibold"
+                className="flex-1 text-ink dark:text-ink-dk font-semibold"
                 numberOfLines={1}>
                 {logNudge.data!.length === 1
                   ? `You trained ${logNudge.data![0].className} — log it?`
                   : `${logNudge.data!.length} sessions to log`}
               </Text>
             </View>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Logging keeps your streak, PRs and history up to date.
             </Text>
             <Pressable
@@ -230,7 +230,7 @@ export default function TrackHome() {
             flip only engage at lg. */}
         <View className="gap-4 lg:flex-row lg:items-start">
           {(recentWorkouts.data?.size ?? 0) > 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card lg:w-80">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card lg:w-80">
               <View className="flex-row gap-2">
                 <Stat
                   icon="flame"
@@ -252,7 +252,7 @@ export default function TrackHome() {
                 />
               </View>
               <View className="gap-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                   Last 12 weeks
                 </Text>
                 <WorkoutHeatmap
@@ -309,10 +309,10 @@ function Stat({
         className="w-8 h-8 rounded-full items-center justify-center">
         <Ionicons name={icon} size={16} color={tint} />
       </View>
-      <Text className="text-gray-900 dark:text-gray-50 text-2xl font-bold leading-7">
+      <Text className="text-ink dark:text-ink-dk text-2xl font-bold leading-7">
         {value}
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs leading-4">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs leading-4">
         {label}
       </Text>
     </View>
@@ -354,16 +354,16 @@ function TrackHowItWorks() {
     },
   ];
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card border border-primary/20">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card border border-primary/20">
       <View className="flex-row items-start gap-3">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
           <Ionicons name="compass-outline" size={22} color={colors.primary} />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             How Track works
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Your workouts, PRs and progress — all in one place.
           </Text>
         </View>
@@ -371,7 +371,7 @@ function TrackHowItWorks() {
           onPress={() => setFlag('track_how_it_works_dismissed')}
           hitSlop={8}
           className="shrink-0 active:opacity-70">
-          <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium text-right">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium text-right">
             Don't show me again
           </Text>
         </Pressable>
@@ -385,10 +385,10 @@ function TrackHowItWorks() {
               <Ionicons name={s.icon} size={16} color={s.tint} />
             </View>
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+              <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                 {s.title}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {s.desc}
               </Text>
             </View>
@@ -405,7 +405,7 @@ function TrackHowItWorks() {
 // reads as a distinct kind of tile (navigation/tools) rather than more
 // pinned-movement content.
 const TOOL_TILE_CLASS =
-  'bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70 border-t-4';
+  'bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70 border-t-4';
 
 // Group-tile shape (slate background, rounded icon, accent blob).
 function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
@@ -430,10 +430,10 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
         <Ionicons name="book-outline" size={22} color={accent} />
       </View>
       <View className="flex-1 justify-end">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+        <Text className="text-ink dark:text-ink-dk font-semibold text-base">
           Journal
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {subtitle}
         </Text>
       </View>
@@ -458,10 +458,10 @@ function LeaderboardsTile() {
         <Ionicons name="trophy-outline" size={22} color={accent} />
       </View>
       <View className="flex-1 justify-end">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+        <Text className="text-ink dark:text-ink-dk font-semibold text-base">
           Leaderboards
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Heaviest lifts, fastest times, hardest AMRAPs.
         </Text>
       </View>
@@ -501,11 +501,11 @@ function InjuryTile() {
       ) : null}
       <View className="flex-1 justify-end">
         <Text
-          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          className="text-ink dark:text-ink-dk font-semibold text-base"
           numberOfLines={2}>
           Injury tracker
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {open.length === 0
             ? 'Log a niggle'
             : `${open.length} open ${open.length === 1 ? 'injury' : 'injuries'}`}
@@ -536,11 +536,11 @@ function LibraryTile() {
       </View>
       <View className="flex-1 justify-end">
         <Text
-          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          className="text-ink dark:text-ink-dk font-semibold text-base"
           numberOfLines={2}>
           Movement Library
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Search & star all movements
         </Text>
       </View>
@@ -642,10 +642,10 @@ function MyMovementsCard({
             <Ionicons name="grid-outline" size={22} color="#6B7280" />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Tools
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Journal, leaderboards, the library &amp; injuries.
             </Text>
           </View>
@@ -673,10 +673,10 @@ function MyMovementsCard({
             <Ionicons name="barbell-outline" size={22} color={colors.primary} />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Movements
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Your pinned movements &amp; groups — edit in the Library.
             </Text>
           </View>
@@ -707,7 +707,7 @@ function MyMovementsCard({
             )}
           </TileGrid>
         ) : (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Nothing pinned yet. Star movements or groups in the Library to pin
             them here.
           </Text>
@@ -733,7 +733,7 @@ function StationTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -745,11 +745,11 @@ function StationTile({
       </View>
       <View className="flex-1 justify-end">
         <Text
-          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          className="text-ink dark:text-ink-dk font-semibold text-base"
           numberOfLines={2}>
           {name}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">{spec}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{spec}</Text>
       </View>
     </Pressable>
   );
@@ -773,7 +773,7 @@ function GroupTile({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
+      className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 min-h-[124px] flex-1 overflow-hidden shadow-card active:opacity-70">
       <View
         style={{ backgroundColor: accent }}
         className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
@@ -792,11 +792,11 @@ function GroupTile({
       ) : null}
       <View className="flex-1 justify-end">
         <Text
-          className="text-gray-900 dark:text-gray-50 font-semibold text-base"
+          className="text-ink dark:text-ink-dk font-semibold text-base"
           numberOfLines={2}>
           {name}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {count} {count === 1 ? 'movement' : 'movements'}
         </Text>
       </View>

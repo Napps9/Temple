@@ -625,10 +625,10 @@ export default function ImportMembersScreen() {
         <BackLink fallbackHref="/management" />
 
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Import members
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Drop in a CSV from your previous platform (Mindbody, PushPress,
             Glofox, Wodify, a spreadsheet…). We stage the rows; members
             link to their data when they sign up at your join link.
@@ -644,11 +644,11 @@ export default function ImportMembersScreen() {
                 size={18}
                 color={colors.primary}
               />
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
                 Already charging members on Stripe? Import them from Stripe first
               </Text>
             </View>
-            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Members with a live Stripe subscription should come across via the
               Stripe importer — their subscription is adopted, with no
               re-entering cards and no double-billing. This CSV import is for
@@ -679,7 +679,7 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'upload' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
             {Platform.OS === 'web' ? (
               <>
                 {/* A real <div> rather than <Pressable> so the standard
@@ -717,10 +717,10 @@ export default function ImportMembersScreen() {
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Ionicons name="cloud-upload-outline" size={24} color={colors.iconSecondary} />
-                  <Text className="text-gray-700 dark:text-gray-200 font-medium">
+                  <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
                     {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     .csv exports from Mindbody, PushPress, Glofox, Wodify or a
                     spreadsheet. Headers in row 1.
                   </Text>
@@ -742,7 +742,7 @@ export default function ImportMembersScreen() {
               </>
             ) : null}
 
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Or paste the CSV content here:
             </Text>
             <TextInput
@@ -755,7 +755,7 @@ export default function ImportMembersScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               style={{ minHeight: 140, textAlignVertical: 'top' }}
-              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-sm font-mono"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm font-mono"
             />
 
             {error ? (
@@ -776,16 +776,16 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'map' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
             <View className="gap-1">
               <View className="flex-row items-center gap-2">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
                   Map your columns
                 </Text>
                 {mappingLoading ? (
                   <View className="flex-row items-center gap-1.5">
                     <ActivityIndicator size="small" color={brand.primaryColor} />
-                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-widest">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-semibold uppercase tracking-widest">
                       Matching
                     </Text>
                   </View>
@@ -802,7 +802,7 @@ export default function ImportMembersScreen() {
                   </View>
                 ) : null}
               </View>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {mappingSource === 'ai'
                   ? 'Matched with AI — adjust anything that\'s off. Columns set to "Ignore" are dropped.'
                   : 'We auto-detected what we could. Adjust anything that\'s wrong. Columns set to "Ignore" are dropped.'}
@@ -812,9 +812,9 @@ export default function ImportMembersScreen() {
               {headers.map((h, i) => (
                 <View
                   key={`${h}-${i}`}
-                  className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                  className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
                   <Text
-                    className="flex-1 text-gray-900 dark:text-gray-50 text-sm"
+                    className="flex-1 text-ink dark:text-ink-dk text-sm"
                     numberOfLines={1}>
                     {h || `(column ${i + 1})`}
                   </Text>
@@ -869,11 +869,11 @@ export default function ImportMembersScreen() {
         ) : null}
 
         {phase === 'preview' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Preview
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {stagedCount} ready to stage · {rows.length - importRows.length}{' '}
               skipped (missing email)
               {excludedCount > 0 ? ` · ${excludedCount} skipped (already on Stripe)` : ''}
@@ -923,14 +923,14 @@ export default function ImportMembersScreen() {
                 onToggle={toggleFuzzyExclude}
               />
             ) : null}
-            <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+            <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
               {importRows.slice(0, 5).map((r, i) => (
                 <View key={i} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
-                  <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                  <Text className="text-ink dark:text-ink-dk text-sm">
                     {String(r.full_name ?? '(no name)')} · {String(r.email)}
                   </Text>
                   {r.plan_name ? (
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       Plan: {String(r.plan_name)}
                       {r.plan_end ? ` (ends ${r.plan_end})` : ''}
                     </Text>
@@ -938,7 +938,7 @@ export default function ImportMembersScreen() {
                 </View>
               ))}
               {importRows.length > 5 ? (
-                <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs pt-1">
                   …and {importRows.length - 5} more.
                 </Text>
               ) : null}
@@ -1011,15 +1011,15 @@ function ReviewPanel({
   const fallback = inference?.source === 'fallback';
   return (
     <View className="gap-4">
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
         <View className="flex-row items-center gap-2">
           <Ionicons name="sparkles" size={18} color={colors.iconSecondary} />
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+          <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
             What we found in your CSV
           </Text>
           {inference ? (
-            <View className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">
-              <Text className="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-widest">
+            <View className="px-2 py-0.5 rounded-full bg-raised dark:bg-raised-dk">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-widest">
                 {inference.source === 'ai'
                   ? 'AI suggestions'
                   : inference.source === 'mixed'
@@ -1029,7 +1029,7 @@ function ReviewPanel({
             </View>
           ) : null}
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {loading
             ? 'Reading your rows and inferring plans…'
             : fallback
@@ -1040,18 +1040,18 @@ function ReviewPanel({
 
       {/* Plans */}
       <View className="gap-3">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest px-1">
           Plans found ({planEntries.length})
         </Text>
         {loading && planEntries.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Reading the rows and inferring plans…
             </Text>
           </View>
         ) : planEntries.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No plan_name column was mapped. Members will be staged without a
               linked plan — staff can attach one later.
             </Text>
@@ -1080,15 +1080,15 @@ function ReviewPanel({
 
       {/* Tags */}
       <View className="gap-2">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest px-1">
           Tags found
         </Text>
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
           {(inference?.tags.keep.length ?? 0) +
             (inference?.tags.drop.length ?? 0) >
           0 ? (
             <>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Greyed-out chips will be dropped on commit. Tap any chip to flip
                 the decision.
               </Text>
@@ -1105,13 +1105,13 @@ function ReviewPanel({
                       className={`px-3 py-1.5 rounded-full border ${
                         on
                           ? 'bg-primary/10 border-primary/30'
-                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
+                          : 'bg-raised dark:bg-raised-dk border-line dark:border-line-dk opacity-50'
                       }`}>
                       <Text
                         className={`text-xs ${
                           on
                             ? 'text-primary font-medium'
-                            : 'text-gray-500 dark:text-gray-400'
+                            : 'text-ink-2 dark:text-ink-2-dk'
                         }`}>
                         {value}
                       </Text>
@@ -1121,7 +1121,7 @@ function ReviewPanel({
               </View>
             </>
           ) : (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No tags column was mapped. You can add tags to members later from
               their profile.
             </Text>
@@ -1130,11 +1130,11 @@ function ReviewPanel({
       </View>
 
       {/* Cohort summary */}
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+        <Text className="text-ink dark:text-ink-dk font-semibold">
           What you're bringing across
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {totalRows} members ready to stage.
         </Text>
       </View>
@@ -1190,7 +1190,7 @@ function PlanReviewCard({
   const bodyDimmed = final.drop || usingExisting;
   return (
     <View
-      className={`bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card ${
+      className={`bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card ${
         final.drop ? 'opacity-60' : ''
       }`}>
       <View className="flex-row items-center gap-2">
@@ -1198,7 +1198,7 @@ function PlanReviewCard({
           style={{ backgroundColor: confidenceColor }}
           className="w-2 h-2 rounded-full"
         />
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest font-mono flex-1">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest font-mono flex-1">
           From "{suggestion.raw_name}"
         </Text>
         {hint ? (
@@ -1241,7 +1241,7 @@ function PlanReviewCard({
 
       {usingExisting && !final.drop ? (
         <View className="gap-1.5">
-          <Text className="text-gray-700 dark:text-gray-200 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Existing plan
           </Text>
           {Platform.OS === 'web' ? (
@@ -1262,12 +1262,12 @@ function PlanReviewCard({
               ))}
             </select>
           ) : (
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {existingPlans.find((ep) => ep.plan_id === final.existing_plan_id)
                 ?.name ?? '(pick on web)'}
             </Text>
           )}
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px]">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px]">
             Members on "{suggestion.raw_name}" will be subscribed to this
             existing plan instead of creating a new one.
           </Text>
@@ -1289,7 +1289,7 @@ function PlanReviewCard({
 
       <View className={bodyDimmed ? 'opacity-40 gap-3' : 'gap-3'} pointerEvents={bodyDimmed ? 'none' : 'auto'}>
         <View className="gap-1.5">
-          <Text className="text-gray-700 dark:text-gray-200 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Plan name
           </Text>
           <TextInput
@@ -1297,11 +1297,11 @@ function PlanReviewCard({
             value={final.name}
             onChangeText={(v) => onChange({ name: v })}
             placeholderTextColor="#9CA3AF"
-            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
           />
         </View>
         <View className="gap-1.5">
-          <Text className="text-gray-700 dark:text-gray-200 text-xs">Kind</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Kind</Text>
           <View className="flex-row gap-2 flex-wrap">
             {(['unlimited', 'credit_period', 'credit_pack'] as PlanKind[]).map(
               (k) => (
@@ -1311,13 +1311,13 @@ function PlanReviewCard({
                   className={`px-3 py-1.5 rounded-md border ${
                     final.kind === k
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={
                       final.kind === k
                         ? 'text-primary text-xs uppercase tracking-widest'
-                        : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                        : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                     }>
                     {k.replace('_', ' ')}
                   </Text>
@@ -1328,7 +1328,7 @@ function PlanReviewCard({
         </View>
         {final.kind !== 'unlimited' ? (
           <View className="gap-1.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Credits per period
             </Text>
             <TextInput
@@ -1339,12 +1339,12 @@ function PlanReviewCard({
               }
               keyboardType="number-pad"
               placeholderTextColor="#9CA3AF"
-              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
             />
           </View>
         ) : null}
         <View className="gap-1.5">
-          <Text className="text-gray-700 dark:text-gray-200 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Monthly price ({currencySymbol(currency)})
           </Text>
           <TextInput
@@ -1353,12 +1353,12 @@ function PlanReviewCard({
             onChangeText={(v) => onChange({ monthly_price: v })}
             keyboardType="decimal-pad"
             placeholderTextColor="#9CA3AF"
-            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-base"
+            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
           />
         </View>
       </View>
       {suggestion.reasoning ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px]">
           {suggestion.reasoning}
         </Text>
       ) : null}
@@ -1385,7 +1385,7 @@ function PlanModeChip({
           ? tone === 'warn'
             ? 'bg-amber-500/10 border-amber-500/40'
             : 'bg-primary/10 border-primary'
-          : 'bg-transparent border-gray-200 dark:border-gray-700'
+          : 'bg-transparent border-line dark:border-line-dk'
       }`}>
       <Text
         className={`text-xs uppercase tracking-widest ${
@@ -1393,7 +1393,7 @@ function PlanModeChip({
             ? tone === 'warn'
               ? 'text-amber-700 dark:text-amber-400 font-semibold'
               : 'text-primary font-semibold'
-            : 'text-gray-500 dark:text-gray-400'
+            : 'text-ink-2 dark:text-ink-2-dk'
         }`}>
         {label}
       </Text>
@@ -1430,7 +1430,7 @@ function FieldPicker({
     );
   }
   return (
-    <Text className="text-gray-700 dark:text-gray-200 text-xs">
+    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
       {FIELD_OPTIONS.find((o) => o.key === value)?.label ?? '?'}
     </Text>
   );
@@ -1733,21 +1733,21 @@ function HandoverPanel({
   return (
     <View className="gap-4">
       <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="text-ink dark:text-ink-dk font-semibold">
           Imported {result.inserted + result.updated} members
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {result.inserted} new · {result.updated} updated · {result.skipped} skipped
           (no email)
         </Text>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Hand the join link to your members
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             They sign up with the same email you imported. Their plan, tags
             and history come along automatically.
           </Text>
@@ -1758,9 +1758,9 @@ function HandoverPanel({
               <QRCode value={url} size={96} />
             </View>
             <View className="flex-1 gap-2">
-              <View className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+              <View className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
                 <Text
-                  className="text-gray-700 dark:text-gray-200 text-sm font-mono"
+                  className="text-ink-2 dark:text-ink-2-dk text-sm font-mono"
                   numberOfLines={1}>
                   {url}
                 </Text>
@@ -1773,18 +1773,18 @@ function HandoverPanel({
             </View>
           </View>
         ) : (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Set a public join slug on the Branding page first.
           </Text>
         )}
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Or, let Temple send the welcome
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Both options pre-set the audience to the members you just
             imported — pick the pre-filled welcome if you want to send in a
             few clicks, or start from a blank canvas if you'd rather write
@@ -1810,12 +1810,12 @@ function HandoverPanel({
         ) : null}
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Or just send the join link now
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             One click, no campaign editor — a short email with their join
             link goes out immediately to everyone still waiting to sign up.
           </Text>
@@ -1827,7 +1827,7 @@ function HandoverPanel({
           Send join invites
         </Button>
         {sendJoinInvites.data ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Sent {sendJoinInvites.data.sent}
             {sendJoinInvites.data.failed > 0
               ? `, ${sendJoinInvites.data.failed} failed`
@@ -1843,11 +1843,11 @@ function HandoverPanel({
       </View>
 
       {stats.data ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Linking progress
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Refreshes every few seconds — keep this page open while your
             members sign up.
           </Text>
@@ -1873,12 +1873,12 @@ function Stat({
 }) {
   return (
     <View className="flex-1">
-      <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
         {label}
       </Text>
       <Text
         style={accent ? { color: accent } : undefined}
-        className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+        className="text-ink dark:text-ink-dk text-2xl font-semibold">
         {value}
       </Text>
     </View>

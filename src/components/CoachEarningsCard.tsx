@@ -57,9 +57,9 @@ export function CoachEarningsCard() {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           Earnings
         </Text>
       </View>
@@ -79,14 +79,14 @@ export function CoachEarningsCard() {
         }}
       />
       {earnings.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : (
         <View className="gap-2">
           <View className="flex-row items-baseline gap-3">
-            <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-3xl font-semibold">
               {formatMoney(totals.cents, totals.currency)}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {totals.classes} {totals.classes === 1 ? 'class' : 'classes'}
             </Text>
           </View>
@@ -108,16 +108,16 @@ export function CoachEarningsCard() {
                     style={{ backgroundColor: r.class_type_color }}
                     className="w-2 h-2 rounded-full"
                   />
-                  <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm" numberOfLines={1}>
+                  <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm" numberOfLines={1}>
                     {r.class_type_name}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {r.class_count} ·{' '}
                     {r.rate_cents > 0
                       ? formatMoney(r.rate_cents, r.currency)
                       : 'no rate'}
                   </Text>
-                  <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                  <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                     {formatMoney(r.earnings_cents, r.currency)}
                   </Text>
                 </View>
@@ -125,7 +125,7 @@ export function CoachEarningsCard() {
             </View>
           ) : null}
           {rows.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">
               No classes or rates yet in this period.
             </Text>
           ) : null}

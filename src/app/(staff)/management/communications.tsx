@@ -33,15 +33,15 @@ export function CommunicationsHome() {
       </View>
 
       <Link href="/management/communications/settings" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
-          <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+          <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="settings-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Sender & footer
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               From name, reply-to, and the required postal-address footer.
             </Text>
           </View>
@@ -50,15 +50,15 @@ export function CommunicationsHome() {
       </Link>
 
       <Link href="/management/communications/topics" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
-          <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+          <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="layers-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Email topics
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Let members subscribe and unsubscribe per topic — newsletter, promos, billing.
             </Text>
           </View>
@@ -67,15 +67,15 @@ export function CommunicationsHome() {
       </Link>
 
       <Link href="/management/communications/automations" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
-          <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+          <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="flash-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Automations
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Emails that send themselves — welcome, first-class follow-up, win-back, lead nurture.
             </Text>
           </View>
@@ -96,15 +96,15 @@ export default function CommunicationsScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Email campaigns
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Design, send and analyse email campaigns to your members.
           </Text>
         </View>
         {canManageComms === false ? (
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             You don't have permission to manage communications.
           </Text>
         ) : (

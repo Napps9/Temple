@@ -141,22 +141,22 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
   });
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         {rule ? 'Edit rule' : 'New rule'}
       </Text>
 
       <Input label="Label" value={label} onChangeText={setLabel} placeholder="e.g. Renew soon" />
 
       <View className="gap-2">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Colour
         </Text>
         <ColorSwatchPicker value={color} onChange={setColor} />
       </View>
 
       <View className="gap-2">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           When the member is
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -167,13 +167,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
               className={`px-3 py-1.5 rounded-full border ${
                 kind === o.value
                   ? 'border-primary bg-primary/10'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={
                   kind === o.value
                     ? 'text-primary text-sm'
-                    : 'text-gray-500 dark:text-gray-400 text-sm'
+                    : 'text-ink-2 dark:text-ink-2-dk text-sm'
                 }>
                 {o.label}
               </Text>
@@ -184,13 +184,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
 
       {meta.needsClassType ? (
         <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             Class type
           </Text>
           {classTypesQuery.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
           ) : (classTypesQuery.data ?? []).length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No class types yet — create one under Classes first.
             </Text>
           ) : (
@@ -202,7 +202,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
                   className={`px-3 py-1.5 rounded-full border flex-row items-center gap-1.5 ${
                     classTypeId === ct.id
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <View
                     style={{ backgroundColor: ct.color }}
@@ -212,7 +212,7 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
                     className={
                       classTypeId === ct.id
                         ? 'text-primary text-sm'
-                        : 'text-gray-500 dark:text-gray-400 text-sm'
+                        : 'text-ink-2 dark:text-ink-2-dk text-sm'
                     }>
                     {ct.name}
                   </Text>
@@ -225,13 +225,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
 
       {meta.needsPlan ? (
         <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             Plan
           </Text>
           {plansQuery.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
           ) : (plansQuery.data ?? []).length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No plans yet — create one under Plans first.
             </Text>
           ) : (
@@ -243,13 +243,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
                   className={`px-3 py-1.5 rounded-full border ${
                     planId === p.plan_id
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={
                       planId === p.plan_id
                         ? 'text-primary text-sm'
-                        : 'text-gray-500 dark:text-gray-400 text-sm'
+                        : 'text-ink-2 dark:text-ink-2-dk text-sm'
                     }>
                     {p.name}
                   </Text>
@@ -279,15 +279,15 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
           className={`w-5 h-5 rounded border ${
             memberVisible
               ? 'bg-primary border-primary'
-              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
+              : 'border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk'
           }`}>
           {memberVisible ? (
             <Text className="text-white text-center text-xs leading-5">✓</Text>
           ) : null}
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50">Visible to the member</Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink dark:text-ink-dk">Visible to the member</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Off keeps this tag internal — members can never read tags that
             aren't marked visible.
           </Text>
@@ -301,13 +301,13 @@ export function TagRuleEditor({ rule, onDone, onCancel }: Props) {
           className={`w-5 h-5 rounded border ${
             active
               ? 'bg-primary border-primary'
-              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
+              : 'border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk'
           }`}>
           {active ? (
             <Text className="text-white text-center text-xs leading-5">✓</Text>
           ) : null}
         </View>
-        <Text className="text-gray-900 dark:text-gray-50">Active</Text>
+        <Text className="text-ink dark:text-ink-dk">Active</Text>
       </Pressable>
 
       {error ? (

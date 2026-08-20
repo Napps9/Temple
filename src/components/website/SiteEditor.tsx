@@ -61,7 +61,7 @@ const ADDABLE: SiteBlockType[] = [
 
 function FieldLabel({ children }: { children: string }) {
   return (
-    <Text className="text-gray-600 dark:text-gray-300 text-xs font-medium">{children}</Text>
+    <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">{children}</Text>
   );
 }
 
@@ -92,10 +92,10 @@ function TextField({
         placeholder={placeholder}
         placeholderTextColor="#9CA3AF"
         multiline={multiline}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
         style={multiline ? { minHeight: 88, textAlignVertical: 'top' } : undefined}
       />
-      {note ? <Text className="text-gray-400 dark:text-gray-500 text-xs italic">{note}</Text> : null}
+      {note ? <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic">{note}</Text> : null}
     </View>
   );
 }
@@ -110,7 +110,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+    <View className="flex-row bg-raised dark:bg-raised-dk rounded-lg p-1 gap-1">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -118,13 +118,13 @@ function Segmented<T extends string>({
             key={opt.value}
             onPress={() => onChange(opt.value)}
             className={`flex-1 items-center py-1.5 rounded-md ${
-              selected ? 'bg-white dark:bg-gray-900' : ''
+              selected ? 'bg-surface dark:bg-surface-dk' : ''
             }`}>
             <Text
               className={`text-xs font-medium ${
                 selected
-                  ? 'text-gray-900 dark:text-gray-50'
-                  : 'text-gray-500 dark:text-gray-400'
+                  ? 'text-ink dark:text-ink-dk'
+                  : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {opt.label}
             </Text>
@@ -152,7 +152,7 @@ function IconBtn({
       onPress={onPress}
       disabled={disabled}
       hitSlop={6}
-      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:opacity-60 ${
+      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-gray-800 border border-line dark:border-line-dk active:opacity-60 ${
         disabled ? 'opacity-30' : ''
       }`}>
       <Ionicons name={icon} size={15} color={danger ? '#EF4444' : colors.iconSecondary} />
@@ -285,8 +285,8 @@ function StockPhotoPickerModal({
       <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">Stock photos</Text>
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-3">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">Stock photos</Text>
           <View className="flex-row gap-2 items-center">
             <TextInput
               value={query}
@@ -295,7 +295,7 @@ function StockPhotoPickerModal({
               placeholderTextColor="#9CA3AF"
               returnKeyType="search"
               onSubmitEditing={() => runSearch(query, 1)}
-              className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
+              className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
             />
             <Pressable
               onPress={() => runSearch(query, 1)}
@@ -316,7 +316,7 @@ function StockPhotoPickerModal({
                 <ActivityIndicator />
               </View>
             ) : photos.length === 0 && search.isSuccess ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-sm text-center py-8">
                 No photos found — try a different search.
               </Text>
             ) : (
@@ -350,7 +350,7 @@ function StockPhotoPickerModal({
                         hitSlop={4}>
                         <Text
                           numberOfLines={1}
-                          className="text-gray-400 dark:text-gray-500 text-[10px]">
+                          className="text-ink-3 dark:text-ink-3-dk text-[10px]">
                           by {p.photographer}
                         </Text>
                       </Pressable>
@@ -361,8 +361,8 @@ function StockPhotoPickerModal({
                   <Pressable
                     onPress={() => runSearch(submittedQuery.current, page + 1)}
                     disabled={search.isPending || savingId != null}
-                    className="flex-row items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg py-2.5 active:opacity-70">
-                    <Text className="text-gray-700 dark:text-gray-200 font-medium text-sm">
+                    className="flex-row items-center justify-center gap-2 bg-raised dark:bg-raised-dk rounded-lg py-2.5 active:opacity-70">
+                    <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">
                       {search.isPending ? 'Loading…' : 'Load more'}
                     </Text>
                   </Pressable>
@@ -374,7 +374,7 @@ function StockPhotoPickerModal({
             onPress={() => openExternal('https://www.pexels.com')}
             hitSlop={4}
             className="items-center pt-1">
-            <Text className="text-gray-500 dark:text-gray-400 text-xs underline">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs underline">
               Photos provided by Pexels
             </Text>
           </Pressable>
@@ -568,7 +568,7 @@ function ScheduleInspector({
   return (
     <View className="gap-3">
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
-      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
         Shows your real weekly schedule automatically — nothing else to edit here.
       </Text>
     </View>
@@ -610,9 +610,9 @@ function PricingInspector({
       <View className="gap-1.5">
         <FieldLabel>Plans shown on the page</FieldLabel>
         {plans.isLoading ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">Loading your plans…</Text>
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Loading your plans…</Text>
         ) : (plans.data ?? []).length === 0 ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             No plans yet — add them under Manage → Plans.
           </Text>
         ) : (
@@ -633,7 +633,7 @@ function PricingInspector({
                   size={18}
                   color={isHidden ? colors.iconTertiary : colors.primary}
                 />
-                <Text className="text-gray-700 dark:text-gray-200 text-sm">{p.name}</Text>
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{p.name}</Text>
               </Pressable>
             );
           })
@@ -682,9 +682,9 @@ function TeamInspector({
       <View className="gap-1.5">
         <FieldLabel>Team members shown on the page</FieldLabel>
         {roster.isLoading ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">Loading your team…</Text>
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Loading your team…</Text>
         ) : (roster.data ?? []).length === 0 ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             No team members yet — invite staff under Manage → Team.
           </Text>
         ) : (
@@ -705,7 +705,7 @@ function TeamInspector({
                   size={18}
                   color={isHidden ? colors.iconTertiary : colors.primary}
                 />
-                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {m.full_name ?? 'Team member'}
                 </Text>
               </Pressable>
@@ -730,7 +730,7 @@ function TestimonialsInspector({
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
       <View className="gap-3">
         {block.quotes.map((q, i) => (
-          <View key={q.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
+          <View key={q.id} className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
             <View className="flex-row items-center justify-between">
               <FieldLabel>{`Quote ${i + 1}`}</FieldLabel>
               <Pressable
@@ -775,9 +775,9 @@ function TestimonialsInspector({
             ],
           })
         }
-        className="flex-row items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg py-2.5 active:opacity-70">
+        className="flex-row items-center justify-center gap-2 bg-raised dark:bg-raised-dk rounded-lg py-2.5 active:opacity-70">
         <Ionicons name="add" size={16} color={colors.iconSecondary} />
-        <Text className="text-gray-700 dark:text-gray-200 font-medium text-sm">Add a quote</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">Add a quote</Text>
       </Pressable>
     </View>
   );
@@ -878,7 +878,7 @@ function LocationInspector({
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
       <TextField label="Address" value={block.address} onChangeText={(t) => onPatch({ address: t })} multiline />
       <TextField label="Hours" value={block.hours} onChangeText={(t) => onPatch({ hours: t })} multiline placeholder={'Mon-Fri 6am-8pm\nSat-Sun 8am-1pm'} />
-      <View className="gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+      <View className="gap-3 pt-3 border-t border-line dark:border-line-dk">
         <FieldLabel>Structured address (helps Google Maps &amp; local search)</FieldLabel>
         <TextField label="Street" value={block.street ?? ''} onChangeText={(t) => onPatch({ street: t })} placeholder="1 Gym St" />
         <View className="flex-row gap-2">
@@ -910,7 +910,7 @@ function LocationInspector({
             />
           </View>
         </View>
-        <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] leading-4">
           Optional — fill these in and search engines can show your address and hours directly in
           results. Your Address text above still controls what visitors see on the page.
         </Text>
@@ -930,7 +930,7 @@ function ContactInspector({
     <View className="gap-3">
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
       <TextField label="Subheading" value={block.subheading} onChangeText={(t) => onPatch({ subheading: t })} multiline />
-      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
         Submissions land in Manage → AI Front Desk, same as your existing enquiry page.
       </Text>
     </View>
@@ -948,7 +948,7 @@ function CallInspector({
     <View className="gap-3">
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
       <TextField label="Subheading" value={block.subheading} onChangeText={(t) => onPatch({ subheading: t })} multiline />
-      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
         The number itself comes from Manage → AI Front Desk, not from here — this block only shows
         up on the live site once that's fully set up (a number assigned, and phone answering
         switched on).
@@ -1046,7 +1046,7 @@ function ThemePicker({
                 <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
                 <View className="flex-1" style={{ backgroundColor: composed.palette.accent }} />
               </View>
-              <Text className="text-gray-600 dark:text-gray-300 text-[11px]">{theme.name}</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-[11px]">{theme.name}</Text>
             </Pressable>
           );
         })}
@@ -1103,7 +1103,7 @@ function CollapsibleSection({
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-2.5 active:opacity-70">
         <Ionicons name={icon} size={16} color={colors.iconSecondary} />
-        <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+        <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
           {title}
         </Text>
         <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={colors.iconTertiary} />
@@ -1131,16 +1131,16 @@ function AddBlockModal({
       <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">Add a block</Text>
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">Add a block</Text>
           <View className="gap-2">
             {ADDABLE.map((type) => (
               <Pressable
                 key={type}
                 onPress={() => onPick(type)}
-                className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+                className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
                 <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color={colors.iconSecondary} />
-                <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   {SITE_BLOCK_LABELS[type]}
                 </Text>
               </Pressable>
@@ -1168,8 +1168,8 @@ function TemplatePickerModal({
       <Pressable onPress={onClose} className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             Apply a template
           </Text>
           <View className="gap-2">
@@ -1179,7 +1179,7 @@ function TemplatePickerModal({
                 <Pressable
                   key={t.id}
                   onPress={() => onPick(t)}
-                  className="flex-row items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+                  className="flex-row items-center gap-3 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
                   <View
                     className="w-12 h-9 rounded-md overflow-hidden flex-row"
                     style={{ borderWidth: 1, borderColor: '#00000014' }}>
@@ -1187,8 +1187,8 @@ function TemplatePickerModal({
                     <View className="w-3" style={{ backgroundColor: composed.palette.accent }} />
                   </View>
                   <View className="flex-1 gap-0.5">
-                    <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">{t.name}</Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">{t.description}</Text>
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">{t.name}</Text>
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{t.description}</Text>
                   </View>
                 </Pressable>
               );
@@ -1296,9 +1296,9 @@ export function SiteEditor({
     <Pressable
       key={type}
       onPress={() => addBlock(type)}
-      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
       <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={15} color={colors.iconSecondary} />
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {SITE_BLOCK_LABELS[type]}
       </Text>
     </Pressable>
@@ -1307,8 +1307,8 @@ export function SiteEditor({
   const themeAndOwnership = (
     <>
       <ThemePicker document={document} onChange={onChange} brandPrimaryColor={brandPrimaryColor} />
-      <View className="gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+      <View className="gap-2 pt-3 border-t border-line dark:border-line-dk">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
           Templates
         </Text>
         <ChipButton
@@ -1317,13 +1317,13 @@ export function SiteEditor({
           tone="neutral"
           onPress={() => setTemplateModalOpen(true)}
         />
-        <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] leading-4">
           Replaces everything on the page with a fresh starting point.
         </Text>
       </View>
       {Platform.OS === 'web' ? (
-        <View className="gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+        <View className="gap-2 pt-3 border-t border-line dark:border-line-dk">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
             Ownership
           </Text>
           <ChipButton
@@ -1332,7 +1332,7 @@ export function SiteEditor({
             tone="neutral"
             onPress={() => downloadJson('site-design.json', document)}
           />
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] leading-4">
             A snapshot of your page content — not a working website file.
           </Text>
         </View>
@@ -1345,27 +1345,27 @@ export function SiteEditor({
       {compact ? (
         <Pressable
           onPress={() => setAddBlockModalOpen(true)}
-          className="flex-row items-center justify-center gap-2 bg-white dark:bg-gray-900 rounded-xl p-3 active:opacity-70">
+          className="flex-row items-center justify-center gap-2 bg-surface dark:bg-surface-dk rounded-xl p-3 active:opacity-70">
           <Ionicons name="add" size={16} color={colors.iconSecondary} />
-          <Text className="text-gray-700 dark:text-gray-200 font-medium text-sm">Add block</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">Add block</Text>
         </Pressable>
       ) : (
-        <View className="lg:w-48 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
-          <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+        <View className="lg:w-48 lg:shrink-0 bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
             Add a block
           </Text>
           <View className="gap-2">{blockButtons}</View>
         </View>
       )}
 
-      <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+      <View className="flex-1 bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
           Page ({document.blocks.length} block{document.blocks.length === 1 ? '' : 's'})
         </Text>
         {document.blocks.length === 0 ? (
           <View className="py-12 items-center px-6">
             <Ionicons name="globe-outline" size={32} color={colors.iconTertiary} />
-            <Text className="text-gray-400 dark:text-gray-500 text-sm mt-2 text-center">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-sm mt-2 text-center">
               Your page is empty. Add blocks from the left to start building.
             </Text>
           </View>
@@ -1379,7 +1379,7 @@ export function SiteEditor({
                   className={`flex-row items-center gap-2 rounded-lg px-3 py-2.5 ${
                     isSelected
                       ? 'bg-primary/10 border border-primary'
-                      : 'bg-gray-50 dark:bg-gray-800 border border-transparent'
+                      : 'bg-raised dark:bg-raised-dk border border-transparent'
                   }`}>
                   <Ionicons
                     name={SITE_BLOCK_ICONS[block.type] as IconName}
@@ -1433,13 +1433,13 @@ export function SiteEditor({
       </View>
 
       {compact ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4">
           <CollapsibleSection title="Theme & ownership" icon="color-palette-outline">
             {themeAndOwnership}
           </CollapsibleSection>
         </View>
       ) : (
-        <View className="lg:w-64 lg:shrink-0 bg-white dark:bg-gray-900 rounded-xl p-4 gap-4">
+        <View className="lg:w-64 lg:shrink-0 bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4">
           {themeAndOwnership}
         </View>
       )}

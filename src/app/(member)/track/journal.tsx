@@ -106,10 +106,10 @@ export default function Journal() {
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/track" />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Journal
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Every workout you've logged.
             </Text>
           </View>
@@ -123,10 +123,10 @@ export default function Journal() {
         </View>
 
         {journal.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
         ) : (journal.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No workouts yet.
             </Text>
           </View>
@@ -150,13 +150,13 @@ function WorkoutCard({ workout }: { workout: WorkoutRow }) {
       onPress={() =>
         router.push(`/track/workout/${workout.id}` as never)
       }
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card active:opacity-70">
+      className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card active:opacity-70">
       <View className="flex-row items-center">
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {workout.title?.trim() || 'Workout'}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {fmtDateLong(workout.performed_at)}
           </Text>
         </View>
@@ -180,13 +180,13 @@ function WorkoutCard({ workout }: { workout: WorkoutRow }) {
       ) : null}
 
       {workout.sections.length === 0 && workout.legacy_results.length === 0 ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic">
           No results recorded.
         </Text>
       ) : null}
 
       {workout.notes ? (
-        <Text className="text-gray-600 dark:text-gray-300 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           {workout.notes}
         </Text>
       ) : null}
@@ -197,24 +197,24 @@ function WorkoutCard({ workout }: { workout: WorkoutRow }) {
 function SectionDisplay({ section }: { section: SectionRow }) {
   const headline = renderHeadline(section);
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
       <View className="flex-row items-center gap-2">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-sm" numberOfLines={1}>
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-sm" numberOfLines={1}>
           {section.title?.trim() || formatLabel(section.section_format)}
         </Text>
-        <View className="rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-2 py-0.5">
-          <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-semibold uppercase tracking-wider">
+        <View className="rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk px-2 py-0.5">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold uppercase tracking-wider">
             {formatLabel(section.section_format)}
           </Text>
         </View>
       </View>
       {section.body ? (
-        <Text className="text-gray-600 dark:text-gray-300 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {section.body}
         </Text>
       ) : null}
       {headline ? (
-        <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+        <Text className="text-ink dark:text-ink-dk font-medium text-sm">
           {headline}
         </Text>
       ) : null}
@@ -233,7 +233,7 @@ function SectionDisplay({ section }: { section: SectionRow }) {
         </View>
       ) : null}
       {section.notes ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">
           {section.notes}
         </Text>
       ) : null}
@@ -272,10 +272,10 @@ function EntryLine({
   if (entry.done) pieces.push('done');
   return (
     <View className="flex-row items-center gap-2">
-      <Text className="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-wider w-20">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider w-20">
         {entry.label?.trim() || `${labelBase} ${idx}`}
       </Text>
-      <Text className="flex-1 text-gray-900 dark:text-gray-50 text-xs">
+      <Text className="flex-1 text-ink dark:text-ink-dk text-xs">
         {pieces.length > 0 ? pieces.join(' · ') : '—'}
       </Text>
     </View>
@@ -296,15 +296,15 @@ function ResultRow({ row }: { row: TrackedResultRow }) {
       }
       className="flex-row items-center gap-3 active:opacity-70">
       <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+        <Text className="text-ink dark:text-ink-dk text-sm font-medium">
           {movementName}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {schemeLabel}
           {row.notes ? ` · ${row.notes}` : ''}
         </Text>
       </View>
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         {display ?? '—'}
       </Text>
     </Pressable>

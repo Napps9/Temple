@@ -110,7 +110,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
   if (!call.available) {
     return (
       <View className="gap-2">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Browser calling isn't connected yet on this deployment.
         </Text>
         <Pressable onPress={onCancel} hitSlop={6} className="self-start">
@@ -124,7 +124,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
     const preparing = !assistant;
     return (
       <View className="gap-3">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           We'll ask your browser for microphone access, then interview you right here — same
           questions, no phone call.
         </Text>
@@ -134,8 +134,8 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
         <View className="flex-row gap-2">
           <Pressable
             onPress={handleCancel}
-            className="flex-1 py-2.5 rounded-lg items-center border border-gray-200 dark:border-gray-700">
-            <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">Cancel</Text>
+            className="flex-1 py-2.5 rounded-lg items-center border border-line dark:border-line-dk">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">Cancel</Text>
           </Pressable>
           <Pressable
             onPress={call.start}
@@ -156,7 +156,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
     return (
       <View className="gap-2 items-center py-2">
         <ActivityIndicator color={colors.primary} />
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">Connecting…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Connecting…</Text>
       </View>
     );
   }
@@ -169,11 +169,11 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
             <View className="w-1.5 h-1.5 rounded-full bg-red-500" />
             <Text className="text-red-600 dark:text-red-400 text-[11px] font-bold">LIVE</Text>
           </View>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
             {formatCallDuration(call.duration)}
           </Text>
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {call.speaking ? 'Speaking…' : 'Listening…'}
         </Text>
         <ScrollView className="max-h-40" showsVerticalScrollIndicator={false}>
@@ -186,7 +186,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
                     ? 'self-end bg-primary/10'
                     : 'self-start bg-white dark:bg-gray-800'
                 }`}>
-                <Text className="text-gray-900 dark:text-gray-50 text-xs">{t.text}</Text>
+                <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
               </View>
             ))}
           </View>
@@ -217,7 +217,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
   return (
     <View className="gap-2 items-center py-2">
       <ActivityIndicator color={colors.primary} />
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">Saving what you told it…</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Saving what you told it…</Text>
     </View>
   );
 }

@@ -148,10 +148,10 @@ export default function Inbox() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Inbox
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Messages from coaches and the gym.
           </Text>
         </View>
@@ -249,13 +249,13 @@ function TabChip({
       className={`px-3 py-1 rounded-full border ${
         active
           ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <Text
         className={
           active
             ? 'text-primary text-sm'
-            : 'text-gray-500 dark:text-gray-400 text-sm'
+            : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>
@@ -278,7 +278,7 @@ function DirectList() {
   return (
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Direct messages
         </Text>
         <Pressable
@@ -290,10 +290,10 @@ function DirectList() {
       </View>
 
       {inbox.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : (inbox.data?.length ?? 0) === 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No conversations yet. Tap New to send a message.
           </Text>
         </View>
@@ -304,25 +304,25 @@ function DirectList() {
             onPress={() =>
               router.push(`/inbox/direct/${row.peer_profile_id}` as never)
             }
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70 flex-row items-center gap-3">
+            className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70 flex-row items-center gap-3">
             <View className="flex-1">
               <View className="flex-row items-center gap-2">
-                <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold" numberOfLines={1}>
+                <Text className="flex-1 text-ink dark:text-ink-dk font-semibold" numberOfLines={1}>
                   {row.peer_full_name}
                 </Text>
                 {row.peer_role && row.peer_role !== 'member' ? (
-                  <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
-                    <Text className="text-gray-600 dark:text-gray-300 text-[10px] uppercase tracking-wider">
+                  <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider">
                       {row.peer_role}
                     </Text>
                   </View>
                 ) : null}
-                <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                   {timeAgo(row.last_message_at)}
                 </Text>
               </View>
               <Text
-                className="text-gray-500 dark:text-gray-400 text-sm"
+                className="text-ink-2 dark:text-ink-2-dk text-sm"
                 numberOfLines={1}>
                 {row.last_message_from_me ? 'You: ' : ''}
                 {snippet(row.last_message_body, 60)}
@@ -423,15 +423,15 @@ function AnnouncementsTab({
   return (
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Gym announcements
         </Text>
         <View className="flex-row gap-2">
           <Pressable
             onPress={() => markAllRead.mutate()}
             disabled={markAllRead.isPending}
-            className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 active:opacity-70">
-            <Text className="text-gray-700 dark:text-gray-200 text-xs">
+            className="rounded-full border border-line dark:border-line-dk px-3 py-1.5 active:opacity-70">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Mark all read
             </Text>
           </Pressable>
@@ -453,7 +453,7 @@ function AnnouncementsTab({
       </View>
 
       {composeOpen ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <Input
             label="Title"
             value={title}
@@ -477,7 +477,7 @@ function AnnouncementsTab({
               value={pinned}
               onValueChange={setPinned}
             />
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Pin to top
             </Text>
           </View>
@@ -491,10 +491,10 @@ function AnnouncementsTab({
       ) : null}
 
       {list.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No announcements yet.
           </Text>
         </View>
@@ -502,19 +502,19 @@ function AnnouncementsTab({
         list.data!.map((a) => (
           <View
             key={a.id}
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+            className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
             <View className="flex-row items-center gap-2">
               {a.pinned ? (
                 <Ionicons name="pin" size={14} color={colors.primary} />
               ) : null}
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold" numberOfLines={1}>
+              <Text className="flex-1 text-ink dark:text-ink-dk font-semibold" numberOfLines={1}>
                 {a.title}
               </Text>
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                 {timeAgo(a.created_at)}
               </Text>
             </View>
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {a.body}
             </Text>
           </View>
@@ -669,14 +669,14 @@ function ClassesTab({
       <ClassChangeNotices gymId={gymId} onChange={onChange} />
 
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Class messages
         </Text>
         <View className="flex-row gap-2">
           <Pressable
             onPress={() => markAllRead.mutate()}
-            className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 active:opacity-70">
-            <Text className="text-gray-700 dark:text-gray-200 text-xs">
+            className="rounded-full border border-line dark:border-line-dk px-3 py-1.5 active:opacity-70">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Mark all read
             </Text>
           </Pressable>
@@ -694,10 +694,10 @@ function ClassesTab({
       </View>
 
       {list.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {role === 'member'
               ? 'No class messages yet. You\'ll see anything your coach sends to a class you\'re booked into.'
               : 'No class messages yet. Tap Broadcast to send one.'}
@@ -712,7 +712,7 @@ function ClassesTab({
           return (
             <View
               key={b.id}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
               <View className="flex-row items-center gap-2">
                 <View
                   style={{ backgroundColor: typeColor }}
@@ -722,7 +722,7 @@ function ClassesTab({
                   </Text>
                 </View>
                 {start ? (
-                  <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
                     {start.toLocaleDateString(undefined, {
                       weekday: 'short',
                       day: 'numeric',
@@ -735,11 +735,11 @@ function ClassesTab({
                       .padStart(2, '0')}`}
                   </Text>
                 ) : null}
-                <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                   {timeAgo(b.created_at)}
                 </Text>
               </View>
-              <Text className="text-gray-900 dark:text-gray-50 text-sm">
+              <Text className="text-ink dark:text-ink-dk text-sm">
                 {b.body}
               </Text>
             </View>
@@ -939,9 +939,9 @@ function CoverTab({ gymId }: { gymId: string }) {
   return (
     <View className="gap-3">
       {rows.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : list.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           Nothing yet. You'll hear here when a coach needs cover, or when
           someone picks up one of your classes.
         </Text>
@@ -965,7 +965,7 @@ function CoverTab({ gymId }: { gymId: string }) {
               className={`rounded-xl p-4 gap-2 border ${
                 uncovered
                   ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
-                  : 'border-transparent bg-white dark:bg-gray-900 shadow-card'
+                  : 'border-transparent bg-surface dark:bg-surface-dk shadow-card'
               }`}>
               <View className="flex-row items-center gap-2">
                 <Ionicons
@@ -983,7 +983,7 @@ function CoverTab({ gymId }: { gymId: string }) {
                   className={`font-semibold flex-1 ${
                     uncovered
                       ? 'text-amber-800 dark:text-amber-200'
-                      : 'text-gray-900 dark:text-gray-50'
+                      : 'text-ink dark:text-ink-dk'
                   }`}>
                   {uncovered
                     ? 'Classes still have no coach'
@@ -991,7 +991,7 @@ function CoverTab({ gymId }: { gymId: string }) {
                       ? 'One of your classes is covered'
                       : `${who} needs cover`}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {timeAgo(n.created_at)}
                 </Text>
               </View>
@@ -1006,7 +1006,7 @@ function CoverTab({ gymId }: { gymId: string }) {
                   className={
                     uncovered
                       ? 'text-amber-700 dark:text-amber-300 text-sm'
-                      : 'text-gray-700 dark:text-gray-200 text-sm'
+                      : 'text-ink-2 dark:text-ink-2-dk text-sm'
                   }>
                   {window}
                 </Text>
@@ -1075,14 +1075,14 @@ function AlertsTab({ gymId }: { gymId: string }) {
           value={showAcked}
           onValueChange={setShowAcked}
         />
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Show acknowledged
         </Text>
       </View>
       {alerts.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : rows.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           {showAcked
             ? 'No alerts yet.'
             : 'No open alerts. Members with health flags will show up here.'}
@@ -1096,7 +1096,7 @@ function AlertsTab({ gymId }: { gymId: string }) {
             key={a.id}
             className={`rounded-xl p-4 gap-2 border ${
               a.acknowledged_at
-                ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                ? 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
                 : amber
                   ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
                   : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
@@ -1107,14 +1107,14 @@ function AlertsTab({ gymId }: { gymId: string }) {
                 size={18}
                 color={amber ? '#D97706' : '#DC2626'}
               />
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1" numberOfLines={1}>
+              <Text className="text-ink dark:text-ink-dk font-semibold flex-1" numberOfLines={1}>
                 {a.subject?.full_name ?? 'Member'} {copy.title}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {formatDate(a.created_at)}
               </Text>
             </View>
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {copy.body}
             </Text>
             <View className="flex-row gap-2">
@@ -1139,7 +1139,7 @@ function AlertsTab({ gymId }: { gymId: string }) {
                   disabled={ack.isPending}
                 />
               ) : (
-                <Text className="text-gray-500 dark:text-gray-400 text-xs self-center">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs self-center">
                   Acknowledged
                 </Text>
               )}

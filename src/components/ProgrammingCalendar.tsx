@@ -332,7 +332,7 @@ export function ProgrammingCalendar({
               hitSlop={8}
               accessibilityLabel="Previous day"
               className="w-8 h-8 items-center justify-center">
-              <Text className="text-gray-400 dark:text-gray-500 text-lg">‹</Text>
+              <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
             </Pressable>
             <Pressable
               onPress={openPicker}
@@ -340,7 +340,7 @@ export function ProgrammingCalendar({
               accessibilityRole="button"
               accessibilityLabel="Pick a date"
               className="px-1.5 py-1 items-center justify-center active:opacity-70">
-              <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-base font-semibold">
                 {fmtDayShort(date)}
               </Text>
             </Pressable>
@@ -349,7 +349,7 @@ export function ProgrammingCalendar({
               hitSlop={8}
               accessibilityLabel="Next day"
               className="w-8 h-8 items-center justify-center">
-              <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
+              <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
             </Pressable>
           </View>
           <View className="flex-1 flex-row justify-end">
@@ -380,7 +380,7 @@ export function ProgrammingCalendar({
             </Text>
             {activeBlock.note ? (
               <Text
-                className="text-gray-500 dark:text-gray-400 text-xs max-w-[45%]"
+                className="text-ink-2 dark:text-ink-2-dk text-xs max-w-[45%]"
                 numberOfLines={1}>
                 {activeBlock.note}
               </Text>
@@ -400,7 +400,7 @@ export function ProgrammingCalendar({
                 className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
                 <Text
                   className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
+                    today ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
@@ -414,7 +414,7 @@ export function ProgrammingCalendar({
                         ? 'text-white'
                         : today
                           ? 'text-primary'
-                          : 'text-gray-900 dark:text-gray-50'
+                          : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}
                   </Text>
@@ -482,8 +482,8 @@ export function ProgrammingCalendar({
               ) : null}
               {dayTypes.length === 0 ? (
                 !personalLocked && !showPersonalCard ? (
-                  <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       No classes scheduled for this day.
                     </Text>
                   </View>
@@ -569,7 +569,7 @@ function ClassTypeCard({
         style={{ backgroundColor: classType.color }}
         className="w-3 h-3 rounded-full"
       />
-      <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+      <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
         {classType.name}
       </Text>
       {mode === 'manage' ? (
@@ -583,7 +583,7 @@ function ClassTypeCard({
 
   const body =
     sections.length === 0 ? (
-      <Text className="text-gray-400 dark:text-gray-500 text-sm">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
         {mode === 'manage'
           ? 'No programming yet — tap to add.'
           : 'No programming yet.'}
@@ -593,16 +593,16 @@ function ClassTypeCard({
         {sections.map((s, idx) => (
           <View key={idx} className="gap-1">
             <View className="flex-row items-center gap-2">
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
                 {s.title}
               </Text>
-              <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
-                <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-semibold uppercase tracking-wider">
+              <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold uppercase tracking-wider">
                   {formatLabel(s.section_format)}
                 </Text>
               </View>
             </View>
-            <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk">{s.body}</Text>
             {repMaxLookup ? (
               <PercentPrescriptionRow section={s} lookup={repMaxLookup} />
             ) : null}
@@ -629,7 +629,7 @@ function ClassTypeCard({
       <>
         <Pressable
           onPress={onEdit}
-          className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+          className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
           {header}
           {body}
         </Pressable>
@@ -646,7 +646,7 @@ function ClassTypeCard({
 
   return (
     <>
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         {header}
         {body}
       </View>
@@ -687,7 +687,7 @@ function PersonalCard({
         style={{ backgroundColor: colors.primary }}
         className="w-3 h-3 rounded-full"
       />
-      <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+      <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
         {title}
       </Text>
       {mode === 'manage' ? (
@@ -701,7 +701,7 @@ function PersonalCard({
 
   const body =
     sections.length === 0 ? (
-      <Text className="text-gray-400 dark:text-gray-500 text-sm">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
         {mode === 'manage'
           ? 'No programming yet — tap to add.'
           : 'Nothing programmed for this day.'}
@@ -711,16 +711,16 @@ function PersonalCard({
         {sections.map((s, idx) => (
           <View key={idx} className="gap-1">
             <View className="flex-row items-center gap-2">
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
                 {s.title}
               </Text>
-              <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
-                <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-semibold uppercase tracking-wider">
+              <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold uppercase tracking-wider">
                   {formatLabel(s.section_format)}
                 </Text>
               </View>
             </View>
-            <Text className="text-gray-700 dark:text-gray-200">{s.body}</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk">{s.body}</Text>
             {repMaxLookup ? (
               <PercentPrescriptionRow section={s} lookup={repMaxLookup} />
             ) : null}
@@ -731,8 +731,8 @@ function PersonalCard({
 
   const filesFooter =
     files.length === 0 ? null : (
-      <View className="gap-1.5 border-t border-gray-100 dark:border-gray-800 pt-3">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">
+      <View className="gap-1.5 border-t border-line dark:border-line-dk pt-3">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold uppercase tracking-wider">
           Programme documents
         </Text>
         {files.map((f) => (
@@ -745,7 +745,7 @@ function PersonalCard({
               size={16}
               color={colors.iconSecondary}
             />
-            <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+            <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
               {f.title}
             </Text>
             <Ionicons name="open-outline" size={14} color={colors.iconTertiary} />
@@ -758,7 +758,7 @@ function PersonalCard({
     return (
       <Pressable
         onPress={onEdit}
-        className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+        className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
         {header}
         {body}
         {filesFooter}
@@ -767,7 +767,7 @@ function PersonalCard({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       {header}
       {body}
       {filesFooter}
@@ -799,18 +799,18 @@ function LockedProgrammingCard({
       : null;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: colors.primary }}
           className="w-3 h-3 rounded-full"
         />
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           Individual programming
         </Text>
         <Ionicons name="lock-closed" size={16} color={colors.iconSecondary} />
       </View>
-      <Text className="text-gray-700 dark:text-gray-200 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Your coach has written you a personal programme
         {access.product_name ? ` — ${access.product_name}` : ''}. Unlock it to
         see your training here.
@@ -839,12 +839,12 @@ function LockedProgrammingCard({
         />
       ) : null}
       {!buyLabel && !access.plan_upgrade_available ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Ask at the front desk about access.
         </Text>
       ) : null}
       {buyLabel && !access.product_active ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           This programme's product isn't available right now — ask at the
           front desk.
         </Text>

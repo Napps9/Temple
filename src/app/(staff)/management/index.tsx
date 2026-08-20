@@ -106,20 +106,20 @@ function ManagementCard({
   saidInstead?: string;
 }) {
   const body = (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 border border-gray-100 dark:border-gray-800 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 border border-line dark:border-line-dk shadow-card">
       <View className="flex-row justify-between items-center">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">{title}</Text>
+        <Text className="text-ink dark:text-ink-dk font-semibold">{title}</Text>
         {comingSoon ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Coming soon
           </Text>
         ) : (
           <Text className="text-primary">→</Text>
         )}
       </View>
-      <Text className="text-gray-500 dark:text-gray-400">{description}</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk">{description}</Text>
       {saidInstead ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           or say “{saidInstead}”
         </Text>
       ) : null}
@@ -181,7 +181,7 @@ function ManageNav({
             ? 'bg-primary shadow-card'
             : vertical
               ? 'hover:bg-slate-200/60 dark:hover:bg-gray-800'
-              : 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
+              : 'bg-surface dark:bg-surface-dk border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700'
         }`}>
         <Ionicons
           name={CATEGORY_ICONS[c]}
@@ -190,7 +190,7 @@ function ManageNav({
         />
         <Text
           className={`text-sm font-medium ${
-            selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+            selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
           }`}>
           {CATEGORY_LABELS[c]}
         </Text>
@@ -236,11 +236,11 @@ function SearchResults({
 }) {
   if (results.length === 0) {
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 border border-gray-100 dark:border-gray-800 shadow-card">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 border border-line dark:border-line-dk shadow-card">
+        <Text className="text-ink dark:text-ink-dk font-semibold">
           Nothing here matches “{query.trim()}”.
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           It may be something you can just say — try asking for it in the
           Timeline.
         </Text>
@@ -604,18 +604,18 @@ function SettingsSection({
   }, [defaultOpen]);
   const colors = useThemeColors();
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
-        <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+        <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
           <Ionicons name={icon} size={18} color={colors.iconSecondary} />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {title}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {description}
           </Text>
         </View>
@@ -626,7 +626,7 @@ function SettingsSection({
         />
       </Pressable>
       {open ? (
-        <View className="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-800">
+        <View className="px-4 pb-4 pt-1 border-t border-line dark:border-line-dk">
           {children}
         </View>
       ) : null}
@@ -653,8 +653,8 @@ function PolicyRow({
   return (
     <View className="gap-2">
       <View>
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">{label}</Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink dark:text-ink-dk font-medium">{label}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {description}
         </Text>
       </View>
@@ -670,11 +670,11 @@ function PolicyRow({
               className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                 selected
                   ? 'bg-primary border-primary'
-                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+                  : 'bg-surface dark:bg-surface-dk border-gray-200 dark:border-gray-800'
               }`}>
               <Text
                 className={`text-sm font-medium ${
-                  selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                  selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {opt === 'self_serve' ? 'Self-serve' : 'Needs approval'}
               </Text>
@@ -700,13 +700,13 @@ function MembershipPoliciesPanel() {
 
   if (policiesQuery.isLoading || !draft) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
     );
   }
 
   return (
     <View className="gap-4">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Choose which changes members make themselves and which need your
         approval. Credit packs and one-off class buys aren't affected.
       </Text>
@@ -799,9 +799,9 @@ function TeamTab() {
   return (
     <View className="gap-4">
       {staffQuery.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : sorted.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           No team members yet — invite some below.
         </Text>
       ) : (
@@ -885,7 +885,7 @@ function TeamMemberRow({
   });
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
       <View className="flex-row items-center gap-3 p-4">
         <Avatar
           name={name}
@@ -893,10 +893,10 @@ function TeamMemberRow({
           size={40}
         />
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {name}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
             {member.role}
           </Text>
         </View>
@@ -914,7 +914,7 @@ function TeamMemberRow({
         ) : null}
       </View>
       {showCoachDetails ? (
-        <View className="px-4 pb-4 gap-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+        <View className="px-4 pb-4 gap-3 border-t border-line dark:border-line-dk pt-3">
           <CoachEarningsSummary profileId={member.profile_id} />
           <CoachQualifications profileId={member.profile_id} />
         </View>
@@ -934,9 +934,9 @@ function CountPill({
 }) {
   const colors = useThemeColors();
   const body = (
-    <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-800">
+    <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-raised dark:bg-raised-dk">
       <Ionicons name={icon} size={13} color={colors.iconSecondary} />
-      <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold min-w-[10px] text-center">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold min-w-[10px] text-center">
         {value === null ? '—' : value}
       </Text>
     </View>
@@ -1047,7 +1047,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
         className="flex-row items-center justify-between active:opacity-70 py-1">
         <View className="flex-row items-center gap-2">
           <Ionicons name="ribbon-outline" size={16} color={colors.iconSecondary} />
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Class type qualifications
           </Text>
         </View>
@@ -1060,11 +1060,11 @@ function CoachQualifications({ profileId }: { profileId: string }) {
       {open ? (
         <View className="gap-1 mt-2">
           {classTypesQuery.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Loading…
             </Text>
           ) : (classTypesQuery.data ?? []).length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No class types yet.
             </Text>
           ) : (
@@ -1080,7 +1080,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
                       style={{ backgroundColor: ct.color }}
                       className="w-2 h-2 rounded-full"
                     />
-                    <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                    <Text className="text-ink dark:text-ink-dk text-sm">
                       {ct.name}
                     </Text>
                   </View>
@@ -1096,7 +1096,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
               );
             })
           )}
-          <Text className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs mt-1">
             Off means this coach can't be assigned or claim cover for this
             class type.
           </Text>
@@ -1131,12 +1131,12 @@ function CoachEarningsSummary({ profileId }: { profileId: string }) {
       <Pressable className="flex-row items-center justify-between active:opacity-70">
         <View className="flex-row items-center gap-2">
           <Ionicons name="cash-outline" size={16} color={colors.iconSecondary} />
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Earnings this month
           </Text>
         </View>
         <View className="flex-row items-center gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {earnings.isLoading
               ? '—'
               : `${formatMoney(total.cents, total.currency)} · ${total.classes} classes`}
@@ -1464,7 +1464,7 @@ function MembersTab() {
 
       {canViewAttendance ? (
         <View className="gap-3">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Attendance
           </Text>
           <View className="flex-row gap-3 flex-wrap">
@@ -1588,13 +1588,13 @@ function ActionCta({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      className={`flex-1 min-w-[150px] flex-row items-center gap-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-3 shadow-card active:opacity-70 ${
+      className={`flex-1 min-w-[150px] flex-row items-center gap-2.5 bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl px-3.5 py-3 shadow-card active:opacity-70 ${
         disabled ? 'opacity-50' : ''
       }`}>
-      <View className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+      <View className="w-8 h-8 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
         <Ionicons name={icon} size={16} color={colors.iconSecondary} />
       </View>
-      <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+      <Text className="text-ink dark:text-ink-dk font-medium text-sm">
         {label}
       </Text>
     </Pressable>

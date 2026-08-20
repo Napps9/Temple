@@ -350,7 +350,7 @@ export default function MemberDetailScreen() {
             size={56}
           />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               {profile.data?.full_name ?? 'Member'}
             </Text>
             {profile.data?.managed ? (
@@ -359,7 +359,7 @@ export default function MemberDetailScreen() {
               </Text>
             ) : null}
             {gymMembership.data ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Joined {formatDate(gymMembership.data.created_at)}
                 {isRemoved
                   ? ` · Removed ${formatDate(gymMembership.data.left_at)}`
@@ -422,7 +422,7 @@ export default function MemberDetailScreen() {
               <MemberTagChip key={t.id} label={t.label} color={t.color} source={t.source} />
             ))
           ) : (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">No tags yet.</Text>
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">No tags yet.</Text>
           )}
           <ChipButton
             tone="neutral"
@@ -456,9 +456,9 @@ export default function MemberDetailScreen() {
               return (
               <View
                 key={s.id}
-                className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-1">
+                className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-1">
                 <View className="flex-row items-center gap-2">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
                     {s.membership_plans?.name ?? 'Plan'}
                   </Text>
                   {refund ? (
@@ -476,14 +476,14 @@ export default function MemberDetailScreen() {
                     </View>
                   ) : null}
                 </View>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {s.status}
                   {s.price_cents !== null
                     ? ` · ${formatMoney(s.price_cents, currency)}/mo`
                     : ''}
                   {s.credit_balance !== null ? ` · ${s.credit_balance} credits` : ''}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {[
                     s.paid_period_end
                       ? `paid through ${formatDate(s.paid_period_end)}`
@@ -519,14 +519,14 @@ export default function MemberDetailScreen() {
               );
             })
           ) : (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">No plans.</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">No plans.</Text>
           )}
         </Section>
 
         {canProgram && !isRemoved ? (
           <Section title="Programming">
-            <View className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-2">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <View className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-2">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Write a personal programme on this member's calendar, upload
                 programme PDFs, and set whether access is free or paid.
               </Text>
@@ -550,12 +550,12 @@ export default function MemberDetailScreen() {
         gymMembership.data.role !== 'member' &&
         (membership?.role === 'owner' || membership?.role === 'admin') ? (
           <Section title="Booking">
-            <View className="bg-white dark:bg-gray-900 rounded-lg p-3 flex-row items-center gap-3">
+            <View className="bg-surface dark:bg-surface-dk rounded-lg p-3 flex-row items-center gap-3">
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   Require a membership to book
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Staff book without a membership by default. Turn this on to
                   require this staff member to hold one, like a member.
                 </Text>
@@ -580,12 +580,12 @@ export default function MemberDetailScreen() {
             comps.data.map((c) => (
               <View
                 key={c.grant_id}
-                className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-1">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   {c.reason ?? 'Comp grant'}
                   {c.revoked_at ? ' (revoked)' : ''}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {formatDate(c.starts_at)} → {formatDate(c.ends_at)}
                   {c.credits_remaining !== null
                     ? ` · ${c.credits_remaining}/${c.credits_total} credits`
@@ -594,7 +594,7 @@ export default function MemberDetailScreen() {
               </View>
             ))
           ) : (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">No grants.</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">No grants.</Text>
           )}
         </Section>
 
@@ -608,15 +608,15 @@ export default function MemberDetailScreen() {
             onboarding.data.map((r) => (
               <View
                 key={r.id}
-                className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-1">
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-1">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {r.question_text}
                 </Text>
-                <Text className="text-gray-900 dark:text-gray-50">{r.answer}</Text>
+                <Text className="text-ink dark:text-ink-dk">{r.answer}</Text>
               </View>
             ))
           ) : (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {gymMembership.data?.par_q_id
                 ? 'No non-health responses recorded.'
                 : 'Onboarding not yet completed.'}
@@ -734,14 +734,14 @@ function PaymentTroubleCard({
 
   return (
     <Section title="Payment trouble">
-      <View className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-2">
-        <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+      <View className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-2">
+        <Text className="text-ink dark:text-ink-dk text-sm font-medium">
           Failing since {formatDate(d.past_due_since)}
           {d.payment_failure_count > 1
             ? ` · ${d.payment_failure_count} attempts`
             : ''}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {d.next_payment_attempt
             ? `Stripe retries ${formatDate(d.next_payment_attempt)}`
             : 'Stripe has stopped retrying — this one is urgent'}
@@ -770,7 +770,7 @@ function PaymentTroubleCard({
           />
         </View>
         {contact.isError ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             You can message {memberName} in Temple; seeing their email or
             phone needs a different permission.
           </Text>
@@ -783,7 +783,7 @@ function PaymentTroubleCard({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="gap-2">
-      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
         {title}
       </Text>
       {children}
@@ -874,7 +874,7 @@ function InjuriesSection({
   return (
     <Section title="Injuries">
       {rows.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           No injuries logged.
         </Text>
       ) : (
@@ -886,7 +886,7 @@ function InjuriesSection({
           return (
             <View
               key={r.id}
-              className="bg-white dark:bg-gray-900 rounded-lg p-3 gap-2">
+              className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-2">
               <View className="flex-row items-center gap-2">
                 <View
                   style={{ backgroundColor: painColour(r.pain_level) }}
@@ -895,7 +895,7 @@ function InjuriesSection({
                     {r.pain_level}
                   </Text>
                 </View>
-                <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium" numberOfLines={1}>
+                <Text className="flex-1 text-ink dark:text-ink-dk font-medium" numberOfLines={1}>
                   {injuryTitle(r.body_region, r.side)}
                 </Text>
                 <View
@@ -908,11 +908,11 @@ function InjuriesSection({
                   </Text>
                 </View>
               </View>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Started {r.started_on} · last update {daysAgo(r.updated_at)}d ago
               </Text>
               {r.description ? (
-                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {r.description}
                 </Text>
               ) : null}
@@ -927,11 +927,11 @@ function InjuriesSection({
                 </Text>
               ) : null}
               {updates.length > 0 ? (
-                <View className="gap-1 border-t border-gray-100 dark:border-gray-800 pt-2">
+                <View className="gap-1 border-t border-line dark:border-line-dk pt-2">
                   {updates.slice(0, 4).map((u, i) => (
                     <Text
                       key={i}
-                      className="text-gray-500 dark:text-gray-400 text-xs">
+                      className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {formatDate(u.created_at)} · pain {u.pain_level}/10
                       {u.feeling ? ` · ${u.feeling}` : ''}
                       {u.note ? ` — ${u.note}` : ''}
@@ -1011,13 +1011,13 @@ function ParqHistorySection({
   return (
     <Section title="PAR-Q">
       {!latest.data ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Member hasn't filled in the health screening yet.
         </Text>
       ) : (
         <View className="gap-2">
           <View className="flex-row items-center justify-between">
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               v{latest.data.parq_questionnaires?.version ?? '—'} ·{' '}
               {formatDate(latest.data.completed_at)}
             </Text>
@@ -1041,16 +1041,16 @@ function ParqHistorySection({
               className={`rounded-lg p-3 gap-1 ${
                 a.answered_yes && a.parq_questions?.flag_on_yes
                   ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                  : 'bg-white dark:bg-gray-900'
+                  : 'bg-surface dark:bg-surface-dk'
               }`}>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {a.parq_questions?.prompt ?? '—'}
               </Text>
-              <Text className="text-gray-900 dark:text-gray-50">
+              <Text className="text-ink dark:text-ink-dk">
                 {a.answered_yes ? 'Yes' : 'No'}
               </Text>
               {a.explanation ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">
                   {a.explanation}
                 </Text>
               ) : null}

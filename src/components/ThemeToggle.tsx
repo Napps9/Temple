@@ -15,7 +15,7 @@ export function ThemeToggle() {
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="w-9 h-9 rounded-full items-center justify-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:opacity-70">
+      className="w-9 h-9 rounded-full items-center justify-center bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-70">
       <Ionicons
         name={dark ? 'sunny-outline' : 'moon-outline'}
         size={18}

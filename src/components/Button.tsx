@@ -46,7 +46,7 @@ const containerStyles: Record<Variant, string> = {
     'bg-secondary/10 border border-secondary/30 hover:bg-secondary/15 active:bg-secondary/20',
   ghost: 'bg-transparent hover:opacity-70',
   destructive:
-    'bg-white dark:bg-gray-900 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-50 dark:active:bg-red-900/20 shadow-card',
+    'bg-surface dark:bg-surface-dk border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-50 dark:active:bg-red-900/20 shadow-card',
 };
 
 // Primary label colour comes from the contrast check below, not a class

@@ -192,9 +192,9 @@ export function StaffBookingSheet({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4 max-h-[80%]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4 max-h-[80%]">
           <View className="flex-row items-center justify-between">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {mode === 'add' && !selectedMember
                 ? 'Add a member'
                 : mode === 'add'
@@ -220,15 +220,15 @@ export function StaffBookingSheet({
                 placeholderTextColor="#9CA3AF"
                 autoCapitalize="none"
                 autoCorrect={false}
-                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
               />
               <ScrollView className="max-h-72">
                 {candidates.isLoading ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Loading…
                   </Text>
                 ) : filteredMembers.length === 0 ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     No matching members not already booked.
                   </Text>
                 ) : (
@@ -240,10 +240,10 @@ export function StaffBookingSheet({
                         className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
                         <Avatar name={c.full_name} size={32} />
                         <View className="flex-1">
-                          <Text className="text-gray-900 dark:text-gray-50">
+                          <Text className="text-ink dark:text-ink-dk">
                             {c.full_name ?? 'Member'}
                           </Text>
-                          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                             {c.role}
                           </Text>
                         </View>
@@ -257,13 +257,13 @@ export function StaffBookingSheet({
           ) : showPicker ? (
             <>
               {entitlements.isLoading ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Loading memberships…
                 </Text>
               ) : (
                 <View className="gap-2">
                   {(entitlements.data?.length ?? 0) === 0 ? (
-                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       This member has no eligible plans or comps for this
                       class —{' '}
                       {mode === 'add'
@@ -291,22 +291,22 @@ export function StaffBookingSheet({
                         className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
                           sel
                             ? 'border-primary bg-primary/10'
-                            : 'border-gray-200 dark:border-gray-700'
+                            : 'border-line dark:border-line-dk'
                         }`}>
                         <Ionicons
                           name={sel ? 'radio-button-on' : 'radio-button-off'}
                           size={18}
                           color={sel ? colors.primary : colors.iconTertiary}
                         />
-                        <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
+                        <Text className="text-ink dark:text-ink-dk text-sm flex-1">
                           {e.label}
                         </Text>
                         {mode === 'swap' && swapCurrent ? (
-                          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                             Current
                           </Text>
                         ) : e.is_default ? (
-                          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                             Default
                           </Text>
                         ) : null}
@@ -321,17 +321,17 @@ export function StaffBookingSheet({
                     className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
                       noCharge
                         ? 'border-primary bg-primary/10'
-                        : 'border-gray-200 dark:border-gray-700'
+                        : 'border-line dark:border-line-dk'
                     }`}>
                     <Ionicons
                       name={noCharge ? 'radio-button-on' : 'radio-button-off'}
                       size={18}
                       color={noCharge ? colors.primary : colors.iconTertiary}
                     />
-                    <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
+                    <Text className="text-ink dark:text-ink-dk text-sm flex-1">
                       No charge
                     </Text>
-                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                       Free
                     </Text>
                   </Pressable>

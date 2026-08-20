@@ -208,7 +208,7 @@ export default function GetStartedScreen() {
             <Text className="text-gray-900 dark:text-white text-3xl font-semibold text-center">
               Welcome to Temple
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-center">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-center">
               Pick how you’ll use it — swipe through, you can always switch
               later.
             </Text>

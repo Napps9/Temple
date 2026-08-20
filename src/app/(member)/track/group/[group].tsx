@@ -112,7 +112,7 @@ export default function GroupPage() {
   if (!group) {
     return (
       <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 mt-8">
+        <Text className="text-ink-2 dark:text-ink-2-dk mt-8">
           Unknown movement group.
         </Text>
       </Screen>
@@ -175,10 +175,10 @@ export default function GroupPage() {
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/track" />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               {group.name}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {group.blurb}
             </Text>
           </View>
@@ -199,12 +199,12 @@ export default function GroupPage() {
                 onPress={() =>
                   router.push(`/track/movement/${m.key}` as never)
                 }
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
                 <View className="flex-1">
-                  <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  <Text className="text-ink dark:text-ink-dk font-semibold">
                     {m.name}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {headlineScheme.label}
                   </Text>
                 </View>
@@ -212,13 +212,13 @@ export default function GroupPage() {
                   <Text
                     className={
                       display
-                        ? 'text-gray-900 dark:text-gray-50 font-semibold'
-                        : 'text-gray-400 dark:text-gray-500 text-sm'
+                        ? 'text-ink dark:text-ink-dk font-semibold'
+                        : 'text-ink-3 dark:text-ink-3-dk text-sm'
                     }>
                     {display ?? '—'}
                   </Text>
                   {merged.length > 0 ? (
-                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                       {merged.length} logged
                     </Text>
                   ) : null}

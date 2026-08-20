@@ -669,7 +669,7 @@ export function ClassTypesPanel() {
             return (
               <View
                 key={r.id ?? `new-${idx}`}
-                className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-3 shadow-card">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-3 shadow-card">
                 <View className="flex-row items-center gap-3">
                   <Pressable
                     onPress={() =>
@@ -703,7 +703,7 @@ export function ClassTypesPanel() {
                   ) : null}
                 </View>
                 {openPickerIdx === idx ? (
-                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
                     <ColorSwatchPicker
                       value={r.color}
                       onChange={(c) => editRow(idx, { color: c })}
@@ -720,8 +720,8 @@ export function ClassTypesPanel() {
                   <Text
                     className={`flex-1 text-sm ${
                       hasSchedule
-                        ? 'text-gray-700 dark:text-gray-200'
-                        : 'text-gray-400 dark:text-gray-500'
+                        ? 'text-ink-2 dark:text-ink-2-dk'
+                        : 'text-ink-3 dark:text-ink-3-dk'
                     }`}
                     numberOfLines={4}>
                     {hasSchedule
@@ -744,17 +744,17 @@ export function ClassTypesPanel() {
                 </Pressable>
 
                 {r.scheduleOpen ? (
-                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-4">
+                  <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-4">
                     {r.schedules.map((sched, sIdx) => (
                       <View
                         key={sIdx}
                         className={
                           sIdx > 0
-                            ? 'gap-3 pt-4 border-t border-gray-200 dark:border-gray-700'
+                            ? 'gap-3 pt-4 border-t border-line dark:border-line-dk'
                             : 'gap-3'
                         }>
                         {r.schedules.length > 1 ? (
-                          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                             Schedule {sIdx + 1}
                           </Text>
                         ) : null}
@@ -774,9 +774,9 @@ export function ClassTypesPanel() {
                     ))}
                     <Pressable
                       onPress={() => addSchedule(idx)}
-                      className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                      className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
                       <Ionicons name="add" size={14} color={colors.iconSecondary} />
-                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         Add another schedule
                       </Text>
                     </Pressable>
@@ -791,8 +791,8 @@ export function ClassTypesPanel() {
                       r.bookingWindowHoursAhead ||
                       r.bookingCutoffMinutesBefore ||
                       r.cancelCutoffMinutesBefore
-                        ? 'text-gray-700 dark:text-gray-200'
-                        : 'text-gray-400 dark:text-gray-500'
+                        ? 'text-ink-2 dark:text-ink-2-dk'
+                        : 'text-ink-3 dark:text-ink-3-dk'
                     }`}
                     numberOfLines={2}>
                     {r.bookingWindowHoursAhead ||
@@ -808,8 +808,8 @@ export function ClassTypesPanel() {
                 </Pressable>
 
                 {r.rulesOpen ? (
-                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-3">
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-3">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       Leave blank to use the gym-wide setting (Manage →
                       Gym settings). Set a value here to override for this
                       class type only.
@@ -835,10 +835,10 @@ export function ClassTypesPanel() {
                       placeholder="inherit"
                     />
                     <View className="gap-2">
-                      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                         Free-cancel cutoff
                       </Text>
-                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                         Inherit the gym setting, or override with either a
                         time before class or "by 9pm the night before"-style
                         absolute cutoff per class type.
@@ -861,13 +861,13 @@ export function ClassTypesPanel() {
                               className={`flex-1 px-3 py-2 rounded-lg border ${
                                 on
                                   ? 'border-primary bg-primary/10'
-                                  : 'border-gray-200 dark:border-gray-700'
+                                  : 'border-line dark:border-line-dk'
                               }`}>
                               <Text
                                 className={`text-xs text-center ${
                                   on
                                     ? 'text-primary font-medium'
-                                    : 'text-gray-500 dark:text-gray-400'
+                                    : 'text-ink-2 dark:text-ink-2-dk'
                                 }`}>
                                 {label}
                               </Text>
@@ -891,7 +891,7 @@ export function ClassTypesPanel() {
                         <View className="gap-2">
                           <View className="flex-row gap-2">
                             <View className="flex-1 gap-1.5">
-                              <Text className="text-gray-700 dark:text-gray-200 text-xs">
+                              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                                 Cancel by (24h)
                               </Text>
                               <TextInput
@@ -903,11 +903,11 @@ export function ClassTypesPanel() {
                                 placeholderTextColor="#9CA3AF"
                                 autoCapitalize="none"
                                 autoCorrect={false}
-                                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+                                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
                               />
                             </View>
                             <View className="w-28 gap-1.5">
-                              <Text className="text-gray-700 dark:text-gray-200 text-xs">
+                              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                                 Days before
                               </Text>
                               <TextInput
@@ -918,11 +918,11 @@ export function ClassTypesPanel() {
                                 placeholder="1"
                                 placeholderTextColor="#9CA3AF"
                                 keyboardType="number-pad"
-                                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+                                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
                               />
                             </View>
                           </View>
-                          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                             e.g. 21:00 · 1 day before = “cancel by 9pm the night before”. Time uses the gym timezone.
                           </Text>
                         </View>
@@ -986,7 +986,7 @@ export function ClassTypesPanel() {
                 size={16}
                 color={colors.iconSecondary}
               />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Archived ({archivedRows.length})
               </Text>
             </Pressable>
@@ -996,13 +996,13 @@ export function ClassTypesPanel() {
                   return (
                     <View
                       key={r.id!}
-                      className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-2">
+                      className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
                       <View className="flex-row items-center gap-3">
                         <View
                           style={{ backgroundColor: r.color }}
                           className="w-8 h-8 rounded-full opacity-50"
                         />
-                        <Text className="flex-1 text-gray-700 dark:text-gray-200" numberOfLines={1}>
+                        <Text className="flex-1 text-ink-2 dark:text-ink-2-dk" numberOfLines={1}>
                           {r.name}
                         </Text>
                       </View>

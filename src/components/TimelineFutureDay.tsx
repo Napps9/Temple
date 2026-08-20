@@ -224,7 +224,7 @@ export function TimelineFutureDay({
         </View>
       ) : lines.length === 0 ? (
         <View className="py-16 px-6 items-center">
-          <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
             {QUIET_FUTURE_DAY}
           </Text>
         </View>

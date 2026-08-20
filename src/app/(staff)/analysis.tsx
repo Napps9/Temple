@@ -299,17 +299,17 @@ export default function AnalysisScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-4xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/(staff)/programming" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Programming analysis
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Is the month balanced? Start with the verdicts, then drill
             into the cards.
           </Text>
         </View>
 
         {canSeeLogsResolved === false ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             You don't have permission to view workout logs, so the
             programming balance is hidden.
           </Text>
@@ -369,12 +369,12 @@ export default function AnalysisScreen() {
             </View>
 
             {pb.isLoading ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Loading programming…
               </Text>
             ) : !pb.hasData ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No programmed sections in this window. Programme a few
                   classes and the matrices will populate.
                 </Text>
@@ -434,7 +434,7 @@ export default function AnalysisScreen() {
                 onPress={() =>
                   router.push(`/management/members/${r.profile_id}` as never)
                 }
-                className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
                 <View
                   style={{ backgroundColor: painColour(r.pain_level) }}
                   className="w-7 h-7 rounded-full items-center justify-center">
@@ -443,11 +443,11 @@ export default function AnalysisScreen() {
                   </Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
                     {r.profiles?.full_name ?? 'Member'} —{' '}
                     {injuryTitle(r.body_region, r.side).toLowerCase()}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {STATUS_META[r.status].label} · updated{' '}
                     {daysAgo(r.updated_at) === 0
                       ? 'today'
@@ -470,21 +470,21 @@ export default function AnalysisScreen() {
           </View>
 
           <View className="gap-3 md:flex-1">
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Movement trends — first vs latest logged result per member
               over the last 12 weeks, from the movement tracker.
             </Text>
             {canSeeLogsResolved === false ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 You don't have permission to view workout logs.
               </Text>
             ) : !canSeeLogs || results.isLoading || tags.isLoading ? (
-              <Text className="text-gray-500 dark:text-gray-400">
+              <Text className="text-ink-2 dark:text-ink-2-dk">
                 Loading…
               </Text>
             ) : trends.length === 0 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Not enough logged results yet — trends need at least two
                   results per member on a movement.
                 </Text>
@@ -505,8 +505,8 @@ export default function AnalysisScreen() {
           <View className="gap-3">
             <Pressable
               onPress={() => setShowUntagged((v) => !v)}
-              className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex-row items-center gap-3 shadow-card active:opacity-70">
-              <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+              className="bg-surface dark:bg-surface-dk rounded-xl px-4 py-3 flex-row items-center gap-3 shadow-card active:opacity-70">
+              <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
                 {pb.untagged.length === 1
                   ? "1 section couldn't be classified"
                   : `${pb.untagged.length} sections couldn't be classified`}{' '}
@@ -765,7 +765,7 @@ function useProgrammingBalance(
 function GroupLabel({ label }: { label: string }) {
   return (
     <View className="flex-row items-center gap-2.5 mt-1">
-      <Text className="text-gray-500 dark:text-gray-400 text-[11px] font-bold uppercase tracking-widest">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[11px] font-bold uppercase tracking-widest">
         {label}
       </Text>
       <View className="flex-1 h-px bg-slate-200 dark:bg-gray-800" />
@@ -778,9 +778,9 @@ const VERDICT_DRIFT = '#F59E0B';
 
 function VerdictTile({ label, verdict }: { label: string; verdict: Verdict }) {
   return (
-    <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl px-3 py-2.5 shadow-card">
+    <View className="flex-1 bg-surface dark:bg-surface-dk rounded-xl px-3 py-2.5 shadow-card">
       <Text
-        className="text-gray-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-wider"
+        className="text-ink-3 dark:text-ink-3-dk text-[9px] font-bold uppercase tracking-wider"
         numberOfLines={1}>
         {label}
       </Text>
@@ -791,7 +791,7 @@ function VerdictTile({ label, verdict }: { label: string; verdict: Verdict }) {
         {verdict.value}
       </Text>
       <Text
-        className="text-gray-500 dark:text-gray-400 text-[9px] leading-3"
+        className="text-ink-2 dark:text-ink-2-dk text-[9px] leading-3"
         numberOfLines={2}>
         {verdict.caption}
       </Text>
@@ -819,7 +819,7 @@ function ClassTypeChip({
       className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
         active
           ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <View
         style={{ backgroundColor: color, opacity: archived ? 0.5 : 1 }}
@@ -827,12 +827,12 @@ function ClassTypeChip({
       />
       <Text
         className={`text-xs font-semibold ${
-          active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+          active ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
         } ${archived ? 'line-through opacity-70' : ''}`}>
         {label}
       </Text>
       {archived ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-[9px] uppercase tracking-wider">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[9px] uppercase tracking-wider">
           arch
         </Text>
       ) : null}
@@ -891,7 +891,7 @@ function PatternEnergyMatrix({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Pattern × energy"
         what="Rows are movement patterns, columns are the three energy systems — phosphagen (short, heavy, near-maximal), glycolytic (hard 1–10 min efforts), oxidative (longer aerobic work). Each cell counts the sections that train that pattern through that system. The badges show your push-to-pull and front-to-back (anterior vs posterior) balance."
@@ -932,7 +932,7 @@ function PatternEnergyMatrix({
         </View>
 
         {rows.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm pt-3">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm pt-3">
             No movements classified yet.
           </Text>
         ) : (
@@ -940,7 +940,7 @@ function PatternEnergyMatrix({
             <View key={r.pattern} className="flex-row items-center gap-1 mt-1">
               <Text
                 style={{ width: labelColumnWidth }}
-                className="text-gray-700 dark:text-gray-200 text-xs"
+                className="text-ink-2 dark:text-ink-2-dk text-xs"
                 numberOfLines={1}>
                 {patternLabels[r.pattern]}
               </Text>
@@ -956,7 +956,7 @@ function PatternEnergyMatrix({
                   <Text
                     className={`text-sm font-semibold ${
                       r.cells[e] > 0
-                        ? 'text-gray-900 dark:text-gray-50'
+                        ? 'text-ink dark:text-ink-dk'
                         : 'text-gray-300 dark:text-gray-700'
                     }`}>
                     {r.cells[e]}
@@ -981,11 +981,11 @@ function RatioBadge({
   right: number;
 }) {
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-full px-3 py-1">
-      <Text className="text-gray-400 dark:text-gray-500 text-[9px] uppercase tracking-widest">
+    <View className="bg-raised dark:bg-raised-dk rounded-full px-3 py-1">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[9px] uppercase tracking-widest">
         {label}
       </Text>
-      <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+      <Text className="text-ink dark:text-ink-dk text-sm font-semibold">
         {left} : {right}
       </Text>
     </View>
@@ -998,7 +998,7 @@ function EnergyMixCard({
   mix: ReturnType<typeof computeEnergyMix>;
 }) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Energy system mix"
         what="The share of your programmed sections that fall under each energy system across the window."
@@ -1012,14 +1012,14 @@ function EnergyMixCard({
               className="text-xs font-semibold uppercase tracking-wider">
               {ENERGY_LABELS[m.system]}
             </Text>
-            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
               {m.count} {m.count === 1 ? 'section' : 'sections'}
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
               {m.pct}%
             </Text>
           </View>
-          <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <View className="h-2 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
             <View
               style={{
                 width: `${m.pct}%`,
@@ -1042,7 +1042,7 @@ function TimeDomainCard({
   const total = mix.reduce((n, m) => n + m.count, 0);
   if (total === 0) return null;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Time domains"
         subtitle="How long your conditioning pieces run, read by AI from what you wrote."
@@ -1052,17 +1052,17 @@ function TimeDomainCard({
       {mix.map((m) => (
         <View key={m.key} className="gap-1">
           <View className="flex-row items-baseline gap-2">
-            <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
               {m.label}
             </Text>
-            <Text className="flex-1 text-gray-400 dark:text-gray-500 text-[10px]">
+            <Text className="flex-1 text-ink-3 dark:text-ink-3-dk text-[10px]">
               {m.pct}%
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
               {m.count}
             </Text>
           </View>
-          <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <View className="h-1.5 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
             <View
               style={{ width: `${m.pct}%` }}
               className="h-full rounded-full bg-primary"
@@ -1082,7 +1082,7 @@ function LoadBalanceCard({
   const total = mix.reduce((n, m) => n + m.count, 0);
   if (total === 0) return null;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Load balance"
         subtitle="The heavy / light split, read by AI from what you wrote."
@@ -1097,14 +1097,14 @@ function LoadBalanceCard({
               className="text-xs font-semibold uppercase tracking-wider">
               {LOAD_LABELS[m.level]}
             </Text>
-            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
               {m.count} {m.count === 1 ? 'section' : 'sections'}
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
               {m.pct}%
             </Text>
           </View>
-          <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <View className="h-2 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
             <View
               style={{
                 width: `${m.pct}%`,
@@ -1128,7 +1128,7 @@ function PatternMixCard({
   const max = nonzero[0]?.count ?? 0;
   if (nonzero.length === 0) return null;
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title="Movement pattern volume"
         what="How many sections touched each movement pattern, ranked highest to lowest."
@@ -1137,17 +1137,17 @@ function PatternMixCard({
       {nonzero.map((m) => (
         <View key={m.pattern} className="gap-1">
           <View className="flex-row items-baseline gap-2">
-            <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
               {PATTERN_LABELS[m.pattern]}
             </Text>
-            <Text className="flex-1 text-gray-400 dark:text-gray-500 text-[10px]">
+            <Text className="flex-1 text-ink-3 dark:text-ink-3-dk text-[10px]">
               {m.pct}%
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
               {m.count}
             </Text>
           </View>
-          <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <View className="h-1.5 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
             <View
               style={{ width: `${(m.count / max) * 100}%` }}
               className="h-full rounded-full bg-primary"
@@ -1202,8 +1202,8 @@ function RegionInjuriesCard({
 
   if (!showVolume && !canSeeHealth) {
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           You don't have permission to view health data.
         </Text>
       </View>
@@ -1211,7 +1211,7 @@ function RegionInjuriesCard({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 md:p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 md:p-4 gap-3 shadow-card">
       <CardHeading
         title={
           both
@@ -1244,13 +1244,13 @@ function RegionInjuriesCard({
       {showVolume ? (
         <View className="gap-2">
           {both ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider text-center">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-semibold uppercase tracking-wider text-center">
               Programmed volume
             </Text>
           ) : null}
           <BodyMap highlights={volTint} figureWidth={figureWidth} />
           {volEntries.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs text-center">
               No region-tagged movements yet.
             </Text>
           ) : (
@@ -1275,13 +1275,13 @@ function RegionInjuriesCard({
       {canSeeHealth ? (
         <View className="gap-2">
           {both ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider text-center">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-semibold uppercase tracking-wider text-center">
               Open injuries
             </Text>
           ) : null}
           <BodyMap highlights={injuryTints} figureWidth={figureWidth} />
           {openCount === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
               No open injuries. Happy days.
             </Text>
           ) : (
@@ -1302,7 +1302,7 @@ function RegionInjuriesCard({
           )}
         </View>
       ) : (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           You don't have permission to view health data.
         </Text>
       )}
@@ -1318,7 +1318,7 @@ function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 6);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <CardHeading
         title="Untagged sections"
         subtitle="No movement we recognise in these sections' bodies, even after an AI read. Add specific movement names so they get counted."
@@ -1328,22 +1328,22 @@ function UntaggedCard({ sections }: { sections: ClassifiedSection[] }) {
       {shown.map((s, i) => (
         <View
           key={i}
-          className="flex-row items-baseline gap-2 border-t border-gray-100 dark:border-gray-800 pt-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest w-20">
+          className="flex-row items-baseline gap-2 border-t border-line dark:border-line-dk pt-2">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest w-20">
             {s.date.slice(5)}
           </Text>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+            <Text className="text-ink dark:text-ink-dk text-sm font-medium">
               {s.title || categoryLabel(s.section_category)}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-wider">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider">
               {categoryLabel(s.section_category)}
             </Text>
           </View>
         </View>
       ))}
       {sections.length > shown.length ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs pt-1">
           +{sections.length - shown.length} more.
         </Text>
       ) : null}
@@ -1368,14 +1368,14 @@ function TrendCard({
   const colors = useThemeColors();
   const scheme = findScheme(trend.movement_key, trend.track_key);
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
       <Pressable
         onPress={() => setOpenCard((v) => !v)}
         className="p-3 md:p-4 gap-1 active:opacity-70">
         <View className="flex-row items-center gap-2">
-          <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
             {movementName(trend.movement_key)}
-            <Text className="text-gray-400 dark:text-gray-500 font-normal">
+            <Text className="text-ink-3 dark:text-ink-3-dk font-normal">
               {'  '}
               {scheme?.label ?? trend.track_key}
             </Text>
@@ -1390,22 +1390,22 @@ function TrendCard({
           <TrendStat icon="trending-up" colour="#10B981" n={trend.improving} />
           <TrendStat icon="trending-down" colour="#EF4444" n={trend.declining} />
           <TrendStat icon="remove" colour="#9CA3AF" n={trend.flat} />
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             {trend.members.length}{' '}
             {trend.members.length === 1 ? 'member' : 'members'}
           </Text>
         </View>
       </Pressable>
       {openCard ? (
-        <View className="px-3 md:px-4 pb-3 gap-1.5 border-t border-gray-100 dark:border-gray-800 pt-2">
+        <View className="px-3 md:px-4 pb-3 gap-1.5 border-t border-line dark:border-line-dk pt-2">
           {trend.members.map((m) => (
             <View key={m.profile_id} className="flex-row items-center gap-2">
               <Text
-                className="flex-1 text-gray-700 dark:text-gray-200 text-sm"
+                className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm"
                 numberOfLines={1}>
                 {nameOf(m.profile_id)}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {fmtValue(trend.movement_key, trend.track_key, m.first)} →{' '}
                 {fmtValue(trend.movement_key, trend.track_key, m.last)}
               </Text>
@@ -1423,7 +1423,7 @@ function TrendCard({
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : m.trend === 'declining'
                         ? 'text-red-600 dark:text-red-400'
-                        : 'text-gray-500 dark:text-gray-400'
+                        : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {m.deltaPct === null
                     ? '—'

@@ -11,14 +11,14 @@ import { useThemeColors } from '@/lib/theme';
 export function BillingNotLiveTile({ title }: { title: string }) {
   const colors = useThemeColors();
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 opacity-70 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 opacity-70 shadow-card">
       <View className="flex-row justify-between items-center">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           {title}
         </Text>
         <Ionicons name="card-outline" size={16} color={colors.iconTertiary} />
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Billing not yet live — connect Stripe to populate.
       </Text>
     </View>

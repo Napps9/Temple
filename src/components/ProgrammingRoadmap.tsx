@@ -88,9 +88,9 @@ export function ProgrammingRoadmap({
             hitSlop={8}
             accessibilityLabel="Previous year"
             className="w-8 h-8 items-center justify-center">
-            <Text className="text-gray-400 dark:text-gray-500 text-lg">‹</Text>
+            <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
           </Pressable>
-          <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold px-1.5">
+          <Text className="text-ink dark:text-ink-dk text-base font-semibold px-1.5">
             {year}
           </Text>
           <Pressable
@@ -98,13 +98,13 @@ export function ProgrammingRoadmap({
             hitSlop={8}
             accessibilityLabel="Next year"
             className="w-8 h-8 items-center justify-center">
-            <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
+            <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
           </Pressable>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <View className="gap-1.5">
-            <View className="h-8 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <View className="h-8 rounded-lg bg-raised dark:bg-raised-dk overflow-hidden">
               {lanes.map((l) => (
                 <View
                   key={l.block.id}
@@ -129,7 +129,7 @@ export function ProgrammingRoadmap({
               {MONTH_LETTERS.map((m, i) => (
                 <Text
                   key={i}
-                  className="flex-1 text-center text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                  className="flex-1 text-center text-[10px] font-semibold text-ink-3 dark:text-ink-3-dk">
                   {m}
                 </Text>
               ))}
@@ -137,7 +137,7 @@ export function ProgrammingRoadmap({
           </View>
 
           {lanes.length === 0 ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-sm">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
               {canEdit
                 ? 'No blocks yet — lay out the year and every coach sees it.'
                 : 'No blocks yet.'}
@@ -151,10 +151,10 @@ export function ProgrammingRoadmap({
                     style={{ backgroundColor: l.block.color }}
                   />
                   <View className="flex-1 gap-0.5">
-                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                    <Text className="text-ink dark:text-ink-dk font-semibold">
                       {l.block.name}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       {blockRangeText(l.block)}
                       {l.block.note ? ` · “${l.block.note}”` : ''}
                     </Text>
@@ -274,8 +274,8 @@ function BlockModal({
         accessibilityLabel="Close"
       />
       <View className="absolute inset-x-0 bottom-0 md:inset-0 md:items-center md:justify-center pointer-events-box-none">
-        <View className="bg-white dark:bg-gray-900 rounded-t-3xl md:rounded-2xl p-5 gap-4 md:w-[440px] shadow-pop">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-bold">
+        <View className="bg-surface dark:bg-surface-dk rounded-t-3xl md:rounded-2xl p-5 gap-4 md:w-[440px] shadow-pop">
+          <Text className="text-ink dark:text-ink-dk text-lg font-bold">
             {draft.id ? 'Edit block' : 'Add a block'}
           </Text>
           <Input
@@ -308,7 +308,7 @@ function BlockModal({
             placeholder="Build to a heavy 5RM by half term"
           />
           <View className="gap-1.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Colour
             </Text>
             <View className="flex-row gap-2">

@@ -58,7 +58,7 @@ export function CopyableValue({ label, value }: { label: string; value: string }
   }
   return (
     <View className="gap-1">
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] uppercase tracking-wide">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] uppercase tracking-wide">
         {label}
       </Text>
       <View className="flex-row items-center gap-2">
@@ -85,14 +85,14 @@ export function CopyableValue({ label, value }: { label: string; value: string }
 export function RecordCard({ record }: { record: DnsRecordDisplay }) {
   const heading = record.record || record.type || 'DNS record';
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
       <View className="flex-row items-center gap-2">
-        <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+        <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
           {heading}
         </Text>
         {record.type ? (
-          <View className="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700">
-            <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-medium">
+          <View className="px-1.5 py-0.5 rounded bg-sunken dark:bg-sunken-dk">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-medium">
               {record.type}
             </Text>
           </View>
@@ -104,7 +104,7 @@ export function RecordCard({ record }: { record: DnsRecordDisplay }) {
       {record.name ? <CopyableValue label="Host / name" value={record.name} /> : null}
       {record.value ? <CopyableValue label="Value" value={record.value} /> : null}
       {record.note ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-[11px] leading-4">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] leading-4">
           {record.note}
         </Text>
       ) : null}

@@ -38,20 +38,20 @@ function InfoButton({
 
 function InfoPanel({ what, why }: { what: string; why: string }) {
   return (
-    <View className="bg-gray-50 dark:bg-gray-800/60 rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk/60 rounded-lg p-3 gap-2">
       <View className="gap-0.5">
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-semibold uppercase tracking-wider">
           What this shows
         </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-xs leading-5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs leading-5">
           {what}
         </Text>
       </View>
       <View className="gap-0.5">
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-semibold uppercase tracking-wider">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-semibold uppercase tracking-wider">
           Why it matters
         </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-xs leading-5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs leading-5">
           {why}
         </Text>
       </View>
@@ -83,13 +83,13 @@ export function CardHeading({
           <Text
             className={
               size === 'section'
-                ? 'text-gray-900 dark:text-gray-50 text-lg font-semibold'
-                : 'text-gray-900 dark:text-gray-50 font-semibold'
+                ? 'text-ink dark:text-ink-dk text-lg font-semibold'
+                : 'text-ink dark:text-ink-dk font-semibold'
             }>
             {title}
           </Text>
           {subtitle ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5">
               {subtitle}
             </Text>
           ) : null}

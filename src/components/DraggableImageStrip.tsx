@@ -88,7 +88,7 @@ export function DraggableImageStrip({
           accessibilityRole="button"
           accessibilityLabel={uploading ? 'Uploading photo' : 'Add photos'}
           style={{ width: SIZE, height: SIZE }}
-          className="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 items-center justify-center active:opacity-70">
+          className="rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk items-center justify-center active:opacity-70">
           <Ionicons
             name={uploading ? 'cloud-upload-outline' : 'add'}
             size={22}

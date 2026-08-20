@@ -117,10 +117,10 @@ export default function WelcomeScreen() {
               <Ionicons name={icon} size={28} color={BLUE} />
             </View>
             <View className="gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold text-center">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold text-center">
                 {heading}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-center leading-5">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-center leading-5">
                 {subcopy}
               </Text>
             </View>
@@ -142,7 +142,7 @@ export default function WelcomeScreen() {
                     onPress={() => router.push('/create-gym' as never)}
                     hitSlop={6}
                     className="items-center py-1">
-                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       Edit the gym name or slug first
                     </Text>
                   </Pressable>
@@ -170,14 +170,14 @@ export default function WelcomeScreen() {
           </View>
 
           <View className="items-center gap-1 pt-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
               Signed in as {session?.user.email ?? 'your account'}
             </Text>
             <Pressable
               onPress={() => signOut.mutate()}
               hitSlop={8}
               className="py-1">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Sign out
               </Text>
             </Pressable>

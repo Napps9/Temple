@@ -31,13 +31,13 @@ export function Input({
 
   const labelCls = forceDark
     ? 'text-gray-200'
-    : 'text-gray-700 dark:text-gray-200';
+    : 'text-ink-2 dark:text-ink-2-dk';
   const boxCls = forceDark
     ? 'bg-gray-900 border-gray-700'
-    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700';
+    : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk';
   const inputCls = forceDark
     ? 'text-gray-50'
-    : 'text-gray-900 dark:text-gray-50';
+    : 'text-ink dark:text-ink-dk';
   const errorCls = forceDark ? 'text-red-400' : 'text-red-500 dark:text-red-400';
 
   return (

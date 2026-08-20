@@ -92,7 +92,7 @@ export function TagRulesPanel() {
 
   return (
     <View className="gap-4">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Rules auto-tag members from their classes, bookings and membership.
         They recompute nightly; recompute now to apply an edit immediately.
       </Text>
@@ -101,13 +101,13 @@ export function TagRulesPanel() {
         Recompute now
       </Button>
       {recomputeMsg ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">{recomputeMsg}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{recomputeMsg}</Text>
       ) : null}
 
       {rulesQuery.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : (rulesQuery.data ?? []).length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           No rules yet. Add one below.
         </Text>
       ) : (
@@ -119,16 +119,16 @@ export function TagRulesPanel() {
                 setEditing(r);
                 setCreating(false);
               }}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 border border-gray-100 dark:border-gray-800 shadow-card">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 border border-line dark:border-line-dk shadow-card">
               <View
                 style={{ backgroundColor: r.color }}
                 className="w-3 h-3 rounded-full"
               />
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   {r.label}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {describeTagRule(r, {
                     classTypeName: r.class_type_id
                       ? classTypeNames.get(r.class_type_id)

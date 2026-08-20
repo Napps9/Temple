@@ -95,9 +95,9 @@ export function DateRangeCta({
     <View>
       <Pressable
         onPress={openModal}
-        className="flex-row items-center justify-between bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full px-4 py-2.5 active:bg-gray-50 dark:active:bg-gray-800">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">{label}</Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Change</Text>
+        className="flex-row items-center justify-between bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-2.5 active:bg-gray-50 dark:active:bg-gray-800">
+        <Text className="text-ink dark:text-ink-dk font-medium">{label}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Change</Text>
       </Pressable>
 
       <Modal
@@ -110,8 +110,8 @@ export function DateRangeCta({
           className="flex-1 bg-black/40 items-center justify-center px-6">
           <Pressable
             onPress={() => {}}
-            className="w-full max-w-md md:max-w-lg bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 gap-3">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+            className="w-full max-w-md md:max-w-lg bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+            <Text className="text-ink dark:text-ink-dk font-semibold text-base">
               Select period
             </Text>
 
@@ -135,7 +135,7 @@ export function DateRangeCta({
             </View>
 
             {showCustom ? (
-              <View className="gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <View className="gap-3 pt-2 border-t border-line dark:border-line-dk">
                 <View className="flex-row gap-3">
                   <View className="flex-1">
                     <DatePicker
@@ -192,7 +192,7 @@ function PresetOption({
         className={
           active
             ? 'text-primary font-medium'
-            : 'text-gray-900 dark:text-gray-50'
+            : 'text-ink dark:text-ink-dk'
         }>
         {label}
       </Text>

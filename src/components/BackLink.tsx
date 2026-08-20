@@ -83,7 +83,7 @@ export function BackLink({
       accessibilityLabel={a11yLabel}
       className="flex-row items-center gap-1 self-start py-1 active:opacity-70">
       <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
-      <Text className="text-gray-500 dark:text-gray-400">{label}</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk">{label}</Text>
     </Pressable>
   );
 }

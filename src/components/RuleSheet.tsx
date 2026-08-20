@@ -36,10 +36,10 @@ export function RuleSheet({
 
   return (
     <View className="gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 text-base font-bold">Your rules</Text>
+      <Text className="text-ink dark:text-ink-dk text-base font-bold">Your rules</Text>
       {groups.map((g) => (
         <View key={g.group} className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wide">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wide">
             {g.group}
           </Text>
           {g.lines.map((l, li) => {
@@ -80,7 +80,7 @@ export function RuleSheet({
                           className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
                             selected
                               ? 'bg-primary border-primary'
-                              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                              : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
                           }`}>
                           <Text
                             className={`text-[13px] font-semibold ${
@@ -115,7 +115,7 @@ export function RuleSheet({
             size={14}
             color="#9CA3AF"
           />
-          <Text className="text-gray-500 dark:text-gray-400 text-[13px] font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] font-medium">
             {showFine ? 'Hide the small print' : `The small print — ${fineCount} sensible defaults`}
           </Text>
         </Pressable>

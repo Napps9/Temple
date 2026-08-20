@@ -130,10 +130,10 @@ export default function SignInScreen() {
           <View className="items-center gap-3">
             <TempleLockup size={28} />
             <View className="items-center gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 Welcome back
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400">
+              <Text className="text-ink-2 dark:text-ink-2-dk">
                 Sign in to continue
               </Text>
             </View>
@@ -190,7 +190,7 @@ export default function SignInScreen() {
                     : 'Didn’t get the confirmation email? Resend it'}
                 </Text>
               </Pressable>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Joined through an email link? You may not have a password yet —
                 use “Forgot password?” above to set one.
               </Text>

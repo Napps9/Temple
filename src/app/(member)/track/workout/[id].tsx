@@ -76,23 +76,23 @@ export default function WorkoutDetail() {
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/track/journal" />
           <View className="flex-1">
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
               Session
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               {workout.data?.title?.trim() || 'Workout'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {workout.data ? fmtDateLong(workout.data.performed_at) : ''}
             </Text>
           </View>
         </View>
 
         {workout.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
         ) : !workout.data ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Workout not found.
             </Text>
           </View>
@@ -102,8 +102,8 @@ export default function WorkoutDetail() {
               <WorkoutSectionCard key={s.id} section={s} />
             ))}
             {workout.data.legacy_results.length > 0 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Results
                 </Text>
                 {workout.data.legacy_results.map((r) => (
@@ -112,19 +112,19 @@ export default function WorkoutDetail() {
               </View>
             ) : null}
             {workout.data.notes ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
-                <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                   Notes
                 </Text>
-                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {workout.data.notes}
                 </Text>
               </View>
             ) : null}
             {workout.data.sections.length === 0 &&
             workout.data.legacy_results.length === 0 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No results recorded.
                 </Text>
               </View>
@@ -150,15 +150,15 @@ function ResultRow({ row }: { row: TrackedResultRow }) {
       }
       className="flex-row items-center gap-3 active:opacity-70">
       <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+        <Text className="text-ink dark:text-ink-dk text-sm font-medium">
           {movementName}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {schemeLabel}
           {row.notes ? ` · ${row.notes}` : ''}
         </Text>
       </View>
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         {display ?? '—'}
       </Text>
     </Pressable>

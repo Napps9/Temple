@@ -62,7 +62,7 @@ export function CustomRuleChip({
         } ${
           error
             ? 'border-red-400 dark:border-red-500'
-            : 'border-gray-300 dark:border-gray-600'
+            : 'border-line-strong dark:border-line-strong-dk'
         }`}>
         <TextInput
           value={amount}
@@ -75,7 +75,7 @@ export function CustomRuleChip({
           placeholderTextColor="#9CA3AF"
           onSubmitEditing={submit}
           accessibilityLabel="A different amount"
-          className={`text-center text-gray-900 dark:text-gray-50 font-semibold ${
+          className={`text-center text-ink dark:text-ink-dk font-semibold ${
             big ? 'w-10 text-[15px]' : 'w-9 text-[13px]'
           }`}
         />
@@ -88,7 +88,7 @@ export function CustomRuleChip({
           hitSlop={6}
           accessibilityLabel={`Unit: ${unit.label}. Tap to change.`}>
           <Text
-            className={`text-gray-500 dark:text-gray-400 font-semibold ${
+            className={`text-ink-2 dark:text-ink-2-dk font-semibold ${
               big ? 'text-sm' : 'text-[13px]'
             }`}>
             {unit.label}
@@ -101,7 +101,7 @@ export function CustomRuleChip({
           accessibilityLabel="Use this"
           className={`rounded-full items-center justify-center ${
             big ? 'w-8 h-8' : 'w-6 h-6'
-          } ${ready ? 'bg-primary' : 'bg-gray-100 dark:bg-gray-800'}`}>
+          } ${ready ? 'bg-primary' : 'bg-raised dark:bg-raised-dk'}`}>
           <Ionicons
             name="arrow-forward"
             size={big ? 15 : 13}

@@ -193,11 +193,11 @@ export function DurationField({
 
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label}
       </Text>
       {blurb ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">{blurb}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{blurb}</Text>
       ) : null}
       {/* Number on the left, unit dropdown on the right. The compact
           trigger (current unit + chevron) sidesteps the mobile clipping
@@ -209,7 +209,7 @@ export function DurationField({
           keyboardType="number-pad"
           placeholder={placeholder}
           placeholderTextColor="#9CA3AF"
-          className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
         />
         <UnitDropdown units={units} unit={unit} onChange={changeUnit} />
       </View>
@@ -245,8 +245,8 @@ function UnitDropdown({
       <Pressable
         ref={triggerRef}
         onPress={openMenu}
-        className="w-24 flex-row items-center justify-between gap-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 active:opacity-70">
-        <Text className="text-gray-900 dark:text-gray-50 text-base">
+        className="w-24 flex-row items-center justify-between gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 active:opacity-70">
+        <Text className="text-ink dark:text-ink-dk text-base">
           {UNIT_LABEL[unit]}
         </Text>
         <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
@@ -264,7 +264,7 @@ function UnitDropdown({
         {pos ? (
           <View
             style={{ position: 'absolute', top: pos.top, left: pos.left, width: pos.width }}
-            className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-pop p-1">
+            className="bg-surface dark:bg-surface-dk rounded-lg border border-line dark:border-line-dk shadow-pop p-1">
             {units.map((u) => {
               const on = u === unit;
               return (
@@ -280,8 +280,8 @@ function UnitDropdown({
                   <Text
                     className={`text-sm ${
                       on
-                        ? 'text-gray-900 dark:text-gray-50 font-medium'
-                        : 'text-gray-700 dark:text-gray-200'
+                        ? 'text-ink dark:text-ink-dk font-medium'
+                        : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {UNIT_LABEL[u]}
                   </Text>

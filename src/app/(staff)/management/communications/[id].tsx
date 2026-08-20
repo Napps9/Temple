@@ -80,7 +80,7 @@ export default function CampaignDetailScreen() {
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management/communications" />
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             You don't have permission to manage communications.
           </Text>
         </ScrollView>
@@ -359,11 +359,11 @@ function EditorView({ campaign }: { campaign: Campaign }) {
               hitSlop={6}
               className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
               <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
-              <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Setup
               </Text>
             </Pressable>
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
               Design email
             </Text>
             <View className="flex-row items-center gap-1">
@@ -391,7 +391,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                   size={15}
                   color={colors.iconSecondary}
                 />
-                <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   {showPreview ? 'Back to editor' : 'Preview'}
                 </Text>
               </Pressable>
@@ -420,18 +420,18 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         <BackLink fallbackHref="/management/communications" />
         <View className="gap-1">
           <View className="flex-row items-center gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold flex-1">
               Edit campaign
             </Text>
             <SaveButton state={saveState} onPress={saveNow} />
           </View>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Build your email, choose who gets it, then send.
           </Text>
         </View>
 
         {/* Details */}
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <Input
             label="Campaign name (internal)"
             value={title}
@@ -506,15 +506,15 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         {/* Design entry — opens the full-screen builder */}
         <Pressable
           onPress={() => setMode('design')}
-          className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 border border-primary/30 hover:border-primary/60 active:opacity-80">
+          className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 border border-primary/30 hover:border-primary/60 active:opacity-80">
           <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
             <Ionicons name="brush-outline" size={22} color={brand.primaryColor} />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Design your email
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {document.blocks.length === 0
                 ? 'Empty — open the builder to add content.'
                 : `${document.blocks.length} block${
@@ -527,7 +527,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
         {/* Topic */}
         <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Topic
           </Text>
           <TopicPicker
@@ -539,7 +539,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
         {/* Audience */}
         <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Audience
           </Text>
           <AudienceBuilder value={audience} onChange={setAudience} />
@@ -562,11 +562,11 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
         {/* Send / confirm */}
         {confirming ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-primary/30">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Send to {count} {count === 1 ? 'member' : 'members'}?
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {describeAudience(audience)}. This can't be undone.
             </Text>
             <View className="flex-row gap-3">
@@ -622,8 +622,8 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                 />
               </View>
             ) : (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2 border border-gray-200 dark:border-gray-700">
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2 border border-line dark:border-line-dk">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Or send it later. Times are the gym's own ({tz}), wherever
                   you happen to be; delivery starts within about fifteen
                   minutes of the slot.
@@ -646,11 +646,11 @@ function EditorView({ campaign }: { campaign: Campaign }) {
               </View>
             )}
             {noSubject ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
                 Add a subject line to enable sending.
               </Text>
             ) : audienceEmpty || count === 0 ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
                 Choose an audience with at least one reachable member.
               </Text>
             ) : null}
@@ -888,12 +888,12 @@ function ReportView({ campaign }: { campaign: Campaign }) {
         <BackLink fallbackHref="/management/communications" />
       <View className="gap-1">
         <View className="flex-row items-center gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold flex-1">
             {campaign.title || 'Campaign'}
           </Text>
           <StatusBadge status={campaign.status} />
         </View>
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           {campaign.subject || 'No subject'}
           {campaign.sent_at ? ` · sent ${formatDateTime(campaign.sent_at)}` : ''}
         </Text>
@@ -935,8 +935,8 @@ function ReportView({ campaign }: { campaign: Campaign }) {
           between two subject lines is a difference in who opened,
           measured twice. */}
       {(variantStats.data ?? []).length > 1 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Subject line test
           </Text>
           {(variantStats.data ?? []).map((v, i) => {
@@ -951,12 +951,12 @@ function ReportView({ campaign }: { campaign: Campaign }) {
             return (
               <View
                 key={v.variant}
-                className="flex-row items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs w-4">
+                className="flex-row items-center gap-3 border-t border-line dark:border-line-dk pt-2">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs w-4">
                   {String.fromCharCode(65 + i)}
                 </Text>
                 <Text
-                  className="flex-1 text-gray-700 dark:text-gray-200 text-sm"
+                  className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm"
                   numberOfLines={2}>
                   {v.subject ?? '(no subject)'}
                 </Text>
@@ -964,14 +964,14 @@ function ReportView({ campaign }: { campaign: Campaign }) {
                   className={`text-sm font-semibold ${
                     won
                       ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-gray-500 dark:text-gray-400'
+                      : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {fullySimulated ? '—' : `${rate}%`}
                 </Text>
               </View>
             );
           })}
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Open rate per subject, from an even split of the audience.
           </Text>
         </View>
@@ -979,7 +979,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
 
       {unmeasured ? (
         <View className="bg-gray-500/10 border border-gray-500/30 rounded-xl p-4 gap-1">
-          <Text className="text-gray-700 dark:text-gray-200 font-semibold text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk font-semibold text-sm">
             Not measured
           </Text>
           <Text className="text-gray-600 dark:text-gray-400 text-xs">
@@ -993,15 +993,15 @@ function ReportView({ campaign }: { campaign: Campaign }) {
 
       {/* What left, what arrived, what came of it — one hero number and
           only the tiles with something to say (src/lib/campaign-report). */}
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-0.5 shadow-card">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-0.5 shadow-card">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">
           {report.hero.label}
         </Text>
-        <Text className="text-gray-900 dark:text-gray-50 text-5xl font-semibold">
+        <Text className="text-ink dark:text-ink-dk text-5xl font-semibold">
           {report.hero.value}
         </Text>
         {report.hero.detail ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {report.hero.detail}
           </Text>
         ) : null}
@@ -1023,11 +1023,11 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       ) : null}
 
       {troubleRows.length > 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Addresses we can no longer reach
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             These are held back from future sends. If one was a typo that has
             since been fixed, clear it from Communications → Settings and the
             next send will include them again.
@@ -1035,12 +1035,12 @@ function ReportView({ campaign }: { campaign: Campaign }) {
           {troubleRows.map((r) => (
             <View
               key={r.id}
-              className="border-t border-gray-100 dark:border-gray-800 pt-2 gap-0.5">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm">
+              className="border-t border-line dark:border-line-dk pt-2 gap-0.5">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 {r.full_name ? `${r.full_name} · ` : ''}
                 {r.email}
               </Text>
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                 {r.complained_at
                   ? 'Marked it as spam'
                   : (r.error ?? 'The address bounced')}
@@ -1051,7 +1051,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       ) : null}
 
       <View className="gap-2">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           What you sent
         </Text>
         <HtmlPreview html={previewHtml} height={420} />
@@ -1089,8 +1089,8 @@ function TopicPicker({
   const rows = topics.data ?? [];
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2">
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Members who unsubscribed from this topic won't receive this send.
         Leave on "No topic" to suppress only members who hit the master "stop
         all" toggle.
@@ -1101,13 +1101,13 @@ function TopicPicker({
           className={`px-3 py-1.5 rounded-full border ${
             value === null
               ? 'border-primary bg-primary/10'
-              : 'border-gray-200 dark:border-gray-700'
+              : 'border-line dark:border-line-dk'
           }`}>
           <Text
             className={`text-xs font-medium ${
               value === null
                 ? 'text-primary'
-                : 'text-gray-700 dark:text-gray-200'
+                : 'text-ink-2 dark:text-ink-2-dk'
             }`}>
             No topic
           </Text>
@@ -1121,11 +1121,11 @@ function TopicPicker({
               className={`px-3 py-1.5 rounded-full border ${
                 sel
                   ? 'border-primary bg-primary/10'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-xs font-medium ${
-                  sel ? 'text-primary' : 'text-gray-700 dark:text-gray-200'
+                  sel ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {t.label}
               </Text>
@@ -1134,7 +1134,7 @@ function TopicPicker({
         })}
       </View>
       {rows.length === 0 ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           No topics set up yet. Go to Communications → Email topics to add
           some.
         </Text>

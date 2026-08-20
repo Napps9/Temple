@@ -65,7 +65,7 @@ function SectionHeader({ label }: { label: string }) {
   return (
     <View className="flex-row items-center gap-2 px-0.5 pt-1">
       <View className="w-1 h-3.5 rounded-full bg-primary" />
-      <Text className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-bold uppercase tracking-widest">
         {label}
       </Text>
     </View>
@@ -407,8 +407,8 @@ export default function LeadAgentScreen() {
   return (
     <LeadsShell active="agent" tabs={['leads', 'agent', 'conversations', 'settings']}>
       <View className="gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">AI Agent</Text>
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">AI Agent</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           What it sounds like, what it knows, and how it keeps getting better.
         </Text>
       </View>
@@ -428,10 +428,10 @@ export default function LeadAgentScreen() {
             </View>
           )}
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               Talk to your AI
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Teach it what to say, or hear how it sounds right now.
             </Text>
           </View>
@@ -445,11 +445,11 @@ export default function LeadAgentScreen() {
                 key={t}
                 onPress={() => setHeroTab(t)}
                 className={`flex-1 px-3 py-2 rounded-lg border ${
-                  sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                  sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                 }`}>
                 <Text
                   className={`text-sm font-semibold text-center ${
-                    sel ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                    sel ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {t === 'teach' ? 'Teach it' : 'Test it'}
                 </Text>
@@ -469,15 +469,15 @@ export default function LeadAgentScreen() {
             {canTestPhone ? (
               <Pressable
                 onPress={() => Linking.openURL(`tel:${agentNumber}`)}
-                className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+                className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-3">
                 <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center">
                   <Ionicons name="call-outline" size={18} color={colors.primary} />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+                  <Text className="text-ink dark:text-ink-dk text-sm font-semibold">
                     Call it for real
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Dial {agentNumber} to hear exactly what a prospect hears.
                   </Text>
                 </View>
@@ -485,7 +485,7 @@ export default function LeadAgentScreen() {
               </Pressable>
             ) : null}
             {!canTestWeb && !canTestPhone ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Finish setting up your assistant first, then you can talk to it here.
               </Text>
             ) : null}
@@ -494,14 +494,14 @@ export default function LeadAgentScreen() {
           <>
             <View className="gap-1.5">
               <View className="flex-row gap-1.5">
-                <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 0 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 1 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 0 ? 'bg-primary' : 'bg-sunken dark:bg-sunken-dk'}`} />
+                <View className={`h-1.5 flex-1 rounded-full ${teachStep >= 1 ? 'bg-primary' : 'bg-sunken dark:bg-sunken-dk'}`} />
               </View>
               <View className="flex-row justify-between">
-                <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 0 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
+                <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 0 ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'}`}>
                   1. Call
                 </Text>
-                <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 1 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
+                <Text className={`text-[10px] font-semibold uppercase tracking-widest ${teachStep === 1 ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'}`}>
                   2. Review &amp; apply
                 </Text>
               </View>
@@ -509,15 +509,15 @@ export default function LeadAgentScreen() {
 
             {isCalling ? (
               <View className="items-center gap-3 py-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold uppercase tracking-widest">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs font-semibold uppercase tracking-widest">
                   {callClock < 3 ? 'Ringing…' : 'In call'}
                 </Text>
                 <Text
-                  className="text-gray-900 dark:text-gray-50 text-3xl font-semibold"
+                  className="text-ink dark:text-ink-dk text-3xl font-semibold"
                   style={{ fontVariant: ['tabular-nums'] }}>
                   {formatCallDuration(callClock)}
                 </Text>
-                <Text className="text-gray-700 dark:text-gray-200 text-sm text-center">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
                   {interview!.phone === 'browser'
                     ? "A browser interview looks to be in progress — if that's stuck (e.g. left over from a closed tab), hang up and start again."
                     : `Calling ${interview!.phone} — answer and chat. When the call ends, the updated brief appears here for your review.`}
@@ -530,11 +530,11 @@ export default function LeadAgentScreen() {
                   className="w-14 h-14 rounded-full bg-red-500 items-center justify-center active:bg-red-600 mt-1">
                   <Ionicons name="call" size={24} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
                 </Pressable>
-                <Text className="text-gray-400 dark:text-gray-500 text-xs">Hang up</Text>
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Hang up</Text>
               </View>
             ) : isReviewing ? (
               <View className="gap-3">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Here's what your call taught the agent, merged into its brief. Edit anything, then
                   apply — nothing is live until you do.
                 </Text>
@@ -566,11 +566,11 @@ export default function LeadAgentScreen() {
               </View>
             ) : isTranscriptOnly ? (
               <View className="gap-3">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Call captured, but automatic drafting isn't configured — copy anything useful into
                   the notes card below.
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs" numberOfLines={12}>
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs" numberOfLines={12}>
                   {interview!.transcript ?? ''}
                 </Text>
                 <ChipButton
@@ -601,7 +601,7 @@ export default function LeadAgentScreen() {
                   />
                 ) : (
                   <>
-                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       The assistant interviews you — your intro offer, where beginners start, parking,
                       the questions you always get. It drafts the update; you review and approve
                       before anything changes.
@@ -618,7 +618,7 @@ export default function LeadAgentScreen() {
                 )}
               </View>
             ) : (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Teaching it by talking needs a browser — open Temple on desktop or your phone's browser
                 to do this.
               </Text>
@@ -629,13 +629,13 @@ export default function LeadAgentScreen() {
 
       <SectionHeader label="AI Front Desk" />
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Answer texts automatically
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               An AI assistant replies to texts on your gym's number — it answers from your real
               plans and schedule, captures the lead and hands hot ones a signup link.
             </Text>
@@ -646,13 +646,13 @@ export default function LeadAgentScreen() {
             onValueChange={(v) => toggleAgent.mutate(v)}
           />
         </View>
-        <View className="h-px bg-gray-100 dark:bg-gray-800" />
+        <View className="h-px bg-raised dark:bg-raised-dk" />
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Answer phone calls too
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {voiceReady
                 ? 'The assistant picks up calls to your number and can text the caller a signup link.'
                 : 'Not set up yet — missed calls get an automatic "text us back" reply instead. Set up your number below to enable it.'}
@@ -666,12 +666,12 @@ export default function LeadAgentScreen() {
           />
         </View>
         {agentNumber ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Your number: {agentNumber}
           </Text>
         ) : frontDeskEntitled ? (
           <View className="gap-2">
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {provisionFailed
                 ? "Setting up your number didn't finish — it's safe to try again."
                 : 'No number yet — set one up to start answering leads.'}
@@ -686,19 +686,19 @@ export default function LeadAgentScreen() {
             ) : null}
           </View>
         ) : (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             No number yet — phone & text isn't on your plan. Contact Temple to turn it on.
           </Text>
         )}
       </View>
 
       {canShareNumber ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Share your number
           </Text>
-          <View className="flex-row items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">{agentNumber}</Text>
+          <View className="flex-row items-center justify-between bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5">
+            <Text className="text-ink dark:text-ink-dk font-medium">{agentNumber}</Text>
             <ChipButton
               label="Copy"
               icon="copy-outline"
@@ -706,18 +706,18 @@ export default function LeadAgentScreen() {
               onPress={() => copyToClipboard(agentNumber!)}
             />
           </View>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Paste this into emails or a social bio.
           </Text>
 
-          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+          <View className="h-px bg-raised dark:bg-raised-dk" />
 
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+              <Text className="text-ink dark:text-ink-dk font-medium text-sm">
                 On your Google Business Profile
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Opens Google's own site — paste the number in there so it shows on Search and Maps.
               </Text>
             </View>
@@ -729,14 +729,14 @@ export default function LeadAgentScreen() {
             />
           </View>
 
-          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+          <View className="h-px bg-raised dark:bg-raised-dk" />
 
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+              <Text className="text-ink dark:text-ink-dk font-medium text-sm">
                 On Temple's website builder
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Add the "Call &amp; text" block from there — it always shows your current number.
               </Text>
             </View>
@@ -748,13 +748,13 @@ export default function LeadAgentScreen() {
             />
           </View>
 
-          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+          <View className="h-px bg-raised dark:bg-raised-dk" />
 
           <View className="gap-1.5">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+            <Text className="text-ink dark:text-ink-dk font-medium text-sm">
               Hosting your site elsewhere
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Copy this snippet into a custom-HTML block on Wix, Squarespace or wherever your site
               lives.
             </Text>
@@ -776,11 +776,11 @@ export default function LeadAgentScreen() {
         </View>
       ) : null}
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           Voice
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           How the assistant sounds on calls.
           {currentVoice ? ` Currently ${currentVoice.name} · ${currentVoice.region}.` : ''}
         </Text>
@@ -792,16 +792,16 @@ export default function LeadAgentScreen() {
                 key={v.id}
                 onPress={() => setSelectedVoice(v.id)}
                 className={`flex-row items-center justify-between rounded-lg border p-3 ${
-                  sel ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'
+                  sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
                 }`}>
                 <View className="flex-1">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
                     {v.name}
-                    <Text className="text-gray-400 dark:text-gray-500 font-normal">
+                    <Text className="text-ink-3 dark:text-ink-3-dk font-normal">
                       {'  '}· {v.region}
                     </Text>
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {v.gender} · {v.desc}
                   </Text>
                 </View>
@@ -820,9 +820,9 @@ export default function LeadAgentScreen() {
 
       <SectionHeader label="Knowledge & Coaching" />
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-start justify-between gap-3">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest pt-1">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest pt-1">
             What the agent knows
           </Text>
           <ChipButton
@@ -835,7 +835,7 @@ export default function LeadAgentScreen() {
             }}
           />
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Plans and the class schedule are included automatically. Add anything else it should
           know — address, parking, intro offer, what makes your gym great.
         </Text>
@@ -864,9 +864,9 @@ export default function LeadAgentScreen() {
           className="flex-1 bg-black/60 items-center justify-center px-6 py-10">
           <Pressable
             onPress={() => {}}
-            className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-xl gap-4 max-h-[90%]">
+            className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-xl gap-4 max-h-[90%]">
             <View className="flex-row items-center justify-between">
-              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 Rewrite with AI
               </Text>
               <Pressable
@@ -902,33 +902,33 @@ export default function LeadAgentScreen() {
                 </Button>
               </View>
             </View>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
               This fills in the notes below — tap "Save notes" after to make it live.
             </Text>
           </Pressable>
         </Pressable>
       </Modal>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           Coaching rules
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Rules and examples you've taught the agent from call reviews. Turn one off to stop
           applying it on future calls. The agent applies your 25 most recent active rules (and 5
           examples) — retire stale ones so new coaching keeps landing.
         </Text>
         {(rules.data ?? []).length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No rules yet. Open a call in Conversations and use "Coach this turn" to teach the
             agent.
           </Text>
         ) : (
           (rules.data ?? []).map((r) => (
-            <View key={r.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-2">
+            <View key={r.id} className="rounded-lg border border-line dark:border-line-dk p-3 gap-2">
               <Text className="text-gray-800 dark:text-gray-100 text-sm">{r.correction}</Text>
               <View className="flex-row items-center justify-between">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wide">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-wide">
                   {r.field_kind} · {r.scope === 'standing_rule' ? 'always' : 'example'}
                 </Text>
                 <Pressable onPress={() => toggleRule.mutate(r.id)} hitSlop={6}>
@@ -946,15 +946,15 @@ export default function LeadAgentScreen() {
         <>
           <View className="flex-row items-center gap-2 px-0.5 pt-1">
             <View className="w-1 h-3.5 rounded-full bg-red-500" />
-            <Text className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-bold uppercase tracking-widest">
               Danger Zone
             </Text>
           </View>
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card border border-red-200 dark:border-red-900/40">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card border border-red-200 dark:border-red-900/40">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Turn off the AI front desk
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Releases your number ({agentNumber}) and deletes the AI assistant. Calls and texts
               stop working immediately — this can't be undone from here.
             </Text>

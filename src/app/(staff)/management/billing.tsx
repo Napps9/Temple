@@ -238,7 +238,7 @@ export default function BillingScreen() {
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management" />
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Only an owner can manage billing.
           </Text>
         </ScrollView>
@@ -252,21 +252,21 @@ export default function BillingScreen() {
         <BackLink fallbackHref="/management" />
 
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Billing & payments
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Connect your gym's Stripe account to charge members for
             memberships and credit packs. You keep 100% — Temple takes no
             cut of your payments.
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             What that's worth
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Card processing itself (roughly 2.9% + 30p, set by Stripe and
             the card networks) is unavoidable anywhere you go — but many
             gym platforms add their own margin on top of it, or take a
@@ -280,7 +280,7 @@ export default function BillingScreen() {
             placeholder="5000"
           />
           <View className="bg-primary/5 rounded-xl p-3">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               At that volume, a platform charging an extra 1–3% on top of
               processing would cost you roughly{' '}
               <Text className="font-semibold">
@@ -290,7 +290,7 @@ export default function BillingScreen() {
               a month. On Temple, that stays with you.
             </Text>
           </View>
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px]">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px]">
             Illustrative only — platform fee structures vary and change
             over time.
           </Text>
@@ -312,9 +312,9 @@ export default function BillingScreen() {
           </View>
         ) : null}
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
           {account.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Checking connection…
             </Text>
           ) : connected ? (
@@ -331,7 +331,7 @@ export default function BillingScreen() {
                         : '#10B981'
                   }
                 />
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
                   {stripeState === 'unfinished'
                     ? 'Finish your Stripe setup'
                     : stripeState === 'broken'
@@ -339,27 +339,27 @@ export default function BillingScreen() {
                       : 'Connected to Stripe'}
                 </Text>
                 {stripeState === 'loading' ? (
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                     Checking…
                   </Text>
                 ) : null}
               </View>
 
               {stripeState === 'ready' ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Member payments run through your own Stripe account
                   (`{stripeAccountId}`) — plans below are live and members can
                   subscribe and check out immediately.
                 </Text>
               ) : stripeState === 'unfinished' ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Your account (`{stripeAccountId}`) is connected but can't take
                   payments yet — finish onboarding in your Stripe dashboard and
                   this clears on its own.
                 </Text>
               ) : stripeState === 'broken' ? (
                 <>
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     The saved account (`{stripeAccountId}`) can't be reached with
                     your current Stripe key — the link was revoked, or it
                     belongs to a different Stripe account or mode. Reconnect to
@@ -381,7 +381,7 @@ export default function BillingScreen() {
 
               {confirmDisconnect ? (
                 <View className="gap-2">
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Disconnect Stripe? Members can't pay until you reconnect —
                     your saved plans stay.
                   </Text>
@@ -424,11 +424,11 @@ export default function BillingScreen() {
             <>
               <View className="flex-row items-center gap-2">
                 <Ionicons name="card-outline" size={20} color={colors.iconSecondary} />
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
                   Not connected yet
                 </Text>
               </View>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 You'll be sent to Stripe to sign in (or create an account)
                 and authorise Temple. It takes a minute, and you can use an
                 existing Stripe account if you have one.
@@ -445,13 +445,13 @@ export default function BillingScreen() {
           )}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Members can choose &amp; pay
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Let members pick a plan and pay themselves. Turn this off if
                 your front desk sets members up instead — staff can always
                 charge a member directly.
@@ -471,13 +471,13 @@ export default function BillingScreen() {
           ) : null}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Require a membership to book
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 When on, members need an active membership or credits to book —
                 without one they're shown your plans at the point of booking.
                 Staff are exempt unless you require it for them on their profile.

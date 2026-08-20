@@ -87,9 +87,9 @@ export function SendingDomainCard() {
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           Sending domain
         </Text>
         {domain ? <StatusBadge meta={domainStatusMeta(domain.status)} /> : null}
@@ -100,7 +100,7 @@ export function SendingDomainCard() {
           text={domainStatusDescription(domain.status)}
         />
       ) : (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Authenticate a domain you own to send from your own address — best
           deliverability, no “via” label. A subdomain like mail.yourgym.com is
           ideal.
@@ -126,9 +126,9 @@ export function SendingDomainCard() {
             autoCapitalize="none"
             placeholder="news"
           />
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Emails will come from{' '}
-            <Text className="font-mono text-gray-600 dark:text-gray-300">
+            <Text className="font-mono text-ink-2 dark:text-ink-2-dk">
               {(fromLocal.trim() || 'news')}@{domainInput.trim() || 'yourdomain.com'}
             </Text>
           </Text>
@@ -145,10 +145,10 @@ export function SendingDomainCard() {
           <View className="flex-row items-center gap-2 bg-green-500/10 rounded-lg p-3">
             <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+              <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                 Sending from
               </Text>
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-mono">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-mono">
                 {fromAddress(domain)}
               </Text>
             </View>
@@ -207,7 +207,7 @@ export function SendingDomainCard() {
       ) : (
         // ---- Pending / failed: show records + verify ---------------------
         <View className="gap-3">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Add these records to the DNS for{' '}
             <Text className="font-mono">{domain.domain}</Text>. The two{' '}
             <Text className="font-mono">send</Text> records share a host — add
@@ -215,7 +215,7 @@ export function SendingDomainCard() {
           </Text>
 
           {records.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No records returned yet — try verifying.
             </Text>
           ) : (
@@ -236,7 +236,7 @@ export function SendingDomainCard() {
             I’ve added the records — verify
           </Button>
           {domain.last_checked_at ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
               Last checked {formatDateTime(domain.last_checked_at)}
             </Text>
           ) : null}

@@ -140,10 +140,10 @@ export default function TasksScreen() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Tasks
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             {canManage
               ? 'Day-to-day work assigned across your team.'
               : 'Tasks assigned to you. Tap a task to mark it done.'}
@@ -156,8 +156,8 @@ export default function TasksScreen() {
         </View>
 
         {canManage ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               New task
             </Text>
             <Input
@@ -179,7 +179,7 @@ export default function TasksScreen() {
               onChange={setDueDate}
             />
             <View className="gap-2">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Assign to
               </Text>
               <View className="flex-row flex-wrap gap-2">
@@ -190,13 +190,13 @@ export default function TasksScreen() {
                     className={`px-3 py-1.5 rounded-full border ${
                       assignTo === a.profile_id
                         ? 'border-primary bg-primary/10'
-                        : 'border-gray-200 dark:border-gray-700'
+                        : 'border-line dark:border-line-dk'
                     }`}>
                     <Text
                       className={
                         assignTo === a.profile_id
                           ? 'text-primary text-sm'
-                          : 'text-gray-500 dark:text-gray-400 text-sm'
+                          : 'text-ink-2 dark:text-ink-2-dk text-sm'
                       }>
                       {a.profiles?.full_name ?? a.role}
                     </Text>
@@ -233,9 +233,9 @@ export default function TasksScreen() {
 
         <View className="gap-2">
           {tasksQuery.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
           ) : (tasksQuery.data ?? []).length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No tasks here.
             </Text>
           ) : (
@@ -248,13 +248,13 @@ export default function TasksScreen() {
                     next: t.status === 'open' ? 'done' : 'open',
                   })
                 }
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
                 <View className="flex-row items-center gap-2">
                   <View
                     className={`w-5 h-5 rounded border ${
                       t.status === 'done'
                         ? 'bg-primary border-primary'
-                        : 'border-gray-300 dark:border-gray-600'
+                        : 'border-line-strong dark:border-line-strong-dk'
                     }`}>
                     {t.status === 'done' ? (
                       <Text className="text-white text-center text-xs leading-5">✓</Text>
@@ -262,23 +262,23 @@ export default function TasksScreen() {
                   </View>
                   <Text className={`flex-1 ${
                       t.status === 'done'
-                        ? 'text-gray-400 dark:text-gray-500 line-through'
-                        : 'text-gray-900 dark:text-gray-50'
+                        ? 'text-ink-3 dark:text-ink-3-dk line-through'
+                        : 'text-ink dark:text-ink-dk'
                     }`} numberOfLines={1}>
                     {t.title}
                   </Text>
                   {t.due_date ? (
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {t.due_date}
                     </Text>
                   ) : null}
                 </View>
                 {t.notes ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {t.notes}
                   </Text>
                 ) : null}
-                <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[10px]">
                   {t.assignee?.full_name ?? 'Unassigned'}
                 </Text>
               </Pressable>
@@ -305,11 +305,11 @@ function Tab({
       className={`px-3 py-1 rounded-full border ${
         active
           ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <Text
         className={
-          active ? 'text-primary text-sm' : 'text-gray-500 dark:text-gray-400 text-sm'
+          active ? 'text-primary text-sm' : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>

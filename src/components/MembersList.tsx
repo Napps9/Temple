@@ -418,7 +418,7 @@ export function MembersList() {
         </Text>
       ) : null}
       {canManageStaff && (pendingQuery.data?.length ?? 0) > 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {pendingQuery.data!.length} imported{' '}
           {pendingQuery.data!.length === 1 ? 'member hasn’t' : 'members haven’t'}{' '}
           signed up yet — they show below with an Imported badge. Send a join
@@ -428,9 +428,9 @@ export function MembersList() {
 
       <View className="gap-2">
         {cohortQuery.isLoading || pendingQuery.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : items.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">No members match.</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">No members match.</Text>
         ) : (
           items.map((it) => {
             if (it.kind === 'pending') {
@@ -452,7 +452,7 @@ export function MembersList() {
             return (
               <View
                 key={m.profile_id}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
                 <Link
                   href={{
                     pathname: '/management/members/[profile]',
@@ -467,10 +467,10 @@ export function MembersList() {
                         size={36}
                       />
                       <View className="flex-1">
-                        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                        <Text className="text-ink dark:text-ink-dk font-semibold">
                           {m.profiles?.full_name ?? 'Member'}
                         </Text>
-                        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                           Joined {m.joined_at ? formatDate(m.joined_at) : '—'}
                         </Text>
                       </View>
@@ -574,11 +574,11 @@ function FilterChip({
       className={`px-3 py-1 rounded-full border ${
         active
           ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <Text
         className={
-          active ? 'text-primary text-sm' : 'text-gray-500 dark:text-gray-400 text-sm'
+          active ? 'text-primary text-sm' : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>
@@ -603,12 +603,12 @@ function TagFilterChip({
       className={`px-3 py-1 rounded-full border flex-row items-center gap-1.5 ${
         active
           ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <View style={{ backgroundColor: color }} className="w-2 h-2 rounded-full" />
       <Text
         className={
-          active ? 'text-primary text-sm' : 'text-gray-500 dark:text-gray-400 text-sm'
+          active ? 'text-primary text-sm' : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>
@@ -671,7 +671,7 @@ function RequestActionRow({
 }) {
   const decide = useDecideChangeRequest(gymId);
   return (
-    <View className="gap-2 border-t border-gray-100 dark:border-gray-800 pt-3">
+    <View className="gap-2 border-t border-line dark:border-line-dk pt-3">
       {requests.map((req) => {
         const isCancel = req.kind === 'cancel';
         const acting =
@@ -688,12 +688,12 @@ function RequestActionRow({
                 label={isCancel ? 'Cancel' : 'Switch'}
                 color={isCancel ? '#DC2626' : '#F59E0B'}
               />
-              <Text className="flex-1 text-gray-600 dark:text-gray-300 text-sm">
+              <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
                 {title}
               </Text>
             </View>
             {req.member_note ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">
                 “{req.member_note}”
               </Text>
             ) : null}
@@ -754,7 +754,7 @@ function PlanChip({
       <Text
         className={`text-[10px] font-semibold ${
           dimmed
-            ? 'text-gray-500 dark:text-gray-400'
+            ? 'text-ink-2 dark:text-ink-2-dk'
             : 'text-blue-700 dark:text-blue-300'
         }`}>
         {name}
@@ -818,7 +818,7 @@ function PendingMemberCard({
     : null;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <Link
         href={{
           pathname: '/management/members/imported/[id]',
@@ -829,10 +829,10 @@ function PendingMemberCard({
           <View className="flex-row items-center gap-3">
             <Avatar name={row.full_name} size={36} />
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 {row.full_name ?? row.email}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Imported {row.created_at ? formatDate(row.created_at) : '—'} · not
                 signed up
               </Text>
@@ -842,7 +842,7 @@ function PendingMemberCard({
           {planLabel ? (
             <View className="flex-row flex-wrap gap-1">
               <View className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
-                <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold">
                   {planLabel}
                 </Text>
               </View>
@@ -854,7 +854,7 @@ function PendingMemberCard({
                 <View
                   key={`t-${i}`}
                   className="rounded-full px-2 py-0.5 border border-gray-300 dark:border-gray-700">
-                  <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-semibold">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold">
                     {t}
                   </Text>
                 </View>
@@ -877,7 +877,7 @@ function PendingMemberCard({
           ) : null}
         </View>
       ) : invited ? (
-        <Text className="self-end text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="self-end text-ink-3 dark:text-ink-3-dk text-xs">
           Invite sent · waiting for sign-up
         </Text>
       ) : null}

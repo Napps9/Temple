@@ -52,10 +52,10 @@ export default function LeaderboardsIndex() {
     return (
       <Screen>
         <View className="mt-8 gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Leaderboards off
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Strength comparisons are disabled for this gym.
           </Text>
         </View>
@@ -87,10 +87,10 @@ export default function LeaderboardsIndex() {
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/track" />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Leaderboards
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Top of the gym across common benchmarks.
             </Text>
           </View>
@@ -112,13 +112,13 @@ export default function LeaderboardsIndex() {
                 className={`rounded-full px-3 py-1.5 border active:opacity-70 ${
                   selected
                     ? 'bg-primary border-primary'
-                    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                    : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
                 }`}>
                 <Text
                   className={
                     selected
                       ? 'text-white text-xs font-medium'
-                      : 'text-gray-700 dark:text-gray-200 text-xs'
+                      : 'text-ink-2 dark:text-ink-2-dk text-xs'
                   }>
                   {b.movement.name} · {b.scheme.label}
                 </Text>
@@ -130,10 +130,10 @@ export default function LeaderboardsIndex() {
         {active ? (
           <View className="gap-3">
             <View>
-              <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                 {active.scheme.label}
               </Text>
-              <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
                 {active.movement.name}
               </Text>
             </View>

@@ -21,7 +21,7 @@ type ConversationRow = {
 const STATUS_COPY: Record<ConversationRow['status'], { label: string; cls: string }> = {
   active: { label: 'AI replying', cls: 'text-emerald-600 dark:text-emerald-400' },
   handed_off: { label: 'With a coach', cls: 'text-amber-600 dark:text-amber-400' },
-  closed: { label: 'Opted out', cls: 'text-gray-400 dark:text-gray-500' },
+  closed: { label: 'Opted out', cls: 'text-ink-3 dark:text-ink-3-dk' },
 };
 
 export default function AgentConversationsScreen() {
@@ -54,10 +54,10 @@ export default function AgentConversationsScreen() {
   return (
     <LeadsShell active="conversations" tabs={tabs}>
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             AI conversations
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Every text and call the front desk assistant has handled. Open one
             to read it or take over.
           </Text>
@@ -66,9 +66,9 @@ export default function AgentConversationsScreen() {
         <View className="gap-2">
           {(conversations.data ?? []).map((c) => (
             <Link key={c.id} href={`/management/leads/conversation/${c.id}`} asChild>
-              <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card active:opacity-80">
+              <Pressable className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card active:opacity-80">
                 <View className="flex-row items-center justify-between gap-2">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium flex-1">
+                  <Text className="text-ink dark:text-ink-dk font-medium flex-1">
                     {c.lead?.full_name ?? c.phone}
                   </Text>
                   {c.status === 'handed_off' && c.last_message_role === 'lead' ? (
@@ -82,11 +82,11 @@ export default function AgentConversationsScreen() {
                   )}
                 </View>
                 <View className="flex-row items-center justify-between gap-2">
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {c.channel === 'voice' ? 'Phone call' : 'SMS'}
                     {c.lead ? ` · ${c.phone}` : ''}
                   </Text>
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                     {new Date(c.last_message_at).toLocaleString('en-GB', {
                       day: 'numeric',
                       month: 'short',
@@ -99,8 +99,8 @@ export default function AgentConversationsScreen() {
             </Link>
           ))}
           {conversations.isSuccess && (conversations.data ?? []).length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center shadow-card">
-              <Text className="text-gray-500 dark:text-gray-400 text-center">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-6 items-center shadow-card">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-center">
                 No conversations yet. When someone texts or calls your gym's
                 number, the thread appears here.
               </Text>

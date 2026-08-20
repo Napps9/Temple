@@ -236,10 +236,10 @@ function RolePermissionsSection() {
   return (
     <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
       <View className="gap-2">
-        <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+        <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
           Role permissions
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Configure what each role can do at this gym. Owners always have
           every capability and members never have staff-area capabilities —
           neither is editable. Changes take effect server-side immediately.
@@ -256,13 +256,13 @@ function RolePermissionsSection() {
               className={`px-4 py-2 rounded-full border ${
                 selected
                   ? 'border-primary bg-primary/10'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={
                   selected
                     ? 'text-primary capitalize'
-                    : 'text-gray-600 dark:text-gray-300 capitalize'
+                    : 'text-ink-2 dark:text-ink-2-dk capitalize'
                 }>
                 {r}
               </Text>
@@ -272,15 +272,15 @@ function RolePermissionsSection() {
       </View>
 
       {overrides.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : (
         <View className="gap-4">
           {CAPABILITY_GROUPS.map((group) => (
             <View key={group.title} className="gap-2">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 {group.title}
               </Text>
-              <View className="bg-white dark:bg-gray-900 rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
                 {group.caps.map((c) => {
                   const overrideValue = overrideMap.get(`${activeRole}:${c.value}`);
                   const isOverridden = overrideValue !== undefined;
@@ -493,33 +493,33 @@ function MemberPermissionsSection() {
     return (
       <View className="gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             Individual permissions
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Give one teammate more (or less) than their role allows. Anything
             set here overrides their role — everyone else on that role is
             unaffected. Pick a teammate to configure.
           </Text>
         </View>
         {roster.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : rows.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No coaches or staff yet. Invite a teammate above first.
           </Text>
         ) : (
-          <View className="bg-white dark:bg-gray-900 rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
             {rows.map((r) => (
               <Pressable
                 key={r.profile_id}
                 onPress={() => setSelected(r)}
                 className="flex-row items-center justify-between gap-3 p-4">
                 <View className="gap-0.5">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
                     {r.profiles?.full_name ?? 'Unnamed teammate'}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs capitalize">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs capitalize">
                     {r.role}
                   </Text>
                 </View>
@@ -542,10 +542,10 @@ function MemberPermissionsSection() {
           icon="chevron-back"
           onPress={() => setSelected(null)}
         />
-        <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+        <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
           {selected.profiles?.full_name ?? 'Unnamed teammate'}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           A blue dot marks a capability set for this person specifically. Toggle
           to override their <Text className="capitalize">{selected.role}</Text>{' '}
           role; clear it to fall back to the role.
@@ -553,15 +553,15 @@ function MemberPermissionsSection() {
       </View>
 
       {roleOverrides.isLoading || memberOverrides.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : (
         <View className="gap-4">
           {CAPABILITY_GROUPS.map((group) => (
             <View key={group.title} className="gap-2">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 {group.title}
               </Text>
-              <View className="bg-white dark:bg-gray-900 rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl divide-y divide-gray-100 dark:divide-gray-800 shadow-card">
                 {group.caps.map((c) => {
                   const memberValue = memberOverrideMap.get(c.value);
                   const isOverridden = memberValue !== undefined;
@@ -643,12 +643,12 @@ function CapabilityRow({
         className="flex-1 flex-row items-center justify-between gap-3">
         <View className="flex-1 gap-0.5">
           <View className="flex-row items-center gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">{label}</Text>
+            <Text className="text-ink dark:text-ink-dk font-medium">{label}</Text>
             {isOverridden ? (
               <View className="w-1.5 h-1.5 rounded-full bg-primary" />
             ) : null}
           </View>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">{description}</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{description}</Text>
         </View>
         <View
           className={`w-11 h-6 rounded-full justify-center px-0.5 ${
@@ -659,7 +659,7 @@ function CapabilityRow({
       </Pressable>
       {onClear ? (
         <Pressable onPress={onClear} disabled={disabled} hitSlop={8}>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">Clear</Text>
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Clear</Text>
         </Pressable>
       ) : null}
     </View>

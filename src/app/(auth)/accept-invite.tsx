@@ -180,10 +180,10 @@ export default function AcceptInviteScreen() {
         <>
           <Header />
           <View className="gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-3xl font-semibold">
               Open your invite link
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               Invites are sent by email — open the link your gym emailed you to
               join. If you can't find it, ask them to resend it.
             </Text>
@@ -196,7 +196,7 @@ export default function AcceptInviteScreen() {
       return (
         <>
           <Header />
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             Loading your invite…
           </Text>
         </>
@@ -209,10 +209,10 @@ export default function AcceptInviteScreen() {
         <>
           <Header />
           <View className="gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-3xl font-semibold">
               This invite isn't valid
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               It may have already been used or expired. Ask your gym to send you
               a fresh invite.
             </Text>
@@ -227,12 +227,12 @@ export default function AcceptInviteScreen() {
         <>
           {branded ? <GymHeader info={info} /> : <Header />}
           <View className="gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               Check your email
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               We sent a confirmation link to{' '}
-              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+              <Text className="text-ink dark:text-ink-dk font-medium">
                 {pendingEmail}
               </Text>
               . Click it, then come back and sign in — you'll land straight in{' '}
@@ -259,7 +259,7 @@ export default function AcceptInviteScreen() {
               setPassword('');
             }}
             className="self-center">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Use a different email
             </Text>
           </Pressable>
@@ -272,7 +272,7 @@ export default function AcceptInviteScreen() {
       return (
         <>
           {branded ? <GymHeader info={info} /> : <Header />}
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             You're signed in — one tap to join {info.name} as{' '}
             {ROLE_LABEL[info.role]}.
           </Text>
@@ -354,10 +354,10 @@ function GymHeader({ info }: { info: InviteGym }) {
         name={info.name}
         primaryColor={info.primary_color}
       />
-      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
         You're joining
       </Text>
-      <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold text-center">
+      <Text className="text-ink dark:text-ink-dk text-2xl font-semibold text-center">
         {info.name}
       </Text>
     </View>

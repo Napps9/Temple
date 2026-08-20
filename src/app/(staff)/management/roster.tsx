@@ -128,13 +128,13 @@ export default function Roster() {
         className="flex-1"
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/timeline" />
-        <Text className="text-gray-900 dark:text-gray-50 text-2xl font-bold">
+        <Text className="text-ink dark:text-ink-dk text-2xl font-bold">
           The team
         </Text>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base">
+            <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
               People
             </Text>
             <ChipButton
@@ -145,37 +145,37 @@ export default function Roster() {
           </View>
           {(people.data ?? []).map((p) => (
             <View key={p.profile_id} className="flex-row items-center gap-3">
-              <Text className="flex-1 text-gray-700 dark:text-gray-200 text-[15px]">
+              <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-[15px]">
                 {p.profiles?.full_name ?? 'Unnamed'}
               </Text>
-              <Text className="text-gray-400 dark:text-gray-500 text-sm">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
                 {ROLE_LABEL[p.role]}
               </Text>
             </View>
           ))}
         </View>
 
-        <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wide pt-2">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wide pt-2">
           Temple&apos;s jobs
         </Text>
 
         {/* Without this an owner who turns a sixth job on, sees nothing
             from it and concludes it is broken — the budget is silent
             everywhere else. */}
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           However many of these you take on, I&apos;ll ask you about at most
           five things a day. Chasing a payment and finding cover don&apos;t
           count — those can&apos;t wait a day.
         </Text>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base">
+            <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
               The front desk
             </Text>
             <RopePill label="on its own" />
           </View>
-          <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
             Answers calls and texts from people asking about the gym — day and
             night — and books their first visit.
           </Text>
@@ -189,9 +189,9 @@ export default function Roster() {
         </View>
 
         {moneyOn ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
             <View className="flex-row items-center gap-3">
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base">
+              <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
                 The money
               </Text>
               <RopePill
@@ -202,7 +202,7 @@ export default function Roster() {
                 }
               />
             </View>
-            <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
               Chases failed payments with a warm nudge, and asks before
               offering the smaller plan. Never cancels anyone; two messages at
               most.
@@ -443,13 +443,13 @@ function SimpleJob({
   if (level === undefined) {
     if (!isOwner) return null;
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-        <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+        <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
           {offTitle}
         </Text>
         <View className="gap-1.5">
           {offLines.map((l, i) => (
-            <Text key={i} className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+            <Text key={i} className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
               {l}
             </Text>
           ))}
@@ -464,14 +464,14 @@ function SimpleJob({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-3">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base">
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-base">
           {name}
         </Text>
         <RopePill label={level === 'autonomous' ? 'on its own' : 'asks first'} />
       </View>
-      <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         {onDescription}
       </Text>
       {isOwner ? (
@@ -492,8 +492,8 @@ function SimpleJob({
 
 function RopePill({ label }: { label: string }) {
   return (
-    <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
-      <Text className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+    <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+      <Text className="text-[10px] font-semibold uppercase tracking-wider text-ink-2 dark:text-ink-2-dk">
         {label}
       </Text>
     </View>
@@ -511,7 +511,7 @@ function DialRow({
 }) {
   return (
     <View className="flex-row items-center gap-2">
-      <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">{label}</Text>
+      <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">{label}</Text>
       {(['approval', 'autonomous'] as const).map((l) => {
         const selected = level === l;
         return (
@@ -521,7 +521,7 @@ function DialRow({
             className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
               selected
                 ? 'bg-primary border-primary'
-                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-[13px] font-semibold ${

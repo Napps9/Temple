@@ -30,16 +30,16 @@ export function EmptyState({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-3">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-6 items-center gap-3">
       <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
         <Ionicons name={icon} size={24} color={colors.primary} />
       </View>
       <View className="gap-1 items-center">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+        <Text className="text-ink dark:text-ink-dk font-semibold text-base">
           {title}
         </Text>
         {description ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
             {description}
           </Text>
         ) : null}

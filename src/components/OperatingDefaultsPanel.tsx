@@ -253,14 +253,14 @@ export function OperatingDefaultsPanel() {
 
   if (canManageStaff === false) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">
+      <Text className="text-ink-2 dark:text-ink-2-dk">
         Only owners can change operating defaults.
       </Text>
     );
   }
   if (!draft) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
     );
   }
 
@@ -283,7 +283,7 @@ export function OperatingDefaultsPanel() {
 
   return (
     <View className="gap-4">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         These are the per-gym defaults the calendar, the screening
         gates, the cohort logic and the booking resolver read. Each
         replaces a value that used to be the same for every gym; tune
@@ -291,7 +291,7 @@ export function OperatingDefaultsPanel() {
       </Text>
 
       <Section title="Training discipline" {...sectionProps('discipline')}>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Sets the flavour of the member Track section. CrossFit shows
           the movement-group catalog (squats, olympic lifts, gymnastics…);
           Hyrox shows the eight race stations, the 1 km run split and
@@ -309,7 +309,7 @@ export function OperatingDefaultsPanel() {
       </Section>
 
       <Section title="Members under 18" {...sectionProps('minors')}>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Off by default. When on, a member whose date of birth makes them
           under 18 can join, but must provide a parent or guardian's consent
           before they finish signing up — and you remain responsible for
@@ -328,7 +328,7 @@ export function OperatingDefaultsPanel() {
       </Section>
 
       <Section title="Billing currency" {...sectionProps('currency')}>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           The currency every price, revenue figure and payout is shown
           in. Connecting Stripe sets this automatically from your Stripe
           account; set it here if you don't use Stripe or want to
@@ -347,7 +347,7 @@ export function OperatingDefaultsPanel() {
       </Section>
 
       <Section title="Weight unit" {...sectionProps('weightUnit')}>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           How weights are shown across Track, leaderboards and percentage
           prescriptions. Everything is stored in kilograms and converted for
           display, so switching this re-labels existing results rather than
@@ -589,8 +589,8 @@ function Section({
   error: string | null;
 }) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         {title}
       </Text>
       {children}
@@ -619,11 +619,11 @@ function Field({
 }) {
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label}
       </Text>
       {blurb ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {blurb}
         </Text>
       ) : null}
@@ -634,7 +634,7 @@ function Field({
         placeholderTextColor="#9CA3AF"
         autoCapitalize="none"
         autoCorrect={false}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
       />
     </View>
   );
@@ -653,11 +653,11 @@ function NumField({
 }) {
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label}
       </Text>
       {blurb ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {blurb}
         </Text>
       ) : null}
@@ -665,7 +665,7 @@ function NumField({
         value={String(value)}
         onChangeText={onChange}
         keyboardType="number-pad"
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
       />
     </View>
   );
@@ -685,7 +685,7 @@ function Choice<T extends string>({
   const colors = useThemeColors();
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label}
       </Text>
       {options.map((o) => {
@@ -697,7 +697,7 @@ function Choice<T extends string>({
             className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
               selected
                 ? 'border-primary bg-primary/10'
-                : 'border-gray-200 dark:border-gray-700'
+                : 'border-line dark:border-line-dk'
             }`}>
             <Ionicons
               name={selected ? 'radio-button-on' : 'radio-button-off'}
@@ -707,8 +707,8 @@ function Choice<T extends string>({
             <Text
               className={`text-sm ${
                 selected
-                  ? 'text-gray-900 dark:text-gray-50 font-medium'
-                  : 'text-gray-700 dark:text-gray-200'
+                  ? 'text-ink dark:text-ink-dk font-medium'
+                  : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {o.label}
             </Text>

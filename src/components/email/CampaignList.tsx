@@ -14,7 +14,7 @@ import {
 } from '@/lib/comms';
 
 const TONE_BADGE: Record<StatusTone, { bg: string; text: string }> = {
-  gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-300' },
+  gray: { bg: 'bg-raised dark:bg-raised-dk', text: 'text-ink-2 dark:text-ink-2-dk' },
   amber: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
   green: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400' },
   red: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400' },
@@ -40,18 +40,18 @@ function CampaignRow({ campaign }: { campaign: CampaignListRow }) {
         : 'No subject yet';
   return (
     <Link href={`/management/communications/${campaign.id}`} asChild>
-      <Pressable className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
+      <Pressable className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
             <View className="flex-row items-center gap-2">
               <Text
-                className="text-gray-900 dark:text-gray-50 font-semibold flex-shrink"
+                className="text-ink dark:text-ink-dk font-semibold flex-shrink"
                 numberOfLines={1}>
                 {campaign.title || 'Untitled campaign'}
               </Text>
               <StatusBadge status={campaign.status} />
             </View>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5" numberOfLines={1}>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5" numberOfLines={1}>
               {subtitle}
             </Text>
           </View>
@@ -75,7 +75,7 @@ export function CampaignList() {
       </Link>
 
       {campaigns.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading campaigns…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading campaigns…</Text>
       ) : (campaigns.data ?? []).length === 0 ? (
         <EmptyState
           icon="mail-outline"

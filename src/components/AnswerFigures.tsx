@@ -34,7 +34,7 @@ function Delta({ direction, text }: { direction: 'up' | 'down' | 'level'; text: 
   // anything at all; painting this red would overrule it.
   const glyph = direction === 'up' ? '↑' : direction === 'down' ? '↓' : '→';
   return (
-    <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+    <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">
       {glyph} {text}
     </Text>
   );
@@ -55,7 +55,7 @@ function Bars({
         {points.map((p, i) => (
           <View
             key={`${p.label}-${i}`}
-            className="flex-1 rounded-[3px] bg-gray-100 dark:bg-gray-800 justify-end"
+            className="flex-1 rounded-[3px] bg-raised dark:bg-raised-dk justify-end"
             style={{ height: BAR_HEIGHT }}>
             {/* A day with nobody in keeps its rail rather than vanishing:
                 a missing bar reads as a missing day. */}
@@ -77,8 +77,8 @@ function Bars({
             numberOfLines={1}
             className={`flex-1 text-center text-[10px] ${
               i === peak
-                ? 'text-gray-700 dark:text-gray-200 font-semibold'
-                : 'text-gray-400 dark:text-gray-500'
+                ? 'text-ink-2 dark:text-ink-2-dk font-semibold'
+                : 'text-ink-3 dark:text-ink-3-dk'
             }`}>
             {i === peak ? `${p.label} ${p.value}` : p.label}
           </Text>
@@ -94,13 +94,13 @@ function Row({ row, tint }: { row: AnswerRow; tint: string }) {
       <View className="flex-row items-baseline gap-2">
         <Text
           numberOfLines={1}
-          className="flex-1 text-gray-700 dark:text-gray-200 text-[13.5px]">
+          className="flex-1 text-ink-2 dark:text-ink-2-dk text-[13.5px]">
           {row.name}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-[13px]">{row.detail}</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">{row.detail}</Text>
       </View>
       {row.weight === undefined ? null : (
-        <View className="h-[3px] rounded-full bg-gray-100 dark:bg-gray-800">
+        <View className="h-[3px] rounded-full bg-raised dark:bg-raised-dk">
           <View
             className="h-[3px] rounded-full"
             style={{
@@ -122,12 +122,12 @@ export function AnswerFigures({ answer }: { answer: ActionAnswer }) {
     <View className="gap-3.5 pt-0.5">
       {answer.figure ? (
         <View className="gap-0.5">
-          <Text className="text-gray-900 dark:text-gray-50 text-[30px] font-semibold leading-9">
+          <Text className="text-ink dark:text-ink-dk text-[30px] font-semibold leading-9">
             {answer.figure.value}
           </Text>
           {/* The delta on its own line rather than beside the label: in a
               chat card both together wrap mid-phrase on a phone. */}
-          <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">
             {answer.figure.label}
           </Text>
           {answer.figure.delta ? <Delta {...answer.figure.delta} /> : null}
@@ -136,7 +136,7 @@ export function AnswerFigures({ answer }: { answer: ActionAnswer }) {
 
       {answer.series && answer.series.points.length > 1 ? (
         <View className="gap-1.5">
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-semibold uppercase tracking-wide">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-wide">
             {answer.series.label}
           </Text>
           <Bars points={answer.series.points} tint={tint} />
@@ -145,14 +145,14 @@ export function AnswerFigures({ answer }: { answer: ActionAnswer }) {
 
       {answer.list && answer.list.rows.length > 0 ? (
         <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-semibold uppercase tracking-wide">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-wide">
             {answer.list.label}
           </Text>
           {answer.list.rows.map((r) => (
             <Row key={r.name} row={r} tint={tint} />
           ))}
           {answer.list.more ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
               and {answer.list.more} more
             </Text>
           ) : null}

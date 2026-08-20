@@ -97,7 +97,7 @@ export default function NewClassBroadcast() {
   if (canBroadcast === false) {
     return (
       <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 mt-8">
+        <Text className="text-ink-2 dark:text-ink-2-dk mt-8">
           You don't have permission to broadcast to classes.
         </Text>
       </Screen>
@@ -110,23 +110,23 @@ export default function NewClassBroadcast() {
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/inbox" />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Broadcast to class
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Message everyone booked into a single session.
             </Text>
           </View>
         </View>
 
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Pick a session in the next 7 days
         </Text>
         {sessions.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
         ) : (sessions.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No upcoming sessions in the next week.
             </Text>
           </View>
@@ -140,7 +140,7 @@ export default function NewClassBroadcast() {
                 <Pressable
                   key={s.id}
                   onPress={() => setSelected(s.id)}
-                  className={`bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 ${
+                  className={`bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 ${
                     selectedNow ? 'border border-primary' : 'border border-transparent'
                   }`}>
                   <View
@@ -151,10 +151,10 @@ export default function NewClassBroadcast() {
                     </Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+                    <Text className="text-ink dark:text-ink-dk font-medium text-sm">
                       {fmtWhen(s.starts_at)}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {bookings} booked · {s.duration_minutes} min
                     </Text>
                   </View>

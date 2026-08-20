@@ -166,7 +166,7 @@ export default function CoachEarningsPage() {
   if (canSetCoachPay === false) {
     return (
       <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 mt-8">
+        <Text className="text-ink-2 dark:text-ink-2-dk mt-8">
           Only the owner can set coach pay rates.
         </Text>
       </Screen>
@@ -183,19 +183,19 @@ export default function CoachEarningsPage() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Coach earnings
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Set per-class-type rates and review what each coach has earned.
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Credit policy
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             What counts as a class taught for earnings.
           </Text>
           <View className="gap-2">
@@ -208,7 +208,7 @@ export default function CoachEarningsPage() {
                   className={`rounded-lg border p-3 flex-row gap-3 items-start active:opacity-70 ${
                     selected
                       ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Ionicons
                     name={selected ? 'radio-button-on' : 'radio-button-off'}
@@ -220,11 +220,11 @@ export default function CoachEarningsPage() {
                       className={
                         selected
                           ? 'text-primary font-medium'
-                          : 'text-gray-900 dark:text-gray-50 font-medium'
+                          : 'text-ink dark:text-ink-dk font-medium'
                       }>
                       {p.label}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {p.blurb}
                     </Text>
                   </View>
@@ -240,7 +240,7 @@ export default function CoachEarningsPage() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Earnings period
           </Text>
           <DateRangeCta
@@ -261,8 +261,8 @@ export default function CoachEarningsPage() {
         </View>
 
         {coaches.length === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No coaches yet. Invite one from the Team page.
             </Text>
           </View>
@@ -331,15 +331,15 @@ function CoachCard({
   const rateByCt = new Map(rates.map((r) => [r.class_type_id, r.per_class_cents]));
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <Pressable
         onPress={() => setExpanded((v) => !v)}
         className="flex-row items-center gap-3 active:opacity-70">
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {coach.full_name?.trim() || 'Coach'}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {totals.classes} {totals.classes === 1 ? 'class' : 'classes'} ·{' '}
             {formatMoney(totals.cents, currency)}
           </Text>
@@ -354,7 +354,7 @@ function CoachCard({
       {expanded ? (
         <View className="gap-3 pt-1">
           {classTypes.length === 0 ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs italic">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic">
               Add a class type before setting rates.
             </Text>
           ) : (
@@ -464,16 +464,16 @@ function ClassTypeRateEditor({
   const earned = earningsRow?.earnings_cents ?? 0;
 
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: classType.color }}
           className="w-2 h-2 rounded-full"
         />
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium text-sm" numberOfLines={1}>
+        <Text className="flex-1 text-ink dark:text-ink-dk font-medium text-sm" numberOfLines={1}>
           {classType.name}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {classCount} · {formatMoney(earned, currency)}
         </Text>
       </View>
@@ -527,7 +527,7 @@ function ClassTypeRateEditor({
         <Pressable
           onPress={() => setEditing(true)}
           className="flex-row items-center gap-2 active:opacity-70">
-          <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
             {existingCents == null
               ? 'No rate set'
               : `${formatMoney(existingCents, currency)} per class`}

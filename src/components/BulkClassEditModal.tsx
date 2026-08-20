@@ -175,8 +175,8 @@ export function BulkClassEditModal({
           accessibilityViewIsModal
           role="dialog"
           aria-modal
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Bulk edit the timetable
           </Text>
 
@@ -195,11 +195,11 @@ export function BulkClassEditModal({
                 className={`flex-1 py-2 rounded-lg border items-center ${
                   mode === value
                     ? 'bg-primary border-primary'
-                    : 'border-gray-300 dark:border-gray-600'
+                    : 'border-line-strong dark:border-line-strong-dk'
                 }`}>
                 <Text
                   className={`text-sm font-medium ${
-                    mode === value ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                    mode === value ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {label}
                 </Text>
@@ -207,7 +207,7 @@ export function BulkClassEditModal({
             ))}
           </View>
 
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {mode === 'close'
               ? 'Every class between these dates is cancelled and credits are returned. Anything scheduled into the window later is blocked until you reopen it.'
               : 'Change capacity, length or start time for every class between these dates. Leave a field blank to keep it as it is. Repeating schedules are updated to match, so the change sticks — untick a class and its schedule is left alone instead.'}
@@ -281,7 +281,7 @@ export function BulkClassEditModal({
           {window ? (
             <ScrollView className="max-h-64">
               {previewQuery.isLoading ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Finding the classes…
                 </Text>
               ) : previewQuery.error ? (
@@ -289,7 +289,7 @@ export function BulkClassEditModal({
                   {errorMessage(previewQuery.error, 'Could not load the classes')}
                 </Text>
               ) : rows.length === 0 ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {mode === 'close'
                     ? 'No classes are scheduled in this window yet. You can still close it — anything added later will be blocked.'
                     : 'No classes are scheduled in this window.'}
@@ -308,7 +308,7 @@ export function BulkClassEditModal({
                           className={`w-5 h-5 rounded border ${
                             checked
                               ? 'bg-primary border-primary'
-                              : 'border-gray-300 dark:border-gray-600'
+                              : 'border-line-strong dark:border-line-strong-dk'
                           }`}>
                           {checked ? (
                             <Text className="text-white text-center text-xs leading-5">
@@ -317,10 +317,10 @@ export function BulkClassEditModal({
                           ) : null}
                         </View>
                         <View className="flex-1">
-                          <Text className="text-gray-900 dark:text-gray-50">
+                          <Text className="text-ink dark:text-ink-dk">
                             {r.class_types?.name ?? r.name}
                           </Text>
-                          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                             {startsAt.toLocaleDateString(undefined, {
                               weekday: 'short',
                               day: 'numeric',
@@ -345,7 +345,7 @@ export function BulkClassEditModal({
           ) : null}
 
           {mode === 'edit' && 'fields' in editFields && window ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {describeBulkEdit(editFields.fields, selected.length)}
             </Text>
           ) : null}
@@ -353,7 +353,7 @@ export function BulkClassEditModal({
           {editResult ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-gray-900 dark:text-gray-50 text-sm">
+              className="text-ink dark:text-ink-dk text-sm">
               {describeBulkEditResult(editResult)}
             </Text>
           ) : null}

@@ -487,7 +487,7 @@ export function ClassDetailModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5">
           {/* Close X — discoverable affordance on mobile where the
               tap-outside isn't obvious. Needs an explicit z-index: on
               web every sibling defaults to zIndex 0 and paints in DOM
@@ -503,7 +503,7 @@ export function ClassDetailModal({
           </Pressable>
           {sessionQuery.isLoading || !detail ? (
             <View className="py-6 items-center">
-              <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
             </View>
           ) : (
             <>
@@ -521,10 +521,10 @@ export function ClassDetailModal({
                   className="self-start rounded-full px-3 py-1">
                   <Text className="text-white text-xs font-semibold">{typeName}</Text>
                 </View>
-                <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+                <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
                   {dateLabel}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400">
+                <Text className="text-ink-2 dark:text-ink-2-dk">
                   {start && end ? `${fmtTime(start)} — ${fmtTime(end)}` : ''} ·{' '}
                   {detail.duration_minutes} min
                 </Text>
@@ -543,22 +543,22 @@ export function ClassDetailModal({
               />
 
               <View className="gap-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                   Coach
                 </Text>
                 <View className="flex-row items-center gap-3">
                   <Avatar name={coachName} avatarUrl={detail?.coach?.avatar_url} />
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
                     {coachName}
                   </Text>
                 </View>
               </View>
 
               <View className="gap-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                   Booked
                 </Text>
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   {bookings.length} / {detail.capacity}{' '}
                   {bookings.length === 1 ? 'spot' : 'spots'} taken
                 </Text>
@@ -566,17 +566,17 @@ export function ClassDetailModal({
 
               {detail.notes ? (
                 <View className="gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                     Notes
                   </Text>
-                  <Text className="text-gray-900 dark:text-gray-50">{detail.notes}</Text>
+                  <Text className="text-ink dark:text-ink-dk">{detail.notes}</Text>
                 </View>
               ) : null}
 
               {mode === 'manage' ? (
                 <View className="gap-2">
                   <View className="flex-row items-center justify-between gap-2">
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                       Members
                     </Text>
                     <View className="flex-row gap-2">
@@ -603,7 +603,7 @@ export function ClassDetailModal({
                     </View>
                   </View>
                   {composing ? (
-                    <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-2">
+                    <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
                       <TextInput
                         value={broadcastBody}
                         onChangeText={setBroadcastBody}
@@ -612,7 +612,7 @@ export function ClassDetailModal({
                         multiline
                         autoFocus
                         editable={!broadcast.isPending}
-                        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 min-h-[72px]"
+                        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk min-h-[72px]"
                       />
                       {broadcastError ? (
                         <Text className="text-red-500 dark:text-red-400 text-xs">
@@ -651,7 +651,7 @@ export function ClassDetailModal({
                   ) : null}
                   <ScrollView className="max-h-48">
                     {bookings.length === 0 ? (
-                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         No bookings yet.
                       </Text>
                     ) : (
@@ -667,7 +667,7 @@ export function ClassDetailModal({
                             />
                             <View className="flex-1">
                               <View className="flex-row items-center gap-2">
-                                <Text className="text-gray-900 dark:text-gray-50">
+                                <Text className="text-ink dark:text-ink-dk">
                                   {b.profiles?.full_name ?? 'Member'}
                                 </Text>
                                 {canSeeHealthFlag &&
@@ -729,16 +729,16 @@ export function ClassDetailModal({
 
               {mode === 'manage' && (staffWaitlist.data?.length ?? 0) > 0 ? (
                 <View className="gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                     Waitlist
                   </Text>
                   <View className="gap-1">
                     {staffWaitlist.data!.map((w) => (
                       <View key={w.profile_id} className="flex-row items-center gap-2">
-                        <Text className="text-gray-500 dark:text-gray-400 text-xs w-6">
+                        <Text className="text-ink-2 dark:text-ink-2-dk text-xs w-6">
                           #{w.rank}
                         </Text>
-                        <Text className="text-gray-700 dark:text-gray-200 text-sm flex-1">
+                        <Text className="text-ink-2 dark:text-ink-2-dk text-sm flex-1">
                           {w.profile_id.slice(0, 8)}…
                         </Text>
                       </View>
@@ -899,8 +899,8 @@ function DependentBookRow({
   }
 
   return (
-    <View className="gap-2 border-t border-gray-100 dark:border-gray-800 pt-3">
-      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+    <View className="gap-2 border-t border-line dark:border-line-dk pt-3">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
         Book a child
       </Text>
       {error ? (
@@ -910,7 +910,7 @@ function DependentBookRow({
         const booked = bookedIds.has(k.id);
         return (
           <View key={k.id} className="flex-row items-center justify-between">
-            <Text className="text-gray-700 dark:text-gray-200">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               {k.fullName ?? 'Child'}
             </Text>
             {booked ? (
@@ -951,33 +951,33 @@ function BookMembershipPrompt({
   return (
     <View className="gap-3">
       <View className="gap-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        <Text className="text-ink dark:text-ink-dk font-medium">
           Membership required
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           You need an active membership to book this class. Pick a plan to get
           started.
         </Text>
       </View>
       {plans.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           No plans available yet — ask your gym to set one up.
         </Text>
       ) : (
         plans.map((plan) => (
           <View
             key={plan.plan_id}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-2">
+            className="rounded-lg border border-line dark:border-line-dk p-3 gap-2">
             <View className="flex-row items-center justify-between gap-3">
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   {plan.name}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {planKindLabel(plan)}
                 </Text>
               </View>
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 {planPriceLabel(plan, currency)}
               </Text>
             </View>
@@ -995,7 +995,7 @@ function BookMembershipPrompt({
         ))
       )}
       {!canSelfCheckout && plans.length > 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Your gym sets up memberships for you — ask a coach.
         </Text>
       ) : null}
@@ -1065,7 +1065,7 @@ function BookActions({
   const colors = useThemeColors();
   if (inPast && !myBookingExists) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         This class has already started.
       </Text>
     );
@@ -1082,13 +1082,13 @@ function BookActions({
       : defaultPick;
     return (
       <View className="gap-3">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        <Text className="text-ink dark:text-ink-dk font-medium">
           {hasChoice
             ? 'Which membership do you want to use?'
             : 'Confirm your booking for this class?'}
         </Text>
         {entitlementsLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Checking your memberships…
           </Text>
         ) : hasChoice && entitlements ? (
@@ -1105,18 +1105,18 @@ function BookActions({
                   className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
                     isSel
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Ionicons
                     name={isSel ? 'radio-button-on' : 'radio-button-off'}
                     size={18}
                     color={isSel ? colors.primary : colors.iconTertiary}
                   />
-                  <Text className="text-gray-900 dark:text-gray-50 text-sm flex-1">
+                  <Text className="text-ink dark:text-ink-dk text-sm flex-1">
                     {e.label}
                   </Text>
                   {e.is_default ? (
-                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
                       Default
                     </Text>
                   ) : null}
@@ -1159,7 +1159,7 @@ function BookActions({
   if (confirming === 'cancel') {
     return (
       <View className="gap-2">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        <Text className="text-ink dark:text-ink-dk font-medium">
           Cancel your booking for this class?
         </Text>
         {lateCancel ? (
@@ -1190,7 +1190,7 @@ function BookActions({
   if (myWaitlistRank !== null) {
     return (
       <View className="gap-2">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        <Text className="text-ink dark:text-ink-dk font-medium">
           You're #{myWaitlistRank} on the waitlist
         </Text>
         <Button
@@ -1205,7 +1205,7 @@ function BookActions({
   if (isFull) {
     return (
       <View className="gap-2">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           This class is full.
         </Text>
         <Button onPress={onJoinWaitlist} loading={waitlistPending}>
@@ -1220,7 +1220,7 @@ function BookActions({
       <View className="gap-1">
         <Button disabled>Booking not yet open</Button>
         {when ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs text-center">
             Books open {when.toLocaleDateString(undefined, {
               weekday: 'short',
               day: 'numeric',
@@ -1238,7 +1238,7 @@ function BookActions({
       <View className="gap-1">
         <Button disabled>Booking closed</Button>
         {when ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs text-center">
             Closed {when.getHours().toString().padStart(2, '0')}:
             {when.getMinutes().toString().padStart(2, '0')}
           </Text>

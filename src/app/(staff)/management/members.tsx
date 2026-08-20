@@ -66,10 +66,10 @@ export default function MembersScreen() {
         scrollEventThrottle={100}>
         <BackLink fallbackHref="/management" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Members
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             {totalQuery.data ?? 0} members. Filter by cohort or search by name.
             Tap a member to open their detail page.
           </Text>

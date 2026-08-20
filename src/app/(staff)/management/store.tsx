@@ -62,7 +62,7 @@ export function StoreHome() {
               }`}>
               <Text
                 className={`text-sm font-medium capitalize ${
-                  selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                  selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {t}
               </Text>
@@ -94,10 +94,10 @@ export default function StoreManageScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Store
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Sell merch, programmes and tickets to your members.
           </Text>
         </View>
@@ -195,9 +195,9 @@ function ProductsTab() {
       </Button>
 
       {products.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : (products.data ?? []).length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400">
+        <Text className="text-ink-2 dark:text-ink-2-dk">
           No products yet. Add your first one above.
         </Text>
       ) : (
@@ -205,14 +205,14 @@ function ProductsTab() {
           <Pressable
             key={p.id}
             onPress={() => setEditing(draftFrom(p))}
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
+            className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card active:opacity-70">
             {productImages(p)[0] ? (
               <Image
                 source={{ uri: productImages(p)[0] }}
                 className="w-12 h-12 rounded-lg"
               />
             ) : (
-              <View className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+              <View className="w-12 h-12 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
                 <Ionicons
                   name={p.kind === 'digital' ? 'cloud-download-outline' : 'cube-outline'}
                   size={20}
@@ -221,10 +221,10 @@ function ProductsTab() {
               </View>
             )}
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 {p.name}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {formatMoney(p.price_cents, currency)}
                 {p.recurring ? '/mo' : ''} ·{' '}
                 {p.recurring
@@ -432,10 +432,10 @@ function ProductEditor({
         onPress={onClose}
         className="flex-row items-center gap-1 self-start active:opacity-70">
         <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
-        <Text className="text-gray-600 dark:text-gray-300">All products</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">All products</Text>
       </Pressable>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
         <Input
           label="Name"
           value={d.name}
@@ -452,10 +452,10 @@ function ProductEditor({
 
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-3">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Recurring (monthly)
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               A monthly subscription — programming, a locker rental, or a
               shipped box. Members are billed each month until they cancel.
             </Text>
@@ -474,7 +474,7 @@ function ProductEditor({
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             Type
           </Text>
           <View className="flex-row gap-2">
@@ -494,11 +494,11 @@ function ProductEditor({
                   className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                     selected
                       ? 'bg-primary border-primary'
-                      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+                      : 'bg-surface dark:bg-surface-dk border-gray-200 dark:border-gray-800'
                   }`}>
                   <Text
                     className={`text-sm font-medium ${
-                      selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                      selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {k === 'physical' ? 'Physical' : 'Digital'}
                   </Text>
@@ -506,7 +506,7 @@ function ProductEditor({
               );
             })}
           </View>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             {d.kind === 'physical'
               ? d.recurring
                 ? 'A box shipped every month — Stripe collects the address; price it to include shipping.'
@@ -527,10 +527,10 @@ function ProductEditor({
           <>
             <View className="flex-row items-center justify-between">
               <View className="flex-1 pr-3">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   Track inventory
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {d.kind === 'digital'
                     ? 'On for limited tickets; off for an unlimited download.'
                     : 'Sells out automatically when stock hits zero.'}
@@ -556,7 +556,7 @@ function ProductEditor({
         ) : null}
 
         <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             Photos
           </Text>
           <DraggableImageStrip
@@ -566,7 +566,7 @@ function ProductEditor({
             uploading={pickImage.isPending}
             max={MAX_IMAGES}
           />
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             {pickImage.isPending
               ? 'Uploading…'
               : 'The first photo is the cover. Long-press a photo to drag and reorder.'}
@@ -575,7 +575,7 @@ function ProductEditor({
 
         {d.kind === 'digital' ? (
           <View className="gap-2">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               {d.recurring ? 'Download file (optional)' : 'Download file'}
             </Text>
             <View className="flex-row items-center gap-3">
@@ -584,7 +584,7 @@ function ProductEditor({
                 size={22}
                 color={d.digital_asset_path ? '#16A34A' : colors.iconTertiary}
               />
-              <Text className="flex-1 text-gray-600 dark:text-gray-300 text-sm" numberOfLines={1}>
+              <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm" numberOfLines={1}>
                 {d.digital_asset_name ?? 'No file yet'}
               </Text>
               <ChipButton
@@ -600,10 +600,10 @@ function ProductEditor({
 
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-3">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Visible in store
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Hide to take it off sale without deleting it.
             </Text>
           </View>
@@ -644,12 +644,12 @@ function OrdersTab() {
   const orders = useStaffStoreOrders(membership?.gymId);
 
   if (orders.isLoading) {
-    return <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>;
+    return <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>;
   }
   const rows = orders.data ?? [];
   if (rows.length === 0) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">
+      <Text className="text-ink-2 dark:text-ink-2-dk">
         No orders yet. They'll show here as members buy.
       </Text>
     );
@@ -682,12 +682,12 @@ function SubscriptionsTab() {
   const subs = useStaffStoreSubscriptions(membership?.gymId);
 
   if (subs.isLoading) {
-    return <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>;
+    return <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>;
   }
   const rows = subs.data ?? [];
   if (rows.length === 0) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">
+      <Text className="text-ink-2 dark:text-ink-2-dk">
         No subscribers yet. Mark a product as recurring to start selling
         subscriptions.
       </Text>
@@ -720,24 +720,24 @@ function SubscriberCard({ sub }: { sub: StaffSubscription }) {
         ? 'Past due'
         : 'Active';
   const stateTone = ended
-    ? 'text-gray-500 dark:text-gray-400'
+    ? 'text-ink-2 dark:text-ink-2-dk'
     : sub.cancel_at_period_end || sub.status === 'past_due'
       ? 'text-amber-600 dark:text-amber-400'
       : 'text-green-600 dark:text-green-400';
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="text-ink dark:text-ink-dk font-semibold">
           {sub.buyer_name ?? 'Member'}
         </Text>
         <Text className={`text-xs font-semibold ${stateTone}`}>{stateLabel}</Text>
       </View>
-      <Text className="text-gray-600 dark:text-gray-300 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         {sub.product_name ?? 'Subscription'} · {priceLabel}
       </Text>
       {renews && !ended ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {sub.cancel_at_period_end ? `Ends ${renews}` : `Renews ${renews}`}
         </Text>
       ) : null}
@@ -770,12 +770,12 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
     text: 'text-green-700 dark:text-green-300',
   },
   refunded: {
-    bg: 'bg-gray-100 dark:bg-gray-800',
-    text: 'text-gray-600 dark:text-gray-300',
+    bg: 'bg-raised dark:bg-raised-dk',
+    text: 'text-ink-2 dark:text-ink-2-dk',
   },
   cancelled: {
-    bg: 'bg-gray-100 dark:bg-gray-800',
-    text: 'text-gray-600 dark:text-gray-300',
+    bg: 'bg-raised dark:bg-raised-dk',
+    text: 'text-ink-2 dark:text-ink-2-dk',
   },
 };
 
@@ -804,9 +804,9 @@ function OrderCard({ order }: { order: StaffOrder }) {
   const st = STATUS_STYLE[order.status] ?? STATUS_STYLE.refunded;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="text-ink dark:text-ink-dk font-semibold">
           {order.buyer_name ?? 'Member'}
         </Text>
         <View className={`px-2 py-1 rounded-full ${st.bg}`}>
@@ -815,10 +815,10 @@ function OrderCard({ order }: { order: StaffOrder }) {
           </Text>
         </View>
       </View>
-      <Text className="text-gray-600 dark:text-gray-300 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         {order.items_summary ?? '—'}
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         {formatMoney(order.total_cents, order.currency)}
         {order.shipping_cents > 0
           ? ` (incl. ${formatMoney(order.shipping_cents, order.currency)} shipping)`
@@ -826,14 +826,14 @@ function OrderCard({ order }: { order: StaffOrder }) {
       </Text>
 
       {order.has_physical && (order.shipping_name || addr.line1) ? (
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mt-1">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest mb-1">
+        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 mt-1">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest mb-1">
             Ship to
           </Text>
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {order.shipping_name}
           </Text>
-          <Text className="text-gray-600 dark:text-gray-300 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             {[addr.line1, addr.line2, addr.city, addr.postal_code, addr.country]
               .filter(Boolean)
               .join(', ')}
@@ -867,7 +867,7 @@ function OrderCard({ order }: { order: StaffOrder }) {
           />
         </View>
       ) : order.tracking_note ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-1">
           Note: {order.tracking_note}
         </Text>
       ) : null}
@@ -888,7 +888,7 @@ function SettingsTab() {
   return (
     <View className="gap-5">
       {role === 'owner' ? <StoreSettingsPanel /> : (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Only an owner can switch the store on or set the shipping fee.
         </Text>
       )}
@@ -933,17 +933,17 @@ function StoreSettingsPanel() {
   });
 
   if (config.isLoading) {
-    return <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>;
+    return <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>;
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          <Text className="text-ink dark:text-ink-dk font-medium">
             Store open
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             When on, members see the Store in their account.
           </Text>
         </View>
@@ -960,7 +960,7 @@ function StoreSettingsPanel() {
         keyboardType="decimal-pad"
         placeholder="0"
       />
-      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
         Added once to any order containing a physical item. Leave at 0 for free
         shipping or collection.
       </Text>
@@ -997,14 +997,14 @@ function RevenuePanel() {
 
   return (
     <View className="gap-2">
-      <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
         Sales this month
       </Text>
       {revenue.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
       ) : rows.length === 0 ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-          <Text className="text-gray-500 dark:text-gray-400">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             No sales yet this month.
           </Text>
         </View>
@@ -1013,11 +1013,11 @@ function RevenuePanel() {
           {rows.map((r) => (
             <View
               key={r.currency}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 flex-1 min-w-[150px] shadow-card">
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 flex-1 min-w-[150px] shadow-card">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 {formatMoney(r.gross_cents, r.currency)}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {r.order_count} {r.order_count === 1 ? 'order' : 'orders'}
               </Text>
             </View>

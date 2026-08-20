@@ -110,10 +110,10 @@ export default function NewDirectMessage() {
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/inbox" />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               New message
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Pick a recipient.
             </Text>
           </View>
@@ -126,13 +126,13 @@ export default function NewDirectMessage() {
           placeholderTextColor="#9CA3AF"
           autoCapitalize="none"
           autoCorrect={false}
-          className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-50 text-base"
+          className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base"
         />
 
         {candidates.isLoading || dmScope.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
         ) : filtered.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No matches.
           </Text>
         ) : (
@@ -142,15 +142,15 @@ export default function NewDirectMessage() {
               onPress={() =>
                 router.replace(`/inbox/direct/${c.profile_id}` as never)
               }
-              className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 shadow-card active:opacity-70">
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   {c.full_name?.trim() || 'Member'}
                 </Text>
               </View>
               {c.role !== 'member' ? (
-                <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
-                  <Text className="text-gray-600 dark:text-gray-300 text-[10px] uppercase tracking-wider">
+                <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider">
                     {c.role}
                   </Text>
                 </View>

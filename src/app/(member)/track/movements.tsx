@@ -47,16 +47,16 @@ export default function MovementLibrary() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/track" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Movement Library
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Search every movement we track — across CrossFit and Hyrox — star
             your favourites, and open any one for your PRs and history.
           </Text>
         </View>
 
-        <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3">
+        <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-gray-300 dark:border-gray-700 rounded-xl px-3">
           <Ionicons name="search" size={18} color={colors.iconSecondary} />
           <TextInput
             value={query}
@@ -64,7 +64,7 @@ export default function MovementLibrary() {
             placeholder="Search movements"
             placeholderTextColor={colors.iconSecondary}
             autoCorrect={false}
-            className="flex-1 py-3 text-gray-900 dark:text-gray-50"
+            className="flex-1 py-3 text-ink dark:text-ink-dk"
           />
           {searching ? (
             <Pressable onPress={() => setQuery('')} hitSlop={8}>
@@ -75,7 +75,7 @@ export default function MovementLibrary() {
 
         {searching ? (
           hits.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No movements match “{query.trim()}”.
             </Text>
           ) : (
@@ -156,7 +156,7 @@ function GroupSection({
       }>
       <Pressable
         onPress={onToggleOpen}
-        className={`flex-row items-center gap-3 bg-white dark:bg-gray-900 border rounded-xl px-4 py-3 active:opacity-70 ${
+        className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border rounded-xl px-4 py-3 active:opacity-70 ${
           open
             ? 'border-primary/50'
             : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
@@ -171,10 +171,10 @@ function GroupSection({
           />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {group.name}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {anyStarred
               ? `${starredCount} of ${group.movements.length} starred${
                   starredCount >= 2 ? (grouped ? ' · grouped' : ' · separate') : ''
@@ -207,7 +207,7 @@ function GroupSection({
         <View className="gap-2">
           {starredCount >= 2 ? (
             <View className="flex-row items-center gap-2 px-1">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                 Show as
               </Text>
               {(['grouped', 'separate'] as const).map((mode) => {
@@ -219,13 +219,13 @@ function GroupSection({
                     className={`px-3 py-1 rounded-full border ${
                       active
                         ? 'border-primary bg-primary/10'
-                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                        : 'border-line dark:border-line-dk hover:bg-gray-50 dark:hover:bg-gray-800/60'
                     }`}>
                     <Text
                       className={`text-xs font-medium ${
                         active
                           ? 'text-primary'
-                          : 'text-gray-500 dark:text-gray-400'
+                          : 'text-ink-2 dark:text-ink-2-dk'
                       }`}>
                       {mode === 'grouped' ? 'One group tile' : 'Separate tiles'}
                     </Text>
@@ -264,7 +264,7 @@ function MovementRow({
   return (
     <Pressable
       onPress={() => router.push(`/track/movement/${movement.key}` as never)}
-      className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-gray-300 dark:hover:border-gray-700 active:opacity-70">
+      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-gray-300 dark:hover:border-gray-700 active:opacity-70">
       <View
         style={{ backgroundColor: `${group.accent}26` }}
         className="w-9 h-9 rounded-full items-center justify-center">
@@ -275,10 +275,10 @@ function MovementRow({
         />
       </View>
       <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        <Text className="text-ink dark:text-ink-dk font-medium">
           {movement.name}
         </Text>
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           {group.name}
         </Text>
       </View>

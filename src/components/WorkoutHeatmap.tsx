@@ -57,7 +57,7 @@ export function WorkoutHeatmap({
       <View className="gap-1">
         {DAY_LETTERS.map((l, i) => (
           <View key={i} className="h-4 items-center justify-center">
-            <Text className="text-gray-400 dark:text-gray-500 text-[9px]">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[9px]">
               {l}
             </Text>
           </View>

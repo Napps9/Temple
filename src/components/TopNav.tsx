@@ -178,7 +178,7 @@ export function TopNav({
               primaryColor={brand.primaryColor}
             />
             <Text
-              className="text-gray-900 dark:text-gray-50 font-semibold text-base hidden lg:flex"
+              className="text-ink dark:text-ink-dk font-semibold text-base hidden lg:flex"
               numberOfLines={1}>
               {gymName}
             </Text>
@@ -249,18 +249,18 @@ export function TopNav({
             width: Math.min(320, windowWidth - 24),
             maxHeight: windowHeight - insets.top - 80,
           }}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-pop p-2">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-pop p-2">
           <ScrollView showsVerticalScrollIndicator={false}>
             <View className="px-3 py-2 flex-row items-center gap-3">
               <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={34} />
               <Text
-                className="flex-1 text-gray-900 dark:text-gray-50 font-semibold text-base"
+                className="flex-1 text-ink dark:text-ink-dk font-semibold text-base"
                 numberOfLines={1}>
                 {displayName}
               </Text>
             </View>
 
-            <View className="h-px bg-gray-100 dark:bg-gray-800 my-1.5" />
+            <View className="h-px bg-raised dark:bg-raised-dk my-1.5" />
 
             <MenuRow
               icon="chatbubble-ellipses-outline"
@@ -342,7 +342,7 @@ function MenuRow({
       onPress={onPress}
       className="flex-row items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-800">
       <Ionicons name={icon} size={20} color={iconColor} />
-      <Text className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] font-medium">
+      <Text className="flex-1 text-ink dark:text-ink-dk text-[15px] font-medium">
         {label}
       </Text>
       {badge && badge > 0 ? (

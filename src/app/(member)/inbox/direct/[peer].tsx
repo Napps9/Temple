@@ -96,7 +96,7 @@ export default function DirectThread() {
         <View className="flex-row items-center gap-3 px-2 pb-3">
           <BackLink inline fallbackHref="/inbox" />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               {peerProfile.data?.full_name?.trim() || 'Member'}
             </Text>
           </View>
@@ -106,19 +106,19 @@ export default function DirectThread() {
           className="flex-1"
           contentContainerClassName="gap-3 px-2 pb-3">
           {messages.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Loading…
             </Text>
           ) : grouped.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No messages yet. Say hi.
               </Text>
             </View>
           ) : (
             grouped.map((group) => (
               <View key={group.key} className="gap-2">
-                <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest text-center">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest text-center">
                   {group.label}
                 </Text>
                 {group.rows.map((m) => {
@@ -129,13 +129,13 @@ export default function DirectThread() {
                       className={`max-w-[80%] rounded-2xl px-3 py-2 ${
                         fromMe
                           ? 'self-end bg-primary'
-                          : 'self-start bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700'
+                          : 'self-start bg-surface dark:bg-surface-dk border border-line dark:border-line-dk'
                       }`}>
                       <Text
                         className={
                           fromMe
                             ? 'text-white text-sm'
-                            : 'text-gray-900 dark:text-gray-50 text-sm'
+                            : 'text-ink dark:text-ink-dk text-sm'
                         }>
                         {m.body}
                       </Text>
@@ -143,7 +143,7 @@ export default function DirectThread() {
                         className={
                           fromMe
                             ? 'text-white/70 text-[10px] mt-1 text-right'
-                            : 'text-gray-400 dark:text-gray-500 text-[10px] mt-1'
+                            : 'text-ink-3 dark:text-ink-3-dk text-[10px] mt-1'
                         }>
                         {new Date(m.created_at).toLocaleTimeString(undefined, {
                           hour: '2-digit',
@@ -158,14 +158,14 @@ export default function DirectThread() {
           )}
         </ScrollView>
 
-        <View className="flex-row items-end gap-2 px-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+        <View className="flex-row items-end gap-2 px-2 pt-2 border-t border-line dark:border-line-dk">
           <TextInput
             value={draft}
             onChangeText={setDraft}
             placeholder="Type a message"
             placeholderTextColor="#9CA3AF"
             multiline
-            className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3 text-gray-900 dark:text-gray-50 text-base"
+            className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl px-4 py-3 text-ink dark:text-ink-dk text-base"
             style={{ minHeight: 44, maxHeight: 120 }}
           />
           <Pressable
@@ -173,7 +173,7 @@ export default function DirectThread() {
             disabled={!draft.trim() || send.isPending}
             className={`w-11 h-11 rounded-full items-center justify-center ${
               !draft.trim() || send.isPending
-                ? 'bg-gray-200 dark:bg-gray-700'
+                ? 'bg-sunken dark:bg-sunken-dk'
                 : 'bg-primary active:bg-primary-dark'
             }`}>
             <Ionicons name="arrow-up" size={20} color="#FFFFFF" />

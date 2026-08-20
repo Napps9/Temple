@@ -52,13 +52,13 @@ export function LeaderboardPrivacyCard() {
   const value = state.data ?? true;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center gap-3">
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Show me on leaderboards
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Compare your scores with other gym members on class WODs and
             strength PRs.
           </Text>

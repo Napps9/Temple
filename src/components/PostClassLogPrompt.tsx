@@ -99,7 +99,7 @@ export function PostClassLogPrompt() {
   const when = relativeDay(new Date(classStart));
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 border border-primary/30">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-primary/30">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: accent + '26' }}
@@ -107,10 +107,10 @@ export function PostClassLogPrompt() {
           <Ionicons name="barbell-outline" size={22} color={accent} />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             How was {typeName}?
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             You trained {when} — log your result while it's fresh.
           </Text>
         </View>

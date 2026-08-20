@@ -87,7 +87,7 @@ export default function LeadCaptureScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         </View>
       </Screen>
     );
@@ -98,10 +98,10 @@ export default function LeadCaptureScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 p-6">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             Gym not found
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             Double-check the link from your gym.
           </Text>
           <Link href="/sign-in" asChild>
@@ -121,10 +121,10 @@ export default function LeadCaptureScreen() {
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 p-6">
           <GymLogo size={64} logoUrl={info.logo_url} name={info.name} primaryColor={primary} />
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             {info.name}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             This gym isn't taking enquiries through this link right now.
           </Text>
         </View>
@@ -137,10 +137,10 @@ export default function LeadCaptureScreen() {
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 p-6">
           <GymLogo size={64} logoUrl={info.logo_url} name={info.name} primaryColor={primary} />
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold text-center">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold text-center">
             Thanks, {fullName.trim().split(' ')[0] || 'there'}!
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             {info.name} has your details and will be in touch soon.
           </Text>
         </View>
@@ -157,13 +157,13 @@ export default function LeadCaptureScreen() {
           <View className="gap-6 w-full max-w-md mx-auto">
             <View className="items-center gap-3 pt-4">
               <GymLogo size={64} logoUrl={info.logo_url} name={info.name} primaryColor={primary} />
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 Enquire at
               </Text>
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold text-center">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold text-center">
                 {info.name}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-center text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-center text-sm">
                 Leave your details and the team will get back to you.
               </Text>
             </View>
@@ -208,13 +208,13 @@ export default function LeadCaptureScreen() {
                   className={`w-5 h-5 rounded border items-center justify-center mt-0.5 ${
                     marketingConsent
                       ? 'bg-primary border-primary'
-                      : 'border-gray-300 dark:border-gray-600'
+                      : 'border-line-strong dark:border-line-strong-dk'
                   }`}>
                   {marketingConsent ? (
                     <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                   ) : null}
                 </View>
-                <Text className="flex-1 text-gray-500 dark:text-gray-400 text-xs leading-5">
+                <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs leading-5">
                   I'm happy for {info.name} to email or text me about
                   membership, offers and classes. You can unsubscribe at any
                   time. We'll always handle your details in line with our
@@ -233,7 +233,7 @@ export default function LeadCaptureScreen() {
                 Send enquiry
               </Button>
 
-              <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
                 Already a member?{' '}
                 <Link href="/sign-in" asChild>
                   <Text className="text-primary">Sign in</Text>

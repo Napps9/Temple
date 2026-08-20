@@ -27,8 +27,8 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   pending: { label: 'Awaiting payment', tone: 'text-amber-600 dark:text-amber-400' },
   paid: { label: 'Paid', tone: 'text-blue-600 dark:text-blue-400' },
   fulfilled: { label: 'Complete', tone: 'text-green-600 dark:text-green-400' },
-  cancelled: { label: 'Cancelled', tone: 'text-gray-500 dark:text-gray-400' },
-  refunded: { label: 'Refunded', tone: 'text-gray-500 dark:text-gray-400' },
+  cancelled: { label: 'Cancelled', tone: 'text-ink-2 dark:text-ink-2-dk' },
+  refunded: { label: 'Refunded', tone: 'text-ink-2 dark:text-ink-2-dk' },
 };
 
 function formatDate(iso: string): string {
@@ -61,17 +61,17 @@ export default function PurchasesScreen() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/store" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Purchases
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Your subscriptions, orders and downloads.
           </Text>
         </View>
 
         {subRows.length > 0 ? (
           <View className="gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Subscriptions
             </Text>
             {subRows.map((s) => (
@@ -81,17 +81,17 @@ export default function PurchasesScreen() {
         ) : null}
 
         {orders.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : rows.length === 0 ? (
           subRows.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               You haven't bought anything yet.
             </Text>
           ) : null
         ) : (
           <View className="gap-2">
             {subRows.length > 0 ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 Orders
               </Text>
             ) : null}
@@ -115,20 +115,20 @@ function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
   const renews = sub.current_period_end ? formatDate(sub.current_period_end) : null;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {sub.name_snapshot}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5">
             {priceLabel}
           </Text>
         </View>
         <Text
           className={`text-xs font-semibold ${
             ended
-              ? 'text-gray-500 dark:text-gray-400'
+              ? 'text-ink-2 dark:text-ink-2-dk'
               : sub.cancel_at_period_end
                 ? 'text-amber-600 dark:text-amber-400'
                 : 'text-green-600 dark:text-green-400'
@@ -138,7 +138,7 @@ function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
       </View>
 
       {renews && !ended ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {sub.cancel_at_period_end
             ? `Access until ${renews}`
             : `Renews ${renews}`}
@@ -210,8 +210,8 @@ function ShippingSection({
 
   if (!editing) {
     return (
-      <View className="border-t border-gray-100 dark:border-gray-800 pt-2 mt-1 gap-1.5">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <View className="border-t border-line dark:border-line-dk pt-2 mt-1 gap-1.5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           Ships to: {formatAddress(sub.shipping_name, sub.shipping_address)}
         </Text>
         {!disabled ? (
@@ -249,7 +249,7 @@ function ShippingSection({
   };
 
   return (
-    <View className="border-t border-gray-100 dark:border-gray-800 pt-3 mt-1 gap-3">
+    <View className="border-t border-line dark:border-line-dk pt-3 mt-1 gap-3">
       <Input label="Name" value={name} onChangeText={setName} placeholder="Full name" />
       {ADDRESS_FIELDS.map((f) => (
         <Input
@@ -285,9 +285,9 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
   const status = STATUS_LABEL[order.status] ?? STATUS_LABEL.paid;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {formatDate(order.created_at)}
         </Text>
         <Text className={`text-xs font-semibold ${status.tone}`}>
@@ -303,16 +303,16 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
             <Text className="text-gray-800 dark:text-gray-100 text-sm">
               {it.quantity}× {it.name_snapshot}
             </Text>
-            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {formatMoney(it.line_total_cents, order.currency)}
             </Text>
           </View>
         ))}
       </View>
 
-      <View className="flex-row justify-between border-t border-gray-100 dark:border-gray-800 pt-2">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">Total</Text>
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+      <View className="flex-row justify-between border-t border-line dark:border-line-dk pt-2">
+        <Text className="text-ink dark:text-ink-dk font-semibold">Total</Text>
+        <Text className="text-ink dark:text-ink-dk font-semibold">
           {formatMoney(order.total_cents, order.currency)}
         </Text>
       </View>
@@ -341,14 +341,14 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
       {order.has_physical && order.status === 'paid' ? (
         <View className="flex-row items-center gap-1.5 mt-1">
           <Ionicons name="cube-outline" size={14} color={colors.iconTertiary} />
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Being prepared for shipping.
           </Text>
         </View>
       ) : null}
 
       {order.tracking_note ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-1">
           Tracking: {order.tracking_note}
         </Text>
       ) : null}

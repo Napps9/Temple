@@ -138,7 +138,7 @@ export function WaiverPanel() {
 
   if (canManage === false) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">
+      <Text className="text-ink-2 dark:text-ink-2-dk">
         Only owners and admins can manage the waiver.
       </Text>
     );
@@ -146,24 +146,24 @@ export function WaiverPanel() {
 
   return (
     <View className="gap-4">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Upload your liability waiver as a PDF. Members read it and sign
         with their finger or mouse before they can book — their signature
         is stored against the exact version they saw.
       </Text>
 
       {active.data ? (
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 border border-emerald-500/30">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 border border-emerald-500/30">
           <View className="flex-row items-center gap-2">
             <Ionicons name="document-text-outline" size={18} color="#10B981" />
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium" numberOfLines={1}>
+            <Text className="flex-1 text-ink dark:text-ink-dk font-medium" numberOfLines={1}>
               {active.data.title}
             </Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               v{active.data.version}
             </Text>
           </View>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {sigCount.data ?? 0}{' '}
             {sigCount.data === 1 ? 'member has' : 'members have'} signed this
             version.
@@ -177,12 +177,12 @@ export function WaiverPanel() {
           </View>
         </View>
       ) : (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           No waiver published yet
         </Text>
       )}
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <Input
           label="Waiver title (optional)"
           value={title}
@@ -195,7 +195,7 @@ export function WaiverPanel() {
           <View className="flex-row items-center gap-2 bg-emerald-500/10 rounded-lg px-3 py-2">
             <Ionicons name="checkmark-circle" size={16} color="#10B981" />
             <Text
-              className="flex-1 text-gray-700 dark:text-gray-200 text-sm"
+              className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm"
               numberOfLines={1}>
               {pending.name}
             </Text>
@@ -212,9 +212,9 @@ export function WaiverPanel() {
         <Pressable
           onPress={() => pick.mutate()}
           disabled={pick.isPending}
-          className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
+          className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk active:opacity-70">
           <Ionicons name="cloud-upload-outline" size={18} color={colors.iconSecondary} />
-          <Text className="text-gray-600 dark:text-gray-300 font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
             {pick.isPending
               ? 'Uploading…'
               : pending
@@ -238,7 +238,7 @@ export function WaiverPanel() {
         </Button>
 
         {active.data ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Publishing a new version asks every member to re-sign on their
             next visit. Existing signatures stay tied to the version they
             signed.
@@ -263,7 +263,7 @@ export function HealthScreeningPanel() {
       {/* Same card treatment as WaiverPanel so the two halves of the
           health-screening surface read as siblings rather than the
           PAR-Q section feeling orphaned underneath. */}
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <Pressable
           onPress={() => setShowParq((v) => !v)}
           className="flex-row items-center gap-2 active:opacity-70">
@@ -273,10 +273,10 @@ export function HealthScreeningPanel() {
             color={colors.iconSecondary}
           />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Question-by-question PAR-Q
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Optional. Adds structured health questions on top of the
               waiver — any "yes" on a flagged question raises a staff
               alert so coaches can follow up.
@@ -429,7 +429,7 @@ export function ParqPanel() {
 
   if (canManage === false) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">
+      <Text className="text-ink-2 dark:text-ink-2-dk">
         Only owners and admins can edit the PAR-Q.
       </Text>
     );
@@ -447,24 +447,24 @@ export function ParqPanel() {
 
   return (
     <View className="gap-4">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         Members re-answer every 12 months. Toggle the flag on the
         questions where a "yes" should reach a coach.
       </Text>
 
       {active.data ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           Current version: v{active.data.version}
         </Text>
       ) : (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
           No PAR-Q published yet
         </Text>
       )}
 
       <View className="gap-3">
         {rows.length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             No questions yet. Add your first one below — they'll appear
             to members in the order you add them.
           </Text>
@@ -472,7 +472,7 @@ export function ParqPanel() {
         {rows.map((r, idx) => (
           <View
             key={r.localId}
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+            className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
             <Input
               label={`Question ${idx + 1}`}
               value={r.prompt}
@@ -484,10 +484,10 @@ export function ParqPanel() {
             />
             <View className="flex-row items-center gap-3">
               <View className="flex-1">
-                <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   Alert coaches on "yes"
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Leave off for non-medical questions like goals or preferences.
                 </Text>
               </View>
@@ -511,9 +511,9 @@ export function ParqPanel() {
 
       <Pressable
         onPress={add}
-        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
         <Ionicons name="add" size={16} color={colors.iconSecondary} />
-        <Text className="text-gray-500 dark:text-gray-400">Add question</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk">Add question</Text>
       </Pressable>
 
       {error ? (
@@ -524,7 +524,7 @@ export function ParqPanel() {
         {active.data ? 'Publish new version' : 'Publish PAR-Q'}
       </Button>
 
-      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
         Publishing creates a new version and asks every member to answer
         again on their next visit. Older responses stay tied to the
         version members saw, so your history is preserved.

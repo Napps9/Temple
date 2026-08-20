@@ -141,7 +141,7 @@ export function SignaturePad({
           className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${
             hasInk ? 'active:opacity-70' : 'opacity-40'
           }`}>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
             Clear
           </Text>
         </Pressable>

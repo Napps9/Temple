@@ -235,7 +235,7 @@ function Figure({
           );
         })}
       </Svg>
-      <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
         {view === 'front' ? 'Front' : 'Back'}
       </Text>
     </View>

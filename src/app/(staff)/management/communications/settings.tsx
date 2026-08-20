@@ -90,17 +90,17 @@ export default function CommsSettingsScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Sender & footer
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             How your emails are addressed, and the postal address every
             marketing email is legally required to carry.
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">Sender</Text>
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">Sender</Text>
           <Input
             label="From name"
             value={fromName}
@@ -115,7 +115,7 @@ export default function CommsSettingsScreen() {
             keyboardType="email-address"
             placeholder="hello@yourgym.com"
           />
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Replies from members go to this address. Leave blank to use your
             provider default.
           </Text>
@@ -134,8 +134,8 @@ export default function CommsSettingsScreen() {
 
         <SendingDomainCard />
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Footer
           </Text>
           <Input
@@ -151,7 +151,7 @@ export default function CommsSettingsScreen() {
             onChangeText={setAddress}
             placeholder="123 Main St, Springfield"
           />
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Shown in the footer alongside the unsubscribe link.
           </Text>
           {saveError?.card === 'footer' ? (

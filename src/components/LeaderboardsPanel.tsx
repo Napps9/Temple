@@ -57,7 +57,7 @@ export function LeaderboardsPanel() {
 
   if (canConfigure === false) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">
+      <Text className="text-ink-2 dark:text-ink-2-dk">
         Only the owner can configure leaderboards.
       </Text>
     );
@@ -74,13 +74,13 @@ export function LeaderboardsPanel() {
 
   return (
     <View className="gap-3">
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Class leaderboards
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Rank members on programmed sections (Tuesday's Fran, the
               strength session, …). Coaches pick per section.
             </Text>
@@ -94,13 +94,13 @@ export function LeaderboardsPanel() {
         </View>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Strength leaderboards
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Rank members on movement PRs (heaviest Back Squat 1RM, fastest
               5K, …) across the gym.
             </Text>
@@ -114,7 +114,7 @@ export function LeaderboardsPanel() {
         </View>
       </View>
 
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Members can hide themselves from leaderboards on their own account
         screen.
       </Text>

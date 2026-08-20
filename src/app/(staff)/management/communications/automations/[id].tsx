@@ -126,7 +126,7 @@ function ConditionChips({
   if (options.length === 0) return null;
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">{label}</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">{label}</Text>
       <View className="flex-row flex-wrap gap-2">
         {options.map((o) => {
           const sel = selected.includes(o.id);
@@ -135,14 +135,14 @@ function ConditionChips({
               key={o.id}
               onPress={() => onToggle(o.id)}
               className={`px-3 py-1.5 rounded-full border ${
-                sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
               }`}>
-              <Text className="text-xs text-gray-700 dark:text-gray-200">{o.label}</Text>
+              <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{o.label}</Text>
             </Pressable>
           );
         })}
       </View>
-      <Text className="text-gray-400 dark:text-gray-500 text-xs">{hint}</Text>
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">{hint}</Text>
     </View>
   );
 }
@@ -190,10 +190,10 @@ function SendTimeControls({
     <View className="gap-2">
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+          <Text className="text-ink dark:text-ink-dk text-sm font-medium">
             Send at a set time
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Otherwise it goes out as soon as the wait is up.
           </Text>
         </View>
@@ -213,9 +213,9 @@ function SendTimeControls({
                   key={h}
                   onPress={() => onHour(h)}
                   className={`px-2.5 py-1 rounded-full border ${
-                    sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                    sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                   }`}>
-                  <Text className="text-xs text-gray-700 dark:text-gray-200">{formatHour(h)}</Text>
+                  <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{formatHour(h)}</Text>
                 </Pressable>
               );
             })}
@@ -228,14 +228,14 @@ function SendTimeControls({
                   key={d.n}
                   onPress={() => onDays((prev) => (prev.includes(d.n) ? prev.filter((x) => x !== d.n) : [...prev, d.n]))}
                   className={`px-2.5 py-1 rounded-full border ${
-                    sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                    sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                   }`}>
-                  <Text className="text-xs text-gray-700 dark:text-gray-200">{d.label}</Text>
+                  <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{d.label}</Text>
                 </Pressable>
               );
             })}
           </View>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             {days.length === 0
               ? 'Any day, in your gym’s timezone.'
               : 'Only on the chosen days, in your gym’s timezone.'}
@@ -642,7 +642,7 @@ export default function AutomationEditor() {
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="py-6 px-4">
           <BackLink fallbackHref="/management/communications/automations" />
-          <Text className="text-gray-500 dark:text-gray-400 mt-4">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk mt-4">Loading…</Text>
         </View>
       </Screen>
     );
@@ -684,11 +684,11 @@ export default function AutomationEditor() {
               hitSlop={6}
               className="flex-row items-center gap-1 active:opacity-70 hover:opacity-80">
               <Ionicons name="chevron-back" size={18} color={colors.iconSecondary} />
-              <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Setup
               </Text>
             </Pressable>
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
               {activeLabel}
             </Text>
             <Button
@@ -708,7 +708,7 @@ export default function AutomationEditor() {
                   size={15}
                   color={colors.iconSecondary}
                 />
-                <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   {showPreview ? 'Back to editor' : 'Preview'}
                 </Text>
               </Pressable>
@@ -737,7 +737,7 @@ export default function AutomationEditor() {
         <BackLink fallbackHref="/management/communications/automations" />
 
         <View className="flex-row items-center justify-between gap-3 flex-wrap">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold flex-1">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold flex-1">
             Edit automation
           </Text>
           <Button
@@ -749,12 +749,12 @@ export default function AutomationEditor() {
           </Button>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center justify-between gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center justify-between gap-3 shadow-card">
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Automation is live
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {canEnable
                 ? 'Sends automatically whenever the trigger fires.'
                 : 'Add a subject and some content before turning this on.'}
@@ -770,8 +770,8 @@ export default function AutomationEditor() {
 
         <Input label="Automation name" value={name} onChangeText={setName} placeholder="Welcome new members" />
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             When it fires
           </Text>
           {(['member_joined', 'member_first_class', 'member_inactive', 'member_tagged', 'lead_cold'] as TriggerType[]).map(
@@ -782,12 +782,12 @@ export default function AutomationEditor() {
                   key={t}
                   onPress={() => setTrigger(t)}
                   className={`rounded-lg border p-3 gap-1 ${
-                    sel ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'
+                    sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
                   }`}>
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
                     {TRIGGER_LABELS[t]}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {TRIGGER_BLURB[t]}
                   </Text>
                 </Pressable>
@@ -796,13 +796,13 @@ export default function AutomationEditor() {
           )}
           {trigger === 'member_tagged' ? (
             <View className="gap-1.5">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Which tag
               </Text>
               {tagLabels.isLoading ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading tags…</Text>
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading tags…</Text>
               ) : (tagLabels.data ?? []).length === 0 ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No member tags yet. Add tags or tag rules from Manage → Members first.
                 </Text>
               ) : (
@@ -814,15 +814,15 @@ export default function AutomationEditor() {
                         key={label}
                         onPress={() => setTagLabel(label)}
                         className={`px-3 py-1.5 rounded-full border ${
-                          sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                          sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                         }`}>
-                        <Text className="text-xs text-gray-700 dark:text-gray-200">{label}</Text>
+                        <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{label}</Text>
                       </Pressable>
                     );
                   })}
                 </View>
               )}
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                 Fires once per member, whether the tag is added by hand or by a
                 tag rule. Losing and regaining the tag doesn’t re-send.
               </Text>
@@ -832,7 +832,7 @@ export default function AutomationEditor() {
             <View className="w-24">
               <Input label="Wait" value={knob} onChangeText={setKnob} keyboardType="number-pad" />
             </View>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm flex-1 pt-5">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm flex-1 pt-5">
               {KNOB_UNIT[trigger]}
             </Text>
           </View>
@@ -852,12 +852,12 @@ export default function AutomationEditor() {
             (showSource && (leadSources.data?.length ?? 0) > 0);
           if (!anyOptions) return null;
           return (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
               <View className="gap-1">
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                   Only send to
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Leave everything unticked to send to everyone the trigger matches.
                 </Text>
               </View>
@@ -892,8 +892,8 @@ export default function AutomationEditor() {
           );
         })()}
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             The email
           </Text>
           <Input label="Subject" value={subject} onChangeText={setSubject} placeholder="Welcome to the gym" />
@@ -905,7 +905,7 @@ export default function AutomationEditor() {
           />
           <Input label="From name (optional)" value={fromName} onChangeText={setFromName} placeholder={brand.gymName} />
 
-          <View className="border-t border-gray-100 dark:border-gray-800 pt-3">
+          <View className="border-t border-line dark:border-line-dk pt-3">
             <SendTimeControls
               hour={sendHour}
               days={sendDays}
@@ -916,14 +916,14 @@ export default function AutomationEditor() {
 
           {trigger !== 'lead_cold' && (topics.data?.length ?? 0) > 0 ? (
             <View className="gap-1.5">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">Topic</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">Topic</Text>
               <View className="flex-row flex-wrap gap-2">
                 <Pressable
                   onPress={() => setTopicId(null)}
                   className={`px-3 py-1.5 rounded-full border ${
-                    topicId === null ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                    topicId === null ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                   }`}>
-                  <Text className="text-xs text-gray-700 dark:text-gray-200">No topic</Text>
+                  <Text className="text-xs text-ink-2 dark:text-ink-2-dk">No topic</Text>
                 </Pressable>
                 {(topics.data ?? []).map((t) => {
                   const sel = topicId === t.id;
@@ -932,14 +932,14 @@ export default function AutomationEditor() {
                       key={t.id}
                       onPress={() => setTopicId(t.id)}
                       className={`px-3 py-1.5 rounded-full border ${
-                        sel ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-700'
+                        sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
                       }`}>
-                      <Text className="text-xs text-gray-700 dark:text-gray-200">{t.label}</Text>
+                      <Text className="text-xs text-ink-2 dark:text-ink-2-dk">{t.label}</Text>
                     </Pressable>
                   );
                 })}
               </View>
-              <Text className="text-gray-400 dark:text-gray-500 text-xs">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                 Members who opted out of this topic won’t be emailed.
               </Text>
             </View>
@@ -951,15 +951,15 @@ export default function AutomationEditor() {
             setEditingStep(null);
             setMode('design');
           }}
-          className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card active:opacity-70">
-          <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+          className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card active:opacity-70">
+          <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
             <Ionicons name="brush-outline" size={18} color={colors.iconSecondary} />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Design your email
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {doc.blocks.length} block{doc.blocks.length === 1 ? '' : 's'} · edit the
               layout and content
             </Text>
@@ -967,12 +967,12 @@ export default function AutomationEditor() {
           <Ionicons name="chevron-forward" size={18} color={colors.iconTertiary} />
         </Pressable>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <View className="gap-1">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Follow-up emails
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Send more emails later in the same sequence. Each one’s wait is
               measured from the trigger, not the email before it.
             </Text>
@@ -981,9 +981,9 @@ export default function AutomationEditor() {
           {steps.map((s, i) => (
             <View
               key={s.id}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-3">
+              className="rounded-lg border border-line dark:border-line-dk p-3 gap-3">
               <View className="flex-row items-center justify-between gap-2">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   Follow-up {i + 1}
                 </Text>
                 <Pressable
@@ -1002,7 +1002,7 @@ export default function AutomationEditor() {
                     keyboardType="number-pad"
                   />
                 </View>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm flex-1 pt-5">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm flex-1 pt-5">
                   days after the trigger
                 </Text>
               </View>
@@ -1035,7 +1035,7 @@ export default function AutomationEditor() {
                   onPress={() => sendTest.mutate(s.id)}
                   disabled={sendTest.isPending}
                   className="active:opacity-70">
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
                     {testSent === s.id ? 'Test queued' : 'Send a test'}
                   </Text>
                 </Pressable>
@@ -1058,7 +1058,7 @@ export default function AutomationEditor() {
             Send a test to me
           </Button>
           {testSent === 'primary' ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs text-center">
               Test queued — it’ll arrive shortly (or simulate in dev).
             </Text>
           ) : null}

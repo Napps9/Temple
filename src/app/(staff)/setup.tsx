@@ -737,13 +737,13 @@ export default function SetupScreen() {
                 <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
                   Setting up
                 </Text>
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold text-[15px]">
+                <Text className="text-ink dark:text-ink-dk font-semibold text-[15px]">
                   {brand.gymName}
                 </Text>
               </View>
             </View>
             <View className="items-end gap-0.5">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {requiredDoneCount} of {REQUIRED_SETUP_KEYS.length} done
               </Text>
               <Pressable onPress={() => router.replace('/onboarding')} hitSlop={6}>
@@ -751,7 +751,7 @@ export default function SetupScreen() {
               </Pressable>
             </View>
           </View>
-          <View className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <View className="h-1.5 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
             <View
               style={{
                 width: `${(requiredDoneCount / REQUIRED_SETUP_KEYS.length) * 100}%`,
@@ -950,14 +950,14 @@ export default function SetupScreen() {
           {busy ? (
             <View className="flex-row items-center gap-2 pl-9">
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">Working on it…</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Working on it…</Text>
             </View>
           ) : null}
         </ScrollView>
 
         {step !== null ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
-            <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -965,7 +965,7 @@ export default function SetupScreen() {
                 placeholder="Type it like you'd say it…"
                 placeholderTextColor="#9CA3AF"
                 multiline
-                className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] max-h-24 py-1.5"
+                className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={submitText}
               />
               <Pressable
@@ -1000,7 +1000,7 @@ function StepSkip({
 }) {
   return (
     <Pressable onPress={onPress} disabled={disabled} hitSlop={6}>
-      <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-sm text-center">
         {label}
       </Text>
     </Pressable>
@@ -1068,7 +1068,7 @@ function MessageRow({
     return (
       <View className="flex-row gap-2.5 pr-7">
         <TempleAvatar />
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] leading-6">
+        <Text className="flex-1 text-ink dark:text-ink-dk text-[15px] leading-6">
           {msg.text}
         </Text>
       </View>
@@ -1093,11 +1093,11 @@ function MessageRow({
         />
         <View className="flex-1">
           {meta ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-[13px] font-medium line-through">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] font-medium line-through">
               {meta.label}
             </Text>
           ) : null}
-          <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">
             {msg.text}
           </Text>
         </View>
@@ -1122,14 +1122,14 @@ function MessageRow({
         />
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-[13px] font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-[13px] font-semibold">
               {meta.label}
             </Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-mono">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-mono">
               ~{meta.estimate}
             </Text>
           </View>
-          <Text className="text-gray-700 dark:text-gray-200 text-[15px] leading-5">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[15px] leading-5">
             {msg.text}
           </Text>
         </View>
@@ -1138,7 +1138,7 @@ function MessageRow({
   }
 
   const card = (children: React.ReactNode, confirmLabel: string, onConfirm: () => void) => (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
       {children}
       {msg.open ? (
         <View className="flex-row gap-2.5">
@@ -1160,10 +1160,10 @@ function MessageRow({
       <View className="gap-2">
         {msg.proposal.schedules.map((s, i) => (
           <View key={i} className="flex-row items-baseline gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-sm font-semibold">
               {s.class_type}
             </Text>
-            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-[13px]">
+            <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-[13px]">
               {formatDays(s.days)} · {s.times.join(', ')} · cap {s.capacity}
             </Text>
           </View>
@@ -1179,13 +1179,13 @@ function MessageRow({
         {msg.proposal.plans.map((p, i) => (
           <View
             key={i}
-            className={`flex-row items-baseline gap-2 py-2 ${i > 0 ? 'border-t border-gray-100 dark:border-gray-800' : ''}`}>
-            <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">{p.name}</Text>
-            <Text className="flex-1 text-gray-500 dark:text-gray-400 text-[12.5px]">
+            className={`flex-row items-baseline gap-2 py-2 ${i > 0 ? 'border-t border-line dark:border-line-dk' : ''}`}>
+            <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">{p.name}</Text>
+            <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-[12.5px]">
               {p.blurb}
               {p.notice_period_days ? `${p.blurb ? ' · ' : ''}${p.notice_period_days} days notice` : ''}
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
               {formatPrice(p.monthly_price_cents, currency)}
             </Text>
           </View>
@@ -1221,7 +1221,7 @@ function MessageRow({
     );
   }
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
       <RuleSheet choices={msg.choices} editable={msg.open} onEdit={onEditRule} />
       {msg.open ? (
         <Button onPress={() => onConfirmRules(msg.choices)} loading={busy}>
@@ -1267,7 +1267,7 @@ function RuleQuestion({
     <View className="gap-2.5">
       <View className="flex-row gap-2.5 pr-7">
         <TempleAvatar />
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] leading-6">
+        <Text className="flex-1 text-ink dark:text-ink-dk text-[15px] leading-6">
           {q.prompt}
         </Text>
       </View>
@@ -1280,7 +1280,7 @@ function RuleQuestion({
               className={`px-4 py-2.5 rounded-full border active:opacity-70 ${
                 i === 0
                   ? 'bg-primary border-primary'
-                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                  : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-sm font-semibold ${
@@ -1321,8 +1321,8 @@ function GoLive({
     (r) => !doneKeys.has(r.key) && !handled.has(r.step),
   );
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         {left.length === 0
           ? 'Everything’s set. Members can find you, book, sign and pay.'
           : 'You left these — each one is a couple of taps whenever you want it.'}
@@ -1333,7 +1333,7 @@ function GoLive({
           onPress={() => onReopen(it.step)}
           className="flex-row items-center gap-2.5 active:opacity-70">
           <Ionicons name="ellipse-outline" size={20} color="#9CA3AF" />
-          <Text className="flex-1 text-[15px] font-medium text-gray-900 dark:text-gray-50">
+          <Text className="flex-1 text-[15px] font-medium text-ink dark:text-ink-dk">
             {STEP_META[it.step].label}
           </Text>
           <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
@@ -1387,8 +1387,8 @@ function ColumnMapper({
           onPress={() =>
             hasEmail ? setAssigning(u.i) : onAssign(u.i, 'email')
           }
-          className="px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 active:opacity-70">
-          <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">
+          className="px-3 py-1.5 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk active:opacity-70">
+          <Text className="text-[13px] font-semibold text-ink-2 dark:text-ink-2-dk">
             {name(u)}
           </Text>
         </Pressable>
@@ -1414,7 +1414,7 @@ function ColumnMapper({
   if (!expanded) {
     return (
       <Pressable onPress={() => setExpanded(true)} hitSlop={4}>
-        <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
           {unmatched.length} other column{unmatched.length === 1 ? '' : 's'}{' '}
           ignored — <Text className="text-link font-medium">bring one in</Text>
         </Text>
@@ -1426,7 +1426,7 @@ function ColumnMapper({
     const col = unmatched.find((u) => u.i === assigning);
     return (
       <View className="gap-2">
-        <Text className="text-gray-500 dark:text-gray-400 text-[12.5px]">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px]">
           Bring “{col ? name(col) : ''}” in as…
         </Text>
         <View className="flex-row flex-wrap items-start gap-1.5">
@@ -1439,7 +1439,7 @@ function ColumnMapper({
                   onAssign(assigning, f);
                   setAssigning(null);
                 }}
-                className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 active:opacity-70">
+                className="px-3 py-1.5 rounded-full border border-line dark:border-line-dk bg-raised dark:bg-raised-dk active:opacity-70">
                 <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">
                   {TEMPLE_FIELD_LABELS[f]}
                 </Text>
@@ -1447,7 +1447,7 @@ function ColumnMapper({
             ))}
         </View>
         <Pressable onPress={() => setAssigning(null)} hitSlop={6}>
-          <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
             Pick a different column
           </Text>
         </Pressable>
@@ -1457,12 +1457,12 @@ function ColumnMapper({
 
   return (
     <View className="gap-2">
-      <Text className="text-gray-500 dark:text-gray-400 text-[12.5px]">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px]">
         Which one do you want?
       </Text>
       {columnChips}
       <Pressable onPress={() => setExpanded(false)} hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
           Leave them out
         </Text>
       </Pressable>
@@ -1607,8 +1607,8 @@ function MembersImportCard({
 
   if (!file) {
     return (
-      <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           Export a CSV from wherever you are now — Mindbody, PushPress, Glofox,
           Wodify, a spreadsheet. I’ll match the columns and show you everything
           before a single row is saved.
@@ -1633,7 +1633,7 @@ function MembersImportCard({
           multiline
           placeholder="…or paste it here: Email,First Name,Last Name,Plan"
           placeholderTextColor="#9CA3AF"
-          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 h-20 text-gray-900 dark:text-gray-50 text-[13px]"
+          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
         />
         {/* The only step that deliberately keeps a screen. A CSV only
             stages rows — nobody is charged and nothing is adopted — but
@@ -1658,12 +1658,12 @@ function MembersImportCard({
   }
 
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+      <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
         {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
         {file.name ? ` in ${file.name}` : ''}
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] leading-5">
         Matched: {matched.map((m) => shortFieldLabel(m.f)).join(', ')}
       </Text>
 
@@ -1676,7 +1676,7 @@ function MembersImportCard({
         }
       />
 
-      <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] leading-5">
         Nobody is charged and nobody is emailed. Each row waits until that
         person signs up, then attaches itself to them.
       </Text>
@@ -1698,7 +1698,7 @@ function MembersImportCard({
           setError(null);
         }}
         hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-sm text-center">
           Use a different file
         </Text>
       </Pressable>
@@ -1706,7 +1706,7 @@ function MembersImportCard({
       <Pressable
         onPress={() => router.push('/management/members/import?backTo=setup' as never)}
         hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-[13px] text-center">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] text-center">
           Plans to map or duplicates to sort? Open the full importer
         </Text>
       </Pressable>
@@ -1895,8 +1895,8 @@ function WorkoutsImportCard({
 
   if (!file) {
     return (
-      <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           One row per result — weighted lifts, WODs scored for time or AMRAP,
           Hyrox splits. Members open the app to their own PRs and leaderboards
           rather than an empty history.
@@ -1914,7 +1914,7 @@ function WorkoutsImportCard({
           multiline
           placeholder="…or paste it here: email,date,movement,weight,reps,unit"
           placeholderTextColor="#9CA3AF"
-          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 h-20 text-gray-900 dark:text-gray-50 text-[13px]"
+          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
         />
         <StepSkip label="Nothing to bring across" onPress={onSkip} />
       </View>
@@ -1942,12 +1942,12 @@ function WorkoutsImportCard({
   ].filter(Boolean);
 
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+      <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
         {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
         {file.name ? ` in ${file.name}` : ''}
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-[13px] leading-5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] leading-5">
         {kinds.length > 0
           ? `Ready: ${kinds.join(', ')}.${
               built!.deferred > 0
@@ -1967,13 +1967,13 @@ function WorkoutsImportCard({
 
       {missNames.length > 0 ? (
         <View className="gap-2">
-          <Text className="text-gray-500 dark:text-gray-400 text-[12.5px] leading-5">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px] leading-5">
             {missNames.length} movement{missNames.length === 1 ? '' : 's'} I don’t
             recognise: {missNames.slice(0, 6).join(', ')}
             {missNames.length > 6 ? `, +${missNames.length - 6} more` : ''}.
           </Text>
           {resolved ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-[12.5px] leading-5">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px] leading-5">
               Still unplaced — those rows get held rather than dropped, and you
               can name them later on the full importer.
             </Text>
@@ -2004,7 +2004,7 @@ function WorkoutsImportCard({
           setError(null);
         }}
         hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-sm text-center">
           Use a different file
         </Text>
       </Pressable>
@@ -2014,7 +2014,7 @@ function WorkoutsImportCard({
           router.push('/management/members/import-workouts?backTo=setup' as never)
         }
         hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-[13px] text-center">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] text-center">
           Movements to name by hand? Open the full importer
         </Text>
       </Pressable>
@@ -2100,10 +2100,10 @@ function LogoCard({
   });
 
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
       <View className="flex-row items-center gap-3">
         <GymLogo size={56} logoUrl={preview} name="?" primaryColor="#2563EB" />
-        <Text className="flex-1 text-gray-500 dark:text-gray-400 text-sm leading-5">
+        <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           Square works best — it becomes the app icon your members install.
         </Text>
       </View>
@@ -2187,7 +2187,7 @@ function ClassBuilderCard({
   }
 
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-4">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-4">
       {entries.length > 0 ? (
         <View className="gap-2">
           {entries.map((e, i) => (
@@ -2197,10 +2197,10 @@ function ClassBuilderCard({
                 style={{ backgroundColor: e.color }}
               />
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold text-sm">
+                <Text className="text-ink dark:text-ink-dk font-semibold text-sm">
                   {e.name}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {summariseRecurrence(e.form, weekStartsOn)}
                 </Text>
               </View>
@@ -2216,7 +2216,7 @@ function ClassBuilderCard({
       ) : null}
 
       <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Class name
         </Text>
         <View className="flex-row items-center gap-2">
@@ -2226,7 +2226,7 @@ function ClassBuilderCard({
               onChangeText={setName}
               placeholder="CrossFit"
               placeholderTextColor="#9CA3AF"
-              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
           {CLASS_TYPE_PALETTE.map((c) => (
@@ -2307,13 +2307,13 @@ function StripeCard({ onSkip }: { onSkip: () => void }) {
   });
 
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         Your own Stripe account takes the money and pays out to your bank.
         Card processing is Stripe's usual rate; Temple adds nothing on top and
         takes no cut of bookings.
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         You'll sign in to Stripe (or create an account) and come straight back
         here. It takes about a minute.
       </Text>
@@ -2421,16 +2421,16 @@ function PlanBuilderCard({
   }
 
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-4">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-4">
       {entries.length > 0 ? (
         <View className="gap-2">
           {entries.map((e, i) => (
             <View key={i} className="flex-row items-start gap-2.5">
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold text-sm">
+                <Text className="text-ink dark:text-ink-dk font-semibold text-sm">
                   {e.name}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {entrySummary(e)}
                 </Text>
               </View>
@@ -2446,7 +2446,7 @@ function PlanBuilderCard({
       ) : null}
 
       <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Plan name
         </Text>
         <TextInput
@@ -2454,7 +2454,7 @@ function PlanBuilderCard({
           onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
           placeholder="Unlimited"
           placeholderTextColor="#9CA3AF"
-          className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
         />
       </View>
 
@@ -2468,7 +2468,7 @@ function PlanBuilderCard({
               className={`px-3 py-1.5 rounded-full border active:opacity-70 ${
                 sel
                   ? 'bg-primary border-primary'
-                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                  : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-[13px] font-semibold ${
@@ -2483,7 +2483,7 @@ function PlanBuilderCard({
 
       <View className="flex-row gap-2">
         <View className="flex-1 gap-1.5">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             {draft.kind === 'credit_pack'
               ? `Price (${currencySymbol(currency)})`
               : `Price (${currencySymbol(currency)} / month)`}
@@ -2494,12 +2494,12 @@ function PlanBuilderCard({
             placeholder="89"
             keyboardType="decimal-pad"
             placeholderTextColor="#9CA3AF"
-            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
           />
         </View>
         {creditKind ? (
           <View className="flex-1 gap-1.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Classes
             </Text>
             <TextInput
@@ -2507,13 +2507,13 @@ function PlanBuilderCard({
               onChangeText={(credits) => setDraft((d) => ({ ...d, credits }))}
               keyboardType="number-pad"
               placeholderTextColor="#9CA3AF"
-              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
         ) : null}
         {recurringKind ? (
           <View className="flex-1 gap-1.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Notice (days)
             </Text>
             <TextInput
@@ -2521,7 +2521,7 @@ function PlanBuilderCard({
               onChangeText={(notice) => setDraft((d) => ({ ...d, notice }))}
               keyboardType="number-pad"
               placeholderTextColor="#9CA3AF"
-              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
         ) : null}
@@ -2669,8 +2669,8 @@ function WaiverCard({
   });
 
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm leading-5">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         A PDF is all it takes — members sign it with their finger in the app,
         and it’s kept as a liability record. Or ask the standard health
         questions instead; either one satisfies the step.
@@ -2695,7 +2695,7 @@ function WaiverCard({
           )
         }
         hitSlop={6}>
-        <Text className="text-gray-400 dark:text-gray-500 text-[13px] text-center">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] text-center">
           Own wording? Write your own questions
         </Text>
       </Pressable>
@@ -2709,7 +2709,7 @@ function WaiverCard({
 // manual-link fallback when email isn't configured.
 function TeamCard({ onDone }: { onDone: (receipt: string) => void }) {
   return (
-    <View className="ml-9 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-card p-4 gap-3">
       <InviteSection
         title="Invite a coach"
         subtitle="They'll get a link to join with the right access."

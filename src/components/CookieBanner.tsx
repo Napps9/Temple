@@ -24,9 +24,9 @@ export function CookieBanner() {
   return (
     <View
       accessibilityRole="alert"
-      className="absolute bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-4">
+      className="absolute bottom-0 left-0 right-0 z-50 border-t border-line dark:border-line-dk bg-surface dark:bg-surface-dk px-4 py-4">
       <View className="w-full max-w-3xl mx-auto gap-3 md:flex-row md:items-center md:justify-between">
-        <Text className="flex-1 text-sm leading-5 text-gray-600 dark:text-gray-300">
+        <Text className="flex-1 text-sm leading-5 text-ink-2 dark:text-ink-2-dk">
           We use only essential storage to run the app. We’d also like to use
           non-essential analytics to improve it — your choice.{' '}
           <Text

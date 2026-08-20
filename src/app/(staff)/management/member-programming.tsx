@@ -93,7 +93,7 @@ function MemberCalendar({ profileId }: { profileId: string }) {
                 avatarUrl={profileQuery.data?.avatar_url}
                 size={32}
               />
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
+              <Text className="flex-1 text-ink dark:text-ink-dk text-lg font-semibold">
                 {name}
               </Text>
             </View>
@@ -235,12 +235,12 @@ function DocumentsModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4 max-h-[90vh]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90vh]">
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
               Programme documents
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               PDFs {memberName} can open from their Programming tab.
             </Text>
           </View>
@@ -250,7 +250,7 @@ function DocumentsModal({
               files.data.map((f) => (
                 <View
                   key={f.id}
-                  className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 flex-row items-center gap-2">
+                  className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2 flex-row items-center gap-2">
                   <Ionicons
                     name="document-text-outline"
                     size={18}
@@ -259,10 +259,10 @@ function DocumentsModal({
                   <Pressable
                     className="flex-1 active:opacity-70"
                     onPress={() => openFile.mutate(f.file_path)}>
-                    <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                    <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                       {f.title}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       Added {formatDate(f.created_at)}
                     </Text>
                   </Pressable>
@@ -276,7 +276,7 @@ function DocumentsModal({
                 </View>
               ))
             ) : (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No documents yet.
               </Text>
             )}
@@ -374,26 +374,26 @@ function IndividualsList() {
         contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-2">
           <BackLink fallbackHref="/(staff)/programming" />
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-bold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-bold">
             Individual programming
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Personal programmes written for one member, free or sold through
             the store and memberships.
           </Text>
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 font-semibold">
+          <Text className="text-ink-2 dark:text-ink-2-dk font-semibold">
             With a programme
           </Text>
           {programmed.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Loading…
             </Text>
           ) : (programmed.data ?? []).length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No individual programming yet — pick a member below to start.
               </Text>
             </View>
@@ -402,13 +402,13 @@ function IndividualsList() {
               <Pressable
                 key={m.profile_id}
                 onPress={() => open(m.profile_id)}
-                className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
                 <Avatar name={m.full_name} avatarUrl={m.avatar_url} size={36} />
                 <View className="flex-1">
-                  <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                  <Text className="text-ink dark:text-ink-dk font-medium">
                     {m.full_name ?? 'Member'}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {[
                       `${m.days_total} day${m.days_total === 1 ? '' : 's'}`,
                       m.upcoming_days > 0 ? `${m.upcoming_days} upcoming` : null,
@@ -424,13 +424,13 @@ function IndividualsList() {
                   className={`rounded-full px-2 py-0.5 ${
                     m.mode === 'paid'
                       ? 'bg-amber-100 dark:bg-amber-900/40'
-                      : 'bg-gray-100 dark:bg-gray-800'
+                      : 'bg-raised dark:bg-raised-dk'
                   }`}>
                   <Text
                     className={`text-[10px] font-semibold uppercase tracking-wider ${
                       m.mode === 'paid'
                         ? 'text-amber-700 dark:text-amber-300'
-                        : 'text-gray-600 dark:text-gray-300'
+                        : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {m.mode}
                   </Text>
@@ -441,7 +441,7 @@ function IndividualsList() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 font-semibold">
+          <Text className="text-ink-2 dark:text-ink-2-dk font-semibold">
             Start a programme
           </Text>
           <Input
@@ -455,20 +455,20 @@ function IndividualsList() {
             <Pressable
               key={m.profile_id}
               onPress={() => open(m.profile_id)}
-              className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
               <Avatar
                 name={m.profiles?.full_name}
                 avatarUrl={m.profiles?.avatar_url}
                 size={36}
               />
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+              <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                 {m.profiles?.full_name ?? 'Member'}
               </Text>
               <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
             </Pressable>
           ))}
           {cohort.data && candidates.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {term ? 'No members match.' : 'Everyone already has a programme.'}
             </Text>
           ) : null}

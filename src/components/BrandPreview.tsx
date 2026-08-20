@@ -32,7 +32,7 @@ export function BrandPreview({
       ? '#FFFFFF'
       : '#111827';
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <View className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk overflow-hidden">
       <View
         className="flex-row items-center gap-3 p-3"
         style={{ backgroundColor: secondaryColor + '10' }}>
@@ -43,7 +43,7 @@ export function BrandPreview({
           primaryColor={primaryColor}
         />
         <Text
-          className="flex-1 font-semibold text-gray-900 dark:text-gray-50"
+          className="flex-1 font-semibold text-ink dark:text-ink-dk"
           numberOfLines={1}>
           {gymName || 'Your gym name'}
         </Text>
@@ -67,11 +67,11 @@ export function BrandPreview({
           </View>
         </View>
 
-        <View className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-1">
+        <View className="rounded-lg border border-line dark:border-line-dk p-3 gap-1">
           <Text className="font-semibold" style={{ color: textColor }}>
             Today's WOD
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             21-15-9 thrusters and pull ups.
           </Text>
         </View>
@@ -86,8 +86,8 @@ export function BrandPreview({
               Leaderboard
             </Text>
           </View>
-          <View className="px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800">
-            <Text className="text-gray-600 dark:text-gray-300 text-xs">
+          <View className="px-3 py-1.5 rounded-full bg-raised dark:bg-raised-dk">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               For time
             </Text>
           </View>

@@ -226,30 +226,30 @@ export default function OnboardingScreen() {
               <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
                 Setting up
               </Text>
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 {allRequiredDone
                   ? "You're all set"
                   : `Welcome to ${brand.gymName || 'Temple'}`}
               </Text>
             </View>
           </View>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             {allRequiredDone
               ? "Your gym is ready for members. The optional steps below seed history and team — you can come back to them anytime from Manage."
               : "A few quick steps and you'll be running classes, taking bookings and tracking members. Most owners are up in about 10 minutes."}
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3">
+        <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-3">
           <View className="flex-row items-center justify-between">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               {requiredDone} of {requiredSteps.length} done
             </Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Required
             </Text>
           </View>
-          <View className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <View className="h-2 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
             <View
               style={{
                 width: `${(requiredDone / Math.max(1, requiredSteps.length)) * 100}%`,
@@ -266,10 +266,10 @@ export default function OnboardingScreen() {
 
         {optionalSteps.length > 0 ? (
           <View className="gap-2">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest px-1">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest px-1">
               Optional · do these later
             </Text>
-            <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-2">
+            <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-2">
               {optionalSteps.map((step) => (
                 <StepRow key={step.key} step={step} accent={colors.primary} />
               ))}
@@ -287,7 +287,7 @@ export default function OnboardingScreen() {
               hitSlop={8}
               disabled={dismiss.isPending}
               onPress={() => dismiss.mutate()}>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 {dismiss.isPending
                   ? 'Saving…'
                   : "Don't show this again — I'll finish setup from Manage"}
@@ -321,7 +321,7 @@ function StepRow({
     <Pressable
       onPress={() => router.push(stepHref(step) as never)}
       className={`flex-row items-center gap-3 rounded-xl px-3 py-3 active:opacity-70 ${
-        step.done ? 'bg-gray-50 dark:bg-gray-800/40' : 'bg-gray-50 dark:bg-gray-800'
+        step.done ? 'bg-raised dark:bg-raised-dk/40' : 'bg-raised dark:bg-raised-dk'
       }`}>
       {/* Status disk: solid emerald + bold tick when fully done, a
           partial-fill ring when some but not all sub-items are
@@ -341,20 +341,20 @@ function StepRow({
           <Text
             className={`text-sm font-medium ${
               step.done
-                ? 'text-gray-400 dark:text-gray-500 line-through'
-                : 'text-gray-900 dark:text-gray-50'
+                ? 'text-ink-3 dark:text-ink-3-dk line-through'
+                : 'text-ink dark:text-ink-dk'
             }`}>
             {step.label}
           </Text>
           {!step.done ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-mono">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-mono">
               ~{step.estimate}
               {step.target > 1 ? ` · ${step.complete}/${step.target}` : ''}
             </Text>
           ) : null}
         </View>
         {!step.done ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {step.description}
           </Text>
         ) : null}

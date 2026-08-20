@@ -120,7 +120,7 @@ function Pill({
       ? tone === 'green'
         ? 'bg-green-600 border-green-600'
         : 'bg-red-600 border-red-600'
-      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700';
+      : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk';
   const iconColor = active
     ? '#FFFFFF'
     : tone === 'green'

@@ -183,10 +183,10 @@ export default function CreateGymScreen() {
               <TempleLockup size={22} />
             </View>
             <View className="gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-3xl font-semibold">
                 Start a new gym
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400">
+              <Text className="text-ink-2 dark:text-ink-2-dk">
                 {step === 'brand'
                   ? 'Pick your colours. You can refine these in settings later.'
                   : step === 'check_email'
@@ -198,14 +198,14 @@ export default function CreateGymScreen() {
             <Steps current={step} />
 
             {step === 'check_email' && pendingEmail ? (
-              <View className="gap-4 bg-white dark:bg-gray-900 rounded-xl p-5 shadow-card">
+              <View className="gap-4 bg-surface dark:bg-surface-dk rounded-xl p-5 shadow-card">
                 <View className="gap-2">
-                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                  <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                     Check your email
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400">
+                  <Text className="text-ink-2 dark:text-ink-2-dk">
                     We sent a confirmation link to{' '}
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       {pendingEmail}
                     </Text>
                     . Click it, then come back here and sign in — we've saved your
@@ -227,7 +227,7 @@ export default function CreateGymScreen() {
                   Resend confirmation email
                 </Button>
                 <Pressable onPress={startOver} className="self-center">
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Use a different email
                   </Text>
                 </Pressable>
@@ -288,7 +288,7 @@ export default function CreateGymScreen() {
                   placeholder="iron-temple"
                 />
                 {effectiveSlug ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Members will join at{' '}
                     <Text className="font-mono">/join/{effectiveSlug}</Text>
                   </Text>
@@ -386,7 +386,7 @@ function Steps({ current }: { current: Step }) {
         <View
           key={i}
           className={`flex-1 h-1.5 rounded-full ${
-            i <= progress ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+            i <= progress ? 'bg-primary' : 'bg-sunken dark:bg-sunken-dk'
           }`}
         />
       ))}

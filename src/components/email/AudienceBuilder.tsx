@@ -43,11 +43,11 @@ function PillToggle({
       className={`px-3 py-2 rounded-full border ${
         selected
           ? 'bg-primary border-primary'
-          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+          : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
       } active:opacity-70`}>
       <Text
         className={`text-sm font-medium ${
-          selected ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+          selected ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
         }`}>
         {label}
       </Text>
@@ -116,7 +116,7 @@ export function AudienceBuilder({
               className={`flex-1 items-center gap-1 py-3 rounded-xl border ${
                 selected
                   ? 'border-primary bg-primary/5'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                  : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
               } active:opacity-70`}>
               <Ionicons
                 name={opt.icon as keyof typeof Ionicons.glyphMap}
@@ -125,7 +125,7 @@ export function AudienceBuilder({
               />
               <Text
                 className={`text-xs font-medium text-center ${
-                  selected ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                  selected ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {opt.label}
               </Text>
@@ -136,7 +136,7 @@ export function AudienceBuilder({
 
       {value.kind === 'cohort' ? (
         <View className="gap-2">
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Include members in any of these states:
           </Text>
           <View className="flex-row flex-wrap gap-2">
@@ -154,7 +154,7 @@ export function AudienceBuilder({
 
       {value.kind === 'manual' ? (
         <View className="gap-2">
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {value.profile_ids.length === 0
               ? 'Nobody picked yet.'
               : `${value.profile_ids.length} member${
@@ -180,7 +180,7 @@ export function AudienceBuilder({
 
       {value.kind === 'pending_members' ? (
         <View className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Set to the members you just imported. Pick a different audience
             above to send to someone else instead.
           </Text>
@@ -190,9 +190,9 @@ export function AudienceBuilder({
       {value.kind === 'tags' ? (
         <View className="gap-2">
           {tagLabels.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading tags…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading tags…</Text>
           ) : (tagLabels.data ?? []).length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No member tags yet. Add tags from Manage → Members first.
             </Text>
           ) : (
@@ -221,13 +221,13 @@ export function AudienceBuilder({
                 key={seg.id}
                 onPress={() => onChange(seg.definition)}
                 onLongPress={() => deleteAudience.mutate(seg.id)}
-                className="flex-row items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 active:opacity-70">
+                className="flex-row items-center gap-1.5 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk px-3 py-2 active:opacity-70">
                 <Ionicons
                   name="bookmark-outline"
                   size={14}
                   color={colors.iconTertiary}
                 />
-                <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   {seg.name}
                 </Text>
               </Pressable>
@@ -240,7 +240,7 @@ export function AudienceBuilder({
             onChangeText={setSegmentName}
             placeholder="Save this audience as…"
             placeholderTextColor={colors.iconTertiary}
-            className="flex-1 bg-white dark:bg-gray-900 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-gray-700"
+            className="flex-1 bg-surface dark:bg-surface-dk rounded-xl px-3 py-2 text-sm text-ink dark:text-ink-dk border border-line dark:border-line-dk"
           />
           <Pressable
             disabled={!segmentName.trim() || saveAudience.isPending}
@@ -253,39 +253,39 @@ export function AudienceBuilder({
             className={`rounded-xl px-3 py-2 border ${
               segmentName.trim()
                 ? 'border-primary bg-primary/5'
-                : 'border-gray-200 dark:border-gray-700'
+                : 'border-line dark:border-line-dk'
             } active:opacity-70`}>
             <Text
               className={`text-sm font-medium ${
                 segmentName.trim()
                   ? 'text-primary'
-                  : 'text-gray-400 dark:text-gray-500'
+                  : 'text-ink-3 dark:text-ink-3-dk'
               }`}>
               Save
             </Text>
           </Pressable>
         </View>
         {(saved.data ?? []).length > 0 ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Tap a segment to load it. Long-press to delete.
           </Text>
         ) : null}
       </View>
 
       {/* Live recipient count */}
-      <View className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-3 shadow-card">
+      <View className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-3 shadow-card">
         <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center">
           <Ionicons name="send-outline" size={18} color={colors.primary} />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {count.isLoading
               ? 'Counting recipients…'
               : count.isError
                 ? 'Could not count recipients'
                 : `${count.data ?? 0} ${count.data === 1 ? 'recipient' : 'recipients'}`}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {describeAudience(value)} · with a valid email, minus unsubscribes
           </Text>
         </View>

@@ -29,14 +29,14 @@ export function ColorField({
 
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-600 dark:text-gray-300 text-xs font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
         {label}
       </Text>
       <View className="flex-row items-center gap-2">
         <Pressable
           onPress={() => setOpen((v) => !v)}
           style={{ backgroundColor: valid ?? value }}
-          className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 active:opacity-70"
+          className="w-9 h-9 rounded-lg border border-line dark:border-line-dk active:opacity-70"
         />
         <TextInput
           value={draft}
@@ -49,11 +49,11 @@ export function ColorField({
           autoCorrect={false}
           placeholder="#000000"
           placeholderTextColor="#9CA3AF"
-          className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-sm"
+          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm"
         />
       </View>
       {open ? (
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mt-1">
+        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 mt-1">
           <ColorSwatchPicker
             value={valid ?? value}
             onChange={(hex) => {

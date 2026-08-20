@@ -285,7 +285,7 @@ export default function AgentSetupWizard() {
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Ionicons name="sparkles" size={22} color={colors.primary} />
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               AI Sales Agent
             </Text>
           </View>
@@ -298,30 +298,30 @@ export default function AgentSetupWizard() {
                     ? 'bg-green-500'
                     : i === step
                       ? 'bg-primary'
-                      : 'bg-gray-200 dark:bg-gray-700'
+                      : 'bg-sunken dark:bg-sunken-dk'
                 }`}
               />
             ))}
           </View>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Step {step + 1} of {STEPS.length} · {STEPS[step]}
           </Text>
         </View>
 
         {/* STEP 0 — Welcome */}
         {step === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               An assistant that answers and sells for you
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               It picks up texts and calls from new leads on your gym's number,
               answers from your real plans and schedule, captures every lead on
               your board, and closes by emailing a one-time signup link. You
               review every conversation and can coach any reply.
             </Text>
             <View className="gap-1.5">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 Already in its brief — nothing to type
               </Text>
               <View className="flex-row flex-wrap gap-2">
@@ -332,17 +332,17 @@ export default function AgentSetupWizard() {
                 ].map((chip) => (
                   <View
                     key={chip}
-                    className="flex-row items-center gap-1.5 rounded-full bg-gray-50 dark:bg-gray-800 px-3 py-1.5">
+                    className="flex-row items-center gap-1.5 rounded-full bg-raised dark:bg-raised-dk px-3 py-1.5">
                     <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                    <Text className="text-gray-700 dark:text-gray-200 text-xs font-medium">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
                       {chip}
                     </Text>
                   </View>
                 ))}
               </View>
             </View>
-            <View className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <View className="rounded-lg bg-raised dark:bg-raised-dk p-3">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {number
                   ? `Your agent number: ${number}`
                   : 'No number yet — Temple provisions one for you. You can still set everything up now.'}
@@ -380,14 +380,14 @@ export default function AgentSetupWizard() {
 
         {/* STEP 2 — Voice */}
         {step === 2 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               How the assistant sounds on calls. Change it any time — texts are
               unaffected.
             </Text>
             {suggestedVoices.length > 0 ? (
               <>
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                   Suggested for your gym
                 </Text>
                 <View className="gap-2">
@@ -408,7 +408,7 @@ export default function AgentSetupWizard() {
             ) : null}
             {otherVoices.length > 0 ? (
               <>
-                <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                   {suggestedVoices.length > 0 ? 'More voices & accents' : 'Choose a voice'}
                 </Text>
                 <View className="gap-2">
@@ -444,13 +444,13 @@ export default function AgentSetupWizard() {
 
         {/* STEP 3 — Recording */}
         {step === 3 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
             <View className="flex-row items-center justify-between gap-3">
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   Record calls for review
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   This is how the agent gets better: play a call back, tap any
                   reply, and coach it — the correction applies to every future
                   conversation. Callers hear a notice at the start; recordings
@@ -497,8 +497,8 @@ export default function AgentSetupWizard() {
             onDone={() => router.replace('/management/leads')}
           />
         ) : step === 4 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               Test it, then turn it on
             </Text>
 
@@ -507,16 +507,16 @@ export default function AgentSetupWizard() {
                 Web-only: the native TalkToAssistant is a hard no-op, so the
                 pitch card would be a dead button there. */}
             {voiceReady && Platform.OS === 'web' && !talkOpen ? (
-              <View className="rounded-xl border-[1.5px] border-primary bg-white dark:bg-gray-900 p-4 gap-2.5">
+              <View className="rounded-xl border-[1.5px] border-primary bg-surface dark:bg-surface-dk p-4 gap-2.5">
                 <View className="flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-lg bg-primary/10 items-center justify-center">
                     <Ionicons name="mic" size={16} color={colors.primary} />
                   </View>
-                  <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                  <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                     Talk to it now
                   </Text>
                 </View>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Hear it live in the browser before anyone else does — no
                   phone, no waiting on a number.
                 </Text>
@@ -529,7 +529,7 @@ export default function AgentSetupWizard() {
             {number ? (
               <>
                 <Pressable onPress={() => setShowTextTest((s) => !s)} className="py-1">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs text-center underline">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center underline">
                     {showTextTest
                       ? 'Hide'
                       : voiceReady && Platform.OS === 'web'
@@ -539,11 +539,11 @@ export default function AgentSetupWizard() {
                 </Pressable>
                 {showTextTest ? (
                   <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       Take it for a spin
                     </Text>
                     <Text className="text-primary text-lg font-semibold">{number}</Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       Text it from your own phone — ask about prices, say you want
                       to join. The thread appears under Conversations, where you
                       can coach any reply before real leads ever see it.
@@ -573,10 +573,10 @@ export default function AgentSetupWizard() {
               <>
                 <View className="flex-row items-center justify-between gap-3 pt-1">
                   <View className="flex-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       Answer phone calls too
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {voiceReady
                         ? 'Picks up calls, not just texts.'
                         : 'Voice isn\'t provisioned yet — texts work now; missed calls get a "text us back" reply.'}
@@ -597,10 +597,10 @@ export default function AgentSetupWizard() {
               <ProvisioningChecklist step={provisionStep} resuming={provisionFailed} />
             ) : frontDeskEntitled ? (
               <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-2">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   {provisionFailed ? 'Something went wrong' : 'Ready to go live'}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {provisionFailed
                     ? "We couldn't finish setting up your number. It's safe to try again — your progress was saved, so this won't buy a second number."
                     : 'Temple sets up a real phone number for texts and calls, in a few seconds.'}
@@ -615,11 +615,11 @@ export default function AgentSetupWizard() {
                 ) : null}
               </View>
             ) : (
-              <View className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-medium">
+              <View className="rounded-lg border border-line dark:border-line-dk p-3 gap-1">
+                <Text className="text-ink dark:text-ink-dk font-medium">
                   Not on your plan yet
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Answering calls and texts needs phone &amp; text access —
                   contact Temple to turn it on, then come back and go live in
                   one tap.
@@ -662,16 +662,16 @@ function VoiceRow({
     <Pressable
       onPress={onPress}
       className={`flex-row items-center justify-between rounded-lg border p-3 ${
-        selected ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'
+        selected ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
       }`}>
       <View className="flex-1">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        <Text className="text-ink dark:text-ink-dk font-medium">
           {name}
-          <Text className="text-gray-400 dark:text-gray-500 font-normal">
+          <Text className="text-ink-3 dark:text-ink-3-dk font-normal">
             {'  '}· {region}
           </Text>
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {gender} · {desc}
         </Text>
       </View>
@@ -685,9 +685,9 @@ function VoiceRow({
 
 function SummaryRow({ k, v }: { k: string; v: string }) {
   return (
-    <View className="flex-row items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2.5">
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">{k}</Text>
-      <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">{v}</Text>
+    <View className="flex-row items-center justify-between rounded-lg bg-raised dark:bg-raised-dk px-3 py-2.5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{k}</Text>
+      <Text className="text-ink dark:text-ink-dk text-sm font-medium">{v}</Text>
     </View>
   );
 }
@@ -697,7 +697,7 @@ const PROVISION_STEPS = ['Bought your number', 'Setting up your assistant', 'Con
 function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boolean }) {
   return (
     <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 font-medium">
+      <Text className="text-ink dark:text-ink-dk font-medium">
         {resuming ? 'Picking up where we left off' : 'Setting up your number'}
       </Text>
       <View className="gap-2">
@@ -709,7 +709,7 @@ function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boo
                   ? 'bg-green-500/15'
                   : i === step
                     ? 'bg-primary/15'
-                    : 'bg-gray-100 dark:bg-gray-800'
+                    : 'bg-raised dark:bg-raised-dk'
               }`}>
               {i < step ? (
                 <Ionicons name="checkmark" size={12} color="#16A34A" />
@@ -724,8 +724,8 @@ function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boo
             <Text
               className={`text-xs ${
                 i === step
-                  ? 'text-gray-900 dark:text-gray-50 font-medium'
-                  : 'text-gray-500 dark:text-gray-400'
+                  ? 'text-ink dark:text-ink-dk font-medium'
+                  : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {label}
               {i === step ? '…' : ''}
@@ -733,7 +733,7 @@ function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boo
           </View>
         ))}
       </View>
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] text-center">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] text-center">
         {resuming
           ? 'Your progress was saved — this won\'t buy a second number'
           : 'Usually under a minute'}

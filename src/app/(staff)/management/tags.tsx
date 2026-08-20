@@ -127,23 +127,23 @@ function MemberTags({ profileId }: { profileId: string }) {
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             {profileQuery.data?.full_name ?? 'Member'}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Manual tags only. Auto tags are managed by rules and recomputed
             against the live cohort view.
           </Text>
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Current tags
           </Text>
           {tagsQuery.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
           ) : (tagsQuery.data ?? []).length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No tags yet.
             </Text>
           ) : (
@@ -163,15 +163,15 @@ function MemberTags({ profileId }: { profileId: string }) {
               ))}
             </View>
           )}
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             The eye marks tags the member can see themselves; everything else
             stays internal. Tap it to flip a manual tag; auto tags follow
             their rule's setting.
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Add manual tag
           </Text>
           <Input
@@ -181,7 +181,7 @@ function MemberTags({ profileId }: { profileId: string }) {
             placeholder="e.g. VIP"
           />
           <View className="gap-2">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Colour
             </Text>
             <ColorSwatchPicker value={color} onChange={setColor} />
@@ -193,13 +193,13 @@ function MemberTags({ profileId }: { profileId: string }) {
               className={`w-5 h-5 rounded border ${
                 memberVisible
                   ? 'bg-primary border-primary'
-                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
+                  : 'border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk'
               }`}>
               {memberVisible ? (
                 <Text className="text-white text-center text-xs leading-5">✓</Text>
               ) : null}
             </View>
-            <Text className="text-gray-900 dark:text-gray-50">Visible to the member</Text>
+            <Text className="text-ink dark:text-ink-dk">Visible to the member</Text>
           </Pressable>
           {error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
@@ -219,7 +219,7 @@ function RulesEditor() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Tag rules
           </Text>
         </View>

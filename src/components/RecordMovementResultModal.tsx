@@ -239,12 +239,12 @@ export function RecordMovementResultModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Record workout"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
               Record workout
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Log a session and any movement results.
             </Text>
           </View>
@@ -260,7 +260,7 @@ export function RecordMovementResultModal({
             />
 
             <View className="gap-3">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Results
               </Text>
               {drafts.map((d, idx) => (
@@ -276,9 +276,9 @@ export function RecordMovementResultModal({
               ))}
               <Pressable
                 onPress={addDraft}
-                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
                 <Ionicons name="add" size={16} color={colors.iconSecondary} />
-                <Text className="text-gray-500 dark:text-gray-400">
+                <Text className="text-ink-2 dark:text-ink-2-dk">
                   Add result
                 </Text>
               </Pressable>
@@ -354,23 +354,23 @@ function DraftCard({
   const colors = useThemeColors();
   const opt = draft.option;
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3">
+    <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-3">
       <View className="flex-row items-center gap-2">
         <Pressable
           onPress={onPickOption}
-          className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
+          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
           <View className="flex-1">
             {opt ? (
               <>
-                <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">
+                <Text className="text-ink dark:text-ink-dk font-medium text-sm">
                   {opt.movementName}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {opt.schemeLabel} · {opt.groupName}
                 </Text>
               </>
             ) : (
-              <Text className="text-gray-400 dark:text-gray-500 text-sm">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
                 Pick a movement
               </Text>
             )}
@@ -406,7 +406,7 @@ function DraftCard({
           />
         </>
       ) : null}
-      <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
         Result {index + 1}
       </Text>
     </View>
@@ -482,8 +482,8 @@ function SchemePickerModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Pick a movement"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Pick a movement
           </Text>
           <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
@@ -495,8 +495,8 @@ function SchemePickerModal({
                   }
                   accessibilityRole="button"
                   accessibilityState={{ expanded: expandedGroup === g.key }}
-                  className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
-                  <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                  className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
+                  <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                     {g.name}
                   </Text>
                   <Ionicons
@@ -518,7 +518,7 @@ function SchemePickerModal({
                           accessibilityRole="button"
                           accessibilityState={{ expanded: expandedMovement === m.key }}
                           className="rounded-lg px-3 py-2 flex-row items-center gap-2 active:opacity-70">
-                          <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+                          <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
                             {m.name}
                           </Text>
                           <Ionicons

@@ -45,24 +45,24 @@ export default function AthleteAccount() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref="/athlete" />
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Account
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Signed in as
           </Text>
-          <Text className="text-gray-900 dark:text-gray-50">
+          <Text className="text-ink dark:text-ink-dk">
             {session?.user.email ?? '—'}
           </Text>
         </View>
 
         {athleteActive.data ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
             <View className="flex-row items-center gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+              <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
                 Solo tracking
               </Text>
               <View className="rounded-full bg-emerald-500/15 px-2 py-0.5">
@@ -71,7 +71,7 @@ export default function AthleteAccount() {
                 </Text>
               </View>
             </View>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               You can log workouts and PRs without a gym. Cancelling stops new
               logging — your history stays.
             </Text>
@@ -91,11 +91,11 @@ export default function AthleteAccount() {
           </View>
         ) : null}
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Train with a gym
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Join an existing gym with an invite link, or start your own. Your
             training history comes with you.
           </Text>
@@ -106,8 +106,8 @@ export default function AthleteAccount() {
               </Pressable>
             </Link>
             <Link href="/create-gym" asChild>
-              <Pressable className="flex-1 rounded-xl px-4 py-3 items-center border border-gray-200 dark:border-gray-700 active:opacity-70">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Pressable className="flex-1 rounded-xl px-4 py-3 items-center border border-line dark:border-line-dk active:opacity-70">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Start a gym
                 </Text>
               </Pressable>

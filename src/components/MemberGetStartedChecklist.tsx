@@ -62,7 +62,7 @@ export function MemberGetStartedChecklist() {
   };
 
   return (
-    <View className="bg-gray-50 dark:bg-gray-800/40 rounded-2xl p-3 gap-3 border border-primary/20">
+    <View className="bg-raised dark:bg-raised-dk/40 rounded-2xl p-3 gap-3 border border-primary/20">
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-3 active:opacity-70">
@@ -70,10 +70,10 @@ export function MemberGetStartedChecklist() {
           <Ionicons name="rocket-outline" size={20} color={colors.primary} />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-sm">
+          <Text className="text-ink dark:text-ink-dk font-semibold text-sm">
             Get the most out of {gymName}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {requiredDone} of {requiredTotal} done
           </Text>
         </View>
@@ -119,19 +119,19 @@ export function MemberGetStartedChecklist() {
                   <Text
                     className={`text-sm font-medium ${
                       step.done
-                        ? 'text-gray-400 dark:text-gray-500 line-through'
-                        : 'text-gray-900 dark:text-gray-50'
+                        ? 'text-ink-3 dark:text-ink-3-dk line-through'
+                        : 'text-ink dark:text-ink-dk'
                     }`}>
                     {step.label}
                   </Text>
                   {step.optional && !step.done ? (
-                    <Text className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                    <Text className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 dark:text-ink-3-dk bg-sunken dark:bg-sunken-dk px-1.5 py-0.5 rounded">
                       Optional
                     </Text>
                   ) : null}
                 </View>
                 {!step.done ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {step.description}
                   </Text>
                 ) : null}
@@ -148,7 +148,7 @@ export function MemberGetStartedChecklist() {
             onPress={dismiss}
             hitSlop={6}
             className="items-center py-2 active:opacity-60">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs font-medium">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs font-medium">
               Skip for now
             </Text>
           </Pressable>

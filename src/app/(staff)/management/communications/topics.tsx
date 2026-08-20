@@ -89,18 +89,18 @@ export default function EmailTopicsScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Email topics
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Categorise your sends so members can choose what they hear from
             you. A member who unsubscribes from “Promos” still receives
             “Billing reminders”.
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Add a topic
           </Text>
           <Input
@@ -131,11 +131,11 @@ export default function EmailTopicsScreen() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Live topics
           </Text>
           {topics.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Loading…
             </Text>
           ) : (topics.data?.length ?? 0) === 0 ? (
@@ -149,14 +149,14 @@ export default function EmailTopicsScreen() {
               {topics.data!.map((t) => (
                 <View
                   key={t.id}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
+                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
                   <View className="flex-row items-start gap-3">
                     <View className="flex-1">
-                      <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                      <Text className="text-ink dark:text-ink-dk font-medium">
                         {t.label}
                       </Text>
                       {t.description ? (
-                        <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+                        <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5">
                           {t.description}
                         </Text>
                       ) : null}

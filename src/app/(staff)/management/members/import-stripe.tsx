@@ -281,10 +281,10 @@ export default function ImportStripeScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/plans" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Import from Stripe
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Bring your Stripe plans and subscribers across. We create a Temple
             plan for each Stripe price — including ones no one's on yet — and
             members with a live subscription are adopted (same billing, no
@@ -293,10 +293,10 @@ export default function ImportStripeScreen() {
         </View>
 
         {commit.data ? (
-          <View className="bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 rounded-xl p-5 gap-3">
+          <View className="bg-surface dark:bg-surface-dk border border-emerald-300 dark:border-emerald-800 rounded-xl p-5 gap-3">
             <View className="flex-row items-center gap-2">
               <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold text-lg">
+              <Text className="text-ink dark:text-ink-dk font-semibold text-lg">
                 {commit.data.createdPlans > 0
                   ? `${commit.data.createdPlans} plan${commit.data.createdPlans === 1 ? '' : 's'} imported`
                   : 'Plans already imported'}
@@ -305,7 +305,7 @@ export default function ImportStripeScreen() {
                   : ''}
               </Text>
             </View>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {commit.data.staged > 0
                 ? "Members join your roster when they sign up with the email on their Stripe account (share your join link or email them an invite). Their subscription then appears in the app, billed as normal and manageable in-app — for them and for you."
                 : 'The plans are ready to use. Assign members to them, or import subscribers later.'}
@@ -317,7 +317,7 @@ export default function ImportStripeScreen() {
             </Button>
           </View>
         ) : preview.isLoading || inference.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Reading your Stripe account…
           </Text>
         ) : preview.error ? (
@@ -332,11 +332,11 @@ export default function ImportStripeScreen() {
             </Button>
           </View>
         ) : (preview.data?.prices?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-5 gap-2 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-5 gap-2 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               No recurring plans found
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               We didn't find any active recurring prices or subscriptions on
               your connected Stripe account.
               {(preview.data?.skipped_no_email ?? 0) > 0
@@ -347,10 +347,10 @@ export default function ImportStripeScreen() {
         ) : (
           <>
             <View className="gap-3">
-              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 Plans
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 One Temple plan is created per Stripe price — including prices no
                 one subscribes to yet. One-time prices come in as credit packs
                 and are off by default. Edit the suggested names, or tick /
@@ -359,7 +359,7 @@ export default function ImportStripeScreen() {
               {plans.map((p) => (
                 <View
                   key={p.price_id}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
                   <Pressable
                     onPress={() => updatePlan(p.price_id, { include: !p.include })}
                     className="flex-row items-center gap-2">
@@ -368,10 +368,10 @@ export default function ImportStripeScreen() {
                       size={20}
                       color={p.include ? colors.primary : colors.iconTertiary}
                     />
-                    <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                       {p.label}
                     </Text>
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                       {!p.recurring
                         ? 'One-time price'
                         : p.count === 0
@@ -387,7 +387,7 @@ export default function ImportStripeScreen() {
                         onChangeText={(v) => updatePlan(p.price_id, { name: v })}
                       />
                       <View className="gap-1">
-                        <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                           Kind
                         </Text>
                         <View className="flex-row gap-2 flex-wrap">
@@ -399,13 +399,13 @@ export default function ImportStripeScreen() {
                                 className={`px-3 py-1.5 rounded-md border ${
                                   p.kind === k
                                     ? 'border-primary bg-primary/10'
-                                    : 'border-gray-200 dark:border-gray-700'
+                                    : 'border-line dark:border-line-dk'
                                 }`}>
                                 <Text
                                   className={`text-xs uppercase tracking-widest ${
                                     p.kind === k
                                       ? 'text-primary'
-                                      : 'text-gray-500 dark:text-gray-400'
+                                      : 'text-ink-2 dark:text-ink-2-dk'
                                   }`}>
                                   {k.replace('_', ' ')}
                                 </Text>
@@ -448,15 +448,15 @@ export default function ImportStripeScreen() {
             </View>
 
             {members.length === 0 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No active subscribers on Stripe — you're importing the plans
                   only. Assign members to them, or import subscribers later.
                 </Text>
               </View>
             ) : (
             <View className="gap-3">
-              <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 Members ({importable.length} selected)
               </Text>
               {(preview.data?.skipped_no_email ?? 0) > 0 ? (
@@ -475,7 +475,7 @@ export default function ImportStripeScreen() {
                     <Pressable
                       key={`${m.email}-${m.subscription_id}`}
                       onPress={() => !planSkipped && toggleMember(m.email)}
-                      className={`flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-lg p-3 ${
+                      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-lg p-3 ${
                         planSkipped ? 'opacity-40' : ''
                       }`}>
                       <Ionicons
@@ -485,12 +485,12 @@ export default function ImportStripeScreen() {
                       />
                       <View className="flex-1">
                         <Text
-                          className="text-gray-900 dark:text-gray-50 text-sm"
+                          className="text-ink dark:text-ink-dk text-sm"
                           numberOfLines={1}>
                           {m.name ? `${m.name} · ` : ''}
                           {m.email}
                         </Text>
-                        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                           {m.label} · {m.status} · {fmtRenew(m.current_period_end)}
                         </Text>
                       </View>

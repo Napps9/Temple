@@ -152,24 +152,24 @@ export default function StartSoloScreen() {
               <Text className="text-amber-500 text-[10px] font-semibold uppercase tracking-widest">
                 Solo · free in beta
               </Text>
-              <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-3xl font-semibold">
                 Keep pushing.
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400">
+              <Text className="text-ink-2 dark:text-ink-2-dk">
                 Log workouts, track PRs, keep your streak alive — even when
                 you're between gyms. Your history is always yours.
               </Text>
             </View>
 
             {pendingEmail ? (
-              <View className="gap-4 bg-white dark:bg-gray-900 rounded-xl p-5 shadow-card">
+              <View className="gap-4 bg-surface dark:bg-surface-dk rounded-xl p-5 shadow-card">
                 <View className="gap-2">
-                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                  <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                     Check your email
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400">
+                  <Text className="text-ink-2 dark:text-ink-2-dk">
                     We sent a confirmation link to{' '}
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       {pendingEmail}
                     </Text>
                     . Click it, then sign in — we'll set up solo tracking on
@@ -201,7 +201,7 @@ export default function StartSoloScreen() {
                     setPassword('');
                   }}
                   className="self-center">
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Use a different email
                   </Text>
                 </Pressable>
@@ -242,7 +242,7 @@ export default function StartSoloScreen() {
                     />
                   </>
                 ) : (
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Signed in as {session.user.email}. Tap below to activate.
                   </Text>
                 )}

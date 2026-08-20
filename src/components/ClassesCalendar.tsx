@@ -318,8 +318,8 @@ function ViewSwitcher({ view }: { view: string }) {
           <Text
             className={`capitalize text-sm font-medium ${
               view === v
-                ? 'text-gray-900 dark:text-gray-50'
-                : 'text-gray-500 dark:text-gray-400'
+                ? 'text-ink dark:text-ink-dk'
+                : 'text-ink-2 dark:text-ink-2-dk'
             }`}>
             {v}
           </Text>
@@ -406,7 +406,7 @@ function ClassTypeFilterRow({
             className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
               active
                 ? 'border-primary bg-primary/10'
-                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
             }`}>
             <View
               style={{ backgroundColor: ct.color }}
@@ -414,7 +414,7 @@ function ClassTypeFilterRow({
             />
             <Text
               className={`text-xs font-semibold ${
-                active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
+                active ? 'text-primary' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {ct.name}
             </Text>
@@ -815,7 +815,7 @@ export function ClassesCalendar({
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel="Jump to today"
-                className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+                className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
                 <Ionicons name="locate-outline" size={18} color={colors.iconSecondary} />
               </Pressable>
             </View>
@@ -825,7 +825,7 @@ export function ClassesCalendar({
                 hitSlop={8}
                 accessibilityLabel="Previous"
                 className="w-8 h-8 items-center justify-center">
-                <Text className="text-gray-400 dark:text-gray-500 text-lg">‹</Text>
+                <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
               </Pressable>
               <Pressable
                 onPress={openPicker}
@@ -833,7 +833,7 @@ export function ClassesCalendar({
                 accessibilityRole="button"
                 accessibilityLabel="Pick a date"
                 className="px-1.5 py-1 items-center justify-center active:opacity-70">
-                <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+                <Text className="text-ink dark:text-ink-dk text-base font-semibold">
                   {headerLabel}
                 </Text>
               </Pressable>
@@ -842,7 +842,7 @@ export function ClassesCalendar({
                 hitSlop={8}
                 accessibilityLabel="Next"
                 className="w-8 h-8 items-center justify-center">
-                <Text className="text-gray-400 dark:text-gray-500 text-lg">›</Text>
+                <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
               </Pressable>
             </View>
             <View className="flex-1 flex-row items-center justify-end gap-2">
@@ -878,10 +878,10 @@ export function ClassesCalendar({
                 setDate(startOfDay(addMonths(date, -1)));
               }}
               hitSlop={8}
-              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
-              <Text className="text-gray-500 dark:text-gray-400 text-lg">‹</Text>
+              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-lg">‹</Text>
             </Pressable>
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
               {fmtMonthYear(date)}
             </Text>
             <Pressable
@@ -890,8 +890,8 @@ export function ClassesCalendar({
                 setDate(startOfDay(addMonths(date, 1)));
               }}
               hitSlop={8}
-              className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
-              <Text className="text-gray-500 dark:text-gray-400 text-lg">›</Text>
+              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-lg">›</Text>
             </Pressable>
             {canCreate || canBulkEdit ? (
               <View className="absolute right-0 top-6 flex-row items-center gap-2">
@@ -1075,7 +1075,7 @@ function FilterPill({
       onPress={onPress}
       style={active ? { backgroundColor: color ?? accent } : undefined}
       className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70 ${
-        active ? '' : 'bg-gray-100 dark:bg-gray-800'
+        active ? '' : 'bg-raised dark:bg-raised-dk'
       }`}>
       {color && !active ? (
         <View
@@ -1085,7 +1085,7 @@ function FilterPill({
       ) : null}
       <Text
         className={`text-xs font-semibold ${
-          active ? 'text-white' : 'text-gray-600 dark:text-gray-300'
+          active ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
         }`}>
         {label}
       </Text>
@@ -1191,7 +1191,7 @@ function AgendaView({
                 className="flex-1 items-center gap-1.5">
                 <Text
                   className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
+                    today ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
@@ -1205,7 +1205,7 @@ function AgendaView({
                         ? 'text-white'
                         : today
                           ? 'text-primary'
-                          : 'text-gray-900 dark:text-gray-50'
+                          : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}
                   </Text>
@@ -1249,13 +1249,13 @@ function AgendaView({
         ) : null}
         <View className="w-full max-w-5xl mx-auto px-2 gap-2.5">
           {shownClasses.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 items-center gap-2">
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-6 items-center gap-2">
               <Ionicons
                 name="calendar-clear-outline"
                 size={24}
                 color={colors.iconTertiary}
               />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No classes on this day.
               </Text>
             </View>
@@ -1310,7 +1310,7 @@ function AgendaCard({
   const statusClass = bookedByMe
     ? 'text-emerald-600 dark:text-emerald-400'
     : full
-      ? 'text-gray-400 dark:text-gray-500'
+      ? 'text-ink-3 dark:text-ink-3-dk'
       : spotsLeft <= 3
         ? 'text-amber-600 dark:text-amber-400'
         : 'text-emerald-600 dark:text-emerald-400';
@@ -1319,18 +1319,18 @@ function AgendaCard({
     <Pressable
       onPress={isPast ? undefined : onPress}
       disabled={isPast}
-      className={`flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-2xl p-3.5 border shadow-card active:bg-gray-50 dark:active:bg-gray-800 ${
+      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-2xl p-3.5 border shadow-card active:bg-gray-50 dark:active:bg-gray-800 ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : recommended
             ? 'border-purple-400 dark:border-purple-500'
-            : 'border-gray-200 dark:border-gray-700'
+            : 'border-line dark:border-line-dk'
       } ${isPast ? 'opacity-50' : ''}`}>
       <View className="w-14">
-        <Text className="text-gray-900 dark:text-gray-50 text-[17px] font-extrabold">
+        <Text className="text-ink dark:text-ink-dk text-[17px] font-extrabold">
           {fmtTime(start)}
         </Text>
-        <Text className="text-gray-400 dark:text-gray-500 text-[11px] mt-0.5">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] mt-0.5">
           {session.duration_minutes} min
         </Text>
       </View>
@@ -1346,7 +1346,7 @@ function AgendaCard({
           ) : null}
           <Text
             numberOfLines={1}
-            className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+            className="text-ink dark:text-ink-dk font-semibold flex-1">
             {sessionLabel(session)}
           </Text>
         </View>
@@ -1354,11 +1354,11 @@ function AgendaCard({
           {coachName ? (
             <>
               <Text
-                className="text-gray-500 dark:text-gray-400 text-xs"
+                className="text-ink-2 dark:text-ink-2-dk text-xs"
                 numberOfLines={1}>
                 with {coachName}
               </Text>
-              <Text className="text-gray-300 dark:text-gray-600 text-xs">·</Text>
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">·</Text>
             </>
           ) : null}
           <Text className={`text-xs font-semibold ${statusClass}`}>
@@ -1474,7 +1474,7 @@ function DayView({
                 className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
                 <Text
                   className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
+                    today ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
@@ -1488,7 +1488,7 @@ function DayView({
                         ? 'text-white'
                         : today
                           ? 'text-primary'
-                          : 'text-gray-900 dark:text-gray-50'
+                          : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}
                   </Text>
@@ -1524,8 +1524,8 @@ function DayView({
         <View className="w-full max-w-5xl mx-auto px-2">
           {mode === 'book' ? (
             dayClasses.length === 0 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No classes scheduled today.
                 </Text>
               </View>
@@ -1601,24 +1601,24 @@ function DayGrid({
         return (
           <View
             key={hour}
-            className="flex-row gap-4 border-t border-gray-100 dark:border-gray-800"
+            className="flex-row gap-4 border-t border-line dark:border-line-dk"
             style={{ height: HOUR_HEIGHT }}>
-            <Text className="text-gray-400 dark:text-gray-500 text-sm w-14 pt-3">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-sm w-14 pt-3">
               {label}
             </Text>
             <View className="flex-1 py-1.5">
               {isOccupied ? null : canCreate ? (
                 <Pressable
                   onPress={() => onCreateAt(date, hour)}
-                  className="border border-dashed border-gray-300 dark:border-gray-600 rounded-xl px-4 justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 hover:border-gray-400 dark:hover:border-gray-500 active:bg-gray-50 dark:active:bg-gray-800"
+                  className="border border-dashed border-line-strong dark:border-line-strong-dk rounded-xl px-4 justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 hover:border-gray-400 dark:hover:border-gray-500 active:bg-gray-50 dark:active:bg-gray-800"
                   style={{ height: HOUR_HEIGHT - 12 }}>
-                  <Text className="text-gray-400 dark:text-gray-500 text-sm">+ Add a class</Text>
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-sm">+ Add a class</Text>
                 </Pressable>
               ) : (
                 <View
-                  className="border border-dashed border-gray-200 dark:border-gray-700 rounded-xl px-4 justify-center"
+                  className="border border-dashed border-line dark:border-line-dk rounded-xl px-4 justify-center"
                   style={{ height: HOUR_HEIGHT - 12 }}>
-                  <Text className="text-gray-400 dark:text-gray-500 text-sm">No class scheduled</Text>
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-sm">No class scheduled</Text>
                 </View>
               )}
             </View>
@@ -1706,7 +1706,7 @@ function DayClassCard({
       style={
         inGrid ? { height: '100%', width: '100%' } : undefined
       }
-      className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800 overflow-hidden shadow-card ${
+      className={`bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800 overflow-hidden shadow-card ${
         compact ? 'p-2' : 'p-4'
       } ${
         isPast
@@ -1732,13 +1732,13 @@ function DayClassCard({
           ) : null}
         </View>
         <Text
-          className={`text-gray-900 dark:text-gray-50 font-medium ${
+          className={`text-ink dark:text-ink-dk font-medium ${
             compact ? 'text-xs' : 'text-base'
           }`}>
           {fmtTime(start)} — {fmtTime(end)}
         </Text>
         {!compact ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {session.capacity} spots
           </Text>
         ) : null}
@@ -1822,22 +1822,22 @@ function WeekView({
             <Pressable
               onPress={() => setDate(addDays(date, -visibleDays))}
               hitSlop={8}
-              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
-              <Text className="text-gray-500 dark:text-gray-400">‹</Text>
+              className="w-8 h-8 rounded-full border border-line dark:border-line-dk items-center justify-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk">‹</Text>
             </Pressable>
-            <Text className="text-gray-700 dark:text-gray-200 font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
               {fmtWeekRange(weekDays[0], weekDays[weekDays.length - 1])}
             </Text>
             <Pressable
               onPress={() => setDate(addDays(date, visibleDays))}
               hitSlop={8}
-              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 items-center justify-center">
-              <Text className="text-gray-500 dark:text-gray-400">›</Text>
+              className="w-8 h-8 rounded-full border border-line dark:border-line-dk items-center justify-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk">›</Text>
             </Pressable>
           </View>
         )}
 
-        <View className="flex-row pb-2 border-b border-gray-200 dark:border-gray-700">
+        <View className="flex-row pb-2 border-b border-line dark:border-line-dk">
           <View className="w-10 md:w-14" />
           {weekDays.map((d, i) => {
             const today = isSameDay(d, new Date());
@@ -1857,13 +1857,13 @@ function WeekView({
                   className={`text-xs uppercase tracking-wide ${
                     today
                       ? 'text-primary font-semibold'
-                      : 'text-gray-500 dark:text-gray-400'
+                      : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {d.toLocaleDateString(undefined, { weekday: 'short' })}
                 </Text>
                 <Text
                   className={`text-lg font-bold mt-0.5 ${
-                    today ? 'text-primary' : 'text-gray-900 dark:text-gray-50'
+                    today ? 'text-primary' : 'text-ink dark:text-ink-dk'
                   }`}>
                   {d.getDate()}
                 </Text>
@@ -1953,9 +1953,9 @@ function WeekGrid({
         return (
           <View
             key={hour}
-            className="flex-row border-t border-gray-100 dark:border-gray-800"
+            className="flex-row border-t border-line dark:border-line-dk"
             style={{ height: HOUR_HEIGHT }}>
-            <Text className="w-10 md:w-14 text-xs text-gray-400 dark:text-gray-500 pt-2">
+            <Text className="w-10 md:w-14 text-xs text-ink-3 dark:text-ink-3-dk pt-2">
               {label}
             </Text>
             {weekDays.map((d, i) => {
@@ -1971,7 +1971,7 @@ function WeekGrid({
                   ) : canCreate ? (
                     <Pressable
                       onPress={() => onCreateAt(d, hour)}
-                      className="flex-1 border border-dashed border-gray-200 dark:border-gray-700 rounded-md active:bg-gray-50 dark:active:bg-gray-800"
+                      className="flex-1 border border-dashed border-line dark:border-line-dk rounded-md active:bg-gray-50 dark:active:bg-gray-800"
                     />
                   ) : (
                     <View className="flex-1 rounded-md" />
@@ -2064,10 +2064,10 @@ function WeekTile({
       }
       disabled={isPast}
       style={{ height: '100%', width: '100%' }}
-      className={`bg-white dark:bg-gray-900 rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 shadow-card ${
+      className={`bg-surface dark:bg-surface-dk rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 shadow-card ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
-          : 'border-gray-200 dark:border-gray-700'
+          : 'border-line dark:border-line-dk'
       } ${isPast ? 'opacity-50' : ''}`}>
       <View className="flex-row items-center gap-1">
         {bookedByMe ? (
@@ -2079,12 +2079,12 @@ function WeekTile({
           />
         )}
         <Text
-          className="text-gray-900 dark:text-gray-50 text-[10px] font-semibold flex-1"
+          className="text-ink dark:text-ink-dk text-[10px] font-semibold flex-1"
           numberOfLines={1}>
           {sessionLabel(session)}
         </Text>
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-[10px]" numberOfLines={1}>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px]" numberOfLines={1}>
         {compact ? fmtTime(start) : `${fmtTime(start)} – ${fmtTime(end)}`}
       </Text>
     </Pressable>
@@ -2118,7 +2118,7 @@ function MonthView({
         <View className="flex-row pb-2">
           {weekLetters.map((l, i) => (
             <View key={i} className="flex-1 items-center">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs font-medium uppercase">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs font-medium uppercase">
                 {l}
               </Text>
             </View>
@@ -2152,18 +2152,18 @@ function MonthView({
                       selected
                         ? 'bg-primary border-primary'
                         : today
-                          ? 'border-primary bg-white dark:bg-gray-900'
-                          : 'border-transparent bg-white dark:bg-gray-900'
+                          ? 'border-primary bg-surface dark:bg-surface-dk'
+                          : 'border-transparent bg-surface dark:bg-surface-dk'
                     }`}>
                     <Text
                       className={
                         selected
                           ? 'text-white font-semibold'
                           : !inMonth
-                            ? 'text-gray-300 dark:text-gray-600'
+                            ? 'text-ink-3 dark:text-ink-3-dk'
                             : today
                               ? 'text-primary font-semibold'
-                              : 'text-gray-900 dark:text-gray-50 font-medium'
+                              : 'text-ink dark:text-ink-dk font-medium'
                       }>
                       {d.getDate()}
                     </Text>

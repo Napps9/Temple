@@ -10,8 +10,8 @@ export function TodayButton({ onPress }: { onPress: () => void }) {
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel="Jump to today"
-      className="rounded-full border border-gray-200 dark:border-gray-700 px-4 h-9 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
-      <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+      className="rounded-full border border-line dark:border-line-dk px-4 h-9 items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         Today
       </Text>
     </Pressable>

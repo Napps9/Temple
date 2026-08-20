@@ -147,7 +147,7 @@ function PercentChip({
         {formatWeight(weight, unit)}
       </Text>
       {showSource ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-[10px] mt-0.5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] mt-0.5">
           {provenance}
         </Text>
       ) : null}
@@ -187,18 +187,18 @@ function MovementPickerModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Which lift is “{term}”?
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Your programming says “{term}” without saying which variant.
             Pick the one you train and we'll use it whenever it comes up
             again.
           </Text>
           <ScrollView className="max-h-72">
             {hits.length === 0 ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No matching lift in the movement catalogue.
               </Text>
             ) : (
@@ -208,10 +208,10 @@ function MovementPickerModal({
                     key={h.movement.key}
                     onPress={() => onPick(h.movement.key)}
                     className="px-3 py-3 rounded-lg active:bg-gray-50 dark:active:bg-gray-800">
-                    <Text className="text-gray-900 dark:text-gray-50">
+                    <Text className="text-ink dark:text-ink-dk">
                       {h.movement.name}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {h.group.name}
                     </Text>
                   </Pressable>

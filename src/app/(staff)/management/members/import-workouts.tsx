@@ -250,10 +250,10 @@ export default function ImportWorkoutsScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Import workout history
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Drop in a CSV of past workouts: one row per result. Weighted lifts
             (movement + weight + reps), benchmark WODs scored For Time or AMRAP,
             and Hyrox station splits + race times all import. We match each row's
@@ -264,7 +264,7 @@ export default function ImportWorkoutsScreen() {
         </View>
 
         {phase === 'upload' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
             {Platform.OS === 'web' ? (
               <>
                 <div
@@ -299,10 +299,10 @@ export default function ImportWorkoutsScreen() {
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Ionicons name="cloud-upload-outline" size={24} color={colors.iconSecondary} />
-                  <Text className="text-gray-700 dark:text-gray-200 font-medium">
+                  <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
                     {dragOver ? 'Drop to upload' : 'Drop a CSV here or tap to choose a file'}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Columns we look for: email, date, movement, weight, reps,
                     unit, score type, score.
                   </Text>
@@ -323,7 +323,7 @@ export default function ImportWorkoutsScreen() {
               </>
             ) : null}
 
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Or paste the CSV here:
             </Text>
             <TextInput
@@ -336,7 +336,7 @@ export default function ImportWorkoutsScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               style={{ minHeight: 140, textAlignVertical: 'top' }}
-              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-sm font-mono"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm font-mono"
             />
             {error ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
@@ -357,12 +357,12 @@ export default function ImportWorkoutsScreen() {
         ) : null}
 
         {phase === 'map' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
+          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
             <View className="gap-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Map your columns
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Email, date and movement are required. Reps + weight + unit are
                 strongly recommended.
               </Text>
@@ -372,9 +372,9 @@ export default function ImportWorkoutsScreen() {
               {headers.map((h, i) => (
                 <View
                   key={`${h}-${i}`}
-                  className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                  className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
                   <Text
-                    className="flex-1 text-gray-900 dark:text-gray-50 text-sm"
+                    className="flex-1 text-ink dark:text-ink-dk text-sm"
                     numberOfLines={1}>
                     {h || `(column ${i + 1})`}
                   </Text>
@@ -420,11 +420,11 @@ export default function ImportWorkoutsScreen() {
         ) : null}
 
         {phase === 'preview' ? (
-          <View className="gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Preview
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {built.weighted.length} lift{built.weighted.length === 1 ? '' : 's'}
               {' · '}
               {built.sections.length} benchmark
@@ -443,13 +443,13 @@ export default function ImportWorkoutsScreen() {
             </Text>
 
             {built.sections.length > 0 ? (
-              <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
                 {built.sections.slice(0, 6).map((s, i) => (
                   <View key={`s${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
-                    <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                    <Text className="text-ink dark:text-ink-dk text-sm">
                       {s.email} · {s.date} · {s.title}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {s.section_format === 'for_time'
                         ? `For time — ${clock(s.total_time_seconds)}`
                         : `AMRAP — ${s.total_rounds ?? 0} + ${s.total_extra_reps ?? 0}`}
@@ -457,7 +457,7 @@ export default function ImportWorkoutsScreen() {
                   </View>
                 ))}
                 {built.sections.length > 6 ? (
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs pt-1">
                     …and {built.sections.length - 6} more benchmark
                     {built.sections.length - 6 === 1 ? '' : 's'}.
                   </Text>
@@ -466,19 +466,19 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.hyrox.length > 0 ? (
-              <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
                 {built.hyrox.slice(0, 6).map((h, i) => (
                   <View key={`h${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
-                    <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                    <Text className="text-ink dark:text-ink-dk text-sm">
                       {h.email} · {h.date} · {hyroxLabel(h.movement_key)}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {clock(h.value_seconds)}
                     </Text>
                   </View>
                 ))}
                 {built.hyrox.length > 6 ? (
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs pt-1">
                     …and {built.hyrox.length - 6} more Hyrox result
                     {built.hyrox.length - 6 === 1 ? '' : 's'}.
                   </Text>
@@ -487,19 +487,19 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.weighted.length > 0 ? (
-              <View className="gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
                 {built.weighted.slice(0, 6).map((r, i) => (
                   <View key={`w${i}`} className="border-t border-gray-100 dark:border-gray-700 pt-1.5 first:border-t-0 first:pt-0">
-                    <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                    <Text className="text-ink dark:text-ink-dk text-sm">
                       {r.email} · {r.date} · {r.movement_key}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {r.weight !== null ? `${r.weight} ${r.unit} × ${r.reps}` : `bodyweight × ${r.reps}`}
                     </Text>
                   </View>
                 ))}
                 {built.weighted.length > 6 ? (
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs pt-1">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs pt-1">
                     …and {built.weighted.length - 6} more lift
                     {built.weighted.length - 6 === 1 ? '' : 's'}.
                   </Text>
@@ -512,17 +512,17 @@ export default function ImportWorkoutsScreen() {
                 <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
                   Unknown movements (dropped)
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {dedupeMisses(built.misses.map((m) => m.value)).join(', ')}
                 </Text>
                 {resolve.isSuccess && (resolve.data?.length ?? 0) === 0 ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     AI couldn’t confidently match these — rename them in the CSV
                     (e.g. “back squat”) and re-import.
                   </Text>
                 ) : aiResolutions.length === 0 ? (
                   <>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       Rename these in the CSV to match the vocab, or let AI match
                       them for you.
                     </Text>
@@ -538,8 +538,8 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {aiResolutions.length > 0 ? (
-              <View className="gap-2 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3">
-                <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+              <View className="gap-2 bg-surface dark:bg-surface-dk border border-primary/30 rounded-lg p-3">
+                <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                   AI matches — tick the ones to apply
                 </Text>
                 {aiResolutions.map((r) => {
@@ -561,9 +561,9 @@ export default function ImportWorkoutsScreen() {
                         size={18}
                         color={on ? colors.primary : colors.iconTertiary}
                       />
-                      <Text className="flex-1 text-gray-900 dark:text-gray-50 text-sm">
+                      <Text className="flex-1 text-ink dark:text-ink-dk text-sm">
                         {r.name} → {MOVEMENT_NAME_BY_KEY.get(r.key) ?? r.key}
-                        <Text className="text-gray-400 dark:text-gray-500">
+                        <Text className="text-ink-3 dark:text-ink-3-dk">
                           {'  '}
                           ({r.confidence})
                         </Text>
@@ -578,12 +578,12 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.deferred > 0 ? (
-              <View className="gap-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+              <View className="gap-1 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg p-3">
+                <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                   {built.deferred} aggregate row{built.deferred === 1 ? '' : 's'}{' '}
                   skipped
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Hyrox total-run and roxzone rows are 8-segment aggregates with
                   no single-station PB — the station splits and race time above
                   import; these don’t.
@@ -620,12 +620,12 @@ export default function ImportWorkoutsScreen() {
             }`}>
             {insertedCount > 0 ? (
               <>
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Imported {insertedCount} result{insertedCount === 1 ? '' : 's'}{' '}
                   across {result.workouts} workout
                   {result.workouts === 1 ? '' : 's'}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {result.results} lift{result.results === 1 ? '' : 's'} ·{' '}
                   {result.sections} benchmark{result.sections === 1 ? '' : 's'} ·{' '}
                   {result.hyrox} Hyrox
@@ -645,11 +645,11 @@ export default function ImportWorkoutsScreen() {
               </>
             ) : result.staged > 0 ? (
               <>
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Staged {result.staged} result{result.staged === 1 ? '' : 's'} for
                   members who haven’t signed up yet
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   These emails match imported (pending) members. Each member’s
                   history lands on their Track the moment they sign up at your join
                   link — nothing else to do.
@@ -660,10 +660,10 @@ export default function ImportWorkoutsScreen() {
               </>
             ) : (
               <>
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Nothing imported — no matching members
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {result.skipped_no_member} row
                   {result.skipped_no_member === 1 ? '' : 's'} had an email that isn’t
                   a member of this gym. Import your members first (Manage → Members →
@@ -700,7 +700,7 @@ function ScoredResultsNotice() {
       <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
         This looks like scored results
       </Text>
-      <Text className="text-gray-600 dark:text-gray-300 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Map the workout name to Movement, plus the Score type and Score columns
         (and Segment for Hyrox). Benchmark WODs (For Time, AMRAP) and Hyrox
         station splits + race times import; weighted lifts need a movement
@@ -763,7 +763,7 @@ function FieldPicker({
     );
   }
   return (
-    <Text className="text-gray-700 dark:text-gray-200 text-xs">
+    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
       {FIELD_OPTIONS.find((o) => o.key === value)?.label ?? '?'}
     </Text>
   );

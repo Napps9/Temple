@@ -304,10 +304,10 @@ export default function LeadsScreen() {
     <LeadsShell active="leads" tabs={tabs}>
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Leads
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               Track prospects from first contact through conversion.
             </Text>
           </View>
@@ -405,7 +405,7 @@ export default function LeadsScreen() {
               <Ionicons name="sparkles" size={22} color={colors.primary} />
               <View className="flex-1">
                 <Text className="text-primary font-semibold">AI Sales Agent</Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Set up an assistant that answers and sells memberships to new leads.
                 </Text>
               </View>
@@ -442,11 +442,11 @@ export default function LeadsScreen() {
                 key={s}
                 onPress={() => setScope(s)}
                 className={`px-3 py-1.5 rounded-full border ${
-                  sel ? 'bg-primary border-primary' : 'border-gray-200 dark:border-gray-700'
+                  sel ? 'bg-primary border-primary' : 'border-line dark:border-line-dk'
                 }`}>
                 <Text
                   className={`text-xs font-medium ${
-                    sel ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                    sel ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {s === 'active'
                     ? `Active pipeline${followUpCount > 0 ? ` · ${followUpCount} to chase` : ''}`
@@ -466,11 +466,11 @@ export default function LeadsScreen() {
         />
 
         {leads.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : (leads.data?.length ?? 0) === 0 ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-6 items-center gap-2 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-6 items-center gap-2 shadow-card">
             <Ionicons name="people-outline" size={32} color={colors.iconTertiary} />
-            <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
               No leads yet. Tap “Add lead” to capture your first prospect.
             </Text>
           </View>
@@ -496,16 +496,16 @@ export default function LeadsScreen() {
                       style={{ backgroundColor: STATUS_COLORS[status] }}
                       className="w-2.5 h-2.5 rounded-full"
                     />
-                    <Text className="text-gray-900 dark:text-gray-50 text-sm font-semibold">
+                    <Text className="text-ink dark:text-ink-dk text-sm font-semibold">
                       {STATUS_LABELS[status]}
                     </Text>
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs num">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs num">
                       {items.length}
                     </Text>
                   </View>
                   {items.length === 0 ? (
-                    <View className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4">
-                      <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+                    <View className="rounded-xl border border-dashed border-line dark:border-line-dk p-4">
+                      <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
                         Nothing here yet
                       </Text>
                     </View>
@@ -516,12 +516,12 @@ export default function LeadsScreen() {
                         <Pressable
                           key={l.id}
                           onPress={() => setOpenLead(l)}
-                          className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2 active:opacity-70 shadow-card">
-                          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                          className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2 active:opacity-70 shadow-card">
+                          <Text className="text-ink dark:text-ink-dk font-medium">
                             {l.full_name}
                           </Text>
                           {l.email || l.phone ? (
-                            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                               {[l.email, l.phone].filter(Boolean).join(' · ')}
                             </Text>
                           ) : null}
@@ -546,7 +546,7 @@ export default function LeadsScreen() {
                                 size={14}
                                 color={colors.iconTertiary}
                               />
-                              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                                 {l.assignee?.full_name ??
                                   (l.assigned_coach_id ? 'Coach' : 'Unassigned')}
                               </Text>
@@ -667,11 +667,11 @@ function AddLeadModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4 max-h-[90%]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90%]">
           <ScrollView>
             <View className="gap-4">
               <View className="flex-row items-center justify-between">
-                <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                   Add a lead
                 </Text>
                 <Pressable
@@ -711,7 +711,7 @@ function AddLeadModal({
 
               {sources.length > 0 ? (
                 <View className="gap-1.5">
-                  <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                     Source
                   </Text>
                   <View className="flex-row flex-wrap gap-2">
@@ -720,7 +720,7 @@ function AddLeadModal({
                       className={`px-3 py-1.5 rounded-full border ${
                         sourceId === null
                           ? 'border-primary bg-primary/10'
-                          : 'border-gray-200 dark:border-gray-700'
+                          : 'border-line dark:border-line-dk'
                       }`}>
                       <Text className="text-xs">None</Text>
                     </Pressable>
@@ -731,7 +731,7 @@ function AddLeadModal({
                           key={s.id}
                           onPress={() => setSourceId(s.id)}
                           className={`px-3 py-1.5 rounded-full border ${
-                            sel ? 'border-primary' : 'border-gray-200 dark:border-gray-700'
+                            sel ? 'border-primary' : 'border-line dark:border-line-dk'
                           }`}
                           style={
                             sel ? { backgroundColor: s.color + '22' } : undefined
@@ -1003,16 +1003,16 @@ function LeadDetailModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md gap-4 max-h-[90%]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md gap-4 max-h-[90%]">
           <ScrollView>
             <View className="gap-4">
               <View className="flex-row items-start justify-between gap-3">
                 <View className="flex-1 gap-1">
-                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                  <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                     {lead.full_name}
                   </Text>
                   {lead.email || lead.phone ? (
-                    <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       {[lead.email, lead.phone].filter(Boolean).join(' · ')}
                     </Text>
                   ) : null}
@@ -1028,8 +1028,8 @@ function LeadDetailModal({
               </View>
 
               {lead.notes ? (
-                <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                  <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     {lead.notes}
                   </Text>
                 </View>
@@ -1066,10 +1066,10 @@ function LeadDetailModal({
 
               {convertPicker ? (
                 <View className="gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                     Link to a member
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     Pick the member this lead became. (Future signups with a
                     matching email auto-link inside the gym's conversion
                     window.)
@@ -1082,11 +1082,11 @@ function LeadDetailModal({
                   />
                   <ScrollView className="max-h-56">
                     {members.isLoading ? (
-                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         Loading…
                       </Text>
                     ) : (members.data?.length ?? 0) === 0 ? (
-                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         No matching members in this gym.
                       </Text>
                     ) : (
@@ -1097,7 +1097,7 @@ function LeadDetailModal({
                             onPress={() => convert.mutate(m.profile_id)}
                             disabled={convert.isPending}
                             className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
-                            <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                            <Text className="text-ink dark:text-ink-dk flex-1">
                               {m.full_name ?? 'Member'}
                             </Text>
                             <Ionicons name="chevron-forward" size={16} color={colors.iconTertiary} />
@@ -1121,7 +1121,7 @@ function LeadDetailModal({
                 </View>
               ) : reassignOpen ? (
                 <View className="gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                     Assign to
                   </Text>
                   <ScrollView className="max-h-56">
@@ -1139,7 +1139,7 @@ function LeadDetailModal({
                               size={18}
                               color={sel ? '#10B981' : '#9CA3AF'}
                             />
-                            <Text className="text-gray-900 dark:text-gray-50 flex-1">
+                            <Text className="text-ink dark:text-ink-dk flex-1">
                               {c.full_name ?? 'Coach'}
                             </Text>
                           </Pressable>
@@ -1156,7 +1156,7 @@ function LeadDetailModal({
               ) : (
                 <>
                   <View className="gap-2">
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                       Assigned to
                     </Text>
                     <View className="flex-row items-center justify-between gap-3">
@@ -1166,7 +1166,7 @@ function LeadDetailModal({
                           size={18}
                           color={colors.iconTertiary}
                         />
-                        <Text className="text-gray-900 dark:text-gray-50">
+                        <Text className="text-ink dark:text-ink-dk">
                           {lead.assignee?.full_name ??
                             (lead.assigned_coach_id ? 'Coach' : 'Unassigned')}
                         </Text>
@@ -1194,7 +1194,7 @@ function LeadDetailModal({
                           className={`text-xs ${
                             latestEmail.status === 'failed'
                               ? 'text-red-500 dark:text-red-400'
-                              : 'text-gray-500 dark:text-gray-400'
+                              : 'text-ink-2 dark:text-ink-2-dk'
                           }`}>
                           {sendStatusLabel(latestEmail)}
                         </Text>
@@ -1211,7 +1211,7 @@ function LeadDetailModal({
                   </View>
 
                   <View className="gap-2">
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                       Status
                     </Text>
                     <View className="flex-row flex-wrap gap-2">
@@ -1223,7 +1223,7 @@ function LeadDetailModal({
                             onPress={() => setStatus.mutate(s)}
                             disabled={setStatus.isPending}
                             className={`px-3 py-1.5 rounded-full border ${
-                              sel ? 'border-primary' : 'border-gray-200 dark:border-gray-700'
+                              sel ? 'border-primary' : 'border-line dark:border-line-dk'
                             }`}
                             style={
                               sel

@@ -69,10 +69,10 @@ export default function InjuriesScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/track" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Injury tracker
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Log a niggle or injury so your coaches can program around it.
             Tap the body where it hurts.
           </Text>
@@ -91,7 +91,7 @@ export default function InjuriesScreen() {
           </View>
         ) : null}
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <BodyMap
             selected={picking}
             highlights={highlights}
@@ -105,21 +105,21 @@ export default function InjuriesScreen() {
               onDone={() => setPicking(null)}
             />
           ) : (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
               Tap a body region to record a new injury.
             </Text>
           )}
         </View>
 
         <View className="gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Your injuries
           </Text>
           {injuries.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
           ) : open.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Nothing logged. Long may it last.
               </Text>
             </View>
@@ -197,8 +197,8 @@ function LogInjuryForm({
   });
 
   return (
-    <View className="gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+    <View className="gap-3 bg-raised dark:bg-raised-dk rounded-xl p-3">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         New injury — {regionLabel(region)}
       </Text>
 
@@ -247,7 +247,7 @@ function InjuryCard({ injury }: { injury: InjuryRow }) {
   const updatedDays = daysAgo(injury.updated_at);
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: painColour(injury.pain_level) }}
@@ -256,7 +256,7 @@ function InjuryCard({ injury }: { injury: InjuryRow }) {
             {injury.pain_level}
           </Text>
         </View>
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold" numberOfLines={1}>
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold" numberOfLines={1}>
           {injuryTitle(injury.body_region, injury.side)}
         </Text>
         <View
@@ -268,12 +268,12 @@ function InjuryCard({ injury }: { injury: InjuryRow }) {
         </View>
       </View>
 
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Started {injury.started_on} · last update{' '}
         {updatedDays === 0 ? 'today' : `${updatedDays}d ago`}
       </Text>
       {injury.description ? (
-        <Text className="text-gray-700 dark:text-gray-200 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           {injury.description}
         </Text>
       ) : null}
@@ -352,11 +352,11 @@ function CheckInForm({
   });
 
   return (
-    <View className="gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+    <View className="gap-3 bg-raised dark:bg-raised-dk rounded-xl p-3">
       <PainPicker label="Pain today" value={pain} onChange={setPain} />
 
       <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Compared to last time?
         </Text>
         <View className="flex-row gap-2">
@@ -373,7 +373,7 @@ function CheckInForm({
               className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
                 feeling === key
                   ? 'border-primary bg-primary/10'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-line dark:border-line-dk'
               }`}>
               <Ionicons
                 name={icon as never}
@@ -384,7 +384,7 @@ function CheckInForm({
                 className={`text-xs font-semibold ${
                   feeling === key
                     ? 'text-primary'
-                    : 'text-gray-500 dark:text-gray-400'
+                    : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {label}
               </Text>
@@ -394,7 +394,7 @@ function CheckInForm({
       </View>
 
       <View className="gap-1.5">
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           Where is it at?
         </Text>
         <View className="flex-row gap-2">
@@ -405,13 +405,13 @@ function CheckInForm({
               className={`px-3 py-1.5 rounded-full border ${
                 status === s
                   ? 'border-primary bg-primary/10'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-xs font-semibold ${
                   status === s
                     ? 'text-primary'
-                    : 'text-gray-500 dark:text-gray-400'
+                    : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {STATUS_META[s].label}
               </Text>
@@ -458,7 +458,7 @@ function SidePicker({
 }) {
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         Side
       </Text>
       <View className="flex-row gap-2 flex-wrap">
@@ -476,13 +476,13 @@ function SidePicker({
             className={`px-3 py-1.5 rounded-full border ${
               value === key
                 ? 'border-primary bg-primary/10'
-                : 'border-gray-200 dark:border-gray-700'
+                : 'border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-xs font-semibold ${
                 value === key
                   ? 'text-primary'
-                  : 'text-gray-500 dark:text-gray-400'
+                  : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {label}
             </Text>
@@ -504,7 +504,7 @@ function PainPicker({
 }) {
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label} — {value}/10
       </Text>
       <View className="flex-row gap-1">
@@ -517,11 +517,11 @@ function PainPicker({
                 i <= value ? painColour(i) : undefined,
             }}
             className={`flex-1 h-8 rounded-md items-center justify-center ${
-              i <= value ? '' : 'bg-gray-200 dark:bg-gray-700'
+              i <= value ? '' : 'bg-sunken dark:bg-sunken-dk'
             } ${i === value ? 'border-2 border-gray-900 dark:border-white' : ''}`}>
             <Text
               className={`text-[10px] font-bold ${
-                i <= value ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+                i <= value ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {i}
             </Text>
@@ -579,7 +579,7 @@ function MovementMultiPick({
   return (
     <View className="gap-1.5">
       <View className="flex-row items-center">
-        <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           {label}
         </Text>
         <ChipButton
@@ -601,13 +601,13 @@ function MovementMultiPick({
         </View>
       ) : null}
       {open ? (
-        <View className="gap-2 bg-white dark:bg-gray-900 rounded-lg p-2">
+        <View className="gap-2 bg-surface dark:bg-surface-dk rounded-lg p-2">
           <TextInput
             value={filter}
             onChangeText={setFilter}
             placeholder="Filter movements…"
             placeholderTextColor="#9CA3AF"
-            className="bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2 text-gray-900 dark:text-gray-50 text-sm"
+            className="bg-raised dark:bg-raised-dk rounded-md px-3 py-2 text-ink dark:text-ink-dk text-sm"
           />
           <View className="flex-row flex-wrap gap-1">
             {shown.map((m) => {
@@ -619,13 +619,13 @@ function MovementMultiPick({
                   className={`rounded-full px-2.5 py-1 border ${
                     on
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                      : 'border-line dark:border-line-dk'
                   }`}>
                   <Text
                     className={`text-[11px] font-medium ${
                       on
                         ? 'text-primary'
-                        : 'text-gray-600 dark:text-gray-300'
+                        : 'text-ink-2 dark:text-ink-2-dk'
                     }`}>
                     {m.name}
                   </Text>

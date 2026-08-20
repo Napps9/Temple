@@ -39,11 +39,11 @@ export function ColourField({
   return (
     <View className="gap-1.5">
       <View>
-        <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
           {label}
         </Text>
         {hint ? (
-          <Text className="text-gray-400 dark:text-gray-500 text-xs mt-0.5">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs mt-0.5">
             {hint}
           </Text>
         ) : null}
@@ -54,7 +54,7 @@ export function ColourField({
             backgroundColor: swatchColour,
             opacity: swatchFaded ? 0.5 : 1,
           }}
-          className="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="w-10 h-10 rounded-lg border border-line dark:border-line-dk"
         />
         <View className="flex-1">
           <TextInput
@@ -64,7 +64,7 @@ export function ColourField({
             autoCorrect={false}
             placeholder={placeholderHex ?? colors.primary}
             placeholderTextColor="#9CA3AF"
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-base"
+            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
           />
         </View>
         <ChipButton
@@ -75,7 +75,7 @@ export function ColourField({
         />
       </View>
       {pickerOpen ? (
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3 mt-1">
+        <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-3 mt-1">
           <ColourArea
             value={valid ?? placeholderHex ?? colors.primary}
             onChange={onChange}

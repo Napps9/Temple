@@ -127,7 +127,7 @@ export default function Goals() {
         className="flex-1"
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/timeline" />
-        <Text className="text-gray-900 dark:text-gray-50 text-2xl font-bold">
+        <Text className="text-ink dark:text-ink-dk text-2xl font-bold">
           Goals
         </Text>
 
@@ -138,11 +138,11 @@ export default function Goals() {
           return (
             <View
               key={g.id}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-              <Text className="text-gray-900 dark:text-gray-50 text-base font-semibold">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+              <Text className="text-ink dark:text-ink-dk text-base font-semibold">
                 {g.target_value} members by {dueLabel(g.due_on)}
               </Text>
-              <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
                 {hit
                   ? `Done — you're at ${current}.`
                   : `${current} today — ${toGo} to go, ${
@@ -155,7 +155,7 @@ export default function Goals() {
               </Text>
               {isOwner ? (
                 <Pressable onPress={() => removeGoal(g.id)} hitSlop={6}>
-                  <Text className="text-gray-400 dark:text-gray-500 text-sm">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
                     Let this one go
                   </Text>
                 </Pressable>
@@ -165,7 +165,7 @@ export default function Goals() {
         })}
 
         {(goals.data ?? []).length === 0 && !adding ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm px-1 leading-5">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm px-1 leading-5">
             A goal here reads like a brief — &ldquo;200 members by
             December&rdquo;. Set one and the score is kept for you.
           </Text>
@@ -178,7 +178,7 @@ export default function Goals() {
         ) : null}
 
         {isOwner && adding ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-4 shadow-card">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4 shadow-card">
             <Input
               label="Members"
               value={target}

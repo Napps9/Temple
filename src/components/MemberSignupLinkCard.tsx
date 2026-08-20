@@ -61,9 +61,9 @@ export function MemberSignupLinkCard() {
   if (!url) return null;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           Signup link
         </Text>
         {brand.publicSignupEnabled ? null : (
@@ -74,7 +74,7 @@ export function MemberSignupLinkCard() {
           </View>
         )}
       </View>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         {brand.publicSignupEnabled
           ? `Share this link or have a walk-in scan the QR. They land on a branded join page and pick a plan.`
           : 'Public signup is turned off — anyone with this link will see "signup is closed." Turn it on in Settings → Branding.'}
@@ -93,9 +93,9 @@ export function MemberSignupLinkCard() {
             <QRCode value={url} size={88} />
           </Pressable>
           <View className="flex-1 gap-2">
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+            <View className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
               <Text
-                className="text-gray-700 dark:text-gray-200 text-sm font-mono"
+                className="text-ink-2 dark:text-ink-2-dk text-sm font-mono"
                 numberOfLines={1}>
                 {url}
               </Text>
@@ -121,9 +121,9 @@ export function MemberSignupLinkCard() {
           </View>
         </View>
       ) : (
-        <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+        <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg p-3">
           <Text
-            className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono"
+            className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-mono"
             numberOfLines={1}>
             {url}
           </Text>

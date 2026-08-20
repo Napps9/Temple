@@ -38,23 +38,23 @@ export function MoneyJobCard({
   };
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 text-[15px] font-semibold leading-[22px]">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold leading-[22px]">
         Failed payments — want me to chase them?
       </Text>
       <View className="gap-1.5">
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           When a card fails, Stripe retries and the member already gets one
           notice from Temple.
         </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           Three days in, I&apos;d send a warm nudge with their pay link — and I
           ask you before each one until you say otherwise.
         </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           If Stripe gives up, I ask before offering the smaller plan.
         </Text>
-        <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           I never cancel anyone, never invent discounts, and stop after two
           messages.
         </Text>

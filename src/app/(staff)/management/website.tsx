@@ -247,7 +247,7 @@ function resolveActivePage(document: SiteDocument, activePageId: string | null):
 
 function SaveIndicator({ state }: { state: 'idle' | 'saving' | 'saved' }) {
   if (state === 'saving') {
-    return <Text className="text-gray-400 dark:text-gray-500 text-xs">Saving…</Text>;
+    return <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Saving…</Text>;
   }
   if (state === 'saved') {
     return <Text className="text-green-600 dark:text-green-400 text-xs">Saved</Text>;
@@ -500,15 +500,15 @@ export default function WebsiteManageScreen() {
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management" />
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Website
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               A public site for {brand.gymName}, built from your own schedule and pricing.
             </Text>
           </View>
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               The site builder isn't turned on for your gym yet — get in touch with Temple
               to add it.
             </Text>
@@ -619,10 +619,10 @@ export default function WebsiteManageScreen() {
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management" />
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Website
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               Pick a starting point — every word, block and theme can be changed later.
             </Text>
           </View>
@@ -635,7 +635,7 @@ export default function WebsiteManageScreen() {
                   key={t.id}
                   onPress={() => void createSite(t.id)}
                   disabled={creatingId != null}
-                  className="flex-row items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 active:opacity-70 hover:border-primary">
+                  className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-4 active:opacity-70 hover:border-primary">
                   <View
                     className="w-16 h-12 rounded-lg overflow-hidden flex-row"
                     style={{ borderWidth: 1, borderColor: '#00000014' }}>
@@ -643,8 +643,8 @@ export default function WebsiteManageScreen() {
                     <View className="w-4" style={{ backgroundColor: composed.palette.accent }} />
                   </View>
                   <View className="flex-1 gap-0.5">
-                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">{t.name}</Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">{t.description}</Text>
+                    <Text className="text-ink dark:text-ink-dk font-semibold">{t.name}</Text>
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{t.description}</Text>
                   </View>
                   {creatingId === t.id ? (
                     <ActivityIndicator />
@@ -887,7 +887,7 @@ export default function WebsiteManageScreen() {
       <View className="flex-row items-center gap-2 flex-wrap">
         <SaveIndicator state={saveState} />
         {site.data.published ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Live at{' '}
             {customDomain.data?.status === 'verified'
               ? customDomain.data.domain
@@ -907,10 +907,10 @@ export default function WebsiteManageScreen() {
       ) : null}
       {introsToAdd.length > 0 ? (
         <View className="bg-primary/5 border border-primary/20 rounded-lg p-3 gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-xs font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
             Give your other pages a stronger opening
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Add a short intro section — a paragraph plus a photo drawn from your class types — to
             the top of your {introsToAdd.length === 1 ? 'other page' : 'other pages'}. You can edit
             or delete it afterwards.
@@ -932,7 +932,7 @@ export default function WebsiteManageScreen() {
   // placement — a destructive action deliberately kept away from the
   // primary Save/Publish flow above.
   const dangerZoneBlock = (
-    <View className="gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+    <View className="gap-2 pt-4 border-t border-line dark:border-line-dk">
       <ChipButton
         tone="red"
         className="self-start"
@@ -940,7 +940,7 @@ export default function WebsiteManageScreen() {
         icon="trash-outline"
         onPress={() => setShowDeleteSite(true)}
       />
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Removes every page and block, and takes the site offline if it's published, so you can
         start over from the template picker. Photos already saved to storage aren't deleted.
       </Text>
@@ -955,9 +955,9 @@ export default function WebsiteManageScreen() {
             stacked rows so the editor/preview gets that height back. The
             page tabs stay visible while previewing, so switching pages
             doesn't need dropping back into the editor first. */}
-        <View className="flex-row items-center gap-2 py-2 px-4 md:px-6 border-b border-gray-100 dark:border-gray-800 flex-wrap">
+        <View className="flex-row items-center gap-2 py-2 px-4 md:px-6 border-b border-line dark:border-line-dk flex-wrap">
           <BackLink inline fallbackHref="/management" />
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">Website</Text>
+          <Text className="text-ink dark:text-ink-dk font-semibold">Website</Text>
           {Platform.OS === 'web' ? (
             <Button
               variant={showPreview ? 'primary' : 'secondary'}
@@ -969,10 +969,10 @@ export default function WebsiteManageScreen() {
           <Link href="/management/website/domain" asChild>
             <Pressable hitSlop={6} className="flex-row items-center gap-1.5 active:opacity-70 hover:opacity-80">
               <Ionicons name="globe-outline" size={15} color={colors.iconSecondary} />
-              <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">Domain</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">Domain</Text>
             </Pressable>
           </Link>
-          <View className="w-px self-stretch bg-gray-200 dark:bg-gray-700 mx-1" />
+          <View className="w-px self-stretch bg-sunken dark:bg-sunken-dk mx-1" />
           {document.pages.map((p) => {
             const isActive = p.id === activePage.id;
             return (
@@ -984,11 +984,11 @@ export default function WebsiteManageScreen() {
                 className={`px-3 py-1.5 rounded-full ${
                   isActive
                     ? 'bg-primary'
-                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    : 'bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}>
                 <Text
                   className={`text-xs font-semibold ${
-                    isActive ? 'text-white' : 'text-gray-600 dark:text-gray-300'
+                    isActive ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {p.title}
                 </Text>
@@ -999,9 +999,9 @@ export default function WebsiteManageScreen() {
             onPress={() => setManagingPages(true)}
             accessibilityRole="button"
             accessibilityLabel="Manage pages"
-            className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/60">
+            className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk hover:bg-gray-50 dark:hover:bg-gray-800/60">
             <Ionicons name="add" size={12} color={colors.iconSecondary} />
-            <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Pages</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">Pages</Text>
           </Pressable>
           <View className="flex-1" />
           <Button
@@ -1026,7 +1026,7 @@ export default function WebsiteManageScreen() {
           </View>
         ) : isSplitView ? (
           <View className="flex-1 flex-row">
-            <View className="w-[460px] shrink-0 border-r border-gray-100 dark:border-gray-800">
+            <View className="w-[460px] shrink-0 border-r border-line dark:border-line-dk">
               <ScrollView className="flex-1" contentContainerClassName="p-4 md:p-6 gap-4">
                 {statusBlock}
                 <SiteEditor

@@ -293,12 +293,12 @@ export function CreateClassModal({
       animationType="fade"
       onRequestClose={onClose}>
       <View className="flex-1 bg-black/60 items-center justify-center px-6">
-        <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5">
+        <View className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5">
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
               {stage === 'form' ? 'New class' : 'Ready to schedule?'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               {stage === 'form'
                 ? 'Pick a date and time, or have it repeat.'
                 : 'Have a quick look — tap Edit if anything needs changing.'}
@@ -337,11 +337,11 @@ export function CreateClassModal({
                   className={`w-5 h-5 rounded border-2 items-center justify-center ${
                     recurring
                       ? 'border-primary bg-primary'
-                      : 'border-gray-300 dark:border-gray-600'
+                      : 'border-line-strong dark:border-line-strong-dk'
                   }`}>
                   {recurring ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
                 </View>
-                <Text className="text-gray-900 dark:text-gray-50">Recurring</Text>
+                <Text className="text-ink dark:text-ink-dk">Recurring</Text>
               </Pressable>
 
               {recurring ? (
@@ -490,7 +490,7 @@ function ConfirmView({
                 className="w-3 h-3 rounded-full"
               />
             ) : null}
-            <Text className="text-gray-900 dark:text-gray-50 text-base font-medium">
+            <Text className="text-ink dark:text-ink-dk text-base font-medium">
               {selectedType?.name ?? 'Unknown'}
             </Text>
           </View>
@@ -498,16 +498,16 @@ function ConfirmView({
 
         {recurring ? (
           <ConfirmRow label="Repeats">
-            <Text className="text-gray-900 dark:text-gray-50">
+            <Text className="text-ink dark:text-ink-dk">
               {daysList || '—'} at {timesList || '—'}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm mt-1">
               Starting {dateLabel}
               {indefinite
                 ? ''
                 : ` · for ${weeks} ${weeks === '1' ? 'week' : 'weeks'}`}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm mt-1">
               {indefinite
                 ? `We'll add ${sessionCount} ${
                     sessionCount === 1 ? 'class' : 'classes'
@@ -519,21 +519,21 @@ function ConfirmView({
           </ConfirmRow>
         ) : (
           <ConfirmRow label="When">
-            <Text className="text-gray-900 dark:text-gray-50">
+            <Text className="text-ink dark:text-ink-dk">
               {dateLabel} at {timeStr}
             </Text>
           </ConfirmRow>
         )}
 
         <ConfirmRow label="Duration · Capacity">
-          <Text className="text-gray-900 dark:text-gray-50">
+          <Text className="text-ink dark:text-ink-dk">
             {durationMinutes} min · {capacity} spot{capacity === '1' ? '' : 's'}
           </Text>
         </ConfirmRow>
 
         {notes.trim() ? (
           <ConfirmRow label="Notes">
-            <Text className="text-gray-900 dark:text-gray-50">{notes.trim()}</Text>
+            <Text className="text-ink dark:text-ink-dk">{notes.trim()}</Text>
           </ConfirmRow>
         ) : null}
       </View>
@@ -550,7 +550,7 @@ function ConfirmRow({
 }) {
   return (
     <View className="gap-1">
-      <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
         {label}
       </Text>
       {children}

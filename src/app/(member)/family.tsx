@@ -61,10 +61,10 @@ export default function FamilyScreen() {
         <BackLink fallbackHref="/account" />
 
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Family
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Add children you look after. You book their classes and complete
             their health screening on their behalf.
           </Text>
@@ -78,8 +78,8 @@ export default function FamilyScreen() {
             </Text>
           </View>
         ) : (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Add a child
             </Text>
             <Input
@@ -114,9 +114,9 @@ export default function FamilyScreen() {
 
         <View className="gap-3">
           {dependents.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
           ) : (dependents.data ?? []).length === 0 ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-sm">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
               No children added yet.
             </Text>
           ) : (
@@ -187,14 +187,14 @@ function DependentCard({
   const ready = screening.data && !needsWaiver && !needsParq;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="text-ink dark:text-ink-dk font-semibold">
           {dependent.fullName ?? 'Child'}
         </Text>
         <View className="flex-row items-center gap-3">
           {age != null ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
               age {age}
             </Text>
           ) : null}
@@ -208,7 +208,7 @@ function DependentCard({
       </View>
 
       {screening.isLoading ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">Checking…</Text>
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Checking…</Text>
       ) : ready ? (
         <Text className="text-emerald-600 dark:text-emerald-400 text-xs">
           Ready to book — book them from any class.

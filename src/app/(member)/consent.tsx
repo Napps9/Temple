@@ -123,16 +123,16 @@ export default function ConsentForm() {
     <Screen edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Welcome — let's get you set up
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             A couple of details and your consent, then you're in.
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Your details
           </Text>
           <Input
@@ -148,7 +148,7 @@ export default function ConsentForm() {
             onChange={setDob}
             max={new Date().toISOString().slice(0, 10)}
           />
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Signed in as {session?.user.email}.
           </Text>
         </View>
@@ -166,11 +166,11 @@ export default function ConsentForm() {
         ) : (
           <>
             {under18 ? (
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Parent or guardian consent
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   You're under 18, so a parent or guardian needs to give
                   consent on your behalf.
                 </Text>
@@ -192,13 +192,13 @@ export default function ConsentForm() {
                     className={`w-6 h-6 rounded-md items-center justify-center mt-0.5 ${
                       guardianAck
                         ? 'bg-primary'
-                        : 'border border-gray-300 dark:border-gray-600'
+                        : 'border border-line-strong dark:border-line-strong-dk'
                     }`}>
                     {guardianAck ? (
                       <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                     ) : null}
                   </View>
-                  <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+                  <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
                     I confirm I am the parent or guardian named above and I
                     give my consent.
                   </Text>
@@ -206,11 +206,11 @@ export default function ConsentForm() {
               </View>
             ) : null}
 
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Consent
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Your gym needs your agreement before it can store any health
                 information. You can withdraw it at any time from your
                 account, which erases the data.
@@ -226,13 +226,13 @@ export default function ConsentForm() {
                       className={`w-6 h-6 rounded-md items-center justify-center mt-0.5 ${
                         on
                           ? 'bg-primary'
-                          : 'border border-gray-300 dark:border-gray-600'
+                          : 'border border-line-strong dark:border-line-strong-dk'
                       }`}>
                       {on ? (
                         <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                       ) : null}
                     </View>
-                    <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+                    <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
                       {c.label}
                     </Text>
                   </Pressable>
@@ -251,7 +251,7 @@ export default function ConsentForm() {
               Agree & continue
             </Button>
             {!canSubmit ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-xs text-center">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
                 Fill in your details{under18 ? ', the guardian consent,' : ''}{' '}
                 and tick all three boxes to continue.
               </Text>

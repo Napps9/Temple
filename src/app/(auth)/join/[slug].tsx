@@ -171,7 +171,7 @@ export default function JoinGymScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         </View>
       </Screen>
     );
@@ -182,10 +182,10 @@ export default function JoinGymScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center gap-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             Gym not found
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             Double-check the link from your gym, or sign in if you already have
             an account.
           </Text>
@@ -211,10 +211,10 @@ export default function JoinGymScreen() {
             name={info.name}
             primaryColor={primary}
           />
-          <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             {info.name}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             Public signup is disabled. Ask your gym to email you an invite.
           </Text>
         </View>
@@ -236,17 +236,17 @@ export default function JoinGymScreen() {
                 name={info.name}
                 primaryColor={primary}
               />
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 You're joining
               </Text>
-              <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
                 {info.name}
               </Text>
             </View>
 
             {session ? (
               <View className="gap-4">
-                <Text className="text-gray-500 dark:text-gray-400 text-center">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-center">
                   You're already signed in. One tap to add yourself to{' '}
                   {info.name}.
                 </Text>
@@ -266,12 +266,12 @@ export default function JoinGymScreen() {
             ) : pendingEmail ? (
               <View className="gap-4">
                 <View className="gap-2">
-                  <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+                  <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                     Check your email
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400">
+                  <Text className="text-ink-2 dark:text-ink-2-dk">
                     We sent a confirmation link to{' '}
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       {pendingEmail}
                     </Text>
                     . Click it, then come back and sign in — you'll land
@@ -291,8 +291,8 @@ export default function JoinGymScreen() {
                 <Pressable
                   onPress={resend}
                   disabled={resendLoading}
-                  className="rounded-lg px-5 py-3 items-center justify-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 active:opacity-80">
-                  <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  className="rounded-lg px-5 py-3 items-center justify-center bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-80">
+                  <Text className="text-ink dark:text-ink-dk font-semibold">
                     {resendLoading ? 'Sending…' : 'Resend confirmation email'}
                   </Text>
                 </Pressable>
@@ -305,7 +305,7 @@ export default function JoinGymScreen() {
                     setPassword('');
                   }}
                   className="self-center">
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Use a different email
                   </Text>
                 </Pressable>

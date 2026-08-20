@@ -188,7 +188,7 @@ export function MovementDetailView({
   if (!meta) {
     return (
       <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 mt-8">
+        <Text className="text-ink-2 dark:text-ink-2-dk mt-8">
           Unknown movement.
         </Text>
       </Screen>
@@ -207,10 +207,10 @@ export function MovementDetailView({
         <View className="flex-row items-center gap-2">
           <BackLink inline fallbackHref={backHref as Href} />
           <View className="flex-1">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               {group.name}
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               {movement.name}
             </Text>
           </View>
@@ -238,7 +238,7 @@ export function MovementDetailView({
 
         <View className="gap-3">
           <View className="flex-row items-center justify-between">
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {isStation ? 'Personal bests' : 'Rep maxes'}
             </Text>
             {isMember && movement.key === HYROX_SIM.key ? (
@@ -264,18 +264,18 @@ export function MovementDetailView({
                 scheme.better,
               );
               const row = (
-                <View className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card">
+                <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card">
                   <View className="flex-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                    <Text className="text-ink dark:text-ink-dk font-semibold">
                       {scheme.label}
                     </Text>
                     {best ? (
-                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                         Set {fmtDateShort(best.performed_at)}
                         {best.source === 'tag' ? ' · from session' : ''}
                       </Text>
                     ) : (
-                      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                         {isMember
                           ? `Tap to log a ${scheme.label.toLowerCase()}`
                           : 'No result logged'}
@@ -294,8 +294,8 @@ export function MovementDetailView({
                   <Text
                     className={
                       display
-                        ? 'text-gray-900 dark:text-gray-50 text-lg font-semibold'
-                        : 'text-gray-400 dark:text-gray-500 text-sm'
+                        ? 'text-ink dark:text-ink-dk text-lg font-semibold'
+                        : 'text-ink-3 dark:text-ink-3-dk text-sm'
                     }>
                     {display ?? (isMember ? '+' : '—')}
                   </Text>
@@ -329,16 +329,16 @@ export function MovementDetailView({
         ) : null}
 
         <View className="gap-3">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Journal
           </Text>
           {direct.isLoading || tags.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Loading…
             </Text>
           ) : merged.length === 0 ? (
-            <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No results for {movement.name} yet.
               </Text>
             </View>
@@ -408,13 +408,13 @@ function MovementPercentagesCard({
 
   return (
     <View className="gap-3">
-      <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+      <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
         Percentages
       </Text>
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
         {resolved === null ? (
           <>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Log a 1 rep max — or a 3, 5 or 10 rep max — and we'll work
               out your percentages here and in your programming.
             </Text>
@@ -430,7 +430,7 @@ function MovementPercentagesCard({
           </>
         ) : (
           <>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               {resolved.source === 'recorded'
                 ? `Of your ${formatWeight(resolved.value, weightUnit)} 1RM, set ${fmtDateShort(resolved.performedAt)}`
                 : `Of ~${formatWeight(resolved.value, weightUnit)}, estimated from your ${resolved.fromReps} rep max (${formatWeight(resolved.fromValue, weightUnit)} × ${resolved.fromReps}, ${fmtDateShort(resolved.performedAt)})`}
@@ -438,11 +438,11 @@ function MovementPercentagesCard({
             <View className="flex-row flex-wrap -m-1">
               {PERCENT_STEPS.map((pct) => (
                 <View key={pct} className="w-1/2 md:w-1/3 p-1">
-                  <View className="flex-row items-baseline justify-between rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold">
+                  <View className="flex-row items-baseline justify-between rounded-lg bg-raised dark:bg-raised-dk px-3 py-2">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">
                       {pct}%
                     </Text>
-                    <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                    <Text className="text-ink dark:text-ink-dk font-semibold">
                       {formatWeight(percentWeight(resolved.value, pct), weightUnit)}
                     </Text>
                   </View>
@@ -486,7 +486,7 @@ function MovementLeaderboardSection({
     <View className="gap-3">
       <View className="flex-row items-center gap-2">
         <Ionicons name="trophy" size={18} color={colors.primary} />
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
+        <Text className="flex-1 text-ink dark:text-ink-dk text-lg font-semibold">
           Leaderboard
         </Text>
       </View>
@@ -500,13 +500,13 @@ function MovementLeaderboardSection({
             className={`rounded-full px-3 py-1 border active:opacity-70 ${
               s.key === scheme.key
                 ? 'bg-primary border-primary'
-                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
             }`}>
             <Text
               className={
                 s.key === scheme.key
                   ? 'text-white text-xs'
-                  : 'text-gray-700 dark:text-gray-200 text-xs'
+                  : 'text-ink-2 dark:text-ink-2-dk text-xs'
               }>
               {s.label}
             </Text>
@@ -541,7 +541,7 @@ function JournalRowView({
     <>
       <View className="flex-1">
         <View className="flex-row items-center gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+          <Text className="text-ink dark:text-ink-dk text-sm font-medium">
             {row.section_title ?? schemeLabel}
           </Text>
           {isPR ? (
@@ -560,20 +560,20 @@ function JournalRowView({
             </View>
           ) : null}
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {row.section_title ? `${schemeLabel} · ` : ''}
           {fmtDateShort(row.performed_at)}
           {row.notes ? ` · ${row.notes}` : ''}
         </Text>
       </View>
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         {display ?? '—'}
       </Text>
     </>
   );
   if (!linkable) {
     return (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 shadow-card">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 shadow-card">
         {body}
       </View>
     );
@@ -585,7 +585,7 @@ function JournalRowView({
           ? router.push(`/track/workout/${row.workout_id}` as never)
           : router.push('/track/journal' as never)
       }
-      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
+      className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
       {body}
     </Pressable>
   );

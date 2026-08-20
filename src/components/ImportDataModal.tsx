@@ -80,11 +80,11 @@ export function ImportDataModal({
               className={`flex-1 px-3 py-2 rounded-lg border items-center ${
                 active
                   ? 'bg-primary border-primary'
-                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                  : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
               }`}>
               <Text
                 className={`text-sm font-medium ${
-                  active ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                  active ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {t === 'members' ? 'Members' : 'Workouts'}
               </Text>
@@ -98,15 +98,15 @@ export function ImportDataModal({
           <Pressable
             key={o.title}
             onPress={() => go(o.href)}
-            className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-start gap-3 border border-gray-100 dark:border-gray-800 shadow-card active:opacity-70">
-            <View className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+            className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-start gap-3 border border-line dark:border-line-dk shadow-card active:opacity-70">
+            <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
               <Ionicons name={o.icon} size={18} color={colors.iconSecondary} />
             </View>
             <View className="flex-1 gap-0.5">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 {o.title}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 {o.description}
               </Text>
             </View>

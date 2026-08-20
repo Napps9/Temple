@@ -219,10 +219,10 @@ export function AccountScreen() {
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl lg:max-w-5xl md:mx-auto md:w-full">
         <BackLink />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Account
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Manage your name, email, and password.
           </Text>
         </View>
@@ -233,7 +233,7 @@ export function AccountScreen() {
         <View className="gap-6 lg:flex-row lg:items-start">
         <View className="gap-6 lg:flex-1">
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <AvatarUploader
             currentUrl={profile?.avatar_url}
             fullName={displayName}
@@ -241,11 +241,11 @@ export function AccountScreen() {
           />
           <View>
             <Text
-              className="text-gray-900 dark:text-gray-50 font-semibold"
+              className="text-ink dark:text-ink-dk font-semibold"
               numberOfLines={1}>
               {displayName}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 capitalize">
+            <Text className="text-ink-2 dark:text-ink-2-dk capitalize">
               {role ?? 'member'} · {membership?.gymName ?? 'Temple'}
             </Text>
           </View>
@@ -258,11 +258,11 @@ export function AccountScreen() {
         <LeaderboardPrivacyCard />
 
         {membership && session ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Family
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Add children you look after and book their classes.
             </Text>
             <ChipButton
@@ -276,11 +276,11 @@ export function AccountScreen() {
         ) : null}
 
         {membership && session ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Communication preferences
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Choose which topics you hear from this gym about — newsletter,
               programming, promos, billing.
             </Text>
@@ -299,8 +299,8 @@ export function AccountScreen() {
         </View>
         <View className="gap-6 lg:flex-1">
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Your details
           </Text>
           <Input
@@ -359,7 +359,7 @@ export function AccountScreen() {
             </View>
           ) : null}
           {detailsMessage ? (
-            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {detailsMessage}
             </Text>
           ) : null}
@@ -376,14 +376,14 @@ export function AccountScreen() {
           </Button>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <Pressable
             onPress={() => setShowPasswordFields((v) => !v)}
             className="flex-row items-center gap-2 hover:opacity-80 active:opacity-70">
-            <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
               Password
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {showPasswordFields ? 'Cancel' : 'Change'}
             </Text>
             <Ionicons
@@ -411,7 +411,7 @@ export function AccountScreen() {
             autoComplete="new-password"
           />
           {passwordMessage ? (
-            <Text className="text-gray-600 dark:text-gray-300 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {passwordMessage}
             </Text>
           ) : null}
@@ -431,11 +431,11 @@ export function AccountScreen() {
         </View>
 
         {membership && session ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Health data & consent
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Permanently deletes your PAR-Q answers and any injuries you've
               logged. You'll be asked to consent again before training.
             </Text>
@@ -461,11 +461,11 @@ export function AccountScreen() {
         ) : null}
 
         {role && role !== 'owner' && membership && session ? (
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Leave this gym
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Cancels any active subscriptions, removes your access, and
               erases your health data (PAR-Q + injuries).
             </Text>
@@ -491,15 +491,15 @@ export function AccountScreen() {
         <View className="mt-2 mb-4 flex-row items-center justify-center gap-3">
           <Link href="/terms" asChild>
             <Pressable hitSlop={6}>
-              <Text className="text-gray-400 dark:text-gray-500 text-xs underline">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs underline">
                 Terms of Service
               </Text>
             </Pressable>
           </Link>
-          <Text className="text-gray-300 dark:text-gray-600 text-xs">·</Text>
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">·</Text>
           <Link href="/privacy" asChild>
             <Pressable hitSlop={6}>
-              <Text className="text-gray-400 dark:text-gray-500 text-xs underline">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs underline">
                 Privacy Policy
               </Text>
             </Pressable>
@@ -528,11 +528,11 @@ export function AccountScreen() {
           className="flex-1 bg-black/60 items-center justify-center px-6">
           <Pressable
             onPress={() => {}}
-            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-lg gap-4">
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
               Erase your health data?
             </Text>
-            <Text className="text-gray-700 dark:text-gray-200">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               This permanently deletes your PAR-Q answers and any injuries
               you've logged, and withdraws your data-processing consent. This
               can't be undone — you'll be asked to consent again before your

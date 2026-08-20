@@ -99,7 +99,7 @@ export default function WaiverForm() {
   if (active.isLoading) {
     return (
       <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 p-6">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk p-6">Loading…</Text>
       </Screen>
     );
   }
@@ -108,10 +108,10 @@ export default function WaiverForm() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             No waiver yet
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Your gym hasn't published a waiver to sign. You can keep using
             the app normally.
           </Text>
@@ -128,10 +128,10 @@ export default function WaiverForm() {
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
         <BackLink />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             {active.data.title}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Please read the waiver in full, then sign below to confirm you
             agree. You'll need to do this before booking a class.
           </Text>
@@ -139,15 +139,15 @@ export default function WaiverForm() {
 
         <Pressable
           onPress={() => openUrl(active.data!.file_url)}
-          className="flex-row items-center gap-3 bg-white dark:bg-gray-900 rounded-xl p-4 active:opacity-70 shadow-card">
+          className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-xl p-4 active:opacity-70 shadow-card">
           <View className="w-10 h-10 rounded-lg bg-primary/10 items-center justify-center">
             <Ionicons name="document-text-outline" size={20} color={colors.primary} />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 font-medium">
+            <Text className="text-ink dark:text-ink-dk font-medium">
               Read the waiver (PDF)
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Opens the full document — v{active.data.version}
             </Text>
           </View>
@@ -155,7 +155,7 @@ export default function WaiverForm() {
         </Pressable>
 
         <View className="gap-2">
-          <Text className="text-gray-700 dark:text-gray-200 font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
             Your signature
           </Text>
           <SignaturePad onChange={setSignature} />
@@ -168,13 +168,13 @@ export default function WaiverForm() {
             className={`w-6 h-6 rounded-md border-2 items-center justify-center mt-0.5 ${
               agreed
                 ? 'bg-primary border-primary'
-                : 'border-gray-300 dark:border-gray-600'
+                : 'border-line-strong dark:border-line-strong-dk'
             }`}>
             {agreed ? (
               <Ionicons name="checkmark" size={16} color="#FFFFFF" />
             ) : null}
           </View>
-          <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm">
+          <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
             I have read and agree to the waiver, and the signature above is
             mine.
           </Text>

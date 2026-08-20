@@ -121,7 +121,7 @@ export default function ParqForm() {
   if (active.isLoading) {
     return (
       <Screen>
-        <Text className="text-gray-500 dark:text-gray-400 p-6">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk p-6">Loading…</Text>
       </Screen>
     );
   }
@@ -130,10 +130,10 @@ export default function ParqForm() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             No PAR-Q yet
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Your gym hasn't published a health screening questionnaire yet.
             You can keep using the app normally.
           </Text>
@@ -156,10 +156,10 @@ export default function ParqForm() {
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
         <BackLink />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Health screening
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Please answer honestly. Any "yes" answer on a flagged question
             tells the team to follow up before your first session — you
             can still book.
@@ -172,8 +172,8 @@ export default function ParqForm() {
           return (
             <View
               key={q.id}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-              <Text className="text-gray-900 dark:text-gray-50 font-medium">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+              <Text className="text-ink dark:text-ink-dk font-medium">
                 {q.prompt}
               </Text>
               <View className="flex-row gap-2">
@@ -198,7 +198,7 @@ export default function ParqForm() {
                   numberOfLines={3}
                   style={{ minHeight: 60, textAlignVertical: 'top' }}
                   autoCapitalize="sentences"
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-50 text-sm"
+                  className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm"
                 />
               ) : null}
             </View>
@@ -232,13 +232,13 @@ function YesNoOption({
       className={`flex-1 px-4 py-3 rounded-lg border items-center active:opacity-70 ${
         selected
           ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700'
+          : 'border-line dark:border-line-dk'
       }`}>
       <Text
         className={
           selected
             ? 'text-primary font-medium'
-            : 'text-gray-700 dark:text-gray-200'
+            : 'text-ink-2 dark:text-ink-2-dk'
         }>
         {label}
       </Text>

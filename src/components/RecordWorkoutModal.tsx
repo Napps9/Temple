@@ -650,12 +650,12 @@ export function RecordWorkoutModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Record workout"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[92vh]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[92vh]">
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
               Record workout
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Add sections from today's session and log your results.
             </Text>
           </View>
@@ -672,19 +672,19 @@ export function RecordWorkoutModal({
             {programmingByClassType.length > 0 ||
             (myProgramme?.sections.length ?? 0) > 0 ? (
               <View className="gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3">
-                <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold uppercase tracking-widest">
                   Pre-fill from today's programming
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
                   {(myProgramme?.sections.length ?? 0) > 0 ? (
                     <Pressable
                       onPress={prefillFromMemberProgramming}
-                      className="flex-row items-center gap-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-1.5 active:opacity-70">
+                      className="flex-row items-center gap-2 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk px-3 py-1.5 active:opacity-70">
                       <Ionicons name="person" size={10} color={colors.primary} />
-                      <Text className="text-gray-900 dark:text-gray-50 text-xs font-medium">
+                      <Text className="text-ink dark:text-ink-dk text-xs font-medium">
                         Your programme
                       </Text>
-                      <Text className="text-gray-500 dark:text-gray-400 text-[10px]">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px]">
                         {myProgramme!.sections.length}
                       </Text>
                     </Pressable>
@@ -693,15 +693,15 @@ export function RecordWorkoutModal({
                     <Pressable
                       key={g.class_type_id}
                       onPress={() => prefillFromClassType(g.class_type_id)}
-                      className="flex-row items-center gap-2 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-1.5 active:opacity-70">
+                      className="flex-row items-center gap-2 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk px-3 py-1.5 active:opacity-70">
                       <View
                         style={{ backgroundColor: g.class_type_color }}
                         className="w-2 h-2 rounded-full"
                       />
-                      <Text className="text-gray-900 dark:text-gray-50 text-xs font-medium">
+                      <Text className="text-ink dark:text-ink-dk text-xs font-medium">
                         {g.class_type_name}
                       </Text>
-                      <Text className="text-gray-500 dark:text-gray-400 text-[10px]">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px]">
                         {g.sections.length}
                       </Text>
                     </Pressable>
@@ -736,9 +736,9 @@ export function RecordWorkoutModal({
               ))}
               <Pressable
                 onPress={addDraft}
-                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
                 <Ionicons name="add" size={16} color={colors.iconSecondary} />
-                <Text className="text-gray-500 dark:text-gray-400">
+                <Text className="text-ink-2 dark:text-ink-2-dk">
                   Add section
                 </Text>
               </Pressable>
@@ -863,9 +863,9 @@ function SectionDraftCard({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 gap-3">
+    <View className="bg-raised dark:bg-raised-dk rounded-xl p-4 gap-3">
       <View className="flex-row items-center justify-between">
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
           Section
         </Text>
         {removable ? (
@@ -902,11 +902,11 @@ function SectionDraftCard({
 
       {draft.body.trim() ? (
         <View className="gap-1">
-          <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             The work
           </Text>
-          <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {draft.body}
             </Text>
           </View>
@@ -962,7 +962,7 @@ function MovementTagList({
   const colors = useThemeColors();
   return (
     <View className="gap-2">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         Tag movements (optional)
       </Text>
       <View className="flex-row flex-wrap gap-2">
@@ -975,8 +975,8 @@ function MovementTagList({
             <Pressable
               key={j}
               onPress={() => onEdit(j)}
-              className="flex-row items-center gap-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-2.5 py-1 active:opacity-70">
-              <Text className="text-gray-900 dark:text-gray-50 text-xs">
+              className="flex-row items-center gap-1 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk px-2.5 py-1 active:opacity-70">
+              <Text className="text-ink dark:text-ink-dk text-xs">
                 {label}
               </Text>
               <Ionicons name="chevron-down" size={12} color={colors.iconTertiary} />
@@ -985,9 +985,9 @@ function MovementTagList({
         })}
         <Pressable
           onPress={onAdd}
-          className="flex-row items-center gap-1 rounded-full border border-dashed border-gray-300 dark:border-gray-600 px-2.5 py-1 active:opacity-70">
+          className="flex-row items-center gap-1 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk px-2.5 py-1 active:opacity-70">
           <Ionicons name="add" size={12} color={colors.iconSecondary} />
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Add tag
           </Text>
         </Pressable>
@@ -1131,7 +1131,7 @@ function AggregateInputs({
             value={draft.did_not_finish}
             onValueChange={(v) => onUpdate({ did_not_finish: v })}
           />
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Did not finish (capped)
           </Text>
         </View>
@@ -1163,9 +1163,9 @@ function EntriesTable({
     return (
       <Pressable
         onPress={() => setExpanded(true)}
-        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
         <Ionicons name="add" size={14} color={colors.iconSecondary} />
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Add per-set details
         </Text>
       </Pressable>
@@ -1189,9 +1189,9 @@ function EntriesTable({
       {entries.map((e, j) => (
         <View
           key={j}
-          className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 gap-2">
+          className="bg-surface dark:bg-surface-dk rounded-lg border border-line dark:border-line-dk p-3 gap-2">
           <View className="flex-row items-center justify-between">
-            <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-wider">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold uppercase tracking-wider">
               {entryLabelFor(format, j + 1)}
             </Text>
             <Pressable
@@ -1212,9 +1212,9 @@ function EntriesTable({
       ))}
       <Pressable
         onPress={onAddEntry}
-        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
         <Ionicons name="add" size={14} color={colors.iconSecondary} />
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Add row
         </Text>
       </Pressable>
@@ -1450,7 +1450,7 @@ function EntryFields({
             value={entry.done}
             onValueChange={(v) => onUpdate({ done: v })}
           />
-          <Text className="text-gray-700 dark:text-gray-200 text-sm">Done</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Done</Text>
         </View>
       ) : null}
     </View>
@@ -1471,17 +1471,17 @@ function PickerButton({
   const colors = useThemeColors();
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label}
       </Text>
       <Pressable
         onPress={onPress}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 flex-row items-center gap-2 active:opacity-70">
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 flex-row items-center gap-2 active:opacity-70">
         <Text
           className={
             value
-              ? 'flex-1 text-gray-900 dark:text-gray-50 text-base'
-              : 'flex-1 text-gray-400 dark:text-gray-500 text-base'
+              ? 'flex-1 text-ink dark:text-ink-dk text-base'
+              : 'flex-1 text-ink-3 dark:text-ink-3-dk text-base'
           }>
           {value ?? placeholder}
         </Text>
@@ -1522,16 +1522,16 @@ function TagEditModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Edit tag"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-sm md:max-w-md gap-3">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-sm md:max-w-md gap-3">
           <View className="gap-1">
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
               Edit tag
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
               {meta?.movement.name ?? tag?.movement_key ?? '—'}
             </Text>
             {meta ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {meta.group.name}
               </Text>
             ) : null}
@@ -1539,7 +1539,7 @@ function TagEditModal({
 
           {meta && meta.movement.schemes.length > 0 ? (
             <View className="gap-1">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Rep scheme
               </Text>
               <View className="gap-1">
@@ -1594,7 +1594,7 @@ function SchemeRow({
       className={`flex-row items-center gap-2 rounded-lg px-3 py-2 active:opacity-70 ${
         selected
           ? 'bg-primary/10 border border-primary/30'
-          : 'bg-gray-50 dark:bg-gray-800 border border-transparent'
+          : 'bg-raised dark:bg-raised-dk border border-transparent'
       }`}>
       <Ionicons
         name={selected ? 'checkmark-circle' : 'ellipse-outline'}
@@ -1605,7 +1605,7 @@ function SchemeRow({
         className={
           selected
             ? 'text-primary text-sm font-medium'
-            : 'text-gray-700 dark:text-gray-200 text-sm'
+            : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>
@@ -1660,8 +1660,8 @@ function MovementTagPickerModal({
         <Pressable
           onPress={() => onPick({ movement_key: m.key, track_key: null })}
           className="flex-1 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
-          <Text className="text-gray-900 dark:text-gray-50 text-sm">{m.name}</Text>
-          <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+          <Text className="text-ink dark:text-ink-dk text-sm">{m.name}</Text>
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px]">
             No rep scheme
           </Text>
         </Pressable>
@@ -1715,15 +1715,15 @@ function MovementTagPickerModal({
           role="dialog"
           aria-modal
           accessibilityLabel="Tag a movement"
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             Tag a movement
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Tag the movement (optionally with a rep scheme) so it lands
             in your per-movement Journal.
           </Text>
-          <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+          <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3">
             <Ionicons name="search" size={16} color={colors.iconTertiary} />
             <TextInput
               value={search}
@@ -1732,7 +1732,7 @@ function MovementTagPickerModal({
               accessibilityLabel="Search all movements"
               placeholderTextColor="#9CA3AF"
               autoCorrect={false}
-              className="flex-1 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
+              className="flex-1 py-2.5 text-ink dark:text-ink-dk text-sm"
             />
             {q ? (
               <Pressable
@@ -1747,7 +1747,7 @@ function MovementTagPickerModal({
           <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-2">
             {q ? (
               matches.length === 0 ? (
-                <Text className="text-gray-500 dark:text-gray-400 text-sm py-2">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-sm py-2">
                   No movements match “{search.trim()}”.
                 </Text>
               ) : (
@@ -1762,8 +1762,8 @@ function MovementTagPickerModal({
                     }
                     accessibilityRole="button"
                     accessibilityState={{ expanded: expandedGroup === g.key }}
-                    className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:opacity-70">
-                    <Text className="flex-1 text-gray-900 dark:text-gray-50 font-medium">
+                    className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:opacity-70">
+                    <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                       {g.name}
                     </Text>
                     <Ionicons
@@ -1820,8 +1820,8 @@ function PickerModal({
           role="dialog"
           aria-modal
           accessibilityLabel={title}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             {title}
           </Text>
           <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-1">
@@ -1830,7 +1830,7 @@ function PickerModal({
                 key={it.key}
                 onPress={() => onPick(it.key)}
                 className="rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800">
-                <Text className="text-gray-900 dark:text-gray-50">
+                <Text className="text-ink dark:text-ink-dk">
                   {it.label}
                 </Text>
               </Pressable>

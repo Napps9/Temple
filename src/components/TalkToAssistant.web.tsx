@@ -33,9 +33,9 @@ export function TalkToAssistant({
 
   if (!call.available) {
     const card = (
-      <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">Talk to it</Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+        <Text className="text-ink dark:text-ink-dk font-medium">Talk to it</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
           {assistantId
             ? "Browser calling isn't connected yet — the Vapi public key (EXPO_PUBLIC_VAPI_KEY) hasn't been added to this deployment."
             : 'Finish setting up your assistant first, then you can talk to it here.'}
@@ -104,7 +104,7 @@ function CallPanel({
   onRequestClose?: () => void;
 }) {
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 gap-3 shadow-pop">
+    <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-3 shadow-pop">
       {call.phase === 'ready' ? (
         <ReadyBody call={call} colors={colors} onCancel={onRequestClose} />
       ) : call.phase === 'connecting' ? (
@@ -134,14 +134,14 @@ function ReadyBody({
         <Ionicons name="mic-outline" size={20} color={colors.primary} />
       </View>
       <View className="gap-1 items-center">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+        <Text className="text-ink dark:text-ink-dk font-semibold text-base">
           Ready to talk?
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs text-center">
           We'll ask your browser for microphone access next.
         </Text>
       </View>
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] text-center">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] text-center">
         Test call — kept separate from your leads and pipeline
       </Text>
       {call.error ? (
@@ -151,8 +151,8 @@ function ReadyBody({
         {onCancel ? (
           <Pressable
             onPress={onCancel}
-            className="flex-1 py-2.5 rounded-lg items-center border border-gray-200 dark:border-gray-700">
-            <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">Cancel</Text>
+            className="flex-1 py-2.5 rounded-lg items-center border border-line dark:border-line-dk">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">Cancel</Text>
           </Pressable>
         ) : null}
         <Pressable
@@ -172,8 +172,8 @@ function ConnectingBody({ colors }: { colors: ReturnType<typeof useThemeColors> 
     <View className="gap-3 items-center py-3">
       <ActivityIndicator size="large" color={colors.primary} />
       <View className="gap-0.5 items-center">
-        <Text className="text-gray-900 dark:text-gray-50 font-medium text-sm">Connecting…</Text>
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">Setting up secure audio</Text>
+        <Text className="text-ink dark:text-ink-dk font-medium text-sm">Connecting…</Text>
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Setting up secure audio</Text>
       </View>
     </View>
   );
@@ -195,7 +195,7 @@ function LiveBody({
           <View className="w-1.5 h-1.5 rounded-full bg-red-500" />
           <Text className="text-red-600 dark:text-red-400 text-[11px] font-bold">LIVE</Text>
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
           {formatCallDuration(call.duration)}
         </Text>
       </View>
@@ -203,10 +203,10 @@ function LiveBody({
       <View className="flex-row items-center gap-3">
         <VoiceOrb speaking={call.speaking} color={colors.primary} />
         <View>
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold text-sm">
+          <Text className="text-ink dark:text-ink-dk font-semibold text-sm">
             {call.speaking ? 'Speaking…' : 'Listening…'}
           </Text>
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             {gymName ? `${gymName} AI` : 'Your AI'}
           </Text>
         </View>
@@ -220,15 +220,15 @@ function LiveBody({
               className={`max-w-[86%] rounded-xl px-3 py-2 ${
                 t.role === 'user'
                   ? 'self-end bg-primary/10'
-                  : 'self-start bg-gray-100 dark:bg-gray-800'
+                  : 'self-start bg-raised dark:bg-raised-dk'
               }`}>
-              <Text className="text-gray-900 dark:text-gray-50 text-xs">{t.text}</Text>
+              <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
             </View>
           ))}
         </View>
       </ScrollView>
 
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] text-center">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] text-center">
         Test call — kept separate from your leads and pipeline
       </Text>
 
@@ -248,8 +248,8 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
   return (
     <View className="gap-3">
       <View className="flex-row items-baseline justify-between">
-        <Text className="text-gray-900 dark:text-gray-50 font-semibold text-sm">Call ended</Text>
-        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+        <Text className="text-ink dark:text-ink-dk font-semibold text-sm">Call ended</Text>
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
           {formatCallDuration(call.duration)}
         </Text>
       </View>
@@ -257,7 +257,7 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
       <ScrollView className="max-h-40" showsVerticalScrollIndicator={false}>
         <View className="gap-2">
           {call.turns.length === 0 ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs text-center py-4">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center py-4">
               No speech was picked up on that call.
             </Text>
           ) : (
@@ -267,16 +267,16 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
                 className={`max-w-[86%] rounded-xl px-3 py-2 ${
                   t.role === 'user'
                     ? 'self-end bg-primary/10'
-                    : 'self-start bg-gray-100 dark:bg-gray-800'
+                    : 'self-start bg-raised dark:bg-raised-dk'
                 }`}>
-                <Text className="text-gray-900 dark:text-gray-50 text-xs">{t.text}</Text>
+                <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
               </View>
             ))
           )}
         </View>
       </ScrollView>
 
-      <Text className="text-gray-400 dark:text-gray-500 text-[11px] text-center">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] text-center">
         Not saved as a lead — read it back anytime under Conversations
       </Text>
 
@@ -284,10 +284,10 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
         <Pressable
           onPress={() => copyToClipboard(transcriptToText(call.turns))}
           disabled={call.turns.length === 0}
-          className={`flex-1 py-2.5 rounded-lg items-center border border-gray-200 dark:border-gray-700 ${
+          className={`flex-1 py-2.5 rounded-lg items-center border border-line dark:border-line-dk ${
             call.turns.length === 0 ? 'opacity-50' : ''
           }`}>
-          <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             Copy transcript
           </Text>
         </Pressable>

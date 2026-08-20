@@ -75,7 +75,7 @@ function IconBtn({
       onPress={onPress}
       disabled={disabled}
       hitSlop={6}
-      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:opacity-60 ${
+      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-gray-800 border border-line dark:border-line-dk active:opacity-60 ${
         disabled ? 'opacity-30' : ''
       }`}>
       <Ionicons
@@ -98,7 +98,7 @@ function Segmented<T extends string | number>({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+    <View className="flex-row bg-raised dark:bg-raised-dk rounded-lg p-1 gap-1">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -106,7 +106,7 @@ function Segmented<T extends string | number>({
             key={String(opt.value)}
             onPress={() => onChange(opt.value)}
             className={`flex-1 flex-row items-center justify-center gap-1 py-1.5 rounded-md ${
-              selected ? 'bg-white dark:bg-gray-900' : ''
+              selected ? 'bg-surface dark:bg-surface-dk' : ''
             }`}>
             {opt.icon ? (
               <Ionicons
@@ -119,8 +119,8 @@ function Segmented<T extends string | number>({
               <Text
                 className={`text-xs font-medium ${
                   selected
-                    ? 'text-gray-900 dark:text-gray-50'
-                    : 'text-gray-500 dark:text-gray-400'
+                    ? 'text-ink dark:text-ink-dk'
+                    : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {opt.label}
               </Text>
@@ -154,7 +154,7 @@ function AlignToggle({
 
 function FieldLabel({ children }: { children: string }) {
   return (
-    <Text className="text-gray-600 dark:text-gray-300 text-xs font-medium">
+    <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-medium">
       {children}
     </Text>
   );
@@ -186,7 +186,7 @@ function TextField({
         multiline={multiline}
         autoCapitalize={autoCapitalize}
         autoCorrect={!multiline ? false : undefined}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-gray-900 dark:text-gray-50 text-sm"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
         style={multiline ? { minHeight: 88, textAlignVertical: 'top' } : undefined}
       />
     </View>
@@ -404,7 +404,7 @@ function SettingsInspector({
                   <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
                   <View className="flex-1" style={{ backgroundColor: composed.palette.accent }} />
                 </View>
-                <Text className="text-gray-600 dark:text-gray-300 text-[11px]">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[11px]">
                   {theme.name}
                 </Text>
               </Pressable>
@@ -600,17 +600,17 @@ export function EmailEditor({
     <Pressable
       key={type}
       onPress={() => addBlock(type)}
-      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
       <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color={colors.iconSecondary} />
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {BLOCK_LABELS[type]}
       </Text>
     </Pressable>
   ));
 
   const paletteCard = (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
-      <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
         Add a block
       </Text>
       <View className="flex-row flex-wrap gap-2">{blockButtons}</View>
@@ -620,14 +620,14 @@ export function EmailEditor({
   // The block list: labelled rows that expand an inline inspector, matching
   // the website builder's accordion.
   const listCard = (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-3 gap-2">
-      <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
         Content{document.blocks.length ? ` (${document.blocks.length})` : ''}
       </Text>
       {document.blocks.length === 0 ? (
         <View className="py-10 items-center px-6">
           <Ionicons name="mail-open-outline" size={30} color={colors.iconTertiary} />
-          <Text className="text-gray-400 dark:text-gray-500 text-sm mt-2 text-center">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-sm mt-2 text-center">
             Your email is empty. Add a block above to start building.
           </Text>
         </View>
@@ -642,7 +642,7 @@ export function EmailEditor({
                   className={`flex-row items-center gap-2 rounded-lg px-3 py-2.5 ${
                     isSelected
                       ? 'bg-primary/10 border border-primary'
-                      : 'bg-gray-50 dark:bg-gray-800 border border-transparent'
+                      : 'bg-raised dark:bg-raised-dk border border-transparent'
                   }`}>
                   <Ionicons
                     name={BLOCK_ICONS[block.type] as IconName}
@@ -706,8 +706,8 @@ export function EmailEditor({
   );
 
   const styleCard = (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3">
-      <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
         Email style
       </Text>
       <SettingsInspector document={document} onChange={handleChange} brand={brand} />
@@ -729,7 +729,7 @@ export function EmailEditor({
   if (Platform.OS === 'web' && width >= 1280) {
     return (
       <View className="flex-1 flex-row">
-        <View className="w-[420px] shrink-0 border-r border-gray-100 dark:border-gray-800">
+        <View className="w-[420px] shrink-0 border-r border-line dark:border-line-dk">
           <ScrollView className="flex-1" contentContainerClassName="gap-3 p-1 pb-6">
             {rail}
           </ScrollView>

@@ -29,8 +29,8 @@ export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
     return (
       <View
         style={{ width, height }}
-        className="bg-white dark:bg-gray-900 rounded-xl items-center justify-center shadow-card">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        className="bg-surface dark:bg-surface-dk rounded-xl items-center justify-center shadow-card">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           No attendance recorded in this range.
         </Text>
       </View>
@@ -45,7 +45,7 @@ export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
   return (
     <View
       style={{ width, height }}
-      className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
+      className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
       <Svg width={width} height={height}>
         <Line
           x1={PADDING_LEFT}

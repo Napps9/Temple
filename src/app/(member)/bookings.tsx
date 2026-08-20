@@ -149,10 +149,10 @@ export default function BookingsScreen() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/book" />
         <View className="gap-1">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             My bookings
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Your upcoming classes and past attendance.
           </Text>
         </View>
@@ -176,7 +176,7 @@ export default function BookingsScreen() {
         </View>
 
         {bookings.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : null}
         {bookings.error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">
@@ -193,7 +193,7 @@ export default function BookingsScreen() {
         <View className="gap-2">
           {tab === 'upcoming' ? (
             upcoming.length === 0 ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 No upcoming classes.
               </Text>
             ) : (
@@ -209,7 +209,7 @@ export default function BookingsScreen() {
             )
           ) : tab === 'waitlisted' ? (
             (waitlist.data?.length ?? 0) === 0 ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Not on any waitlists.
               </Text>
             ) : (
@@ -227,7 +227,7 @@ export default function BookingsScreen() {
               ))
             )
           ) : past.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               No past bookings.
             </Text>
           ) : (
@@ -261,13 +261,13 @@ function TabChip({
       className={`px-3 py-1 rounded-full border ${
         active
           ? 'border-primary bg-primary/10'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
       }`}>
       <Text
         className={
           active
             ? 'text-primary text-sm'
-            : 'text-gray-500 dark:text-gray-400 text-sm'
+            : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>
@@ -293,7 +293,7 @@ function BookingCard({
   const att = attendanceLabel(row);
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 shadow-card">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: typeColor }}
@@ -301,10 +301,10 @@ function BookingCard({
           <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          <Text className="text-ink dark:text-ink-dk font-medium">
             {fmtDate(start)} · {fmtTime(start)}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {row.duration_minutes} min
           </Text>
         </View>
@@ -350,7 +350,7 @@ function WaitlistCard({
   return (
     <Pressable
       onPress={onOpen}
-      className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-2 active:opacity-70 shadow-card">
+      className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 active:opacity-70 shadow-card">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: typeColor }}
@@ -358,10 +358,10 @@ function WaitlistCard({
           <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          <Text className="text-ink dark:text-ink-dk font-medium">
             {fmtDate(start)} · {fmtTime(start)}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {row.position === 1
               ? "You're next in line"
               : `#${row.position} on the waitlist`}

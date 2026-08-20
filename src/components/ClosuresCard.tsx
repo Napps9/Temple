@@ -85,24 +85,24 @@ export function ClosuresCard() {
   const closures = closuresQuery.data ?? [];
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-      <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+      <Text className="text-ink dark:text-ink-dk font-semibold">
         Closures
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Dates the gym is shut. Classes inside a closure are cancelled, and
         anything scheduled into it later is blocked. Start one from the Bulk
         button on the Classes calendar.
       </Text>
 
       {closuresQuery.isLoading ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : closuresQuery.error ? (
         <Text className="text-red-500 dark:text-red-400 text-sm">
           {errorMessage(closuresQuery.error, 'Could not load closures')}
         </Text>
       ) : closures.length === 0 ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           No closures set.
         </Text>
       ) : (
@@ -110,15 +110,15 @@ export function ClosuresCard() {
           {closures.map((c) => (
             <View
               key={c.id}
-              className="flex-row items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
+              className="flex-row items-center gap-3 border border-line dark:border-line-dk rounded-lg px-3 py-2">
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 text-sm">
+                <Text className="text-ink dark:text-ink-dk text-sm">
                   {c.starts_on === c.ends_on
                     ? fmtClosureDate(c.starts_on)
                     : `${fmtClosureDate(c.starts_on)} – ${fmtClosureDate(c.ends_on)}`}
                 </Text>
                 {c.reason ? (
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                     {c.reason}
                   </Text>
                 ) : null}

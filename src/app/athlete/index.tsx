@@ -44,7 +44,7 @@ function AccentCard({
         className="absolute rounded-2xl"
         style={{ backgroundColor: accent, top: 5, left: 5, right: -5, bottom: -5 }}
       />
-      <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
+      <View className="bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-2xl p-4 gap-3">
         {children}
       </View>
     </View>
@@ -183,10 +183,10 @@ export default function AthleteHome() {
         <View className="flex-row items-center gap-3">
           <TempleMark size={44} />
           <View className="flex-1">
-            <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
               Athlete
             </Text>
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Your training
             </Text>
           </View>
@@ -194,13 +194,13 @@ export default function AthleteHome() {
             <Pressable
               hitSlop={8}
               accessibilityLabel="Account"
-              className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 items-center justify-center active:opacity-70">
+              className="w-10 h-10 rounded-full bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 items-center justify-center active:opacity-70">
               <Ionicons name="person-outline" size={18} color={colors.iconPrimary} />
             </Pressable>
           </Link>
         </View>
 
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           You're not in a gym right now, but your workout history is yours — it
           is kept, and it follows you into any gym on the network when you join.
         </Text>
@@ -217,15 +217,15 @@ export default function AthleteHome() {
                 <Ionicons name="lock-closed-outline" size={20} color={BRAND_STEEL} />
               </View>
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Your training is still here
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {waitingLine(held!)}
                 </Text>
               </View>
             </View>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Nothing has been deleted. Start solo tracking to open it back up
               and pick up where you left off — or take a copy, free, whether you
               subscribe or not.
@@ -256,10 +256,10 @@ export default function AthleteHome() {
                 <Ionicons name="barbell-outline" size={20} color={BRAND_GOLD} />
               </View>
               <View className="flex-1">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Solo tracking is on
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Log lifts and PRs without a gym.
                 </Text>
               </View>
@@ -275,7 +275,7 @@ export default function AthleteHome() {
                 <Ionicons name="barbell-outline" size={20} color={BRAND_GOLD} />
               </View>
               <View className="flex-1 flex-row items-center gap-2">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+                <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
                   Keep tracking on your own
                 </Text>
                 <View className="rounded-full bg-amber-500/15 px-2 py-0.5">
@@ -285,7 +285,7 @@ export default function AthleteHome() {
                 </View>
               </View>
             </View>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Turn on solo tracking to log workouts and PRs even when you're not
               in a gym. It's free while we're in beta.
             </Text>
@@ -310,7 +310,7 @@ export default function AthleteHome() {
               style={{ backgroundColor: BRAND_STEEL + '26' }}>
               <Ionicons name="people-outline" size={20} color={BRAND_STEEL} />
             </View>
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold flex-1">
+            <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
               Train with a gym
             </Text>
           </View>
@@ -321,8 +321,8 @@ export default function AthleteHome() {
               </Pressable>
             </Link>
             <Link href="/create-gym" asChild>
-              <Pressable className="flex-1 rounded-xl px-4 py-3 items-center border border-gray-200 dark:border-gray-700 active:opacity-70">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Pressable className="flex-1 rounded-xl px-4 py-3 items-center border border-line dark:border-line-dk active:opacity-70">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   Start a gym
                 </Text>
               </Pressable>
@@ -338,11 +338,11 @@ export default function AthleteHome() {
               <Ionicons name="time-outline" size={20} color={inkOrCream} />
             </View>
             <View className="flex-1 flex-row items-center justify-between">
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 Movements you've logged
               </Text>
               {workoutCount.data ? (
-                <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                   {workoutCount.data} workout{workoutCount.data === 1 ? '' : 's'}
                 </Text>
               ) : null}
@@ -350,11 +350,11 @@ export default function AthleteHome() {
           </View>
 
           {movements.isLoading ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
           ) : logged.length === 0 ? (
             <View className="items-center gap-2 py-2">
               <Ionicons name="barbell-outline" size={28} color={colors.iconTertiary} />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
                 No logged movements yet. Start solo tracking above, or join a
                 gym — your PRs and history live here either way.
               </Text>
@@ -365,12 +365,12 @@ export default function AthleteHome() {
                 <Pressable
                   key={m.key}
                   onPress={() => router.push(`/athlete/movement/${m.key}` as never)}
-                  className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
+                  className="bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex-row items-center gap-3 active:opacity-70">
                   <View className="flex-1">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       {m.name}
                     </Text>
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                       {m.group}
                     </Text>
                   </View>

@@ -15,10 +15,10 @@ export default function NotFound() {
     <Screen>
       <View className="flex-1 items-center justify-center p-6 gap-8">
         <View className="gap-2 items-center max-w-md">
-          <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold text-center">
+          <Text className="text-ink dark:text-ink-dk text-3xl font-semibold text-center">
             We couldn't find that page
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-center">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             The link you followed may be broken, or the page may have been
             moved.
           </Text>
@@ -30,8 +30,8 @@ export default function NotFound() {
             </Pressable>
           </Link>
           <Link href="/sign-in" asChild>
-            <Pressable className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 items-center active:opacity-80">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Pressable className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-3 items-center active:opacity-80">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Sign in
               </Text>
             </Pressable>

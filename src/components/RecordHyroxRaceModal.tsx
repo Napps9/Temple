@@ -192,12 +192,12 @@ export function RecordHyroxRaceModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
               Log a full race simulation
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Every run, station and roxzone split — the total posts as
               your Race Simulation result too.
             </Text>
@@ -218,7 +218,7 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-2">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
                 Race type
               </Text>
               <ChipRow
@@ -229,7 +229,7 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-2">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
                 Division
               </Text>
               <ChipRow
@@ -240,7 +240,7 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-2">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
                 Category
               </Text>
               <ChipRow
@@ -251,7 +251,7 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-1.5">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest">
                 Age group (optional)
               </Text>
               {Platform.OS === 'web' ? (
@@ -283,7 +283,7 @@ export function RecordHyroxRaceModal({
             </View>
 
             <View className="gap-3">
-              <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                 Splits — 8 laps, run → roxzone → station
               </Text>
               {Array.from({ length: 8 }, (_, lap) => (
@@ -302,7 +302,7 @@ export function RecordHyroxRaceModal({
               <TotalRow label="Runs" seconds={totals.runTotalSeconds} />
               <TotalRow label="Stations" seconds={totals.stationTotalSeconds} />
               <TotalRow label="Roxzone" seconds={totals.roxzoneTotalSeconds} />
-              <View className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+              <View className="h-px bg-sunken dark:bg-sunken-dk my-1" />
               <TotalRow label="Total" seconds={totals.totalSeconds} bold />
             </View>
           </ScrollView>
@@ -311,7 +311,7 @@ export function RecordHyroxRaceModal({
             <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
           ) : null}
           {!canSave && !error ? (
-            <Text className="text-gray-400 dark:text-gray-500 text-xs">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
               Fill in all 24 splits to save.
             </Text>
           ) : null}
@@ -352,8 +352,8 @@ function LapCard({
   onChangeSplit: (index: number, text: string) => void;
 }) {
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-2">
-      <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+    <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
         Lap {lapNumber}
       </Text>
       {splits.map((s, i) => (
@@ -398,16 +398,16 @@ function TotalRow({
       <Text
         className={
           bold
-            ? 'text-gray-900 dark:text-gray-50 text-sm font-semibold'
-            : 'text-gray-600 dark:text-gray-300 text-sm'
+            ? 'text-ink dark:text-ink-dk text-sm font-semibold'
+            : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {label}
       </Text>
       <Text
         className={
           bold
-            ? 'text-gray-900 dark:text-gray-50 text-sm font-semibold'
-            : 'text-gray-600 dark:text-gray-300 text-sm'
+            ? 'text-ink dark:text-ink-dk text-sm font-semibold'
+            : 'text-ink-2 dark:text-ink-2-dk text-sm'
         }>
         {formatSeconds(seconds)}
       </Text>
@@ -435,11 +435,11 @@ function ChipRow<T extends string>({
             className={`px-3 py-1.5 rounded-full border ${
               on
                 ? 'bg-primary border-primary'
-                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
             }`}>
             <Text
               className={`text-xs font-medium ${
-                on ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+                on ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
               }`}>
               {opt.label}
             </Text>

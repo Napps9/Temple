@@ -67,13 +67,13 @@ export function WorkoutSectionCard({
   const headline = renderHeadline(section);
   const programmed = section.body?.trim();
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
       <View className="flex-row items-center gap-2">
-        <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
           {section.title?.trim() || categoryLabel(section.section_category)}
         </Text>
-        <View className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
-          <Text className="text-gray-600 dark:text-gray-300 text-[10px] font-semibold uppercase tracking-wider">
+        <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold uppercase tracking-wider">
             {formatLabel(section.section_format)}
           </Text>
         </View>
@@ -81,10 +81,10 @@ export function WorkoutSectionCard({
 
       {programmed ? (
         <View className="bg-primary/5 border-l-2 border-primary rounded-r-lg px-3 py-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest mb-1">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest mb-1">
             Programmed
           </Text>
-          <Text className="text-gray-700 dark:text-gray-200 text-sm leading-snug">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-snug">
             {programmed}
           </Text>
         </View>
@@ -92,10 +92,10 @@ export function WorkoutSectionCard({
 
       {headline ? (
         <View className="flex-row items-baseline gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
             Result
           </Text>
-          <Text className="flex-1 text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          <Text className="flex-1 text-ink dark:text-ink-dk text-lg font-semibold">
             {headline}
           </Text>
         </View>
@@ -143,7 +143,7 @@ export function WorkoutSectionCard({
       ) : null}
 
       {section.notes ? (
-        <Text className="text-gray-500 dark:text-gray-400 text-xs italic">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">
           {section.notes}
         </Text>
       ) : null}
@@ -193,10 +193,10 @@ function EntryLine({
   if (entry.done) pieces.push('done');
   return (
     <View className="flex-row items-center gap-2">
-      <Text className="text-gray-500 dark:text-gray-400 text-[10px] uppercase tracking-wider w-20">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider w-20">
         {entry.label?.trim() || `${labelBase} ${idx}`}
       </Text>
-      <Text className="flex-1 text-gray-900 dark:text-gray-50 text-xs">
+      <Text className="flex-1 text-ink dark:text-ink-dk text-xs">
         {pieces.length > 0 ? pieces.join(' · ') : '—'}
       </Text>
     </View>

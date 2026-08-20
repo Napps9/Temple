@@ -328,7 +328,7 @@ export function BrandingPanel() {
 
   if (canManageStaff === false) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400">
+      <Text className="text-ink-2 dark:text-ink-2-dk">
         Only the owner can edit branding.
       </Text>
     );
@@ -351,8 +351,8 @@ export function BrandingPanel() {
         {/* Colours sit beside the live preview so each edit is visible
             the moment it's typed or picked. Stacks on small screens. */}
         <View className="md:flex-row gap-4 items-stretch">
-          <View className="flex-1 bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <View className="flex-1 bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Colours
             </Text>
             <ColourField
@@ -396,8 +396,8 @@ export function BrandingPanel() {
           </View>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Logo
           </Text>
           <View className="flex-row items-center gap-3">
@@ -463,8 +463,8 @@ export function BrandingPanel() {
           saveProps={cardSaveProps('dark')}
         />
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Gym details
           </Text>
           <Input
@@ -493,13 +493,13 @@ export function BrandingPanel() {
           <Button {...cardSaveProps('details')}>Save</Button>
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Public signup
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 When on, anyone with your join link can sign up as a member.
               </Text>
             </View>
@@ -515,11 +515,11 @@ export function BrandingPanel() {
           {cardError('signup')}
           {publicSignup && cleanedSlug ? (
             <View className="gap-1">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Share this link
               </Text>
               <View className="flex-row items-center gap-2">
-                <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono" numberOfLines={1}>
+                <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-mono" numberOfLines={1}>
                   {joinUrl(origin, cleanedSlug)}
                 </Text>
                 <Pressable
@@ -533,13 +533,13 @@ export function BrandingPanel() {
           ) : null}
         </View>
 
-        <View className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
                 Lead capture form
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 When on, anyone with your enquiry link can leave their
                 details — they land in Manage → AI Front Desk as a cold lead.
               </Text>
@@ -556,11 +556,11 @@ export function BrandingPanel() {
           {cardError('lead')}
           {leadCapture && cleanedSlug ? (
             <View className="gap-1">
-              <Text className="text-gray-500 dark:text-gray-400 text-xs">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Share this enquiry link
               </Text>
               <View className="flex-row items-center gap-2">
-                <Text className="flex-1 text-gray-700 dark:text-gray-200 text-sm font-mono" numberOfLines={1}>
+                <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-mono" numberOfLines={1}>
                   {leadUrl(origin, cleanedSlug)}
                 </Text>
                 <Pressable
@@ -650,7 +650,7 @@ function AdvancedBrandingCard({
   }
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl shadow-card">
+    <View className="bg-surface dark:bg-surface-dk rounded-xl shadow-card">
       <Pressable
         onPress={onToggle}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
@@ -658,10 +658,10 @@ function AdvancedBrandingCard({
           <Ionicons name="contrast-outline" size={18} color={colors.primary} />
         </View>
         <View className="flex-1">
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             Advanced branding
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             Set a different logo and palette for dark mode. Anything you leave
             blank is auto-generated from your light-mode colours.
           </Text>
@@ -674,13 +674,13 @@ function AdvancedBrandingCard({
       </Pressable>
 
       {open ? (
-        <View className="border-t border-gray-100 dark:border-gray-800 p-4 gap-5">
+        <View className="border-t border-line dark:border-line-dk p-4 gap-5">
           {/* Dark logo */}
           <View className="gap-2">
-            <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+            <Text className="text-ink dark:text-ink-dk font-semibold">
               Dark-mode logo
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Upload an inverted version of your mark if your logo
               doesn't read on a dark background. Leave blank to reuse
               the light-mode logo.
@@ -725,7 +725,7 @@ function AdvancedBrandingCard({
           {/* Dark colours */}
           <View className="gap-3">
             <View className="flex-row items-center gap-2">
-              <Text className="flex-1 text-gray-900 dark:text-gray-50 font-semibold">
+              <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
                 Dark-mode colours
               </Text>
               <ChipButton
@@ -771,7 +771,7 @@ function AdvancedBrandingCard({
             />
           </View>
 
-          <Text className="text-gray-400 dark:text-gray-500 text-xs">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             Toggle the app to dark mode (top-right) after saving to see the
             full chrome render with these colours.
           </Text>

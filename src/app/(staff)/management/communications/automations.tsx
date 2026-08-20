@@ -118,7 +118,7 @@ export default function AutomationsScreen() {
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="py-6 px-4 gap-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management/communications" />
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             You don’t have permission to manage communications.
           </Text>
         </View>
@@ -133,10 +133,10 @@ export default function AutomationsScreen() {
         <BackLink fallbackHref="/management/communications" />
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Automations
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400">
+            <Text className="text-ink-2 dark:text-ink-2-dk">
               Emails that send themselves when something happens — a member joins,
               attends their first class, goes quiet, or a lead stays cold.
             </Text>
@@ -151,7 +151,7 @@ export default function AutomationsScreen() {
         ) : null}
 
         {automations.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : (automations.data?.length ?? 0) === 0 ? (
           <EmptyState
             icon="flash-outline"
@@ -163,13 +163,13 @@ export default function AutomationsScreen() {
             {automations.data!.map((a) => (
               <View
                 key={a.id}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 flex-row items-center gap-3 shadow-card">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 shadow-card">
                 <Link href={`/management/communications/automations/${a.id}`} asChild>
                   <Pressable className="flex-1 active:opacity-70">
-                    <Text className="text-gray-900 dark:text-gray-50 font-medium">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
                       {a.name}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       {TRIGGER_LABELS[a.trigger_type]}
                       {a.compiled_html ? '' : ' · draft'}
                     </Text>

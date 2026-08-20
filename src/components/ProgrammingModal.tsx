@@ -300,10 +300,10 @@ export function ProgrammingModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
           {!target || !date ? (
             <View className="py-6 items-center">
-              <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
             </View>
           ) : (
             <>
@@ -317,13 +317,13 @@ export function ProgrammingModal({
                     </Text>
                   </View>
                 ) : (
-                  <View className="self-start rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                    <Text className="text-gray-700 dark:text-gray-200 text-xs font-semibold">
+                  <View className="self-start rounded-full px-3 py-1 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">
                       {target.name}
                     </Text>
                   </View>
                 )}
-                <Text className="text-gray-900 dark:text-gray-50 text-xl font-semibold">
+                <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
                   {fmtLongDate(date)}
                 </Text>
               </View>
@@ -332,7 +332,7 @@ export function ProgrammingModal({
                 className="max-h-[60vh]"
                 contentContainerClassName="gap-3">
                 {programming.isLoading ? (
-                  <Text className="text-gray-500 dark:text-gray-400">
+                  <Text className="text-ink-2 dark:text-ink-2-dk">
                     Loading…
                   </Text>
                 ) : (
@@ -354,9 +354,9 @@ export function ProgrammingModal({
                     ))}
                     <Pressable
                       onPress={addDraft}
-                      className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                      className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
                       <Ionicons name="add" size={16} color={colors.iconSecondary} />
-                      <Text className="text-gray-500 dark:text-gray-400">
+                      <Text className="text-ink-2 dark:text-ink-2-dk">
                         Add section
                       </Text>
                     </Pressable>
@@ -425,7 +425,7 @@ function DraftCard({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 gap-3">
+    <View className="bg-raised dark:bg-raised-dk rounded-xl p-4 gap-3">
       <Pressable
         onPress={onRemove}
         hitSlop={4}
@@ -489,10 +489,10 @@ function DraftCard({
             color={draft.leaderboard_enabled ? colors.primary : colors.iconTertiary}
           />
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+            <Text className="text-ink dark:text-ink-dk text-sm font-medium">
               Add to leaderboard
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Members who log this section will be ranked against each other.
             </Text>
           </View>
@@ -516,17 +516,17 @@ function PickerButton({
   const colors = useThemeColors();
   return (
     <View className="gap-1.5">
-      <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {label}
       </Text>
       <Pressable
         onPress={onPress}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 flex-row items-center gap-2 active:opacity-70">
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 flex-row items-center gap-2 active:opacity-70">
         <Text
           className={
             value
-              ? 'flex-1 text-gray-900 dark:text-gray-50 text-base'
-              : 'flex-1 text-gray-400 dark:text-gray-500 text-base'
+              ? 'flex-1 text-ink dark:text-ink-dk text-base'
+              : 'flex-1 text-ink-3 dark:text-ink-3-dk text-base'
           }>
           {value ?? placeholder}
         </Text>
@@ -560,8 +560,8 @@ function PickerModal({
         className="flex-1 bg-black/60 items-center justify-center px-6">
         <Pressable
           onPress={() => {}}
-          className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-          <Text className="text-gray-900 dark:text-gray-50 text-lg font-semibold">
+          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
+          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
             {title}
           </Text>
           <ScrollView className="max-h-[60vh]" contentContainerClassName="gap-1">
@@ -570,7 +570,7 @@ function PickerModal({
                 key={it.key}
                 onPress={() => onPick(it.key)}
                 className="rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800">
-                <Text className="text-gray-900 dark:text-gray-50">
+                <Text className="text-ink dark:text-ink-dk">
                   {it.label}
                 </Text>
               </Pressable>

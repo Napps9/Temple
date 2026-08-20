@@ -713,22 +713,22 @@ export function PlansPanel() {
                 <Pressable
                   key={r.localId}
                   onPress={() => beginEdit(r.localId)}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card active:opacity-70">
+                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card active:opacity-70">
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
-                      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                      <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                         {snap.name}
                       </Text>
-                      <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         {planKindLabel(snap)}
                       </Text>
                     </View>
                     <View className="items-end">
-                      <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+                      <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                         {planPriceLabel(snap, currency)}
                       </Text>
                       {snap.notice_period_days ? (
-                        <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                           {snap.notice_period_days}-day notice
                         </Text>
                       ) : null}
@@ -744,7 +744,7 @@ export function PlansPanel() {
             return (
               <View
                 key={r.localId}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-3 shadow-card">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 shadow-card">
                 <Input
                   label="Name"
                   value={r.name}
@@ -752,7 +752,7 @@ export function PlansPanel() {
                   placeholder="Unlimited monthly"
                 />
                 <View className="gap-1">
-                  <Text className="text-gray-700 dark:text-gray-200 text-sm">Type</Text>
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Type</Text>
                   <View className="flex-row gap-2 flex-wrap">
                     {(
                       [
@@ -784,13 +784,13 @@ export function PlansPanel() {
                           className={`px-3 py-1.5 rounded-md border ${
                             active
                               ? 'border-primary bg-primary/10'
-                              : 'border-gray-200 dark:border-gray-700'
+                              : 'border-line dark:border-line-dk'
                           }`}>
                           <Text
                             className={
                               active
                                 ? 'text-primary text-xs uppercase tracking-widest'
-                                : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                                : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                             }>
                             {t.label}
                           </Text>
@@ -799,12 +799,12 @@ export function PlansPanel() {
                     })}
                   </View>
                   {r.kind === 'credit_pack' ? (
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                       A fixed bundle of sessions. They don&apos;t expire.
                     </Text>
                   ) : null}
                   {r.kind === 'programming_only' ? (
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                       A personal-training style membership: the member gets the
                       individual programming a coach writes for them. It does
                       not book classes.
@@ -813,7 +813,7 @@ export function PlansPanel() {
                 </View>
                 {r.kind !== 'credit_pack' && r.kind !== 'programming_only' ? (
                   <View className="gap-1">
-                    <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                       Membership type
                     </Text>
                     <View className="flex-row gap-2 flex-wrap">
@@ -832,13 +832,13 @@ export function PlansPanel() {
                           className={`px-3 py-1.5 rounded-md border ${
                             r.kind === t.key
                               ? 'border-primary bg-primary/10'
-                              : 'border-gray-200 dark:border-gray-700'
+                              : 'border-line dark:border-line-dk'
                           }`}>
                           <Text
                             className={
                               r.kind === t.key
                                 ? 'text-primary text-xs uppercase tracking-widest'
-                                : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                                : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                             }>
                             {t.label}
                           </Text>
@@ -900,10 +900,10 @@ export function PlansPanel() {
                   <View className="flex-row items-center gap-3">
                     <Ionicons name="checkbox" size={20} color={colors.primary} />
                     <View className="flex-1">
-                      <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                      <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                         Includes individualized programming
                       </Text>
-                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                         Always on for this plan type — it&apos;s what the plan
                         sells.
                       </Text>
@@ -921,10 +921,10 @@ export function PlansPanel() {
                       color={r.includesProgramming ? colors.primary : colors.iconTertiary}
                     />
                     <View className="flex-1">
-                      <Text className="text-gray-900 dark:text-gray-50 text-sm font-medium">
+                      <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                         Includes individualized programming
                       </Text>
-                      <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                         Members on this plan can view any personal programme a
                         coach writes for them, without buying it separately.
                       </Text>
@@ -934,7 +934,7 @@ export function PlansPanel() {
 
                 {r.kind === 'programming_only' ? null : (
                 <View className="gap-2">
-                  <Text className="text-gray-700 dark:text-gray-200 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Classes this plan covers
                   </Text>
                   <View className="flex-row gap-2">
@@ -945,13 +945,13 @@ export function PlansPanel() {
                         className={`px-3 py-1.5 rounded-md border ${
                           r.coverageMode === m
                             ? 'border-primary bg-primary/10'
-                            : 'border-gray-200 dark:border-gray-700'
+                            : 'border-line dark:border-line-dk'
                         }`}>
                         <Text
                           className={
                             r.coverageMode === m
                               ? 'text-primary text-xs uppercase tracking-widest'
-                              : 'text-gray-500 dark:text-gray-400 text-xs uppercase tracking-widest'
+                              : 'text-ink-2 dark:text-ink-2-dk text-xs uppercase tracking-widest'
                           }>
                           {m === 'all' ? 'All classes' : 'Specific classes'}
                         </Text>
@@ -959,7 +959,7 @@ export function PlansPanel() {
                     ))}
                   </View>
                   {r.coverageMode === 'all' ? (
-                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                       Members on this plan can book any class type.
                     </Text>
                   ) : (classTypes.data?.length ?? 0) === 0 ? (
@@ -978,7 +978,7 @@ export function PlansPanel() {
                               className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border ${
                                 on
                                   ? 'border-primary bg-primary/10'
-                                  : 'border-gray-200 dark:border-gray-700'
+                                  : 'border-line dark:border-line-dk'
                               }`}>
                               <View
                                 style={{ backgroundColor: ct.color }}
@@ -987,8 +987,8 @@ export function PlansPanel() {
                               <Text
                                 className={`text-xs ${
                                   on
-                                    ? 'text-gray-900 dark:text-gray-50 font-medium'
-                                    : 'text-gray-600 dark:text-gray-300'
+                                    ? 'text-ink dark:text-ink-dk font-medium'
+                                    : 'text-ink-2 dark:text-ink-2-dk'
                                 }`}>
                                 {ct.name}
                               </Text>
@@ -996,7 +996,7 @@ export function PlansPanel() {
                           );
                         })}
                       </View>
-                      <Text className="text-gray-400 dark:text-gray-500 text-xs">
+                      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                         When a member holds more than one eligible plan, they
                         choose which to use at booking.
                       </Text>
@@ -1067,7 +1067,7 @@ export function PlansPanel() {
                 size={16}
                 color={colors.iconSecondary}
               />
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Archived ({archivedRows.length})
               </Text>
             </Pressable>
@@ -1077,8 +1077,8 @@ export function PlansPanel() {
                   return (
                     <View
                       key={r.localId}
-                      className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-2">
-                      <Text className="text-gray-700 dark:text-gray-200">{r.name}</Text>
+                      className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
+                      <Text className="text-ink-2 dark:text-ink-2-dk">{r.name}</Text>
                       {canArchive ? (
                         <View className="flex-row gap-2 justify-end flex-wrap">
                           <ActionButton
@@ -1114,10 +1114,10 @@ export default function PlansScreen() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Plans
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Define your membership plans. Existing subscribers keep the price
             and credits they signed up with — editing a plan only changes what
             new subscribers get.

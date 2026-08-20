@@ -51,7 +51,7 @@ export function StrengthLeaderboard({
 
   if (query.isLoading) {
     return (
-      <Text className="text-gray-500 dark:text-gray-400 text-sm">Loading…</Text>
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
     );
   }
 
@@ -60,8 +60,8 @@ export function StrengthLeaderboard({
 
   if (rows.length === 0) {
     return (
-      <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+      <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           No {scheme.label.toLowerCase()} results in the gym yet.
         </Text>
       </View>
@@ -73,33 +73,33 @@ export function StrengthLeaderboard({
       {shown.map((r) => (
         <View
           key={r.profile_id}
-          className="flex-row items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+          className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-lg p-3">
           <View className="w-9 items-center">
             <Text
               className={
                 r.rank <= 3
                   ? 'text-primary font-bold text-sm'
-                  : 'text-gray-500 dark:text-gray-400 text-sm'
+                  : 'text-ink-2 dark:text-ink-2-dk text-sm'
               }>
               {ordinal(r.rank)}
             </Text>
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-sm">
+            <Text className="text-ink dark:text-ink-dk text-sm">
               {r.display_name}
             </Text>
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px]">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px]">
               {fmtDateShort(r.performed_at)}
               {r.source === 'tag' ? ' · from session' : ''}
             </Text>
           </View>
-          <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
             {formatStrengthValue(r, scheme.metric, weightUnit)}
           </Text>
         </View>
       ))}
       {limit != null && rows.length > limit ? (
-        <Text className="text-gray-400 dark:text-gray-500 text-xs italic pt-1">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic pt-1">
           +{rows.length - limit} more
         </Text>
       ) : null}

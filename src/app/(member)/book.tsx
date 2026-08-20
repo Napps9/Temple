@@ -241,7 +241,7 @@ function RecommendedClassCard() {
           haptic.tap();
           setDetailOpen(true);
         }}
-        className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
+        className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
         <View
           style={{ backgroundColor: typeColor }}
           className="rounded-full px-2 py-0.5">
@@ -250,11 +250,11 @@ function RecommendedClassCard() {
         <View className="flex-1">
           <View className="flex-row items-center gap-1">
             <Ionicons name="sparkles" size={11} color="#A855F7" />
-            <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
               Recommended
             </Text>
           </View>
-          <Text className="text-gray-900 dark:text-gray-50 font-medium">
+          <Text className="text-ink dark:text-ink-dk font-medium">
             {fmtNext(start)}
           </Text>
         </View>
@@ -320,15 +320,15 @@ function NextClassCard() {
   return (
     <Pressable
       onPress={() => router.push('/bookings')}
-      className="bg-white dark:bg-gray-900 rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
-      <View className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 items-center justify-center">
+      className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 shadow-card">
+      <View className="w-8 h-8 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
         <Ionicons name="ticket-outline" size={16} color={colors.iconSecondary} />
       </View>
       <View className="flex-1">
-        <Text className="text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-widest">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] uppercase tracking-widest">
           {start ? 'Your next class' : 'My bookings'}
         </Text>
-        <Text className="text-gray-900 dark:text-gray-50 font-medium">
+        <Text className="text-ink dark:text-ink-dk font-medium">
           {start ? fmtNext(start) : 'Nothing booked yet'}
         </Text>
       </View>

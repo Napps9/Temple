@@ -122,17 +122,17 @@ export default function SopsScreen() {
             <Text className="text-primary">← All documents</Text>
           </Pressable>
           <View className="gap-1">
-            <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               {active.title}
             </Text>
             {active.category ? (
-              <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                 {active.category}
               </Text>
             ) : null}
           </View>
-          <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card">
-            <Text className="text-gray-900 dark:text-gray-50 whitespace-pre-wrap">
+          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card">
+            <Text className="text-ink dark:text-ink-dk whitespace-pre-wrap">
               {active.body_markdown || 'No content.'}
             </Text>
           </View>
@@ -174,7 +174,7 @@ export default function SopsScreen() {
             placeholder="e.g. Intake, Emergency"
           />
           <View className="gap-1.5">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
               Body
             </Text>
             <TextInput
@@ -184,7 +184,7 @@ export default function SopsScreen() {
               numberOfLines={12}
               placeholder="Markdown supported in a future update — plain text for now."
               placeholderTextColor="#9CA3AF"
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-50 text-base min-h-[200px]"
+              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base min-h-[200px]"
               style={{ textAlignVertical: 'top' }}
             />
           </View>
@@ -204,10 +204,10 @@ export default function SopsScreen() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             SOPs
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             How we do things here. Visible to all staff; only owners and
             admins can edit.
           </Text>
@@ -224,9 +224,9 @@ export default function SopsScreen() {
         ) : null}
 
         {docsQuery.isLoading ? (
-          <Text className="text-gray-500 dark:text-gray-400">Loading…</Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : (docsQuery.data ?? []).length === 0 ? (
-          <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             No documents yet.
           </Text>
         ) : (
@@ -235,16 +235,16 @@ export default function SopsScreen() {
               <Pressable
                 key={d.id}
                 onPress={() => setActiveId(d.id)}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
-                <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
                   {d.title}
                 </Text>
                 {d.category ? (
-                  <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
                     {d.category}
                   </Text>
                 ) : null}
-                <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Updated {formatDate(d.updated_at)}
                 </Text>
               </Pressable>

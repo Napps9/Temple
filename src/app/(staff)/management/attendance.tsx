@@ -124,10 +124,10 @@ export default function AttendanceScreen() {
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <View className="gap-2">
-          <Text className="text-gray-900 dark:text-gray-50 text-2xl font-semibold">
+          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
             Attendance
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400">
+          <Text className="text-ink-2 dark:text-ink-2-dk">
             Trends from check-ins recorded on class bookings.
           </Text>
         </View>
@@ -196,7 +196,7 @@ export default function AttendanceScreen() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             Attended per day
           </Text>
           <AttendanceChart
@@ -204,14 +204,14 @@ export default function AttendanceScreen() {
           />
           <View className="gap-1">
             {dayBuckets.length === 0 ? (
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 {loading ? 'Loading…' : 'No attendance recorded in this range.'}
               </Text>
             ) : (
               dayBuckets.map((d) => (
                 <View key={d.day} className="flex-row justify-between">
-                  <Text className="text-gray-900 dark:text-gray-50">{d.day}</Text>
-                  <Text className="text-gray-500 dark:text-gray-400">{d.attended}</Text>
+                  <Text className="text-ink dark:text-ink-dk">{d.day}</Text>
+                  <Text className="text-ink-2 dark:text-ink-2-dk">{d.attended}</Text>
                 </View>
               ))
             )}
@@ -219,11 +219,11 @@ export default function AttendanceScreen() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-widest">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
             By class type
           </Text>
           {typeBuckets.length === 0 ? (
-            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {loading ? 'Loading…' : 'No bookings to bucket.'}
             </Text>
           ) : (
@@ -234,11 +234,11 @@ export default function AttendanceScreen() {
               return (
                 <View
                   key={`${b.class_type_id ?? 'open'}`}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-4 gap-1 shadow-card">
-                  <Text className="text-gray-900 dark:text-gray-50 font-semibold">
+                  className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-1 shadow-card">
+                  <Text className="text-ink dark:text-ink-dk font-semibold">
                     {typeName}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Attended {b.attended} · No-show {b.no_show} · Unmarked {b.unmarked}
                   </Text>
                 </View>

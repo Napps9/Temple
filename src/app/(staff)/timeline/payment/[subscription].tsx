@@ -298,10 +298,10 @@ export default function PaymentStory() {
             // A failed read must never dress up as a recovered payment —
             // the empty state below claims the money came right.
             <View className="py-16 px-6 items-center gap-3">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+              <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                 Couldn&apos;t load this payment
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
                 {errorMessage(rows.error, 'Something went wrong reading it')}
               </Text>
               <ChipButton
@@ -313,39 +313,39 @@ export default function PaymentStory() {
             </View>
           ) : !row ? (
             <View className="py-16 px-6 items-center gap-2">
-              <Text className="text-gray-900 dark:text-gray-50 font-semibold text-base">
+              <Text className="text-ink dark:text-ink-dk font-semibold text-base">
                 Nothing here
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm text-center">
                 That payment has come right, or the link is stale.
               </Text>
             </View>
           ) : (
             <>
               <View className="gap-1">
-                <Text className="text-gray-900 dark:text-gray-50 text-xl font-bold leading-[28px]">
+                <Text className="text-ink dark:text-ink-dk text-xl font-bold leading-[28px]">
                   {line!.text}
                 </Text>
-                <Text className="text-gray-500 dark:text-gray-400 text-[13px]">
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">
                   {paymentSubLine(row, currency)}
                 </Text>
               </View>
 
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
-                <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                   Why this has come up
                 </Text>
                 {whyLines(row, attendance.data ?? null, new Date()).map((s, i) => (
                   <Text
                     key={i}
-                    className="text-gray-700 dark:text-gray-200 text-[14px] leading-[20px]">
+                    className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
                     {s}
                   </Text>
                 ))}
               </View>
 
-              <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-1.5">
-                <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-1.5">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                   What I&apos;d do today
                 </Text>
                 {whatIdDoLines(
@@ -357,28 +357,28 @@ export default function PaymentStory() {
                 ).map((s, i) => (
                   <Text
                     key={i}
-                    className="text-gray-700 dark:text-gray-200 text-[14px] leading-[20px]">
+                    className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[20px]">
                     {s}
                   </Text>
                 ))}
               </View>
 
               {preview.data ? (
-                <View className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-card gap-2">
-                  <Text className="text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+                <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 shadow-card gap-2">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
                     {chased
                       ? `The nudge on its way to ${first}`
                       : `The message ${first} would get`}
                   </Text>
-                  <Text className="text-gray-900 dark:text-gray-50 text-[14.5px] font-semibold leading-[20px]">
+                  <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold leading-[20px]">
                     {preview.data.subject}
                   </Text>
-                  <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                    <Text className="text-gray-700 dark:text-gray-200 text-[14px] leading-[21px]">
+                  <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[21px]">
                       {preview.data.body}
                     </Text>
                   </View>
-                  <Text className="text-gray-400 dark:text-gray-500 text-[12.5px]">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
                     {chased
                       ? 'The receipt in the Timeline has the delivery story.'
                       : 'Your template, their details — nothing goes until you say.'}
@@ -462,7 +462,7 @@ export default function PaymentStory() {
                 ) : (
                   <Text
                     key={i}
-                    className="text-gray-700 dark:text-gray-200 text-[15px] leading-[22px] px-1">
+                    className="text-ink-2 dark:text-ink-2-dk text-[15px] leading-[22px] px-1">
                     {t.text}
                   </Text>
                 ),
@@ -479,7 +479,7 @@ export default function PaymentStory() {
                       key={q}
                       onPress={() => ask(q)}
                       disabled={busy}
-                      className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 active:opacity-70">
+                      className="px-3.5 py-2 rounded-full border border-line dark:border-line-dk bg-surface dark:bg-surface-dk active:opacity-70">
                       <Text className="text-gray-700 dark:text-gray-300 text-[13px] font-semibold">
                         {q}
                       </Text>
@@ -493,7 +493,7 @@ export default function PaymentStory() {
 
         {row ? (
           <View className="px-4 pb-4 pt-1 md:max-w-2xl md:mx-auto md:w-full">
-            <View className="flex-row items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5 shadow-card">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -501,7 +501,7 @@ export default function PaymentStory() {
                 placeholder={PAYMENT_ASK_PLACEHOLDER}
                 placeholderTextColor="#9CA3AF"
                 multiline
-                className="flex-1 text-gray-900 dark:text-gray-50 text-[15px] max-h-24 py-1.5"
+                className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
                 onSubmitEditing={() => ask(input)}
               />
               <Pressable
