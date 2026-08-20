@@ -381,7 +381,7 @@ function DraftCard({
           <Pressable
             onPress={onRemove}
             hitSlop={4}
-            className="w-9 h-9 rounded-lg items-center justify-center active:bg-gray-200 dark:active:bg-gray-700"
+            className="w-9 h-9 rounded-lg items-center justify-center active:bg-sunken dark:active:bg-sunken-dk"
           accessibilityLabel="Close">
             <Ionicons name="close" size={18} color={colors.ink3} />
           </Pressable>
@@ -537,7 +537,7 @@ function SchemePickerModal({
                               <Pressable
                                 key={`${opt.movementKey}-${opt.schemeKey}`}
                                 onPress={() => onPick(opt)}
-                                className="rounded-lg px-3 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                                className="rounded-lg px-3 py-2 active:bg-raised dark:active:bg-raised-dk">
                                 <Text className="text-primary text-sm">
                                   {opt.schemeLabel}
                                 </Text>

@@ -159,7 +159,7 @@ function GroupSection({
         className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border rounded-xl px-4 py-3 active:opacity-70 ${
           open
             ? 'border-primary/50'
-            : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
+            : 'border-gray-200 dark:border-gray-800 hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <View
           style={{ backgroundColor: `${group.accent}26` }}
@@ -219,7 +219,7 @@ function GroupSection({
                     className={`px-3 py-1 rounded-full border ${
                       active
                         ? 'border-primary bg-primary/10'
-                        : 'border-line dark:border-line-dk hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                        : 'border-line dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/60'
                     }`}>
                     <Text
                       className={`text-xs font-medium ${
@@ -264,7 +264,7 @@ function MovementRow({
   return (
     <Pressable
       onPress={() => router.push(`/track/movement/${movement.key}` as never)}
-      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-gray-300 dark:hover:border-gray-700 active:opacity-70">
+      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-line-strong dark:hover:border-line-strong-dk active:opacity-70">
       <View
         style={{ backgroundColor: `${group.accent}26` }}
         className="w-9 h-9 rounded-full items-center justify-center">

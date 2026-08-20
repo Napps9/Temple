@@ -676,7 +676,7 @@ function SourcesEditorModal({
                   hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel="Close"
-                  className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+                  className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
                   <Ionicons name="close" size={18} color={colors.ink2} />
                 </Pressable>
               </View>

@@ -600,7 +600,7 @@ export function EmailEditor({
     <Pressable
       key={type}
       onPress={() => addBlock(type)}
-      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
       <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {BLOCK_LABELS[type]}

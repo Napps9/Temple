@@ -872,7 +872,7 @@ function SectionDraftCard({
           <Pressable
             onPress={onRemove}
             hitSlop={4}
-            className="w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-700"
+            className="w-8 h-8 rounded-lg items-center justify-center active:bg-raised dark:active:bg-raised-dk"
           accessibilityLabel="Close">
             <Ionicons name="close" size={18} color={colors.ink3} />
           </Pressable>
@@ -1199,7 +1199,7 @@ function EntriesTable({
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Remove entry"
-              className="w-7 h-7 rounded items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+              className="w-7 h-7 rounded items-center justify-center active:bg-raised dark:active:bg-raised-dk">
               <Ionicons name="close" size={14} color={colors.ink3} />
             </Pressable>
           </View>
@@ -1659,7 +1659,7 @@ function MovementTagPickerModal({
       <View className="flex-row items-center gap-2">
         <Pressable
           onPress={() => onPick({ movement_key: m.key, track_key: null })}
-          className="flex-1 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
+          className="flex-1 rounded-lg px-3 py-2 hover:bg-raised dark:hover:bg-raised-dk/60 active:bg-raised dark:active:bg-raised-dk">
           <Text className="text-ink dark:text-ink-dk text-sm">{m.name}</Text>
           <Text className="text-ink-3 dark:text-ink-3-dk text-[10px]">
             No rep scheme
@@ -1674,7 +1674,7 @@ function MovementTagPickerModal({
             accessibilityRole="button"
             accessibilityLabel={`${m.name} rep schemes`}
             accessibilityState={{ expanded: expandedMovement === m.key }}
-            className="w-8 h-8 rounded items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-800">
+            className="w-8 h-8 rounded items-center justify-center hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk">
             <Ionicons
               name={expandedMovement === m.key ? 'chevron-up' : 'chevron-down'}
               size={14}
@@ -1689,7 +1689,7 @@ function MovementTagPickerModal({
             <Pressable
               key={s.key}
               onPress={() => onPick({ movement_key: m.key, track_key: s.key })}
-              className="rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:bg-gray-100 dark:active:bg-gray-800">
+              className="rounded-lg px-3 py-2 hover:bg-raised dark:hover:bg-raised-dk/60 active:bg-raised dark:active:bg-raised-dk">
               <Text className="text-primary text-xs">{s.label}</Text>
             </Pressable>
           ))}
@@ -1762,7 +1762,7 @@ function MovementTagPickerModal({
                     }
                     accessibilityRole="button"
                     accessibilityState={{ expanded: expandedGroup === g.key }}
-                    className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:opacity-70">
+                    className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-raised dark:hover:bg-raised-dk active:opacity-70">
                     <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                       {g.name}
                     </Text>
@@ -1829,7 +1829,7 @@ function PickerModal({
               <Pressable
                 key={it.key}
                 onPress={() => onPick(it.key)}
-                className="rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800">
+                className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
                 <Text className="text-ink dark:text-ink-dk">
                   {it.label}
                 </Text>

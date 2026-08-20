@@ -207,7 +207,7 @@ function MovementPickerModal({
                   <Pressable
                     key={h.movement.key}
                     onPress={() => onPick(h.movement.key)}
-                    className="px-3 py-3 rounded-lg active:bg-gray-50 dark:active:bg-gray-800">
+                    className="px-3 py-3 rounded-lg active:bg-raised dark:active:bg-raised-dk">
                     <Text className="text-ink dark:text-ink-dk">
                       {h.movement.name}
                     </Text>

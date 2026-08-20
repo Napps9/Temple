@@ -1,8 +1,10 @@
 import { Redirect, Tabs, usePathname } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
+import { SideNav } from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
+import { MD } from '@/lib/breakpoint';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { shouldRecord } from '@/lib/route-usage';
 import { supabase } from '@/lib/supabase';
@@ -56,6 +58,7 @@ function useRouteOpens(gymId: string | null | undefined) {
 export default function StaffLayout() {
   const session = useSession();
   const colors = useThemeColors();
+  const { width } = useWindowDimensions();
   const canAccessStaff = useCan('can_access_staff_area');
   const { data: membership } = useGymMembership();
   useRouteOpens(membership?.gymId);
@@ -65,9 +68,15 @@ export default function StaffLayout() {
     return <Redirect href="/book" />;
   }
 
-  return (
-    <View className="flex-1 bg-ground dark:bg-ground-dk">
-      <TopNav sections={STAFF_SECTIONS} variant="staff" />
+  // A rail beside the pages at 768 and up, a top bar below it. The router
+  // is the same either way — this swaps the chrome, not the navigation:
+  // four sections centred in a 1400px window left the top third of the
+  // screen doing nothing and gave Members, Plans, Communications and
+  // Billing nowhere to live except behind Manage.
+  const rail = width >= MD;
+
+  const tabs = (
+    <>
       {/* backBehavior="history": when a back press bubbles past a tab's
           inner stack, return to the tab the user was actually on. The
           default is firstRoute, which sent Timeline -> member -> Back to
@@ -88,6 +97,22 @@ export default function StaffLayout() {
         <Tabs.Screen name="setup" options={{ title: 'Setup' }} />
         <Tabs.Screen name="timeline" options={{ title: 'Timeline' }} />
       </Tabs>
+    </>
+  );
+
+  if (rail) {
+    return (
+      <View className="flex-1 flex-row bg-ground dark:bg-ground-dk">
+        <SideNav sections={STAFF_SECTIONS} />
+        <View className="flex-1 min-w-0">{tabs}</View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-ground dark:bg-ground-dk">
+      <TopNav sections={STAFF_SECTIONS} variant="staff" />
+      {tabs}
     </View>
   );
 }

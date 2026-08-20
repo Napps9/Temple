@@ -215,7 +215,7 @@ export function MemberProgrammingAccessModal({
                   setProductId(null);
                   setPickerOpen(false);
                 }}
-                className="rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800">
+                className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
                 <Text className="text-ink dark:text-ink-dk">
                   No product
                 </Text>
@@ -230,7 +230,7 @@ export function MemberProgrammingAccessModal({
                     setProductId(p.id);
                     setPickerOpen(false);
                   }}
-                  className="rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800">
+                  className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
                   <Text className="text-ink dark:text-ink-dk">
                     {p.name}
                   </Text>

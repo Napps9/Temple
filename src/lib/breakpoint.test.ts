@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DIALOG_MIN_WIDTH, modalShape } from './modal-shape';
+import { MD, modalShape } from './breakpoint';
 
 // One rule, and it is worth pinning because getting it wrong is invisible
 // in code review and obvious to a member holding a phone.
@@ -15,8 +15,8 @@ describe('modalShape', () => {
   });
 
   it('switches at md, and md itself is a dialog', () => {
-    expect(modalShape(DIALOG_MIN_WIDTH - 1)).toBe('sheet');
-    expect(modalShape(DIALOG_MIN_WIDTH)).toBe('dialog');
+    expect(modalShape(MD - 1)).toBe('sheet');
+    expect(modalShape(MD)).toBe('dialog');
   });
 
   // A tablet in portrait is 768 and lands on dialog; the same tablet is

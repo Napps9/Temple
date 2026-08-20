@@ -498,7 +498,7 @@ export function ClassDetailModal({
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="Close"
-            className="absolute right-3 top-3 z-10 w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+            className="absolute right-3 top-3 z-10 w-9 h-9 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
             <Ionicons name="close" size={20} color={colors.ink2} />
           </Pressable>
           {sessionQuery.isLoading || !detail ? (

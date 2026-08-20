@@ -684,7 +684,7 @@ function HistoryButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       className={`w-8 h-8 rounded-lg items-center justify-center active:opacity-70 ${
-        disabled ? 'opacity-30' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+        disabled ? 'opacity-30' : 'hover:bg-raised dark:hover:bg-raised-dk'
       }`}>
       <Ionicons name={icon} size={18} color={colors.ink2} />
     </Pressable>

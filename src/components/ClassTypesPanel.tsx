@@ -697,7 +697,7 @@ export function ClassTypesPanel() {
                       hitSlop={4}
                       accessibilityRole="button"
                       accessibilityLabel="Remove"
-                      className="w-10 h-10 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+                      className="w-10 h-10 rounded-lg items-center justify-center active:bg-raised dark:active:bg-raised-dk">
                       <Ionicons name="close" size={18} color={colors.ink3} />
                     </Pressable>
                   ) : null}

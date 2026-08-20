@@ -1,18 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar } from './Avatar';
 import { GymLogo } from './GymLogo';
-import { useGymMembership, useMyProfile, useSession } from '@/lib/auth';
+import { NavAccountMenu } from './NavAccountMenu';
 import { haptic } from '@/lib/haptic';
-import { useNotificationCount } from '@/lib/notifications';
-import { useGymStoreConfig } from '@/lib/store';
-import { CURRENT_SUB_STATUSES, useGymPlans, useMySubscriptions } from '@/lib/subscriptions';
-import { useThemeColors, useThemePreference } from '@/lib/theme';
+import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 
@@ -48,38 +43,11 @@ export function TopNav({
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const brand = useGymBrand();
-  const session = useSession();
-  const { data: profile } = useMyProfile();
-  const { data: membership } = useGymMembership();
-  const { scheme, set } = useThemePreference();
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
-  const notifCount = useNotificationCount();
-  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // Membership + store are member-only concepts — only query them for the
-  // member top bar so the staff nav doesn't pay for unused fetches.
-  const storeGymId = variant === 'member' ? membership?.gymId : undefined;
-  const storeConfig = useGymStoreConfig(storeGymId);
-  const plans = useGymPlans(storeGymId);
-  const subs = useMySubscriptions(storeGymId, session?.user.id);
-  const hasCurrentSub = (subs.data ?? []).some((s) =>
-    CURRENT_SUB_STATUSES.has(s.status),
-  );
-  const showMembership =
-    variant === 'member' &&
-    !!membership &&
-    ((plans.data?.length ?? 0) > 0 || hasCurrentSub);
-  const showStore =
-    variant === 'member' &&
-    !!membership &&
-    !!session &&
-    !!storeConfig.data?.store_enabled;
 
   const gymName = brand.gymName;
 
-  const accountHref = variant === 'staff' ? '/management/account' : '/account';
   const homeHref = variant === 'staff' ? '/timeline' : '/book';
   const showCrossLink = variant === 'staff' || canAccessStaff;
   const crossHref = variant === 'staff' ? '/book' : '/classes';
@@ -87,8 +55,6 @@ export function TopNav({
   // the old "Member view" label read as where-you-are to half of users
   // and where-you're-going to the rest.
   const crossLabel = variant === 'staff' ? 'Viewing Staff' : 'Viewing Member';
-  const onAccount = pathname === accountHref;
-  const displayName = profile?.full_name?.trim() || session?.user.email || '';
 
   // staff = blue, member = green: the switch doubles as a "which side
   // am I on" indicator, so the tint must change with the variant.
@@ -204,154 +170,10 @@ export function TopNav({
           </Pressable>
         ) : null}
 
-        {/* Messages + theme fold into the account button — tap the avatar
-            to expand them. A dot on the avatar surfaces unread messages
-            while the menu is closed. */}
-        <Pressable
-          onPress={() => {
-            haptic.tap();
-            setMenuOpen(true);
-          }}
-          hitSlop={4}
-          accessibilityLabel={
-            notifCount > 0
-              ? `Account, ${notifCount} unread`
-              : 'Account and settings'
-          }
-          style={onAccount ? { borderColor: brand.primaryColor } : undefined}
-          className={`w-9 h-9 rounded-full items-center justify-center border-2 hover:opacity-80 active:opacity-70 ${
-            onAccount ? '' : 'border-transparent'
-          }`}>
-          <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={30} />
-          {/* Unread messages surface a dot while the menu is closed. */}
-          {notifCount > 0 ? (
-            <View className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-ground dark:border-ground-dk" />
-          ) : null}
-        </Pressable>
+        <NavAccountMenu variant={variant} anchor="top-right" />
         </View>
       </View>
 
-      <Modal
-        visible={menuOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setMenuOpen(false)}>
-        <Pressable
-          className="flex-1"
-          onPress={() => setMenuOpen(false)}
-          accessibilityLabel="Close menu"
-        />
-        <View
-          style={{
-            position: 'absolute',
-            top: insets.top + 52,
-            right: 12,
-            width: Math.min(320, windowWidth - 24),
-            maxHeight: windowHeight - insets.top - 80,
-          }}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-pop p-2">
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View className="px-3 py-2 flex-row items-center gap-3">
-              <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={34} />
-              <Text
-                className="flex-1 text-ink dark:text-ink-dk font-semibold text-base"
-                numberOfLines={1}>
-                {displayName}
-              </Text>
-            </View>
-
-            <View className="h-px bg-raised dark:bg-raised-dk my-1.5" />
-
-            <MenuRow
-              icon="chatbubble-ellipses-outline"
-              label="Messages"
-              iconColor={colors.ink}
-              badge={notifCount}
-              onPress={() => {
-                haptic.tap();
-                setMenuOpen(false);
-                router.push('/inbox' as never);
-              }}
-            />
-            <MenuRow
-              icon={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
-              label={scheme === 'dark' ? 'Light mode' : 'Dark mode'}
-              iconColor={colors.ink}
-              onPress={() => {
-                haptic.selection();
-                set(scheme === 'dark' ? 'light' : 'dark');
-                setMenuOpen(false);
-              }}
-            />
-            <MenuRow
-              icon="person-circle-outline"
-              label="Account"
-              iconColor={colors.ink}
-              onPress={() => {
-                haptic.tap();
-                setMenuOpen(false);
-                router.push(accountHref as never);
-              }}
-            />
-            {showMembership ? (
-              <MenuRow
-                icon="card-outline"
-                label="Membership"
-                iconColor={colors.ink}
-                onPress={() => {
-                  haptic.tap();
-                  setMenuOpen(false);
-                  router.push('/membership' as never);
-                }}
-              />
-            ) : null}
-            {showStore ? (
-              <MenuRow
-                icon="bag-handle-outline"
-                label="Store"
-                iconColor={colors.ink}
-                onPress={() => {
-                  haptic.tap();
-                  setMenuOpen(false);
-                  router.push('/store' as never);
-                }}
-              />
-            ) : null}
-          </ScrollView>
-        </View>
-      </Modal>
     </View>
-  );
-}
-
-function MenuRow({
-  icon,
-  label,
-  iconColor,
-  badge,
-  onPress,
-}: {
-  icon: IoniconName;
-  label: string;
-  iconColor: string;
-  badge?: number;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-800">
-      <Ionicons name={icon} size={20} color={iconColor} />
-      <Text className="flex-1 text-ink dark:text-ink-dk text-[15px] font-medium">
-        {label}
-      </Text>
-      {badge && badge > 0 ? (
-        <View className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 items-center justify-center">
-          <Text className="text-white text-[11px] font-bold">
-            {badge > 9 ? '9+' : badge}
-          </Text>
-        </View>
-      ) : null}
-    </Pressable>
   );
 }

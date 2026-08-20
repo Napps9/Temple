@@ -1138,7 +1138,7 @@ function AddBlockModal({
               <Pressable
                 key={type}
                 onPress={() => onPick(type)}
-                className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+                className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
                 <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={16} color={colors.ink2} />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
                   {SITE_BLOCK_LABELS[type]}
@@ -1179,7 +1179,7 @@ function TemplatePickerModal({
                 <Pressable
                   key={t.id}
                   onPress={() => onPick(t)}
-                  className="flex-row items-center gap-3 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+                  className="flex-row items-center gap-3 px-3 py-2.5 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
                   <View
                     className="w-12 h-9 rounded-md overflow-hidden flex-row"
                     style={{ borderWidth: 1, borderColor: '#00000014' }}>
@@ -1296,7 +1296,7 @@ export function SiteEditor({
     <Pressable
       key={type}
       onPress={() => addBlock(type)}
-      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700 active:opacity-70">
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
       <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={15} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {SITE_BLOCK_LABELS[type]}

@@ -629,7 +629,7 @@ function ClassTypeCard({
       <>
         <Pressable
           onPress={onEdit}
-          className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+          className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-raised dark:active:bg-raised-dk shadow-card">
           {header}
           {body}
         </Pressable>
@@ -758,7 +758,7 @@ function PersonalCard({
     return (
       <Pressable
         onPress={onEdit}
-        className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+        className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 active:bg-raised dark:active:bg-raised-dk shadow-card">
         {header}
         {body}
         {filesFooter}

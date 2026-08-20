@@ -95,7 +95,7 @@ export function DateRangeCta({
     <View>
       <Pressable
         onPress={openModal}
-        className="flex-row items-center justify-between bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-2.5 active:bg-gray-50 dark:active:bg-gray-800">
+        className="flex-row items-center justify-between bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-2.5 active:bg-raised dark:active:bg-raised-dk">
         <Text className="text-ink dark:text-ink-dk font-medium">{label}</Text>
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Change</Text>
       </Pressable>
@@ -186,7 +186,7 @@ function PresetOption({
     <Pressable
       onPress={onPress}
       className={`flex-row items-center justify-between px-3 py-3 rounded-lg ${
-        active ? 'bg-primary/10' : 'active:bg-gray-50 dark:active:bg-gray-800'
+        active ? 'bg-primary/10' : 'active:bg-raised dark:active:bg-raised-dk'
       }`}>
       <Text
         className={

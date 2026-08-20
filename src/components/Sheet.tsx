@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text } from './Text';
 
-import { modalShape } from '@/lib/modal-shape';
+import { modalShape } from '@/lib/breakpoint';
 import { useThemeColors } from '@/lib/theme';
 
 // One modal for the whole product: a sheet on a phone, a dialog on a

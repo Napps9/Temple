@@ -713,7 +713,7 @@ export default function ImportMembersScreen() {
                   className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
                     dragOver
                       ? 'border-primary bg-primary/5'
-                      : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                      : 'border-gray-300 dark:border-gray-700 hover:bg-raised dark:hover:bg-raised-dk/40'
                   }`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Ionicons name="cloud-upload-outline" size={24} color={colors.ink2} />

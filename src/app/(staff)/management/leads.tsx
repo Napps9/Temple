@@ -679,7 +679,7 @@ function AddLeadModal({
                   hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel="Close"
-                  className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+                  className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
                   <Ionicons name="close" size={18} color={colors.ink2} />
                 </Pressable>
               </View>
@@ -1022,7 +1022,7 @@ function LeadDetailModal({
                   hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel="Close"
-                  className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100 dark:active:bg-gray-800">
+                  className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
                   <Ionicons name="close" size={18} color={colors.ink2} />
                 </Pressable>
               </View>
@@ -1096,7 +1096,7 @@ function LeadDetailModal({
                             key={m.profile_id}
                             onPress={() => convert.mutate(m.profile_id)}
                             disabled={convert.isPending}
-                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-raised dark:active:bg-raised-dk">
                             <Text className="text-ink dark:text-ink-dk flex-1">
                               {m.full_name ?? 'Member'}
                             </Text>
@@ -1133,7 +1133,7 @@ function LeadDetailModal({
                             key={c.profile_id}
                             onPress={() => reassign.mutate(c.profile_id)}
                             disabled={reassign.isPending}
-                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-gray-100 dark:active:bg-gray-800">
+                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-raised dark:active:bg-raised-dk">
                             <Ionicons
                               name={sel ? 'checkmark-circle' : 'ellipse-outline'}
                               size={18}

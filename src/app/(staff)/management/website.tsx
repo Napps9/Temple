@@ -984,7 +984,7 @@ export default function WebsiteManageScreen() {
                 className={`px-3 py-1.5 rounded-full ${
                   isActive
                     ? 'bg-primary'
-                    : 'bg-raised dark:bg-raised-dk hover:bg-gray-200 dark:hover:bg-gray-700'
+                    : 'bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk'
                 }`}>
                 <Text
                   className={`text-xs font-semibold ${
@@ -999,7 +999,7 @@ export default function WebsiteManageScreen() {
             onPress={() => setManagingPages(true)}
             accessibilityRole="button"
             accessibilityLabel="Manage pages"
-            className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk hover:bg-gray-50 dark:hover:bg-gray-800/60">
+            className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk hover:bg-raised dark:hover:bg-raised-dk/60">
             <Ionicons name="add" size={12} color={colors.ink2} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">Pages</Text>
           </Pressable>

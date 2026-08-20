@@ -270,7 +270,7 @@ function DocumentsModal({
                     onPress={() => remove.mutate(f)}
                     hitSlop={6}
                     accessibilityLabel={`Remove ${f.title}`}
-                    className="w-8 h-8 rounded-lg items-center justify-center active:bg-gray-100 dark:active:bg-gray-700">
+                    className="w-8 h-8 rounded-lg items-center justify-center active:bg-raised dark:active:bg-raised-dk">
                     <Ionicons name="trash-outline" size={16} color={colors.ink3} />
                   </Pressable>
                 </View>
@@ -402,7 +402,7 @@ function IndividualsList() {
               <Pressable
                 key={m.profile_id}
                 onPress={() => open(m.profile_id)}
-                className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+                className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:bg-raised dark:active:bg-raised-dk shadow-card">
                 <Avatar name={m.full_name} avatarUrl={m.avatar_url} size={36} />
                 <View className="flex-1">
                   <Text className="text-ink dark:text-ink-dk font-medium">
@@ -455,7 +455,7 @@ function IndividualsList() {
             <Pressable
               key={m.profile_id}
               onPress={() => open(m.profile_id)}
-              className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:bg-gray-50 dark:active:bg-gray-800 shadow-card">
+              className="bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:bg-raised dark:active:bg-raised-dk shadow-card">
               <Avatar
                 name={m.profiles?.full_name}
                 avatarUrl={m.profiles?.avatar_url}

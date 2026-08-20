@@ -815,7 +815,7 @@ export function ClassesCalendar({
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel="Jump to today"
-                className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center active:bg-gray-100 dark:active:bg-gray-800">
+                className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center active:bg-raised dark:active:bg-raised-dk">
                 <Ionicons name="locate-outline" size={18} color={colors.ink2} />
               </Pressable>
             </View>
@@ -878,7 +878,7 @@ export function ClassesCalendar({
                 setDate(startOfDay(addMonths(date, -1)));
               }}
               hitSlop={8}
-              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
+              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-raised dark:hover:bg-raised-dk">
               <Text className="text-ink-2 dark:text-ink-2-dk text-lg">‹</Text>
             </Pressable>
             <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
@@ -890,7 +890,7 @@ export function ClassesCalendar({
                 setDate(startOfDay(addMonths(date, 1)));
               }}
               hitSlop={8}
-              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800">
+              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-raised dark:hover:bg-raised-dk">
               <Text className="text-ink-2 dark:text-ink-2-dk text-lg">›</Text>
             </Pressable>
             {canCreate || canBulkEdit ? (
@@ -1319,7 +1319,7 @@ function AgendaCard({
     <Pressable
       onPress={isPast ? undefined : onPress}
       disabled={isPast}
-      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-2xl p-3.5 border shadow-card active:bg-gray-50 dark:active:bg-gray-800 ${
+      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-2xl p-3.5 border shadow-card active:bg-raised dark:active:bg-raised-dk ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : recommended
@@ -1610,7 +1610,7 @@ function DayGrid({
               {isOccupied ? null : canCreate ? (
                 <Pressable
                   onPress={() => onCreateAt(date, hour)}
-                  className="border border-dashed border-line-strong dark:border-line-strong-dk rounded-xl px-4 justify-center hover:bg-gray-50 dark:hover:bg-gray-800/60 hover:border-gray-400 dark:hover:border-gray-500 active:bg-gray-50 dark:active:bg-gray-800"
+                  className="border border-dashed border-line-strong dark:border-line-strong-dk rounded-xl px-4 justify-center hover:bg-raised dark:hover:bg-raised-dk/60 hover:border-gray-400 dark:hover:border-gray-500 active:bg-raised dark:active:bg-raised-dk"
                   style={{ height: HOUR_HEIGHT - 12 }}>
                   <Text className="text-ink-3 dark:text-ink-3-dk text-sm">+ Add a class</Text>
                 </Pressable>
@@ -1706,12 +1706,12 @@ function DayClassCard({
       style={
         inGrid ? { height: '100%', width: '100%' } : undefined
       }
-      className={`bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-gray-50 dark:active:bg-gray-800 overflow-hidden shadow-card ${
+      className={`bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden shadow-card ${
         compact ? 'p-2' : 'p-4'
       } ${
         isPast
           ? 'opacity-50'
-          : 'hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-pop'
+          : 'hover:border-line-strong dark:hover:border-line-strong-dk hover:shadow-pop'
       }`}>
       <View className={`flex-1 ${compact ? 'gap-0.5' : 'gap-1.5'}`}>
         <View className="flex-row items-center gap-2">
@@ -1971,7 +1971,7 @@ function WeekGrid({
                   ) : canCreate ? (
                     <Pressable
                       onPress={() => onCreateAt(d, hour)}
-                      className="flex-1 border border-dashed border-line dark:border-line-dk rounded-md active:bg-gray-50 dark:active:bg-gray-800"
+                      className="flex-1 border border-dashed border-line dark:border-line-dk rounded-md active:bg-raised dark:active:bg-raised-dk"
                     />
                   ) : (
                     <View className="flex-1 rounded-md" />
@@ -2064,7 +2064,7 @@ function WeekTile({
       }
       disabled={isPast}
       style={{ height: '100%', width: '100%' }}
-      className={`bg-surface dark:bg-surface-dk rounded-md p-1.5 gap-1 border overflow-hidden active:bg-gray-50 dark:active:bg-gray-800 shadow-card ${
+      className={`bg-surface dark:bg-surface-dk rounded-md p-1.5 gap-1 border overflow-hidden active:bg-raised dark:active:bg-raised-dk shadow-card ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : 'border-line dark:border-line-dk'
