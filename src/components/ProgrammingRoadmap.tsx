@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import {
   blockRangeText,
   yearLanes,
@@ -267,17 +268,28 @@ function BlockModal({
   };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        className="flex-1 bg-black/40"
-        onPress={onClose}
-        accessibilityLabel="Close"
-      />
-      <View className="absolute inset-x-0 bottom-0 md:inset-0 md:items-center md:justify-center pointer-events-box-none">
-        <View className="bg-surface dark:bg-surface-dk rounded-t-3xl md:rounded-2xl p-5 gap-4 md:w-[440px] shadow-float">
-          <Text className="text-ink dark:text-ink-dk text-lg font-bold">
-            {draft.id ? 'Edit block' : 'Add a block'}
-          </Text>
+    // This was already a sheet below md and a dialog above it, hand-rolled
+    // — the same rule Sheet encodes, written out a second time.
+    <Sheet
+      visible
+      title={draft.id ? 'Edit block' : 'Add a block'}
+      onClose={onClose}
+      dialogWidth={440}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose} disabled={busy}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button onPress={save} loading={busy} disabled={!valid}>
+              {draft.id ? 'Save' : 'Add block'}
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-4 pb-1">
           <Input
             label="Name"
             value={draft.name}
@@ -326,29 +338,25 @@ function BlockModal({
             </View>
           </View>
           {error ? (
-            <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-600 dark:text-red-400 text-[13px]">
+              {error}
+            </Text>
           ) : null}
-          <View className="flex-row items-center gap-2">
-            <View className="flex-1">
-              <Button onPress={save} loading={busy} disabled={!valid}>
-                {draft.id ? 'Save' : 'Add block'}
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose} disabled={busy}>
-                Cancel
-              </Button>
-            </View>
-          </View>
           {draft.id ? (
-            <Pressable onPress={remove} disabled={busy} hitSlop={6}>
-              <Text className="text-red-600 dark:text-red-400 text-sm font-semibold text-center">
+            <Pressable
+              onPress={remove}
+              disabled={busy}
+              hitSlop={6}
+              accessibilityRole="button"
+              className="py-1">
+              <Text className="text-red-600 dark:text-red-400 text-[13px] font-semibold text-center">
                 Remove this block
               </Text>
             </Pressable>
           ) : null}
-        </View>
       </View>
-    </Modal>
+    </Sheet>
   );
 }

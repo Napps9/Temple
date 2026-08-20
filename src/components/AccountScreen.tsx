@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from './Text';
 
 import { AvatarUploader } from './AvatarUploader';
 import { BackLink } from './BackLink';
 import { Button } from './Button';
 import { ChipButton } from './ChipButton';
+import { ConfirmDialog } from './ConfirmDialog';
 import { CoachEarningsCard } from './CoachEarningsCard';
 import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
@@ -518,45 +519,20 @@ export function AccountScreen() {
         />
       ) : null}
 
-      <Modal
+      {/* This is the destructive-confirm shape exactly — a question, its
+          consequence, one red action and a named way out — so it is
+          ConfirmDialog rather than a fourth hand-rolled copy of it. */}
+      <ConfirmDialog
         visible={showWithdraw}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowWithdraw(false)}>
-        <Pressable
-          onPress={() => setShowWithdraw(false)}
-          className="flex-1 bg-black/60 items-center justify-center px-6">
-          <Pressable
-            onPress={() => {}}
-            className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              Erase your health data?
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk">
-              This permanently deletes your PAR-Q answers and any injuries
-              you've logged, and withdraws your data-processing consent. This
-              can't be undone — you'll be asked to consent again before your
-              next training session.
-            </Text>
-            {withdrawError ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
-                {withdrawError}
-              </Text>
-            ) : null}
-            <View className="flex-row gap-2 justify-end">
-              <Button variant="secondary" onPress={() => setShowWithdraw(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onPress={() => withdrawConsent.mutate()}
-                loading={withdrawConsent.isPending}>
-                Erase data
-              </Button>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        title="Erase your health data?"
+        body="This permanently deletes your PAR-Q answers and any injuries you've logged, and withdraws your data-processing consent. This can't be undone — you'll be asked to consent again before your next training session."
+        confirmLabel="Erase data"
+        cancelLabel="Keep it"
+        pending={withdrawConsent.isPending}
+        error={withdrawError}
+        onConfirm={() => withdrawConsent.mutate()}
+        onCancel={() => setShowWithdraw(false)}
+      />
     </Screen>
   );
 }

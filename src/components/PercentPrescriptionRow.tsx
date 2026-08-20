@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
 import { movementName, searchMovements } from '@/lib/movements';
 import { formatWeight, percentWeight, type ResolvedMax } from '@/lib/one-rep-max';
@@ -177,53 +178,44 @@ function MovementPickerModal({
   const hits = useMemo(() => (term ? weightedHits(term) : []), [term]);
 
   return (
-    <Modal
+    <Sheet
       visible={term !== null}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            Which lift is “{term}”?
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            Your programming says “{term}” without saying which variant.
-            Pick the one you train and we'll use it whenever it comes up
-            again.
-          </Text>
-          <ScrollView className="max-h-72">
-            {hits.length === 0 ? (
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                No matching lift in the movement catalogue.
-              </Text>
-            ) : (
-              <View className="gap-1">
-                {hits.map((h) => (
-                  <Pressable
-                    key={h.movement.key}
-                    onPress={() => onPick(h.movement.key)}
-                    className="px-3 py-3 rounded-lg active:bg-raised dark:active:bg-raised-dk">
-                    <Text className="text-ink dark:text-ink-dk">
-                      {h.movement.name}
-                    </Text>
-                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                      {h.group.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </ScrollView>
+      title={`Which lift is \u201c${term}\u201d?`}
+      subtitle="Pick the one you train and we’ll use it whenever it comes up again"
+      onClose={onClose}
+      actions={
+        <SheetAction grow>
           <Button variant="secondary" onPress={onClose}>
             Cancel
           </Button>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        </SheetAction>
+      }>
+      <View className="pb-1">
+        {hits.length === 0 ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
+            No matching lift in the movement catalogue.
+          </Text>
+        ) : (
+          <View className="rounded-card border border-line dark:border-line-dk overflow-hidden">
+            {hits.map((h, i) => (
+              <Pressable
+                key={h.movement.key}
+                onPress={() => onPick(h.movement.key)}
+                accessibilityRole="button"
+                className={`px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
+                  i === 0 ? '' : 'border-t border-line dark:border-line-dk'
+                }`}>
+                <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold">
+                  {h.movement.name}
+                </Text>
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
+                  {h.group.name}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
+    </Sheet>
   );
 }

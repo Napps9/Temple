@@ -1,13 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Input } from '@/components/Input';
-import { useThemeColors } from '@/lib/theme';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import {
   addPage,
   removePage,
@@ -39,7 +38,6 @@ export function PageManagerModal({
   onClose: () => void;
   onSelectPage: (pageId: string) => void;
 }) {
-  const colors = useThemeColors();
   const [newTitle, setNewTitle] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -56,31 +54,30 @@ export function PageManagerModal({
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-        <Pressable
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          className="flex-1 bg-black/60 items-center justify-center px-6">
-          <Pressable
-            onPress={() => {}}
-            accessibilityViewIsModal
-            role="dialog"
-            aria-modal
-            accessibilityLabel="Manage pages"
-            className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4 max-h-[85vh]">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">Pages</Text>
-              <Pressable
-                onPress={onClose}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Close">
-                <Ionicons name="close" size={20} color={colors.ink3} />
-              </Pressable>
-            </View>
-
-            <ScrollView className="max-h-[50vh]" contentContainerClassName="gap-3">
+      <Sheet
+        visible={visible}
+        title="Pages"
+        onClose={onClose}
+        dialogWidth={560}
+        actions={
+          <>
+            <SheetAction grow>
+              <Input
+                label="New page"
+                value={newTitle}
+                onChangeText={setNewTitle}
+                placeholder="e.g. Schedule"
+                onSubmitEditing={handleAdd}
+              />
+            </SheetAction>
+            <SheetAction>
+              <Button variant="plain" onPress={handleAdd} disabled={!newTitle.trim()}>
+                Add
+              </Button>
+            </SheetAction>
+          </>
+        }>
+        <View className="gap-3 pb-1">
               {document.pages.map((p, i) => (
                 <View
                   key={p.id}
@@ -132,25 +129,8 @@ export function PageManagerModal({
                   />
                 </View>
               ))}
-            </ScrollView>
-
-            <View className="flex-row items-end gap-2">
-              <View className="flex-1">
-                <Input
-                  label="New page"
-                  value={newTitle}
-                  onChangeText={setNewTitle}
-                  placeholder="e.g. Schedule"
-                  onSubmitEditing={handleAdd}
-                />
-              </View>
-              <Button variant="secondary" onPress={handleAdd} disabled={!newTitle.trim()}>
-                Add
-              </Button>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </Sheet>
 
       <ConfirmDialog
         visible={pendingDeleteId != null}

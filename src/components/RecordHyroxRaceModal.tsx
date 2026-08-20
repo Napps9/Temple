@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
+import { Sheet, SheetAction } from './Sheet';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -186,24 +187,32 @@ export function RecordHyroxRaceModal({
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              Log a full race simulation
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              Every run, station and roxzone split — the total posts as
-              your Race Simulation result too.
-            </Text>
-          </View>
+<Sheet
+      visible={visible}
+      title={"Log a full race simulation"}
+      subtitle={"Every run, station and roxzone split — the total posts as your Race Simulation result too."}
+      dialogWidth={620}
+      onClose={onClose}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              onPress={() => save.mutate()}
+              loading={save.isPending}
+              success={saved}
+              disabled={!canSave}>
+              Save race
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-4 pb-1">
 
-          <ScrollView className="max-h-[65vh]" contentContainerClassName="gap-4">
             <DatePicker label="Date" value={date} onChange={setDate} />
 
             <View className="flex-row gap-2">
@@ -305,7 +314,6 @@ export function RecordHyroxRaceModal({
               <View className="h-px bg-sunken dark:bg-sunken-dk my-1" />
               <TotalRow label="Total" seconds={totals.totalSeconds} bold />
             </View>
-          </ScrollView>
 
           {error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
@@ -316,25 +324,8 @@ export function RecordHyroxRaceModal({
             </Text>
           ) : null}
 
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button
-                onPress={() => save.mutate()}
-                loading={save.isPending}
-                success={saved}
-                disabled={!canSave}>
-                Save race
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Sheet>
   );
 }
 

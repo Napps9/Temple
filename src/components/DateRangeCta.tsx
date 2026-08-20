@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { Button } from '@/components/Button';
 import { DatePicker } from '@/components/DatePicker';
+import { Sheet } from '@/components/Sheet';
 
 export type Preset = 'month' | 'quarter' | 'year' | '7d' | '30d' | 'custom';
 
@@ -100,21 +102,8 @@ export function DateRangeCta({
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Change</Text>
       </Pressable>
 
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}>
-        <Pressable
-          onPress={() => setOpen(false)}
-          className="flex-1 bg-black/40 items-center justify-center px-6">
-          <Pressable
-            onPress={() => {}}
-            className="w-full max-w-md md:max-w-lg bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
-            <Text className="text-ink dark:text-ink-dk font-semibold text-base">
-              Select period
-            </Text>
-
+      <Sheet visible={open} title="Select period" onClose={() => setOpen(false)}>
+        <View className="gap-3 pb-1">
             <View className="gap-1">
               {(Object.keys(PRESET_LABELS) as Exclude<Preset, 'custom'>[]).map((p) => (
                 <PresetOption
@@ -152,7 +141,7 @@ export function DateRangeCta({
                     />
                   </View>
                 </View>
-                <Pressable
+                <Button
                   onPress={() => {
                     onChange({
                       preset: 'custom',
@@ -160,15 +149,13 @@ export function DateRangeCta({
                       end: draftEnd,
                     });
                     setOpen(false);
-                  }}
-                  className="bg-primary rounded-lg px-4 py-3 items-center active:bg-primary-dark">
-                  <Text className="text-white font-semibold">Apply custom range</Text>
-                </Pressable>
+                  }}>
+                  Apply custom range
+                </Button>
               </View>
             ) : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </Sheet>
     </View>
   );
 }

@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Sheet, SheetAction } from '@/components/Sheet';
 import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { useGymMembership } from '@/lib/auth';
@@ -166,20 +167,44 @@ export function BulkClassEditModal({
     ' Classes scheduled into these dates later will be blocked until you reopen them.';
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          accessibilityViewIsModal
-          role="dialog"
-          aria-modal
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            Bulk edit the timetable
-          </Text>
-
+    <Sheet
+      visible={visible}
+      title="Bulk edit the timetable"
+      onClose={onClose}
+      dialogWidth={560}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose}>
+              Close
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            {mode === 'close' ? (
+              <Button
+                variant="destructive"
+                onPress={() => setConfirming(true)}
+                loading={pending}
+                disabled={!window || previewQuery.isLoading}>
+                {`Close gym (${selected.length})`}
+              </Button>
+            ) : (
+              <Button
+                onPress={submitEdit}
+                loading={pending}
+                disabled={
+                  !window ||
+                  previewQuery.isLoading ||
+                  !!editError ||
+                  selected.length === 0
+                }>
+                {`Apply to ${selected.length}`}
+              </Button>
+            )}
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-4 pb-1">
           <View className="flex-row gap-2">
             {(
               [
@@ -370,38 +395,7 @@ export function BulkClassEditModal({
             <Text className="text-red-500 dark:text-red-400 text-sm">{editError}</Text>
           ) : null}
 
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose}>
-                Close
-              </Button>
-            </View>
-            <View className="flex-1">
-              {mode === 'close' ? (
-                <Button
-                  variant="destructive"
-                  onPress={() => setConfirming(true)}
-                  loading={pending}
-                  disabled={!window || previewQuery.isLoading}>
-                  {`Close gym (${selected.length})`}
-                </Button>
-              ) : (
-                <Button
-                  onPress={submitEdit}
-                  loading={pending}
-                  disabled={
-                    !window ||
-                    previewQuery.isLoading ||
-                    !!editError ||
-                    selected.length === 0
-                  }>
-                  {`Apply to ${selected.length}`}
-                </Button>
-              )}
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
+      </View>
 
       <ConfirmDialog
         visible={confirming}
@@ -420,6 +414,6 @@ export function BulkClassEditModal({
         }}
         pending={pending}
       />
-    </Modal>
+    </Sheet>
   );
 }

@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
+import { Sheet, SheetAction } from './Sheet';
 import { useGymMembership } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
 import { errorMessage } from '@/lib/errors';
@@ -87,26 +88,30 @@ export function MemberProgrammingAccessModal({
   });
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-2xl gap-5 max-h-[90vh]">
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              Programming access
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              How {memberName} unlocks their individual programming.
-            </Text>
-          </View>
-
+      title="Programming access"
+      subtitle={`How ${memberName} unlocks their individual programming.`}
+      onClose={onClose}
+      dialogWidth={520}
+      actions={
+        <>
+          <SheetAction>
+            <Button variant="secondary" onPress={onClose}>
+              Cancel
+            </Button>
+          </SheetAction>
+          <SheetAction grow>
+            <Button
+              onPress={() => save.mutate()}
+              loading={save.isPending}
+              success={saved}>
+              Save
+            </Button>
+          </SheetAction>
+        </>
+      }>
+      <View className="gap-4 pb-1">
           <View className="flex-row gap-2">
             {(['free', 'paid'] as const).map((m) => {
               const active = mode === m;
@@ -170,46 +175,26 @@ export function MemberProgrammingAccessModal({
           )}
 
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-500 dark:text-red-400 text-[13px]">
               {error}
             </Text>
           ) : null}
+      </View>
 
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={onClose}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button
-                onPress={() => save.mutate()}
-                loading={save.isPending}
-                success={saved}>
-                Save
-              </Button>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-
-      <Modal
+      <Sheet
         visible={pickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPickerOpen(false)}>
-        <Pressable
-          onPress={() => setPickerOpen(false)}
-          className="flex-1 bg-black/60 items-center justify-center px-6">
-          <Pressable
-            onPress={() => {}}
-            className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-5 w-full max-w-md md:max-w-lg gap-3 max-h-[80vh]">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              Pick a product
-            </Text>
-            <ScrollView
-              className="max-h-[60vh]"
-              contentContainerClassName="gap-1">
+        title="Pick a product"
+        onClose={() => setPickerOpen(false)}
+        actions={
+          <SheetAction grow>
+            <Button variant="secondary" onPress={() => setPickerOpen(false)}>
+              Cancel
+            </Button>
+          </SheetAction>
+        }>
+            <View className="gap-1 pb-1">
               <Pressable
                 onPress={() => {
                   setProductId(null);
@@ -241,17 +226,12 @@ export function MemberProgrammingAccessModal({
                 </Pressable>
               ))}
               {products.data && products.data.length === 0 ? (
-                <Text className="text-ink-2 dark:text-ink-2-dk text-sm px-3 py-2">
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] px-3 py-2">
                   No store products yet — add one in Manage → Store first.
                 </Text>
               ) : null}
-            </ScrollView>
-            <Button variant="secondary" onPress={() => setPickerOpen(false)}>
-              Cancel
-            </Button>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </Modal>
+            </View>
+      </Sheet>
+    </Sheet>
   );
 }
