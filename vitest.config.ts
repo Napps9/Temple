@@ -33,6 +33,9 @@ import { defineConfig } from 'vitest/config';
 const stub = (name: string) =>
   fileURLToPath(new URL(`./test/${name}.tsx`, import.meta.url));
 
+const stubTs = (name: string) =>
+  fileURLToPath(new URL(`./test/${name}.ts`, import.meta.url));
+
 export default defineConfig({
   resolve: {
     // The two stubs are packages that ship source vite cannot parse.
@@ -50,6 +53,11 @@ export default defineConfig({
       { find: /^@expo\/vector-icons$/, replacement: stub('expo-vector-icons') },
       { find: /^expo-router$/, replacement: stub('expo-router') },
       { find: /^nativewind$/, replacement: stub('nativewind') },
+      // expo-haptics reaches expo-modules-core, which reads globals only
+      // the native runtime injects. Button imports it, so without this
+      // every component containing a button was untestable.
+      { find: /^expo-haptics$/, replacement: stubTs('expo-haptics') },
+      { find: /^react-native-svg$/, replacement: stub('react-native-svg') },
     ],
   },
   test: {

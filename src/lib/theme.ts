@@ -60,5 +60,19 @@ export function useThemeColors() {
     // `secondary` Tailwind token).
     secondary: brand.secondaryColor,
     white: '#FFFFFF',
+
+    // The neutral ramp, for the places a colour has to be a runtime value
+    // rather than a class: Ionicon tints, SVG fills, shadow colours. Same
+    // values as the `ground` / `surface` / `ink` Tailwind tokens, so a
+    // component can mix classes and props without drifting.
+    ground: dark ? '#0A0B0D' : '#F7F7F8',
+    surface: dark ? '#131519' : '#FFFFFF',
+    raised: dark ? '#1B1E23' : '#F1F1F4',
+    sunken: dark ? '#23272D' : '#E9E9EE',
+    line: dark ? '#26282D' : '#E9E9EE',
+    lineStrong: dark ? '#34373D' : '#DCDCE3',
+    ink: dark ? '#F4F5F6' : '#14161A',
+    ink2: dark ? '#9AA0A9' : '#5B606A',
+    ink3: dark ? '#6C727B' : '#8B909A',
   };
 }

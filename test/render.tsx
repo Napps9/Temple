@@ -1,6 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render as rtlRender } from '@testing-library/react';
+import { cleanup, render as rtlRender } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
+import { afterEach } from 'vitest';
+
+// Testing Library unmounts after each test by itself only when vitest is
+// running with globals — and this repo runs with `globals: false`, so it
+// never fired. Nothing noticed while every test rendered its own unique
+// strings into its own container.
+//
+// A modal is what makes it matter. react-native-web's <Modal> portals to
+// document.body rather than into the container, so an un-unmounted one
+// outlives its test, and `screen` — which searches the whole body — then
+// finds two of everything the next test looks for. Registering the hook
+// here rather than in setup-env.ts keeps it off the ~1,600 node-env tests
+// that have no DOM to clean.
+afterEach(cleanup);
 
 // Rendering a Temple component, with the providers it assumes.
 //
