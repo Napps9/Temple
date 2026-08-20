@@ -1,0 +1,326 @@
+/* Temple — proposed design system ("Paper & Ink"), Contra + Luma flavoured.
+   Mockup-only stylesheet: this is the target look, expressed in plain CSS so
+   it can be screenshotted. It is not wired into the app. */
+
+:root {
+  --paper: #f3f1ec;
+  --surface: #ffffff;
+  --surface-2: #faf8f3;
+  --line: #e3ded2;
+  --line-soft: #eeeae1;
+  --ink: #17150f;
+  --ink-2: #5b564c;
+  --ink-3: #918b7e;
+  --accent: #c2410c;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(194, 65, 12, 0.1);
+  --gold: #e8b620;
+  --steel: #3b6ba5;
+  --ok: #2f7a4f;
+  --ok-soft: rgba(47, 122, 79, 0.1);
+  --warn: #a9741f;
+  --warn-soft: rgba(169, 116, 31, 0.12);
+  --bad: #ab3a2c;
+  --bad-soft: rgba(171, 58, 44, 0.1);
+  --r: 18px;
+  --r-sm: 12px;
+  --font-ui: 'Inter Tight', system-ui, sans-serif;
+  --font-display: 'Archivo', system-ui, sans-serif;
+}
+
+.dark {
+  --paper: #0c0b0a;
+  --surface: #151412;
+  --surface-2: #1c1a17;
+  --line: rgba(244, 242, 237, 0.1);
+  --line-soft: rgba(244, 242, 237, 0.06);
+  --ink: #f4f2ed;
+  --ink-2: #a49d91;
+  --ink-3: #79736a;
+  --accent: #e9773f;
+  --accent-ink: #1a0d05;
+  --accent-soft: rgba(233, 119, 63, 0.14);
+  --ok: #5fbf88;
+  --ok-soft: rgba(95, 191, 136, 0.14);
+  --warn: #e0a445;
+  --warn-soft: rgba(224, 164, 69, 0.14);
+  --bad: #e5705f;
+  --bad-soft: rgba(229, 112, 95, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+.app {
+  font-family: var(--font-ui);
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv05' 1, 'ss03' 1;
+}
+
+/* ---------- type ---------- */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.032em;
+  line-height: 1.02;
+}
+.h1 { font-family: var(--font-display); font-weight: 700; font-size: 27px; letter-spacing: -0.03em; line-height: 1.1; }
+.h2 { font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -0.02em; line-height: 1.2; }
+.h3 { font-weight: 600; font-size: 15.5px; letter-spacing: -0.012em; line-height: 1.3; }
+.body { font-size: 14.5px; line-height: 1.45; color: var(--ink-2); }
+.small { font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.micro {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.dim { color: var(--ink-3); }
+.mid { color: var(--ink-2); }
+.strong { color: var(--ink); font-weight: 600; }
+
+/* ---------- surfaces ---------- */
+/* Depth comes from a hairline and a tone step, never a shadow. */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 16px;
+}
+.card.flush { padding: 0; overflow: hidden; }
+.inset {
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: 12px;
+}
+.rule { height: 1px; background: var(--line); }
+.stack { display: flex; flex-direction: column; }
+.row { display: flex; align-items: center; }
+.between { justify-content: space-between; }
+.grow { flex: 1; min-width: 0; }
+.wrap { flex-wrap: wrap; }
+.g2 { gap: 2px; } .g4 { gap: 4px; } .g6 { gap: 6px; } .g8 { gap: 8px; }
+.g10 { gap: 10px; } .g12 { gap: 12px; } .g14 { gap: 14px; } .g16 { gap: 16px; }
+.g20 { gap: 20px; } .g24 { gap: 24px; } .g32 { gap: 32px; }
+.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- controls ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: default;
+}
+.btn-ink { background: var(--ink); color: var(--paper); }
+.btn-accent { background: var(--accent); color: var(--accent-ink); }
+.btn-outline { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-quiet { background: var(--surface-2); color: var(--ink); border-color: var(--line-soft); }
+.btn-sm { height: 34px; padding: 0 14px; font-size: 13.5px; }
+.btn-full { width: 100%; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.chip-ink { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.chip-accent { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.chip-ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.chip-warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.chip-bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+.dot { width: 7px; height: 7px; border-radius: 999px; flex: none; }
+
+/* Segmented nav track — hairline, active segment is solid ink. */
+.seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+}
+.seg > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: -0.01em;
+}
+.seg > .on { background: var(--ink); color: var(--paper); }
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 6px 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 14.5px;
+  color: var(--ink-3);
+}
+
+.avatar {
+  width: 30px; height: 30px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.01em;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2);
+  flex: none;
+}
+
+.i { display: block; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.i-fill { fill: currentColor; stroke: none; }
+
+/* ---------- app chrome ---------- */
+
+.topbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.gymtile {
+  width: 32px; height: 32px; border-radius: 10px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 15px;
+  background: var(--accent); color: var(--accent-ink);
+}
+
+/* Luma-style agenda spine: time in the gutter, a hairline rail with a node. */
+.spine { display: flex; gap: 12px; }
+.spine-gutter { width: 46px; flex: none; text-align: right; padding-top: 14px; }
+.spine-rail { width: 11px; flex: none; position: relative; }
+.spine-rail::before {
+  content: ''; position: absolute; left: 5px; top: 0; bottom: -14px; width: 1px; background: var(--line);
+}
+.spine-node {
+  position: absolute; left: 1px; top: 18px; width: 9px; height: 9px;
+  border-radius: 999px; background: var(--paper); border: 2px solid var(--ink-3);
+}
+.spine-node.on { border-color: var(--accent); background: var(--accent); }
+.spine:last-child .spine-rail::before { bottom: 8px; }
+
+.daycell {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 6px 0 7px; border-radius: 12px;
+}
+.daycell .d { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--ink-3); text-transform: uppercase; }
+.daycell .n { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+.daycell.on { background: var(--ink); }
+.daycell.on .d { color: rgba(244, 242, 237, 0.6); }
+.daycell.on .n { color: var(--paper); }
+.daycell.today .d, .daycell.today .n { color: var(--accent); }
+
+.heat { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.heat > div { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.heat i { display: block; aspect-ratio: 1; border-radius: 3px; background: var(--line-soft); }
+
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--ink);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 104px;
+}
+
+/* ---------- phone frame + sheet chrome ---------- */
+
+body.board {
+  margin: 0;
+  padding: 40px;
+  background: #dcd7cd;
+  font-family: var(--font-ui);
+  color: #17150f;
+}
+.board-head { max-width: 1180px; margin: 0 auto 26px; }
+.board-title {
+  font-family: var(--font-display); font-weight: 700; font-size: 24px;
+  letter-spacing: -0.03em; margin: 0 0 4px;
+}
+.board-sub { font-size: 14px; color: #625c51; margin: 0; max-width: 780px; line-height: 1.5; }
+.board-row { display: flex; gap: 34px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+.frame-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.frame-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6f695d; }
+.frame {
+  width: 390px; height: 844px; border-radius: 46px; padding: 11px;
+  background: #100f0d; flex: none;
+  box-shadow: 0 24px 60px rgba(20, 16, 10, 0.28);
+}
+.screen {
+  width: 100%; height: 100%; border-radius: 36px; overflow: hidden;
+  display: flex; flex-direction: column; position: relative;
+}
+.statusbar {
+  height: 44px; flex: none; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 26px 0 30px;
+  font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em;
+}
+.homebar { height: 22px; flex: none; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 7px; }
+.homebar span { width: 128px; height: 4px; border-radius: 999px; background: var(--ink); opacity: 0.28; }
+.scrollarea { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.pad { padding: 14px 16px; }
+
+.desk {
+  width: 1240px; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(20, 16, 10, 0.18);
+  box-shadow: 0 24px 60px rgba(20, 16, 10, 0.22);
+}
+.deskbar {
+  height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 14px;
+  background: var(--surface-2); border-bottom: 1px solid var(--line);
+}
+.deskbar b { width: 10px; height: 10px; border-radius: 999px; background: var(--line); display: block; }
+.deskbar .url {
+  margin-left: 12px; height: 22px; padding: 0 12px; border-radius: 999px;
+  background: var(--paper); border: 1px solid var(--line);
+  font-size: 11.5px; color: var(--ink-3); display: flex; align-items: center;
+}

@@ -1,0 +1,80 @@
+/* Today's Temple look, approximated for side-by-side comparison:
+   cool slate ground, white shadowed cards, 12px radius, system sans,
+   brand blue #3B6BA5 as the fill for every emphasis. */
+
+.legacy {
+  --l-bg: #f1f5f9;
+  --l-surface: #ffffff;
+  --l-inset: #f1f5f9;
+  --l-line: #e5e7eb;
+  --l-ink: #111827;
+  --l-ink2: #6b7280;
+  --l-ink3: #9ca3af;
+  --l-primary: #3b6ba5;
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  background: var(--l-bg);
+  color: var(--l-ink);
+  -webkit-font-smoothing: antialiased;
+}
+.legacy.dark {
+  --l-bg: #030712;
+  --l-surface: #111827;
+  --l-inset: #1f2937;
+  --l-line: #374151;
+  --l-ink: #f9fafb;
+  --l-ink2: #9ca3af;
+  --l-ink3: #6b7280;
+}
+.legacy .lcard {
+  background: var(--l-surface);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 14px rgb(15 23 42 / 0.08);
+}
+.legacy .lcard.bordered { border: 1px solid var(--l-line); border-radius: 16px; }
+.legacy .lmicro {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--l-ink3); font-weight: 500;
+}
+.legacy .lh { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+.legacy .lbody { font-size: 14px; color: var(--l-ink2); }
+.legacy .lsmall { font-size: 12px; color: var(--l-ink2); }
+.legacy .lseg {
+  display: inline-flex; gap: 2px; padding: 4px; border-radius: 999px; background: #e2e8f0;
+}
+.legacy.dark .lseg { background: #1f2937; }
+.legacy .lseg > * {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px;
+  border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--l-ink2);
+}
+.legacy .lseg > .on {
+  background: var(--l-surface); color: var(--l-ink);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.12);
+}
+.legacy .lpill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; padding: 0 16px; border-radius: 999px;
+  background: var(--l-primary); color: #fff; font-size: 12px; font-weight: 700;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 14px rgb(15 23 42 / 0.08);
+}
+.legacy .lchip {
+  display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 12px;
+  border-radius: 999px; border: 1px solid rgba(59, 107, 165, 0.3);
+  background: rgba(59, 107, 165, 0.1); color: var(--l-primary);
+  font-size: 12px; font-weight: 600;
+}
+.legacy .lfilter {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px;
+  border-radius: 999px; border: 1px solid var(--l-line); background: var(--l-surface);
+  font-size: 12px; font-weight: 500; color: var(--l-ink2);
+}
+.legacy .ldaycell {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.legacy .ldaycell .d { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--l-ink3); }
+.legacy .ldaycell .n {
+  width: 36px; height: 36px; border-radius: 999px; display: flex;
+  align-items: center; justify-content: center; font-size: 16px; font-weight: 700;
+}
+.legacy .ldaycell.on .n { background: var(--l-primary); color: #fff; box-shadow: 0 6px 20px rgb(15 23 42 / 0.16); }
+.legacy .ldaycell.today .d, .legacy .ldaycell.today .n { color: var(--l-primary); }
