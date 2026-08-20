@@ -7,6 +7,7 @@ import { identityBoard, typeBoard, pagePatternsBoard, modalSystemBoard } from '.
 import { authBoard, bookBoard, planStoreBoard, trackBoard, healthBoard, inboxBoard, accountBoard } from './b-member.mjs';
 import { timelineBoard, classesBoard, programmingBoard, membersBoard, moneyBoard, commsBoard, desktopBoard } from './b-staff.mjs';
 import { statesBoard, beforeAfterBoard } from './b-states.mjs';
+import { aiMarkBoard } from './b-aimark.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -15,22 +16,23 @@ const PAGES = [
   ['02-type-controls', typeBoard],
   ['03-page-patterns', pagePatternsBoard],
   ['04-modal-system', modalSystemBoard],
-  ['05-auth', authBoard],
-  ['06-member-book', bookBoard],
-  ['07-member-money', planStoreBoard],
-  ['08-member-track', trackBoard],
-  ['09-member-health', healthBoard],
-  ['10-member-inbox', inboxBoard],
-  ['11-member-account', accountBoard],
-  ['12-staff-timeline', timelineBoard],
-  ['13-staff-classes', classesBoard],
-  ['14-staff-programming', programmingBoard],
-  ['15-staff-members', membersBoard],
-  ['16-staff-money', moneyBoard],
-  ['17-staff-comms', commsBoard],
-  ['18-staff-desktop', desktopBoard],
-  ['19-states', statesBoard],
-  ['20-before-after', beforeAfterBoard],
+  ['05-ai-mark', aiMarkBoard],
+  ['06-auth', authBoard],
+  ['07-member-book', bookBoard],
+  ['08-member-money', planStoreBoard],
+  ['09-member-track', trackBoard],
+  ['10-member-health', healthBoard],
+  ['11-member-inbox', inboxBoard],
+  ['12-member-account', accountBoard],
+  ['13-staff-timeline', timelineBoard],
+  ['14-staff-classes', classesBoard],
+  ['15-staff-programming', programmingBoard],
+  ['16-staff-members', membersBoard],
+  ['17-staff-money', moneyBoard],
+  ['18-staff-comms', commsBoard],
+  ['19-staff-desktop', desktopBoard],
+  ['20-states', statesBoard],
+  ['21-before-after', beforeAfterBoard],
 ];
 
 // Drop anything a previous numbering left behind.

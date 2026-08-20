@@ -418,3 +418,11 @@ body.board {
 
 /* ---- desktop sidebar shell ---- */
 .side { width: 246px; flex: none; background: var(--surface); border-right: 1px solid var(--line); padding: 16px 12px; display: flex; flex-direction: column; gap: 14px; }
+
+/* The AI mark in an avatar slot. Every person in the product is a circle,
+   so the machine is a rounded square — the shape says "an entity, not a
+   human" before the glyph inside it has been read. */
+.aimark {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  background: var(--ink); color: var(--surface);
+}

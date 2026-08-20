@@ -1,6 +1,6 @@
 # A Contra-flavoured look for Temple
 
-Exploration, not shipped. Nothing here is wired into the app: twenty static
+Exploration, not shipped. Nothing here is wired into the app: twenty-one static
 HTML boards rendered to PNG so the direction can be judged before any code
 moves. Open `png/*.png`; everything else is the machinery.
 
@@ -38,9 +38,14 @@ written rule for the destructive case: the title is the question, the body
 is the consequence, red appears once, and the safe option is named
 ("Keep the class", never "Cancel" in a cancel dialog).
 
-Plus **four states every pattern owes you** (`png/19-states.png`): nothing
+Plus **four states every pattern owes you** (`png/20-states.png`): nothing
 yet, nothing matches, loading, and failed — four genuinely different
 screens, not one spinner.
+
+And **one glyph for the machine** (`png/05-ai-mark.png`): the iridescent
+orb was lifted almost verbatim from the reference, so it is replaced by
+Temple's own housemark on a squared tile. People are circles; the machine
+is a rounded square. Ink on light, paper on dark, never the gym's colour.
 
 ## The visual system
 
@@ -53,9 +58,11 @@ screens, not one spinner.
   five things: the logo tile, the one primary action per page, class-type
   dots, a member's own data, and the gym's photography. Repeated row
   actions (five Book buttons) are ink.
-- **One orb.** Anything the machine did carries the iridescent sphere and
-  nothing else — one glyph across the product instead of five amber
-  banners.
+- **One mark for the machine.** Anything the agent did carries the Temple
+  housemark and nothing else — one glyph across the product instead of five
+  amber banners. It is the only solid-filled icon among ~30 monoline ones,
+  and in avatar slots it takes a rounded-square tile because every person
+  in the product is a circle.
 
 ## The boards
 
@@ -65,22 +72,23 @@ screens, not one spinner.
 | `02-type-controls` | Fraunces + Geist, the scale, every control light + dark |
 | `03-page-patterns` | **The eight shapes, the rule for each, the surfaces that use them** |
 | `04-modal-system` | **Sheet vs dialog, four sizes, the destructive confirm in full** |
-| `05-auth` | Landing, sign in, start a gym, accept an invite |
-| `06-member-book` | Book (light + dark), Programming, My bookings |
-| `07-member-money` | Membership, Store, buying, Purchases |
-| `08-member-track` | Track, a movement, Journal, recording |
-| `09-member-health` | Consent, PAR-Q, waiver signing, injury check-in |
-| `10-member-inbox` | Inbox, a notice, a thread, empty |
-| `11-member-account` | Account, leaving, family, email preferences |
-| `12-staff-timeline` | Today, your rules, a past day |
-| `13-staff-classes` | Classes, new class, the roster, cancelling |
-| `14-staff-programming` | The week, a session, Analysis |
-| `15-staff-members` | Members, a member, inviting, tags |
-| `16-staff-money` | Plans, Billing, Coach earnings, Refund |
-| `17-staff-comms` | Communications, a campaign, Leads, a conversation |
-| `18-staff-desktop` | The three-column shell, Members and Settings, light + dark |
-| `19-states` | **Nothing yet · nothing matches · loading · failed** |
-| `20-before-after` | Member Book today vs proposed |
+| `05-ai-mark` | **Six candidates for the machine's glyph, in every context it appears** |
+| `06-auth` | Landing, sign in, start a gym, accept an invite |
+| `07-member-book` | Book (light + dark), Programming, My bookings |
+| `08-member-money` | Membership, Store, buying, Purchases |
+| `09-member-track` | Track, a movement, Journal, recording |
+| `10-member-health` | Consent, PAR-Q, waiver signing, injury check-in |
+| `11-member-inbox` | Inbox, a notice, a thread, empty |
+| `12-member-account` | Account, leaving, family, email preferences |
+| `13-staff-timeline` | Today, your rules, a past day |
+| `14-staff-classes` | Classes, new class, the roster, cancelling |
+| `15-staff-programming` | The week, a session, Analysis |
+| `16-staff-members` | Members, a member, inviting, tags |
+| `17-staff-money` | Plans, Billing, Coach earnings, Refund |
+| `18-staff-comms` | Communications, a campaign, Leads, a conversation |
+| `19-staff-desktop` | The three-column shell, Members and Settings, light + dark |
+| `20-states` | **Nothing yet · nothing matches · loading · failed** |
+| `21-before-after` | Member Book today vs proposed |
 
 ## Deliberate departures from the reference
 
@@ -116,13 +124,15 @@ screens, not one spinner.
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..20.html
+node build.mjs   # writes 01..21.html
 node shot.mjs    # screenshots them to png/ at 2x
-node shot.mjs 13 # just one board
+node shot.mjs 05 # just one board
 ```
 
-`kit.mjs` holds every shared part; `b-foundation`, `b-member`, `b-staff`
-and `b-states` hold the boards. `system.css` is the proposed design
+`kit.mjs` holds every shared part — including `AI_CHOICE`, the single
+constant that swaps the machine's glyph across all sixteen places it
+appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states`
+hold the boards. `system.css` is the proposed design
 system, `legacy.css` approximates today's app for the before/after.
 `fonts/` holds the woff2 files (all SIL OFL) so a rebuild does not depend
 on Google Fonts serving the same URLs.

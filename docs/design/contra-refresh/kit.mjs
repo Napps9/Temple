@@ -103,7 +103,51 @@ export const AV = (initials, size = 30) =>
 export const avstack = (list, size = 22, onMedia = false) =>
   `<div class="avstack ${size < 24 ? 'faces' : ''} ${onMedia ? 'on-media' : ''}">${list.map((i) => AV(i, size)).join('')}</div>`;
 
-export const orb = (size) => `<span class="orb" style="width:${size}px;height:${size}px;display:block"></span>`;
+/* ---------------------------------------------------------- the AI mark */
+/* The one glyph that means "a machine did this". It sits where an avatar
+   sits, so it must not read as a person; it must survive 13px; and in a
+   monochrome system the cheapest way to make it separable from the ~30 line
+   icons is to be the only SOLID one. */
+
+export const AI = {
+  // Temple's own mark. Inside a gym the gym's logo leads and this appears
+  // nowhere else, so the housemark is free to mean one thing in-product:
+  // Temple itself is doing the work.
+  housemark: () => `<g transform="scale(0.5)" fill="currentColor"><path d="${MARK.portico}"/></g>`,
+  // Tried and rejected: at 12px a keystone is a bucket.
+  keystone: () => `<path fill="currentColor" d="M5.4 4.3h13.2a1.2 1.2 0 0 1 1.18 1.43l-2.62 13.6a1.2 1.2 0 0 1-1.18.97H8.02a1.2 1.2 0 0 1-1.18-.97L4.22 5.73A1.2 1.2 0 0 1 5.4 4.3z"/>`,
+  aperture: () =>
+    `<circle cx="12" cy="12" r="3.1" fill="currentColor"/>
+     <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+       <path d="M10.68 4.52A7.6 7.6 0 0 1 19.14 9.4"/>
+       <path d="M19.14 14.6A7.6 7.6 0 0 1 10.68 19.48"/>
+       <path d="M6.18 16.89A7.6 7.6 0 0 1 6.18 7.11"/>
+     </g>`,
+  sparkle: () =>
+    `<path fill="currentColor" d="M12 2.1c.85 4.6 2.3 6.9 5.6 7.95l3.3.95-3.3.95c-3.3 1.05-4.75 3.35-5.6 7.95-.85-4.6-2.3-6.9-5.6-7.95L3.1 11l3.3-.95C9.7 9 11.15 6.7 12 2.1z"/>`,
+  ember: () =>
+    `<circle cx="12" cy="12" r="9.1" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".3"/>
+     <circle cx="12" cy="12" r="5.5" fill="currentColor"/>`,
+  engraved: () =>
+    `<circle cx="12" cy="12" r="9.2" fill="currentColor"/>
+     <path d="M7.3 8.9a6.1 6.1 0 0 1 7.5-1.5" fill="none" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" opacity=".85"/>`,
+};
+
+export const AI_CHOICE = 'housemark';
+
+export const aiGlyph = (size, kind = AI_CHOICE, style = '') =>
+  `<svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px;flex:none;display:block;${style}">${AI[kind]()}</svg>`;
+
+// People are circles; the machine is a rounded square. At avatar sizes it
+// takes the tile, below that it is a bare glyph standing in for a line icon.
+export const orb = (size, kind = AI_CHOICE) =>
+  size >= 22
+    ? `<span class="aimark" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.3)}px">${aiGlyph(Math.round(size * 0.62), kind)}</span>`
+    : aiGlyph(size, kind);
+
+// The gradient sphere, kept only so the comparison board can show it.
+export const orbLegacy = (size) =>
+  `<span class="orb" style="width:${size}px;height:${size}px;display:block"></span>`;
 
 export const dot = (c) => `<i class="dot" style="background:${c}"></i>`;
 
