@@ -19,31 +19,20 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const INK = '#14161A';
 const PAPER = '#F4F5F6';
 
-// Front card with the column knocked out of it, even-odd. Kept identical
-// to CARD in src/components/TempleMark.tsx.
-const CARD =
-  'M5 0H67A5 5 0 0 1 72 5V67A5 5 0 0 1 67 72H5A5 5 0 0 1 0 67V5A5 5 0 0 1 5 0Z' +
-  'M27 31.5A9 6 0 0 1 45 31.5V63H27Z';
+// The portico: architrave, three columns, stylobate. Kept identical to
+// PORTICO in src/components/TempleMark.tsx.
+const PORTICO =
+  'M3 6h42v7H3zM8.5 17h6.4v16H8.5zM20.8 17h6.4v16h-6.4zM33.1 17h6.4v16h-6.4zM3 36h42v7H3z';
 
-// The two cards behind, as hairlines. What used to carry the gold and the
-// steel blue; they are what makes the silhouette still recognisable.
-const ghost = (at, opacity, ink) =>
-  `<rect x="${at}" y="${at}" width="70.4" height="70.4" rx="5" fill="none" stroke="${ink}" stroke-width="2" stroke-opacity="${opacity}"/>`;
-
-// Below about 40px the two ghost cards stop being depth and start being
-// noise — they eat a third of the box and resolve to two grey smudges. A
-// favicon gets the front card alone.
-const glyph = (ink, ghosts = true) =>
-  `${ghosts ? ghost(20.8, 0.3, ink) + ghost(10.8, 0.55, ink) : ''}<path d="${CARD}" fill="${ink}" fill-rule="evenodd"/>`;
-
-// `pad` widens the viewBox so the mark sits inside a square tile with air
-// around it — app icons need the margin, a mark in a row does not.
-function markSvg({ ink = INK, pad = 2, bg = null, ghosts = true } = {}) {
+// `pad` widens the viewBox so the mark sits inside a tile with air around
+// it — app icons need the margin, a mark in a row does not. The glyph runs
+// from 3 to 45 inside a 48 box, so it already carries a little.
+function markSvg({ ink = INK, pad = 0, bg = null } = {}) {
   const min = -pad;
-  const span = (ghosts ? 92 : 72) + pad * 2;
+  const span = 48 + pad * 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${min} ${min} ${span} ${span}" width="${span}" height="${span}">${
     bg ? `<rect x="${min}" y="${min}" width="${span}" height="${span}" fill="${bg}"/>` : ''
-  }${glyph(ink, ghosts)}</svg>`;
+  }<path d="${PORTICO}" fill="${ink}"/></svg>`;
 }
 
 // Fraunces, inlined so the lockup is self-contained and renders on a
@@ -56,12 +45,12 @@ const fontCss = `@font-face{font-family:'Fraunces';font-weight:700;src:url(data:
 
 function lockupSvg({ ink = INK } = {}) {
   const size = 26;
-  const markW = Math.round(size * 1.08);
-  const gap = Math.round(size * 0.34);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 34" width="140" height="34">
+  const markW = Math.round(size * 1.18);
+  const gap = Math.round(size * 0.3);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136 34" width="136" height="34">
 <style>${fontCss}
 .w{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:${size}px;fill:${ink}}</style>
-<g transform="translate(0 4) scale(${(markW / 92).toFixed(4)})">${glyph(ink)}</g>
+<g transform="translate(0 2) scale(${(markW / 48).toFixed(4)})"><path d="${PORTICO}" fill="${ink}"/></g>
 <text class="w" x="${markW + gap}" y="26">temple</text>
 </svg>`;
 }
@@ -71,21 +60,21 @@ function lockupSvg({ ink = INK } = {}) {
 const ASSETS = [
   // The app icon is the mark on paper — a transparent icon renders on
   // whatever the launcher feels like, which is not a decision to give away.
-  ['assets/images/icon.png', markSvg({ pad: 16, bg: PAPER }), 1024],
-  ['assets/images/favicon.png', markSvg({ pad: 5, bg: PAPER, ghosts: false }), 48],
-  ['assets/images/favicon-32.png', markSvg({ pad: 5, bg: PAPER, ghosts: false }), 32],
+  ['assets/images/icon.png', markSvg({ pad: 9, bg: PAPER }), 1024],
+  ['assets/images/favicon.png', markSvg({ pad: 4, bg: PAPER }), 48],
+  ['assets/images/favicon-32.png', markSvg({ pad: 4, bg: PAPER }), 32],
   // Splash and the Android foreground sit on their own background colour,
   // so these are transparent by design.
-  ['assets/images/splash-icon.png', markSvg({ pad: 4 }), 192],
-  ['assets/images/android-icon-foreground.png', markSvg({ pad: 40 }), 432],
-  ['assets/images/android-icon-monochrome.png', markSvg({ pad: 40 }), 432],
+  ['assets/images/splash-icon.png', markSvg({ pad: 2 }), 192],
+  ['assets/images/android-icon-foreground.png', markSvg({ pad: 22 }), 432],
+  ['assets/images/android-icon-monochrome.png', markSvg({ pad: 22 }), 432],
 
   ['assets/images/temple-brand/mark-on-light.svg', markSvg({ ink: INK })],
   ['assets/images/temple-brand/mark-on-dark.svg', markSvg({ ink: PAPER })],
-  ['assets/images/temple-brand/mark-on-light-512px.png', markSvg({ pad: 4 }), 512],
+  ['assets/images/temple-brand/mark-on-light-512px.png', markSvg({ pad: 2 }), 512],
   [
     'assets/images/temple-brand/mark-on-dark-512px.png',
-    markSvg({ ink: PAPER, pad: 4 }),
+    markSvg({ ink: PAPER, pad: 2 }),
     512,
   ],
   ['assets/images/temple-brand/lockup-on-light.svg', lockupSvg({ ink: INK })],
@@ -95,8 +84,18 @@ const ASSETS = [
 // The lockup is wider than it is tall, so it cannot go through the square
 // shot below; these carry their own box.
 const WIDE = [
-  ['assets/images/temple-brand/lockup-on-light-960px.png', lockupSvg({ ink: INK }), 960, 233],
-  ['assets/images/temple-brand/lockup-on-dark-960px.png', lockupSvg({ ink: PAPER }), 960, 233],
+  [
+    'assets/images/temple-brand/lockup-on-light-960px.png',
+    lockupSvg({ ink: INK }),
+    960,
+    240,
+  ],
+  [
+    'assets/images/temple-brand/lockup-on-dark-960px.png',
+    lockupSvg({ ink: PAPER }),
+    960,
+    240,
+  ],
 ];
 
 function write(path, contents) {

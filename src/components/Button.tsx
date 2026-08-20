@@ -7,7 +7,7 @@ import { contrastRatio } from '@/lib/brand-derivation';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+type Variant = 'primary' | 'plain' | 'secondary' | 'ghost' | 'destructive';
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 type Props = {
@@ -22,11 +22,26 @@ type Props = {
   icon?: IconName;
 };
 
+// WHICH VARIANT. The gym's colour is allowed on exactly one action per
+// page — the thing that page exists to do. Everything else is ink.
+//
+//   primary     the one action. Filled with the gym's colour.
+//   plain       a repeated action: a Book button on each of eight rows,
+//               Edit on each of twelve plans. Eight accent pills do not
+//               read as eight invitations, they read as a loud list, and
+//               the one that mattered is no longer findable.
+//   secondary   the safe half of a pair — Cancel next to a primary.
+//   ghost       a link that happens to be a button.
+//   destructive the dangerous one. Outlined rather than filled, and it
+//               appears once: see the rule in ConfirmDialog.
+//
 // Tonal primary on secondary so the button reads as an action — the
 // previous near-invisible white-on-white version disappeared inside
 // modal footers and on light-mode pages.
 const containerStyles: Record<Variant, string> = {
   primary: 'bg-primary hover:opacity-90 active:bg-primary-dark shadow-card',
+  plain:
+    'bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-strong-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk',
   secondary:
     'bg-secondary/10 border border-secondary/30 hover:bg-secondary/15 active:bg-secondary/20',
   ghost: 'bg-transparent hover:opacity-70',
@@ -39,6 +54,7 @@ const containerStyles: Record<Variant, string> = {
 // readable on it.
 const textStyles: Record<Variant, string> = {
   primary: 'font-semibold',
+  plain: 'text-ink dark:text-ink-dk font-semibold',
   secondary: 'text-secondary font-semibold',
   ghost: 'text-link',
   destructive: 'text-red-600 dark:text-red-400 font-semibold',
@@ -46,6 +62,7 @@ const textStyles: Record<Variant, string> = {
 
 const successIconColor: Record<Variant, string> = {
   primary: '#FFFFFF',
+  plain: '#16A34A',
   secondary: '#16A34A',
   ghost: '#16A34A',
   destructive: '#DC2626',
@@ -65,20 +82,16 @@ export const Button = forwardRef<View, Props>(function Button(
     contrastRatio(colors.primary, '#111827')
       ? '#FFFFFF'
       : '#111827';
-  // Icon + spinner tint tracks the variant's text colour: the
-  // contrast-picked label on the solid fill, brand Text on ghost links,
-  // brand Secondary on the tonal secondary, red on destructive, brand
-  // Primary otherwise.
-  const accent =
-    variant === 'primary'
-      ? primaryLabel
-      : variant === 'destructive'
-        ? '#DC2626'
-        : variant === 'ghost'
-          ? colors.text
-          : variant === 'secondary'
-            ? colors.secondary
-            : colors.primary;
+  // Icon + spinner tint tracks the variant's text colour, so a leading
+  // icon and its label are never two different colours.
+  const accent: Record<Variant, string> = {
+    primary: primaryLabel,
+    plain: colors.ink,
+    secondary: colors.secondary,
+    ghost: colors.text,
+    destructive: '#DC2626',
+  };
+  const tint = accent[variant];
   return (
     <Pressable
       ref={ref}
@@ -100,7 +113,7 @@ export const Button = forwardRef<View, Props>(function Button(
         isDisabled ? 'opacity-50' : ''
       }`}>
       {loading ? (
-        <ActivityIndicator color={accent} />
+        <ActivityIndicator color={tint} />
       ) : (
         <RNView className="flex-row items-center gap-2">
           {success ? (
@@ -110,7 +123,7 @@ export const Button = forwardRef<View, Props>(function Button(
               color={variant === 'primary' ? primaryLabel : successIconColor[variant]}
             />
           ) : icon ? (
-            <Ionicons name={icon} size={18} color={accent} />
+            <Ionicons name={icon} size={18} color={tint} />
           ) : null}
           <Text
             className={textStyles[variant]}

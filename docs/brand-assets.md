@@ -14,21 +14,20 @@ gets recoloured.
 
 ## The mark
 
-Three offset rounded-square cards, the front one with a doorway cut out
-of it. The two behind are hairlines, so the offset still reads as depth
-without a shadow.
+A **portico**: an architrave, three columns, a stylobate. Straight lines
+only, no enclosing shape, one ink.
 
-It used to be three *filled* cards — gold, steel blue, ink — each holding
-a column, with the offset doing the work of a drop shadow. That was a
-considered identity and the silhouette is unchanged, but it was built on
-the two things the current design system removed: colour in the furniture,
-and depth from shadow rather than from a hairline and a tone step. So it
-was flattened rather than replaced. One ink, on light or on dark.
+It replaces three offset rounded-square cards — gold, steel blue, ink —
+each holding a column, with the offset doing the work of a drop shadow.
+That was a considered identity, but it was built on the two things the
+current design system removed: colour in the furniture, and depth from a
+shadow rather than from a hairline and a tone step.
 
-The doorway stops short of the card's bottom edge on purpose. Run it to
-the edge and the ink around it forms an arch that reads as a lowercase
-**n** — which, sitting next to a lowercase wordmark, is the one thing the
-mark must not do.
+Portico was chosen over three other directions for one reason: it still
+reads as a building at 15px and cannot be mistaken for a letter. That
+matters more than usual here, because the mark sits beside a lowercase
+wordmark, and anything with a counter starts reading as the word's first
+character.
 
 ## The wordmark
 
@@ -71,9 +70,6 @@ All three take the active scheme's ink automatically and accept a
 photo scrim). Nothing needs an `on-light` / `on-dark` choice any more —
 that decision moved into `useThemeColors()`.
 
-`TempleMark` drops the two hairline cards below 28px, where they stop
-being depth and start being two grey smudges.
-
 ## The flat files
 
 For anything outside the app — an app store, a build tool, a slide, a
@@ -108,7 +104,7 @@ what people actually see.
 
 ## Do / don't
 
-- **Do** keep clear space around the mark of roughly one card's width.
+- **Do** keep clear space around the mark of roughly one column's width.
 - **Do** let the component pick ink or paper; only pass `color` when the
   surface is neither.
 - **Don't** recolour it, rotate it, stretch it, add a shadow, or rebuild

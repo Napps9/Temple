@@ -6,9 +6,27 @@
 // assert. The icon's name is kept as a data attribute so a test can check
 // which icon was chosen where that is the point; everything else is a
 // hole where a glyph goes.
+//
+// The tint is kept too. A design system whose central rule is about where
+// colour is allowed needs some way to ask what colour something was given,
+// and an icon is often the only element in a component carrying a runtime
+// colour rather than a class.
 function stub(family: string) {
-  return function Icon({ name }: { name?: string; size?: number; color?: string }) {
-    return <span data-icon={`${family}:${name ?? ''}`} aria-hidden="true" />;
+  return function Icon({
+    name,
+    color,
+  }: {
+    name?: string;
+    size?: number;
+    color?: string;
+  }) {
+    return (
+      <span
+        data-icon={`${family}:${name ?? ''}`}
+        data-color={color ?? ''}
+        aria-hidden="true"
+      />
+    );
   };
 }
 

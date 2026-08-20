@@ -1375,13 +1375,20 @@ function AgendaCard({
           </Text>
         </View>
       ) : isPast ? null : (
+        // Ink, not the gym's colour. A day of classes is eight of these
+        // down one screen, and eight accent pills stop meaning "press this
+        // one" — they just make the list loud. The accent is spent on the
+        // single action a page exists for, which here is the primary in
+        // the class sheet this row opens.
         <View
-          className={`rounded-full px-4 py-2 ${
-            full ? 'bg-gray-100 dark:bg-gray-800' : 'bg-primary'
+          className={`rounded-full px-4 py-2 border ${
+            full
+              ? 'bg-raised dark:bg-raised-dk border-transparent'
+              : 'bg-surface dark:bg-surface-dk border-line-strong dark:border-line-strong-dk'
           }`}>
           <Text
             className={`text-xs font-bold ${
-              full ? 'text-gray-500 dark:text-gray-400' : 'text-white'
+              full ? 'text-ink-3 dark:text-ink-3-dk' : 'text-ink dark:text-ink-dk'
             }`}>
             {full ? 'Waitlist' : 'Book'}
           </Text>

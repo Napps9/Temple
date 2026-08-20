@@ -1,82 +1,40 @@
 import { View } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { Text } from './Text';
 import { useThemeColors } from '@/lib/theme';
 
-// Temple's mark, drawn rather than loaded.
+// Temple's mark: a portico. An architrave, three columns, a stylobate.
 //
-// The silhouette is unchanged — three offset cards, the front one holding
-// a column — but it is one colour now. The gold and steel-blue cards
-// behind became hairlines and the column became a knockout, because the
-// system this sits in gets its depth from a hairline and a tone step and
-// has no gradients or drop shadows anywhere else. A three-colour mark
-// with a fake shadow was the last thing in the product still arguing for
-// the old one.
+// It replaces the three offset cards — gold, steel blue and ink, each
+// holding a column, the offset doing the work of a drop shadow. That was
+// a considered identity, but it was built on the two things the design
+// system removed: colour in the furniture, and depth from shadow rather
+// than from a hairline and a tone step.
 //
-// Drawn as SVG rather than the PNG pair it replaces so it takes the ink
-// of whatever it is placed on, at any size, in either scheme, without a
-// second file.
-
-// The front card with the column cut out of it, as one even-odd path: the
-// column has to be a hole rather than a filled shape, because the mark is
-// placed on surface, on ground, and on the gym's own colour, and a hole
-// is the only version that is right on all three.
-const CARD =
-  'M5 0H67A5 5 0 0 1 72 5V67A5 5 0 0 1 67 72H5A5 5 0 0 1 0 67V5A5 5 0 0 1 5 0Z' +
-  'M27 31.5A9 6 0 0 1 45 31.5V63H27Z';
-
-// Below this the two cards behind stop being depth and start being noise:
-// their stroke lands under half a pixel, the doorway loses the room it
-// needs, and what is left is two grey smudges. A favicon-sized mark is the
-// front card alone. The lockup sits above this deliberately — dropping the
-// cards there would throw away the silhouette in the one place the mark is
-// most often seen.
-const GHOSTS_ABOVE = 20;
+// Straight lines only, and no enclosing shape. It is the one direction of
+// the four drawn that still reads as a building at 15px and cannot be
+// mistaken for a letter — which matters more than usual here, because it
+// sits beside a lowercase wordmark, and anything with a counter starts
+// reading as the word's first character.
+//
+// Drawn rather than loaded, so it takes the ink of whatever it sits on at
+// any size in either scheme from one source instead of a PNG per pairing.
+export const PORTICO =
+  'M3 6h42v7H3zM8.5 17h6.4v16H8.5zM20.8 17h6.4v16h-6.4zM33.1 17h6.4v16h-6.4zM3 36h42v7H3z';
 
 export function TempleMark({ size = 44, color }: { size?: number; color?: string }) {
   const colors = useThemeColors();
-  const ink = color ?? colors.ink;
-  const ghosts = size >= GHOSTS_ABOVE;
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox={ghosts ? '-2 -2 96 96' : '-2 -2 76 76'}
-      accessibilityLabel="Temple">
-      {ghosts ? (
-        <>
-          <Rect
-            x={20.8}
-            y={20.8}
-            width={70.4}
-            height={70.4}
-            rx={5}
-            fill="none"
-            stroke={ink}
-            strokeWidth={2}
-            strokeOpacity={0.3}
-          />
-          <Rect
-            x={10.8}
-            y={10.8}
-            width={70.4}
-            height={70.4}
-            rx={5}
-            fill="none"
-            stroke={ink}
-            strokeWidth={2}
-            strokeOpacity={0.55}
-          />
-        </>
-      ) : null}
-      <Path d={CARD} fill={ink} fillRule="evenodd" />
+    <Svg width={size} height={size} viewBox="0 0 48 48" accessibilityLabel="Temple">
+      <Path d={PORTICO} fill={color ?? colors.ink} />
     </Svg>
   );
 }
 
 // The wordmark. Lowercase and serif: Temple is the thing a gym runs on,
-// not a monument, and the old letterspaced caps said the opposite.
+// not a monument, and the old letterspaced caps with a TECHNOLOGY tagline
+// said the opposite.
 //
 // The family is set inline rather than through a class because Text
 // prepends `font-normal`, which names Geist — and two font-family
@@ -104,18 +62,16 @@ export function TempleWordmark({
   );
 }
 
-// Mark and wordmark together. The mark runs a little taller than the type
-// because it is a square with two cards trailing off its bottom-right —
-// the front card, which is the part that reads, is only three quarters of
-// the box, so matching the box to the cap height leaves the mark looking
-// undersized next to the word.
+// Mark and wordmark together. The portico is drawn across about three
+// quarters of its box, so the box runs a little taller than the type to
+// land the architrave and the stylobate near the word's own extremes.
 export function TempleLockup({ size = 26, color }: { size?: number; color?: string }) {
   return (
     <View
       className="flex-row items-center"
-      style={{ gap: Math.round(size * 0.34) }}
+      style={{ gap: Math.round(size * 0.3) }}
       accessibilityLabel="Temple">
-      <TempleMark size={Math.round(size * 1.08)} color={color} />
+      <TempleMark size={Math.round(size * 1.18)} color={color} />
       <TempleWordmark size={size} color={color} />
     </View>
   );

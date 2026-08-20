@@ -305,6 +305,7 @@ function ProductCard({
           ) : (
             <View className="mt-1">
               <Button
+                variant="plain"
                 onPress={() => onBuy(1)}
                 loading={pending}
                 icon="repeat-outline">
@@ -341,6 +342,7 @@ function ProductCard({
             ) : null}
             <View className="flex-1">
               <Button
+                variant="plain"
                 onPress={() => onBuy(clamped)}
                 loading={pending}
                 icon="card-outline">
